@@ -17,6 +17,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/dup/_legacy.py
 - tests/unit/test_dup.py
+- tests/test_excludes.py
+- tests/unit/test_memo.py
+- src/frob/dup/_legacy_common.py
+- src/frob/dup/_legacy_cpp.py
+- src/frob/dup/_legacy_py.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -118,6 +123,36 @@ scope_changes:
   reason: revert scope widening -- pulled in unrelated rust/doc closure noise (188
     warnings) far outside T-4107's fix; handle SCOPE002/AFFECT001 findings via targeted
     waivers instead
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering find_duplicates plus
+    the private-helper modules the touched indexer functions already call'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering find_duplicates plus
+    the private-helper modules the touched indexer functions already call'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup/_legacy_common.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering find_duplicates plus
+    the private-helper modules the touched indexer functions already call'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup/_legacy_cpp.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering find_duplicates plus
+    the private-helper modules the touched indexer functions already call'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup/_legacy_py.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering find_duplicates plus
+    the private-helper modules the touched indexer functions already call'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
