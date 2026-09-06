@@ -19,10 +19,41 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/ticket_runner/_verify.py
+- tests/unit/test_ticket_runner_base_forward_t4105.py
+- tests/ticket_land_suite/test_verify_intent.py
+- tests/unit/test_app_runners_t0976_mutation_evidence.py
+- tests/unit/test_ticket_close_bug002_t1427.py
+- tests/unit/test_ticket_close_own_obligations_t1387.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_base_forward_t4105.py
+  reason: test evidence for the --base forwarding fix touches these test files
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/ticket_land_suite/test_verify_intent.py
+  reason: test evidence for the --base forwarding fix touches these test files
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_app_runners_t0976_mutation_evidence.py
+  reason: test evidence for the --base forwarding fix touches these test files
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_ticket_close_bug002_t1427.py
+  reason: test evidence for the --base forwarding fix touches these test files
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_ticket_close_own_obligations_t1387.py
+  reason: test evidence for the --base forwarding fix touches these test files
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given a ticket branched off a non-main target branch and an explicit base
