@@ -17,8 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/dup/_legacy.py
 - tests/unit/test_dup.py
-- tests/test_excludes.py
-- tests/unit/test_memo.py
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
@@ -153,6 +151,18 @@ scope_changes:
   glob: src/frob/dup/_legacy_py.py
   reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering find_duplicates plus
     the private-helper modules the touched indexer functions already call'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_excludes.py
+  reason: revert -- these test files themselves cover unrelated modules (excludes/arch/memo/graph/lang),
+    expanding SCOPE002 breadth further; not the right remedy
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_memo.py
+  reason: revert -- these test files themselves cover unrelated modules (excludes/arch/memo/graph/lang),
+    expanding SCOPE002 breadth further; not the right remedy
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
