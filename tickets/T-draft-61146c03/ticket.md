@@ -19,12 +19,6 @@ scope:
 - tests/ticket_land_suite/test_land_lock.py
 - tests/test_tickets_mutation_evidence.py
 - tickets/T-draft-fe768f82/ticket.md
-- src/frob/tickets/_land.py
-- src/frob/tickets/_mutation_evidence.py
-- tests/conftest.py
-- tests/unit/test_conftest_console_ctrl_guard.py
-- tests/unit/test_process_guard.py
-- tests/unit/test_process_pid_liveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -77,6 +71,54 @@ scope_changes:
   reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
     file itself, plus production/test modules that touched-test-files'' pre-existing
     frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: 'revert: these pulled in a huge cascading doc scope closure via unrelated
+    pre-existing frob:tests/doc bindings in src/frob/tickets/_land.py; this ticket
+    touches only test files, keep scope narrow and handle SCOPE002 via targeted waivers
+    instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/tickets/_mutation_evidence.py
+  reason: 'revert: these pulled in a huge cascading doc scope closure via unrelated
+    pre-existing frob:tests/doc bindings in src/frob/tickets/_land.py; this ticket
+    touches only test files, keep scope narrow and handle SCOPE002 via targeted waivers
+    instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/conftest.py
+  reason: 'revert: these pulled in a huge cascading doc scope closure via unrelated
+    pre-existing frob:tests/doc bindings in src/frob/tickets/_land.py; this ticket
+    touches only test files, keep scope narrow and handle SCOPE002 via targeted waivers
+    instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_conftest_console_ctrl_guard.py
+  reason: 'revert: these pulled in a huge cascading doc scope closure via unrelated
+    pre-existing frob:tests/doc bindings in src/frob/tickets/_land.py; this ticket
+    touches only test files, keep scope narrow and handle SCOPE002 via targeted waivers
+    instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_process_guard.py
+  reason: 'revert: these pulled in a huge cascading doc scope closure via unrelated
+    pre-existing frob:tests/doc bindings in src/frob/tickets/_land.py; this ticket
+    touches only test files, keep scope narrow and handle SCOPE002 via targeted waivers
+    instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_process_pid_liveness.py
+  reason: 'revert: these pulled in a huge cascading doc scope closure via unrelated
+    pre-existing frob:tests/doc bindings in src/frob/tickets/_land.py; this ticket
+    touches only test files, keep scope narrow and handle SCOPE002 via targeted waivers
+    instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
