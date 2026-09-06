@@ -23,6 +23,7 @@ scope:
 - tests/unit/gates/test_profile_boundary_subject_count.py
 - src/frob/gates/_waive.py
 - docs/design/registry/check-coverage.yaml
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -115,6 +116,12 @@ scope_changes:
   glob: docs/design/registry/check-coverage.yaml
   reason: 'REG010: SUBJECT001 needs a CHK-GATE-SUBJECT001 entry in the registry, filed
     via frob registry audit --sync-gate-rules'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'DOCENUM001: docs/modules/gates.md''s frob:enumerates rule-catalog anchor
+    must list SUBJECT001 now that it is a registered gate rule id'
   actor: logan
   at: '2026-09-06'
 body_changes:
