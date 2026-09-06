@@ -2,7 +2,7 @@
 id: T-4085
 title: ticket_runner.run() ambient-cwd resolution accepts a directory with no frob.toml
   and no git repo, silently writing the ledger there
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -38,6 +38,10 @@ scope_changes:
     of unrelated symbols into this narrow ticket's scope closure.
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard::test_ambient_cwd_with_no_frob_toml_or_git_is_refused
+- tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard::test_ambient_cwd_inside_a_real_frob_repo_still_works
+- tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard::test_explicit_path_to_a_bare_directory_is_still_trusted
 designated_repro_test: null
 threat: null
 component: null

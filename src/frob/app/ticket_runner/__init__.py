@@ -533,11 +533,17 @@ _LAND_LOCK_EXEMPT_VERBS = frozenset({"land", "merge-driver", "sweep-async"})
 
 # frob:ticket T-1779
 # frob:ticket T-1779
-# frob:tests tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_land_in_progress  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestDispatchLandGuard.test_read_only_verb_runs_while_land_in_progress  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_l\
+# and_in_progress
+# frob:tests \
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_read_only_verb_runs_while_lan\
+# d_in_progress
 # frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_land_verb_itself_is_exempt
-# frob:tests tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the_ticket_file_at_all  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the\
+# _ticket_file_at_all
 def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) -> None:
     """`run()`'s pre-dispatch closing of T-1779's gap 1: the EXISTING
     `refuse_if_land_in_progress` guard (T-1619) only ran inside
@@ -764,6 +770,31 @@ def _resolve_ticket_root(cfg: AppConfig) -> Path:
     return (cfg.ticket_path or Path(".")).resolve()
 
 
+# frob:ticket T-4085
+def _ambient_cwd_root_used(cfg: AppConfig) -> bool:
+    """True when `_resolve_ticket_root` fell all the way through to the
+    bare-cwd default for `cfg` -- neither an explicit `--path` nor
+    `FROB_ROOT` pinned the root deliberately (T-4085). This is the ONLY
+    case the bare-directory guard below applies to: an explicit `--path`
+    or `FROB_ROOT` is already a deliberate choice by the caller (the same
+    "an explicit flag always wins" rule `_resolve_ticket_root` applies for
+    T-1674) and is trusted outright, which is also what keeps this guard
+    from breaking the 36+ test files that pass `ticket_path=tmp_path`
+    against a bare directory on purpose, as test isolation."""
+    return _explicit_ticket_path(cfg) is None and _frob_root_env() is None
+
+
+# frob:ticket T-4085
+def _looks_like_a_frob_repo(root: Path) -> bool:
+    """Whether `root` has a `frob.toml` or is (the top of) a git checkout
+    -- the minimal bar `run`'s ambient-cwd guard (T-4085) requires before
+    trusting `root` as a ticket-store write target. Checked at `root`
+    itself only, never by searching upward: an upward search would trade
+    a silent wrong-DIRECTORY write for a silent wrong-REPO write, which
+    T-4085 explicitly rejects as a fix (see its own ticket body)."""
+    return (root / "frob.toml").exists() or (root / ".git").exists()
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
@@ -783,14 +814,54 @@ def _resolve_ticket_root(cfg: AppConfig) -> Path:
 # of the registry's own count, an orthogonal concern this change never touches; \
 # docs/modules/app.md#runners and #config (the docs this change IS actually about) \
 # were updated in the same diff"
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
+# frob:tests \
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_\
+# exits_1
 # frob:ticket T-1674
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_env_used_when_path_not_explicit  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_path_wins_over_frob_root  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_root_is_logged_for_a_mutating_verb  # noqa: E501
+# frob:tests \
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_\
+# env_used_when_path_not_explicit
+# frob:tests \
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_p\
+# ath_wins_over_frob_root
+# frob:tests \
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_r\
+# oot_is_logged_for_a_mutating_verb
+# frob:ticket T-4085
+# frob:tests \
+# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_\
+# ambient_cwd_with_no_frob_toml_or_git_is_refused
+# frob:tests \
+# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_\
+# ambient_cwd_inside_a_real_frob_repo_still_works
+# frob:tests \
+# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_\
+# explicit_path_to_a_bare_directory_is_still_trusted
 def run(cfg: AppConfig) -> None:
-    """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
+    """Dispatch to the ticket subcommand named by `cfg.ticket_command`.
+
+    T-4085: when `cfg` pinned nothing explicitly (`_ambient_cwd_root_used`
+    -- no `--path`, no `FROB_ROOT`), the resolved root must also look like
+    a frob repo (`_looks_like_a_frob_repo`) before any handler runs.
+    Without this, `frob ticket new` run from an arbitrary non-repo
+    directory (a consumer's `/tmp` scratchpad, in the incident that filed
+    this ticket) silently resolves that directory as root and writes a
+    ledger nothing will ever read, printing a success line identical to a
+    correct run."""
     root = _resolve_ticket_root(cfg)
+
+    # frob:ticket T-4085
+    if _ambient_cwd_root_used(cfg) and not _looks_like_a_frob_repo(root):
+        _log.error(
+            "ticket %s: refusing -- resolved root %s has neither a "
+            "frob.toml nor a .git directory, and no --path/FROB_ROOT was "
+            "given to pin it deliberately; nothing would ever read a "
+            "ledger written here. Run this from inside a frob repo, or "
+            "pass --path/FROB_ROOT to name one explicitly.",
+            cfg.ticket_command,
+            root,
+        )
+        sys.exit(1)
 
     handler = _ticket_dispatch_table().get(cfg.ticket_command)
     if handler is None:
