@@ -33,6 +33,9 @@ scope_changes:
   reason: regression test for the frob.toml severity-override fix
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_survives_repo_severity_overrides
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_not_forced_to_error_in_this_repo
 designated_repro_test: null
 threat: null
 component: null
