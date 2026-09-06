@@ -2,7 +2,7 @@
 id: T-4103
 title: the first SUITE-RESULT line shares a line with pytest's [100%] progress output,
   so the repo's own always-greppable signal cannot be anchored
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
