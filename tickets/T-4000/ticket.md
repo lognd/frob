@@ -21,7 +21,6 @@ scope:
 - docs/modules/tickets.md
 - docs/modules/tickets-lifecycle.md
 - docs/modules/tickets-landing.md
-- src/frob/tickets/__init__.py
 - src/frob/app/config.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - tests/test_tickets_evidence_removal.py
@@ -84,6 +83,14 @@ scope_changes:
 - op: add
   glob: tests/test_tickets_evidence_removal.py
   reason: new test file covering part 3 (evidence removal) and part 4 (--cwd) fixtures
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/tickets/__init__.py
+  reason: 'avoided touching __init__.py entirely: remove_evidence is imported directly
+    from frob.tickets._evidence at its one call site instead of being re-exported
+    from the package, which sidesteps SCOPE002''s transitive closure explosion across
+    the whole re-export surface'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
