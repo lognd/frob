@@ -18,10 +18,25 @@ scope:
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
 - scripts/artifact_smoke.py
+- tests/system/test_artifact_smoke.py
+- tests/unit/test_artifact_smoke_script.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_artifact_smoke.py
+  reason: 'scope closure: these are the tests that cover scripts/artifact_smoke.py
+    and are the ones currently red; the fix must edit them'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_artifact_smoke_script.py
+  reason: 'scope closure: these are the tests that cover scripts/artifact_smoke.py
+    and are the ones currently red; the fix must edit them'
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
