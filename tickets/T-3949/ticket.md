@@ -31,6 +31,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 3778
   new_length: 6583
+- mode: set
+  reason: 'F-259 is the most severe instance yet: a directory-glob lease on a shared
+    test folder left a ticket with no compliant route, so it closed with an outstanding
+    SCOPE001. Directory globs are a distinct aggravator from whole-file leases and
+    scale their blast radius with the tree, not the work'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 6583
+  new_length: 9721
 designated_repro_test: null
 threat: null
 component: null
@@ -154,3 +163,57 @@ ADDITIONAL ACCEPTANCE
 ADDITIONAL FIXTURE: a ticket whose scope collides with a live lease does not
 appear as plainly doable -- so no dispatch can be made on a ticket that cannot
 start.
+
+## F-259: A TICKET CLOSED WITH AN OUTSTANDING VIOLATION BECAUSE THE RULE LEFT NO OTHER ROUTE
+
+logand.app-v2, 2026-09-06:
+
+  "T-0191 (scope: ImageCarousel.tsx) had to edit
+   frontend/tests/unit/pages/projects.test.tsx (the UT row for its comp), but
+   `frob ticket scope --add` was REFUSED because T-0092 holds a live lease on the
+   whole glob frontend/tests/unit/pages/. THE TEST EDIT STILL HAD TO HAPPEN
+   (test-first), so T-0191 CLOSED WITH AN OUTSTANDING SCOPE001."
+
+THIS IS THE WORST OUTCOME THIS DEFECT HAS PRODUCED. The previous reports cost
+serialisation, a wasted dispatch, and manual queue re-ordering. This one produced
+a TICKET CLOSED IN KNOWN VIOLATION -- the enforcement system's own record now
+contains a ticket that admits it broke a rule, because the rule offered no
+compliant path.
+
+THE SQUEEZE IS STRUCTURAL, not a judgement call by the agent:
+  - TDD001 and the test-first workflow REQUIRE the test edit.
+  - The file is inside a DIRECTORY-GLOB lease held by a sibling ticket.
+  - `scope --add` is refused, so the edit cannot be declared.
+  - Not editing means not doing the work.
+Every available action violates something. The agent picked the option that
+delivered the work and left an honest violation on the record, which is the least
+bad choice and should not be held against it.
+
+DIRECTORY-GLOB LEASES ARE THE SPECIFIC AGGRAVATOR HERE, and they deserve separate
+treatment from the whole-FILE leases the earlier reports describe. A lease on
+`frontend/tests/unit/pages/` fences off every test file for every component in
+that tree -- so ONE ticket touching one page's tests blocks EVERY sibling
+component ticket, because shared test directories are exactly where unrelated
+work co-locates. The blast radius scales with the directory, not with the work.
+
+THEIR TWO SUGGESTIONS, and the second is the cheaper one to reason about:
+  1. LEASE THE CONCRETE FILES A TICKET'S UT ROWS NAME, rather than the directory
+     glob the scope was written with. This is the symbol/section-granularity ask
+     from the earlier reports, applied to directories: derive the lease from what
+     the ticket actually declares it will touch.
+  2. LET `--add` SUCCEED FOR A FILE THE LEASEHOLDER HAS NOT TOUCHED. Narrower and
+     testable against real state -- the leaseholder's own diff is knowable, so a
+     file it has not modified is provably uncontended. NOTE this needs care: "has
+     not touched YET" is not "will not touch", so it trades a hard refusal for a
+     possible later conflict. Say which risk is preferred rather than assuming.
+
+CROSS-REFERENCE T-4050 (the scope-denominator epic): this is the LEASE side, not
+the denominator side, and the two must not be conflated -- but a ticket that
+cannot declare a file it must edit will produce denominator findings forever,
+because its declared scope can never match its real diff. The two subsystems
+produce each other's symptoms.
+
+ADDITIONAL ACCEPTANCE
+- A ticket that must edit a file inside a sibling's directory-glob lease has a
+  compliant route -- it never has to close in known violation.
+- Directory-glob leases specifically addressed, not just whole-file ones.
