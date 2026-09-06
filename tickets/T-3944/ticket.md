@@ -15,11 +15,34 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/ticket_runner/_scope_cmd.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/gates/_prework.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_scope_cmd.py
+  reason: the filed scope named src/frob/app/ticket_runner/_scope_cmd.py, which does
+    not exist -- I invented the path instead of verifying it. scope --add is handled
+    in _mutate.py and the pre-work sweep/PRE001 lives in gates/_prework.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: the filed scope named src/frob/app/ticket_runner/_scope_cmd.py, which does
+    not exist -- I invented the path instead of verifying it. scope --add is handled
+    in _mutate.py and the pre-work sweep/PRE001 lives in gates/_prework.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_prework.py
+  reason: the filed scope named src/frob/app/ticket_runner/_scope_cmd.py, which does
+    not exist -- I invented the path instead of verifying it. scope --add is handled
+    in _mutate.py and the pre-work sweep/PRE001 lives in gates/_prework.py
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
