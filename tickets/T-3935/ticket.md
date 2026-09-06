@@ -21,6 +21,8 @@ scope:
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
 - docs/guides/release.md
+- scripts/verify_release_ci_status.py
+- src/frob/doctor.py
 evidence_scope:
 - docs/guides/release.md
 scope_breadth_ack: false
@@ -124,6 +126,20 @@ scope_changes:
     this ticket only cites the artifact-smoke-stage-t-3884 section
   actor: logan
   at: '2026-09-05'
+- op: add
+  glob: scripts/verify_release_ci_status.py
+  reason: docs/guides/release.md (in full scope for artifact_smoke.py frob:doc closure)
+    also anchors these two files elsewhere in the doc; adding to close SCOPE002, will
+    demote to evidence-only next since neither is edited by this ticket
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/doctor.py
+  reason: docs/guides/release.md (in full scope for artifact_smoke.py frob:doc closure)
+    also anchors these two files elsewhere in the doc; adding to close SCOPE002, will
+    demote to evidence-only next since neither is edited by this ticket
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
