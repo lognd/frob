@@ -17,15 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - tests/unit/test_cycle_waiver.py
-- tests/system/test_cli_check.py
-- tests/unit/test_capability_and_deploy_cycle_regression.py
-- tests/unit/test_check.py
-- tests/unit/test_check_gates_summary.py
-- tests/unit/test_check_tool_unavailable.py
-- tests/unit/test_dup_pipeline_cycle_regression.py
-- tests/unit/test_gates_lang_graph_cycle_regression.py
-- tests/unit/test_process_guard.py
-- tests/unit/test_vet_cycle_regression.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -111,6 +102,87 @@ scope_changes:
   reason: 'revert: docs/modules/gates.md''s own scope closure recurses into ~470 unrelated
     gates-module symbols, far outside this ticket''s actual change; treating _diag_severity/_unresolved_count''s
     pre-existing doc edge as inherited scope debt instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/system/test_cli_check.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_capability_and_deploy_cycle_regression.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_check.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_check_gates_summary.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_check_tool_unavailable.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_dup_pipeline_cycle_regression.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_gates_lang_graph_cycle_regression.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_process_guard.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_vet_cycle_regression.py
+  reason: 'revert: scope closure over these shared gate-suite files recurses unboundedly
+    into unrelated check_runner/conftest/gates-module symbols far outside this ticket''s
+    actual change (T-4056 touches only _build_import_graph''s node-id computation
+    and _run_cycle''s zero-subject log); back to minimal scope, treating inherited
+    SCOPE002 debt on this shared module as pre-existing, not introduced here'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
