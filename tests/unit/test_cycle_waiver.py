@@ -11,7 +11,8 @@ an unrelated file's waiver does not.
 
 from __future__ import annotations
 
-from pathlib import Path
+import ntpath
+from pathlib import Path, PureWindowsPath
 
 from frob.check._python import _run_cycle
 
@@ -115,3 +116,33 @@ class TestCycleWaiverPipeline:
             "a frob:waive with no reason= must not suppress a CYCLE001 "
             f"finding; got {result.diagnostics}"
         )
+
+
+# frob:ticket T-4056
+def test_windows_shaped_relative_path_str_disagrees_with_as_posix() -> None:
+    """T-4056 mechanism proof: on win32, `str(Path.relative_to(...))` and
+    `Path.relative_to(...).as_posix()` are DIFFERENT strings for any
+    multi-component path -- this is what made every `_build_import_graph`
+    node id (built with the bare, pre-fix `str()`) permanently unequal to
+    every edge target `resolve_local_import` returns (`as_posix()`,
+    always), so Tarjan saw only graph singletons and CYCLE001 silently
+    reported "no cycles" on a real, unwaived cycle.
+
+    This assertion is a PROVEN claim, not a platform simulation of the
+    kind that misled T-3947/T-3948: `PureWindowsPath.__str__` and
+    `.as_posix()` are pure Python string methods with no OS dispatch
+    (unlike `fnmatch`'s `os.path.normcase`, which genuinely behaves
+    differently per-platform) -- `ntpath` is used directly, for the same
+    reason, to keep the claim in terms of the real Windows path flavour
+    rather than a `Path` object whose separator is actually `/` on this
+    (posix) test-running machine. What this test does NOT prove is that
+    `_build_import_graph`'s real behavior on a real Windows CI runner
+    matches this reasoning end to end -- that still needs a real Windows
+    run (T-3936)."""
+    windows_rel = PureWindowsPath("pkg", "a.py")
+    assert str(windows_rel) == "pkg\\a.py"
+    assert windows_rel.as_posix() == "pkg/a.py"
+    assert str(windows_rel) != windows_rel.as_posix()
+    # ntpath (the real win32 path module) agrees with PureWindowsPath here
+    # -- there is no separate os-dispatch step being skipped.
+    assert ntpath.join("pkg", "a.py") == "pkg\\a.py"

@@ -418,7 +418,19 @@ def _build_import_graph(scan_root: Path):  # noqa: ANN202
     cycle, not a second occurrence of one), so CYCLE001 must not fire on
     it. A module-level import inside `try:`/`except ImportError:` or a
     module-level `if sys.version_info:` guard is still import-time and is
-    still counted."""
+    still counted.
+
+    T-4056: node ids are always `.as_posix()` (never a bare `str()`),
+    matching `frob.app.cycle_runner._process_path`'s T-3786 fix for the
+    identical bug -- `resolve_local_import` always returns a forward-
+    slash `as_posix()` string (`_resolve_under`'s
+    `candidate.relative_to(root).as_posix()`), so a bare `str()` node id
+    on win32 (`pkg\\a.py`) never equals the forward-slash edge target
+    (`pkg/b.py`) `add_edge` records for it. Every node this function adds
+    was then a graph singleton on Windows -- Tarjan found no SCC of size
+    > 1, so CYCLE001 silently reported "no cycles" on every real cycle,
+    including the suite's own unwaived positive control
+    (`tests/unit/test_cycle_waiver.py::test_unwaived_cycle_reports`)."""
     from frob.cycle.graph import DependencyGraph
     from frob.lang import extract_import_edges, resolve_local_import
 
@@ -433,7 +445,7 @@ def _build_import_graph(scan_root: Path):  # noqa: ANN202
         if any(p in skip or p.startswith(".") for p in rel_parts):
             continue
         try:
-            rel = str(path.relative_to(scan_root))
+            rel = path.relative_to(scan_root).as_posix()
             graph.add_node(rel)
             result = extract_import_edges(path)
             if result.is_err:
@@ -597,7 +609,22 @@ def _run_cycle(root: Path) -> ToolResult:
     from frob.cycle.graph import find_cycles
 
     scan_root = root if root.is_dir() else root.parent
-    cycles = find_cycles(_build_import_graph(scan_root))
+    graph = _build_import_graph(scan_root)
+    if not graph.nodes:
+        # T-4056: a detector that measured ZERO subjects and one that
+        # measured a clean tree must not render identically -- see
+        # T-3985 (subject-count primitive, not built here). This is the
+        # cheap, local version: log loudly so an empty-graph "no cycles"
+        # (e.g. the exact node-identity bug this ticket fixed) is
+        # visible in the log even though the ToolResult shape is
+        # unchanged for every existing caller.
+        _log.warning(
+            "_run_cycle: measured 0 subject(s) under %s -- a clean 'no "
+            "cycles' report from an empty graph is indistinguishable "
+            "from a genuinely cycle-free tree without this log line",
+            scan_root,
+        )
+    cycles = find_cycles(graph)
     diags = _cycle_diags(cycles)
     diags = _cycle_apply_waivers(root, diags)
     return ToolResult(
