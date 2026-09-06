@@ -2,7 +2,7 @@
 id: T-4057
 title: 'Windows CI cluster B: ~/.claude HOME-relative fixtures use HOME env (ignored
   by Path.home() on Windows); stale-guard also has a CRLF/autocrlf false-negative'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
