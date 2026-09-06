@@ -21,6 +21,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'F-246 adds a measured cost (one ~50k-token dispatch producing nothing but
+    a description of the blockage) and a chain instance, plus a separable cheaper
+    ask: frob ticket doable already knows both sides and should not offer a ticket
+    whose scope collides with a live lease'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3778
+  new_length: 6583
 designated_repro_test: null
 threat: null
 component: null
@@ -94,3 +104,53 @@ ACCEPTANCE
 - Disjoint symbol-level edits in one file no longer serialise.
 - The refusal names the colliding glob.
 - All three fixtures committed.
+## F-246: A MEASURED COST, AND A SECOND ASK THAT IS CHEAPER THAN THE MAIN FIX
+
+logand.app-v2, 2026-09-06. Same defect, now on a DOCS file and with a price tag:
+
+  "T-0089 could not start because T-0226 (a licence doc anchor, A TWO-LINE
+   ADDITION) holds a whole-file lease on
+   docs/spec/L5-component-design/SUB-16-public-pages.md, and T-0226 was itself
+   queued behind T-0218's lease on frontend/scripts/licenses.ts. An agent slot
+   was burned filing a draft ticket that describes the chain and then exiting.
+   Cost: ONE DISPATCH (~50k tokens, 84s) WITH ZERO OUTPUT; the coordinator had to
+   re-order the queue by hand."
+
+This is the first report to QUANTIFY the cost, and it is the strongest evidence
+on this ticket. A two-line documentation addition fenced off an entire L5 spec
+file, which fenced off an unrelated ticket, which consumed a full agent dispatch
+that produced nothing but a description of the blockage. Note also the CHAIN --
+T-0089 behind T-0226 behind T-0218 -- so lease granularity does not just
+serialise pairs, it composes into queues.
+
+THEIR SECOND SUGGESTION IS SEPARABLE AND SHIPPABLE BEFORE THE GRANULARITY FIX,
+and I want it treated as its own child rather than folded in:
+
+  "`frob ticket doable` should already exclude tickets whose declared scope
+   collides with a LIVE lease (IT KNOWS BOTH SIDES), or mark them 'doable after
+   T-0226'."
+
+They are right that both sides are known. `doable` is the verb whose entire job
+is answering "what can be worked now", and it is currently answering a question
+nobody asked -- what is unblocked by DEPENDENCIES -- while ignoring the other
+thing that makes a ticket unworkable. That is why an agent slot was spent: the
+dispatch was made on `doable`'s word. Fixing this does not require deciding
+anything about lease granularity, and it converts a burned dispatch into a
+correct queue ordering. IT ALSO FIXES THE COORDINATOR-SIDE COST directly -- I
+have been picking dispatch sets by hand all session.
+
+THEIR FIRST SUGGESTION, section-granular doc leases, is the docs-shaped version
+of this ticket's symbol-granular ask, with a useful concrete unit: "the
+frob:describes anchor table is already a unit". So for documentation there may be
+an existing structural boundary to lease against, rather than needing a new
+concept. Worth checking before designing anything general.
+
+ADDITIONAL ACCEPTANCE
+- `frob ticket doable` excludes (or explicitly annotates) tickets whose declared
+  scope collides with a live lease. Shippable independently of granularity.
+- Whether the frob:describes anchor table can serve as the doc-lease unit,
+  answered before designing a new one.
+
+ADDITIONAL FIXTURE: a ticket whose scope collides with a live lease does not
+appear as plainly doable -- so no dispatch can be made on a ticket that cannot
+start.
