@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/**
+- .github/dependabot.yml
+- tests/test_ci_workflow_actions_pinned.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +28,23 @@ scope_changes:
   reason: 'Part A: pin third-party GitHub Actions to SHAs in workflow files'
   actor: logan
   at: '2026-09-05'
+- op: add
+  glob: .github/dependabot.yml
+  reason: 'Part A: add GitHub Actions update mechanism (Dependabot) alongside SHA
+    pins'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_ci_workflow_actions_pinned.py
+  reason: 'add a repro test proving the SHA-pin fix: fails against an unpinned uses:
+    line, passes against the pinned workflow'
+  actor: logan
+  at: '2026-09-05'
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestReleaseWorkflowNoAutomaticTrigger::test_ci_workflow_never_references_release_or_pypi
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
+- tests/test_ci_workflow_timeout.py::TestBuildJobHasATimeoutBackstop::test_build_job_declares_timeout_minutes
+- tests/test_ci_workflow_timeout.py::TestUbuntuTestStepIsTimedWithStackDump::test_ubuntu_test_step_wraps_pytest_in_timeout_abrt
 designated_repro_test: null
 threat: null
 component: null
