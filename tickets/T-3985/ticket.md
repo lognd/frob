@@ -28,6 +28,13 @@ body_changes:
   at: '2026-09-06'
   old_length: 3748
   new_length: 4648
+- mode: append
+  reason: T-4036 item 4 (include!'d file invisible to gate:TEST/DOC/REF) is another
+    subject-count instance, applied to the walker; cross-referencing rather than duplicating
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4648
+  new_length: 5741
 designated_repro_test: null
 acceptance:
 - text: given the design step, when it completes, then it states an explicit checkable
@@ -71,3 +78,6 @@ SCOPE: add a subject_count (or subjects_examined) field to the shared ToolResult
 
 
 T-4025 item 1 is another instance of this ticket's own primitive, cross-referenced rather than duplicated. FINDING: a frontend component fully implemented, tested, and V-model-closed, that is NEVER INVOKED from any real entrypoint -- frob knows package.json declares an entrypoint and knows the script names, but does not model REACHABILITY from a declared entrypoint down to the component. This is a vacuous-pass shape at the component-invocation level rather than the gate level: three green, closed components that nothing calls is exactly "a check with a subject count of zero" one layer further down the call graph. Fold this into the design step's scope: does the subject-count primitive generalize to "is this V-model-closed unit ever reached from a declared entrypoint," or does that need its own reachability pass reusing the same callgraph BFS machinery already proven for COV006/T-3962.
+
+
+T-4036 item 4, cross-referenced rather than duplicated -- a further instance of this ticket's own subject-count primitive. FINDING: a source file included via a language's include!/#include-style mechanism rather than declared as a proper module (e.g. Rust's mod declaration) is invisible to gate:TEST, gate:DOC, and gate:REF simultaneously -- all three walk the module tree, none of them walk raw includes, so all three report CLEAN on a file with real code, two real callers, and doc comments that none of them ever reads. This is three gates independently examining a subject set that silently excludes a real, live file -- exactly the "0 findings over 0 subjects examined, indistinguishable from 0 over N" shape this ticket exists to fix, just triggered by a walker gap rather than a path-separator or reachability bug. Their own fallback ask is precisely the primitive applied to the walker: report an unwalked-but-tracked source file (present in git, matched by no language walker's subject set) as a finding in its own right, distinct from a clean pass over files the walker DID see.
