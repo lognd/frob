@@ -201,7 +201,8 @@ acceptance:
 - text: given T-3844's promotion list, when this ticket's design step completes, then
     it reports whether a subject count would have flagged any of the 308 promoted-to-error
     rules as never-exercised rather than clean
-  evidence: []
+  evidence:
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_windows_path_mismatch_repro
 - text: given ToolResult gains a subject_count field, when PROFILE001 (T-3941's proven
     positive control) is wired to populate it, then a repro of the T-3941 Windows
     path-mismatch bug shows subject_count == 0 on an enforcing gate and the new cross-cutting
@@ -217,6 +218,13 @@ acceptance:
   - tests/unit/test_check.py::TestSubjectCountPrimitive::test_foreign_repo_never_trips_subject001
   - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_windows_path_mismatch_repro
   - tests/unit/test_check.py::TestSubjectCountPrimitive::test_unprobed_family_subject_count_stays_none
+- text: 'SUBJECT001 (T-0756 promotion playbook): a before-fails/after-passes fixture
+    proves the new rule actually fires through the real production frob check invocation,
+    not just a unit-level predicate call -- test_frob_own_repo_with_zero_usages_trips_subject001
+    constructs a frob-own-repo-shaped fixture, forces PROFILE001''s own subject-count
+    probe to zero (the T-3941 repro), and asserts the real _run_gates pipeline''s
+    gate:PROFILE ToolResult carries the SUBJECT001 diagnostic and a failing exit code'
+  evidence: []
 threat: null
 component: null
 anchor: false
