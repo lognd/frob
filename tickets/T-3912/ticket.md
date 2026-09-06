@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_debt_deprecated.py
 - frob.toml
+- tests/gates_suite/test_debt.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: frob.toml
   reason: smallest correct fix is reverting the config override, not the gate code
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/gates_suite/test_debt.py
+  reason: regression test for the frob.toml severity-override fix
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
