@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_tickets_evidence_cli.py
+- tests/unit/test_verify_language_buckets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,11 @@ scope_changes:
   glob: tests/test_tickets_evidence_cli.py
   reason: end-to-end regression test mirroring TestTicketEvidenceRustOracle, using
     vitest -- the exact shape the consumer report (F-134) hit
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_verify_language_buckets.py
+  reason: unit tests for _other_language_collected_ids helper
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
