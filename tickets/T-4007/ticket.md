@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'apollo reported the ratchet''s measured downstream cost: post-transition,
+    closing a one-line lockfile ticket went from three commands to five, because close''s
+    requirements are independent of ticket size and kind. That is the consequence
+    the missing durable record concealed'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4015
+  new_length: 6290
 designated_repro_test: null
 threat: null
 component: null
@@ -95,3 +105,42 @@ ACCEPTANCE
 - A durable record for one-way ratchet transitions.
 - The stamp-coverage artifact question resolved explicitly, not left ambiguous.
 - All three fixtures committed.
+## THE RATCHET'S MEASURED COST, reported by the same consumer
+
+apollo, 2026-09-06, after the rapid -> standard transition described above:
+
+  "Standard profile (post-ratchet): `frob ticket close --evidence-cmd` alone no
+   longer closes -- close now demands a Done report AND per-acceptance bound
+   evidence even for ONE-LINE LOCKFILE MICRO-TICKETS (T-3336/T-3837 behavior).
+   The rapid-era three-command ceremony is now five commands."
+
+THIS IS THE CONSEQUENCE THE MISSING RECORD HID. The ratchet fired automatically,
+one-way, at a file-count threshold, and the visible result was not "gates got
+stricter" in the abstract -- it was that closing a one-line lockfile change went
+from three commands to five. Nobody chose that trade for that class of ticket;
+it followed from a repo growing past 300 files.
+
+THE ASK IS PROPORTIONALITY, NOT LENIENCY, and it should be read that way. They
+are not disputing that a Done report and bound evidence are right for real work.
+They are observing that the requirement is INDEPENDENT OF THE TICKET'S SIZE AND
+KIND, so a lockfile bump pays the same ceremony as a feature. A rule that costs
+the same regardless of what it is protecting will be routed around -- and this
+queue already has a measured instance of exactly that: T-4008, where the only way
+to land a non-Python bug fix was to RE-KIND the ticket, corrupting the data other
+rules depend on.
+
+DO NOT FIX THIS BY WEAKENING close FOR EVERYONE. The evidence requirements exist
+for good reasons and T-4031 is separately about tickets landing with NO acceptance
+criteria at all. Any proportionality mechanism must be a declared, visible
+property of the ticket -- not an implicit escape that a busy agent can reach for.
+
+WHAT TO DETERMINE, alongside this ticket's existing questions: does the profile
+system already express per-kind or per-size requirements, or is strictness a
+single global dial? If it is one dial, that is the finding -- and it explains
+why an automatic one-way ratchet is felt as a blunt instrument.
+
+ADDITIONAL ACCEPTANCE
+- Whether close's requirements can vary by ticket kind/size today, answered by
+  measurement.
+- If the ratchet is retained as-is, the ceremony cost it imposes stated in its
+  durable record, so the trade is visible at the moment it is made.
