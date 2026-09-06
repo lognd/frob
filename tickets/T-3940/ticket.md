@@ -382,6 +382,12 @@ scope_changes:
     test file this fix''s fixtures live in'
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_bare_print_outside_the_render001_pathspec_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_pre_existing_render001_merely_touched_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_waived_new_finding_does_not_refuse
 designated_repro_test: null
 threat: null
 component: null
