@@ -2,7 +2,7 @@
 id: T-3936
 title: 'Windows CI: 19 remaining platform-specific failures (49 -> 28 -> 19 after
   shared causes removed)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
