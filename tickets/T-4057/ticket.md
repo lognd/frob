@@ -1,0 +1,51 @@
+---
+id: T-4057
+title: 'Windows CI cluster B: ~/.claude HOME-relative fixtures use HOME env (ignored
+  by Path.home() on Windows); stale-guard also has a CRLF/autocrlf false-negative'
+state: queued
+kind: bug
+origin: human
+created: '2026-09-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- tests/test_telemetry.py
+- tests/unit/test_skills_sync.py
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py
+- .claude/hooks/sync-claude-config.py
+- src/frob/scaffold/_skills_sync.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+T-3936 Cluster B: two root causes. (1) test_telemetry.py's home_claude_config_changed
+test and test_skills_sync.py's defaults-to-home test monkeypatch.setenv(HOME) but
+production reads Path.home() (src/frob/app/telemetry/_state.py, src/frob/scaffold/
+_skills_sync.py) which on Windows resolves via ntpath.expanduser: USERPROFILE or
+HOMEDRIVE+HOMEPATH only, HOME is never consulted. So the fixture's fake home is
+silently ignored on real Windows and the code touches the runner's real profile
+dir instead -- a TEST-FIXTURE bug, fix by monkeypatch.setattr(Path, "home",
+staticmethod(lambda: fake_home)) matching the pattern test_sync_claude_config_
+stale_guard_t3408.py already uses correctly elsewhere in the same file.
+(2) test_sync_claude_config_stale_guard_t3408.py's stale_file_skipped test already
+uses that Path.home patch (not HOME env) so it is a DIFFERENT mechanism: stale_
+managed_sources() in .claude/hooks/sync-claude-config.py compares source_path.
+read_text() (working tree, CRLF under Windows autocrlf) against git show output
+(LF-normalized blob content), so source_text != merge_base_text is spuriously
+true on Windows and the T-3408 stale-source guard never fires there -- a real
+consumer-affecting bug, fix by normalizing line endings before comparison in
+_is_source_stale_vs_main plus a CRLF regression test. The CRLF claim still needs
+confirmation on real Windows CI.
