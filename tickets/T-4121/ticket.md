@@ -14,10 +14,30 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_new.py
+- src/frob/gates/_tickets_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: 'the two homes of the closure: _new.py computes and reports scope closure
+    at filing time (the only module naming it), and _tickets_gate.py carries the SCOPE001
+    enforcement the consumer hit via check --only scope. The diff-scoped option this
+    ticket asks to evaluate first would land in one or both'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: 'the two homes of the closure: _new.py computes and reports scope closure
+    at filing time (the only module naming it), and _tickets_gate.py carries the SCOPE001
+    enforcement the consumer hit via check --only scope. The diff-scoped option this
+    ticket asks to evaluate first would land in one or both'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given a doc file carrying anchors for many symbols, when a ticket edits one
