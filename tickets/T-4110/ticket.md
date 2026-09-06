@@ -1,5 +1,5 @@
 ---
-id: T-draft-066b430e
+id: T-4110
 title: 'H3-10: a declaration glob matching zero files must be its own finding, distinct
   from capability-unobserved'
 state: queued
