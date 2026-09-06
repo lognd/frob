@@ -2,7 +2,7 @@
 id: T-4107
 title: 'the tests/ duplication floor never applies on Windows: two indexer sites emit
   a backslash rel that the prefix override table cannot match'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
