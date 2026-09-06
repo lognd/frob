@@ -2,7 +2,7 @@
 id: T-4110
 title: 'H3-10: a declaration glob matching zero files must be its own finding, distinct
   from capability-unobserved'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-06'
@@ -26,6 +26,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - tests/unit/strata/test_selfconform.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: true
 scope_breadth_ack_reason: design/frob.strata and docs/modules/gates.md are both maximal
   cross-reference hubs (26 nodes' worth of unrelated frob:doc targets, and the entire
@@ -143,6 +144,14 @@ scope_changes:
     added to the SAME two via lists test_selfconform.py already appears in (design/frob.strata:1657
     fs.write, :1677 net). This is the exact 'must not weaken existing gates while
     landing a new one' obligation, not new capability surface.
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-4110's own via-list additions (adding test_selfconform_kinds.py/test_selfconform_core_rules.py
+    to testsuite's fs.write and net via lists in design/frob.strata) push testsuite::fs.write
+    and testsuite::net past their committed ratchet ceilings (508->510, 26->27); SYS111
+    requires bumping accepted_count with a reason in the same diff
   actor: logan
   at: '2026-09-06'
 evidence:
