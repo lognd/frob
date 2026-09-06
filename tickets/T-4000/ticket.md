@@ -118,6 +118,17 @@ scope_changes:
     by the new test file's real marker.txt fixture
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_drops_id_from_flat_list_and_acceptance
+- tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_not_found_is_err
+- tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_requires_reason
+- tests/test_tickets_evidence_removal.py::TestEvidenceRemoveCli::test_cli_remove_channel
+- tests/test_tickets_evidence_removal.py::TestEvidenceRemoveCli::test_cli_remove_without_reason_exits_nonzero
+- tests/test_tickets_evidence_removal.py::TestEvidenceCmdCwdFlag::test_cwd_runs_against_named_subdirectory
+- tests/test_tickets_evidence_removal.py::TestEvidenceCmdCwdFlag::test_cwd_escape_attempt_is_refused
+- tests/test_tickets_evidence_removal.py::TestEvidenceCmdCwdFlag::test_cli_cwd_channel
+- tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused::test_silent_zero_exit_command_is_refused
+- tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused::test_chatty_zero_exit_command_is_accepted
 designated_repro_test: null
 threat: null
 component: null
