@@ -16,9 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_exhaustive_handling.py
-- tests/gates_suite/test_compliance.py
 - docs/modules/gates.md
-- src/frob/gates/_ffi_boundary.py
+- tests/unit/gates/test_exhaustive_handling_path_shape.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
   ~40 gates; this ticket's edit is a narrow, additive scope note under the EXHAUST001/002/003
@@ -47,6 +46,27 @@ scope_changes:
   reason: T-3947/T-3948 worked as one series in one worktree (identical bug class,
     sibling gate files) -- shared test file (test_compliance.py) and doc (gates.md)
     touched by both, plus the sibling gate source, need scope on each ticket
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/gates_suite/test_compliance.py
+  reason: moved new fixtures to a standalone test module to avoid tests/gates_suite/test_compliance.py's
+    shared-file scope-closure explosion; T-3947 owns _ffi_boundary.py in its own scope
+    now that the shared gates.md/test_compliance.py touches were reverted
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/gates/_ffi_boundary.py
+  reason: moved new fixtures to a standalone test module to avoid tests/gates_suite/test_compliance.py's
+    shared-file scope-closure explosion; T-3947 owns _ffi_boundary.py in its own scope
+    now that the shared gates.md/test_compliance.py touches were reverted
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/gates/test_exhaustive_handling_path_shape.py
+  reason: moved new fixtures to a standalone test module to avoid tests/gates_suite/test_compliance.py's
+    shared-file scope-closure explosion; T-3947 owns _ffi_boundary.py in its own scope
+    now that the shared gates.md/test_compliance.py touches were reverted
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
