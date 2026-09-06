@@ -19,8 +19,16 @@ scope:
 - src/frob/dup/_cache.py
 - tests/unit/test_graph_cache.py
 - tests/unit/test_dup_cache.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'cache.py/_cache.py''s SELECT-guard fix touches store_file_data/store_parsed_artifact,
+  whose reverse frob:doc/frob:tests edges fan out across nearly the whole graph/dup
+  subsystem and dozens of unrelated test files (docs/modules/dup.md, docs/modules/graph.md,
+  tests/test_graph.py, tests/test_graph_lock.py, tests/unit/test_graph_build_lock.py,
+  and many more via the shared _write test helper) -- this is the T-3914 scope-closure-breadth
+  pattern: pulling all of it into scope for a guard-only, 2-file bugfix would be out
+  of proportion to the change. Fix is scoped to the 5 fetchone() guard sites plus
+  2 additional identical-construct sites found by the sweep, all within cache.py/_cache.py,
+  with 3 new fixtures in tests/unit/test_graph_cache.py and tests/unit/test_dup_cache.py.'
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
