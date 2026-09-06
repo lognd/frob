@@ -23,6 +23,7 @@ scope:
 - tests/gates_suite/test_run.py
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -102,6 +103,12 @@ scope_changes:
     a clean scope list). Accepting the SCOPE002 closure cascade as pre-existing/out-of-proportion
     noise, same class as T-3914''s precedent (docs/modules/gates.md documents the
     whole gates module; any ticket that touches it inherits that breadth).'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'REG010: the two new gate rules (GATES001, INV009) need a CHK-GATE-<rule>
+    registry entry'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
