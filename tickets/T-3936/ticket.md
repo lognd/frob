@@ -71,6 +71,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 4025
   new_length: 9386
+- mode: set
+  reason: full per-failure tracebacks obtained from a complete Windows run; classifying
+    the 26 into six mechanism clusters with a suggested order. Notably cluster C is
+    a dead cycle detector (a subject-count/positive-control instance, not three test
+    bugs) and two of cluster A are our own fixtures encoding a false premise
+  actor: logan
+  at: '2026-09-06'
+  old_length: 9386
+  new_length: 13772
 designated_repro_test: null
 threat: null
 component: null
@@ -182,3 +191,73 @@ attach off-tty) whose failure text is an explicit "assert 'TTY' in ..." mismatch
 
 STILL TRUE: no skip or xfail to reach green; a platform guard needs an explicit
 condition whose reason states WHY in prose.
+
+## FULL TRACEBACKS OBTAINED: THE 26 CLASSIFIED BY MECHANISM
+
+A later complete run (26 failures, collected=13473) returned per-failure
+tracebacks. The list is stable between runs -- the same tests fail -- so unlike
+ubuntu this is a fixed defect set, not a flake population. WORK THESE AS SIX
+CLUSTERS, not 26 singletons.
+
+CLUSTER A -- PATH SEPARATOR SEMANTICS (7). The dominant cluster.
+  arch_suite/test_misc::test_symref_matches_dsl_waiver_binding_exactly
+      'C:\...\long.cpp::Foo.bar' != 'C:/...' -- a symref built with backslashes
+      compared against one built with forward slashes. THE SAME PRODUCER/
+      VALIDATOR SPLIT as T-3941; likely a genuine defect.
+  ticket_land_suite/test_land_core::..._never_absorbs_a_bystanders_dirty_file
+      'tickets\T-3000\ticket.md' not found in git's output 'tickets/T-3000/...'
+      -- GIT ALWAYS EMITS FORWARD SLASHES; the test builds the needle with
+      WindowsPath. Test-side defect.
+  unit/test_dup::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+      CodeFragment(file='tests\\test_one.py') -- the tests/ floor glob does not
+      match backslash paths. PRODUCTION-side; check whether the floor uses
+      fnmatch (platform-dependent, see below) or startswith.
+  unit/rapid_sweep_suite/test_filing::test_absolute_outside_root_is_kept_and_logged
+      backslash-escaping in the logged message vs the expected literal.
+  unit/gates/test_ffi_boundary_path_shape + test_exhaustive_handling_path_shape
+      OUR OWN NEW FIXTURES, and they encode a FALSE PREMISE -- see the correction
+      recorded on T-3947/T-3948: is_excluded returns True on Windows because
+      fnmatch normcases the GLOB's forward slashes to backslashes. FIX OR DELETE
+      THESE FIRST; they currently assert Windows behaves as Linux.
+  unit/test_lang_primitives::test_symbol_tree_covers_span
+      'def ' missing from the front and a trailing newline present -- a span/
+      offset computed over CRLF text. Byte-offset vs character-offset.
+
+CLUSTER B -- HOME-RELATIVE STATE (3).
+  test_telemetry::test_redundant_rerun_not_flagged_when_home_claude_config_changed
+  unit/test_skills_sync::test_run_defaults_to_home_claude_when_no_override_given
+  unit/test_sync_claude_config_stale_guard_t3408::test_stale_file_skipped_forward_file_synced
+      All three concern ~/.claude. On Windows HOME is not the same concept
+      (USERPROFILE/APPDATA), so a fake-home fixture that works on posix does not
+      redirect the code under test. Likely ONE root cause for all three.
+
+CLUSTER C -- CYCLE DETECTION RETURNS NOTHING (3).
+  unit/test_cycle_waiver:: all three cases report 'no cycles', exit 0, empty
+  diagnostics -- including the UNWAIVED positive control. So frob-cycle finds no
+  cycles at all on Windows. THIS IS A SUBJECT-COUNT INSTANCE and a positive
+  control correctly reporting a dead detector -- treat it like PROFILE001
+  (T-3941), not like three test bugs. HIGH PRIORITY: a detector that silently
+  finds nothing is the class this queue exists to catch.
+
+CLUSTER D -- GIT AND PROCESS ENVIRONMENT (4).
+  unit/test_process_lock (x3): `git config user.email` RETURNS 130, and a
+      BrokenProcessPool. Exit 130 is SIGINT-shaped -- something is killing git.
+      Investigate as one cause; 130 from `git config` is not a normal failure.
+  ticket_land_suite/test_land_lock::..._orphaned_lock_..._reclaimed_and_logged
+      no reclaim log lines -- pairs with the known Windows mandatory-locking
+      issue already filed as T-4029.
+
+CLUSTER E -- ENCODING (1), and it is the most diagnostic single failure.
+  test_worktree_guard::test_bare_eval_succeeds_with_no_filtering
+      stdout contains '\x00s\x00t\x00r\x00o\x00' -- that is UTF-16LE. A Windows
+      shell is emitting UTF-16 where the test expects UTF-8. Worth fixing early:
+      any other test asserting on captured output could be affected the same way.
+
+CLUSTER F -- SINGLETONS (8): tzdata (already T-4046), the TTY assertion in
+  cli_ticket attach, land_lint_diff_attribution SystemExit, ticket_leases
+  '?? .frob/land.lock' untracked, test_wip git status empty when non-empty
+  expected (autocrlf), strata_core_gil timeout marker absent,
+  land_release_out_of_tree sha mismatch, tickets_evidence_cli EvidenceCmdFailed.
+
+SUGGESTED ORDER: C (dead detector) -> A's two false fixtures -> B (one cause, 3
+tests) -> E (encoding, may unblock others) -> D -> A's remainder -> F.
