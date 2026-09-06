@@ -31,6 +31,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 3701
   new_length: 5739
+- mode: set
+  reason: 'F-268 is a fourth instance on the same path family, and the consumer names
+    the cost explicitly: agents treat ERROR-labelled informational lines as failures
+    and re-run. Three of the four concern the normal fact that a worktree''s changes
+    are not yet on main, so this is a class fix rather than four message edits'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5739
+  new_length: 8402
 designated_repro_test: null
 threat: null
 component: null
@@ -141,3 +150,49 @@ command's ERROR was real is the definition of an unreliable signal.
 ADDITIONAL FIXTURE: a quarantine raised and self-cleared within one run is
 either not surfaced as an ERROR at all, or is surfaced as explicitly provisional
 -- and a quarantine that genuinely persists past the run is still loud.
+
+## FOURTH INSTANCE, AND THE CONSUMER NAMES THE COST DIRECTLY: F-268
+
+logand.app-v2, 2026-09-06:
+
+  "T-0232 promoted T-draft-10776525 -> T-0241 in its worktree; `close` then
+   printed an ERROR-labelled line that T-0241 'exists only on this branch until
+   landing', ALTHOUGH CLOSE SUCCEEDED (state done). Same shape as the
+   done-report ERROR that is not fatal: informational lines should not carry the
+   ERROR label, AGENTS TREAT THEM AS FAILURES AND RE-RUN."
+
+FOUR INSTANCES NOW, ALL ON THE SAME PATH FAMILY:
+  1. `done-report` in a worktree -> ERROR for the intended pre-land path
+  2. `work` on an already-started ticket -> ERROR after creating a usable worktree
+  3. a land raising a quarantine it then clears itself -> transient ERROR
+  4. `close` -> ERROR for a promoted follow-up that exists only on the branch
+Every one describes a NORMAL, EXPECTED, CORRECT state of the worktree workflow.
+Nothing is wrong in any of them. Three of the four are specifically about the
+fact that a worktree's ledger changes are not yet on main -- which is the entire
+premise of working in a worktree.
+
+"AGENTS TREAT THEM AS FAILURES AND RE-RUN" IS THE MEASURED COST, and it is worse
+than wasted cycles. This session produced the proof from our own side: three
+implementer agents ended turns "waiting" or re-running rather than landing
+finished work, and one abandoned a completed ticket outright after believing an
+error message (recorded on T-4053). An ERROR label on a correct outcome does not
+merely annoy -- it changes what agents DO.
+
+IT ALSO EXPLAINS AN EARLIER OBSERVATION ON THIS TICKET. FAST_EXIT1 exists to warn
+that a fast ERROR exit did not do the work; when correct paths emit ERROR lines,
+that heuristic fires on successes too, and the diagnostic built to prevent
+misreading failures becomes a source of misreading successes.
+
+THE FIX IS NOW CLEARLY A CLASS FIX, NOT FOUR MESSAGE EDITS. Whoever takes this
+should enumerate every ERROR-level emission on the close/done-report/work/promote
+paths and ask of each: CAN THIS APPEAR WHEN THE COMMAND SUCCEEDS? If yes it is
+not an error -- it is INFO (or WARNING where the user genuinely must act later),
+and the process exit status must agree. State the rule in code, so a future
+message cannot be added at the wrong level by default.
+
+DO NOT resolve this by suppressing the information. "T-0241 exists only on this
+branch until landing" is genuinely useful -- a reader should know the follow-up
+is not yet on main. The content is right; only the severity is wrong.
+
+ADDITIONAL FIXTURE: a promoted follow-up in a worktree produces an INFO-level
+notice and a successful exit, and FAST_EXIT1 does not fire on it.
