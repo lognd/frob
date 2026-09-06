@@ -19,8 +19,6 @@ scope:
 - src/frob/dup/_cache.py
 - tests/unit/test_graph_cache.py
 - tests/unit/test_dup_cache.py
-- docs/modules/dup.md
-- docs/modules/graph.md
 - tests/test_graph.py
 - tests/test_graph_lock.py
 - tests/unit/test_graph_build_lock.py
@@ -69,6 +67,20 @@ scope_changes:
   glob: tests/unit/test_graph_build_lock.py
   reason: 'scope closure: T-4018 fixtures live in these test files, whose bound frob:doc/frob:tests
     edges require these paths in scope'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/dup.md
+  reason: 'revert: whole-module docs pulled in transitive closure across unrelated
+    files far beyond T-4018''s actual change; the frob:doc directive on the touched
+    symbols was pre-existing before this ticket, not introduced by it'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/graph.md
+  reason: 'revert: whole-module docs pulled in transitive closure across unrelated
+    files far beyond T-4018''s actual change; the frob:doc directive on the touched
+    symbols was pre-existing before this ticket, not introduced by it'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
