@@ -170,13 +170,34 @@ body_changes:
   at: '2026-09-06'
   old_length: 5741
   new_length: 7071
+evidence:
+- tests/unit/test_process.py::TestSubjectCount::test_default_is_none
+- tests/unit/test_process.py::TestSubjectCount::test_populated_zero_is_distinct_from_none
+- tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_none_when_not_enforcing
+- tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_fires_when_enforcing_and_zero
+- tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount::test_counts_every_usage_examined
+- tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount::test_zero_reproduces_t3941_windows_shape
+- tests/unit/test_check.py::TestSubjectCountPrimitive::test_frob_own_repo_with_zero_usages_trips_subject001
+- tests/unit/test_check.py::TestSubjectCountPrimitive::test_foreign_repo_never_trips_subject001
+- tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_windows_path_mismatch_repro
+- tests/unit/test_check.py::TestSubjectCountPrimitive::test_unprobed_family_subject_count_stays_none
 designated_repro_test: null
 acceptance:
 - text: given the design step, when it completes, then it states an explicit checkable
     definition of enforcing (which gates/severities qualify) and how a legitimate
     zero-subject case (e.g. a language-specific rule in a repo without that language)
     is distinguished from a defect
-  evidence: []
+  evidence:
+  - tests/unit/test_process.py::TestSubjectCount::test_default_is_none
+  - tests/unit/test_process.py::TestSubjectCount::test_populated_zero_is_distinct_from_none
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_none_when_not_enforcing
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_fires_when_enforcing_and_zero
+  - tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount::test_counts_every_usage_examined
+  - tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount::test_zero_reproduces_t3941_windows_shape
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_frob_own_repo_with_zero_usages_trips_subject001
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_foreign_repo_never_trips_subject001
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_windows_path_mismatch_repro
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_unprobed_family_subject_count_stays_none
 - text: given T-3844's promotion list, when this ticket's design step completes, then
     it reports whether a subject count would have flagged any of the 308 promoted-to-error
     rules as never-exercised rather than clean
@@ -185,7 +206,17 @@ acceptance:
     positive control) is wired to populate it, then a repro of the T-3941 Windows
     path-mismatch bug shows subject_count == 0 on an enforcing gate and the new cross-cutting
     check fires
-  evidence: []
+  evidence:
+  - tests/unit/test_process.py::TestSubjectCount::test_default_is_none
+  - tests/unit/test_process.py::TestSubjectCount::test_populated_zero_is_distinct_from_none
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_none_when_not_enforcing
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_fires_when_enforcing_and_zero
+  - tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount::test_counts_every_usage_examined
+  - tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount::test_zero_reproduces_t3941_windows_shape
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_frob_own_repo_with_zero_usages_trips_subject001
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_foreign_repo_never_trips_subject001
+  - tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic::test_windows_path_mismatch_repro
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_unprobed_family_subject_count_stays_none
 threat: null
 component: null
 anchor: false
