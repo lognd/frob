@@ -21,7 +21,6 @@ scope:
 - src/frob/gates/_refs.py
 - src/frob/strata/_code_binding.py
 - src/frob/strata/_effects.py
-- src/frob/strata/_selfconform_kinds.py
 - src/frob/tickets/_doable.py
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land_merge_zones.py
@@ -32,6 +31,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/strata/_selfconform_kinds.py
+  reason: collides with T-4110's active lease on this file; auditing this site separately/later
+    to avoid blocking on that ticket
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
