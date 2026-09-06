@@ -25,6 +25,7 @@ scope:
 - docs/modules/gates.md
 - docs/design/registry/check-coverage.yaml
 - tests/unit/strata/test_selfconform.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -124,6 +125,19 @@ scope_changes:
     filing a follow-on ticket because a SYS1xx rule that computes a violation list
     but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
     gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: design/frob.strata
+  reason: Adding tests/unit/strata/test_selfconform_kinds.py and test_selfconform_core_rules.py
+    (the ticket's own declared test scope) reproduces the SAME fs.write (_write helper's
+    path.write_text) and net (fixture source literal 'requests.get(...)') patterns
+    test_selfconform.py already carries, and testsuite's may grants are per-file via
+    lists (not ambient) -- confirmed by running TestRealGateGreen/TestCoverageTotality,
+    which failed with genuine new SYS100 findings on both new files until they are
+    added to the SAME two via lists test_selfconform.py already appears in (design/frob.strata:1657
+    fs.write, :1677 net). This is the exact 'must not weaken existing gates while
+    landing a new one' obligation, not new capability surface.
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
