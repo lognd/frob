@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_ffi_boundary.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
-- design/frob.strata
 scope_breadth_ack: true
 scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
   ~40 gates; this ticket's edit is a narrow, additive scope note under the FFI001/FFI002
@@ -83,6 +82,14 @@ scope_changes:
   reason: 'SELFAUDIT001: declare the new standalone test file''s fs.write capability
     at the testsuite node''s may clause, per existing per-ticket via-list precedent
     (T-3516/T-3531/etc in the same block)'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: design/frob.strata
+  reason: reverted the frob.strata edit -- switched the new test module to import
+    the already-declared tests.conftest._write helper instead of defining a local
+    write, so no new fs.write via-site needs declaring (avoids a second scope-closure
+    explosion, this time over the design registry's own doc/test cross-references)
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
