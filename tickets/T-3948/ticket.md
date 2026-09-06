@@ -16,7 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_exhaustive_handling.py
-- docs/modules/gates.md
 - tests/unit/gates/test_exhaustive_handling_path_shape.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
@@ -67,6 +66,14 @@ scope_changes:
   reason: moved new fixtures to a standalone test module to avoid tests/gates_suite/test_compliance.py's
     shared-file scope-closure explosion; T-3947 owns _ffi_boundary.py in its own scope
     now that the shared gates.md/test_compliance.py touches were reverted
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: reverted the gates.md doc edit -- editing that shared multi-gate reference
+    file dragged in a full scope-closure requirement over hundreds of unrelated gate
+    symbols (SCOPE002); the new standalone test module plus AFFECT001 waivers at the
+    two changed sites cover this instead
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
