@@ -19,6 +19,9 @@ scope:
 - tests/system/test_artifact_smoke.py
 - .github/workflows/ci.yml
 - tests/unit/test_artifact_smoke_script.py
+- docs/guides/release.md
+- src/frob/doctor.py
+- scripts/verify_release_ci_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +73,27 @@ scope_changes:
     content (doctor.py/verify_release_ci_status.py anchors), out of proportion to
     pull in per this repo''s established precedent (see artifact_smoke.py''s own existing
     COV001 waiver reasoning); documenting via code docstrings instead'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/guides/release.md
+  reason: 'AFFECT001: check_base_install''s frob:doc target changed and must be updated;
+    doctor.py/verify_release_ci_status.py added only to close release.md''s pre-existing
+    unrelated doc-anchor scope debt (no edits planned to those two files)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/doctor.py
+  reason: 'AFFECT001: check_base_install''s frob:doc target changed and must be updated;
+    doctor.py/verify_release_ci_status.py added only to close release.md''s pre-existing
+    unrelated doc-anchor scope debt (no edits planned to those two files)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: scripts/verify_release_ci_status.py
+  reason: 'AFFECT001: check_base_install''s frob:doc target changed and must be updated;
+    doctor.py/verify_release_ci_status.py added only to close release.md''s pre-existing
+    unrelated doc-anchor scope debt (no edits planned to those two files)'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
