@@ -17,6 +17,16 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - tests/unit/test_cycle_waiver.py
+- docs/modules/gates.md
+- tests/system/test_cli_check.py
+- tests/unit/test_capability_and_deploy_cycle_regression.py
+- tests/unit/test_check.py
+- tests/unit/test_check_gates_summary.py
+- tests/unit/test_check_tool_unavailable.py
+- tests/unit/test_dup_pipeline_cycle_regression.py
+- tests/unit/test_gates_lang_graph_cycle_regression.py
+- tests/unit/test_process_guard.py
+- tests/unit/test_vet_cycle_regression.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +35,76 @@ scope_changes:
 - op: add
   glob: tests/unit/test_cycle_waiver.py
   reason: add test-file for Windows node-id posix regression test
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_capability_and_deploy_cycle_regression.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_check_gates_summary.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_check_tool_unavailable.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_dup_pipeline_cycle_regression.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_gates_lang_graph_cycle_regression.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_process_guard.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_vet_cycle_regression.py
+  reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
+    unrelated symbols in the same module require these files in scope (SCOPE002),
+    not new work introduced by this ticket'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
