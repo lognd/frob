@@ -20,6 +20,7 @@ scope:
 - tests/gates_suite/test_invariant.py
 - tests/gates_suite/test_gates.py
 - docs/modules/gates.md
+- src/frob/check/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,13 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: Invariants section documents load_invariants' abort-on-first-malformed-file
     contract, which this fix changes to per-file scoping
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: '_gates_error_result is the literal place a run_gates Err(ConfigMalformed)
+    is rendered: exit_code=0 summary=''gates skipped: ...'' -- defect 1 (abort prints
+    as pass) is fixed here, not just in gates/__init__.py'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
