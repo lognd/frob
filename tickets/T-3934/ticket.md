@@ -15,10 +15,22 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_ticket_land_proof_claims.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: SCOPE002 flags pre-existing frob:tests directives in src/frob/tickets/_land.py
+  (added at T-2091/T-2255, predating this ticket) pointing at two of this file's test
+  names; this ticket's fix only updates test doubles to accept the target_branch kwarg
+  and does not touch _land.py's production code, so its scope stays narrowly the test
+  file per the briefing's explicit STOP-and-report rule rather than widening scope
+  on my own
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_skipped_unmeasured_is_not_printed_as_verified_true
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_no_recorded_outcome_leaves_verified_unaffected
+- tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_skipped_unmeasured_is_surfaced_not_dropped
+- tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_ran_healthy_path_is_printed
+- tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_no_recorded_outcome_prints_unknown
 designated_repro_test: null
 threat: null
 component: null
