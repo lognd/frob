@@ -20,6 +20,7 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
+evidence_scope:
 - docs/guides/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -105,6 +106,14 @@ scope_changes:
   reason: docs/guides/release.md holds the frob:doc anchor scripts/artifact_smoke.py
     already cites (T-3884); adding to satisfy SCOPE002 doc-anchor closure, then demoting
     to evidence-only in the next call since it is only cited, never edited
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/release.md
+  reason: docs/guides/release.md is cited (frob:doc anchor target) but never edited
+    by this ticket; evidence-only avoids a write lease this ticket does not use and
+    (measured) avoids the full write-scope doc-closure recursion that otherwise pulls
+    in every other unrelated symbol this large doc also anchors
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
