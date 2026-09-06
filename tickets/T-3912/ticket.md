@@ -16,7 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
-- tests/gates_suite/test_debt.py
+- tests/gates_suite/test_depr003_severity_override.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,10 +38,33 @@ scope_changes:
     modified, its scope-closure edges (docs/tests fan-out) do not apply
   actor: logan
   at: '2026-09-05'
+- op: remove
+  glob: tests/gates_suite/test_debt.py
+  reason: moved regression tests into a dedicated new file to avoid pulling in test_debt.py's
+    large pre-existing cross-reference fan-out
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/gates_suite/test_depr003_severity_override.py
+  reason: moved regression tests into a dedicated new file to avoid pulling in test_debt.py's
+    large pre-existing cross-reference fan-out
+  actor: logan
+  at: '2026-09-05'
 evidence:
-- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_survives_repo_severity_overrides
-- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_not_forced_to_error_in_this_repo
+- tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_severity_overrides
+- tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_error_in_this_repo
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_survives_repo_severity_overrides
+  new_node: tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_severity_overrides
+  reason: moved test into a dedicated file to avoid test_debt.py's scope-closure fan-out
+  actor: logan
+  at: '2026-09-05'
+- old_node: tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_not_forced_to_error_in_this_repo
+  new_node: tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_error_in_this_repo
+  reason: moved test into a dedicated file to avoid test_debt.py's scope-closure fan-out
+  actor: logan
+  at: '2026-09-05'
 threat: null
 component: null
 anchor: false
