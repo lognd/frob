@@ -128,6 +128,7 @@ def _blank_fenced_blocks(text: str) -> str:
 
 # frob:ticket T-3724
 # frob:ticket T-3843
+# frob:ticket T-3979
 _FRONTMATTER_DELIM_RE = re.compile(r"^---\s*$")
 # T-3843: generalized from "any *reason key" (T-3724) to "any known PROSE
 # key" -- see `_blank_ticket_reason_fields`'s docstring for the full
@@ -140,7 +141,40 @@ _FRONTMATTER_DELIM_RE = re.compile(r"^---\s*$")
 # `reason` field is, and DOC006's only waive mechanism (an inline HTML
 # comment adjacent to the citation) cannot be placed inside a YAML scalar,
 # making a frontmatter-title finding unwaivable by construction.
-_PROSE_KEY_RE = re.compile(r"^(\s*)(\w*reason|title):\s?(.*)$")
+#
+# T-3979: `old_text`/`new_text` (`AcceptanceAmendmentEntry`, src/frob/
+# tickets/_models.py) are the SAME argument one field family later, with a
+# sharper edge -- they are not merely unwaivable, they are UNFIXABLE by the
+# sanctioned mechanism: `frob ticket accept --amend` is what WRITES a
+# corrected criterion's PREVIOUS (violating) text into `old_text` as a
+# historical record, so re-amending to "fix" a DOC006 finding there only
+# appends another record carrying the same violating string (T-3979's own
+# measured no-exit: tickets/T-3976/ticket.md). `old_text` is by
+# construction never-live -- it exists specifically to preserve text that
+# has already been superseded by `new_text` -- so it can never be the
+# genuinely-dead-pointer case DOC006 exists for; blanking it costs nothing
+# real. `new_text` is blanked alongside it for the identical reason
+# `title`'s sibling `reason` fields are (T-3843's own precedent): the
+# CURRENT wording of an amended criterion is free-text prose composed at
+# mutation time (it becomes `Ticket.acceptance[index].text`, itself never
+# scanned by this gate for the same structured-vs-prose reason), not a
+# doc-pointer site.
+#
+# Sibling audit-entry fields deliberately NOT added here, checked against
+# every `*Entry` model in src/frob/tickets/_models.py (T-3979's own
+# "verify against the real ledger, do not blanket-exempt" instruction):
+#   - `ScopeChangeEntry.glob`, `EvidenceChangeEntry.old_node`/`new_node`,
+#     `DesignatedReproChangeEntry.old_value`/`new_value`: these hold real
+#     identifiers this gate SHOULD be able to check (a scope glob is a
+#     repo path; a bound evidence id is a pytest node id) -- case (a),
+#     preserved.
+#   - `TriageChangeEntry.old_value`/`new_value`: a single enum/label value
+#     (priority, kind, component), never composed narrative prose --
+#     structured data, not the `old_text`/`title` class.
+#   - `ReviewEntry.findings`: a live reviewer's CURRENT assessment, not a
+#     record of superseded text -- the amendment no-exit does not apply,
+#     and a reviewer citing a genuinely dead symbol is exactly case (a).
+_PROSE_KEY_RE = re.compile(r"^(\s*)(\w*reason|title|old_text|new_text):\s?(.*)$")
 
 
 # frob:tests \
@@ -193,33 +227,39 @@ _PROSE_KEY_RE = re.compile(r"^(\s*)(\w*reason|title):\s?(.*)$")
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_docs_prose_pointer_stil\
 # l_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_old_text_field\
+# _not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_new_text_field\
+# _not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_open_ticket_bo\
+# dy_still_flagged_alongside_old_text_and_new_text
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_amend_that_rem\
+# oves_a_doc006_violation_leaves_ticket_clean
 def _blank_ticket_reason_fields(text: str) -> str:
     """Blank the VALUE of every YAML frontmatter key ending in `reason`
-    (`reason`, `scope_breadth_ack_reason`, `staleness_reason`, ...) OR
-    named `title`, preserving line count and indentation so other
-    violations' line numbers stay correct (T-3724, extended by T-3843).
+    (`reason`, `scope_breadth_ack_reason`, `staleness_reason`, ...), or
+    named `title`, `old_text`, or `new_text`, preserving line count and
+    indentation so other violations' line numbers stay correct (T-3724,
+    extended by T-3843 and T-3979 -- see `_PROSE_KEY_RE`'s own module-
+    level comment for the full field-by-field rationale, including which
+    sibling audit-entry fields were deliberately left OUT).
 
-    `frob ticket scope`/`fail`/`ack` write `*reason` keys as free-text
-    accountability prose at mutation time -- why a glob moved, why a
-    ticket is stale, why a check was waived -- never doc-pointer prose. A
-    reason mentioning a future config key or a file path that does not
-    exist YET must not be resolved as a DOC006 pointer. `frob ticket new`
-    writes `title` the same way: free-text prose composed at filing time,
-    routinely naming a not-yet-implemented config key or symbol a FEATURE
-    ticket is proposing (T-3843's own measured case). Unlike a `reason`
-    field, a `title` finding has no working waive form at all -- DOC006's
-    waive mechanism is an inline HTML comment immediately preceding the
-    citation, which cannot be placed inside a YAML scalar -- so leaving
-    `title` unblanked makes such a finding unwaivable by construction, not
-    merely inconvenient.
-
-    Every OTHER `Ticket` frontmatter field (src/frob/tickets/_models.py)
-    is structured data (ids, enums, dates, bools, commit shas, nested
-    audit-trail entries) rather than narrative prose, and is deliberately
-    left untouched -- see T-3843's ticket body for the full field-by-field
-    enumeration. Only the frontmatter block is touched here, so a
-    legitimate pointer written in the ticket BODY (prose a human reads and
-    is expected to keep correct) still gets checked."""
+    Each key covers a class of free-text prose composed at mutation time
+    that DOC006 must not resolve as a doc pointer, never a structured
+    value a real pointer could legitimately live in: `*reason` (why a
+    scope glob moved, a ticket went stale, ...), `title` (a feature
+    ticket's own filing-time prose, T-3843), and `old_text`/`new_text`
+    (`AcceptanceAmendmentEntry`, written by `frob ticket accept --amend/
+    --remove`, T-3979) -- `old_text` sharpest of all, since `--amend` is
+    the sanctioned remedy for a DOC006 finding and is exactly what writes
+    the violating wording into `old_text` as a permanent record, so
+    re-amending to fix it only re-creates the finding. Only the
+    frontmatter block is touched here, so a legitimate pointer in the
+    ticket BODY still gets checked."""
     lines = text.splitlines()
     if not lines or not _FRONTMATTER_DELIM_RE.match(lines[0]):
         return text

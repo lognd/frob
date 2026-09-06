@@ -1380,6 +1380,168 @@ class TestDoc006TitleFieldExclusion:
         assert _by_rule(violations, "docs/guide.md")
 
 
+# frob:ticket T-3979
+class TestDoc006OldTextNewTextFieldExclusion:
+    """T-3979: `acceptance_amendments[].old_text`/`.new_text` (written by
+    `frob ticket accept --amend/--remove`) are free-text prose in exactly
+    the sense `reason`/`title` are (T-3724/T-3843) -- with the sharper
+    no-exit `old_text` adds: `--amend` is the SANCTIONED remedy for a
+    DOC006 finding in a criterion's own text, and it is what WRITES the
+    superseded (violating) text into `old_text`, so re-amending to clear
+    the finding only appends another record carrying the same string.
+    Measured on tickets/T-3976/ticket.md (T-3979's own motivating case).
+    Positive control both directions, matching `TestDoc006ReasonFieldExclusion`/
+    `TestDoc006TitleFieldExclusion`'s shape: the frontmatter `old_text`/
+    `new_text` are exempt (must-stay-quiet), the ticket BODY (real prose)
+    still fires (must-fire), and the amend-that-fixes-a-violation no-exit
+    is made checkable directly."""
+
+    def test_old_text_field_not_flagged(self, tmp_path: Path) -> None:
+        """A dead config-section pointer preserved verbatim in `old_text`
+        (the historical record of what a criterion used to say) must NOT
+        fire -- it is by construction superseded text, never live."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        frontmatter = (
+            "---\n"
+            "id: T-9016\n"
+            "title: placeholder\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "acceptance:\n"
+            "- text: given a clean criterion, when it runs, then it passes\n"
+            "  evidence: []\n"
+            "acceptance_amendments:\n"
+            "- op: replace\n"
+            "  index: 0\n"
+            "  old_text: given [[check.stack]] is implemented, when it runs,\n"
+            "    then it passes\n"
+            "  new_text: given a clean criterion, when it runs, then it passes\n"
+            "  reason: rewritten as prose, matching T-3931/T-3976\n"
+            "  actor: logan\n"
+            "  at: '2026-09-03'\n"
+            "---\n"
+        )
+        _write(tmp_path, "tickets/T-9016/ticket.md", frontmatter + "placeholder\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9016/ticket.md")
+
+    def test_new_text_field_not_flagged(self, tmp_path: Path) -> None:
+        """A PROPOSED config section named in `new_text` -- an amended
+        criterion's own current wording, composed at mutation time exactly
+        like `title` -- must NOT fire, mirroring T-3843's title precedent."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        frontmatter = (
+            "---\n"
+            "id: T-9017\n"
+            "title: placeholder\n"
+            "state: queued\n"
+            "kind: feature\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "acceptance:\n"
+            "- text: given a clean criterion, when it runs, then it passes\n"
+            "  evidence: []\n"
+            "acceptance_amendments:\n"
+            "- op: replace\n"
+            "  index: 0\n"
+            "  old_text: stale wording\n"
+            "  new_text: given the proposed [[check.stack]] section is implemented,\n"
+            "    when it runs, then it passes\n"
+            "  reason: reworded to name the proposed section\n"
+            "  actor: logan\n"
+            "  at: '2026-09-03'\n"
+            "---\n"
+        )
+        _write(tmp_path, "tickets/T-9017/ticket.md", frontmatter + "placeholder\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9017/ticket.md")
+
+    def test_open_ticket_body_still_flagged_alongside_old_text_and_new_text(
+        self, tmp_path: Path
+    ) -> None:
+        """The `old_text`/`new_text` exemption is scoped to the
+        frontmatter block only -- a dangling pointer in the ticket BODY of
+        the same ticket must still fire (must-FIRE half of the positive
+        control)."""
+        _init_repo(tmp_path)
+        frontmatter = (
+            "---\n"
+            "id: T-9018\n"
+            "title: placeholder\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "acceptance:\n"
+            "- text: given a clean criterion, when it runs, then it passes\n"
+            "  evidence: []\n"
+            "acceptance_amendments:\n"
+            "- op: replace\n"
+            "  index: 0\n"
+            "  old_text: stale wording\n"
+            "  new_text: given a clean criterion, when it runs, then it passes\n"
+            "  reason: rewritten as prose\n"
+            "  actor: logan\n"
+            "  at: '2026-09-03'\n"
+            "---\n"
+        )
+        body = "Plan: touch `src/pkg/mod.py::long_gone_symbol`.\n"
+        _write(tmp_path, "tickets/T-9018/ticket.md", frontmatter + body)
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "tickets/T-9018/ticket.md")
+
+    def test_amend_that_removes_a_doc006_violation_leaves_ticket_clean(
+        self, tmp_path: Path
+    ) -> None:
+        """THE NO-EXIT, MADE CHECKABLE (T-3979's own acceptance criterion):
+        `frob ticket accept --amend`'s sanctioned remedy for a DOC006
+        violation in a criterion's own text is to rewrite it -- which
+        writes the OLD, violating wording into `old_text` as an audit
+        record. Before this fix that re-created the violation the amend
+        was meant to clear; this asserts the amended ticket -- corrected
+        `acceptance[0].text`, `new_text` matching it, and `old_text`
+        carrying the original violating string verbatim, exactly the
+        shape `frob ticket accept --amend` produces -- is DOC006-clean
+        end to end, with no exemption of any file/section wider than the
+        two prose fields this fix targets."""
+        _init_repo(tmp_path)
+        clean_text = "given a clean criterion, when it runs, then it passes"
+        violating_text = "given [[check.stack]] is implemented, when it runs, then it passes"
+        frontmatter = (
+            "---\n"
+            "id: T-9019\n"
+            "title: placeholder\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "acceptance:\n"
+            f"- text: {clean_text}\n"
+            "  evidence: []\n"
+            "acceptance_amendments:\n"
+            "- op: replace\n"
+            "  index: 0\n"
+            f"  old_text: {violating_text}\n"
+            f"  new_text: {clean_text}\n"
+            "  reason: DOC006 fires on the proposed config section written in\n"
+            "    literal TOML form; rewritten as prose\n"
+            "  actor: logan\n"
+            "  at: '2026-09-03'\n"
+            "---\n"
+        )
+        _write(tmp_path, "tickets/T-9019/ticket.md", frontmatter + "placeholder\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9019/ticket.md")
+
+
 # frob:ticket T-3724
 class TestBlankTicketReasonFields:
     """Direct unit coverage of `_blank_ticket_reason_fields`'s exact line-

@@ -2,7 +2,7 @@
 id: T-3979
 title: DOC006 conflates live pointers with quoted consumer symbols, proposed config
   keys and old_text audit records; amend re-creates the violation
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
