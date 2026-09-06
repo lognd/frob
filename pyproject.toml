@@ -190,6 +190,22 @@ dev = [
     # `ty` stays the sole gating checker; mypy's own exit code/diagnostics
     # never gate `frob check` directly.
     "mypy>=1.10",
+    # T-4046: hypothesis's generic st.from_type(object) strategy (used by
+    # tests/test_fuzz.py's fuzz-target resolution tests) can draw a
+    # datetime/tzinfo value that reaches stdlib `zoneinfo`. Linux/macOS
+    # read the system tz database directly; Windows CPython ships no
+    # bundled tz database at all, so `zoneinfo` needs the `tzdata` PyPI
+    # package there and even ZoneInfo("UTC") raises without it (MEASURED:
+    # tests/test_fuzz.py::TestRunFuzz::test_ungeneratable_target_reports_no_generator
+    # failed on win32 CI with ModuleNotFoundError: No module named
+    # 'tzdata'). Only TESTS reach zoneinfo here -- no shipped code under
+    # src/frob imports it (the one hit, src/frob/vet/_capability_registry/
+    # _matrix.py's NO_CAPABILITY_MODULES, is a string literal in a
+    # capability-classification table, not an import) -- so this is a dev
+    # dependency, not a runtime one, and Windows CONSUMERS of installed
+    # frob are NOT affected by this gap. sys_platform marker keeps
+    # Linux/macOS installs free of an unneeded package.
+    "tzdata; sys_platform == 'win32'",
 ]
 
 # T-3845 update: both crates ARE published to PyPI now (release.yml

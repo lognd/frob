@@ -1,0 +1,72 @@
+## Done report
+
+Runtime-vs-test finding: only TESTS reach zoneinfo. tests/test_fuzz.py's
+TestRunFuzz::test_ungeneratable_target_reports_no_generator calls run_fuzz,
+which drives hypothesis' generic st.from_type(object) strategy; that
+strategy can draw a tzinfo/zoneinfo value, matching the reported failure
+(hypothesis's own note: "These lines were always and only run by failing
+examples: ...zoneinfo/__init__.py:24"). Searched all of src/frob for an
+actual `zoneinfo` import: none exists. The single hit under src/frob
+(src/frob/vet/_capability_registry/_matrix.py:1169) is a string literal in
+the NO_CAPABILITY_MODULES tuple -- a capability-classification table
+entry, not an import. Therefore Windows CONSUMERS of installed frob are
+NOT affected by this gap; it is a dev/test-only dependency, correctly
+placed in [dependency-groups].dev with a `sys_platform == "win32"` marker,
+not [project].dependencies.
+
+Evidence: tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows
+(3 tests: test_dev_group_declares_tzdata_for_win32,
+test_runtime_dependencies_do_not_declare_tzdata,
+test_non_windows_installs_gain_no_tzdata), all measured green via
+`uv run pytest -q tests/unit/test_dependency_pins.py -p no:xdist`
+(6/6 passed including the pre-existing TestMcpPinIsBounded class).
+These prove the fix STRUCTURALLY (parse pyproject.toml for real, evaluate
+the packaging Marker against sys_platform="win32"/"linux"/"darwin")
+instead of by re-running the hypothesis-driven fuzz test and hoping it
+draws a zoneinfo-reaching example again -- the ticket log states the
+previous Windows run passed only because hypothesis did not generate the
+triggering case, so a green run there proves nothing.
+
+Filed: none (no out-of-scope work discovered).
+
+Gates: `frob check --ticket T-4046` clean for this ticket's declared
+scope (pyproject.toml, tests/unit/test_dependency_pins.py) -- gate:COV,
+gate:PRE, gate:SCOPE all clear once frob:ticket directives, scope
+extension, and the pre-work sweep were added. Remaining repo-wide FAILs
+(ruff-format 26 files, ty 6 diagnostics in
+src/frob/check/_python.py's _gates_family_result, gate:COV 5 pre-existing
+errors elsewhere) are pre-existing, unrelated to zoneinfo/tzdata, and
+outside this ticket's scope -- not touched or introduced here.
+
+`frob test --base main` triggers a suite-wide fallback for this diff
+(pyproject.toml has no recognized language mapping, so select_tests logs
+"fallback=package for unknown-language file pyproject.toml -> suite-wide
+across ['python', 'rust', 'strata']") which exceeds the interactive
+verification budget; `pytest` was run directly on the bound evidence
+node ids instead, per the Dispatch verification budget standing note.
+
+uv.lock: every `uv run frob ...` invocation in this worktree re-syncs and
+regenerates uv.lock with the correct tzdata entries (verified identical
+to a manual `uv lock` run), then frob's pre-commit hook refuses to let
+uv.lock be committed ("uv.lock is land-owned (T-0731) -- lockfile update
+happens at land time"). Expected: the lock update is real and
+reproducible; land, not this ticket's commits, owns committing it.
+uv.lock was restored to its committed state before each commit.
+
+### Changed
+```
+ pyproject.toml                     | 16 +++++++++
+ tests/unit/test_dependency_pins.py | 66 ++++++++++++++++++++++++++++++++++++++
+ tickets/T-4046/ticket.md           | 12 +++++++
+ 3 files changed, 94 insertions(+)
+```
+
+### Evidence
+- `tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows::test_dev_group_declares_tzdata_for_win32` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows::test_runtime_dependencies_do_not_declare_tzdata` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows::test_non_windows_installs_gain_no_tzdata` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 1 error(s), 4433 warning(s), 933 waived
+- error-findings: missing-argument@tests/unit/test_check_gates_summary.py
