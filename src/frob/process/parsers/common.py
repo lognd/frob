@@ -120,6 +120,59 @@ class ToolResult(BaseModel):
     diagnostics: list[Diagnostic] = []
     tests: list[TestCase] = []
     summary: str = ""
+    # frob:ticket T-3985
+    # frob:doc docs/modules/process.md#public-api
+    # frob:tests tests/unit/test_process.py::TestSubjectCount.test_default_is_none
+    # frob:tests \
+    # tests/unit/test_process.py::TestSubjectCount.test_populated_zero_is_distinct_from\
+    # _none
+    subject_count: int | None = None
+    """T-3985's subject-count primitive: how many things this tool actually
+    EXAMINED this run, independent of `diagnostics` -- the field every
+    measured incident this ticket exists to prevent was missing
+    (PROFILE001 returning `()` unconditionally on Windows/T-3941, the
+    Windows cycle detector comparing mismatched path forms/T-4056, a
+    prettier stage printing "0 files need formatting" as a verdict over
+    an empty set/T-4044, a mutation scorer reporting "killed zero
+    mutants" over a diff with no mutable Python at all/T-4008): every one
+    of those produced a `ToolResult` byte-identical, to any reader who
+    only looks at `diagnostics`/`exit_code`, to a genuinely clean pass.
+
+    THREE STATES, deliberately not two:
+      - `None` (the default): this call site has not been migrated to
+        populate the field yet. NOT the same claim as `0` -- a caller
+        that cannot yet say how many subjects it examined must not be
+        read as "examined zero", which is itself a specific, checkable
+        claim. Every pre-T-3985 `ToolResult` construction in this repo
+        is `None` today; migrating a call site to a real count is
+        additive per-site work this ticket deliberately does NOT do in
+        bulk (see this ticket's own scope note) -- `None` is what an
+        unmigrated gate looks like, not a defect by itself.
+      - `0`, populated: this call site counted its subjects and there
+        were none. Only meaningful together with whether the check was
+        ENFORCING (see `enforcing_zero_subject_diagnostic` below) -- a
+        rule with no applicable subjects in this repo (a Kotlin-only
+        rule where the repo has no Kotlin) is legitimately `0` and is
+        NOT a defect; T-3941's PROFILE001 shape (an enforcing gate that
+        silently examined nothing on one platform) is the defect.
+      - a positive integer: subjects were examined, whether or not any
+        produced a diagnostic. This is what distinguishes T-3844's two
+        kinds of zero FINDINGS: a rule promoted to `error` with zero
+        live findings and `subject_count > 0` was genuinely exercised
+        and clean; the same rule with `subject_count == 0` (had this
+        field existed then) would have shown it was never really
+        exercised at all -- exactly the signal T-3844's own
+        findings-by-rule measurement could not see (see T-3844's ticket
+        body, which this ticket was required to read before designing).
+
+    NOT a substitute for `diagnostics`/`exit_code`, and not a claim about
+    COVERAGE -- a gate can have a nonzero, even correct, subject count
+    and still be examining the WRONG subjects (T-4056's Windows cycle
+    detector kept a nonzero node count throughout; what broke was node
+    IDENTITY, not node COUNT, so a subject-count check alone would only
+    have PARTLY caught that bug). This field only answers "did this
+    check look at anything at all", never "did it look at the right
+    things"."""
 
     @property
     def passed(self) -> bool:
@@ -269,6 +322,75 @@ class ToolResult(BaseModel):
         # frob:doc docs/modules/process.md#public-api
         """The full structured result as JSON."""
         return self.model_dump_json(indent=2)
+
+
+# frob:ticket T-3985
+# frob:enforces CHK-GATE-SUBJECT001
+# frob:doc docs/modules/process.md#public-api
+# frob:tests \
+# tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_not_enf\
+# orcing
+# frob:tests \
+# tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject\
+# _count_is_none
+# frob:tests \
+# tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject\
+# _count_is_positive
+# frob:tests \
+# tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_fires_when_enforc\
+# ing_and_zero
+def enforcing_zero_subject_diagnostic(
+    tool: str, subject_count: int | None, *, enforcing: bool
+) -> Diagnostic | None:
+    """T-3985's cross-cutting primitive: a `Diagnostic` (code `SUBJECT001`)
+    iff `tool` is an ENFORCING check (`enforcing`, decided by the CALLER --
+    this function takes no opinion on what "enforcing" means, deliberately;
+    see below) that reported `subject_count == 0`.
+
+    Returns `None` (no finding) in every other case:
+      - `enforcing=False`: a non-enforcing check (a warn-severity rule, or
+        a rule the caller has explicitly carved out as inapplicable to
+        this repo, e.g. a language-specific rule for a language not
+        present) legitimately has zero subjects; flagging it is exactly
+        the noise this ticket's own design constraint warns would get the
+        whole mechanism waived wholesale (WAIVE004's own lesson: an
+        exemption matching the normal case disables the guard). Callers
+        MUST compute `enforcing` from an explicit, checkable definition
+        (this repo's is severity == error after `[gates.severity]`
+        overrides, per `frob.gates._waive._severity_overrides`) -- never
+        pass `True` unconditionally, or every legitimately-inapplicable
+        rule becomes a false positive.
+      - `subject_count is None`: this call site has not been migrated to
+        report a real count yet (see `ToolResult.subject_count`'s own
+        docstring) -- an unmigrated gate is not itself evidence of the
+        T-3941 defect shape, only silence about it.
+      - `subject_count` is a positive integer: subjects were examined;
+        whatever `diagnostics` says about them is the real verdict.
+
+    `SUBJECT001` is deliberately a WARNING-shaped finding at the caller's
+    discretion (this function does not itself set exit_code/severity
+    policy) -- see this function's own module docstring section on
+    `ToolResult.subject_count` for the full incident list this is meant
+    to catch, and this ticket's own honest limit: a nonzero subject count
+    proves the check looked at SOMETHING, never that it looked at the
+    RIGHT things (T-4056's Windows cycle detector kept a nonzero node
+    count throughout a real, undetected bug)."""
+    if not enforcing or subject_count is None or subject_count != 0:
+        return None
+    return Diagnostic(
+        severity="error",
+        code="SUBJECT001",
+        message=(
+            f"SUBJECT001: {tool} is configured as an ENFORCING check but "
+            "reported subject_count == 0 this run -- indistinguishable "
+            "from a genuinely clean pass over real subjects (T-3941's "
+            "PROFILE001/Windows shape: reported clean for months while "
+            "examining nothing). If this check legitimately has no "
+            "applicable subjects in this repo, that must be declared "
+            "explicitly (a carve-out the caller recognizes), not left as "
+            "a silent zero; otherwise fix why it examined nothing."
+        ),
+    )
 
 
 # frob:doc docs/modules/process.md#public-api

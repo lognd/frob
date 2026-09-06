@@ -997,6 +997,101 @@ class TestSummarySeverityHonesty:
         assert summary == "1 warning"
 
 
+# ---------------------------------------------------------------------------
+# T-3985: subject-count primitive wired into the gate-family pipeline
+# ---------------------------------------------------------------------------
+
+
+class TestSubjectCountPrimitive:
+    """T-3985: an ENFORCING gate reporting zero subjects is a finding in
+    its own right (SUBJECT001), wired here for the PROFILE001 proof of
+    concept -- and a non-frob repo (no legitimate PROFILE001 subject
+    universe at all) must never trip it, per the ticket's own "a zero
+    subject count is not always a defect" design constraint."""
+
+    def test_foreign_repo_never_trips_subject001(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        """A plain fixture repo (not frob's own checkout, `pyproject.toml`
+        absent or named something else) has no legitimate PROFILE001
+        subject universe -- `is_frob_own_repo` gates enforcement off, so
+        SUBJECT001 must never fire even though the probe genuinely
+        returns 0 (no `src/frob/**` tree exists to scan)."""
+        from typani import Ok
+
+        from frob.check._python import _run_gates
+        from frob.gates import GateReport, GateStats
+
+        report = GateReport(violations=(), waived=(), stats=GateStats())
+        monkeypatch.setattr(
+            "frob.gates.run_gates",
+            lambda cfg, *, use_cache=False: Ok(report),  # noqa: ARG005
+        )
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        results = _run_gates(tmp_path)
+        assert isinstance(results, list)
+        profile_result = next((r for r in results if r.tool == "gate:PROFILE"), None)
+        assert profile_result is not None
+        assert profile_result.subject_count == 0
+        assert profile_result.exit_code == 0
+        assert not any(d.code == "SUBJECT001" for d in profile_result.diagnostics)
+
+    def test_frob_own_repo_with_zero_usages_trips_subject001(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        """T-3985 acceptance[2]'s repro, at the wired-in pipeline level:
+        frob's OWN repo shape (`pyproject.toml` name="frob") with the
+        `_symbol_usages` probe forced to return nothing -- the exact
+        T-3941 Windows path-mismatch shape -- must trip SUBJECT001 on the
+        `gate:PROFILE` stage and fail it, even though `violations` is
+        empty (indistinguishable from clean without this primitive)."""
+        from typani import Ok
+
+        from frob.check._python import _run_gates
+        from frob.gates import GateReport, GateStats
+
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.0.0"\n'
+        )
+        (tmp_path / "src" / "frob" / "tickets").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "tickets" / "_profile.py").write_text(
+            "class ProfileName:\n    pass\n"
+        )
+        monkeypatch.setattr(
+            "frob.gates._profile_boundary._symbol_usages",
+            lambda root, symbol: (),  # noqa: ARG005
+        )
+        report = GateReport(violations=(), waived=(), stats=GateStats())
+        monkeypatch.setattr(
+            "frob.gates.run_gates",
+            lambda cfg, *, use_cache=False: Ok(report),  # noqa: ARG005
+        )
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        results = _run_gates(tmp_path)
+        assert isinstance(results, list)
+        profile_result = next(r for r in results if r.tool == "gate:PROFILE")
+        assert profile_result.subject_count == 0
+        assert profile_result.exit_code == 1
+        assert any(d.code == "SUBJECT001" for d in profile_result.diagnostics)
+        summary_result = next(r for r in results if r.tool == "gate-summary")
+        assert summary_result.exit_code == 1
+
+    def test_unprobed_family_subject_count_stays_none(self) -> None:
+        # frob:tests src/frob/check/_python.py::_family_subject_count kind="unit"
+        """A rule family with no registered probe (every family except
+        PROFILE, at this ticket's proof-of-concept scope) is simply
+        unmigrated -- `subject_count` stays `None`, never `0`, and no
+        `SUBJECT001` diagnostic is ever added for it."""
+        from frob.check._python import _gates_family_result
+
+        result = _gates_family_result("COV", [], [], Path("/nonexistent"))
+        assert result.subject_count is None
+        assert not any(d.code == "SUBJECT001" for d in result.diagnostics)
+        assert "0 waived" in result.summary
+
+
 class TestDupArchWaiverAwareSummaries:
     """T-0375: the frob-dup and frob-arch stage summaries must subtract
     findings already covered by a reasoned `frob:waive`, mirroring the

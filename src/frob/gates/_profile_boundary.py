@@ -62,7 +62,7 @@ from frob.xref import xref
 
 _log = get_logger(__name__)
 
-__all__ = ["profile_boundary_gate"]
+__all__ = ["profile_boundary_gate", "profile_boundary_subject_count"]
 
 #: The profile-collapse epic's own settings-resolver home -- the enum's
 #: definition/ratchet module (`frob.tickets._profile`) and T-2360's
@@ -102,6 +102,47 @@ def _symbol_usages(root: Path, symbol: str) -> tuple[tuple[str, int], ...]:
     if result.is_err:
         return ()
     return tuple((usage.file, usage.line) for usage in result.danger_ok.usages)
+
+
+# frob:ticket T-3985
+# frob:doc \
+# docs/modules/process.md#subject-count-primitive-a-zero-subject-enforcing-gate-is-a-fi\
+# nding-t-3985
+# frob:tests \
+# tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCo\
+# unt.test_counts_every_usage_examined
+# frob:tests \
+# tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCo\
+# unt.test_zero_reproduces_t3941_windows_shape
+# frob:waive WIRE001 follow_up="T-4087" reason="genuinely wired -- called from \
+# frob.check._python._subject_count_probes(), but only via a function-scoped deferred \
+# import (frob.check._python cannot import frob.gates._profile_boundary at module \
+# scope without a real frob.gates<->frob.check circular import, see that function's \
+# own docstring) that the best-effort callgraph cannot trace through -- same class of \
+# gap as this repo's cross-package DEAD001/WIRE001 dynamic-wiring waivers \
+# (T-1831/T-1856 precedent). T-4087 carries the T-1856 anchor=True marker: it is a \
+# WIRE001 follow_up ANCHOR, not deferred work -- it stays queued/open forever on \
+# purpose so WIRE002's follow_up-must-be-open check keeps passing, and it must never \
+# be closed."
+def profile_boundary_subject_count(root: Path) -> int:
+    """T-3985's subject-count primitive, wired to PROFILE001 as the proof
+    of concept: the total number of `_PROFILE_BOUNDARY_SYMBOLS` usages
+    `_symbol_usages` actually examined under `root`, ALLOWED and FLAGGED
+    alike -- not the violation count. This is the exact quantity that was
+    silently `0` for months on Windows (T-3941): `_symbol_usages` (via
+    `frob.xref.xref`) returned the empty tuple unconditionally because
+    xref's backslash-separated paths never matched this gate's
+    forward-slash `_SRC_PREFIX`/`_PROFILE_BOUNDARY_ALLOWED_FILES` checks,
+    so `profile_boundary_gate` reported zero violations -- indistinguishable
+    from a genuine clean pass unless something else reports how many
+    usages were actually looked at. Kept as a SEPARATE function (not a
+    second return value on `profile_boundary_gate` itself) so every
+    existing `tuple[Violation, ...]`-typed caller of `profile_boundary_gate`
+    across `frob.gates` is completely unaffected -- this is additive, not
+    a signature change."""
+    return sum(
+        len(_symbol_usages(root, symbol)) for symbol in _PROFILE_BOUNDARY_SYMBOLS
+    )
 
 
 # frob:enforces CHK-GATE-PROFILE001

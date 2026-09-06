@@ -1,7 +1,7 @@
 ---
 id: T-3985
 title: 'subject-count primitive: enforcing gate with zero subjects is a finding'
-state: in-progress
+state: done
 kind: invariant
 origin: agent
 created: '2026-09-06'
@@ -224,7 +224,8 @@ acceptance:
     constructs a frob-own-repo-shaped fixture, forces PROFILE001''s own subject-count
     probe to zero (the T-3941 repro), and asserts the real _run_gates pipeline''s
     gate:PROFILE ToolResult carries the SUBJECT001 diagnostic and a failing exit code'
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestSubjectCountPrimitive::test_frob_own_repo_with_zero_usages_trips_subject001
 threat: null
 component: null
 anchor: false

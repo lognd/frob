@@ -438,3 +438,112 @@ class TestToolResultMeasurement:
         dumped = json.loads(r.model_dump_json())
         assert dumped["measurement"] == "not_measured"
         assert "no targets resolved" in dumped["measurement_reason"]
+
+
+# ---------------------------------------------------------------------------
+# ToolResult.subject_count / enforcing_zero_subject_diagnostic (T-3985)
+# ---------------------------------------------------------------------------
+
+
+class TestSubjectCount:
+    """`ToolResult.subject_count`: three states, `None` (unmigrated) is
+    never conflated with `0` (populated and empty)."""
+
+    def test_default_is_none(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestSubjectCount.test_default_is_none
+        from frob.process.parsers.common import ToolResult
+
+        r = ToolResult(tool="gate:PROFILE")
+        assert r.subject_count is None
+
+    def test_populated_zero_is_distinct_from_none(self) -> None:
+        # frob:tests \
+        # tests/unit/test_process.py::TestSubjectCount.test_populated_zero_is_distinct_\
+        # from_none
+        from frob.process.parsers.common import ToolResult
+
+        unmigrated = ToolResult(tool="gate:COV")
+        migrated_empty = ToolResult(tool="gate:PROFILE", subject_count=0)
+        assert unmigrated.subject_count is None
+        assert migrated_empty.subject_count == 0
+        assert unmigrated.subject_count != migrated_empty.subject_count
+
+
+class TestEnforcingZeroSubjectDiagnostic:
+    """`enforcing_zero_subject_diagnostic`: fires ONLY on the intersection
+    of enforcing=True and a populated subject_count of exactly 0 -- the
+    design constraint the ticket body requires (a rule the repo has
+    legitimately never had cause to exercise must not become noise)."""
+
+    def test_none_when_not_enforcing(self) -> None:
+        # frob:tests \
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when\
+        # _not_enforcing
+        from frob.process.parsers.common import enforcing_zero_subject_diagnostic
+
+        assert (
+            enforcing_zero_subject_diagnostic(
+                "gate:KOTLIN", subject_count=0, enforcing=False
+            )
+            is None
+        )
+
+    def test_none_when_subject_count_is_none(self) -> None:
+        # frob:tests \
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when\
+        # _subject_count_is_none
+        from frob.process.parsers.common import enforcing_zero_subject_diagnostic
+
+        assert (
+            enforcing_zero_subject_diagnostic(
+                "gate:COV", subject_count=None, enforcing=True
+            )
+            is None
+        )
+
+    def test_none_when_subject_count_is_positive(self) -> None:
+        # frob:tests \
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when\
+        # _subject_count_is_positive
+        from frob.process.parsers.common import enforcing_zero_subject_diagnostic
+
+        assert (
+            enforcing_zero_subject_diagnostic(
+                "gate:PROFILE", subject_count=3, enforcing=True
+            )
+            is None
+        )
+
+    def test_fires_when_enforcing_and_zero(self) -> None:
+        # frob:tests \
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_fires_whe\
+        # n_enforcing_and_zero
+        from frob.process.parsers.common import enforcing_zero_subject_diagnostic
+
+        d = enforcing_zero_subject_diagnostic(
+            "gate:PROFILE", subject_count=0, enforcing=True
+        )
+        assert d is not None
+        assert d.code == "SUBJECT001"
+        assert d.severity == "error"
+        assert "gate:PROFILE" in d.message
+
+    def test_windows_path_mismatch_repro(self) -> None:
+        # frob:tests \
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_windows_p\
+        # ath_mismatch_repro
+        # T-3985 acceptance[2]: a repro of the T-3941 shape -- an
+        # enforcing gate whose ToolResult carries subject_count == 0
+        # must trip this check, the way a failing positive control was
+        # the ONLY thing that caught the real bug.
+        from frob.process.parsers.common import (
+            ToolResult,
+            enforcing_zero_subject_diagnostic,
+        )
+
+        result = ToolResult(tool="gate:PROFILE", exit_code=0, subject_count=0)
+        finding = enforcing_zero_subject_diagnostic(
+            result.tool, result.subject_count, enforcing=True
+        )
+        assert finding is not None
+        assert finding.code == "SUBJECT001"

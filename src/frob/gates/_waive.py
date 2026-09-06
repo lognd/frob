@@ -1040,6 +1040,16 @@ _KNOWN_GATE_RULES = frozenset(
         # repo-wide as a STANDING check instead of only ever consulted
         # scope-limited at one ticket's own close/land preflight.
         "GATERULE001",
+        # frob:ticket T-3985
+        # T-3985: SUBJECT001, emitted by `frob.process.parsers.common.
+        # enforcing_zero_subject_diagnostic` and wired into the
+        # `gate:<FAMILY>` `ToolResult`s `frob.check._python.
+        # _gates_family_result` builds -- an ENFORCING gate reporting a
+        # populated `subject_count == 0` (a check that examined nothing,
+        # indistinguishable at the raw-count level from a genuine clean
+        # pass; see docs/modules/process.md's own subject-count-primitive
+        # section for the full incident list this exists to catch).
+        "SUBJECT001",
         # frob:ticket T-0924
         # T-0924: the larger pre-existing batch T-0901's drift-lock test
         # surfaced beyond T-0903/T-0923's ids, carried in that test's

@@ -185,6 +185,111 @@ that made a `not_measured` result what it is (empty string when
 `as_text`'s reader could already see just by looking at the rendered
 lines.
 
+### Subject-count primitive: a zero-subject enforcing gate is a finding (T-3985)
+
+`ToolResult.subject_count` (`int | None`, default `None`) answers a
+question `measurement` above cannot: not "did this result find anything
+clean", but "did this check examine ANYTHING at all". Every measured
+incident this ticket exists to prevent produced a `ToolResult`
+byte-identical, to a reader who only looks at `diagnostics`/`exit_code`,
+to a genuine clean pass: PROFILE001 returned `()` unconditionally on
+Windows for months (T-3941, backslash paths never matched a
+forward-slash prefix), the Windows cycle detector reported "no cycles"
+for every real cycle (T-4056, mismatched path forms between node ids and
+edge targets), a prettier stage printed "FAIL prettier 0 files need
+formatting" (T-4044), a mutation scorer reported "killed zero mutants"
+over a diff with no mutable Python at all (T-4008).
+
+Three states, not two: `None` means this call site has not been
+migrated to report a count (not a claim of zero); `0` means it counted
+and found nothing; a positive integer means subjects were examined,
+whatever `diagnostics` says about them. `enforcing_zero_subject_
+diagnostic(tool, subject_count, *, enforcing)` is the pure predicate --
+it fires (a `SUBJECT001` error `Diagnostic`) only on the intersection of
+`enforcing=True` and a POPULATED `subject_count == 0`. The caller
+decides `enforcing`, deliberately: a rule for a language this repo does
+not use has zero subjects legitimately, and treating every zero as a
+defect is exactly the failure mode WAIVE004 already taught this repo
+(an exemption matching the normal case disables the guard) -- turned
+around here as "flagging every zero matches the normal, legitimate case
+and drowns the mechanism in noise".
+
+**This also answers T-3844's two-kinds-of-zero question directly**: a
+rule promoted to `error` in `[gates.severity]` with zero live findings
+and a nonzero subject count was genuinely exercised and clean; the same
+rule with `subject_count == 0` was never really exercised at all -- the
+signal T-3844's own findings-by-rule measurement could not see.
+
+**Would a subject count have flagged any of T-3844's 308 promoted-to-
+error rules?** Answered honestly, not guessed at: NO retroactive
+per-rule subject count exists for those 308 -- this ticket's scope is
+the model field plus the cross-cutting check plus ONE wired probe
+(PROFILE001), not instrumenting the other 307 (see the scope note
+above); a definitive per-rule answer needs each one wired the same way
+PROFILE001 was, which is real follow-up work, not something this design
+step can compute from data that was never collected. What T-3844's OWN
+measurement already narrows the search to: its `RuleCensusEntry.
+corpus_wide` field (`frob.gates._waive.census_gate_rules`) already
+separates rules whose live=0 on a clean tree is expected/healthy
+(`_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES` -- DUP001/DUP002/AFFECT001/
+AFFECT002/WIRE001/SCOPE001, diff-scoped rules that only ever fire
+against a diff) from rules where live=0 SHOULD mean genuinely clean. The
+308 promoted rules are, by construction, exactly the ones T-3844
+measured at zero findings on a full unscoped run -- the shape most likely
+to include a PROFILE001-style silent-zero is any rule in that list whose
+subject universe is narrow, platform-conditional, or artifact-dependent
+(a language-specific check where the language may not appear in every
+run, a platform-guarded rule like WALK001/PORT001-shaped checks, a rule
+reading a generated/optional artifact) -- the same shape class PROFILE001
+itself is (self-referential to one specific module). A full retroactive
+audit of which of the 308 are zero-subject rather than clean is real,
+valuable follow-up work and is explicitly named here as OUT of this
+ticket's scope rather than silently skipped.
+
+**Wired for one proof-of-concept rule**, `frob.check._python.
+_gates_family_result`/`_family_subject_count` populate `gate:PROFILE`'s
+`subject_count` from `frob.gates._profile_boundary.
+profile_boundary_subject_count` (the total `ProfileName` usages examined,
+allowed and flagged alike) -- `enforcing` there additionally requires
+`frob.repo_meta.is_frob_own_repo`, since PROFILE001 is self-referential
+to frob's own `src/frob/tickets/_profile.py` layer and has no legitimate
+subject universe in any other repo. Every other gate family stays
+`subject_count=None`, completely unaffected -- this ticket is
+infrastructure plus one worked example, not a repo-wide rollout (see
+T-3985's own scope note).
+
+**Honest limit**: a nonzero subject count only proves a check looked at
+SOMETHING; it does not prove it looked at the RIGHT things. T-4056's
+Windows cycle detector kept a nonzero node count throughout its own
+undetected bug -- what broke was node IDENTITY (mismatched path forms
+between node ids and edge targets), not node COUNT. This primitive would
+only have PARTLY caught that shape.
+
+**Explicit boundary against reachability (adjacent, not the same
+mechanism)**: three independent audits (T-4025 item 1, T-4071 M-1, and
+a consumer's H3-6) each found a function/component that is exported,
+documented (`frob:doc` pointing at a real spec requirement), and covered
+by a passing unit test -- every gate closes it clean -- yet has no
+caller outside its own tests, unreachable from any real entrypoint. This
+is NOT the same question `subject_count` answers. Subject-count asks "did
+this CHECK examine anything at all" (a property of a gate RUN, over the
+corpus it scans); reachability asks "is this ALREADY-EXAMINED, already-
+closed unit actually reachable from a declared entrypoint" (a property of
+one SYMBOL, independent of whether every gate that touched it reported a
+nonzero subject count and a clean pass). In the H3-6 shape, `subject_
+count` for every relevant gate (COV/TEST/DOC) is genuinely positive and
+the checks are genuinely clean -- there is no zero to catch. A bare count
+is not the discriminator here, the same honest-limit shape as T-4056's
+node-identity bug above, not an extension of it: T-4056 broke because the
+count stayed right while identity broke; H3-6 breaks because the count
+and every per-gate verdict are correct and the missing fact (reachability
+from an entrypoint) lives entirely outside what any of those gates
+measure. Reachability is real, independently-motivated follow-up work
+(reusing the callgraph BFS machinery already proven for COV006/T-3962),
+tracked as its own ticket rather than folded into this one -- stretching
+`subject_count` to also mean "and it's reachable" would conflate two
+different questions behind one field.
+
 ## pytest-spawn resolution (T-3311)
 
 <!-- frob:describes src/frob/process/_pytest_spawn.py::resolve_pytest_argv -->

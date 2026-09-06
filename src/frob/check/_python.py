@@ -18,9 +18,10 @@ from __future__ import annotations
 import os
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from frob.excludes import iter_files
+from frob.findings import Severity as _GateSeverity
 from frob.logging import get_logger
 from frob.process._guard import (
     EXEC_KILL_SWITCH_ENV,
@@ -31,6 +32,7 @@ from frob.process.parsers.common import (
     Diagnostic,
     Severity,
     ToolResult,
+    enforcing_zero_subject_diagnostic,
     tool_crash_result,
     tool_disabled_result,
     tool_unavailable_result,
@@ -38,6 +40,51 @@ from frob.process.parsers.common import (
 
 if TYPE_CHECKING:
     from frob.gates import Violation
+
+# frob:ticket T-3985
+# `_GateSeverity` above (imported as `frob.findings.Severity as
+# _GateSeverity`) is the gate-severity ENUM (`.ERROR`/`.WARN`) --
+# deliberately aliased because `Severity` (already imported below from
+# `frob.process.parsers.common`) is an UNRELATED `Literal["error",
+# "warning", "note", "info"]` string alias for `Diagnostic.severity`. Do
+# not conflate the two.
+
+# frob:ticket T-3985
+#: T-3985's subject-count primitive, wired for a PROOF OF CONCEPT of ONE
+#: rule (PROFILE001, T-3941's own proven positive control) -- rule id ->
+#: (probe callable, the rule's hardcoded severity absent any `[gates.
+#: severity]` override). Deliberately NOT a repo-wide rollout: see this
+#: ticket's own scope note ("scope the FIRST landing to the model change
+#: plus the cross-cutting check plus 2-3 gates as a proof of concept").
+#: A rule with no entry here is simply unmigrated -- its family's
+#: `ToolResult.subject_count` stays `None`, never misread as `0`.
+#:
+#: Built lazily by `_subject_count_probes()` (never at import time):
+#: `frob.gates` and `frob.check._python` have a live circular-import
+#: relationship (`frob.gates.__init__` transitively imports back into
+#: this module via `frob.graph`/`frob.check.__init__`), so importing
+#: `frob.gates._profile_boundary`/`frob.gates._waive` at module scope
+#: here breaks `import frob` outright. Every other module-level import
+#: in this file is unaffected; this is the one probe registry that must
+#: stay deferred.
+_SUBJECT_COUNT_PROBES: dict[str, tuple[Callable[[Path], int], _GateSeverity]] | None = (
+    None
+)
+
+
+def _subject_count_probes() -> dict[str, tuple[Callable[[Path], int], _GateSeverity]]:
+    """Lazily-built, memoized `_SUBJECT_COUNT_PROBES` -- see that name's
+    own docstring for why this cannot be a plain module-level dict
+    literal in this file."""
+    global _SUBJECT_COUNT_PROBES
+    if _SUBJECT_COUNT_PROBES is None:
+        from frob.gates._profile_boundary import profile_boundary_subject_count
+
+        _SUBJECT_COUNT_PROBES = {
+            "PROFILE001": (profile_boundary_subject_count, _GateSeverity.ERROR),
+        }
+    return _SUBJECT_COUNT_PROBES
+
 
 # frob:ticket T-2585
 _log = get_logger(__name__)
@@ -1302,8 +1349,7 @@ def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
                 )
             ],
             summary=(
-                f"gates FAILED to load required state ({err.value}) -- "
-                "no gate ran"
+                f"gates FAILED to load required state ({err.value}) -- no gate ran"
             ),
         )
     return ToolResult(
@@ -1327,19 +1373,81 @@ def _rule_family(rule: str) -> str:
     return rule
 
 
+# frob:ticket T-3985
+def _family_subject_count(family: str, root: Path) -> tuple[int | None, bool]:
+    """T-3985's subject-count primitive, evaluated per rule FAMILY (the
+    granularity `_gates_family_result` already reports at): `(subject_
+    count, enforcing)`. `subject_count` is `None` when no rule in
+    `family` has a registered probe in `_SUBJECT_COUNT_PROBES` -- an
+    unmigrated family, never misread as "examined zero" (`ToolResult.
+    subject_count`'s own None-vs-0 doctrine). Otherwise it is the SUM of
+    every probed rule's count (allowed AND flagged usages alike, not just
+    violations -- see `profile_boundary_subject_count`'s own docstring
+    for why). `enforcing` is True iff ANY probed rule in `family` is
+    currently effective-severity ERROR after `frob.toml`'s `[gates.
+    severity]` overrides (`_severity_overrides`) -- a family partly
+    downgraded to warn is still worth flagging on its enforcing half."""
+    from frob.gates._waive import _severity_overrides
+    from frob.repo_meta import is_frob_own_repo
+
+    # T-3985 design constraint: PROFILE001 (and, so far, only PROFILE001)
+    # is self-referential to frob's OWN `src/frob/**` tree -- a foreign
+    # repo, or a bare fixture directory with no such tree at all, has NO
+    # legitimate PROFILE001 subject universe, the same "a rule for a
+    # language this repo does not use" carve-out the ticket body itself
+    # requires. Without this, EVERY non-frob checkout would trip
+    # SUBJECT001 on PROFILE001 permanently -- exactly the "matches the
+    # normal case, disables the guard" failure this ticket's own design
+    # constraint warns is worse than the bug it prevents.
+    own_repo = is_frob_own_repo(root)
+    total = 0
+    found = False
+    enforcing = False
+    overrides = _severity_overrides(root)
+    for rule, (probe, default_severity) in _subject_count_probes().items():
+        if _rule_family(rule) != family:
+            continue
+        found = True
+        total += probe(root)
+        if own_repo and overrides.get(rule, default_severity) == _GateSeverity.ERROR:
+            enforcing = True
+    return (total, enforcing) if found else (None, False)
+
+
 # frob:ticket T-0420
-def _gates_family_result(family: str, violations: list, waived: list) -> ToolResult:  # noqa: ANN001
+# frob:ticket T-3985
+def _gates_family_result(
+    family: str,
+    violations: list,
+    waived: list,
+    root: Path,  # noqa: ANN001
+) -> ToolResult:
     """One named per-family `ToolResult` (`gate:TEST`, `gate:COV`, ...):
     its own diagnostics and its own error/warning/unresolved/waived
     count, so a human reads `TEST FAIL 2 errors` instead of hunting
     inside one shared `gates` timing blob for which family actually
     failed (T-0420). T-1664: `n_unresolved` is its OWN term, never
     folded into `n_warn` -- a family whose check could not determine an
-    answer for part of the repo must not read as "just some warnings"."""
+    answer for part of the repo must not read as "just some warnings".
+
+    T-3985: also populates `subject_count` (`_family_subject_count`) and,
+    when that family is an ENFORCING gate reporting zero subjects,
+    appends a `SUBJECT001` diagnostic and fails the stage -- the
+    cross-cutting primitive this ticket exists to add. A family with no
+    registered probe gets `subject_count=None` and is completely
+    unaffected (this is a proof-of-concept for PROFILE001 only; see
+    `_SUBJECT_COUNT_PROBES`'s own docstring)."""
     diags = [*_violation_diags(violations), *_waived_diags(waived)]
     n_err = _error_count(violations)
     n_unresolved = _unresolved_count(violations)
     n_warn = len(violations) - n_err - n_unresolved
+    subject_count, enforcing = _family_subject_count(family, root)
+    subject_finding = enforcing_zero_subject_diagnostic(
+        f"gate:{family}", subject_count, enforcing=enforcing
+    )
+    if subject_finding is not None:
+        diags.append(subject_finding)
+        n_err += 1
     # T-0228 (extended by T-1664): never collapse distinct outcome kinds
     # into one ambiguous count -- error/warning/unresolved/waived each
     # get their own term, always, whether zero or not; a family that
@@ -1357,23 +1465,35 @@ def _gates_family_result(family: str, violations: list, waived: list) -> ToolRes
         exit_code=1 if n_err > 0 else 0,
         diagnostics=diags,
         summary=summary,
+        subject_count=subject_count,
     )
 
 
 # frob:ticket T-0420
-def _gates_family_results(violations, waived) -> list[ToolResult]:  # noqa: ANN001
+# frob:ticket T-3985
+def _gates_family_results(violations, waived, root: Path) -> list[ToolResult]:  # noqa: ANN001
     """Every named per-family stage (T-0420), ordered alphabetically by
     family name for a stable, scannable list -- families present only in
     `waived` (never in a kept violation) still get their own line, since a
     fully-waived family is real signal ("this family found things, all
-    discharged"), not silence."""
+    discharged"), not silence.
+
+    T-3985: a family with a registered subject-count probe
+    (`_SUBJECT_COUNT_PROBES`) but ZERO violations and ZERO waivers is now
+    ALSO forced into `families` -- before this, a fully-clean family
+    (T-3941's own PROFILE001 shape) produced no `gate:<FAMILY>` stage at
+    all, so there was nowhere for a zero-subject finding to attach. Every
+    OTHER (unprobed) family's behavior is completely unchanged: it still
+    only appears when it has a violation or a waiver."""
     families: dict[str, tuple[list, list]] = {}
     for v in violations:
         families.setdefault(_rule_family(v.rule), ([], []))[0].append(v)
     for w in waived:
         families.setdefault(_rule_family(w.rule), ([], []))[1].append(w)
+    for rule in _subject_count_probes():
+        families.setdefault(_rule_family(rule), ([], []))
     return [
-        _gates_family_result(family, fam_violations, fam_waived)
+        _gates_family_result(family, fam_violations, fam_waived, root)
         for family, (fam_violations, fam_waived) in sorted(families.items())
     ]
 
@@ -1517,7 +1637,19 @@ def _gates_success_result(
         )
     )
     n_err = _error_count(violations)
-    results = _gates_family_results(violations, report.waived)
+    results = _gates_family_results(violations, report.waived, root)
+    # T-3985: a zero-subject finding on an enforcing family is an ERROR
+    # not represented in `violations` (there is no Violation to fail on
+    # when the gate examined nothing) -- fold each family stage's own
+    # subject-count error(s) into the overall count so the final
+    # gate-summary/exit code reflects it too, not just the per-family
+    # stage line.
+    n_err += sum(
+        1
+        for r in results
+        if r.tool.startswith("gate:")
+        and any(d.code == "SUBJECT001" for d in r.diagnostics)
+    )
     if delta_note is not None:
         results.append(
             ToolResult(

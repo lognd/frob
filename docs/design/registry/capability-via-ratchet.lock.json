@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 507,
-      "reason": "T-4000: adds tests/test_tickets_evidence_removal.py, whose TestEvidenceCmdCwdFlag writes a real marker.txt under a tmp_path subdirectory to prove --evidence-cmd --cwd runs against the named subdirectory -- bumping the ceiling to the current measured count.",
-      "ticket": "T-4000"
+      "accepted_count": 508,
+      "reason": "T-3985: adds tests/unit/gates/test_profile_boundary_subject_count.py, whose fixtures write real Python source files under tmp_path (via _write/Path.write_text) to prove profile_boundary_subject_count's PROFILE001 subject-count probe -- bumping the ceiling to the current measured count, 507 -> 508, one real new site.",
+      "ticket": "T-3985"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
