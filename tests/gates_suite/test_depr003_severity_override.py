@@ -10,12 +10,10 @@ beyond the two files (`frob.toml`, this test) the fix actually touches.
 
 from pathlib import Path
 
-import pytest
-
-from frob.gates import GateConfig, Severity, deprecated_gate, run_gates
+from frob.gates import Severity, deprecated_gate
 from frob.gates._waive import _apply_severity_overrides, _severity_overrides
 from frob.tickets import TicketQueue, TicketState
-from tests.conftest import _first_rule, _git_init, _snapshot, _ticket, _write
+from tests.conftest import _first_rule, _snapshot, _ticket, _write
 
 
 def test_depr003_survives_repo_severity_overrides(tmp_path: Path) -> None:
