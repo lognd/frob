@@ -1788,12 +1788,41 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      # T-3935: frob-core/strata-core are hard `==`-pinned DEFAULT deps
+      # (T-3845) and neither is published to any registry, so a plain
+      # `uv pip install dist/*.whl` resolve reaches out to PyPI for them
+      # and fails outright ("frob-core was not found in the package
+      # registry"; measured in CI run 34005559354). This job's own point
+      # is to prove a BARE install (no Rust toolchain, no `make core`,
+      # unlike the `build` job) still works, so the cores are built here
+      # via maturin directly rather than reusing `build`'s native step --
+      # keeping this job self-contained and not adding a cross-job
+      # artifact dependency for a single ubuntu-only smoke check.
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
+      - name: Build frob-core wheel (abi3-py311, local find-links only)
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          working-directory: frob-core
+          args: --release --out dist
+      - name: Build strata-core wheel (abi3-py311, local find-links only)
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          working-directory: strata-core
+          args: --release --out dist
       - name: Build the bare wheel (no native extras)
         run: uv build --wheel
+      # T-3935: `--find-links` points the resolver at the just-built core
+      # wheels INSTEAD OF a registry -- the pin is honoured (still exact
+      # `==0.530.0`, still resolved for real) but satisfied locally, since
+      # neither core is published anywhere yet.
       - name: Install into a clean venv
         run: |
           uv venv /tmp/frob-standalone-venv
-          uv pip install --python /tmp/frob-standalone-venv/bin/python dist/*.whl
+          uv pip install --python /tmp/frob-standalone-venv/bin/python \
+            dist/*.whl \
+            --find-links frob-core/dist \
+            --find-links strata-core/dist
       - name: frob --help must not crash without native extensions
         run: /tmp/frob-standalone-venv/bin/frob --help
       # T-0135 moved sys_gate's `from frob.strata import load_design_ids`

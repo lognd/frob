@@ -2,7 +2,7 @@
 id: T-3935
 title: 'ALPHA BLOCKER: frob wheel is uninstallable -- frob-core/strata-core hard-pinned
   but in no registry'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -20,7 +20,7 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
-- tickets/T-draft-3bf296c3/**
+- tickets/T-3957/**
 evidence_scope:
 - docs/guides/release.md
 - scripts/verify_release_ci_status.py
@@ -164,7 +164,7 @@ scope_changes:
   actor: logan
   at: '2026-09-06'
 - op: add
-  glob: tickets/T-draft-3bf296c3/**
+  glob: tickets/T-3957/**
   reason: 'SCOPE001 false-positive: this tickets own bookkeeping file (filed while
     working T-3935, documenting an out-of-scope discovery) is not being recognized
     via its own implicit scope exemption; adding explicitly to unblock the close'

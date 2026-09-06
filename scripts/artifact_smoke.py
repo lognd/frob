@@ -69,6 +69,64 @@ def _run(argv: list[str], *, timeout: int = 300) -> subprocess.CompletedProcess:
     )
 
 
+# frob:ticket T-3935
+# frob:waive COV001 reason="same doc-anchor scope-closure tension \
+# SCANNED_BASES/RETIRED_RULE_IDS (src/frob/gates/_rule_id_scan.py, T-1010/T-1937) \
+# already carry -- a frob:doc anchor here would live in docs/guides/release.md, whose \
+# own SCOPE002 closure (every OTHER symbol that shared doc describes across the repo, \
+# including scripts/verify_release_ci_status.py and src/frob/doctor.py) is out of \
+# proportion to pull into T-3935's narrow scope for one preflight helper; this \
+# module's own docstring is the authoritative description, see T-3935's Done report"
+_REQUIRED_CORE_WHEEL_GLOBS = {
+    "frob-core": "frob_core-*.whl",
+    "strata-core": "strata_core-*.whl",
+}
+
+
+# frob:ticket T-3935
+# frob:waive COV001 reason="same doc-anchor scope-closure tension as \
+# _REQUIRED_CORE_WHEEL_GLOBS above -- see that waiver's reason"
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absen\
+# t_names_both
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_\
+# names_only_that_one
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_prese\
+# nt_does_not_raise
+# frob:tests \
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
+# eport_named_core_missing
+def _require_core_wheels(core_wheels_dir: Path) -> None:
+    """T-3935: `frob-core`/`strata-core` are hard `==`-pinned DEFAULT
+    dependencies of `frob` (T-3845) that are not published to any
+    registry, so `--find-links core_wheels_dir` is the ONLY way an
+    install of the built wheel can ever resolve them. Without this
+    preflight, a missing/empty `core_wheels_dir` surfaces as uv's raw
+    "was not found in the package registry" resolver trace inside every
+    downstream check -- which reads identically whether the core was
+    simply never built (a CI wiring bug) or the version pin itself is
+    wrong (a real regression). Checked once, up front, so a wiring bug
+    fails fast with a message naming exactly which core is missing,
+    instead of that ambiguity landing in the release gate."""
+    missing = [
+        name
+        for name, pattern in _REQUIRED_CORE_WHEEL_GLOBS.items()
+        if not list(core_wheels_dir.glob(pattern))
+    ]
+    if missing:
+        raise SmokeCheckError(
+            "core-wheels-preflight",
+            f"core_wheels_dir ({core_wheels_dir}) does not contain a built "
+            f"wheel for: {', '.join(missing)}. frob-core/strata-core are "
+            "hard-pinned default dependencies (T-3845) that are not "
+            "published to any registry -- they must be built and supplied "
+            "via --core-wheels-dir before any install can resolve them. "
+            "This is 'core not built/supplied', not a bad version pin.",
+        )
+
+
 def _make_venv(venv_dir: Path) -> Path:
     """A fresh venv at `venv_dir` via `uv venv`; returns its python
     executable. Raises `SmokeCheckError` if venv creation itself fails --
@@ -293,6 +351,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL setup: wheel not found at {wheel_path}", file=sys.stderr)
         return 1
     core_dir = args.core_wheels_dir.resolve()
+    try:
+        _require_core_wheels(core_dir)
+    except SmokeCheckError as exc:
+        print(f"FAIL {exc.name}: {exc.detail}", file=sys.stderr)
+        return 1
 
     checks = _build_checks(wheel_path, core_dir, skip_native=args.skip_native)
     failures = _run_checks(checks)

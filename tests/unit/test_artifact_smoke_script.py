@@ -38,6 +38,17 @@ def _fail(stderr: str = "boom") -> subprocess.CompletedProcess:
     return subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr=stderr)
 
 
+def _touch_core_wheels(core_dir: Path) -> None:
+    """T-3935: `main`'s `_require_core_wheels` preflight checks the real
+    filesystem for `frob_core-*.whl`/`strata_core-*.whl` (it runs before
+    any mocked `_run` call), so every `main`-level test that mocks
+    installs green must still drop matching placeholder files here or
+    the preflight itself fails the test before the mocked checks run."""
+    core_dir.mkdir(exist_ok=True)
+    (core_dir / "frob_core-0.1.0-cp311-abi3-linux_x86_64.whl").write_bytes(b"")
+    (core_dir / "strata_core-0.1.0-cp311-abi3-linux_x86_64.whl").write_bytes(b"")
+
+
 class TestCheckBaseInstall:
     """`check_base_install`: venv, install, `--version`, `doctor`."""
 
@@ -149,6 +160,64 @@ class TestCheckNativeExtra:
                 )
 
 
+class TestRequireCoreWheels:
+    """T-3935 MUST-FIRE fixture: `_require_core_wheels` (and `main`'s use
+    of it) must name the specific missing core, never surface as an
+    ambiguous downstream resolver trace -- this is the fast, offline
+    proof; tests/system/test_artifact_smoke.py's
+    ``test_absent_cores_report_named_core_missing`` is the real,
+    unmocked proof against `main` end-to-end."""
+
+    def test_both_cores_absent_names_both(self, tmp_path: Path) -> None:
+        """An empty `core_wheels_dir` -> `SmokeCheckError` naming BOTH
+        missing cores, not a generic failure."""
+        core_dir = tmp_path / "cores"
+        core_dir.mkdir()
+        with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
+            artifact_smoke._require_core_wheels(core_dir)
+        assert "frob-core" in str(exc_info.value)
+        assert "strata-core" in str(exc_info.value)
+
+    def test_one_core_absent_names_only_that_one(self, tmp_path: Path) -> None:
+        """Only `strata-core`'s wheel is missing -> the error names
+        exactly that one, not `frob-core` (which IS present)."""
+        core_dir = tmp_path / "cores"
+        core_dir.mkdir()
+        (core_dir / "frob_core-0.1.0-cp311-abi3-linux_x86_64.whl").write_bytes(b"")
+        with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
+            artifact_smoke._require_core_wheels(core_dir)
+        # the missing-list clause names exactly strata-core, not frob-core
+        # (which IS present) -- the boilerplate sentence after it mentions
+        # frob-core by name regardless, so check the specific clause.
+        assert "wheel for: strata-core." in str(exc_info.value)
+
+    def test_both_cores_present_does_not_raise(self, tmp_path: Path) -> None:
+        """Both wheels present -> no exception."""
+        core_dir = tmp_path / "cores"
+        _touch_core_wheels(core_dir)
+        artifact_smoke._require_core_wheels(core_dir)  # must not raise
+
+    def test_main_reports_missing_core_before_any_install_attempt(
+        self, tmp_path: Path
+    ) -> None:
+        """`main` end-to-end (still mocked at the `_run` boundary, but the
+        preflight itself hits the real filesystem): an empty
+        `core_wheels_dir` must fail with the named-core message and never
+        reach a mocked install call at all."""
+        wheel = tmp_path / "frob.whl"
+        wheel.write_bytes(b"")
+        core_dir = tmp_path / "cores"
+        core_dir.mkdir()
+
+        with patch.object(artifact_smoke, "_run") as mock_run:
+            code = artifact_smoke.main(
+                ["--wheel", str(wheel), "--core-wheels-dir", str(core_dir)]
+            )
+
+        assert code == 1
+        mock_run.assert_not_called()
+
+
 class TestMain:
     """`main`: end-to-end argv parsing and the aggregate pass/fail exit
     code, with every underlying command mocked."""
@@ -158,7 +227,7 @@ class TestMain:
         wheel = tmp_path / "frob-0.1.0-py3-none-any.whl"
         wheel.write_bytes(b"")
         core_dir = tmp_path / "cores"
-        core_dir.mkdir()
+        _touch_core_wheels(core_dir)
 
         with patch.object(artifact_smoke, "_run", return_value=_ok(stdout="native")):
             code = artifact_smoke.main(
@@ -189,7 +258,7 @@ class TestMain:
         wheel = tmp_path / "frob.whl"
         wheel.write_bytes(b"")
         core_dir = tmp_path / "cores"
-        core_dir.mkdir()
+        _touch_core_wheels(core_dir)
 
         def fake_run(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
             if "-c" in argv:
@@ -208,7 +277,7 @@ class TestMain:
         wheel = tmp_path / "frob.whl"
         wheel.write_bytes(b"")
         core_dir = tmp_path / "cores"
-        core_dir.mkdir()
+        _touch_core_wheels(core_dir)
 
         with patch.object(artifact_smoke, "_run", return_value=_ok()):
             code = artifact_smoke.main(

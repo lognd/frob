@@ -125,6 +125,55 @@ class TestArtifactSmokeMustFire:
         )
 
 
+class TestArtifactSmokeAbsentCores:
+    """T-3935 MUST-FIRE fixture: `main` run end-to-end against a REAL
+    built wheel, with the cores deliberately absent, must report the
+    named missing core -- not the raw "was not found in the package
+    registry" resolver trace that made CI run 34005559354's failure
+    indistinguishable from a wrong version pin."""
+
+    @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
+    def test_absent_cores_report_named_core_missing(self, tmp_path: Path) -> None:
+        """A real wheel, `--core-wheels-dir` pointed at an EMPTY
+        directory: the smoke script must fail fast, name both missing
+        cores, and never even attempt a pip install."""
+        fixed_src = _copy_source_tree(tmp_path, serve_pin="mcp>=1.28.1,<2")
+        out_dir = tmp_path / "dist"
+        out_dir.mkdir()
+        wheel = _build_wheel(fixed_src, out_dir)
+
+        empty_core_dir = tmp_path / "no-cores"
+        empty_core_dir.mkdir()
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(_SMOKE_SCRIPT),
+                "--wheel",
+                str(wheel),
+                "--core-wheels-dir",
+                str(empty_core_dir),
+                "--skip-native",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode != 0, (
+            "absent cores must fail the smoke gate -- it did not:\n"
+            + result.stdout
+            + result.stderr
+        )
+        combined = result.stdout + result.stderr
+        assert "frob-core" in combined
+        assert "strata-core" in combined
+        assert "not found in the package registry" not in combined, (
+            "the raw resolver trace leaked through -- the preflight should "
+            "have caught this before any pip install was attempted:\n"
+            + combined
+        )
+
+
 class TestArtifactSmokeMustStayQuiet:
     """MUST-STAY-QUIET: the current, fixed wheel must pass every check
     cleanly."""
