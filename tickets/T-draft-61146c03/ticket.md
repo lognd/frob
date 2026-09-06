@@ -18,10 +18,67 @@ scope:
 - tests/unit/test_conftest_suite_result_status.py
 - tests/ticket_land_suite/test_land_lock.py
 - tests/test_tickets_mutation_evidence.py
+- tickets/T-draft-fe768f82/ticket.md
+- src/frob/tickets/_land.py
+- src/frob/tickets/_mutation_evidence.py
+- tests/conftest.py
+- tests/unit/test_conftest_console_ctrl_guard.py
+- tests/unit/test_process_guard.py
+- tests/unit/test_process_pid_liveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-fe768f82/ticket.md
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/tickets/_mutation_evidence.py
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/conftest.py
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_conftest_console_ctrl_guard.py
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_process_guard.py
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_process_pid_liveness.py
+  reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
+    file itself, plus production/test modules that touched-test-files'' pre-existing
+    frob:tests bindings and private-helper fakes reach into'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
