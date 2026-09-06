@@ -19,8 +19,12 @@ scope:
 - tests/gates_suite/test_compliance.py
 - docs/modules/gates.md
 - src/frob/gates/_exhaustive_handling.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
+  ~40 gates; this ticket's edit is a narrow, additive scope note under the FFI001/FFI002
+  section only (T-3947's own path-shape fix) and does not touch or invalidate any
+  other gate's described section, so full scope closure over every other gate file
+  that doc happens to also describe is not warranted
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
