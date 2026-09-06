@@ -2,7 +2,7 @@
 id: T-3925
 title: wire LANGUAGE_COLLECTORS into evidence BINDING (add/replace/land re-verify),
   not just verify
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_tickets_evidence_cli.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: end-to-end regression test mirroring TestTicketEvidenceRustOracle, using
+    vitest -- the exact shape the consumer report (F-134) hit
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
