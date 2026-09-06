@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 506,
-      "reason": "T-3937: adds tests/unit/test_verify_language_buckets.py's real-collector fixtures (package.json/CTestTestfile.cmake/cache seeding for vitest and cpp evidence-binding tests) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3937"
+      "accepted_count": 507,
+      "reason": "T-4000: adds tests/test_tickets_evidence_removal.py, whose TestEvidenceCmdCwdFlag writes a real marker.txt under a tmp_path subdirectory to prove --evidence-cmd --cwd runs against the named subdirectory -- bumping the ceiling to the current measured count.",
+      "ticket": "T-4000"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

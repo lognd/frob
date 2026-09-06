@@ -126,6 +126,8 @@ _STRING_FIELDS = (
     # frob:ticket T-1492
     "ticket_migrate_to",
     "ticket_evidence_cmd",
+    # frob:ticket T-4000
+    "ticket_evidence_cwd",
     # frob:ticket T-1670
     "ticket_designate_repro",
     # frob:ticket T-1851
@@ -365,6 +367,8 @@ _LIST_FIELDS = (
     "ticket_evidence_ids",
     # frob:ticket T-1537
     "ticket_evidence_replace",
+    # frob:ticket T-4000
+    "ticket_evidence_remove",
     # frob:ticket T-0749
     "ticket_accepts",
     "ticket_labels",

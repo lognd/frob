@@ -696,6 +696,12 @@ class AppConfig(BaseModel):
     ticket_body_reason_file: Path | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
+    # frob:ticket T-4000
+    #: `frob ticket evidence <id> --evidence-cmd CMD --cwd DIR`: run CMD from
+    #: DIR (a subdirectory of the ticket's resolved `--path` root) instead of
+    #: the root itself. `None` (default) keeps running at root, the T-0834
+    #: behavior. Ignored without `--evidence-cmd` (F-215).
+    ticket_evidence_cwd: str | None = None
     # frob:ticket T-1670
     # `frob ticket evidence <id> --designate-repro NODE-ID`: mark NODE-ID
     # as the explicit BUG002 repro test, overriding the positional-first
@@ -774,6 +780,14 @@ class AppConfig(BaseModel):
     # too; the store's default single-ticket load/write only ever sees
     # active storage without this).
     ticket_evidence_archived: bool = False
+    # frob:ticket T-4000
+    #: `frob ticket evidence <id> --remove EVIDENCE-ID (--reason TEXT |
+    #: --reason-file PATH)`: permanently drop one evidence id (flat list +
+    #: every acceptance binding), atomically. `None` (default) means no
+    #: `--remove` given -- the retraction path `--replace` cannot provide
+    #: for a false `cmd:` entry, since `--replace`'s replacement id must
+    #: itself resolve/pass (F-215).
+    ticket_evidence_remove: str | None = None
     # frob:ticket T-0572
     # frob:ticket T-0749
     # frob:ticket T-3837

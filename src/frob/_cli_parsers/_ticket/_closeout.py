@@ -108,6 +108,24 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
     return [ticket_attach_p, ticket_block_p, ticket_unblock_p, ticket_close_p]
 
 
+# frob:ticket T-4000
+# F-215: help text used to say docs-kind tickets only, never matched ux
+_EVIDENCE_CMD_KIND_HELP = (
+    "kind gated by CMD_EVIDENCE_ALLOWED_KINDS (docs/ux), code kinds still "
+    "require pytest/--evidence node ids"
+)
+
+
+def _add_evidence_cwd_arg(parser) -> None:  # noqa: ANN001
+    """Register `--cwd DIR` (T-4000, F-215), shared by close/reverify/evidence."""
+    parser.add_argument(
+        "--cwd", dest="ticket_evidence_cwd", metavar="DIR",
+        help="with --evidence-cmd: run COMMAND from DIR under the ticket's "
+        "--path root, not the root itself (F-215, vs. `cd DIR && cmd`/`npx "
+        "--prefix DIR`)",
+    )
+
+
 def _add_ticket_close_parser(ticket_sub):
     """Register `frob ticket close` and return its subparser."""
     ticket_close_p = ticket_sub.add_parser("close", help="transition to done")
@@ -121,20 +139,14 @@ def _add_ticket_close_parser(ticket_sub):
         help="pytest node id to record as evidence before closing (repeatable)",
     )
     ticket_close_p.add_argument(
-        "--evidence-cmd",
-        dest="ticket_evidence_cmd",
-        metavar="COMMAND",
+        "--evidence-cmd", dest="ticket_evidence_cmd", metavar="COMMAND",
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
-        "exit status and an output digest as evidence before closing -- "
-        "docs-kind tickets only, code kinds still require --evidence node ids",
+        "exit/digest as evidence before closing -- " + _EVIDENCE_CMD_KIND_HELP,
     )
+    _add_evidence_cwd_arg(ticket_close_p)
     ticket_close_p.add_argument(
-        "--accepts",
-        dest="ticket_accepts",
-        action="append",
-        type=int,
-        default=[],
-        metavar="INDEX",
+        "--accepts", dest="ticket_accepts", action="append", type=int,
+        default=[], metavar="INDEX",
         help="T-0572: 1-based ticket.acceptance position (T-3837; see "
         "`frob ticket show`'s [N] list) that --evidence/--evidence-cmd's "
         "id(s) also bind to (repeatable); an unbound acceptance criterion "
@@ -142,9 +154,7 @@ def _add_ticket_close_parser(ticket_sub):
     )
     # frob:ticket T-0571
     ticket_close_p.add_argument(
-        "--strict",
-        dest="ticket_close_strict",
-        action="store_true",
+        "--strict", dest="ticket_close_strict", action="store_true",
         help="require an approve-verdict `frob ticket review` record "
         "naming the current commit before closing (T-0571); combined with "
         "`[tickets] require_review_for_close` in frob.toml, which must "
@@ -234,12 +244,11 @@ def _add_ticket_reverify_parser(ticket_sub):
         help="pytest node id to record as evidence before reverifying (repeatable)",
     )
     ticket_reverify_p.add_argument(
-        "--evidence-cmd",
-        dest="ticket_evidence_cmd",
-        metavar="COMMAND",
+        "--evidence-cmd", dest="ticket_evidence_cmd", metavar="COMMAND",
         help="non-pytest evidence channel (T-0215), same semantics as "
         "`close --evidence-cmd`",
     )
+    _add_evidence_cwd_arg(ticket_reverify_p)
     ticket_reverify_p.add_argument(
         "--accepts",
         dest="ticket_accepts",
@@ -356,13 +365,11 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "as `close`/`reverify --base-ref`",
     )
     ticket_evidence_p.add_argument(
-        "--evidence-cmd",
-        dest="ticket_evidence_cmd",
-        metavar="COMMAND",
+        "--evidence-cmd", dest="ticket_evidence_cmd", metavar="COMMAND",
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
-        "exit status and an output digest as evidence -- docs-kind tickets "
-        "only, code kinds still require pytest node ids",
+        "exit/digest as evidence -- " + _EVIDENCE_CMD_KIND_HELP,
     )
+    _add_evidence_cwd_arg(ticket_evidence_p)
     # frob:ticket T-1537
     ticket_evidence_p.add_argument(
         "--replace",
@@ -398,13 +405,16 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     )
     # frob:ticket T-1561
     ticket_evidence_p.add_argument(
-        "--archived",
-        dest="ticket_evidence_archived",
-        action="store_true",
-        help="with --replace, target an ARCHIVED ticket instead of an "
-        "active one -- COV003 scans tickets-archive.md/tickets/archive/** "
-        "too, so a stale evidence binding on an already-archived ticket "
+        "--archived", dest="ticket_evidence_archived", action="store_true",
+        help="with --replace/--remove, target an ARCHIVED ticket instead of "
+        "an active one -- a stale binding on an already-archived ticket "
         "needs this to be reachable at all (T-1561)",
+    )
+    # frob:ticket T-4000
+    ticket_evidence_p.add_argument(
+        "--remove", dest="ticket_evidence_remove", metavar="EVIDENCE-ID",
+        help="permanently drop one evidence id -- for a false/no-op `cmd:` "
+        "entry --replace cannot correct (F-215). Requires --reason",
     )
     ticket_evidence_p.add_argument(
         "--accepts",

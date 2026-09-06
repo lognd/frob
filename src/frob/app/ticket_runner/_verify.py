@@ -89,20 +89,19 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
     """Validate `cfg.ticket_evidence_ids` against collected pytest node ids
     and append the resolvable ones to the ticket's structured evidence list;
     or, with `--evidence-cmd`, record the T-0215 non-pytest cmd-evidence
-    entry instead (docs-kind tickets only); or, with `--replace OLD NEW`
-    (T-1537), rebind an existing evidence id everywhere it appears; or,
-    with `--designate-repro NODE-ID` (T-1670), mark one bound evidence id
-    as BUG002's explicit repro test (T-1929: validated against the parent
-    commit at designate time -- see `_evidence_apply_designate_repro`); or,
-    with `--check-repro [NODE-ID]` (T-1929), run that SAME parent-commit
-    classification on demand WITHOUT mutating anything and exit -- this
-    channel is read-only and handled first, before the "requires at least
-    one of" dispatch below, since it never reaches the mutating channels
-    or the ledger commit at the bottom of this function. Requires at least
-    one of the mutating four -- none of them is silently a no-op. Each
-    channel's own apply-and-exit-on-error step is a small helper
-    (`_evidence_apply_*`, ARCH001 split) so this dispatcher stays a thin
-    sequence of "if given, apply" checks."""
+    entry instead (kind gated by `CMD_EVIDENCE_ALLOWED_KINDS`, currently
+    docs/ux); or, with `--replace OLD NEW` (T-1537), rebind an existing
+    evidence id everywhere it appears; or, with `--remove EVIDENCE-ID`
+    (T-4000), permanently drop one -- the retraction `--replace` cannot
+    provide for a false `cmd:` entry, since `--replace`'s replacement id
+    must itself resolve/pass; or, with `--designate-repro NODE-ID`
+    (T-1670), mark one bound evidence id as BUG002's explicit repro test
+    (T-1929: validated at designate time, see
+    `_evidence_apply_designate_repro`); or, with `--check-repro [NODE-ID]`
+    (T-1929), run that SAME classification on demand WITHOUT mutating
+    anything and exit -- read-only, handled first. Requires at least one
+    of the mutating five; each channel's apply-and-exit-on-error step is a
+    small helper (`_evidence_apply_*`, ARCH001 split)."""
     if cfg.ticket_check_repro is not None:
         if cfg.ticket_id is None:
             _log.error("frob ticket evidence --check-repro requires <id>")
@@ -114,20 +113,22 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
         cfg.ticket_evidence_ids
         or cfg.ticket_evidence_cmd
         or cfg.ticket_evidence_replace
+        or cfg.ticket_evidence_remove
         or cfg.ticket_designate_repro
     )
     if cfg.ticket_id is None or not has_evidence:
         _log.error(
             "frob ticket evidence requires <id> and one of "
             "<pytest-node-id>..., --evidence-cmd 'command', "
-            "--replace OLD-NODE-ID NEW-NODE-ID, --designate-repro NODE-ID, "
-            "or --check-repro [NODE-ID]"
+            "--replace OLD-NODE-ID NEW-NODE-ID, --remove EVIDENCE-ID, "
+            "--designate-repro NODE-ID, or --check-repro [NODE-ID]"
         )
         sys.exit(1)
 
     _evidence_apply_node_ids(root, cfg)
     _evidence_apply_cmd(root, cfg)
     _evidence_apply_replace(root, cfg)
+    _evidence_apply_remove(root, cfg)
     _evidence_apply_designate_repro(root, cfg)
 
     # frob:ticket T-1178
@@ -158,12 +159,18 @@ def _evidence_apply_node_ids(root: Path, cfg: AppConfig) -> None:
 
 
 def _evidence_apply_cmd(root: Path, cfg: AppConfig) -> None:
-    """`_evidence`'s `--evidence-cmd` channel (ARCH001 split)."""
+    """`_evidence`'s `--evidence-cmd` channel (ARCH001 split). `--cwd DIR`
+    (T-4000, F-215) is ignored -- never silently applied -- unless
+    `--evidence-cmd` is also given; nothing to run it against otherwise."""
     if not cfg.ticket_evidence_cmd:
         return
     assert cfg.ticket_id is not None
     cmd_result = _apply_cmd_evidence(
-        root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
+        root,
+        cfg.ticket_id,
+        cfg.ticket_evidence_cmd,
+        cfg.ticket_accepts,
+        cwd=cfg.ticket_evidence_cwd,
     )
     if cmd_result.is_err:
         sys.exit(1)
@@ -196,6 +203,50 @@ def _evidence_apply_replace(root: Path, cfg: AppConfig) -> None:
     )
     if replace_result.is_err:
         sys.exit(1)
+
+
+# frob:ticket T-4000
+def _evidence_apply_remove(root: Path, cfg: AppConfig) -> None:
+    """`_evidence`'s `--remove EVIDENCE-ID (--reason TEXT | --reason-file
+    PATH)` channel (ARCH001 split, T-4000, F-215's "no-exit" fix): unlike
+    `--replace`, there is no replacement id to resolve/pass -- this only
+    ever shrinks the ledger, so it is the retraction path for a false or
+    unfalsifiable `cmd:` entry (an empty-output no-op, or one whose
+    command later proves not to have measured anything) that `--replace`
+    structurally cannot provide. Same required-`--reason` refusal shape as
+    `--replace` (T-1733's precedent): the reason resolver is shared
+    (`_resolve_evidence_replace_reason` reads `ticket_evidence_replace_
+    reason`/`_reason_file`, which `--remove` reuses rather than adding a
+    second, near-identical pair of CLI flags for the same "why" prompt)."""
+    if not cfg.ticket_evidence_remove:
+        return
+    assert cfg.ticket_id is not None
+    reason = _resolve_evidence_replace_reason(cfg)
+    if not reason:
+        _log.error(
+            "ticket evidence --remove requires --reason TEXT or "
+            "--reason-file PATH (T-4000, mirroring T-1733's --replace "
+            "--reason precedent)"
+        )
+        sys.exit(1)
+    from frob.tickets._evidence import remove_evidence
+
+    remove_result = remove_evidence(
+        root,
+        cfg.ticket_id,
+        cfg.ticket_evidence_remove,
+        reason=reason,
+        archived=cfg.ticket_evidence_archived,
+    )
+    if remove_result.is_err:
+        _log.error("ticket evidence --remove failed: %s", remove_result.danger_err)
+        sys.exit(1)
+    _log.info(
+        "%s: evidence --remove %r applied (%d evidence id(s) remain)",
+        cfg.ticket_id,
+        cfg.ticket_evidence_remove,
+        len(remove_result.danger_ok.evidence),
+    )
 
 
 # frob:ticket T-1670
@@ -2861,7 +2912,12 @@ def _log_evidence_result(ticket_id: str, result) -> None:  # noqa: ANN001
 # frob:ticket T-0796
 # frob:tests tests/test_tickets_evidence_cli.py
 def _apply_cmd_evidence(
-    root: Path, ticket_id: str, command: str, accepts: Sequence[int] | None = None
+    root: Path,
+    ticket_id: str,
+    command: str,
+    accepts: Sequence[int] | None = None,
+    *,
+    cwd: str | None = None,
 ):
     """Run `command` via `frob.tickets.add_cmd_evidence` and append its
     exit-status/digest entry to `ticket_id`'s evidence list -- the
@@ -2878,11 +2934,12 @@ def _apply_cmd_evidence(
     closed with `--evidence-cmd` + `--accepts` silently ended up UNBOUND."""
     from frob.tickets import add_cmd_evidence
 
-    result = add_cmd_evidence(root, ticket_id, command, accepts)
+    result = add_cmd_evidence(root, ticket_id, command, accepts, cwd=cwd)
     if result.is_err:
         _log.error(
-            "ticket evidence-cmd failed: %s (docs-kind tickets only; code "
-            "kinds require pytest --evidence node ids)",
+            "ticket evidence-cmd failed: %s (kind must be in "
+            "CMD_EVIDENCE_ALLOWED_KINDS, currently docs/ux; code kinds "
+            "require pytest --evidence node ids)",
             result.danger_err,
         )
         return result

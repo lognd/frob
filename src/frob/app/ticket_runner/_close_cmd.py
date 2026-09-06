@@ -1162,7 +1162,11 @@ def _apply_close_time_evidence(root: Path, cfg: AppConfig) -> None:
 
     if cfg.ticket_evidence_cmd:
         cmd_added = _apply_cmd_evidence(
-            root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
+            root,
+            cfg.ticket_id,
+            cfg.ticket_evidence_cmd,
+            cfg.ticket_accepts,
+            cwd=cfg.ticket_evidence_cwd,
         )
         if cmd_added.is_err:
             sys.exit(1)

@@ -1774,6 +1774,187 @@ def _rebind_evidence(
     )
 
 
+def _unbind_evidence(ticket: Ticket, normalized_old: str) -> Ticket:
+    """The pure deletion half of `remove_evidence` (T-4000, ARCH001 split
+    mirroring `_rebind_evidence`): drops `normalized_old` from
+    `ticket.evidence` AND every acceptance criterion's own `evidence`
+    tuple, order-preserving. Unlike `_rebind_evidence` there is no
+    replacement id to insert, so this can never grow or dedupe-collide --
+    it only ever shrinks. Returns the updated `Ticket`, unwritten (the
+    caller owns the single `write_ticket` call)."""
+    new_evidence = tuple(nid for nid in ticket.evidence if nid != normalized_old)
+    new_acceptance = tuple(
+        c.model_copy(
+            update={
+                "evidence": tuple(nid for nid in c.evidence if nid != normalized_old)
+            }
+        )
+        for c in ticket.acceptance
+    )
+    return ticket.model_copy(
+        update={"evidence": new_evidence, "acceptance": new_acceptance}
+    )
+
+
+# frob:ticket T-4000
+def _prepare_remove_evidence(
+    root: Path,
+    ticket_id: str,
+    node_id: str,
+    reason: str,
+    *,
+    archived: bool = False,
+) -> Result[tuple[str, Ticket], TicketError]:
+    """The validate-and-load half of `remove_evidence` (ARCH001 split,
+    mirroring `_prepare_replace_evidence`): requires a non-blank `reason`,
+    normalizes `node_id`, loads `ticket_id` (from archive storage when
+    `archived=True`, same as `_prepare_replace_evidence`), and confirms
+    the normalized id is actually bound somewhere. Returns `(normalized_
+    old, ticket)`, unwritten."""
+    from frob.tickets import normalize_evidence_separator
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    if not reason.strip():
+        _log.error("tickets: %s --remove requires --reason (T-4000)", ticket_id)
+        return Err(TicketError.EvidenceReplaceReasonMissing)
+
+    normalized_old = normalize_evidence_separator(node_id)
+
+    if archived:
+        from frob.tickets._store import load_archive
+
+        archive_loaded = load_archive(root)
+        if archive_loaded.is_err:
+            return Err(archive_loaded.danger_err)
+        ticket = archive_loaded.danger_ok.get(ticket_id)
+        if ticket is None:
+            _log.warning(
+                "tickets: %s not found in the archive (T-4000 --remove --archived)",
+                ticket_id,
+            )
+            return Err(TicketError.NotFound)
+    else:
+        from frob.tickets import _load_one
+
+        loaded = _load_one(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket = loaded.danger_ok
+
+    present_in_flat = normalized_old in ticket.evidence
+    present_in_acceptance = any(normalized_old in c.evidence for c in ticket.acceptance)
+    if not present_in_flat and not present_in_acceptance:
+        _log.warning(
+            "tickets: %s --remove target %r is not present in the "
+            "evidence list or any acceptance criterion",
+            ticket_id,
+            normalized_old,
+        )
+        return Err(TicketError.EvidenceReplaceNotFound)
+
+    return Ok((normalized_old, ticket))
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_tickets_evidence_removal.py::TestRemoveEvidence.test_remove_drops_id_from_\
+# flat_list_and_acceptance
+# frob:tests \
+# tests/test_tickets_evidence_removal.py::TestRemoveEvidence.test_remove_not_found_is_e\
+# rr
+# frob:tests \
+# tests/test_tickets_evidence_removal.py::TestRemoveEvidence.test_remove_requires_reason
+# frob:ticket T-4000
+def remove_evidence(
+    root: Path,
+    ticket_id: str,
+    node_id: str,
+    *,
+    reason: str,
+    archived: bool = False,
+) -> Result[Ticket, TicketError]:
+    """Permanently drop one evidence id from `ticket.evidence` and unbind
+    it from every acceptance criterion's `evidence` tuple, in a single
+    atomic `write_ticket` call (T-4000, F-215's "no-exit" half): the
+    retraction `replace_evidence` (`--replace`) cannot provide for a false
+    `cmd:` entry, since `--replace`'s `new_node` must itself resolve/pass
+    like a fresh `add_evidence` id -- a `cmd:` id resolves against
+    neither. VERIFIED against the CLI first (per this ticket's own
+    instruction not to assume): before this function, a false `cmd:`
+    entry had no CLI path back out of the ledger at all.
+
+    Same cost `replace_evidence` charges for weakening what proves a
+    ticket (T-1733's precedent, one step further -- removal is a strict
+    superset of rebinding): `reason` required non-blank
+    (`Err(EvidenceReplaceReasonMissing)`, reused rather than a parallel
+    enum member), `node_id` must already be bound
+    (`Err(EvidenceReplaceNotFound)`) -- see `_prepare_remove_evidence`.
+    Every non-no-op removal appends an `EvidenceChangeEntry` with
+    `new_node=""` marking a deletion, reusing `--replace`'s audit schema
+    instead of a second near-identical one. Unlike `replace_evidence`
+    there is no new id to resolve/pass on the way in -- this only ever
+    shrinks `ticket.evidence`. `archived` (T-1561 precedent) retargets
+    both load and write at archive storage."""
+    from datetime import date
+
+    from frob.tickets._models import EvidenceChangeEntry
+
+    prepared = _prepare_remove_evidence(
+        root, ticket_id, node_id, reason, archived=archived
+    )
+    if prepared.is_err:
+        return Err(prepared.danger_err)
+    normalized_old, ticket = prepared.danger_ok
+
+    entry = EvidenceChangeEntry(
+        old_node=normalized_old,
+        new_node="",
+        reason=reason,
+        actor=_current_actor(),
+        at=date.today(),
+    )
+    updated = _unbind_evidence(ticket, normalized_old).model_copy(
+        update={"evidence_changes": ticket.evidence_changes + (entry,)}
+    )
+    return _write_removed_evidence(
+        root, ticket_id, ticket, updated, normalized_old, reason, archived
+    )
+
+
+# frob:ticket T-4000
+def _write_removed_evidence(
+    root: Path,
+    ticket_id: str,
+    original: Ticket,
+    updated: Ticket,
+    normalized_old: str,
+    reason: str,
+    archived: bool,
+) -> Result[Ticket, TicketError]:
+    """The write-and-log tail of `remove_evidence` (ARCH001 split)."""
+    from frob.tickets._store import write_archived_ticket, write_ticket
+
+    write_result = (
+        write_archived_ticket(root, updated)
+        if archived
+        else write_ticket(root, updated)
+    )
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s removed evidence %r (%d evidence id(s) remain, %d "
+        "acceptance binding(s) updated): %s",
+        ticket_id,
+        normalized_old,
+        len(updated.evidence),
+        sum(1 for c in original.acceptance if normalized_old in c.evidence),
+        reason,
+    )
+    return Ok(updated)
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit
@@ -1991,6 +2172,31 @@ def _check_cmd_evidence_kind(
     return Err(TicketError.EvidenceKindNotAllowed)
 
 
+# frob:ticket T-4000
+def _resolve_cmd_evidence_cwd(
+    root: Path, ticket_id: str, cwd: str | None
+) -> Result[Path, TicketError]:
+    """`add_cmd_evidence`'s `--cwd DIR` resolution (ARCH001 split, T-4000,
+    F-215): `None` (default) runs at `root` itself (T-0834); a given `cwd`
+    is resolved and CONFINED to `root` -- `Err(EvidenceCmdFailed)` on an
+    escape attempt (e.g. `../x` or an absolute path outside `root`) since
+    a ticket's `--evidence-cmd`/`--cwd` is repo-writable by any agent."""
+    if cwd is None:
+        return Ok(root)
+    resolved = (root / cwd).resolve()
+    root_resolved = root.resolve()
+    if resolved != root_resolved and root_resolved not in resolved.parents:
+        _log.error(
+            "tickets: %s --cwd %r resolves to %s, outside worktree root %s -- refused",
+            ticket_id,
+            cwd,
+            resolved,
+            root_resolved,
+        )
+        return Err(TicketError.EvidenceCmdFailed)
+    return Ok(resolved)
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_docs_kind_closes
 # frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_bug_kind_rejected
@@ -2005,6 +2211,8 @@ def add_cmd_evidence(
     ticket_id: str,
     command: str,
     accepts: Sequence[int] | None = None,
+    *,
+    cwd: str | None = None,
 ) -> Result[Ticket, TicketError]:
     """Kind-gated non-pytest evidence channel (T-0215): runs `command` via
     `run_cmd_evidence` and appends the resulting entry to `ticket_id`'s
@@ -2016,16 +2224,15 @@ def add_cmd_evidence(
     unrelated shell command's exit status alone.
 
     `accepts` (T-0796, renumbered 1-based by T-3837) mirrors `add_evidence`'s
-    acceptance-binding: a list of 1-based `ticket.acceptance` positions the
-    recorded cmd-evidence entry is ALSO bound onto, in the same write as the
-    evidence-list append. Its validation is identical to `add_evidence` --
-    an out-of-range index (i<1 or i>len(ticket.acceptance)) rejects the
-    whole call (`Err(AcceptanceIndexOutOfRange)`) before anything is
-    written. Before T-0796 this parameter did not exist, so `--accepts`
-    passed alongside `--evidence-cmd` on the CLI was silently dropped and
-    docs-kind tickets closed with UNBOUND acceptance despite the operator's
-    explicit binding request.
-    """
+    acceptance-binding: 1-based `ticket.acceptance` positions the recorded
+    entry is ALSO bound onto, in the same write. An out-of-range index
+    (i<1 or i>len(ticket.acceptance)) rejects the whole call
+    (`Err(AcceptanceIndexOutOfRange)`) before anything is written.
+
+    `cwd` (T-4000, F-215's `--cwd DIR` fix, keyword-only): an optional
+    subdirectory of `root`, resolved and confined to it via
+    `_resolve_cmd_evidence_cwd` (see its docstring); `None` (default)
+    keeps running at `root` itself (T-0834)."""
     from frob.tickets import _load_one
 
     leased = enforce_worktree_lease(root)
@@ -2044,8 +2251,8 @@ def add_cmd_evidence(
         out_of_range = [i for i in accepts if i < 1 or i > len(ticket.acceptance)]
         if out_of_range:
             _log.warning(
-                "tickets: %s --accepts index/indices out of range %s "
-                "(ticket has %d acceptance item(s), valid range is 1..%d)",
+                "tickets: %s --accepts index/indices out of range %s (ticket "
+                "has %d acceptance item(s), valid range is 1..%d)",
                 ticket_id,
                 out_of_range,
                 len(ticket.acceptance),
@@ -2053,12 +2260,11 @@ def add_cmd_evidence(
             )
             return Err(TicketError.AcceptanceIndexOutOfRange)
 
-    # T-0834: run the command from the ticket's own resolved `--path` root,
-    # not the invoking process's cwd -- the evidence claim is about the
-    # worktree named by `root`, and a relative-path probe (grep/test over
-    # scope files) silently ran against whatever directory happened to
-    # invoke the CLI before this, with no indication of which cwd it used.
-    recorded = run_cmd_evidence(command, cwd=root)
+    run_dir = _resolve_cmd_evidence_cwd(root, ticket_id, cwd)
+    if run_dir.is_err:
+        return Err(run_dir.danger_err)
+
+    recorded = run_cmd_evidence(command, cwd=run_dir.danger_ok)
     if recorded.is_err:
         return Err(recorded.danger_err)
     entry = recorded.danger_ok
