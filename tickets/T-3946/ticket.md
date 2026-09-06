@@ -15,11 +15,28 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/_cli_parsers/_ticket/_evidence.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_evidence.py
+  reason: 'filed scope named _cli_parsers/_ticket/_evidence.py, which does not exist
+    -- I invented the path from the verb name for the second time in one session instead
+    of grepping. Measured: all three --accepts definitions live in _cli_parsers/_ticket/_closeout.py
+    at lines 132, 244 and 410'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'filed scope named _cli_parsers/_ticket/_evidence.py, which does not exist
+    -- I invented the path from the verb name for the second time in one session instead
+    of grepping. Measured: all three --accepts definitions live in _cli_parsers/_ticket/_closeout.py
+    at lines 132, 244 and 410'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
