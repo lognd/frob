@@ -2897,6 +2897,42 @@
       "old_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
       "reason": "T-3886 (landed 7c461d3ff) changed run_coalesced_verification to classify a None verify_fn result via _capture_unmeasurable_reason into ChildTimedOut/ChildSpawnRefused/ChildOutputUnparsable/Unmeasurable instead of one undifferentiated Unmeasurable. Read the function's own docstring, the WorkerError class docstring, _capture_unmeasurable_reason, and docs/modules/tickets-verify-sweep.md's 'Unmeasurable-cause separation (T-3886)' section (already written for this exact change, MEASURED 2026-09-05): both still accurately describe current behavior, no drift found -- re-acking the moved body digest only.",
       "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-06",
+      "facet": "body",
+      "new_digest": "6b2b3ee5e99e7faca19c61fac24a06869a326d98e7d2d6f1c6238fefc53d0ef5",
+      "old_digest": "26b10e66c50a8a0654663f81127109c966e9048d9ff89fc725b10b004a904ed3",
+      "reason": "T-3941 changed xref() to build its rel field with path.relative_to(root).as_posix() instead of str(...), moving the BODY digest. Re-verified the documentation is still true: the function's contract, signature and return shape are unchanged; the only behavioural difference is that the file field is now guaranteed posix-style on every platform, which is what the docs already describe as a repo-relative path and what Linux and macOS already produced. The 8 dependents consume it as a repo-relative path string",
+      "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-06",
+      "facet": "sig",
+      "new_digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
+      "old_digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
+      "reason": "T-3941 changed xref() to build its rel field with path.relative_to(root).as_posix() instead of str(...), moving the BODY digest. Re-verified the documentation is still true: the function's contract, signature and return shape are unchanged; the only behavioural difference is that the file field is now guaranteed posix-style on every platform, which is what the docs already describe as a repo-relative path and what Linux and macOS already produced. The 8 dependents consume it as a repo-relative path string",
+      "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-06",
+      "facet": "body",
+      "new_digest": "6b2b3ee5e99e7faca19c61fac24a06869a326d98e7d2d6f1c6238fefc53d0ef5",
+      "old_digest": "6b2b3ee5e99e7faca19c61fac24a06869a326d98e7d2d6f1c6238fefc53d0ef5",
+      "reason": "probe: testing whether --facet is honored at all",
+      "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-06",
+      "facet": "sig",
+      "new_digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
+      "old_digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
+      "reason": "probe: testing whether --facet is honored at all",
+      "ref": "src/frob/xref/__init__.py::xref"
     }
   ],
   "entries": [
@@ -4336,7 +4372,7 @@
       "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
     },
     {
-      "digest": "26b10e66c50a8a0654663f81127109c966e9048d9ff89fc725b10b004a904ed3",
+      "digest": "6b2b3ee5e99e7faca19c61fac24a06869a326d98e7d2d6f1c6238fefc53d0ef5",
       "facet": "body",
       "ref": "src/frob/xref/__init__.py::xref"
     },
