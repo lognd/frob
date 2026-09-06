@@ -16,8 +16,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
 - tests/unit/test_graph_cache.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: cache.py's shared meta-table helpers (get_root, get_file_meta,
+  etc.) carry frob:doc/frob:tests reverse-edges fanning across the whole graph subsystem
+  doc (docs/modules/graph.md) and test_graph.py -- same T-3914/T-4018 scope-closure-breadth
+  pattern; out of proportion to pull in for a one-symbol guard fix
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
