@@ -2,7 +2,7 @@
 id: T-4110
 title: 'H3-10: a declaration glob matching zero files must be its own finding, distinct
   from capability-unobserved'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-06'
@@ -19,6 +19,12 @@ scope:
 - src/frob/strata/_selfconform_core_rules.py
 - tests/unit/strata/test_selfconform_kinds.py
 - tests/unit/strata/test_selfconform_core_rules.py
+- src/frob/strata/_selfconform_ids.py
+- src/frob/strata/_selfconform.py
+- src/frob/gates/_waive.py
+- docs/modules/gates.md
+- docs/design/registry/check-coverage.yaml
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +40,90 @@ scope_changes:
   glob: tests/unit/strata/test_selfconform.py
   reason: 'revert: dragged in a 76-warning transitive closure across the whole selfconform
     test file; use a new dedicated test file instead'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/strata/_selfconform_ids.py
+  reason: 'T-4110''s own Work section requires the new rule to be ''wired into frob
+    check''s gate set and docs/modules/gates.md''s rule catalog'', which is structurally
+    impossible from the originally-declared 2-file scope: the rule id constant lives
+    in _selfconform_ids.py, _collect_sys_violations/_apply_sys_waivers orchestration
+    (the SYS110 precedent this ticket follows) lives in _selfconform.py, the gate-rule-id
+    registry lives in _waive.py''s _KNOWN_GATE_RULES, and the rule catalog/CHK-GATE
+    entry live in docs/modules/gates.md and check-coverage.yaml. Widening rather than
+    filing a follow-on ticket because a SYS1xx rule that computes a violation list
+    but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
+    gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'T-4110''s own Work section requires the new rule to be ''wired into frob
+    check''s gate set and docs/modules/gates.md''s rule catalog'', which is structurally
+    impossible from the originally-declared 2-file scope: the rule id constant lives
+    in _selfconform_ids.py, _collect_sys_violations/_apply_sys_waivers orchestration
+    (the SYS110 precedent this ticket follows) lives in _selfconform.py, the gate-rule-id
+    registry lives in _waive.py''s _KNOWN_GATE_RULES, and the rule catalog/CHK-GATE
+    entry live in docs/modules/gates.md and check-coverage.yaml. Widening rather than
+    filing a follow-on ticket because a SYS1xx rule that computes a violation list
+    but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
+    gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-4110''s own Work section requires the new rule to be ''wired into frob
+    check''s gate set and docs/modules/gates.md''s rule catalog'', which is structurally
+    impossible from the originally-declared 2-file scope: the rule id constant lives
+    in _selfconform_ids.py, _collect_sys_violations/_apply_sys_waivers orchestration
+    (the SYS110 precedent this ticket follows) lives in _selfconform.py, the gate-rule-id
+    registry lives in _waive.py''s _KNOWN_GATE_RULES, and the rule catalog/CHK-GATE
+    entry live in docs/modules/gates.md and check-coverage.yaml. Widening rather than
+    filing a follow-on ticket because a SYS1xx rule that computes a violation list
+    but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
+    gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-4110''s own Work section requires the new rule to be ''wired into frob
+    check''s gate set and docs/modules/gates.md''s rule catalog'', which is structurally
+    impossible from the originally-declared 2-file scope: the rule id constant lives
+    in _selfconform_ids.py, _collect_sys_violations/_apply_sys_waivers orchestration
+    (the SYS110 precedent this ticket follows) lives in _selfconform.py, the gate-rule-id
+    registry lives in _waive.py''s _KNOWN_GATE_RULES, and the rule catalog/CHK-GATE
+    entry live in docs/modules/gates.md and check-coverage.yaml. Widening rather than
+    filing a follow-on ticket because a SYS1xx rule that computes a violation list
+    but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
+    gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'T-4110''s own Work section requires the new rule to be ''wired into frob
+    check''s gate set and docs/modules/gates.md''s rule catalog'', which is structurally
+    impossible from the originally-declared 2-file scope: the rule id constant lives
+    in _selfconform_ids.py, _collect_sys_violations/_apply_sys_waivers orchestration
+    (the SYS110 precedent this ticket follows) lives in _selfconform.py, the gate-rule-id
+    registry lives in _waive.py''s _KNOWN_GATE_RULES, and the rule catalog/CHK-GATE
+    entry live in docs/modules/gates.md and check-coverage.yaml. Widening rather than
+    filing a follow-on ticket because a SYS1xx rule that computes a violation list
+    but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
+    gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'T-4110''s own Work section requires the new rule to be ''wired into frob
+    check''s gate set and docs/modules/gates.md''s rule catalog'', which is structurally
+    impossible from the originally-declared 2-file scope: the rule id constant lives
+    in _selfconform_ids.py, _collect_sys_violations/_apply_sys_waivers orchestration
+    (the SYS110 precedent this ticket follows) lives in _selfconform.py, the gate-rule-id
+    registry lives in _waive.py''s _KNOWN_GATE_RULES, and the rule catalog/CHK-GATE
+    entry live in docs/modules/gates.md and check-coverage.yaml. Widening rather than
+    filing a follow-on ticket because a SYS1xx rule that computes a violation list
+    but is never collected/waivable/catalogued is exactly the ''built but check-invisible''
+    gap T-1761/T-1977/T-2523 already document and fixed the same way for SYS109/SYS111/SYS112.'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
