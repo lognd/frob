@@ -25,7 +25,6 @@ scope:
 - tests/test_tickets_evidence_cli.py
 - tests/test_ticket_leases.py
 - tests/test_ticket_land_lint_diff_attribution.py
-- tests/test_telemetry.py
 - tests/test_fuzz.py
 - tests/system/test_cli_ticket.py
 scope_breadth_ack: false
@@ -58,6 +57,12 @@ scope_changes:
     narrowing T-3936's own scope to the remaining 15/19 (unblocks T-4028's start,
     which was refused on a scope-lease collision with this now-stale portion of T-3936's
     declared scope)
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_telemetry.py
+  reason: 'narrowed: tests/test_telemetry.py''s HOME-relative fixture bug is now owned
+    by T-4057 (Cluster B)'
   actor: logan
   at: '2026-09-06'
 body_changes:
