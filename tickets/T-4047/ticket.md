@@ -1,0 +1,35 @@
+---
+id: T-4047
+title: 'T-4018 follow-up: _read_root still guards fetchone() with is-not-None'
+state: queued
+kind: bug
+origin: human
+created: '2026-09-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/cache.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+T-4018 fixed 7 fetchone()-guard sites in cache.py/_cache.py but missed
+_read_root (originally reported as the line-1679 site) -- it was mistakenly
+conflated with _get_file_hash during the fix. _read_root still does
+row[0] if row is not None else None, so an empty-tuple fetchone() result
+still raises IndexError there. Fix: truthiness guard (if row) plus the
+same _warn_if_empty_row(table="meta", key="root") call used at the sibling
+meta-table sites (_read_schema_version, _check_fingerprint).
