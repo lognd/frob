@@ -18,6 +18,9 @@ scope:
 - src/frob/tickets/_evidence.py
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
+- docs/modules/tickets.md
+- docs/modules/tickets-lifecycle.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +40,21 @@ scope_changes:
     beyond _evidence.py; verified --replace''s new_node must resolve as a collected
     pytest/rust/other-language id (src/frob/app/ticket_runner/_verify.py:_apply_replace_evidence),
     so there is genuinely no path to correct a bad cmd: entry today'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: doc-coverage targets for symbols touched in _evidence.py/_verify.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: doc-coverage targets for symbols touched in _evidence.py/_verify.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: doc-coverage targets for symbols touched in _evidence.py/_verify.py
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
