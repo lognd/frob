@@ -17,6 +17,13 @@ authors = [
 dependencies = [
     "typani>=0.0.3",
     "pydantic>=2.12.0",
+    # T-4013: frob.policy matches user-authored `frob.toml` policy globs
+    # with pathspec's gitwildmatch/gitignore dialect, not `fnmatch`
+    # (`fnmatch` has no zero-or-more-directories `**` and is
+    # platform-dependent via `os.path.normcase`). Previously reached only
+    # transitively through mypy (a dev dependency) -- a bare wheel install
+    # would have crashed `frob.policy` with `ModuleNotFoundError`.
+    "pathspec>=0.12",
     "tree-sitter>=0.25.2",
     "tree-sitter-python>=0.25.0",
     "tree-sitter-cpp>=0.23.4",

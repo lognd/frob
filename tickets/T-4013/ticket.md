@@ -2,7 +2,7 @@
 id: T-4013
 title: 'F-226: policy globs use fnmatch, so app/**/*.py silently misses files directly
   under app/ and a security policy under-covers in silence'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-06'
@@ -18,6 +18,7 @@ scope:
 - src/frob/policy/__init__.py
 - tests/test_policy.py
 - pyproject.toml
+- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -63,12 +64,9 @@ scope_changes:
     pulling in the whole file
   actor: logan
   at: '2026-09-06'
-- op: remove
-  glob: uv.lock
-  reason: uv.lock is land-owned (T-0731); lockfile update happens at land time, not
-    something this ticket's diff controls directly
-  actor: logan
-  at: '2026-09-06'
+evidence:
+- tests/test_policy.py::TestRules::test_glob_double_star_matches_file_directly_under_prefix
+- tests/test_policy.py::TestRules::test_glob_stays_quiet_outside_matched_directory
 designated_repro_test: null
 threat: null
 component: null

@@ -148,3 +148,47 @@ class TestRules:
         result = load_policy(tmp_path)
         assert result.is_ok
         assert result.danger_ok == ()
+
+    def test_glob_double_star_matches_file_directly_under_prefix(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4013 must-fire fixture: `app/**/*.py` must cover a file
+        directly under `app/`, not just one nested in a subdirectory --
+        `fnmatch` degrades `**` to "at least one intervening directory"
+        and silently missed exactly this file; gitwildmatch semantics
+        (what every policy author actually means by `**`) must not."""
+        _write(tmp_path, "app/request_context.py", "import socket\n")
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[[policy.forbidden-import]]\n"
+            'id = "POL-raw-client-ip"\n'
+            'module = "socket"\n'
+            'within = "app/**/*.py"\n',
+        )
+        snap = _snapshot(tmp_path)
+        rules = load_policy(tmp_path).danger_ok
+        diff = Diff(base="x", hunks=())
+        violations = policy_gate(rules, snap, diff)
+        violations_by_rule = {v.rule: v for v in violations}
+        assert "POL-raw-client-ip" in violations_by_rule
+        assert violations_by_rule["POL-raw-client-ip"].file == "app/request_context.py"
+
+    def test_glob_stays_quiet_outside_matched_directory(self, tmp_path: Path) -> None:
+        """T-4013 must-stay-quiet fixture: the gitwildmatch widening is
+        bounded -- a file genuinely outside `app/**/*.py` (a sibling
+        directory) still does not match."""
+        _write(tmp_path, "other/request_context.py", "import socket\n")
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[[policy.forbidden-import]]\n"
+            'id = "POL-raw-client-ip"\n'
+            'module = "socket"\n'
+            'within = "app/**/*.py"\n',
+        )
+        snap = _snapshot(tmp_path)
+        rules = load_policy(tmp_path).danger_ok
+        diff = Diff(base="x", hunks=())
+        violations = policy_gate(rules, snap, diff)
+        assert violations == ()

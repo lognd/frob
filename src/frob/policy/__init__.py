@@ -15,10 +15,11 @@ load-time `Err(BadQuery)`, never a silent no-op at scan time.
 
 from __future__ import annotations
 
-import fnmatch
 import tomllib
+from functools import lru_cache
 from pathlib import Path
 
+import pathspec
 import tree_sitter
 from pydantic import ValidationError
 from tree_sitter_language_pack import get_language, get_parser
@@ -35,9 +36,33 @@ from frob.policy._models import PolicyError, PolicyKind, PolicyRule
 _log = get_logger(__name__)
 
 
+# frob:ticket T-4013
+# frob:tests \
+# tests/test_policy.py::TestRules.test_glob_double_star_matches_file_directly_under_pre\
+# fix
+# frob:tests \
+# tests/test_policy.py::TestRules.test_glob_stays_quiet_outside_matched_directory
+@lru_cache(maxsize=None)
+def _compiled_glob(pattern: str) -> pathspec.PathSpec:
+    """Compile `pattern` under gitwildmatch semantics (cached per pattern).
+
+    T-4013: policy globs previously matched via `fnmatch.fnmatch`, which has
+    no zero-or-more-directories `**` -- `app/**/*.py` silently missed files
+    directly under `app/` (`fnmatch` degrades `**` to "at least one
+    intervening directory") and, independently, `fnmatch.normcase`s both
+    sides so the same pattern matches differently on Windows than on Linux.
+    `pathspec`'s `gitwildmatch` dialect is what `.gitignore`, ruff, and
+    every other modern tool mean by `**`, and it is platform-independent.
+    """
+    return pathspec.PathSpec.from_lines("gitignore", [pattern])
+
+
 def _files_under(root: Path, snapshot: GraphSnapshot, pattern: str) -> tuple[str, ...]:
-    """Repo-relative paths in `snapshot.file_hashes` matching glob `pattern`."""
-    return tuple(sorted(p for p in snapshot.file_hashes if fnmatch.fnmatch(p, pattern)))
+    """Repo-relative paths in `snapshot.file_hashes` matching glob `pattern`
+    under gitwildmatch semantics (T-4013: not `fnmatch`, which lacks a
+    zero-or-more-directories `**` and is platform-dependent via `normcase`)."""
+    spec = _compiled_glob(pattern)
+    return tuple(sorted(p for p in snapshot.file_hashes if spec.match_file(p)))
 
 
 def _load_forbidden_imports(
