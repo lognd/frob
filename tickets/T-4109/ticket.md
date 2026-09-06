@@ -16,8 +16,11 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=epic: a decomposition container. Its ten leaves span
+  the declaration/glob subject-count surface, the docstring-claim lint, and five new
+  rule families across gates and strata; scope belongs on the leaves, where it can
+  be disjoint enough to dispatch in parallel'
 designated_repro_test: null
 acceptance:
 - text: given the ten findings in F-307, when this epic is decomposed, then each has
