@@ -2879,6 +2879,24 @@
       "old_digest": null,
       "reason": "T-3727: added is_frob_own_repo scoping so GATERULE001 never fires against a downstream repo's own rule-id catalog; doc and behavior re-verified in sync",
       "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-05",
+      "facet": "body",
+      "new_digest": "52ebae860a6b6753dbbb1a358c78f07a4f27f5f67f725a6b04659aedaa204bcd",
+      "old_digest": "1cd64a856d1e3a0a70015d8e127932be47032bac0462f80d916b6d296a972535",
+      "reason": "T-3886 (landed 7c461d3ff) changed run_coalesced_verification to classify a None verify_fn result via _capture_unmeasurable_reason into ChildTimedOut/ChildSpawnRefused/ChildOutputUnparsable/Unmeasurable instead of one undifferentiated Unmeasurable. Read the function's own docstring, the WorkerError class docstring, _capture_unmeasurable_reason, and docs/modules/tickets-verify-sweep.md's 'Unmeasurable-cause separation (T-3886)' section (already written for this exact change, MEASURED 2026-09-05): both still accurately describe current behavior, no drift found -- re-acking the moved body digest only.",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-05",
+      "facet": "sig",
+      "new_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
+      "old_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
+      "reason": "T-3886 (landed 7c461d3ff) changed run_coalesced_verification to classify a None verify_fn result via _capture_unmeasurable_reason into ChildTimedOut/ChildSpawnRefused/ChildOutputUnparsable/Unmeasurable instead of one undifferentiated Unmeasurable. Read the function's own docstring, the WorkerError class docstring, _capture_unmeasurable_reason, and docs/modules/tickets-verify-sweep.md's 'Unmeasurable-cause separation (T-3886)' section (already written for this exact change, MEASURED 2026-09-05): both still accurately describe current behavior, no drift found -- re-acking the moved body digest only.",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
     }
   ],
   "entries": [
@@ -4308,7 +4326,7 @@
       "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
     },
     {
-      "digest": "1cd64a856d1e3a0a70015d8e127932be47032bac0462f80d916b6d296a972535",
+      "digest": "52ebae860a6b6753dbbb1a358c78f07a4f27f5f67f725a6b04659aedaa204bcd",
       "facet": "body",
       "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
     },
