@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - pyproject.toml
+- tests/unit/test_dependency_pins.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_dependency_pins.py
+  reason: structural MUST-FIRE/MUST-STAY-QUIET coverage for the win32 tzdata marker
+    lives in this shared dependency-pin test module
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
