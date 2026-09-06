@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'apollo reported a third severity-mismatch instance with a distinct mechanism:
+    a land raises a quarantine for the previous batch and clears it itself, so the
+    ERROR is true when printed and false moments later. Recorded here because the
+    class and cost match, with its different (timing, not static severity) mechanism
+    called out'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3701
+  new_length: 5739
 designated_repro_test: null
 threat: null
 component: null
@@ -94,3 +105,39 @@ ACCEPTANCE
 - FAST_EXIT1 no longer fires on a documented success path.
 - The wider sweep reported.
 - All three fixtures committed.
+## THIRD INSTANCE, and it is the most alarming shape yet
+
+apollo, 2026-09-06:
+
+  "A land can RAISE a quarantine mid-run for the PREVIOUS batch (TEST006 on the
+   stamp) and then CLEAR IT ITSELF when its own reverify passes -- the scary
+   ERROR line is transient; check `frob verify status` before reacting."
+
+The two instances above are success paths mislabelled as ERROR. This one is
+worse: an ERROR that is TRUE WHEN PRINTED and FALSE MOMENTS LATER, resolved by
+the same run that raised it. The user is shown a quarantine -- one of the
+loudest states this system has -- for a condition the run is about to fix on its
+own.
+
+WHY IT BELONGS ON THIS TICKET RATHER THAN ITS OWN: the defect is identical in
+kind -- output whose severity does not describe the outcome -- and the cost is
+the same, which is that a consumer has now written down a SECOND "safe to ignore"
+instruction, this time for a QUARANTINE. That is the state we most need people to
+react to. Teaching users to wait-and-see through a quarantine line is a direct
+attack on the mechanism's purpose.
+
+IT ALSO HAS A DISTINCT MECHANISM, so do not assume this ticket's fix covers it:
+the other two are a static severity choice on a known-good path. This is a
+TIMING problem -- a transient intermediate state made externally visible. The
+candidate fixes differ accordingly: do not surface a quarantine raised for a
+previous batch until the current run's reverify has settled, or label it
+explicitly as provisional ("raised for the previous batch; will clear if this
+run's reverify passes") so the reader knows it is not yet a verdict.
+
+THE CONSUMER'S OWN REMEDY IS THE TELL: "check `frob verify status` before
+reacting". A user needing a SECOND command to find out whether the first
+command's ERROR was real is the definition of an unreliable signal.
+
+ADDITIONAL FIXTURE: a quarantine raised and self-cleared within one run is
+either not surfaced as an ERROR at all, or is surfaced as explicitly provisional
+-- and a quarantine that genuinely persists past the run is still loud.
