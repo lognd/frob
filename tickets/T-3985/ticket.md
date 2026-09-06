@@ -21,6 +21,7 @@ scope:
 - tests/unit/test_check.py
 - docs/modules/process.md
 - tests/unit/gates/test_profile_boundary_subject_count.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -100,6 +101,13 @@ scope_changes:
   glob: tests/unit/gates/test_profile_boundary_subject_count.py
   reason: moved PROFILE001 subject-count POC tests to a new file since the existing
     tests/unit/gates/test_profile_boundary.py is under an active lease held by T-3936
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: SUBJECT001 must be registered in the T-1002 managed _KNOWN_GATE_RULES zone
+    before GATERULE001 will allow this ticket to close (T-1937/T-1956's close-time
+    gate refuses an unregistered constructed rule id)
   actor: logan
   at: '2026-09-06'
 body_changes:
