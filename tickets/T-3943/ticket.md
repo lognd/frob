@@ -49,6 +49,16 @@ scope_changes:
     done-report''s --base-ref governs only the Changed section)'
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: set
+  reason: 'F-271 is a second independent instance (a branch 620+ commits behind) and
+    adds a cheaper mitigation than the fix: warn when the measured diff is grossly
+    disproportionate to the declared scope, which catches a wrong denominator however
+    it was chosen'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3711
+  new_length: 5821
 designated_repro_test: null
 threat: null
 component: null
@@ -121,3 +131,43 @@ ACCEPTANCE
 - close and done-report agree with check on what the base is.
 - The done-report --base-ref partial-application is resolved, not documented around.
 - All three fixtures committed.
+## SECOND REPORT, WITH A CHEAPER MITIGATION THAN THE FIX: F-271
+
+logand.app-v2, 2026-09-06 (their T-0239), repeating F-173:
+
+  "`frob check` without `--base sub-17-rust` produced a MUCH WIDER
+   gate:COV/gate:CROSSTICKET count because the worktree is 620+ COMMITS BEHIND
+   MAIN. frob could INFER THE BASE from the branch's merge-base with the ticket's
+   declared branch, or WARN WHEN THE DIFF AGAINST MAIN IS THOUSANDS OF LINES FOR
+   A TICKET WITH A FIVE-FILE SCOPE."
+
+The original report measured 439 findings collapsing to 8 with the right base.
+This is a second, independent instance on a different branch (620+ commits
+behind), so the defect is not specific to one parked branch.
+
+THEIR SECOND SUGGESTION IS THE VALUABLE ONE AND IT IS NOT THE SAME AS THE FIX.
+Inferring the base (their first suggestion, and this ticket's main proposal) is
+the correct repair. But the WARNING is a cheap, independent safety net that works
+even when inference is wrong or unavailable:
+
+    warn when the diff against the chosen base is thousands of lines while the
+    ticket declares a five-file scope
+
+That is a self-check on the MEASUREMENT ITSELF -- a gross mismatch between the
+declared subject set and the measured one means the denominator is probably wrong,
+whatever produced it. It costs nothing to compute (both numbers are already in
+hand at that point) and it would have caught BOTH reported instances without
+requiring the inference to be correct.
+
+WORTH BUILDING BOTH, and the warning first if the inference proves subtle: a
+wrong inferred base fails silently in exactly the same way as a wrong explicit
+one, so the warning protects the fix as well as the status quo.
+
+RELATED: T-4050 (the scope-denominator epic) covers what set a ticket is
+accountable for; this is the BASE-REF axis of the same question. A "the measured
+set is wildly larger than the declared set" check belongs naturally with that
+work -- note it there if the epic is picked up first.
+
+ADDITIONAL ACCEPTANCE
+- A warning when the measured diff is grossly disproportionate to the declared
+  scope, independent of how the base was chosen.
