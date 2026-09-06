@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/_debt_deprecated.py
 - frob.toml
 - tests/gates_suite/test_debt.py
 scope_breadth_ack: false
@@ -31,6 +30,12 @@ scope_changes:
 - op: add
   glob: tests/gates_suite/test_debt.py
   reason: regression test for the frob.toml severity-override fix
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: fix lives entirely in frob.toml's severity override; this file was never
+    modified, its scope-closure edges (docs/tests fan-out) do not apply
   actor: logan
   at: '2026-09-05'
 evidence:
