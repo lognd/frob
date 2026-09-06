@@ -28,6 +28,10 @@ scope_changes:
     lives in this shared dependency-pin test module
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows::test_dev_group_declares_tzdata_for_win32
+- tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows::test_runtime_dependencies_do_not_declare_tzdata
+- tests/unit/test_dependency_pins.py::TestTzdataDeclaredForWindows::test_non_windows_installs_gain_no_tzdata
 designated_repro_test: null
 threat: null
 component: null
