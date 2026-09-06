@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'internal corroboration of consumer F-218: my own implementer measured 30-367+
+    SCOPE002 closure findings from adding one shared doc/test file to a one-line fix,
+    and had to work around it with waivers plus standalone test modules; T-3914''s
+    Done report documents the same shape historically'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3497
+  new_length: 5925
 designated_repro_test: null
 threat: null
 component: null
@@ -86,3 +96,43 @@ ACCEPTANCE
 - The output's description of its own scoping made accurate.
 - Checked against T-3943 so the two fixes do not conflict.
 - All three fixtures committed.
+## CORROBORATED INTERNALLY, SAME DAY -- and this is now a THREE-WAY arrival
+
+While landing T-3947 and T-3948 (two one-line Windows path-normalisation fixes),
+my own implementer hit this defect head-on and measured it:
+
+  "both tickets initially tried to satisfy AFFECT001 by editing
+   docs/modules/gates.md and adding fixtures to the shared
+   tests/gates_suite/test_compliance.py. Both attempts were reverted after
+   measuring that adding either shared file to a ticket's scope triggers frob's
+   SCOPE002 bidirectional closure check across every OTHER symbol that file also
+   describes/tests -- 30 to 367+ findings depending on the file, wildly
+   disproportionate to a one-line Windows-path fix."
+
+THREE INDEPENDENT ARRIVALS AT ONE DEFECT:
+  1. Consumer F-218 (this ticket): the transitive import closure flags
+     .gitignore/ci.yml/package.json on a ticket with an EMPTY diff.
+  2. My implementer today: adding one shared doc or test file to scope produces
+     30-367+ closure findings for a one-line change.
+  3. T-3914's own Done report already documented this shape historically.
+
+A defect reached from three directions by three actors is not a preference about
+gate tuning. It is the strongest corroboration standard this queue has.
+
+WHAT THE INTERNAL CASE ADDS THAT THE CONSUMER REPORT DOES NOT: it shows the
+closure explosion is triggered by the CORRECT action. The agent was doing exactly
+what AFFECT001 asks -- documenting the changed function and adding a test -- and
+the shared files that are the natural homes for both are precisely the ones whose
+closure detonates. So the gate that demands documentation and the gate that
+polices scope are pulling against each other, and the only way through was a
+waiver plus standalone test modules created solely to avoid the shared file.
+
+THAT WORKAROUND IS ITSELF A COST WORTH COUNTING: new standalone test modules were
+created not because they belong there, but because the shared module could not be
+scoped. Repeated across many tickets, that fragments the test suite as a direct
+consequence of a scope-gate artifact. Note the agent had to add a DUP001-avoidance
+delegation between the two new modules for the same reason.
+
+SO THE DENOMINATOR FIX PROPOSED ABOVE IS NOT ONLY ABOUT FALSE FINDINGS. It also
+removes a standing pressure to avoid shared documentation and shared test files
+-- which is the opposite of what the rest of the system is trying to encourage.
