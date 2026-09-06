@@ -376,7 +376,17 @@ class TestRunSocketDaemon:
         assert response.is_ok
         assert response.danger_ok == []
 
-        thread.join(timeout=5)
+        # T-4055: do not bet on the scheduler -- a fixed `join(timeout=5)`
+        # followed immediately by `assert not thread.is_alive()` failed
+        # under xdist load on ubuntu CI (a 0.3s idle-timeout daemon thread
+        # simply did not get scheduled promptly enough among 13500+
+        # concurrently-collected tests). Poll for the thread actually
+        # dying instead of asserting a fixed deadline -- this still fails
+        # loudly (MUST-FIRE) if the daemon genuinely never exits, but does
+        # not fail merely because this run's scheduler was slow.
+        deadline = time.monotonic() + 30
+        while thread.is_alive() and time.monotonic() < deadline:
+            thread.join(timeout=0.1)
         assert not thread.is_alive()
         assert len(results) == 1
         assert results[0].is_ok
@@ -418,10 +428,6 @@ class TestRunSocketDaemon:
             "for the tracked follow-up."
         ),
     )
-    # reason: 0.3s idle-timeout daemon thread plus a wall-clock polling
-    # loop for socket reachability; nondeterministic under CI scheduler
-    # load, not a deterministic assertion.
-    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_stale_socket_file_is_replaced(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_rep\
@@ -448,7 +454,14 @@ class TestRunSocketDaemon:
         else:
             pytest.fail("daemon never became reachable over the replaced socket")
 
-        thread.join(timeout=5)
+        # T-4055: poll for the thread's actual death instead of a fixed
+        # join/assert pair -- see test_serves_one_request_then_idle_exits
+        # for the rationale (this test carried a `pytest.mark.flaky`
+        # rerun-based workaround for the same underlying wall-clock bet,
+        # which masked rather than fixed the nondeterminism; removed).
+        deadline = time.monotonic() + 30
+        while thread.is_alive() and time.monotonic() < deadline:
+            thread.join(timeout=0.1)
         assert not thread.is_alive()
         assert results[0].is_ok
 

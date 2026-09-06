@@ -2,7 +2,7 @@
 id: T-4055
 title: 'Ubuntu CI fails exactly one DIFFERENT test per run: a load-sensitive flake
   population makes green unreachable by chance'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
