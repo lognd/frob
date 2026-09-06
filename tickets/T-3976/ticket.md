@@ -25,10 +25,28 @@ acceptance:
     vs content-scanned), when this ticket's design step completes, then the note is
     attached before implementation
   evidence: []
-- text: given [[refs.artifact]] is implemented, when a file under a declared artifact
+- text: 'given the proposed refs.artifact construct is implemented (named in prose,
+    not in double-bracket TOML form: as a literal section header it parses as a live
+    config pointer and DOC006 correctly refuses it, because no such key exists yet),
+    when a file under a declared artifact glob changes with no reasoned annotation,
+    then it is flagged the same way an undeclared entrypoint change is today'
+  evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: given [[refs.artifact]] is implemented, when a file under a declared artifact
     glob changes with no reasoned annotation, then it is flagged the same way an undeclared
     entrypoint change is today
-  evidence: []
+  new_text: 'given the proposed refs.artifact construct is implemented (named in prose,
+    not in double-bracket TOML form: as a literal section header it parses as a live
+    config pointer and DOC006 correctly refuses it, because no such key exists yet),
+    when a file under a declared artifact glob changes with no reasoned annotation,
+    then it is flagged the same way an undeclared entrypoint change is today'
+  reason: 'DOC006 fails CI against this criterion''s own text: a PROPOSED config section
+    written in literal TOML section form is indistinguishable from a live config pointer,
+    and no such key exists. Rewritten as prose, matching the same fix applied to T-3931'
+  actor: logan
+  at: '2026-09-06'
 threat: null
 component: null
 anchor: false
