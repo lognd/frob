@@ -2,7 +2,7 @@
 id: T-4085
 title: ticket_runner.run() ambient-cwd resolution accepts a directory with no frob.toml
   and no git repo, silently writing the ledger there
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
