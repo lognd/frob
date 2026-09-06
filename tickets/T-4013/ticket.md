@@ -19,6 +19,7 @@ scope:
 - tests/test_policy.py
 - pyproject.toml
 - uv.lock
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,12 @@ scope_changes:
     direct dependency (was only reachable transitively via mypy, a dev dependency
     -- a bare wheel install would ModuleNotFoundError) in pyproject.toml, re-locked
     in uv.lock'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'closing scope: load_policy/policy_gate''s frob:doc target lives here; T-4013
+    changes documented glob-matching semantics (fnmatch -> pathspec gitwildmatch)'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
