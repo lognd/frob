@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_ffi_boundary.py
 - tests/gates_suite/test_compliance.py
-- docs/modules/gates.md
 - src/frob/gates/_exhaustive_handling.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
@@ -47,6 +46,15 @@ scope_changes:
   reason: T-3947/T-3948 worked as one series in one worktree (identical bug class,
     sibling gate files) -- shared test file (test_compliance.py) and doc (gates.md)
     touched by both, plus the sibling gate source, need scope on each ticket
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: reverted the gates.md doc edit -- editing that shared multi-gate reference
+    file dragged in a full scope-closure requirement over ~40 unrelated gate source
+    files (SCOPE002); resolving AFFECT001 via frob:waive at the two changed sites
+    instead, since this is a comment-only internal fix with no documented-behavior
+    change
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
