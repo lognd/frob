@@ -1,7 +1,7 @@
 ---
 id: T-3985
 title: 'subject-count primitive: enforcing gate with zero subjects is a finding'
-state: queued
+state: in-progress
 kind: invariant
 origin: agent
 created: '2026-09-06'
