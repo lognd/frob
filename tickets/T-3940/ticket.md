@@ -16,10 +16,218 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- docs/modules/gates.md
+- docs/modules/tickets-landing.md
+- docs/modules/tickets-merge-driver.md
+- docs/modules/tickets-verify-sweep.md
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_archive.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/ticket_runner/_verify.py
+- tests/system/test_cli_ticket_land.py
+- tests/test_ticket_land_ty_diff_attribution.py
+- tests/test_ticket_merge_driver.py
+- tests/test_ticket_work_and_land_finish.py
+- tests/ticket_land_suite/test_land_plan.py
+- tests/ticket_land_suite/test_verify_intent.py
+- tests/ticket_land_suite/test_verify_reset.py
+- tests/unit/test_land_auto_rebase.py
+- tests/unit/test_land_cmd_backpressure.py
+- tests/unit/test_land_cmd_quarantine.py
+- tests/unit/test_land_finish_guard.py
+- tests/unit/test_land_finish_idempotent.py
+- tests/unit/test_ticket_runner_land_cmd_flags.py
+- tests/unit/test_ticket_runner_land_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/tickets-merge-driver.md
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_archive.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/system/test_cli_ticket_land.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_ticket_land_ty_diff_attribution.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_ticket_merge_driver.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/ticket_land_suite/test_land_plan.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/ticket_land_suite/test_verify_intent.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/ticket_land_suite/test_verify_reset.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_land_auto_rebase.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_land_cmd_backpressure.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_land_cmd_quarantine.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_land_finish_guard.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_land_finish_idempotent.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_cmd_flags.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'T-3940: _land_cmd.py''s own existing frob:doc/frob:tests edges reach these
+    files (gate:SCOPE002 under-capture) and the test file itself is touched by this
+    ticket''s fix -- widening declared scope to close the gap, not expanding the work
+    performed'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
