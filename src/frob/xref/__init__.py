@@ -126,10 +126,21 @@ def xref(
 
     for path in files:
         ext = path.suffix.lower()
+        # T-3941: `rel` is this module's public contract with every
+        # caller that compares it against a forward-slash literal
+        # (`profile_boundary_gate`'s `_SRC_PREFIX`/`_PROFILE_BOUNDARY_
+        # ALLOWED_FILES`, and any future consumer) -- `str(some_
+        # WindowsPath)` uses backslashes on Windows, which silently
+        # broke every such comparison there (PROFILE001 returning `()`
+        # unconditionally on Windows, T-3941). `Path.as_posix()` is
+        # always forward-slash-separated regardless of platform, on
+        # both the relative-to-root case and the two fallbacks (a bare
+        # filename has no separator to normalize; an absolute `path`
+        # outside `root` can still contain backslashes on Windows).
         try:
-            rel = str(path.relative_to(root)) if root.is_dir() else path.name
+            rel = path.relative_to(root).as_posix() if root.is_dir() else path.name
         except ValueError:
-            rel = str(path)
+            rel = path.as_posix()
 
         if ext in _SOURCE_EXTS:
             defn, file_usages = _search_parsed(path, symbol, rel)

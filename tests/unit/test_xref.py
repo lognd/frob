@@ -168,6 +168,37 @@ def test_text_search_finds_usages_in_strata_file(tmp_path):
     assert {u.line for u in xr.usages} == {1, 2}
 
 
+# frob:ticket T-3941
+def test_definition_and_usage_file_fields_are_posix_style(tmp_path):
+    # frob:tests src/frob/xref/__init__.py::xref kind="unit"
+    """T-3941 MUST-STAY-TRUE contract: `Definition.file`/`Usage.file` are
+    always forward-slash-separated, regardless of platform. This is the
+    exact field `profile_boundary_gate` (PROFILE001) compared against
+    forward-slash literals (`_SRC_PREFIX`, `_PROFILE_BOUNDARY_ALLOWED_
+    FILES`) -- `str(a_relative_WindowsPath)` uses backslashes, which
+    made every such comparison silently fail and PROFILE001 return `()`
+    unconditionally on Windows. A nested directory is required to prove
+    anything here: a single-component relative path has no separator at
+    all to get wrong, so `py_file`'s own top-level fixture could not
+    have caught this."""
+    nested = tmp_path / "pkg" / "sub"
+    nested.mkdir(parents=True)
+    (nested / "defn.py").write_text("def helper():\n    pass\n")
+    (nested / "caller.py").write_text(
+        "from defn import helper\n\nresult = helper(42)\n"
+    )
+
+    xr = xref("helper", tmp_path).danger_ok
+
+    assert xr.definition is not None
+    assert xr.definition.file == "pkg/sub/defn.py"
+    assert "\\" not in xr.definition.file
+    assert xr.usages, "expected at least one usage across the nested tree"
+    for usage in xr.usages:
+        assert usage.file.startswith("pkg/sub/")
+        assert "\\" not in usage.file
+
+
 def test_collect_source_files_skips_hidden_directory(tmp_path):
     # frob:tests src/frob/xref/__init__.py::xref kind="unit"
     # A dot-prefixed directory exercises `_collect_source_files`'s

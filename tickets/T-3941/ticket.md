@@ -2,7 +2,7 @@
 id: T-3941
 title: 'PROFILE001 silently returns zero findings on Windows: xref emits backslash
   paths, gate compares forward-slash prefixes'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
