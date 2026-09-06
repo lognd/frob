@@ -59,6 +59,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 3711
   new_length: 5821
+- mode: set
+  reason: 'F-304 escalates this from a bad default to an ignored flag: the agent PASSED
+    --base and gate:COV still diffed against main, producing 32 findings against an
+    816-commit-stale base. A flag accepted and ignored is worse than no flag, and
+    fixing only the default would leave this half broken'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5821
+  new_length: 8350
 designated_repro_test: null
 threat: null
 component: null
@@ -171,3 +180,48 @@ work -- note it there if the epic is picked up first.
 ADDITIONAL ACCEPTANCE
 - A warning when the measured diff is grossly disproportionate to the declared
   scope, independent of how the base was chosen.
+
+## F-304 ESCALATES THIS FROM A BAD DEFAULT TO AN IGNORED FLAG
+
+logand.app-v2, 2026-09-06:
+
+  "T-0264's agent PASSED --base sub-17-rust; gate:COV STILL reported COV002 on
+   AsciiCanvas.tsx BY DIFFING AGAINST MAIN. F-173/F-271 family: --base should
+   apply to EVERY diff-driven gate, not only SCOPE."
+
+THIS IS A DIFFERENT AND WORSE DEFECT THAN THE ONE THIS TICKET WAS FILED FOR. F-173
+and F-271 are about the DEFAULT being main when no base is given -- bad, but the
+user has a remedy. F-304 says the remedy DOES NOT WORK for gate:COV: the flag is
+accepted, and the gate ignores it. 32 COV002 findings judged against an
+816-commit-stale base while the user had explicitly named the correct one.
+
+A FLAG THAT IS ACCEPTED AND IGNORED IS WORSE THAN NO FLAG. With no flag the user
+knows the base is wrong and can reason about the output. Here they did the right
+thing, got confirmation the option exists, and received findings computed against
+something else entirely -- with nothing in the output saying which base was
+actually used. That is the same shape as `done-report --base-ref` governing only
+the Changed section and not the captured gate state, already recorded above:
+partial application of a flag, silently.
+
+SO THE DELIVERABLE IS NOW TWO THINGS, and the second was not in the original
+framing:
+  1. Infer/derive the base rather than hardcoding main (the original ask), AND
+  2. MAKE --base APPLY TO EVERY DIFF-DRIVEN GATE, not just SCOPE. Enumerate which
+     gates consume a diff and which base each one uses today. The consumer's
+     framing is exactly right: "--base should apply to every diff-driven gate".
+Fixing only (1) leaves a user who passes --base still getting wrong answers from
+COV, which is arguably the more damaging half because it looks like it worked.
+
+THE DISPROPORTION WARNING PROPOSED EARLIER ON THIS TICKET NOW COVERS BOTH CASES,
+which strengthens the argument for shipping it first: "the measured diff is
+thousands of lines for a five-file scope" is true whether the base was defaulted
+badly OR a passed base was ignored. It is a self-check on the measurement rather
+than on the mechanism, so it catches an ignored flag that no amount of correct
+inference would.
+
+ADDITIONAL ACCEPTANCE
+- Every diff-driven gate enumerated, with the base each one uses today stated.
+- --base honoured by all of them, or an explicit reason why a gate legitimately
+  uses a different base.
+- The base actually used is reported in the output, so a mismatch is visible
+  rather than inferred from surprising findings.
