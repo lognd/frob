@@ -2,7 +2,7 @@
 id: T-3947
 title: FFI002 gate mis-scopes test/excluded files on Windows (backslash rel path,
   same class as PROFILE001)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
