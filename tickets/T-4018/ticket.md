@@ -2,7 +2,7 @@
 id: T-4018
 title: Cache reads guard fetchone() with 'is not None' but get an empty tuple, so
   row[0] raises IndexError and aborts a gate run (5 sites)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
