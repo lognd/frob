@@ -47,6 +47,24 @@ from frob.process._lock import (
 
 _log = get_logger(__name__)
 
+
+# frob:ticket T-4018
+def _warn_if_empty_row(
+    row: tuple[object, ...] | None, *, table: str, **keys: object
+) -> None:
+    """Log at WARNING when `row` is present but has zero columns (T-4018) --
+    a `fetchone()` result of `()` is not normal sqlite behaviour, and a
+    truthiness-only miss guard would otherwise swallow it as an ordinary
+    cache miss with no trace of the underlying condition."""
+    if row is not None and len(row) == 0:
+        _log.warning(
+            "cache: fetchone() returned an empty row (present but no "
+            "columns) from table=%s keys=%r -- treating as a cache miss",
+            table,
+            keys,
+        )
+
+
 # frob:ticket T-0279
 # Bumped 1 -> 2: a cache.db written before the T-0336 gates.py fix (which
 # taught `frob.gates` to treat a `frob:tests` edge's src/target endpoints
@@ -686,7 +704,8 @@ def _read_schema_version(
     try:
         cur = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'")
         row = cur.fetchone()
-        return conn, (int(row[0]) if row is not None else None)
+        _warn_if_empty_row(row, table="meta", key="schema_version")
+        return conn, (int(row[0]) if row else None)
     except sqlite3.DatabaseError as exc:
         _log.warning("cache.connect: unreadable db at %s, rebuilding: %s", path, exc)
     try:
@@ -808,7 +827,8 @@ def _check_fingerprint(conn: sqlite3.Connection, path: Path) -> None:
     current = _compute_fingerprint()
     cur = conn.execute("SELECT value FROM meta WHERE key = 'fingerprint'")
     row = cur.fetchone()
-    stored = row[0] if row is not None else None
+    _warn_if_empty_row(row, table="meta", key="fingerprint")
+    stored = row[0] if row else None
     if stored == current:
         return
     _log.info(
@@ -1718,7 +1738,8 @@ def _get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     def _op(c: sqlite3.Connection) -> str | None:
         cur = c.execute("SELECT content_hash FROM files WHERE path = ?", (file_path,))
         row = cur.fetchone()
-        return row[0] if row is not None else None
+        _warn_if_empty_row(row, table="files", path=file_path)
+        return row[0] if row else None
 
     return _run_with_stale_reconnect(conn, _op, what=f"_get_file_hash({file_path})")
 
@@ -1748,7 +1769,8 @@ def get_file_meta(
             (file_path,),
         )
         row = cur.fetchone()
-        return (row[0], row[1], row[2]) if row is not None else None
+        _warn_if_empty_row(row, table="files", path=file_path)
+        return (row[0], row[1], row[2]) if row else None
 
     return _run_with_stale_reconnect(conn, _op, what=f"get_file_meta({file_path})")
 
@@ -2013,7 +2035,13 @@ def load_parsed_artifact(
             "WHERE content_hash = ? AND fingerprint = ?",
             (content_hash, fingerprint),
         ).fetchone()
-        return row[0] if row is not None else None
+        _warn_if_empty_row(
+            row,
+            table="parsed_artifacts",
+            content_hash=content_hash,
+            fingerprint=fingerprint,
+        )
+        return row[0] if row else None
 
     return _run_with_stale_reconnect(
         conn, _op, what=f"load_parsed_artifact({content_hash[:12]})"

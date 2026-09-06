@@ -25,7 +25,7 @@ from typani.result import Result
 from typani.unit import Unit
 
 from frob.dup._models import DupError
-from frob.graph.cache import _compute_fingerprint
+from frob.graph.cache import _compute_fingerprint, _warn_if_empty_row
 from frob.logging import get_logger
 from frob.process._lock import derived_state_write_lock
 
@@ -111,7 +111,8 @@ def _check_fingerprint(conn: sqlite3.Connection) -> None:
     """
     current = f"{_compute_fingerprint()}|dup={_dup_code_fingerprint()}"
     row = conn.execute("SELECT value FROM meta WHERE key = 'fingerprint'").fetchone()
-    stored = row[0] if row is not None else None
+    _warn_if_empty_row(row, table="meta", key="fingerprint")
+    stored = row[0] if row else None
     if stored == current:
         return
     _log.info(

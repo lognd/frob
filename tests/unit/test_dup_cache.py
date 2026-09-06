@@ -172,6 +172,59 @@ class TestFingerprintInvalidation:
         assert _cache.get_fingerprint(tmp_path, "fresh-digest", "r3") == ["current"]
 
 
+# frob:ticket T-4018
+class TestCheckFingerprintEmptyRowGuard:
+    """`fetchone()` can return `()` -- present but zero columns -- not just
+    `None` (T-4018's CI hit, in the sibling `frob.graph.cache` module's
+    identical construct). `_check_fingerprint`'s old `row is not None`
+    guard treated `()` as a real row and crashed on `row[0]`; the fix is
+    a truthiness guard. Constructed directly via `row_factory` rather than
+    raced for, per T-4018."""
+
+    # frob:ticket T-4018
+    def test_empty_meta_row_is_treated_as_no_stored_fingerprint(
+        self, tmp_path: Path
+    ) -> None:
+        """An empty `()` row from the `meta` fingerprint lookup does not
+        raise -- it is treated the same as a genuinely missing row, so the
+        cache is invalidated (not crashed) rather than served stale."""
+        conn_result = _cache._connect(tmp_path)
+        assert conn_result.is_ok, conn_result.err
+        conn = conn_result.danger_ok
+
+        def factory(cursor, row):  # type: ignore[no-untyped-def]
+            columns = [d[0] for d in cursor.description]
+            if columns == ["value"]:
+                return ()
+            return row
+
+        conn.row_factory = factory
+        # Must not raise IndexError.
+        _cache._check_fingerprint(conn)
+
+    # frob:ticket T-4018
+    def test_empty_meta_row_logs_a_warning_naming_table_and_key(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """An empty-but-present `meta` row is not silently swallowed -- it
+        logs a WARNING naming the table and the lookup key (T-4018)."""
+        conn_result = _cache._connect(tmp_path)
+        assert conn_result.is_ok, conn_result.err
+        conn = conn_result.danger_ok
+
+        def factory(cursor, row):  # type: ignore[no-untyped-def]
+            columns = [d[0] for d in cursor.description]
+            if columns == ["value"]:
+                return ()
+            return row
+
+        conn.row_factory = factory
+        with caplog.at_level("WARNING", logger="frob.graph.cache"):
+            _cache._check_fingerprint(conn)
+        warnings = [r.message for r in caplog.records if r.levelname == "WARNING"]
+        assert any("meta" in msg and "fingerprint" in msg for msg in warnings)
+
+
 class TestConnectionReuse:
     """T-0191: get/put no longer reopen `.frob/dup.db` on every call -- one
     connection is cached per resolved db path for the process's lifetime."""

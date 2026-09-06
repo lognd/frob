@@ -125,6 +125,86 @@ class TestParsedArtifacts:
         assert loaded == "two"
 
 
+# frob:ticket T-4018
+class TestEmptyRowGuard:
+    """`fetchone()` can return `()` -- present but zero columns -- not just
+    `None`, on the empty-row condition CI hit under xdist load (T-4018).
+    `row is not None` is True for `()`, so the old guard's `row[0]` raised
+    `IndexError`; the fix is a truthiness guard (`if row`), which covers
+    both `None` and `()`. `row_factory` is the only way to construct the
+    condition directly rather than racing for it (a real sqlite
+    `fetchone()` on a matched single-column SELECT never returns `()`)."""
+
+    # frob:ticket T-4018
+    @staticmethod
+    def _force_empty_rows(conn: sqlite3.Connection) -> None:
+        """Make the `parsed_artifacts.payload` query's `fetchone()` return
+        `()`, modeling the row_factory-interaction hypothesis for T-4018's
+        empty-row condition without racing for it. Scoped by the query's
+        own column list so it does not also blank unrelated reads this
+        module issues internally (e.g. `PRAGMA database_list`)."""
+
+        def factory(cursor: sqlite3.Cursor, row: tuple[object, ...]) -> object:
+            columns = [d[0] for d in cursor.description]
+            if columns == ["payload"]:
+                return ()
+            return row
+
+        conn.row_factory = factory
+
+    # frob:ticket T-4018
+    def test_empty_row_is_a_clean_miss_not_a_crash(self, tmp_path: Path) -> None:
+        """`load_parsed_artifact` returns `None`, not `IndexError`, when
+        `fetchone()` yields `()` for an otherwise-present row (T-4018)."""
+        conn = graph_cache.connect(tmp_path / "cache.db")
+        graph_cache.store_parsed_artifact(
+            conn, content_hash="deadbeef", fingerprint="frob==0.0.0", payload="x"
+        )
+        self._force_empty_rows(conn)
+        loaded = graph_cache.load_parsed_artifact(
+            conn, content_hash="deadbeef", fingerprint="frob==0.0.0"
+        )
+        assert loaded is None
+
+    # frob:ticket T-4018
+    def test_genuine_cached_payload_still_returns_unchanged(
+        self, tmp_path: Path
+    ) -> None:
+        """The truthiness-guard fix does not disturb an ordinary cache hit
+        -- only an empty `()` row is treated specially."""
+        conn = graph_cache.connect(tmp_path / "cache.db")
+        graph_cache.store_parsed_artifact(
+            conn,
+            content_hash="realkey",
+            fingerprint="frob==0.0.0",
+            payload="real-payload",
+        )
+        loaded = graph_cache.load_parsed_artifact(
+            conn, content_hash="realkey", fingerprint="frob==0.0.0"
+        )
+        assert loaded == "real-payload"
+
+    # frob:ticket T-4018
+    def test_empty_row_logs_a_warning_naming_table_and_keys(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """An empty-but-present row is not silently swallowed as an
+        ordinary miss -- it logs a WARNING naming the table and the
+        lookup keys, so cache corruption or a concurrency fault stays
+        diagnosable (T-4018)."""
+        conn = graph_cache.connect(tmp_path / "cache.db")
+        graph_cache.store_parsed_artifact(
+            conn, content_hash="deadbeef", fingerprint="frob==0.0.0", payload="x"
+        )
+        self._force_empty_rows(conn)
+        with caplog.at_level("WARNING", logger="frob.graph.cache"):
+            graph_cache.load_parsed_artifact(
+                conn, content_hash="deadbeef", fingerprint="frob==0.0.0"
+            )
+        warnings = [r.message for r in caplog.records if r.levelname == "WARNING"]
+        assert any("parsed_artifacts" in msg and "deadbeef" in msg for msg in warnings)
+
+
 # frob:ticket T-3607
 _SIBLING_READER_SCRIPT = """
 import sqlite3

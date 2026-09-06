@@ -2,7 +2,7 @@
 id: T-4018
 title: Cache reads guard fetchone() with 'is not None' but get an empty tuple, so
   row[0] raises IndexError and aborts a gate run (5 sites)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -112,6 +112,12 @@ scope_changes:
     cross-file suggestions instead'
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_graph_cache.py::TestEmptyRowGuard::test_empty_row_is_a_clean_miss_not_a_crash
+- tests/unit/test_graph_cache.py::TestEmptyRowGuard::test_genuine_cached_payload_still_returns_unchanged
+- tests/unit/test_graph_cache.py::TestEmptyRowGuard::test_empty_row_logs_a_warning_naming_table_and_keys
+- tests/unit/test_dup_cache.py::TestCheckFingerprintEmptyRowGuard::test_empty_meta_row_is_treated_as_no_stored_fingerprint
+- tests/unit/test_dup_cache.py::TestCheckFingerprintEmptyRowGuard::test_empty_meta_row_logs_a_warning_naming_table_and_key
 designated_repro_test: null
 threat: null
 component: null
