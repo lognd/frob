@@ -23,7 +23,12 @@ no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
-anchor: false
-anchor_reason: null
+anchor: true
+anchor_reason: 'WIRE001 follow_up anchor (T-1856 pattern, T-1831/T-1856 precedent):
+  profile_boundary_subject_count is genuinely wired (called from frob.check._python._subject_count_probes)
+  but only via a function-local deferred import required to avoid a real frob.gates<->frob.check
+  circular import -- the callgraph''s best-effort tracer cannot see through that,
+  a permanent structural fact, not deferred work; stays queued forever so WIRE002''s
+  follow_up-must-be-open check keeps passing'
 land_commit: null
 ---
