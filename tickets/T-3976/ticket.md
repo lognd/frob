@@ -37,6 +37,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 1463
   new_length: 2234
+- mode: append
+  reason: T-4025 item 8's two findings (deleted entry bundle, 138MB tracked binaries
+    in dist/) are both properties of build output this ticket already scopes; cross-referencing
+    rather than filing a second construct, per the coordinator's explicit check-first
+    instruction
+  actor: logan
+  at: '2026-09-06'
+  old_length: 2234
+  new_length: 3318
 designated_repro_test: null
 acceptance:
 - text: given a design note deciding what watched means for an artifact glob (annotation-required
@@ -78,3 +87,6 @@ FINDING THIS WOULD HAVE CAUGHT: frontend/public/** (or equivalent verbatim-copy 
 Proposed: a refs.artifact construct alongside the existing refs.entrypoint one (both named in prose here, not in literal double-bracket TOML form -- refs.artifact does not exist yet, so as a literal section header it parses as a live config pointer and DOC006 correctly refuses it), each file individually justified (mirroring entrypoint's own per-entry reason= discipline visible in _refs_schema.py), declaring a verbatim-copy build/static directory as a watched surface. What "watched" means in practice (min: a change to a declared artifact glob requires a reasoned annotation; ambitious: some content check e.g. no obvious secret/credential pattern) is a design decision to make explicit before implementing.
 
 frob:waive DOC006 reason="the remaining DOC006 finding on this ticket is in the ledger's own `old_text:` audit field, which records the criterion text as it read BEFORE it was corrected. That field is by construction a historical record of text that is no longer live, and `frob ticket accept --amend` -- the sanctioned mechanism for making this exact correction -- is what wrote it. So amending to remove the violation re-creates it, and no amount of further amending can clear it: a no-exit. The live prose has already been fixed to name refs.artifact as prose rather than a literal TOML section header. The structural fix (exempt the old_text audit field from DOC006) is T-3979; this waiver covers only the historical record, not any live pointer" follow_up="T-3979"
+
+
+T-4025 item 8, cross-referenced rather than filed as a second construct -- CHECKED per the coordinator's instruction: this ticket's own refs.artifact proposal (declaring a verbatim-copy build/static directory as a watched surface, each file/glob individually justified) is the right home for both of item 8's findings: a post-build step that deletes the entry bundle (a build-output correctness property) and 138MB of tracked binaries shipping in dist/ (a build-output size/content property). Both are "properties of build OUTPUT, entirely outside frob's graph" in exactly the way this ticket already frames the problem. Fold both into this ticket's design step as concrete motivating cases for what "watched" should mean in practice: the entry-bundle-deletion case argues for the content-scanned option (verify the declared artifact glob's expected files are actually present after build, not just that changes to them are annotated) rather than the cheaper annotation-only option: an annotation alone would not have caught a build step silently DELETING a file that should exist.
