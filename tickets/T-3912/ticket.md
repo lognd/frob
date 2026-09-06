@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
 - tests/gates_suite/test_depr003_severity_override.py
-- tests/gates_suite/test_compliance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +56,13 @@ scope_changes:
     this test''s own _write helper (a class method) to my imported tests.conftest._write
     of the same short name; not a real dependency, widened to unblock close (see filed
     follow-up)'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/gates_suite/test_compliance.py
+  reason: 'reverting: widening scope here cascades into that file''s own large unrelated
+    fan-out (37 warnings); using an import alias instead to eliminate the bare-name
+    collision that caused the false SCOPE002 hit'
   actor: logan
   at: '2026-09-05'
 evidence:
