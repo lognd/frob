@@ -2,7 +2,7 @@
 id: T-4000
 title: 'F-215: evidence-cmd records an empty-output exit-0 no-op as genuine evidence,
   and a bad cmd: entry cannot be retracted'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
