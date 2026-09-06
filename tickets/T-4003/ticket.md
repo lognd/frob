@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: F-225 reports the same zero on a second symbol class (plain .ts script entry
+    points, pre-existing on prerender.ts), which widens the footprint and argues against
+    a JSX/component-specific cause; recorded here rather than filed as a duplicate
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3789
+  new_length: 5517
 designated_repro_test: null
 threat: null
 component: null
@@ -91,3 +100,32 @@ ACCEPTANCE
 - If real: the cache/invalidation path traced and named, not guessed.
 - The zero made self-describing per T-3985.
 - All three fixtures committed.
+## SECOND SYMBOL CLASS, SAME DAY: F-225
+
+  "Script entry points with frob:tests directives still report '0 collected unit
+   case(s)' on frontend/scripts/*.ts (pre-existing on prerender.ts); same root
+   cause as F-172/F-219 (vitest collection not feeding the rule)."
+
+This widens the reported surface from React components (Landing.tsx) to plain TS
+SCRIPT entry points, and notes it is PRE-EXISTING on prerender.ts rather than
+newly introduced. Two different symbol shapes, same zero.
+
+WHY THAT MATTERS FOR DIAGNOSIS RATHER THAN JUST VOLUME: a defect affecting both a
+.tsx component and a plain .ts script argues against anything specific to JSX,
+component detection, or a particular directive placement, and points at the
+collection/caching path this ticket already names as the open question. It also
+argues against the stale-install hypothesis being the WHOLE story -- pre-existing
+on a second file class is a broader footprint than a single missed fix would
+explain, though it still does not rule staleness out.
+
+DO NOT treat the added instance as added evidence for their stated MECHANISM.
+Their attribution is still "same root cause as F-172", and F-172's actual cause
+(the evidence BINDING path, fixed by T-3925) is confirmed NOT to be this code
+path -- TEST002/TEST003 call all three collectors at gates/__init__.py:6367-6384
+and TS was deliberately admitted by T-0730. Two symptoms sharing a wrong
+attribution are still one unproven mechanism.
+
+The acceptance order above is unchanged: rule stale-install in or out FIRST, then
+trace the cache/invalidation path. Use prerender.ts as the second reproduction
+case -- a plain .ts script is a simpler subject than a .tsx component and is the
+better one to bisect against.
