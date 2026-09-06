@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
-- docs/guides/agentic-workflow.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +31,12 @@ scope_changes:
   glob: docs/guides/agentic-workflow.md
   reason: close scope-closure gap surfaced by declaring the whole _closeout.py file
     in scope (pre-existing frob:doc edge, unrelated to this ticket's own fix)
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/guides/agentic-workflow.md
+  reason: 'revert: pulled in a cascade of unrelated cross-referencing files; filing
+    a separate ticket for the pre-existing SCOPE002 gap instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
