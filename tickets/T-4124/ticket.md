@@ -2,7 +2,7 @@
 id: T-4124
 title: 'audit: other fnmatch-against-path-glob call sites share T-4102/T-4013''s normcase
   platform-dependence bug'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
