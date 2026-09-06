@@ -40,6 +40,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 3497
   new_length: 5925
+- mode: set
+  reason: 'F-249 is the breadth axis with a worse trigger: a file the ticket never
+    touched is pulled into its scope verdict by a forward-looking frob:tests directive
+    owned by a DIFFERENT ticket, fired by implementing the symbol correctly. Sharpens
+    the axis from walk-distance to a rule about inbound edges from outside the diff'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5925
+  new_length: 8819
 designated_repro_test: null
 threat: null
 component: null
@@ -146,3 +155,54 @@ delegation between the two new modules for the same reason.
 SO THE DENOMINATOR FIX PROPOSED ABOVE IS NOT ONLY ABOUT FALSE FINDINGS. It also
 removes a standing pressure to avoid shared documentation and shared test files
 -- which is the opposite of what the rest of the system is trying to encourage.
+
+## F-249: THE BREADTH AXIS WITH A NEW AND WORSE TRIGGER -- A FILE THIS TICKET NEVER TOUCHED, PULLED IN BY SOMEONE ELSE'S DIRECTIVE
+
+logand.app-v2, 2026-09-06:
+
+  "T-0051 implemented VerifyEmail. A skipped stub test LEFT FOR T-0092
+   (frontend/tests/unit/pages/verify-email.test.tsx) already carried a
+   `frob:tests` pointing at VerifyEmail::VerifyEmail. THE MOMENT THE SYMBOL
+   EXISTED the directive resolved and SCOPE002 flagged the stub file as
+   touched-by-inference although T-0051 NEVER EDITED IT and it is not in T-0051's
+   scope."
+
+THIS IS THE SAME BREADTH DEFECT AS THE IMPORT-CLOSURE CASE ABOVE, but the
+inbound edge is worse in three ways and the difference matters for the fix:
+
+  1. THE FILE IS NOT IN THE DIFF AT ALL. The import-closure instance at least
+     started from files the ticket touched. Here T-0051 touched nothing in that
+     stub; the file reached IN to the ticket because a directive it did not write
+     began resolving.
+  2. THE EDGE IS OWNED BY ANOTHER TICKET. The stub and its frob:tests belong to
+     T-0092. So one ticket's declared future work contaminates a different
+     ticket's scope verdict the instant the symbol it names comes into existence.
+  3. IT IS TRIGGERED BY DOING THE WORK CORRECTLY. Implementing VerifyEmail is
+     exactly what T-0051 was for. Nothing went wrong; the finding appeared
+     BECAUSE the implementation succeeded. A gate that fires on success is
+     indistinguishable from noise and will be waived.
+
+IT ALSO PENALISES A PRACTICE THIS SYSTEM ENCOURAGES. Leaving a skipped stub
+carrying a forward-looking frob:tests directive is good hygiene -- it is how the
+obligation survives until T-0092 picks it up, and it is the same shape as the
+frob:pending idea already recorded on T-3977. Under the current denominator,
+writing that stub guarantees a spurious finding for whichever ticket implements
+the symbol first. The better the previous ticket behaved, the worse the next one
+looks.
+
+THEIR PROPOSED RULE IS PRECISE AND I WOULD ADOPT IT AS STATED: SCOPE002 should
+fire only on files IN THE DIFF, never on files reached by resolving a directive
+ANOTHER TICKET OWNS. Note the second clause is the important half -- a directive
+this ticket itself wrote is legitimately its business; one written by a different
+ticket is not.
+
+FOR THE PARENT EPIC (T-4050): this sharpens the BREADTH axis from "how far do we
+walk from the diff" to something stricter -- INBOUND edges from files outside the
+diff must not pull those files into the subject set at all, regardless of edge
+kind. The import-closure case and this one are the same answer seen from two
+sides.
+
+ADDITIONAL FIXTURE: implementing a symbol named by a forward-looking frob:tests
+directive in a file the ticket does not own and never touched produces NO
+SCOPE002 finding for that ticket -- while the owning ticket's obligation remains
+intact and still fires for T-0092.
