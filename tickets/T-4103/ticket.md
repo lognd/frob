@@ -21,6 +21,11 @@ scope:
 - tests/integration/test_gitlog.py
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_suite_result_status.py
+- tests/test_mutate_journal.py
+- src/frob/mutate/__init__.py
+- src/frob/mutate/_journal.py
+- docs/modules/mutate.md
+- tests/test_mutate.py
 evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
@@ -166,6 +171,41 @@ scope_changes:
   reason: 'revert: full-scope closure on the mutate module family snowballs indefinitely
     (mutate/__init__.py -> docs/modules/mutate.md -> tests/test_mutate.py -> ...)
     and is unrelated production code T-4103 never touches; handling via waiver instead'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_mutate_journal.py
+  reason: full SCOPE002 closure on the pre-existing tests/conftest.py::pytest_configure/pytest_sessionfinish
+    frob:tests bindings this repo's frob.toml promotes to error; tracking-only, no
+    edits intended to the mutate module family
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/mutate/__init__.py
+  reason: full SCOPE002 closure on the pre-existing tests/conftest.py::pytest_configure/pytest_sessionfinish
+    frob:tests bindings this repo's frob.toml promotes to error; tracking-only, no
+    edits intended to the mutate module family
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/mutate/_journal.py
+  reason: full SCOPE002 closure on the pre-existing tests/conftest.py::pytest_configure/pytest_sessionfinish
+    frob:tests bindings this repo's frob.toml promotes to error; tracking-only, no
+    edits intended to the mutate module family
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/mutate.md
+  reason: full SCOPE002 closure on the pre-existing tests/conftest.py::pytest_configure/pytest_sessionfinish
+    frob:tests bindings this repo's frob.toml promotes to error; tracking-only, no
+    edits intended to the mutate module family
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_mutate.py
+  reason: full SCOPE002 closure on the pre-existing tests/conftest.py::pytest_configure/pytest_sessionfinish
+    frob:tests bindings this repo's frob.toml promotes to error; tracking-only, no
+    edits intended to the mutate module family
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
