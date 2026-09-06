@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'fifth and sixth sightings: a one-line TSDoc edit blocked by a parked branchs
+    subtree lease demonstrates the whole causal chain; plus the refusal-should-name-the-holder
+    ask'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 5051
+  new_length: 7400
 designated_repro_test: null
 threat: null
 component: null
@@ -116,3 +125,45 @@ ACCEPTANCE
 - The nine consumer findings mapped to whichever are resolved and whichever
   remain.
 - Both fixture sets committed.
+
+
+
+FIFTH AND SIXTH SIGHTINGS, arriving within minutes of this ticket being filed.
+
+  F-143  a lease on `frontend/src/**` held by a ticket on ONE PARKED BRANCH
+         blocks a ONE-LINE TSDoc EDIT on ANOTHER branch.
+
+THIS IS THE CLUSTER'S THESIS DEMONSTRATED END TO END, and it is worth reading as
+a single causal sentence rather than as another data point:
+
+    precise scope is expensive to declare (F-051/F-063/F-106/F-138)
+      -> so the ticket declared `frontend/src/**`, a whole subtree
+      -> that glob is a WRITE LEASE, not merely a coverage statement
+      -> the ticket's branch was then parked
+      -> the lease has NO LIFECYCLE INDEPENDENT OF TICKET STATE, so it persists
+      -> a one-line documentation edit on an unrelated branch is refused
+
+Every link is a separate finding already listed in this ticket. F-143 is the
+first report where all of them fire together on a change that could not
+possibly conflict -- a TSDoc comment. The cost is not theoretical contention;
+it is a trivial edit blocked by a branch nobody is working on.
+
+NOTE ALSO WHAT THE OPERATOR HAD TO DO IN F-142's SIBLING REPORT: hand-scan with
+`grep -l '^state: in-progress'` across the ledger to discover which parked
+tickets held the leases. There is no verb that answers "what is blocking me and
+why" -- fleet_status reports leases as live/reclaimable/leaked from the
+coordinator's seat, but an agent in a worktree hitting a refusal gets the
+refusal and nothing else. WHATEVER DIRECTION IS CHOSEN, ADD THAT: a refusal
+should name the holding ticket, its branch, and whether that branch is parked.
+That is cheap, independent of the design decision, and it converts a grep hunt
+into a sentence.
+
+SEPARATE FINDING FROM THE SAME BATCH, RECORDED HERE ONLY SO IT IS NOT LOST --
+FILE IT ON ITS OWN, IT IS NOT PART OF THIS CLUSTER: "ticket verbs run in a
+parked-branch worktree move that branch's history under sibling worktrees".
+That is a HISTORY-MUTATION claim, not a lease claim, and if it is accurate it is
+more serious than anything in this ticket -- a ledger verb in one worktree
+altering what a sibling worktree sees is the shape that produced the
+conflict-marker corruption in T-3892. CONFIRM THE MECHANISM BEFORE ACTING: I
+have not verified it, and "move that branch's history" could describe several
+different behaviours, only some of which are defects.
