@@ -19,6 +19,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: T-4025 item 1 is another instance of the subject-count primitive (reachability-from-entrypoint
+    is a zero-subjects-examined shape); cross-referencing per the coordinator's instruction
+    rather than filing a duplicate
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3748
+  new_length: 4648
 designated_repro_test: null
 acceptance:
 - text: given the design step, when it completes, then it states an explicit checkable
@@ -59,3 +68,6 @@ TWO DESIGN CONSTRAINTS THAT MUST BE ANSWERED IN THIS TICKET'S DESIGN STEP, NOT L
 2. THIS INTERSECTS T-3844'S TWO-KINDS-OF-ZERO PROBLEM (read T-3844 before designing): zero findings because the code is clean, versus zero findings because the condition/subject never arose. T-3844 measured findings-by-rule at the SEVERITY layer and could not distinguish these -- a rule promoted to error while genuinely clean is fine; a rule promoted to error while silently examining nothing is exactly the PROFILE001 shape. The subject count is precisely the missing signal T-3844's own measurement could not see. Design how a subject count would have changed T-3844's promotion decisions (would any of the 308 promoted-to-error zero-finding rules have shown a zero SUBJECT count, meaning they were never really exercised rather than clean) as part of validating this design.
 
 SCOPE: add a subject_count (or subjects_examined) field to the shared ToolResult/diagnostic-emitting model (src/frob/process/parsers/common.py::ToolResult) that every gate/check populates, plus a new cross-cutting check (run after normal gate execution, reading the collected results) that flags any ENFORCING gate reporting subject_count == 0. This is infrastructure work touching many gates' call sites to populate the field -- scope the FIRST landing to the model change plus the cross-cutting check plus 2-3 gates as a proof of concept (PROFILE001/T-3941's own gate is the obvious first target, since it is the proven positive control), not a repo-wide rollout in one ticket.
+
+
+T-4025 item 1 is another instance of this ticket's own primitive, cross-referenced rather than duplicated. FINDING: a frontend component fully implemented, tested, and V-model-closed, that is NEVER INVOKED from any real entrypoint -- frob knows package.json declares an entrypoint and knows the script names, but does not model REACHABILITY from a declared entrypoint down to the component. This is a vacuous-pass shape at the component-invocation level rather than the gate level: three green, closed components that nothing calls is exactly "a check with a subject count of zero" one layer further down the call graph. Fold this into the design step's scope: does the subject-count primitive generalize to "is this V-model-closed unit ever reached from a declared entrypoint," or does that need its own reachability pass reusing the same callgraph BFS machinery already proven for COV006/T-3962.
