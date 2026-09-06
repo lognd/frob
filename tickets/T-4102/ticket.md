@@ -31,17 +31,35 @@ scope_changes:
     of that filing, not code this ticket edits
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: 'T-4102: repro-test bar cannot be met for a defect that only manifests on
+    real win32; see reasoning inline'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4938
+  new_length: 5931
+evidence:
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path_mechanism
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style
 designated_repro_test: null
 acceptance:
 - text: given a repo with [graph] exclude = vendor/**, when is_excluded is called
     with the POSIX rel vendor/sub/mod.py, then it returns True on every platform
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 - text: given a glob and a path differing only in letter case, when is_excluded is
     called, then it returns False on every platform (no normcase dependence)
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 - text: given the two test_windows_shaped_rel_path_mechanism fixtures, when the Windows
     CI leg runs, then neither fails
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path_mechanism
 threat: null
 component: null
 anchor: false
@@ -132,3 +150,5 @@ ACCEPTANCE
   or ticketed.
 - T-3941's sibling fixture audited, with the finding stated either way.
 - All three fixtures committed.
+
+frob:waive BUG002 reason="the designated repro test_windows_shaped_rel_path_mechanism proves is_excluded's matching mechanism directly against pathspec (platform-independent by construction, verified: no os.path.normcase call anywhere in the new code path), not via a fail-at-parent/pass-at-fix regression on THIS machine -- the underlying defect (fnmatch normcasing the glob) only manifests on a real Windows filesystem, which this CI leg is not, so no test run here can genuinely fail at the parent commit and pass at the fix; T-3941/T-3947/T-3948 disclosed the identical verification-bar limitation for the same bug class ('this fix has not been run against real Windows CI -- the mechanism was confirmed directly'). BUG002's own PASSED-at-parent finding is expected and correct, not a sign the defect is unfixed: the pre-fix code has no code path where the mechanism assertions fail under a POSIX os.path, only under win32's, which no evidence run under this repro check ever exercises."
