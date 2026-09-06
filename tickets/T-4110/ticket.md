@@ -145,6 +145,27 @@ scope_changes:
     landing a new one' obligation, not new capability surface.
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/strata/test_selfconform_kinds.py::TestMatchedRealFiles::test_returns_only_matching_files
+- tests/unit/strata/test_selfconform_kinds.py::TestMatchedRealFiles::test_empty_when_no_glob_matches
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchNodeCodeIds::test_node_with_zero_matching_files_is_flagged
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchNodeCodeIds::test_node_with_at_least_one_matching_file_is_not_flagged
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchNodeCodeIds::test_node_with_no_code_glob_at_all_is_skipped
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchNodeCodeIds::test_disjoint_from_fully_excluded_node_ids
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchViaEntries::test_glob_form_via_matching_no_owned_file_is_flagged
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchViaEntries::test_glob_form_via_matching_owned_file_is_not_flagged
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchViaEntries::test_symbol_form_via_is_never_flagged_even_when_matching_nothing
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchViaEntries::test_via_naming_a_graph_excluded_real_file_is_not_flagged
+- tests/unit/strata/test_selfconform_kinds.py::TestZeroMatchViaEntries::test_node_with_no_may_grants_yields_nothing
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchCodeGlob::test_must_fire_when_code_glob_matches_nothing
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchCodeGlob::test_must_not_fire_when_glob_matches_real_files_with_zero_observed_capability
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchCodeGlob::test_must_not_fire_when_glob_matches_real_files_that_exercise_capability
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchCodeGlob::test_must_not_fire_for_fully_graph_excluded_node
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchViaEntry::test_must_fire_when_via_glob_matches_no_owned_file
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchViaEntry::test_must_not_fire_for_symbol_form_via_matching_zero_files
+- tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchViaEntry::test_must_not_fire_when_via_glob_matches_owned_file
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 designated_repro_test: null
 threat: null
 component: null
