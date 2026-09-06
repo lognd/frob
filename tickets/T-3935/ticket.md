@@ -20,6 +20,7 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
+- docs/guides/release.md
 evidence_scope:
 - docs/guides/release.md
 scope_breadth_ack: false
@@ -114,6 +115,13 @@ scope_changes:
     by this ticket; evidence-only avoids a write lease this ticket does not use and
     (measured) avoids the full write-scope doc-closure recursion that otherwise pulls
     in every other unrelated symbol this large doc also anchors
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/release.md
+  reason: scripts/artifact_smoke.py (already in scope) has pre-existing frob:doc anchors
+    into this file (T-3884); SCOPE002 requires the full doc file in scope even though
+    this ticket only cites the artifact-smoke-stage-t-3884 section
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
