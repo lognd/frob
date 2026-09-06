@@ -85,6 +85,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 9386
   new_length: 13772
+- mode: set
+  reason: 'third complete Windows run: 26 -> 19 with cluster C (cycle detector) entirely
+    cleared including its positive control, and two of the HOME cluster. Records one
+    NEW failure (gate cache serving a stale hit after a tracked-file edit) and verifies
+    it is not from T-3985, which landed after this commit'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 13772
+  new_length: 17027
 designated_repro_test: null
 threat: null
 component: null
@@ -266,3 +275,60 @@ CLUSTER F -- SINGLETONS (8): tzdata (already T-4046), the TTY assertion in
 
 SUGGESTED ORDER: C (dead detector) -> A's two false fixtures -> B (one cause, 3
 tests) -> E (encoding, may unblock others) -> D -> A's remainder -> F.
+
+## MEASURED DELTA ON cc3dae236: 26 -> 19, WITH WHOLE CLUSTERS CLEARED
+
+Third complete Windows run (collected=13494, failed=19). macOS PASSED on the same
+commit -- the first fully green leg of this drive -- and ubuntu was still running.
+
+CLEARED SINCE THE 26-FAILURE RUN, and each confirms a landed fix on real Windows
+rather than by simulation:
+  - test_cycle_waiver x3  -> T-4056 (the dead cycle detector). The whole of
+    cluster C is gone, INCLUDING the unwaived positive control. That is the
+    strongest confirmation available: the detector now finds the cycle it was
+    blind to.
+  - test_telemetry, test_skills_sync -> T-4057's Path.home fixture fix. Two of
+    that cluster's three.
+  - test_process_lock x3 (the `git config` exit-130 and BrokenProcessPool cases)
+    and test_reconcile_auto_commit -> cleared without a targeted fix; likely
+    downstream of the same environment work, but NOT attributable with
+    confidence. Do not claim them.
+
+STILL FAILING AND EXPECTED TO:
+  - The two path-shape fixtures (ffi_boundary, exhaustive_handling) fail with the
+    SAME assertion as before -- `is_excluded('vendor\sub\mod.py', ('vendor/**',))`
+    returns True. That is the false premise recorded on T-3947/T-3948: fnmatch
+    normcases the GLOB's forward slashes to backslashes on Windows, so the match
+    SUCCEEDS and the fixtures assert the opposite. REWRITE OR DELETE THEM; they
+    are two of the 19 and neither represents a real defect.
+  - test_sync_claude_config_stale_guard: T-4057's CRLF production fix did NOT
+    resolve it on real Windows. That agent explicitly caveated the fix rested on
+    documented git/ntpath semantics rather than a measurement -- the caveat was
+    right. Re-open that mechanism rather than assuming the fix is merely
+    incomplete.
+  - tzdata (test_fuzz) is back, with the same ZoneInfoNotFoundError. It was absent
+    from the previous run purely because hypothesis did not generate the case --
+    confirming the earlier note that its absence was luck, not resolution.
+    T-4046 remains unfixed.
+
+ONE NEW FAILURE, NOT PRESENT IN THE 26-RUN:
+    tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates
+    ::test_tracked_file_edit_forces_process_gate_recompute
+    "a tracked-file edit must force a real archgate re-run, not a stale cache
+     hit" -- assert 0.0 != 0.0
+
+I CHECKED WHETHER THIS IS OURS AND IT IS NOT T-3985: that ticket wired
+subject-count probes into `src/frob/check/_python.py` (the gate pipeline, exactly
+where a cache regression would live), but it landed AFTER this commit and is still
+unpushed -- `git merge-base --is-ancestor 79200c119 cc3dae236` is false. The
+assertion itself dates to T-1445's gate-result cache work.
+
+So it is either a genuine Windows cache defect (mtime resolution or cache keying
+differing on NTFS is the obvious candidate) or a new flake. TREAT IT AS THE FIRST
+UNTIL MEASURED: an archgate timing of exactly 0.0 means the gate did not run at
+all, which is a stale-cache hit -- and a cache that serves stale results after a
+tracked-file edit is a silent-zero shape, not a timing wobble.
+
+RUNNING TALLY: 49 (aborted) -> 28 (aborted) -> 26 -> 25 -> 19. The first three
+were floors from runs that aborted mid-suite; only the last three are complete
+counts.
