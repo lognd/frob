@@ -19,11 +19,8 @@ scope:
 - tests/unit/test_conftest_stackdump.py
 - .github/workflows/ci.yml
 - tests/integration/test_gitlog.py
-- tests/test_mutate_journal.py
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_suite_result_status.py
-- src/frob/mutate/__init__.py
-- src/frob/mutate/_journal.py
 evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
@@ -148,6 +145,27 @@ scope_changes:
     requires these in write scope (evidence-only demotion does not satisfy SCOPE002);
     transitively pulls in the two mutate modules test_mutate_journal.py itself cites
     -- tracking-only, no edits planned to any of these files
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_mutate_journal.py
+  reason: 'revert: full-scope closure on the mutate module family snowballs indefinitely
+    (mutate/__init__.py -> docs/modules/mutate.md -> tests/test_mutate.py -> ...)
+    and is unrelated production code T-4103 never touches; handling via waiver instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/mutate/__init__.py
+  reason: 'revert: full-scope closure on the mutate module family snowballs indefinitely
+    (mutate/__init__.py -> docs/modules/mutate.md -> tests/test_mutate.py -> ...)
+    and is unrelated production code T-4103 never touches; handling via waiver instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/mutate/_journal.py
+  reason: 'revert: full-scope closure on the mutate module family snowballs indefinitely
+    (mutate/__init__.py -> docs/modules/mutate.md -> tests/test_mutate.py -> ...)
+    and is unrelated production code T-4103 never touches; handling via waiver instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
