@@ -18,7 +18,6 @@ scope:
 - src/frob/policy/__init__.py
 - tests/test_policy.py
 - pyproject.toml
-- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +61,12 @@ scope_changes:
   reason: gates.md is a huge doc file whose closure balloons scope by 343 unrelated
     anchors; will address the SCOPE002 doc-edge advisory a narrower way instead of
     pulling in the whole file
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: uv.lock
+  reason: uv.lock is land-owned (T-0731); lockfile update happens at land time, not
+    something this ticket's diff controls directly
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
