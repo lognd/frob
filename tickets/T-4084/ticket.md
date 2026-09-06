@@ -20,6 +20,16 @@ no_scope_declared: true
 no_scope_declared_reason: 'tier=epic: collects a tenth consumer''s ten findings; most
   are corroboration routed to existing tickets, and the two genuinely new items (docs
   absent from the wheel, graph cache stale mid-check) need their own scoped children'
+body_changes:
+- mode: set
+  reason: 'measured the packaging question item 4 raised: pyproject packages only
+    src/ and lists four package-data entries, none of them docs/. So docs/ genuinely
+    is not in the wheel, the packaging is deliberate, and the MESSAGES citing docs/
+    paths are the defect -- recording it so the child does not re-derive it'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5917
+  new_length: 8173
 designated_repro_test: null
 threat: null
 component: null
@@ -118,3 +128,47 @@ ACCEPTANCE
   lexical-hook tickets rather than refiled.
 - Items 5 and 9 cross-referenced to T-3985 and T-4069 respectively.
 - Item 8 decided deliberately, either way.
+## ITEM 4's FIRST QUESTION IS ALREADY ANSWERED: docs/ IS NOT IN THE WHEEL
+
+I asked above whether docs/ is meant to ship. Measured, so the child ticket does
+not need to re-derive it. pyproject.toml:205-214:
+
+    [tool.setuptools]
+    packages = { find = { where = ["src"] } }
+
+    [tool.setuptools.package-data]
+    frob = [
+        "py.typed",
+        "scaffold/data/**/*.j2",
+        "scaffold/data/**/*.toml",
+        "logging/config.toml",
+    ]
+
+Only `src/` is packaged, and package-data lists four specific things -- py.typed,
+the scaffold templates, and a logging config. `docs/` appears NOWHERE. So the
+consumer's report is exactly right: every runtime message citing a docs/ path is
+unresolvable for anyone who installed frob rather than cloning it.
+
+THAT SETTLES WHICH HALF TO FIX. The packaging is deliberate and sensible -- docs/
+is large, and shipping a whole documentation tree inside a wheel is not obviously
+right. So THE MESSAGES ARE THE DEFECT, not the packaging. Every diagnostic that
+says "see docs/..." is written from the perspective of someone standing in the
+repo, and the majority of frob's users are not.
+
+WHAT THE CHILD SHOULD DO:
+1. ENUMERATE every runtime message citing a docs/ path. T-4020 already found one
+   citing a dead ANCHOR and asked for a sweep of doc references in messages --
+   that sweep and this one are the same work, so DO THEM TOGETHER and note it on
+   T-4020.
+2. Decide the remedy per message. Options, and the right answer probably differs
+   by case: point at a published URL rather than a repo path; inline the essential
+   grammar into the message; or ship a minimal reference subset in package-data
+   for the few documents diagnostics actually cite. The consumer's specific pain
+   was the strata `node` grammar and the vmodel vocabulary -- a small, bounded set.
+3. FIX THE `#` COMMENT MESSAGE REGARDLESS. "unexpected character '#'" for a file
+   whose comment syntax is `//` is a one-line improvement that would have saved
+   this user most of their probing, and it does not depend on the packaging
+   decision at all. Ship it first.
+
+DO NOT resolve this by adding docs/ to the wheel without measuring the size cost
+and deciding it deliberately -- that is the tempting fix and it may well be wrong.
