@@ -24,6 +24,7 @@ scope:
 - src/frob/app/config.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - tests/test_tickets_evidence_removal.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -91,6 +92,14 @@ scope_changes:
     from frob.tickets._evidence at its one call site instead of being re-exported
     from the package, which sidesteps SCOPE002''s transitive closure explosion across
     the whole re-export surface'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'FLAGCOV001: --cwd/--remove CLI flags parse to AppConfig fields (ticket_evidence_cwd,
+    ticket_evidence_remove) but the from_external forwarding layer''s field-copy tuple
+    never listed them, so they were silently dropped before reaching the model --
+    the exact T-2387/T-0749 defect FLAGCOV001 exists to catch'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
