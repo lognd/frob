@@ -13,11 +13,16 @@ covered here.
 A standalone module (not tests/gates_suite/test_compliance.py, where
 this gate's other fixtures live) so this ticket's scope stays narrow --
 that shared file's `frob:tests` directives fan out into dozens of
-unrelated gates' source files via scope closure."""
+unrelated gates' source files via scope closure.
+
+T-4102: `test_windows_shaped_rel_path_mechanism` below originally
+asserted a false premise (it predicted `os.path.normcase`-under-Windows
+behaviour from a `PureWindowsPath` run on Linux, which does not
+simulate the stdlib) -- see that function's own docstring."""
 
 from __future__ import annotations
 
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 
 from frob.gates._ffi_boundary import ffi_boundary_gate
 from tests.conftest import _by_rule, _write
@@ -72,29 +77,54 @@ def test_rel_path_fed_to_exclude_and_test_checks_is_posix_style(
         assert "\\" not in v.file
 
 
-# frob:ticket T-3947
+# frob:ticket T-4102
 def test_windows_shaped_rel_path_mechanism() -> None:
-    """Reproduces the exact pre-fix/post-fix mechanism with
-    `PureWindowsPath` (no Windows machine available -- same method
-    T-3941 used to prove PROFILE001's identical bug class, and T-3948's
-    sibling fix at `_exhaustive_handling`'s equivalent site). Pre-fix
-    (`str(a_relative_WindowsPath)`), a backslash-joined `rel` makes
-    `is_excluded` fail to match a real `[graph].exclude` glob AND makes
-    `is_test_file`'s `tests/` directory-component check see only one
-    opaque part -- both silently wrong. Post-fix (`.as_posix()`), both
-    are correct."""
-    from frob.excludes import is_excluded, is_test_file
+    """T-4102: this fixture used to reproduce the pre-fix/post-fix
+    mechanism with `PureWindowsPath` and assert `is_excluded` returns
+    `False` for a backslash-joined `rel` against a POSIX glob. That
+    claim was true on Linux (where `fnmatch.normcase` is the identity
+    function) but FALSE on real Windows (`fnmatch.fnmatch`, excludes.py's
+    old matcher, runs BOTH operands through `os.path.normcase`, which
+    turns the glob's `/` into `\\` on Windows -- so the backslash path
+    incidentally MATCHED). `PureWindowsPath` simulates Windows PATH
+    SHAPES; it does not simulate the Windows STDLIB, so this was never
+    provable from Linux -- exactly the trap this ticket exists to
+    document (do not repeat it: MEMORY.md).
 
-    root = PureWindowsPath("C:/repo")
-    excluded_path = PureWindowsPath("C:/repo/vendor/sub/mod.py")
-    test_path = PureWindowsPath("C:/repo/tests/sub/test_mod.py")
+    T-4102 migrated `is_excluded` to pathspec's gitwildmatch dialect,
+    which never normcases either operand, so the matching question is no
+    longer platform-conditional at all: the same (rel, glob) pair
+    answers identically everywhere. What is actually true and actually
+    worth asserting is that directly, plus the specific failure mode
+    (case-folding) `os.path.normcase` used to introduce -- not a
+    prediction of what a Windows library would do, run from Linux.
 
-    pre_excl_rel = str(excluded_path.relative_to(root))
-    post_excl_rel = excluded_path.relative_to(root).as_posix()
-    pre_test_rel = str(test_path.relative_to(root))
-    post_test_rel = test_path.relative_to(root).as_posix()
+    `is_test_file`'s own `tests/` directory-component check is unrelated
+    to this bug: it parses via `PurePosixPath`, which never consults
+    `os.path`, so it was never platform-dependent -- see
+    `test_rel_path_fed_to_exclude_and_test_checks_is_posix_style` for its
+    POSIX-`rel` coverage."""
+    from frob.excludes import is_excluded
 
-    assert is_excluded(pre_excl_rel, ("vendor/**",)) is False
-    assert is_excluded(post_excl_rel, ("vendor/**",)) is True
-    assert is_test_file(pre_test_rel) is False
-    assert is_test_file(post_test_rel) is True
+    # A POSIX-shaped rel (what the producers now emit via `.as_posix()`)
+    # matches its glob the same way on every platform -- pathspec never
+    # consults `os.path`, so there is no platform for the answer to vary
+    # by.
+    assert is_excluded("vendor/sub/mod.py", ("vendor/**",)) is True
+
+    # A backslash-joined rel (what a naive `str(a_relative_path)` would
+    # have produced pre-`.as_posix()`) never matches a POSIX-shaped glob,
+    # on ANY platform: gitwildmatch treats `\\` as a literal character,
+    # never a path separator, and performs no normcase step. This is the
+    # replacement for the false pre-fix/post-fix claim above -- true
+    # unconditionally, not true-on-Linux-only.
+    assert is_excluded("vendor\\sub\\mod.py", ("vendor/**",)) is False
+
+    # THIRD FIXTURE (ticket T-4102): a glob and a path differing only in
+    # case never match, proving there is no `os.path.normcase` dependence
+    # left. `fnmatch.fnmatch` case-folded on Windows and on
+    # case-insensitive filesystems' `normcase`, silently making
+    # `[graph].exclude` mean different things per platform for the exact
+    # same repo config.
+    assert is_excluded("Vendor/sub/mod.py", ("vendor/**",)) is False
+    assert is_excluded("vendor/sub/mod.py", ("Vendor/**",)) is False

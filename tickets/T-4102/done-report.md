@@ -1,0 +1,51 @@
+## Done report
+
+Changed:
+- src/frob/excludes.py::is_excluded -- migrated from `fnmatch.fnmatch` to pathspec gitwildmatch (`_compiled_globs`, `lru_cache`d per glob tuple), matching T-4013's identical fix in `frob.policy`. `fnmatch.fnmatch` runs both operands through `os.path.normcase`, which folds case and turns a glob's `/` into `\\` on Windows -- so the same (rel, glob) pair could answer differently per platform. pathspec's gitwildmatch dialect never normcases either operand.
+- src/frob/excludes.py::load_exclude_globs -- docstring updated (was: "match ... via fnmatch"; now names pathspec/gitwildmatch).
+- src/frob/excludes.py::_should_prune_dir -- docstring's "fnmatch requires trailing characters" line reworded to "gitwildmatch's `**` requires a path component after the `/`" (same behavior, verified: `is_excluded("generated/.", ("generated/**",))` is still `True` under pathspec, preserving the `prefix/**` probe trick this function relies on).
+- src/frob/excludes.py::is_excluded -- `frob:waive AFFECT001`: the matcher swap has no Linux-visible/documented-behavior change for the POSIX-shaped rel every producer emits; docs/modules/app.md's own description ("True if rel_path matches one of the globs") describes the contract, not the matcher, and stays accurate unwritten.
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism -- REWRITTEN. Previously asserted `is_excluded("vendor\\sub\\mod.py", ("vendor/**",)) is False`, a claim that was true on Linux only (fnmatch.normcase is the identity function there) and false on real Windows (normcase there turns the glob's `/` into `\\`, so it matched) -- proven only via `PureWindowsPath` path-shape simulation, which does not simulate the Windows stdlib. Replaced with three assertions that are true on every platform: a POSIX rel matches its glob; a backslash-joined rel never matches a POSIX glob (gitwildmatch treats `\\` as a literal, never normcases); and a glob/path differing only in case never match (the specific `os.path.normcase` failure mode this ticket closes). Dropped the unused `PureWindowsPath` import.
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path_mechanism -- unchanged in body (it delegates by calling the FFI boundary file's function of the same name directly), inherits the rewrite above automatically.
+
+Evidence:
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production (regression, unaffected)
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style (regression, unaffected)
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path_mechanism
+- tests/unit/gates/test_exhaustive_handling_path_shape.py's other two fixtures (regression, unaffected)
+- Also run (not bound, all pass, confirms no regression to the shared `frob.excludes` surface): tests/test_excludes.py (23 tests), tests/unit/test_xref.py (T-3941's own suite).
+- `frob test --base main`: exit=0, selected 7 python tests (touched=9 ripple=0), all recorded PASS.
+
+Windows-mechanism verification method (documented, matching T-3941/T-3947/T-3948's own disclosed bar): confirmed directly against pathspec's real behavior on this (Linux) machine -- `pathspec.PathSpec.from_lines("gitignore", ["vendor/**"]).match_file(...)` returns `False` for both `"vendor\\sub\\mod.py"` and `"Vendor/sub/mod.py"`/`"vendor/sub/mod.py"` vs `"Vendor/**"`, and `True` for `"vendor/sub/mod.py"` -- and pathspec's own design (it operates on the string directly, never calls `os.path.normcase`) means these answers are the same on every platform, unlike the old `fnmatch.fnmatch`-based mechanism which genuinely depended on which OS's `os.path` module was loaded. This repo's actual Windows CI runner reaching this code path has not been separately re-verified (no Windows machine available here either) -- expected outcome per T-4102's own acceptance criterion: "the Windows failure count drops by exactly 2."
+
+T-3941 audit (frob.xref.xref's sibling fixture, `tests/unit/test_xref.py::test_definition_and_usage_file_fields_are_posix_style`): AUDITED, NOT the same false-premise bug. It does not use `PureWindowsPath` or predict `os.path.normcase` behavior at all -- it writes real files to `tmp_path` on the actual filesystem and asserts `Definition.file`/`Usage.file` are forward-slash (comparing xref's own `.as_posix()`-producing code against literal `/`-joined strings), which is a real, platform-independent assertion about `frob.xref.xref`'s own producer code, not about `is_excluded`/`fnmatch`/`os.path.normcase` at all. No false premise found; no fix needed.
+
+Other fnmatch-against-path-glob call sites: found in 13 more files (src/frob/gates/__init__.py, _doclink_docanchor.py, _fix_engine_text.py, _refs.py; src/frob/strata/_code_binding.py, _effects.py, _selfconform_kinds.py; src/frob/tickets/_doable.py, _land_git_ops.py, _land_merge_zones.py, _models.py, _new_renumber.py, _scope.py) -- all outside T-4102's declared scope (src/frob/excludes.py + the two test files). Filed as T-4124 "audit: other fnmatch-against-path-glob call sites share T-4102/T-4013's normcase platform-dependence bug" (pending renumber at land) with the full file:line list and per-site audit guidance (not every hit is necessarily a bug -- e.g. `_refs.py`'s `fnmatch.fnmatchcase` never normcases; `_models.py`/`_scope.py`'s narrow-vs-broad SCOPE glob containment may not be a real-filesystem-path comparison).
+
+Filed: T-4124 (see above; id is pending `frob ticket renumber` at land time, per this repo's normal draft-ticket flow).
+
+Gates: `frob check --ticket T-4102`: 10 errors remain, all `gate:SCOPE` SCOPE002 scope-closure suggestions of the disproportionate-closure shape T-3914/T-3947/T-3948's own Done reports documented and did not chase: `src/frob/excludes.py`'s pre-existing `frob:doc`/`frob:tests` directives (present before this ticket touched the file) point at `docs/modules/app.md` (7 symbols) and `tests/test_excludes.py` (27 symbols); the two in-scope standalone test files' pre-existing `frob:tests` directives point at their respective gate modules (`_exhaustive_handling.py`, `_ffi_boundary.py`) and, transitively, at other `tests/unit/gates/*.py` files sharing a same-named private `_write` helper (a resolver false-positive, same shape T-3947 documented -- this ticket's own files import the disambiguated `tests.conftest._write`, not a local one). Verified these are pre-existing to the ticket's own 3-file scope declaration, not introduced by this diff: `frob ticket scope T-4102 --add ...` on any single one of them re-surfaces the same fan-out into the next file (confirmed for `docs/modules/app.md` and `tests/test_excludes.py`). Chasing full closure would mean pulling `docs/modules/app.md`'s and `tests/test_excludes.py`'s entire surface into a Windows-only path-shape bugfix's scope -- out of proportion, same reasoning as the precedent tickets. `gate:PRE`, `gate:FMT`, `gate:AFFECT`, `gate:COV` all clean after fixing (pre-work sweep re-run; directive line wrapped to canonical form via `frob format --directives`; `frob:waive AFFECT001` added; the two new-fixture COV002 findings resolved by pointing `is_excluded`'s `frob:tests` directive at the already-in-scope `test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism` instead of the out-of-scope `tests/test_excludes.py`, avoiding that file's own closure fan-out entirely rather than adding to it). `frob test --base main`: exit=0, 7 tests selected and passing.
+
+### Changed
+```
+ src/frob/excludes.py                             | 44 +++++++++++--
+ tests/unit/gates/test_ffi_boundary_path_shape.py | 84 ++++++++++++++++--------
+ tickets/T-4102/done-report.md                    | 45 +++++++++++++
+ tickets/T-4102/ticket.md                         | 18 ++++-
+ tickets/T-4124/ticket.md               | 59 +++++++++++++++++
+ 5 files changed, 216 insertions(+), 34 deletions(-)
+```
+
+### Evidence
+- `tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_ffi_boundary_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_ffi_boundary_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path_mechanism` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_exhaustive_handling_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_exhaustive_handling_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 2 error(s), 4431 warning(s), 934 waived
+- error-findings: SCOPE002@tickets.md, missing-argument@tests/unit/test_check_gates_summary.py

@@ -12,11 +12,13 @@ fast path), itself a leaf with no further frob imports.
 
 from __future__ import annotations
 
-import fnmatch
 import os
 import tomllib
 from collections.abc import Iterator
+from functools import lru_cache
 from pathlib import Path, PurePosixPath
+
+import pathspec
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
@@ -58,8 +60,9 @@ BUILTIN_SKIP_DIRS = frozenset(
 def load_exclude_globs(root: Path) -> tuple[str, ...]:
     """Read `[graph] exclude = [...]` from frob.toml; absent config is `()`.
 
-    Globs match the root-relative POSIX path via fnmatch, so
-    `"tests/fixtures/**"` excludes everything under that directory.
+    Globs match the root-relative POSIX path via pathspec's gitwildmatch
+    dialect (T-4102), so `"tests/fixtures/**"` excludes everything under
+    that directory.
     """
     toml_path = root / "frob.toml"
     if not toml_path.exists():
@@ -77,10 +80,37 @@ def load_exclude_globs(root: Path) -> tuple[str, ...]:
     return tuple(globs)
 
 
+# frob:ticket T-4102
+# frob:tests \
+# tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechan\
+# ism
+@lru_cache(maxsize=None)
+def _compiled_globs(exclude_globs: tuple[str, ...]) -> pathspec.PathSpec:
+    """Compile `exclude_globs` under gitwildmatch semantics (cached per tuple).
+
+    T-4102: `is_excluded` previously matched via `fnmatch.fnmatch`, which
+    (like T-4013's identical finding in `frob.policy`) runs BOTH operands
+    through `os.path.normcase` -- on Windows that turns a glob's forward
+    slashes into backslashes, so a POSIX-shaped glob accidentally matches a
+    backslash-joined path, and the same (rel, glob) pair can answer
+    differently per platform. `pathspec`'s `gitwildmatch` dialect (already a
+    direct runtime dependency, T-4013) is platform-independent and has no
+    normcase step.
+    """
+    return pathspec.PathSpec.from_lines("gitignore", list(exclude_globs))
+
+
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
+# frob:waive AFFECT001 reason="T-4102 only swaps is_excluded's internal matcher from \
+# fnmatch.fnmatch to pathspec gitwildmatch (a platform- dependence bugfix with no \
+# Linux-visible behavior change for the POSIX- shaped rel paths every producer emits); \
+# docs/modules/app.md's own description ('True if rel_path matches one of the globs') \
+# already describes the contract, not the matcher, and stays accurate unchanged"
 def is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool:
     """True if `rel_path` (root-relative, POSIX) matches any glob."""
-    return any(fnmatch.fnmatch(rel_path, glob) for glob in exclude_globs)
+    if not exclude_globs:
+        return False
+    return _compiled_globs(exclude_globs).match_file(rel_path)
 
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
@@ -123,8 +153,9 @@ def _should_prune_dir(
     cost of every excluded subtree): the built-in skip-name set
     (`is_skipped_dir`), the repo's `[graph] exclude` globs (`is_excluded`,
     probed with a synthetic child path since the globs are typically
-    `"prefix/**"` and fnmatch requires trailing characters after the `/` to
-    match), and nested git checkouts (`_is_nested_worktree`).
+    `"prefix/**"` and gitwildmatch's `**` requires a path component after
+    the `/` to match -- it does not match `prefix` itself), and nested git
+    checkouts (`_is_nested_worktree`).
     """
     if is_skipped_dir(dir_path.name):
         return True

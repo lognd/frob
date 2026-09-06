@@ -2,7 +2,7 @@
 id: T-4102
 title: two T-3947/T-3948 Windows fixtures assert a false premise (fnmatch normcases
   the glob too), and is_excluded's matching is platform-dependent
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -18,14 +18,14 @@ scope:
 - src/frob/excludes.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
 - tests/unit/gates/test_exhaustive_handling_path_shape.py
-- tickets/T-draft-22f16441/ticket.md
+- tickets/T-4124/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-22f16441/ticket.md
+  glob: tickets/T-4124/ticket.md
   reason: T-4102's audit finding (checking other fnmatch-against-path-glob call sites)
     was filed as a new ticket from this worktree; its own ticket.md is a byproduct
     of that filing, not code this ticket edits
