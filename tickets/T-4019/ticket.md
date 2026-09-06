@@ -18,10 +18,10 @@ scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/__init__.py
 - tests/gates_suite/test_invariant.py
-- tests/gates_suite/test_gates.py
 - docs/modules/gates.md
 - src/frob/check/_python.py
 - tests/unit/test_check.py
+- tests/gates_suite/test_run.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +64,18 @@ scope_changes:
   glob: tests/unit/test_check.py
   reason: existing _gates_error_result coverage (TestGatesErrorResultQueueUnavailable
     et al) and the new must-not-print-pass-for-unexecuted-stage fixture live here
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/gates_suite/test_gates.py
+  reason: test_gates.py does not exist in this repo; the real run_gates integration
+    suite (where the must-fire/must-stay-quiet fixtures belong) is test_run.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/gates_suite/test_run.py
+  reason: test_gates.py does not exist in this repo; the real run_gates integration
+    suite (where the must-fire/must-stay-quiet fixtures belong) is test_run.py
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
