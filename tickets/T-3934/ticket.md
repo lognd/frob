@@ -1,7 +1,7 @@
 ---
 id: T-3934
 title: 'CI red: T-3787 target_branch kwarg breaks 6 land-proof tests on all platforms'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'

@@ -62,10 +62,18 @@ class TestLandProofClaimsOutcome:
         # This MUST fail against current main: pre-T-2091, `_print_land_
         # proof` never consults the claims-reverify outcome at all, so it
         # prints `verified=True` regardless.
+        seen_target_branch: list[str] = []
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            seen_target_branch.append(target_branch)
+            return (True, "done", True)
+
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", True),
+            _fake_land_proof_checks,
         )
         report = _fake_report("T-9001")
         _LAST_CLAIMS_OUTCOME["T-9001"] = _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
@@ -85,6 +93,10 @@ class TestLandProofClaimsOutcome:
         # either -- the ancestor+state checks alone still gate `--finish`/
         # the nonzero-exit check, unaffected by the skip.
         assert verified is True
+        # T-3787: `_land_proof_checks` must receive the target branch
+        # `_fake_report` implies via its `getattr` fallback ("main",
+        # since the fake report carries no `target_branch` attribute).
+        assert seen_target_branch == ["main"]
 
     # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_passed_healthy_path_is_unchanged  # noqa: E501
     def test_passed_healthy_path_is_unchanged(
@@ -93,10 +105,18 @@ class TestLandProofClaimsOutcome:
         caplog: pytest.LogCaptureFixture,
         tmp_path,
     ) -> None:
+        seen_target_branch: list[str] = []
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            seen_target_branch.append(target_branch)
+            return (True, "done", True)
+
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", True),
+            _fake_land_proof_checks,
         )
         report = _fake_report("T-9002")
         _LAST_CLAIMS_OUTCOME["T-9002"] = _ClaimsReverifyOutcome.PASSED
@@ -112,6 +132,10 @@ class TestLandProofClaimsOutcome:
         assert "verified=True" in line
         assert "claims_reverify=passed" in line
         assert verified is True
+        # T-3787: `_land_proof_checks` must receive the target branch
+        # `_fake_report` implies via its `getattr` fallback ("main",
+        # since the fake report carries no `target_branch` attribute).
+        assert seen_target_branch == ["main"]
 
     # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_no_recorded_outcome_leaves_verified_unaffected  # noqa: E501
     def test_no_recorded_outcome_leaves_verified_unaffected(
@@ -123,10 +147,18 @@ class TestLandProofClaimsOutcome:
         # No entry in `_LAST_CLAIMS_OUTCOME` at all (a dry run / recovered
         # marker path that never went through `land()`'s own claims-check
         # step in this process) -- must not change the pre-T-2091 shape.
+        seen_target_branch: list[str] = []
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            seen_target_branch.append(target_branch)
+            return (True, "done", True)
+
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", True),
+            _fake_land_proof_checks,
         )
         report = _fake_report("T-9003")
         _LAST_CLAIMS_OUTCOME.pop("T-9003", None)
@@ -140,6 +172,10 @@ class TestLandProofClaimsOutcome:
         assert "verified=True" in line
         assert "claims_reverify=unknown" in line
         assert verified is True
+        # T-3787: `_land_proof_checks` must receive the target branch
+        # `_fake_report` implies via its `getattr` fallback ("main",
+        # since the fake report carries no `target_branch` attribute).
+        assert seen_target_branch == ["main"]
 
 
 # frob:ticket T-2275
@@ -158,10 +194,18 @@ class TestLandProofOrphanEvidenceOutcome:
         # This MUST fail against current main: pre-T-2275, `_print_land_
         # proof` never consults `_LAST_ORPHAN_EVIDENCE_OUTCOME` at all, so
         # the LAND-PROOF line carries no `orphan_evidence_check=` field.
+        seen_target_branch: list[str] = []
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            seen_target_branch.append(target_branch)
+            return (True, "done", True)
+
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", True),
+            _fake_land_proof_checks,
         )
         report = _fake_report("T-9101")
         _LAST_ORPHAN_EVIDENCE_OUTCOME["T-9101"] = (
@@ -180,6 +224,10 @@ class TestLandProofOrphanEvidenceOutcome:
         # T-2275 is surfacing only -- the returned bool is the unchanged
         # ancestor+state computation, unaffected by this field.
         assert verified is True
+        # T-3787: `_land_proof_checks` must receive the target branch
+        # `_fake_report` implies via its `getattr` fallback ("main",
+        # since the fake report carries no `target_branch` attribute).
+        assert seen_target_branch == ["main"]
 
     # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome.test_ran_healthy_path_is_printed  # noqa: E501
     def test_ran_healthy_path_is_printed(
@@ -188,10 +236,18 @@ class TestLandProofOrphanEvidenceOutcome:
         caplog: pytest.LogCaptureFixture,
         tmp_path,
     ) -> None:
+        seen_target_branch: list[str] = []
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            seen_target_branch.append(target_branch)
+            return (True, "done", True)
+
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", True),
+            _fake_land_proof_checks,
         )
         report = _fake_report("T-9102")
         _LAST_ORPHAN_EVIDENCE_OUTCOME["T-9102"] = _OrphanEvidenceCheckOutcome.RAN
@@ -206,6 +262,10 @@ class TestLandProofOrphanEvidenceOutcome:
         line = proof_lines[-1]
         assert "orphan_evidence_check=ran" in line
         assert verified is True
+        # T-3787: `_land_proof_checks` must receive the target branch
+        # `_fake_report` implies via its `getattr` fallback ("main",
+        # since the fake report carries no `target_branch` attribute).
+        assert seen_target_branch == ["main"]
 
     # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome.test_no_recorded_outcome_prints_unknown  # noqa: E501
     def test_no_recorded_outcome_prints_unknown(
@@ -218,10 +278,18 @@ class TestLandProofOrphanEvidenceOutcome:
         # went through `_check_orphaned_evidence_deletion` in this
         # process) -- must fall back to `unknown`, same as
         # `claims_reverify=`'s own fallback.
+        seen_target_branch: list[str] = []
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            seen_target_branch.append(target_branch)
+            return (True, "done", True)
+
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", True),
+            _fake_land_proof_checks,
         )
         report = _fake_report("T-9103")
         _LAST_ORPHAN_EVIDENCE_OUTCOME.pop("T-9103", None)
@@ -234,3 +302,7 @@ class TestLandProofOrphanEvidenceOutcome:
         line = proof_lines[-1]
         assert "orphan_evidence_check=unknown" in line
         assert verified is True
+        # T-3787: `_land_proof_checks` must receive the target branch
+        # `_fake_report` implies via its `getattr` fallback ("main",
+        # since the fake report carries no `target_branch` attribute).
+        assert seen_target_branch == ["main"]
