@@ -21,7 +21,6 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
-- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -369,6 +368,14 @@ scope_changes:
   reason: 'T-4145: declare the new test fixture''s net.connect false-positive capability
     (SELFAUDIT001), same fixture-literal precedent as this node''s existing T-2464
     entry'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: design/frob.strata
+  reason: 'T-4145: revert -- touching design/frob.strata''s scope-closure cascades
+    unboundedly (260+ warnings) for a one-line capability declaration; fixed the underlying
+    false-positive by removing the trigger substring from the test fixture text instead,
+    no design/frob.strata edit needed'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
