@@ -2069,8 +2069,16 @@ class TestRunRuffRealPaths:
         assert len(results) == 2
         assert len(seen_argvs) == 2, seen_argvs
         for argv in seen_argvs:
-            assert argv[:4] == ["uv", "run", "--project", str(tmp_path)], argv
-            assert argv[4] == "ruff", argv
+            # T-4163: run-only spawn, `--no-sync` is load-bearing (never
+            # lazily syncs/mutates the target project's tree).
+            assert argv[:5] == [
+                "uv",
+                "run",
+                "--no-sync",
+                "--project",
+                str(tmp_path),
+            ], argv
+            assert argv[5] == "ruff", argv
 
 
 # frob:ticket T-2320
@@ -2320,7 +2328,8 @@ class TestRunRuffAutofix:
         assert [r.tool for r in results] == ["ruff-check-fix", "ruff-format-write"]
         assert all(r.exit_code == 0 for r in results)
         assert len(seen_argvs) == 2
-        prefix = ["uv", "run", "--project", str(tmp_path)]
+        # T-4163: run-only spawn, `--no-sync` is load-bearing.
+        prefix = ["uv", "run", "--no-sync", "--project", str(tmp_path)]
         assert seen_argvs[0] == [*prefix, "ruff", "check", "--fix", str(tmp_path)]
         assert seen_argvs[1] == [*prefix, "ruff", "format", str(tmp_path)]
 
@@ -3162,3 +3171,185 @@ class TestGatesErrorResultRealTicketError:
 
         assert result.exit_code == 1
         assert result.diagnostics[0].code == "QUEUE001"
+
+
+# frob:ticket T-4171
+class TestProjectImportArgv:
+    """`frob.process._project_tool.project_import_argv` -- the IMPORTING
+    spawn kind (T-4171): same argv shape as `project_tool_argv`, the run-
+    only kind, distinguished only by the reason a caller uses it
+    (importing the target's own modules, never syncing an environment to
+    make that import possible)."""
+
+    def test_shape(self, tmp_path: Path) -> None:
+        """Identical shape to `project_tool_argv`: `uv run --no-sync
+        --project <root> <tool> <*args>` -- T-4171: the importing kind
+        must never sync/mutate the target's environment either, so the
+        argv itself does not change, only the caller's own failure
+        posture (see `frob.gates._flag_coverage._spawn_resolver`)."""
+        from frob.process._project_tool import project_import_argv
+
+        argv = project_import_argv(tmp_path, "python", "-c", "import x")
+        assert argv == [
+            "uv",
+            "run",
+            "--no-sync",
+            "--project",
+            str(tmp_path),
+            "python",
+            "-c",
+            "import x",
+        ]
+
+    def test_same_shape_as_run_only(self, tmp_path: Path) -> None:
+        """`project_tool_argv` and `project_import_argv` build the exact
+        same argv for the same inputs -- the two spawn kinds are
+        distinguished by NAME/call-site reason, never by a flag
+        difference (T-4171's own acceptance criterion)."""
+        from frob.process._project_tool import project_import_argv, project_tool_argv
+
+        assert project_import_argv(tmp_path, "ty", "check") == project_tool_argv(
+            tmp_path, "ty", "check"
+        )
+
+
+# frob:ticket T-4171
+class TestProjectToolSpawnNonMutation:
+    """T-4171 MUST-FIRE fixture: a read-only tool spawn built by either
+    `project_tool_argv` or `project_import_argv`, run against a project
+    whose environment is ALREADY PRESENT (explicitly `uv sync`'d, the
+    real-world precondition T-4163's own doctrine assigns to the
+    operator/CI, never to the spawn itself), does not create or modify
+    anything further in that project's tree -- a REAL `uv run`
+    subprocess, not a mocked one, so this actually proves the
+    `--no-sync` guarantee rather than assuming the flag name is enough.
+
+    NOTE (measured, not assumed): a project with NO environment at all
+    is a different case -- `uv run --no-sync` against a project with no
+    `.venv` still creates one (verified empirically: `--no-sync` stops
+    RE-locking/RE-syncing an existing environment, it does not stop the
+    FIRST-EVER venv from being materialized). That gap is real and is
+    reported in this ticket's done report rather than silently papered
+    over; fixing it would mean giving every one of this module's
+    callers a preflight existence check, which reaches call sites
+    outside T-4171's declared scope (`check/_python.py`,
+    `pyfmt_runner.py`, `_land_cmd.py`, `_coverage_refresh.py`) and is
+    filed as follow-up work instead."""
+
+    def _write_and_sync_project(self, root: Path) -> None:
+        """A minimal project, explicitly `uv sync`'d once so its own
+        `.venv`/`uv.lock` are the ALREADY-PRESENT environment under
+        test -- the state a real target project is expected to be in
+        before any `frob check` spawn touches it."""
+        import subprocess
+
+        (root / "pyproject.toml").write_text(
+            "[project]\n"
+            'name = "warmproj"\n'
+            'version = "0.0.1"\n'
+            'requires-python = ">=3.11"\n'
+            "dependencies = []\n"
+            "\n"
+            "[tool.uv]\n"
+            "package = false\n"
+        )
+        subprocess.run(
+            ["uv", "sync", "--project", str(root)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+    def _tree_snapshot(self, root: Path) -> set[str]:
+        """Every path under `root`, relative, for a before/after diff --
+        excluding `__pycache__` bytecode caches, which Python itself
+        writes on ANY interpreter invocation (including a plain `python
+        -c` against an unrelated already-installed package) and are
+        gitignored everywhere; they are not the dependency/lockfile
+        mutation this fixture guards against."""
+        return {
+            str(p.relative_to(root))
+            for p in root.rglob("*")
+            if "__pycache__" not in p.parts
+        }
+
+    def test_run_only_spawn_does_not_mutate_an_already_present_env(
+        self, tmp_path: Path
+    ) -> None:
+        """`project_tool_argv`'s argv, actually spawned via `uv run`
+        against an already-synced project: the tree afterward is
+        byte-for-byte the same set of paths -- no re-lock, no package
+        churn, no new file of any kind (the T-4163 guarantee, proven
+        rather than assumed)."""
+        import subprocess
+
+        from frob.process._project_tool import project_tool_argv
+
+        self._write_and_sync_project(tmp_path)
+        before = self._tree_snapshot(tmp_path)
+        argv = project_tool_argv(tmp_path, "python", "-c", "print('ok')")
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+        after = self._tree_snapshot(tmp_path)
+        assert after == before, f"run-only spawn mutated the tree: {after - before}"
+        assert proc.returncode == 0
+        assert proc.stdout.strip() == "ok"
+
+    def test_import_spawn_does_not_mutate_an_already_present_env(
+        self, tmp_path: Path
+    ) -> None:
+        """Same guarantee for `project_import_argv` -- the importing
+        kind must be exactly as non-mutating as the run-only kind
+        (T-4171: both spawn kinds share the no-sync argv, only the
+        caller's failure posture differs once an import can't be
+        satisfied)."""
+        import subprocess
+
+        from frob.process._project_tool import project_import_argv
+
+        self._write_and_sync_project(tmp_path)
+        before = self._tree_snapshot(tmp_path)
+        argv = project_import_argv(tmp_path, "python", "-c", "print('ok')")
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+        after = self._tree_snapshot(tmp_path)
+        assert after == before, f"import spawn mutated the tree: {after - before}"
+        assert proc.returncode == 0
+        assert proc.stdout.strip() == "ok"
+
+    def test_no_sync_does_not_prevent_first_time_venv_creation(
+        self, tmp_path: Path
+    ) -> None:
+        """DOCUMENTS A REAL GAP (T-4171 done report), does not paper
+        over it: against a project with NO environment at all yet (no
+        prior `uv sync`), `--no-sync` stops uv from RE-syncing/RE-
+        locking, but does not stop it from creating a FIRST-EVER
+        `.venv` -- `--no-sync` is not a full non-mutation guarantee by
+        itself for a genuinely cold target, only for one whose
+        environment is already present. Every caller behind
+        `project_tool_argv`/`project_import_argv` in this codebase
+        today (this repo's own worktree, `frob ticket work`'d before
+        any check runs) is never actually cold, so this gap is latent,
+        not live -- but it is real, and worth a follow-up ticket rather
+        than silence."""
+        import subprocess
+
+        from frob.process._project_tool import project_tool_argv
+
+        (tmp_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'name = "coldproj"\n'
+            'version = "0.0.1"\n'
+            'requires-python = ">=3.11"\n'
+            "dependencies = []\n"
+            "\n"
+            "[tool.uv]\n"
+            "package = false\n"
+        )
+        assert not (tmp_path / ".venv").exists()
+        argv = project_tool_argv(tmp_path, "python", "-c", "print('ok')")
+        subprocess.run(argv, capture_output=True, text=True, timeout=60)
+        assert (tmp_path / ".venv").exists(), (
+            "if this ever starts failing, uv's own behavior changed and "
+            "the gap this test documents may be closed -- update the "
+            "docstring/follow-up ticket rather than deleting the test"
+        )

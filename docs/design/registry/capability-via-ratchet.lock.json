@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 297,
-      "reason": "T-4125: adds tests/unit/test_project_tool.py (mocks guarded_subprocess_run, but its call sites still lexically match the exec scanner) and tests/unit/vet/test_bare_toolchain.py (fixture text literals containing 'subprocess.run(...)' for the BARETOOL001 AST finder under test, never actually executed) -- bumping the ceiling to the current measured count, 295 -> 297, two real new files.",
-      "ticket": "T-4125"
+      "accepted_count": 299,
+      "reason": "T-4171: adds real (not mocked) `uv run`/`uv sync` subprocess spawns to tests/unit/test_check.py (TestProjectImportArgv/TestProjectToolSpawnNonMutation, proving project_tool_argv/project_import_argv's non-mutation guarantee empirically) and tests/unit/test_flag_coverage_gate.py (_sync_fixture_project, syncing each throwaway fixture project so the flag-coverage gate's importing resolver spawn has an already-present environment to import pydantic/cattrs from) -- bumping the ceiling to the current measured count, 297 -> 299, two files gaining new via-list entries.",
+      "ticket": "T-4171"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

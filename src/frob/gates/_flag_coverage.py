@@ -55,7 +55,7 @@ from frob.gates._docblocks_refs import _console_command_sources
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
-from frob.process._project_tool import project_tool_argv
+from frob.process._project_tool import project_import_argv
 
 _log = get_logger(__name__)
 
@@ -233,7 +233,14 @@ def _spawn_resolver(
     failing to run at all, vs. the spawned script's own reported per-step
     failure, are both surfaced here so `_check_source` has one call site
     instead of two)."""
-    argv = project_tool_argv(
+    # T-4171: this spawn's whole point is to IMPORT `source.parser`/
+    # `config`/`forwarded` from inside root's own environment --
+    # `project_import_argv`, not `project_tool_argv`, is the correct
+    # wrapper: same argv shape (still `--no-sync`, never mutates root's
+    # tree), but it marks this call site as one that must report
+    # UNRESOLVED rather than clean when that environment can't provide
+    # the import (handled below via `_unresolved`).
+    argv = project_import_argv(
         root,
         "python",
         "-c",

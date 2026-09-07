@@ -50,22 +50,39 @@ class ProjectToolError(ErrorSet):
     ResolveFailed = "spawning the project-scoped tool resolution probe failed"
 
 
+def _project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
+    """Shared argv builder behind both `project_tool_argv` and
+    `project_import_argv` (T-4171): `uv run --no-sync --project <root>
+    <tool> <*args>`. Both spawn kinds resolve `tool` from `root`'s own
+    lockfile/venv rather than the spawning process's PATH, and both
+    must never create or mutate that environment as a side effect --
+    `--no-sync` is load-bearing for each, not just the run-only kind
+    (T-4163's dirty-tree bug can happen to an importing spawn exactly
+    the same way). What differs between the two public wrappers is
+    never this argv shape, only how a caller must react when the
+    environment `--no-sync` refuses to populate turns out not to have
+    what's needed -- see each wrapper's own docstring."""
+    return ["uv", "run", "--no-sync", "--project", str(root), tool, *args]
+
+
 # frob:doc docs/modules/process.md#public-api
 # frob:tests tests/unit/test_project_tool.py::TestProjectToolArgv.test_shape
 def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
-    """The ONE correct argv shape for invoking `tool` (e.g. `"ty"`,
-    `"ruff"`, `"pytest"`) inside the project rooted at `root`'s OWN
-    environment: `uv run --project <root> <tool> <*args>`. `uv run`
-    resolves `tool` from that project's lockfile/venv regardless of
-    what a bare name would resolve to on PATH -- the fix for T-4125's
-    population of bare-name call sites and the one shape T-3887's
-    BARETOOL001 gate (`frob.gates._bare_toolchain`) now enforces
-    everywhere a project toolchain is spawned. Every caller should pass
-    this list straight to `guarded_subprocess_run`/`subprocess.run`,
-    never construct its own `["uv", "run", ...]` or bare-name argv by
-    hand -- one mechanism, not a second correct spelling living next to
-    the wrong one (T-4125's own `pyfmt_runner.py` finding: both spellings
-    existed four lines apart).
+    """The RUN-ONLY spawn kind (T-4171): invoking `tool` (e.g. `"ty"`,
+    `"ruff"`, `"pytest"`) purely as a tool BINARY inside the project
+    rooted at `root`'s OWN environment -- the caller never imports
+    anything from `root`'s own source tree, it only runs an external
+    checker/formatter against it and reads that process's stdout/exit
+    code. `uv run` resolves `tool` from that project's lockfile/venv
+    regardless of what a bare name would resolve to on PATH -- the fix
+    for T-4125's population of bare-name call sites and the one shape
+    T-3887's BARETOOL001 gate (`frob.gates._bare_toolchain`) now
+    enforces everywhere a project toolchain is spawned. Every caller
+    should pass this list straight to `guarded_subprocess_run`/
+    `subprocess.run`, never construct its own `["uv", "run", ...]` or
+    bare-name argv by hand -- one mechanism, not a second correct
+    spelling living next to the wrong one (T-4125's own
+    `pyfmt_runner.py` finding: both spellings existed four lines apart).
 
     T-4163: `--no-sync` is load-bearing, not an optimization -- plain
     `uv run --project <root>` lazily locks/syncs that project's OWN
@@ -79,8 +96,46 @@ def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
     `tool` against whatever environment already exists without
     resolving/writing a lockfile or venv; a project that genuinely needs
     a fresh sync should run `uv sync` itself as an explicit step, not
-    have it triggered as a hidden side effect of `frob check`."""
-    return ["uv", "run", "--no-sync", "--project", str(root), tool, *args]
+    have it triggered as a hidden side effect of `frob check`. Every
+    call site behind this wrapper is a run-only spawn -- if a future
+    caller needs to IMPORT `root`'s own modules, it must use
+    `project_import_argv` instead, never this one (T-4171: the two
+    kinds have opposite failure postures once the environment is
+    absent)."""
+    return _project_tool_argv(root, tool, *args)
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:tests tests/unit/test_check.py::TestProjectImportArgv.test_shape kind="unit"
+# frob:tests \
+# tests/unit/test_check.py::TestProjectImportArgv.test_same_shape_as_run_only kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestProjectToolSpawnNonMutation.test_import_spawn_does_not_mutate_an_already_present_env kind="unit"  # noqa: E501
+def project_import_argv(root: Path, tool: str, *args: str) -> list[str]:
+    """The IMPORTING spawn kind (T-4171): a `tool` invocation (in
+    practice always `"python"`, running a short script argv) whose
+    WHOLE POINT is to import code that lives inside the project rooted
+    at `root` -- `frob.gates._flag_coverage`'s resolver script is the
+    one caller today, importing a consumer's own parser-factory/config
+    module so a dependency-version mismatch with frob's own interpreter
+    can never break the import (T-4147).
+
+    Argv shape is IDENTICAL to `project_tool_argv` -- still `--no-sync`,
+    still never creates or mutates `root`'s environment -- because
+    T-4163's dirty-tree bug applies here too: an importing gate that
+    silently synced `root` on a cold environment would write the exact
+    untracked lockfile/venv a later gate then refuses `root`'s tree on,
+    the same failure mode T-4163 fixed for the run-only kind. The
+    difference this wrapper exists to name is what a caller MUST do
+    when the import then fails because no environment was present to
+    import from: report the check as UNRESOLVED/UNMEASURED, never as a
+    clean pass and never by falling back to syncing one into existence.
+    A project whose dependencies genuinely need to be present for this
+    gate to measure anything must be synced by an explicit `uv sync`
+    step (the operator's or CI's, not this gate's) BEFORE `frob check`
+    runs -- exactly the T-4163 doctrine, extended to the importing case
+    instead of carved out as an exception to it."""
+    return _project_tool_argv(root, tool, *args)
 
 
 # frob:doc docs/modules/process.md#public-api
@@ -182,6 +237,7 @@ def resolve_project_tool(
 __all__ = [
     "ProjectToolError",
     "ToolIdentity",
+    "project_import_argv",
     "project_tool_argv",
     "resolve_project_tool",
 ]

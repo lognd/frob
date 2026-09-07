@@ -631,9 +631,12 @@ class TestComputeWorkerCount:
         argv = _refresh_mod._pytest_argv(
             tmp_path, targets=(), cov_target="src/frob", append=False
         )
-        assert argv[:4] == ["uv", "run", "--project", str(tmp_path)]
+        # T-4163: `--no-sync` is load-bearing on this run-only spawn --
+        # pytest is invoked as a tool binary, never imported, so the
+        # helper must never lazily sync/mutate the target project's tree.
+        assert argv[:5] == ["uv", "run", "--no-sync", "--project", str(tmp_path)]
         assert "pytest" in argv
-        assert argv.index("pytest") == 4
+        assert argv.index("pytest") == 5
 
     def test_pytest_argv_off_repo_project_not_importable_from_frob(
         self, tmp_path: Path

@@ -1573,6 +1573,17 @@ node testsuite : trusted {
     // same disclosed shape as test_wire001_multiprocessing_target.py's
     // T-3576 fixture-literal note above).
     may "exec" via "tests/unit/test_project_tool.py", "tests/unit/vet/test_bare_toolchain.py";
+    // T-4171: TestProjectImportArgv/TestProjectToolSpawnNonMutation
+    // (tests/unit/test_check.py) spawn a REAL `uv run`/`uv sync`
+    // subprocess against a throwaway tmp_path project to prove the
+    // non-mutation guarantee empirically rather than mocking it away --
+    // that is the whole point of these fixtures. `_sync_fixture_project`
+    // (tests/unit/test_flag_coverage_gate.py) does the same `uv sync`
+    // step so the flag-coverage gate's importing resolver spawn has an
+    // already-present environment to resolve `pydantic`/`cattrs` from,
+    // mirroring the real-world operator/CI precondition T-4163's own
+    // doctrine assigns to the caller, never to the gate itself.
+    may "exec" via "tests/unit/test_check.py", "tests/unit/test_flag_coverage_gate.py";
     // T-3516: tests/conftest.py's worker-crash marker (pytest_runtest_
     // logstart/logfinish, T-3516) writes/removes .frob/xdist-crash-marker/
     // <workerid>.json; tests/unit/test_conftest_stackdump.py's own

@@ -5,10 +5,21 @@ synthetic parser/config pair, never the real 340-field `AppConfig`) plus
 this repo's own real `frob.toml` declaration as the must-still-pass
 control -- the same two-fixture discipline every T-2390-family child is
 required to carry (a must-now-fire case AND a must-still-pass control).
+
+T-4171: the gate's own resolver spawn is the IMPORTING kind
+(`project_import_argv`) and must never sync/mutate the checked
+project's environment itself (T-4163's dirty-tree doctrine, extended to
+importing spawns). So every fixture here plays the role T-4163 assigns
+to the operator/CI: it runs `uv sync --project <tmp_path>` itself, as an
+explicit step, BEFORE invoking `flag_coverage_gate` -- exactly the
+real-world precondition ("a project that genuinely needs a fresh sync
+should run `uv sync` itself") rather than relying on the gate to sync a
+throwaway `tmp_path` on its own.
 """
 
 from __future__ import annotations
 
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -17,6 +28,23 @@ import pytest
 
 from frob.findings import Severity
 from frob.gates._flag_coverage import flag_coverage_gate
+
+
+# frob:waive WIRE001 reason="a private per-file fixture helper used only by this \
+# file's own tests -- same shape as _write_fixture_project immediately below it, never \
+# called from production code by design (T-4171)"
+def _sync_fixture_project(root: Path) -> None:
+    """Explicit `uv sync --project <root>` step (T-4171): the fixture's
+    own precondition for `flag_coverage_gate`'s no-mutate resolver spawn
+    to find an already-present environment to import from, mirroring
+    what a real operator/CI must do before running `frob check` against
+    a cold checkout."""
+    subprocess.run(
+        ["uv", "sync", "--project", str(root)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
 def _write_fixture_project(
@@ -95,6 +123,11 @@ def _write_fixture_project(
             """
         )
     )
+    # T-4171: `flag_coverage_gate`'s resolver spawn is the IMPORTING kind
+    # and never syncs/mutates `root`'s environment itself -- sync it here,
+    # explicitly, as the fixture's own precondition (the role T-4163's
+    # doctrine assigns to the operator/CI, not the gate).
+    _sync_fixture_project(tmp_path)
     return tmp_path
 
 
@@ -280,5 +313,9 @@ class TestFlagCoverageGate:
                 """
             )
         )
+        # T-4171: the rewritten pyproject.toml above adds `cattrs` to the
+        # dependency set -- re-sync so the already-present environment
+        # this gate's no-mutate resolver spawn relies on actually has it.
+        _sync_fixture_project(tmp_path)
         violations = flag_coverage_gate(tmp_path)
         assert violations == ()

@@ -2,7 +2,7 @@
 id: T-4171
 title: 'the no-sync fix for a mutating tool spawn broke the gate that must import
   the target project''s modules: one setting serving two incompatible callers'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -54,18 +54,34 @@ scope_changes:
     new exec via-list entries for real uv subprocess fixtures'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/unit/test_check.py::TestProjectImportArgv::test_shape
+- tests/unit/test_check.py::TestProjectImportArgv::test_same_shape_as_run_only
+- tests/unit/test_check.py::TestProjectToolSpawnNonMutation::test_run_only_spawn_does_not_mutate_an_already_present_env
+- tests/unit/test_check.py::TestProjectToolSpawnNonMutation::test_import_spawn_does_not_mutate_an_already_present_env
+- tests/unit/test_check.py::TestProjectToolSpawnNonMutation::test_no_sync_does_not_prevent_first_time_venv_creation
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
+- tests/test_coverage.py::TestComputeWorkerCount::test_pytest_argv_routes_through_project_env
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_now_fire_reports_the_genuinely_dropped_flag
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_still_pass_when_everything_is_forwarded
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_non_callable_non_set_forwarded_is_unresolved
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_project_dependency_not_in_frobs_own_interpreter_still_resolves
 designated_repro_test: null
 acceptance:
 - text: given a read-only tool spawn, when it runs against a target project, then
     nothing in that project's tree is created or modified
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestProjectToolSpawnNonMutation::test_run_only_spawn_does_not_mutate_an_already_present_env
 - text: given a gate that must import the target project's modules, when the environment
     cannot provide them, then it reports unmeasured rather than clean and does not
     mutate the target tree
-  evidence: []
+  evidence:
+  - tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_project_dependency_not_in_frobs_own_interpreter_still_resolves
 - text: given the argv the helper builds for each spawn kind, when the assertions
     run, then they match
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
 threat: null
 component: null
 anchor: false

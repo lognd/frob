@@ -51,6 +51,7 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_derived_lock.py::DerivedStateLockUnavailable -->
 <!-- frob:describes src/frob/process/_project_tool.py::ProjectToolError -->
 <!-- frob:describes src/frob/process/_project_tool.py::project_tool_argv -->
+<!-- frob:describes src/frob/process/_project_tool.py::project_import_argv -->
 <!-- frob:describes src/frob/process/_project_tool.py::ToolIdentity -->
 <!-- frob:describes src/frob/process/_project_tool.py::resolve_project_tool -->
 
@@ -626,8 +627,14 @@ version direction, which is why the fix never compares versions or
 assumes a direction: it simply never lets a bare name resolve at all.
 
 ```python
-# frob/process/_project_tool.py -- one project-scoped tool spawn mechanism
+# frob/process/_project_tool.py -- two project-scoped tool spawn kinds,
+# named by REASON, sharing one non-mutating argv shape (T-4171)
 def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
+    ...  # RUN-ONLY: caller only runs `tool` as a binary, never imports
+    ...  # ["uv", "run", "--no-sync", "--project", str(root), tool, *args]
+
+def project_import_argv(root: Path, tool: str, *args: str) -> list[str]:
+    ...  # IMPORTING: caller's whole point is to import root's own modules
     ...  # ["uv", "run", "--no-sync", "--project", str(root), tool, *args]
 
 def resolve_project_tool(
@@ -636,28 +643,49 @@ def resolve_project_tool(
     ...  # resolved absolute path + `--version` output, from INSIDE root's env
 ```
 
-`project_tool_argv(root, tool, *args)` is the only correct argv shape --
-`frob.check._python`'s `_run_ruff`/`_ruff_format_result`/
-`_run_ruff_autofix`/`_ty_base_cmd`, `frob.app.pyfmt_runner`'s four ruff
-call sites, and `frob.app.ticket_runner._land_cmd`'s `_ty_check_files`/
-`_ruff_check_files` all route through it now. `resolve_project_tool`
+`project_tool_argv(root, tool, *args)` is the correct argv shape for a
+RUN-ONLY spawn -- `frob.check._python`'s `_run_ruff`/
+`_ruff_format_result`/`_run_ruff_autofix`/`_ty_base_cmd`,
+`frob.app.pyfmt_runner`'s four ruff call sites, and
+`frob.app.ticket_runner._land_cmd`'s `_ty_check_files`/
+`_ruff_check_files` all route through it. `resolve_project_tool`
 additionally names the RESOLVED binary path and version for a caller
 that needs to put that in a diagnostic message -- the land's pre-land
 type-check refusal (`_assert_touched_files_type_check_pre_land`) does
 exactly this, so a refusal names not just each error's file/line/text
 but which `ty` binary produced them.
 
-T-4163: `--no-sync` is load-bearing, not cosmetic. Plain `uv run
---project <root>` lazily locks/syncs the TARGET project's own
-environment on first use, writing an untracked `uv.lock` (and creating
-`.venv/`) inside that project's working tree as a side effect of what
-the caller intended as a read-only lint/typecheck spawn. `frob check`
-diffing that same tree a few gates later then refuses on the file its
-own tool invocation just wrote (PRE001/SCOPE001 on a "clean" project).
-`--no-sync` runs `tool` against whatever environment already exists
-without touching the lockfile or venv; `resolve_project_tool`'s
-which-probe spawn goes through `project_tool_argv` for the same reason
-rather than hand-rolling a second `uv run` argv next to it.
+T-4171: `project_import_argv(root, tool, *args)` is the SAME argv shape,
+for the one existing caller whose whole point is the opposite of
+read-only -- `frob.gates._flag_coverage`'s resolver spawn IMPORTS a
+consumer's own parser-factory/config module from inside `root`'s
+environment (T-4147). The two wrappers exist because their callers must
+react differently to the SAME failure (an environment `--no-sync`
+refuses to populate): a run-only caller's tool simply isn't there to
+run; an importing caller's target code isn't there to import, which
+must be reported UNRESOLVED/UNMEASURED, never treated as a reason to
+sync one into existence. Naming the two kinds at the call site (rather
+than a `sync: bool` flag) makes that reaction the reviewable thing, not
+a boolean whose meaning has to be re-derived from context each time.
+
+T-4163: `--no-sync` is load-bearing, not cosmetic, for BOTH kinds.
+Plain `uv run --project <root>` lazily locks/syncs the TARGET project's
+own environment on first use, writing an untracked `uv.lock` (and
+creating `.venv/`) inside that project's working tree as a side effect
+of what the caller intended as a read-only spawn. `frob check` diffing
+that same tree a few gates later then refuses on the file its own tool
+invocation just wrote (PRE001/SCOPE001 on a "clean" project). `--no-
+sync` runs `tool` against whatever environment already exists without
+touching the lockfile or venv; `resolve_project_tool`'s which-probe
+spawn goes through `project_tool_argv` for the same reason rather than
+hand-rolling a second `uv run` argv next to it. MEASURED GAP (T-4171,
+not yet closed): `--no-sync` stops RE-syncing an existing environment,
+but `uv run` still materializes a FIRST-EVER `.venv` when none exists
+at all -- every caller in this codebase today runs against an already-
+`uv sync`'d worktree, so this gap is latent rather than live, but a
+consumer project with no environment at all would still see one
+created. See `tests/unit/test_check.py::TestProjectToolSpawnNonMutation::
+test_no_sync_does_not_prevent_first_time_venv_creation`.
 
 `frob.gates._bare_toolchain.bare_toolchain_gate` (BARETOOL001, WARN-tier)
 is the regrowth guard: an AST scan (`frob.vet._bare_toolchain`) over
