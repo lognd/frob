@@ -2,7 +2,7 @@
 id: T-4136
 title: test_land_cmd_drain_wiring double missing target_branch kwarg (T-4105 producer/consumer
   desync)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
