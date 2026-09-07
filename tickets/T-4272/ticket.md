@@ -29,6 +29,14 @@ body_changes:
   at: '2026-09-07'
   old_length: 5030
   new_length: 9282
+- mode: append
+  reason: 'owner decision settling the last open question: taking a leaf out of a
+    claimed epic is permitted but is the one operation that requires a fresh remote
+    read rather than the cached view'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 9282
+  new_length: 12332
 designated_repro_test: null
 acceptance:
 - text: given a claimed epic and a collaborator with no network access, when they
@@ -223,3 +231,52 @@ holder can release a leaf explicitly, or the requester can take it with an
 acknowledgement that both parties can see. Decide this before building, because
 retrofitting a partial release into a subtree claim is much harder than designing
 for it.
+
+
+
+THE LAST OPEN QUESTION IS SETTLED: TAKING A LEAF OUT OF A CLAIMED EPIC IS
+ALLOWED, BUT IT IS THE ONE OPERATION THAT MUST ASK THE REMOTE FIRST.
+
+THE RULE. A claimed epic covers its whole subtree, so its leaves are simply
+absent from the available set every other contributor and agent computes. That
+answer is derived locally from the cached view and costs nothing. Taking one of
+those leaves anyway is an explicit act, and it requires a FRESH read of the
+remote before it may proceed -- not the cached view, however recent.
+
+WHY THE ASYMMETRY IS THE RIGHT SHAPE, AND NOT AN INCONSISTENCY. The default
+assumption behind an epic claim is that a person is already working somewhere
+inside it. Acting against that assumption is exactly the case where stale
+information is most likely to cause the collision the whole system exists to
+prevent. So the cheap, common, offline path stays cheap, common and offline, and
+the rare contentious path pays a network round trip. Cost is placed where the
+risk is, rather than spread evenly over every invocation.
+
+WHAT THE FRESH READ IS ACTUALLY FOR, WHICH IS MORE THAN CONFIRMING THE CLAIM
+STILL EXISTS. It answers whether the epic is being worked RIGHT NOW. A holder
+whose branch tip advanced minutes ago is mid-flight and taking a leaf from under
+them is very likely a collision. A holder whose tip has not moved in a long time
+may have stopped, and taking a leaf is close to free. Those are different
+situations that deserve different friction, and only a current read can tell them
+apart. Use the same locally-observed staleness measure defined above rather than
+comparing timestamps across machines.
+
+OFFLINE MUST DEGRADE TOWARD NOT TAKING. If the remote cannot be reached, this
+one operation is refused. Every other verb keeps working offline exactly as
+before, and nothing about the ordinary path becomes network-dependent. State the
+principle plainly so it survives future changes: when information is
+unavailable, the system fails toward NOT taking someone else's work, never
+toward taking it. An unreachable remote must never read as an absent claim.
+
+THE TAKING IS ITSELF A CLAIM, WHICH MAKES THE COORDINATION SYMMETRIC. Since a
+claim is a branch, taking a leaf means publishing a branch for that leaf. The
+epic's holder sees it on their next refresh, their own agents then exclude that
+leaf from their available set for the same reason everyone else excludes claimed
+work, and no messaging channel is needed for either party to learn what happened.
+The claim view should make this legible from both directions: a holder must be
+able to see that a leaf inside their epic is held by someone else, and by whom.
+
+RECORD THE OVERRIDE, INCLUDING WHAT WAS OBSERVED. When a leaf is taken from a
+claimed epic, record who took it, who held the epic, and the epic tip's observed
+staleness at that moment. That last part is what makes a later disagreement
+resolvable: the taker can show the epic looked cold, or the record shows it did
+not and the taker proceeded anyway. Both are useful; a bare "taken" is not.
