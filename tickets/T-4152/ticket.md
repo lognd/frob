@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'retracts this ticket''s central premise: an emitter DOES exist, referencing
+    the heading through a constant, and my literal-string search could not see it.
+    Records the method error, folds in consumer report F-358 which states the opposite
+    complaint, and restates the part that survives -- the land silently downgrading
+    when the section is absent'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4774
+  new_length: 7984
 designated_repro_test: null
 acceptance:
 - text: given a done report produced by the done-report verb, when it is written,
@@ -118,3 +129,55 @@ ACCEPTANCE
 - Historical reports left unmodified.
 - The proportion of new reports lacking the section measured after the fix.
 - All three fixtures committed.
+
+RETRACTION -- THIS TICKET'S CENTRAL PREMISE IS FALSE. I wrote above that the
+generator "never emits" the captured-claims section and that four call sites read
+a section nothing writes. THAT IS WRONG. There IS an emitter:
+
+    src/frob/tickets/_models.py:1022   _CLAIMS_HEADING = "### Captured claims"
+    src/frob/tickets/_models.py:1165   lines = [_CLAIMS_HEADING, ...]
+    src/frob/tickets/_reporting.py:559 calls _capture_done_report_claims(...)
+
+HOW I GOT IT WRONG, and the method error matters more than the fact: I searched
+for the LITERAL STRING "Captured claims" across the source and found only
+docstrings and parsers, then concluded no writer existed. The writer references
+the heading through a CONSTANT, so a literal search cannot see it. This project's
+standing directive is that checks must compare parsed symbols rather than
+substrings; I applied a substring search to a question about symbols and reached a
+confident wrong answer. The same error in a gate is a class this queue has filed
+eleven times.
+
+A CONSUMER REPORT ARRIVING AFTER THIS TICKET STATES THE OPPOSITE COMPLAINT, and
+between the two the real shape is visible. F-358: the done-report verb ALWAYS
+appends its own Changed / Evidence / Captured-claims sections, so the flat
+heading-only form their repo uses cannot be produced through the verb at all. So
+the verb emits; it is reports NOT produced by the verb that lack the section.
+
+WHAT SURVIVES, restated honestly. The measured facts are unchanged: 2373 of 3066
+done reports here carry the section and 693 do not, and a land whose report lacks
+it downgrades to an unverified outcome that reads like a pass. The defect is NOT
+a missing emitter. It is that:
+
+  1. A report can reach a land WITHOUT having gone through the verb -- hand
+     written, or written by an agent following prose -- and nothing requires that
+     it did. The section is therefore optional in practice while the verifier
+     treats its absence as an acceptable skip.
+  2. THE LAND'S RESPONSE TO A MISSING SECTION IS THE REAL BUG. It warns and
+     proceeds, so unmeasured and verified share an outcome. That half of the
+     original ticket stands entirely and is the part to fix: either regenerate
+     the section from the verb at land time, or refuse the land, but do not
+     silently downgrade the strongest post-land check for a formatting reason.
+  3. F-358 adds a genuine second defect in the other direction: the verb offers
+     no way to produce the flat form, so a repo that wants it must hand-write --
+     which is precisely how a report ends up without the section. The two
+     findings are the same loop. Fixing only one leaves the other producing
+     victims.
+
+REVISED DIRECTION FOR WHOEVER WORKS THIS
+- Do not "add an emitter". Read the existing one first.
+- Decide what a land does when the section is absent, and make unmeasured
+  distinguishable from verified in the output. That was and remains the point.
+- Handle F-358's half: either the verb can produce the flat form, or the flat
+  form is documented as unsupported. Silently supporting it in practice while the
+  verifier requires the other shape is the state that produced both reports.
+- Historical reports stay unmodified.
