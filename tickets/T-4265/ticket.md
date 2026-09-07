@@ -21,19 +21,72 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_includes_windows_and_macos
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_is_fail_fast_false
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_is_gated_to_ubuntu_only
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_does_not_shell_to_make
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_stamp_baseline_is_bare_not_chunked_by_only
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_calls_frob_coverage_full
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_suite_runs_under_coverage_once_not_twice
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_ignore_console_ctrl
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_hard_exit
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_midrun_watchdog_seconds
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_raises_per_test_timeout_to_600
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_surfaces_failure_tracebacks
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_ubuntu_test_step_no_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_windows_test_step_no_reruns_flakes
 designated_repro_test: null
 acceptance:
 - text: given the integration workflow, when the cleanup lands, then no diagnostic
     step block remains whose originating ticket is closed, and each removal was confirmed
     against that ticket individually
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_includes_windows_and_macos
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_is_fail_fast_false
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_is_gated_to_ubuntu_only
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_does_not_shell_to_make
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_stamp_baseline_is_bare_not_chunked_by_only
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_calls_frob_coverage_full
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_suite_runs_under_coverage_once_not_twice
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_ignore_console_ctrl
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_hard_exit
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_midrun_watchdog_seconds
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_raises_per_test_timeout_to_600
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_surfaces_failure_tracebacks
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_ubuntu_test_step_no_reruns_flakes
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_windows_test_step_no_reruns_flakes
 - text: given the workflow's own matrix test, when steps are removed, then its assertions
     are updated to reflect a deliberate decision about each pinned step rather than
     deleted to match the new file
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_includes_windows_and_macos
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_is_fail_fast_false
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_is_gated_to_ubuntu_only
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_does_not_shell_to_make
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_stamp_baseline_is_bare_not_chunked_by_only
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_calls_frob_coverage_full
+  - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_suite_runs_under_coverage_once_not_twice
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_ignore_console_ctrl
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_hard_exit
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_midrun_watchdog_seconds
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_raises_per_test_timeout_to_600
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_surfaces_failure_tracebacks
+  - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_ubuntu_test_step_no_reruns_flakes
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_windows_test_step_no_reruns_flakes
 - text: given the windows leg, when the cleanup lands, then its wall-clock duration
     before and after is reported, including the case where it did not improve
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
 threat: null
 component: null
 anchor: false
