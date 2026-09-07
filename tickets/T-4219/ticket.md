@@ -22,7 +22,6 @@ scope:
 - tests/unit/gates/test_pkg_resources.py
 - docs/modules/gates.md
 - docs/design/registry/check-coverage.yaml
-- design/frob.strata
 - src/frob/gates/_doclink_docanchor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -80,6 +79,13 @@ scope_changes:
   glob: src/frob/gates/_doclink_docanchor.py
   reason: 'T-4219: pkg_resources_gate reuses _doclink_docanchor._line_index for offset->line
     resolution rather than duplicating PERF002''s fix'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: design/frob.strata
+  reason: 'T-4219: reverted -- using code-level frob:waive SELFAUDIT001 instead of
+    expanding the design capability lists, to avoid design/frob.strata''s huge doc-closure
+    fan-out'
   actor: logan
   at: '2026-09-07'
 body_changes:
