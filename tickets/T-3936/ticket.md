@@ -21,7 +21,6 @@ scope:
 - tests/unit/arch_suite/test_misc.py
 - tests/ticket_land_suite/test_wip.py
 - tests/ticket_land_suite/test_land_core.py
-- tests/test_worktree_guard.py
 - tests/test_tickets_evidence_cli.py
 - tests/test_ticket_leases.py
 - tests/test_ticket_land_lint_diff_attribution.py
@@ -65,6 +64,16 @@ scope_changes:
     by T-4057 (Cluster B)'
   actor: logan
   at: '2026-09-06'
+- op: remove
+  glob: tests/test_worktree_guard.py
+  reason: T-3936 is a Windows-failure TRACKING ticket with no worktree and no code
+    changes of its own; its declared scope holds file leases it never uses, and that
+    lease is now actively blocking T-4162's fix to the xdist preflight in this very
+    file. Narrowing on main is safe here precisely because there is no worktree to
+    invalidate. The remaining scope entries should be removed the same way as they
+    block others
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'first COMPLETE Windows run (34024645783) after the hang fix landed: 25
