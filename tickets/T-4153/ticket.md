@@ -16,10 +16,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_refs.py
 - tests/test_refs_gate.py
+- docs/modules/gates.md
+- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'SCOPE002: ref_gate''s existing frob:doc/frob:tests targets must be in-scope
+    alongside the file being edited'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: 'SCOPE002: ref_gate''s existing frob:doc/frob:tests targets must be in-scope
+    alongside the file being edited'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 threat: null
 component: null
