@@ -3,7 +3,7 @@ id: T-4264
 title: 'drive the posix gate errors to zero: formatter drift, two stale acks, a broken
   tests edge, a missing doc edge, three unreachable bindings, and a waiver whose symref
   does not match'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
