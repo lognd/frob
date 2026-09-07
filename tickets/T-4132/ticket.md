@@ -24,6 +24,7 @@ scope:
 - tests/system/test_packaging_py_typed.py
 - design/frob.strata
 - tickets/T-4133/ticket.md
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -225,6 +226,12 @@ scope_changes:
     class as T-3914/T-4013/T-4019/T-4085''s own accepted SCOPE002 precedent) -- disclosed
     in the Done report, not suppressed. tickets/T-4133/ticket.md is the mirrored follow-up
     ticket this ticket filed from this worktree.'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-4132: SELFAUDIT001/SYS111 requires bumping testsuite::exec''s ratchet
+    ceiling in the same diff that grows its via-list'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
