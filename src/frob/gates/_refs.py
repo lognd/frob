@@ -390,6 +390,55 @@ def _is_github_convention_file(rel_path: str) -> bool:
     )
 
 
+# frob:ticket T-4153
+#: T-4153: ledger-v2 (sharded-ledger) mode's own per-ticket artifacts --
+#: `frob.tickets._store`'s `_V2_TICKET_GLOB` ("T-*/ticket.md") shape,
+#: mirrored here for both the active and archived ticket directories, and
+#: for `done-report.md` (written by `frob ticket done-report` into the
+#: same per-ticket directory). These are read only by `frob ticket`/`frob
+#: check` tooling -- never referenced from other tracked source files by
+#: design -- the identical "universal, tooling-consumed, no per-project
+#: judgment call" shape T-3249/T-3444 already carved out for ledger-v1's
+#: single root `tickets.md`/`tickets-archive.md` above. Before this, the
+#: moment `frob ticket new` created the FIRST ticket in a v2-mode project,
+#: its `tickets/T-*/ticket.md` failed REF001 on the spot, and `frob
+#: ticket done-report` tripped the same finding on `done-report.md` --
+#: frob's own ledger writes making a freshly adopted project gate-dirty
+#: on day one, the exact "clean project fails clean" shape T-3019/T-3031/
+#: T-3249/T-3444/T-4145 all fixed for their own respective artifacts.
+#:
+#: Deliberately narrow, per T-4145's own recorded caution: this is NOT a
+#: blanket exemption for the `tickets/` directory or for markdown files in
+#: general -- an exemption that matches the normal case disables the
+#: guard, and this repo has an incident on record (an-exemption-matching-
+#: the-normal-case-disables-the-guard) of exactly that failure mode. Only
+#: the two fixed filenames frob itself writes, at the two fixed directory
+#: depths frob itself uses (`tickets/T-*/` and `tickets/archive/T-*/`),
+#: are matched -- any other file dropped into a ticket directory (a
+#: hand-authored design note, a stray script) stays fully subject to
+#: REF001/REF002, proven by
+#: `TestTicketLedgerV2Exempt.test_unrelated_file_in_ticket_dir_still_fires_ref001`.
+_TICKET_LEDGER_V2_EXEMPT_GLOBS = (
+    "tickets/T-*/ticket.md",
+    "tickets/T-*/done-report.md",
+    "tickets/archive/T-*/ticket.md",
+    "tickets/archive/T-*/done-report.md",
+)
+
+
+def _is_ticket_ledger_v2_artifact(rel_path: str) -> bool:
+    """True if `rel_path` is one of ledger-v2's own per-ticket artifacts
+    (T-4153: `ticket.md`/`done-report.md` under `tickets/T-*/` or
+    `tickets/archive/T-*/`, matching `frob.tickets._store`'s own
+    `_V2_TICKET_GLOB` shape) -- written and consumed only by `frob
+    ticket`/`frob check` tooling, never by another tracked file's text, so
+    REF001/REF002's premise does not apply to it."""
+    return any(
+        fnmatch.fnmatchcase(rel_path, pattern)
+        for pattern in _TICKET_LEDGER_V2_EXEMPT_GLOBS
+    )
+
+
 # frob:ticket T-3031
 # frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_node_modules_root_entry_is_exempt kind="unit"  # noqa: E501
 # frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_a_real_orphan_outside_any_vendored_tree_still_fires kind="unit"  # noqa: E501
@@ -1044,6 +1093,7 @@ def _ref_gate_file_violations(
     if (
         rel_path in _DEFAULT_ROOT_MANIFEST_EXEMPT
         or _is_github_convention_file(rel_path)
+        or _is_ticket_ledger_v2_artifact(rel_path)
         or _allowlist_covers(rel_path, allowlist)
         or _is_collectible_test_filename(rel_path)
         or _is_under_vendored_tree(rel_path)

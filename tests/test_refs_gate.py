@@ -908,3 +908,94 @@ class TestVendoredTreeExempt:
         violations = ref_gate(tmp_path)
 
         assert "REF001" in _rule_ids(violations, "genuinely_orphaned.py")
+
+
+class TestTicketLedgerV2Exempt:
+    """T-4153: ledger-v2 (sharded-ledger) mode's own per-ticket artifacts
+    (`tickets/T-*/ticket.md` and `tickets/T-*/done-report.md`, plus their
+    `tickets/archive/T-*/` counterparts) are exempt from REF001/REF002 --
+    the identical "read only by frob ticket/frob check tooling, never
+    referenced from other tracked source files" shape T-3249/T-3444
+    already exempted ledger-v1's root tickets.md/tickets-archive.md for.
+    Before this, `frob ticket new` creating the first ticket in a v2-mode
+    project failed REF001 on its own ticket.md on the spot, and `frob
+    ticket done-report` tripped the same finding on done-report.md."""
+
+    # frob:ticket T-4153
+    # frob:tests \
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_ticket_md_is_exempt_with_n\
+    # o_declaration kind="unit"
+    def test_ticket_md_is_exempt_with_no_declaration(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "tickets/T-0001/ticket.md", "# T-0001\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "tickets/T-0001/ticket.md") == []
+
+    # frob:ticket T-4153
+    # frob:tests \
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_done_report_md_is_exempt_w\
+    # ith_no_declaration kind="unit"
+    def test_done_report_md_is_exempt_with_no_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "tickets/T-0001/ticket.md", "# T-0001\n")
+        _write(tmp_path, "tickets/T-0001/done-report.md", "# Done report\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "tickets/T-0001/done-report.md") == []
+
+    # frob:ticket T-4153
+    # frob:tests \
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_archived_ticket_md_is_exem\
+    # pt_with_no_declaration kind="unit"
+    def test_archived_ticket_md_is_exempt_with_no_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        """Must-fire-withheld, archive variant: `frob ticket land`'s
+        archive move keeps the same two filenames one directory level
+        deeper (`tickets/archive/T-*/`); the exemption follows them
+        there."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "tickets/archive/T-0001/ticket.md", "# T-0001\n")
+        _write(
+            tmp_path, "tickets/archive/T-0001/done-report.md", "# Done report\n"
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "tickets/archive/T-0001/ticket.md") == []
+        assert (
+            _rule_ids(violations, "tickets/archive/T-0001/done-report.md") == []
+        )
+
+    # frob:ticket T-4153
+    # frob:tests \
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_unrelated_file_in_ticket_d\
+    # ir_still_fires_ref001 kind="unit"
+    def test_unrelated_file_in_ticket_dir_still_fires_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        """Must-stay-fire sibling, proving the exemption is narrow (per
+        T-4145's own recorded caution against exemptions that swallow
+        the normal case): a file that is NOT one of the two fixed
+        filenames frob itself writes, even though it sits inside a
+        `tickets/T-*/` directory, is ordinary tracked content and stays
+        fully subject to REF001."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "tickets/T-0001/ticket.md", "# T-0001\n")
+        _write(tmp_path, "tickets/T-0001/notes.md", "scratch notes\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "tickets/T-0001/notes.md")

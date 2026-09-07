@@ -1,7 +1,7 @@
 ---
 id: T-4153
 title: 'REF001: exempt ledger-v2 tickets/T-*/ticket.md and done-report.md'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -45,6 +45,11 @@ scope_changes:
     SCOPE002'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/test_refs_gate.py::TestTicketLedgerV2Exempt::test_ticket_md_is_exempt_with_no_declaration
+- tests/test_refs_gate.py::TestTicketLedgerV2Exempt::test_done_report_md_is_exempt_with_no_declaration
+- tests/test_refs_gate.py::TestTicketLedgerV2Exempt::test_archived_ticket_md_is_exempt_with_no_declaration
+- tests/test_refs_gate.py::TestTicketLedgerV2Exempt::test_unrelated_file_in_ticket_dir_still_fires_ref001
 designated_repro_test: null
 threat: null
 component: null
