@@ -2,7 +2,7 @@
 id: T-4191
 title: 'CI red on WIRE002: a private test fixture''s WIRE001 waiver needs a follow-up
   ticket for wiring that will never happen'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -20,13 +20,21 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_now_fire_reports_the_genuinely_dropped_flag
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_still_pass_when_everything_is_forwarded
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_this_repos_own_frob_toml_reports_zero
+- tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
+designated_repro_test: tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo
 acceptance:
 - text: given the live-repo WIRE002 assertion, when the suite runs, then it passes
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo
 - text: given a WIRE001 waiver on a production symbol with no follow-up attribute,
     when the gate runs, then it is still refused
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
 threat: null
 component: null
 anchor: false

@@ -30,9 +30,9 @@ from frob.findings import Severity
 from frob.gates._flag_coverage import flag_coverage_gate
 
 
-# frob:waive WIRE001 reason="a private per-file fixture helper used only by this \
-# file's own tests -- same shape as _write_fixture_project immediately below it, never \
-# called from production code by design (T-4171)"
+# frob:waive WIRE001 follow_up="T-4151" reason="a private per-file fixture helper used \
+# only by this file's own tests -- same shape as _write_fixture_project immediately \
+# below it, never called from production code by design (T-4171)"
 def _sync_fixture_project(root: Path) -> None:
     """Explicit `uv sync --project <root>` step (T-4171): the fixture's
     own precondition for `flag_coverage_gate`'s no-mutate resolver spawn
