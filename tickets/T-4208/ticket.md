@@ -2,7 +2,7 @@
 id: T-4208
 title: 'land: run the type stage with the project venv''s checker (not PATH), and
   print file:line:message diagnostics on refusal'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 Consumer F-328 (T-4135). Land refused three times citing '1/2 NEW ty error(s)' with no line numbers, while the worktree's own venv ty and frob check --only ty both reported clean. Root cause: land's type stage ran the globally-installed ty (older) instead of the project venv's ty (matches gate); the refusal message also never printed a diagnostic. Fix both: pin the same binary the gate uses, and always print file/line/code/message on refusal. Same shape as T-4125 (already done for a different refusal path) recurring here for the type stage specifically. Fixture-testable: YES, consumer-blocking now (land blocker).
+
+## Drop reason
+- 2026-09-07: duplicate: T-4125 already covers land type-stage refusal attribution and landed today (project_tool_argv/project_import_argv route toolchain spawns through the project env; the ty stage now names the resolved tool path+version on refusal). F-328's evidence (land refused on a stale globally-installed ty finding no line/diagnostic) is corroborating evidence that the fix works as intended -- attach it to T-4125's evidence trail rather than reopening. (absorbed by T-4125)
