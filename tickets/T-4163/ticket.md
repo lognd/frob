@@ -19,8 +19,8 @@ scope:
 - src/frob/gates/_bare_toolchain.py
 - src/frob/gates/__init__.py
 - src/frob/gates/_package_audit*.py
-- src/frob/vet/**
 - src/frob/check/__init__.py
+- src/frob/vet/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +60,16 @@ scope_changes:
   glob: src/frob/check/__init__.py
   reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
     fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/vet/**
+  reason: narrow to the one file needing the new re-export
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/vet/__init__.py
+  reason: narrow to the one file needing the new re-export
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
