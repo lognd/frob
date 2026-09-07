@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/_coverage_refresh.py
 - src/frob/tickets/_worktree_guard.py
+- tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
   glob: src/frob/tickets/_worktree_guard.py
   reason: F-018's xdist-plugin-presence probe (_xdist_plugin_present) lives here and
     needs the same project-env fix
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_coverage.py
+  reason: test coverage for the coverage_refresh pytest-argv fix
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
