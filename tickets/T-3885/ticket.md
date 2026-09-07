@@ -26,6 +26,17 @@ body_changes:
   at: '2026-09-05'
   old_length: 4291
   new_length: 6765
+- mode: set
+  reason: 'converts this ticket from reasoning to measurement: caught a live land
+    whose working directory and worktree argument both name another repository being
+    reported as an in-flight land of this one. Adds the id-collision fact -- this
+    repo has its own archived ticket with the same number -- which turns the false
+    positive into a false but resolvable explanation, and separates the confirmed
+    detection defect from the unconfirmed blocking claim'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 6765
+  new_length: 9879
 designated_repro_test: null
 threat: null
 component: null
@@ -166,3 +177,58 @@ ADD TO THE FIXTURES:
 DO NOT fix (b) alone by excluding the current pid. The measured process trees
 show three pids per land, so a naive self-check would still trip on siblings and
 children. Fix the predicate, not the symptom.
+
+CONFIRMED LIVE, 2026-09-07, WITH THE PROCESS STILL RUNNING. This ticket was filed
+on reasoning; here is the measurement.
+
+This repository's fleet status reported:
+
+    LANDS IN FLIGHT: 1
+      T-0412 pids=2075447 elapsed=326s
+
+I inspected the process before it exited:
+
+    /proc/2075447/cwd      -> /home/logan/projects/logand.app-v2
+    /proc/2075447/cmdline  -> frob ticket land T-0412 --worktree
+                              /home/logan/projects/logand.app-v2/.claude/worktrees
+
+So a land running entirely inside ANOTHER REPOSITORY is reported as an in-flight
+land of THIS one. The process scan matches on the command shape and does not
+constrain by working directory or by the worktree path the command itself names
+-- and that path names the other repository explicitly, so the information needed
+to reject the match was present in the matched string.
+
+A SECOND FACT THAT MAKES THIS WORSE AND WAS NOT IN THE ORIGINAL REPORT: TICKET
+IDS COLLIDE ACROSS REPOSITORIES. This repository has its own archived T-0412.
+Their live T-0412 is a different ticket in a different queue. So a cross-repo
+match does not merely produce a spurious "a land is running" -- it produces one
+attributed to a REAL, RESOLVABLE id here, which a reader can look up and be
+misled by. Anyone diagnosing this would find an archived ticket and reasonably
+conclude something had gone wrong with it.
+
+I ALSO SAW THIS EARLIER TODAY AND COULD NOT CONFIRM IT. A fleet status hours ago
+reported an in-flight land for another consumer-shaped id; by the time I inspected
+the process it had exited, and I recorded that I had no evidence either way rather
+than asserting a cross-repo match. This is that same phenomenon, caught while
+live.
+
+WHAT THIS TICKET SHOULD NOW REQUIRE
+  1. Constrain the scan by repository. The worktree path is already in the matched
+     command line, and the process working directory is available -- either is
+     sufficient. Prefer checking both, since a land can legitimately run with a
+     working directory outside the repo it targets.
+  2. Do not resolve a matched ticket id against THIS repository's ledger without
+     first establishing the process belongs to this repository. The id collision
+     above turns a false positive into a false, plausible-looking explanation.
+  3. Re-check what this scan GATES. If a cross-repo land can make a ledger verb
+     here refuse with a land-in-progress error, then one repository's work can
+     block another's, which is the title of this ticket and now has a confirmed
+     mechanism behind it. Establish that by test rather than by inference -- I
+     have confirmed the DETECTION is cross-repo, not the blocking.
+
+MUST-FIRE FIXTURE:   a land running in another repository is not reported as an
+                     in-flight land of this one.
+MUST-STAY-QUIET:     a land running in THIS repository is still detected, including
+                     when its working directory differs from the repo root.
+THIRD FIXTURE:       a matched ticket id is not resolved against this repository's
+                     ledger unless the process is established to belong here.
