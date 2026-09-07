@@ -2,7 +2,7 @@
 id: T-4177
 title: 'drop the uv, ruff, ty and pytest badges from the README: they advertise the
   toolchain, and the ty endpoint 404s into placeholder text'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-07'
