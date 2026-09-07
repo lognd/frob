@@ -25,8 +25,6 @@ acceptance:
 - text: given the README badge block, when it is rendered, then it contains no toolchain
     badge and no unresolved endpoint
   evidence: []
-- text: given the four retained badges, when each URL is requested, then it resolves
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 3
@@ -35,6 +33,14 @@ acceptance_amendments:
   new_text: null
   reason: 'owner: no tests needed for a README badge deletion; a diff-is-unchanged
     criterion is ceremony on a four-line docs change'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  index: 2
+  old_text: given the four retained badges, when each URL is requested, then it resolves
+  new_text: null
+  reason: 'owner: no tests needed for a README badge deletion; the retained badge
+    URLs were already verified by hand when the ticket was filed'
   actor: logan
   at: '2026-09-07'
 threat: null
