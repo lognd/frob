@@ -1,7 +1,7 @@
 ---
 id: T-4146
 title: wire BARETOOL001 into gates/__init__.py's job registry
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-09-07'
