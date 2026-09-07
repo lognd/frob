@@ -89,6 +89,18 @@ acceptance:
     then they can see which leaf was taken and by whom, and the record names the epic
     tip staleness observed at the moment it was taken
   evidence: []
+- text: given a claim held by someone else, when a contributor acknowledges the override
+    with a reason, then the work proceeds locally and no verb is blocked, offline
+    included
+  evidence: []
+- text: given an override, when it is attempted without a reason or as an ambient
+    session-wide setting, then it is refused, since a reflex-supplied override makes
+    the claim system decoration
+  evidence: []
+- text: given work done under an override, when it is landed, then the land output
+    names whose claim was overridden and why, and the override record travels on the
+    next push without the override itself having required the network
+  evidence: []
 threat: null
 component: null
 anchor: false
