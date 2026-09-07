@@ -23,6 +23,7 @@ scope:
 - tests/unit/test_ticket_restore.py
 - tickets/T-4156/ticket.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -479,6 +480,12 @@ scope_changes:
     source, following this node''s own T-2464 fixture-literal precedent, is required
     to land; accepting the resulting SCOPE002 closure-cascade debt already filed as
     its own follow-up ticket'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-4145: bump the testsuite::net.connect ratchet ceiling 3->4 for the new
+    declared site, required alongside the design/frob.strata declaration to land'
   actor: logan
   at: '2026-09-07'
 evidence:
