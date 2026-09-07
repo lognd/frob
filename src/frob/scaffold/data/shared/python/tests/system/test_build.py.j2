@@ -16,6 +16,15 @@ def test_package_imports():
     importlib.import_module("{{ project.name }}")
 
 
+def test_py_typed_marker_present():
+    """The `py.typed` marker declared in `pyproject.toml`'s package-data
+    must actually exist -- a declaration with no backing file is a
+    silent zero-match (setuptools does not error on it) and ships this
+    package untyped to every downstream type checker."""
+    marker = Path(__file__).parent.parent.parent / "src" / "{{ project.name }}" / "py.typed"
+    assert marker.is_file()
+
+
 {% if project.type != "python-library" -%}
 def test_cli_help():
     """The CLI entry point must exit 0 with --help."""

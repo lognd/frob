@@ -1598,7 +1598,7 @@ node testsuite : trusted {
     // "multiprocessing.Process(" still lexically matches this scanner's
     // own textual needle table, same false-positive class T-3598/T-3526
     // hit for other fixture-literal shapes.
-    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/coordinator_suite/test_verify_lands.py", "tests/unit/gates/test_win32_kill_signal.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py";
+    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/coordinator_suite/test_verify_lands.py", "tests/unit/gates/test_win32_kill_signal.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py", "tests/system/test_packaging_py_typed.py";
     // T-1478: tests/unit/strata/test_effects.py's own new argument-level
     // `of`-scoping fixtures contain real `os.environ.get(...)` needle
     // literals (exercising the SAME env-read observation the `of` join

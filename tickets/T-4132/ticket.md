@@ -3,7 +3,7 @@ id: T-4132
 title: py.typed is declared in package-data but does not exist and is absent from
   the built wheel, so frob ships untyped and every scaffolded project inherits the
   same false claim
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -256,14 +256,27 @@ scope_changes:
     defect class'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/system/test_packaging_py_typed.py::TestFrobWheelShipsPyTyped::test_built_wheel_contains_py_typed_marker
+- tests/system/test_packaging_py_typed.py::TestFrobWheelShipsPyTyped::test_built_wheel_does_not_duplicate_or_drop_other_package_data
+- tests/system/test_packaging_py_typed.py::TestScaffoldedProjectShipsPyTyped::test_scaffolded_project_wheel_contains_py_typed_marker[python-library]
+- tests/system/test_packaging_py_typed.py::TestScaffoldedProjectShipsPyTyped::test_scaffolded_project_wheel_contains_py_typed_marker[python-tool]
 designated_repro_test: null
 acceptance:
 - text: given a wheel built from this repository, when its contents are listed, then
     a py.typed marker is present at the package root
-  evidence: []
+  evidence:
+  - tests/system/test_packaging_py_typed.py::TestFrobWheelShipsPyTyped::test_built_wheel_contains_py_typed_marker
+  - tests/system/test_packaging_py_typed.py::TestFrobWheelShipsPyTyped::test_built_wheel_does_not_duplicate_or_drop_other_package_data
+  - tests/system/test_packaging_py_typed.py::TestScaffoldedProjectShipsPyTyped::test_scaffolded_project_wheel_contains_py_typed_marker[python-library]
+  - tests/system/test_packaging_py_typed.py::TestScaffoldedProjectShipsPyTyped::test_scaffolded_project_wheel_contains_py_typed_marker[python-tool]
 - text: given a freshly scaffolded python project, when a wheel is built from it,
     then that wheel contains its own py.typed marker
-  evidence: []
+  evidence:
+  - tests/system/test_packaging_py_typed.py::TestFrobWheelShipsPyTyped::test_built_wheel_contains_py_typed_marker
+  - tests/system/test_packaging_py_typed.py::TestFrobWheelShipsPyTyped::test_built_wheel_does_not_duplicate_or_drop_other_package_data
+  - tests/system/test_packaging_py_typed.py::TestScaffoldedProjectShipsPyTyped::test_scaffolded_project_wheel_contains_py_typed_marker[python-library]
+  - tests/system/test_packaging_py_typed.py::TestScaffoldedProjectShipsPyTyped::test_scaffolded_project_wheel_contains_py_typed_marker[python-tool]
 threat: null
 component: null
 anchor: false

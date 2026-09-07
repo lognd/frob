@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 294,
-      "reason": "T-3884: adds scripts/artifact_smoke.py's own must-fire/must-stay-quiet fixtures -- tests/system/test_artifact_smoke.py's real uv-build subprocess spawns and tests/unit/test_artifact_smoke_script.py's importlib.util module exec_module call -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3884"
+      "accepted_count": 295,
+      "reason": "T-4132: adds tests/system/test_packaging_py_typed.py's real uv-build subprocess spawns (same shape as T-3884's test_artifact_smoke.py precedent) -- 3 must-fire/must-stay-quiet/third fixtures each build a real wheel via `uv build --wheel`. Bumping the ceiling to the current measured count.",
+      "ticket": "T-4132"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

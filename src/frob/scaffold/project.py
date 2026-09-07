@@ -51,6 +51,13 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
             "types/python-library/__init__.py.j2", "src/{{ project.name }}/__init__.py"
         ),
         _ManifestEntry(
+            # T-4132: package-data declares this marker (pyproject.toml.j2);
+            # without this manifest entry the declaration matches zero files
+            # and every scaffolded project silently ships untyped.
+            "shared/python/py.typed.j2",
+            "src/{{ project.name }}/py.typed",
+        ),
+        _ManifestEntry(
             "shared/python/logging/__init__.py.j2",
             "src/{{ project.name }}/logging/__init__.py",
         ),
@@ -98,6 +105,13 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/python/pyproject.toml.j2", "pyproject.toml"),
         _ManifestEntry(
             "types/python-tool/__init__.py.j2", "src/{{ project.name }}/__init__.py"
+        ),
+        _ManifestEntry(
+            # T-4132: package-data declares this marker (pyproject.toml.j2);
+            # without this manifest entry the declaration matches zero files
+            # and every scaffolded project silently ships untyped.
+            "shared/python/py.typed.j2",
+            "src/{{ project.name }}/py.typed",
         ),
         _ManifestEntry(
             "types/python-tool/__main__.py.j2", "src/{{ project.name }}/__main__.py"
