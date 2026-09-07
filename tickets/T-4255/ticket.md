@@ -18,10 +18,18 @@ scope:
 - tests/system/test_cli_ticket.py
 - tests/test_worktree_guard.py
 - tests/test_tickets_evidence_cli.py
+- src/frob/process/_tty.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_tty.py
+  reason: 'T-4255: shared cross-platform interactive-stdin check for the attach TTY
+    fast-fail (sys.stdin.isatty() misreports True for NUL on Windows)'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given the Windows runner, when the ticket CLI system test runs, then it passes
