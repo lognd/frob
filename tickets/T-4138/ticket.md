@@ -14,10 +14,40 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/gates/_coverage*.py
+- tests/**/test_test002*
+- tests/**/*coverage*
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: TEST002 conflates absent coverage artifact with measured zero; fix distinguishes
+    three states and audits shared loader consumers
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_coverage*.py
+  reason: TEST002 conflates absent coverage artifact with measured zero; fix distinguishes
+    three states and audits shared loader consumers
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/**/test_test002*
+  reason: TEST002 conflates absent coverage artifact with measured zero; fix distinguishes
+    three states and audits shared loader consumers
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/**/*coverage*
+  reason: TEST002 conflates absent coverage artifact with measured zero; fix distinguishes
+    three states and audits shared loader consumers
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a symbol with bound passing test cases and no coverage artifact, when
