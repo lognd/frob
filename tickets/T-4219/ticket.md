@@ -2,7 +2,7 @@
 id: T-4219
 title: 'relative image and link targets in the declared long-description file break
   on the package index: fix this README and add a cross-project gate'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-07'
