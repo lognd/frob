@@ -2,7 +2,7 @@
 id: T-4167
 title: close reports MissingEvidence for two unrelated causes, one of which is a Done-report
   heading unrecognised without a preceding blank line
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: splitting the MissingEvidence/no-Done-report disjunction needs a new TicketError
+    member (TicketError lives in _models.py); the close-failure-hint dispatch table
+    in _close_cmd.py may also need a new hint entry
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a ticket with a Done report but no bound evidence, when close runs,
