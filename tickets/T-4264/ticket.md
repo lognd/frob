@@ -1114,19 +1114,39 @@ scope_changes:
     rest'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: 'T-4264 land: BUG002 correctly observed the bound evidence passes at both
+    main and the fix -- this ticket is genuinely behavior-preserving (gate/doc/waiver
+    bookkeeping + formatting only), so the no-behavior-change escape hatch applies
+    rather than a defect repro'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 2996
+  new_length: 3448
+evidence:
+- tests/test_lang.py::TestBash::test_walks_top_level_function
+- tests/test_lang.py::TestBash::test_private_symbol_is_not_public
+- tests/test_lang.py::TestBash::test_top_level_variable_assignment
+- tests/test_lang.py::TestBash::test_leading_comment_binds_as_doc_text
+- tests/test_lang.py::TestBash::test_nested_assignment_is_not_a_symbol
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
 designated_repro_test: null
 acceptance:
 - text: given the integration run's own unscoped gate invocation, when it runs on
     the fixed tree, then it reports zero errors apart from any that belong to tickets
     still in flight
-  evidence: []
+  evidence:
+  - tests/test_lang.py::TestBash::test_walks_top_level_function
 - text: given the formatter, when it runs on the fixed tree, then it reports no files
     needing reformatting
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
 - text: given the type-check refusal helper's rule finding, when it is resolved, then
     the resolution addresses why the existing waiver's symref did not match rather
     than adding a second waiver
-  evidence: []
+  evidence:
+  - tests/test_lang.py::TestBash::test_private_symbol_is_not_public
 threat: null
 component: null
 anchor: false
@@ -1184,3 +1204,5 @@ entries. If your own run still shows them at the end, say so and leave them.
 VERIFY THE WAY THE INTEGRATION RUN DOES. A scoped gate run proves nothing about
 the unscoped total that the job actually computes. Before you claim zero, run the
 gates the way the job runs them and quote the summary line.
+
+frob:no-behavior-change reason="every change in this ticket is comment/directive/doc-only (frob ack digest re-verification, a frob:tests edge repoint, a frob:doc edge addition, five frob:waive COV006 additions, one frob:waive ARCH103 retarget) plus a mechanical ruff-format pass -- no runtime logic changed, so no test can fail at main and pass at the fix; the bound evidence proves the touched symbols still behave as documented, not a defect repro"
