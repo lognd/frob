@@ -20,6 +20,7 @@ scope:
 - tests/**/test_test002*
 - tests/**/*coverage*
 - docs/modules/gates.md
+- tests/gates_suite/test_test_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +53,11 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: gates.py frob:doc targets live here
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/gates_suite/test_test_gate.py
+  reason: editing 2-tuple to 3-tuple unpack of _load_tests fixed by T-4138
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
