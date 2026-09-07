@@ -60,6 +60,12 @@ scope_changes:
   reason: editing 2-tuple to 3-tuple unpack of _load_tests fixed by T-4138
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_unmeasured_when_ts_collector_failed
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_still_fires_when_collector_did_not_fail
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_absent_vs_measured_zero_render_differently
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_load_tests_merges_all_four_collectors
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_structural_only_edge_no_longer_credited
 designated_repro_test: null
 acceptance:
 - text: given a symbol with bound passing test cases and no coverage artifact, when
