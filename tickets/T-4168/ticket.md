@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'adds a second shape that cannot demonstrate a red state and needs a different
+    answer: a repro that can only run against a live deployment, whose module hard-skips
+    by design. Distinguishes it from this ticket''s file-absent case, where placing
+    the test into the parent checkout is a viable fix, and warns that any accept-declared-unrunnable
+    path must key on a machine-visible declaration rather than a prose reason'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4084
+  new_length: 7132
 designated_repro_test: null
 acceptance:
 - text: given a repro test that is new in the ticket and absent at the parent commit,
@@ -106,3 +117,52 @@ ACCEPTANCE
 - The absent case given a named outcome and a stated policy.
 - No path added by which an undemonstrated repro satisfies the gate.
 - All three fixtures committed.
+
+A SECOND SHAPE THAT CANNOT DEMONSTRATE A RED STATE, AND IT NEEDS A DIFFERENT
+ANSWER FROM THIS TICKET'S. logand.app-v2 F-387 (on frob 0.530.0): a close was
+refused for confirmatory-only evidence, and the analysis is correct on both
+halves.
+
+  - The bound test DID pass at the parent, honestly: it asserts a header equals
+    an exact string, and both the string and the code changed in the same commit.
+    Confirmatory by construction, not a repro. The refusal is RIGHT.
+  - The genuine repro exists and is a different test: it parses a live response
+    and would fail pre-fix, pass post-fix. But it can ONLY execute against a real
+    deployed endpoint. Its module hard-skips otherwise BY DESIGN, and its own
+    docstring says it never runs by default in CI or a local invocation. There is
+    no local double for it, unlike the compose-stack fixtures their other
+    end-to-end tests use.
+
+SO THE TICKET HAS A REAL REPRO THAT THE GATE STRUCTURALLY CANNOT OBSERVE. That is
+not the same as this ticket's file-absent-at-parent case, where the test exists
+and could be run against the old code if the machinery placed it there. Here,
+running it at the parent is impossible without a deployment, and no amount of
+checkout machinery changes that.
+
+THE HONEST OPTIONS, AND NEITHER IS "WEAKEN THE GATE":
+  a. ACCEPT A DECLARED-UNRUNNABLE REPRO, under a named, checkable condition. A
+     test whose module declares it requires an external environment is a
+     different category from a test that merely failed to run. If the gate can
+     see that declaration -- the skip is by design and documented -- it could
+     record the repro as DECLARED BUT UNVERIFIABLE rather than refusing or
+     silently passing. That is the unmeasured-not-clean posture this queue has
+     demanded everywhere else, applied here.
+  b. REQUIRE A LOCAL DOUBLE for the assertion, so a repro exists that CAN run at
+     the parent. Their other end-to-end tests already have compose-stack
+     fixtures; this module does not. That is arguably the better engineering
+     answer and it is also more work, and it is THEIR work rather than frob's.
+
+Prefer (a) as frob's part, because frob cannot require every consumer to build a
+local double for every deployment-only assertion, and refusing the close is
+currently forcing exactly that or forcing a false binding. But (a) must NOT
+degrade into a general escape: the declaration has to be machine-visible and
+specific, not prose in a reason string. This repo has already recorded that an
+intention stated in prose is not enforcement, four times in one session.
+
+WHAT THIS ADDS TO THIS TICKET'S SCOPE: when enumerating why a repro cannot
+demonstrate a red state, the file-absent case is one reason and
+declared-environment-dependence is another. Both currently collapse into an
+outcome that is either a refusal or a no-verdict. Distinguish them by name, and
+decide each separately -- I have deliberately not merged them, because the fix
+for one (place the test into the parent checkout and run it) is unavailable for
+the other.
