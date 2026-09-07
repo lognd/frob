@@ -40,6 +40,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 5752
   new_length: 7809
+- mode: set
+  reason: 'adds a sixth independent measurement (267 warnings from one shared design
+    doc) and the consumer''s own framing of the mechanism, plus the point their report
+    adds that mine did not: the hub-file shape is deliberate documentation design,
+    so any fix premised on splitting those documents asks consumers to reorganise
+    their docs to suit a gate'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 7809
+  new_length: 9988
 designated_repro_test: null
 threat: null
 component: null
@@ -179,3 +189,43 @@ different SCOPE002 behaviour -- T-4098 in particular is about the rule being
 structurally UNWAIVABLE, which is a separate defect from the closure being too
 broad. Read each before folding or dropping it; a census is evidence of a
 pattern, not proof that every member is the same bug.
+
+A SIXTH MEASUREMENT, AND THE CONSUMER'S OWN CONCLUSION IS THE ARGUMENT.
+logand.app-v2 F-370: adding one shared design document to a ticket's scope -- the
+ticket needed it because its acceptance criteria update one component's anchor --
+produced roughly 267 closure warnings naming symbols from a completely different
+subsystem that the ticket never touches.
+
+Their one-line statement of the mechanism is better than mine above:
+
+    the closure treats "this doc file is in scope" as "every symbol this doc
+    file describes must be in scope too", even for components the ticket
+    never touches
+
+And their closing note is the cost: "Not actionable from here ... logged rather
+than chased." That is the third independent party to reach the same verdict --
+the finding is real, the fix is not available to the person hitting it, and the
+only rational response is to record it and move on. A gate whose findings are
+routinely and correctly ignored has stopped functioning as a gate.
+
+THE MEASUREMENT SET IS NOW SIX, ACROSS TWO REPOSITORIES:
+
+    ~140   this repo, from the SYS113 work
+     345   this repo, a planner scoping a leaf to the gates catalog
+      71   this repo, filing the ticket that became this one
+     350+  this repo, the CLI parser package's anchors into two hub docs
+     267   the consumer, one shared L5 design document
+      10   the consumer, a smaller instance in the same family
+
+Six independent hits, five different tasks, two codebases. Nobody set out to
+study this rule; everyone tripped over it.
+
+ONE POINT THEIR REPORT ADDS THAT MINE DID NOT, and it matters for the fix: the
+document in question "documents the whole subsystem in one file BY DESIGN". So
+the file shape the closure punishes is not an accident of authoring that could be
+refactored away -- it is a deliberate, reasonable documentation structure. Any fix
+premised on splitting hub documents would be asking every consumer to reorganise
+their docs to suit a gate. That is the wrong direction, and it strengthens the
+case for the diff-scoped option this ticket already prefers: narrow the closure to
+the anchors the diff actually touches, which requires nothing of the document at
+all.
