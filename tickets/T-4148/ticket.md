@@ -13,10 +13,20 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/testing/_coverage_refresh.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_coverage_refresh.py
+  reason: 'T-4148: the bare pytest argv (F-017) and the xdist plugin-presence check
+    (F-018) both need to route through the target project''s own uv-managed environment
+    instead of frob''s'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 threat: null
 component: null
