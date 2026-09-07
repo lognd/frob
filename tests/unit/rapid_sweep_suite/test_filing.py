@@ -61,7 +61,9 @@ class TestRelativizeRegressionScopeFile:
         # absolute-but-outside-root branch this test means to pin.
         # Anchor on tmp_path's own drive/root so the literal is absolute
         # on every platform while still resolving outside tmp_path.
-        outside = str(Path(tmp_path.anchor) / "definitely" / "not" / "under" / "tmp_path" / "x.py")
+        outside = str(
+            Path(tmp_path.anchor) / "definitely" / "not" / "under" / "tmp_path" / "x.py"
+        )
         with caplog.at_level(logging.WARNING):
             result = _relativize_regression_scope_file(tmp_path, outside)
         assert result == outside

@@ -314,7 +314,16 @@ class TestRecordLandCommit:
             ["git", "show", "--stat", "--format=", new_sha], v2_repo
         ).stdout
         assert "feature.py" not in head_files
-        assert str(v2_ticket_path(v2_repo, tid).relative_to(v2_repo)) in head_files
+        # T-4244: git's `--stat` output is always forward-slash-separated
+        # regardless of platform (git normalizes paths internally); render
+        # the comparison side the same way with `.as_posix()` rather than
+        # the native-separator `str()`, which backslash-renders on Windows
+        # and never matches -- producers emit POSIX, comparisons are
+        # against POSIX (T-4107's own rule, `_posix_rel` in
+        # src/frob/dup/_legacy.py).
+        assert (
+            v2_ticket_path(v2_repo, tid).relative_to(v2_repo).as_posix() in head_files
+        )
 
         # The bystander's edit was never absorbed -- it is still sitting
         # there, uncommitted, exactly as a genuinely concurrent process's

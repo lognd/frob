@@ -230,7 +230,14 @@ def test_raw_tree_returns_tree_source_language(tmp_path: Path):
 def test_symbol_tree_covers_span(tmp_path: Path):
     # frob:tests src/frob/lang/__init__.py::symbol_tree kind="unit"
     path = tmp_path / "s.py"
-    path.write_text(_PY)
+    # T-4244: `write_text` text-mode-translates every "\n" to `os.linesep`
+    # on write (CRLF on Windows) before tree-sitter ever sees the bytes.
+    # `symbol_tree`/`_parse` read via `read_bytes()` (no translation), so
+    # the parsed byte offsets and content would diverge from the LF-only
+    # `_PY.encode("utf-8")` slice this test compares against below --
+    # write the exact intended bytes so the fixture is platform-invariant
+    # instead of depending on the platform's newline default.
+    path.write_bytes(_PY.encode("utf-8"))
     node = symbol_tree(path, (5, 7)).danger_ok
     assert node.label == "function_definition"
 

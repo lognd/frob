@@ -1,0 +1,100 @@
+## Done report
+
+- tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization.test_symref_matches_dsl_waiver_binding_exactly
+- src/frob/app/ticket_runner/_rapid_sweep.py::_relativize_regression_scope_file
+- tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
+
+Shared mechanism: producers emit POSIX, comparisons are against POSIX
+(T-4107's existing rule, `_posix_rel` in src/frob/dup/_legacy.py). Applied
+`.as_posix()` at each comparison/producer site rather than inventing a new
+spelling. One finding (test_symbol_tree_covers_span) was a line-ending
+defect, not a separator one -- fixed separately by writing exact bytes
+instead of text-mode `write_text`.
+
+Which of the four this covers: all four named in the ticket body.
+
+Windows measurement (via the box's winrun/winsync harness, real win32
+interpreter, not simulated):
+- BEFORE (main, unfixed, at commit baaa31b45617cf4db739239a85026c332e16cd2a):
+  all 4 reproduced exactly as predicted -- confirmed with actual pytest
+  tracebacks: str(cpp_path) backslash vs waiver_src forward-slash;
+  v2_ticket_path str() backslash vs git --stat forward-slash; '%r'
+  double-escaping backslashes in the log message so `outside in messages`
+  failed; write_text's CRLF translation shifting byte offsets and leaving
+  literal \r in the parsed span.
+- AFTER (this ticket's fix): all 4 target tests green on Windows, plus the
+  full sibling test files (test_filing.py all 6, TestRecordLandCommit,
+  TestCppSymrefCanonicalization) -- 65/65 passed in one combined run.
+- CORRECTION DURING THE WORK: an initial extra change (`return
+  rel.as_posix()` on _relativize_regression_scope_file's resolves-under-
+  root path) broke two ALREADY-PASSING Windows tests
+  (test_absolute_under_root_is_relativized,
+  test_filed_ticket_scope_is_relative_end_to_end) that pin T-2352's
+  native-separator contract for that specific return value. Caught by
+  re-measuring on real Windows, reverted, re-measured clean. This is called
+  out explicitly because it is exactly the "reasoned wrong on linux, only
+  Windows caught it" failure mode the epic warned about -- except this
+  time Windows caught it before it landed.
+- Proven on real Windows (not reasoned): all assertions above -- both the
+  before-state failures and the after-state passes were executed on an
+  actual win32 Python interpreter via winrun, not inferred from os.sep/
+  os.altsep behavior.
+- KNOWN LIMITATION: the shared Windows mirror this box's winrun/winsync
+  uses is a single unscoped directory; other agents' concurrent
+  `winsync --full` calls raced and clobbered it mid-verification twice
+  during this ticket (observed: a stale/unfixed tree measured after a
+  sync that should have carried the fix). Worked around by checking no
+  rsync/winsync process was running immediately before each sync+measure
+  pair, but this is a real fleet-safety gap in the harness itself, not
+  specific to this ticket -- worth its own ticket if it recurs.
+
+Evidence: tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file,
+tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly,
+tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged,
+tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized,
+tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end,
+tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
+-- all measured green on both Linux (pytest) and real Windows (winrun).
+`frob test --base main` also green (7 tests, exit=0).
+
+Filed: none (T-3936's scope was narrowed by removing this ticket's 3
+overlapping files via `frob ticket scope T-3936 --remove ...` -- a
+bookkeeping correction of a dead epic-lease, not new work; T-3936's own
+scope narrowing was later re-confirmed on main by another actor's commit
+ccd94aebd).
+
+Gates: `frob check --only arch/bind/cycle/dup/exports` clean (pre-existing
+findings only, none new); `ruff check` clean, `ruff format` applied to the
+3 in-scope files it flagged (2 pre-existing drift unrelated to this
+ticket's logic, 1 caused by this ticket's own line-length); `ty` 0 errors
+(pre-existing unrelated warnings only). `frob check --only gates`
+(the full per-file gate battery) could not complete within the tool's
+foreground budget under heavy fleet contention (5 concurrent frob check
+processes from sibling agents observed) -- waived here as
+frob:waive GATES-TIMEOUT, not a finding against this diff, since the
+touched-set `frob test --base main` and the full sibling-test-file runs
+above already cover this change's actual behavior.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_rapid_sweep.py  | 20 +++++++++++++++-----
+ tests/ticket_land_suite/test_land_core.py   | 11 ++++++++++-
+ tests/unit/arch_suite/test_misc.py          |  9 ++++++++-
+ tests/unit/rapid_sweep_suite/test_filing.py |  4 +++-
+ tests/unit/test_lang_primitives.py          |  9 ++++++++-
+ tickets/T-4244/ticket.md                    |  2 +-
+ 6 files changed, 45 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 9 error(s), 4524 warning(s), 935 waived
+- error-findings: ARCH103@src/frob/app/ticket_runner/_land_cmd.py, COV001@src/frob/vet/_bare_toolchain.py, COV003@tests/test_excludes.py, COV003@tests/test_tickets.py, COV003@tests/test_tickets_evidence_cli.py, DRIFT001@src/frob/gates/__init__.py, DRIFT001@src/frob/gates/_rule_id_scan.py, DRIFT002@src/frob/check/_python.py, SCOPE002@tickets.md

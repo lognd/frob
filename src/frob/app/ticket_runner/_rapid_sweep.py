@@ -985,9 +985,7 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
 # frob:ticket T-2030
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_pins_frob_root_to_the_correct_root  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_strips_worktree_lease_env  # noqa: E501
-def _detached_sweep_env(
-    root: Path, target_branch: str | None = None
-) -> dict[str, str]:
+def _detached_sweep_env(root: Path, target_branch: str | None = None) -> dict[str, str]:
     """T-2030: the `env=` this module's detached `sweep-async` child MUST
     be spawned with -- never the bare inherited `os.environ`.
 
@@ -2191,14 +2189,26 @@ def _relativize_regression_scope_file(root: Path, file: str) -> str:
     try:
         rel = Path(file).relative_to(root)
     except ValueError:
+        # T-4244: `%r` (repr) DOUBLES every backslash in a Windows path,
+        # so a caller checking `file in message` (a plain substring test
+        # against the raw, un-repr'd path) never matches there even
+        # though the same path is logged -- verified: '%r' % 'C:\\foo'
+        # yields doubled backslashes, '%s' % same string round-trips
+        # exactly. `%s` logs the path as-is on every platform.
         _log.warning(
-            "rapid sweep: regression finding file %r is absolute but does "
-            "not resolve under root %r -- keeping as-is rather than "
+            "rapid sweep: regression finding file %s is absolute but does "
+            "not resolve under root %s -- keeping as-is rather than "
             "guessing a relative path",
             file,
             str(root),
         )
         return file
+    # NOTE (T-4244): NOT switched to `.as_posix()` here -- T-2352's own
+    # tests (test_absolute_under_root_is_relativized,
+    # test_filed_ticket_scope_is_relative_end_to_end) pin `str(Path(...))`
+    # (native separator) as this function's contract for the resolves-
+    # under-root case, measured still passing on real Windows. Only the
+    # WARNING-branch %r formatting above was the actual defect.
     return str(rel)
 
 

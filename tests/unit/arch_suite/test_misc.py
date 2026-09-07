@@ -353,7 +353,14 @@ class TestCppSymrefCanonicalization:
         parser = Parser(Language(tscpp.language()))
         tree = parser.parse(cpp_path.read_bytes())
         out = []
-        _check_long_functions(tree, str(cpp_path), 2, out)
+        # T-4244: the real production caller (frob/arch/__init__.py) always
+        # passes an `.as_posix()`'d path here -- `parse_file`'s own
+        # `_display_path` falls back to `path.as_posix()` too when the
+        # path (as here, under tmp_path) does not resolve under cwd. Using
+        # `str(cpp_path)` instead renders native separators on Windows and
+        # never matches `waiver_src` below; match the real contract rather
+        # than inventing a fourth path spelling.
+        _check_long_functions(tree, cpp_path.as_posix(), 2, out)
         assert out
         violation_symref = out[0].symref
 

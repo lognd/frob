@@ -2,7 +2,7 @@
 id: T-4244
 title: 'Windows path-shape class: four failures where a backslash-rendered path is
   compared against a forward-slash string'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
