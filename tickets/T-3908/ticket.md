@@ -14,10 +14,66 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_accept.py
+- src/frob/tickets/_models.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- tests/test_tickets_acceptance.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_accept.py
+  reason: 'T-3908: --amend/--remove index convention fix touches the accept mutation
+    family (_accept.py), the error message enum (_models.py), CLI dispatch/help (_mutate.py,
+    _metadata.py), its test file, and the one doc section (tickets-data-storage.md)
+    documenting the 0-based CLI contract that must move to 1-based'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'T-3908: --amend/--remove index convention fix touches the accept mutation
+    family (_accept.py), the error message enum (_models.py), CLI dispatch/help (_mutate.py,
+    _metadata.py), its test file, and the one doc section (tickets-data-storage.md)
+    documenting the 0-based CLI contract that must move to 1-based'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: 'T-3908: --amend/--remove index convention fix touches the accept mutation
+    family (_accept.py), the error message enum (_models.py), CLI dispatch/help (_mutate.py,
+    _metadata.py), its test file, and the one doc section (tickets-data-storage.md)
+    documenting the 0-based CLI contract that must move to 1-based'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-3908: --amend/--remove index convention fix touches the accept mutation
+    family (_accept.py), the error message enum (_models.py), CLI dispatch/help (_mutate.py,
+    _metadata.py), its test file, and the one doc section (tickets-data-storage.md)
+    documenting the 0-based CLI contract that must move to 1-based'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_tickets_acceptance.py
+  reason: 'T-3908: --amend/--remove index convention fix touches the accept mutation
+    family (_accept.py), the error message enum (_models.py), CLI dispatch/help (_mutate.py,
+    _metadata.py), its test file, and the one doc section (tickets-data-storage.md)
+    documenting the 0-based CLI contract that must move to 1-based'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'T-3908: --amend/--remove index convention fix touches the accept mutation
+    family (_accept.py), the error message enum (_models.py), CLI dispatch/help (_mutate.py,
+    _metadata.py), its test file, and the one doc section (tickets-data-storage.md)
+    documenting the 0-based CLI contract that must move to 1-based'
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'de-pointer flags and code paths that cannot resolve in this repo: proposed
