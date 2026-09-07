@@ -2,7 +2,7 @@
 id: T-4257
 title: 'fix the Windows infrastructure test failures: stale gate-cache hit, land attribution,
   out-of-tree release bump, and the strata GIL timeout'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
