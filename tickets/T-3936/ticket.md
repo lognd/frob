@@ -16,11 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/gates/test_profile_boundary.py
-- tests/unit/strata/test_strata_core_gil.py
-- tests/test_tickets_evidence_cli.py
-- tests/test_ticket_land_lint_diff_attribution.py
 - tests/test_fuzz.py
-- tests/system/test_cli_ticket.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -108,6 +104,38 @@ scope_changes:
     empty (epic-lease-leak pattern, see memory), so this scope entry is a dead lease
     blocking T-4244's start. Narrowing rather than stealing since there is no live
     worktree to steal from.
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/system/test_cli_ticket.py
+  reason: these four files are now owned by named leaves under epic T-4236, which
+    supersedes this tracking ticket for the Windows failure set; T-3936 is in-progress
+    with no worktree, so it holds write leases nothing is using and blocks the leaves
+    that will actually do the work
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_tickets_evidence_cli.py
+  reason: these four files are now owned by named leaves under epic T-4236, which
+    supersedes this tracking ticket for the Windows failure set; T-3936 is in-progress
+    with no worktree, so it holds write leases nothing is using and blocks the leaves
+    that will actually do the work
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/strata/test_strata_core_gil.py
+  reason: these four files are now owned by named leaves under epic T-4236, which
+    supersedes this tracking ticket for the Windows failure set; T-3936 is in-progress
+    with no worktree, so it holds write leases nothing is using and blocks the leaves
+    that will actually do the work
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_ticket_land_lint_diff_attribution.py
+  reason: these four files are now owned by named leaves under epic T-4236, which
+    supersedes this tracking ticket for the Windows failure set; T-3936 is in-progress
+    with no worktree, so it holds write leases nothing is using and blocks the leaves
+    that will actually do the work
   actor: logan
   at: '2026-09-07'
 body_changes:
