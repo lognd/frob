@@ -319,6 +319,144 @@ class TestD02ScopeBinding:
         assert evidence_covers_scope(ticket, snapshot) is False
 
 
+# frob:ticket T-4170
+class TestT4170PreExistingTestOutsideScopeBoundViaDirective:
+    """F-367: a bug/feature-kind ticket's ONLY honest evidence is a
+    pre-existing test that predates it -- that test's FILE sits outside
+    the ticket's scope (it was never touched), but the test's own
+    `frob:tests` binding names a symbol INSIDE scope. VERIFIED PREMISE
+    FIRST (the ticket's own instruction): `evidence_covers_scope`'s route
+    1 (a `TESTS`-edge walk, `_evidence_binds_to_scope`) ALREADY accepts
+    this shape at the unit level (`TestD02ScopeBinding.test_evidence_
+    covers_scope_true_for_bound_test`, pre-existing, unchanged) -- the
+    premise as literally stated (this shape is refused today) is FALSE
+    for `evidence_covers_scope` itself. These tests additionally prove it
+    against a REAL graph build (not a hand-constructed `GraphSnapshot`,
+    which cannot catch a directive-PARSING gap the unit-level test is
+    blind to), and bug-kind specifically (the reported ticket kind)."""
+
+    def _bug_kind_repo_with_directive_bound_test(
+        self, tmp_path: Path
+    ) -> tuple[Ticket, "GraphSnapshot"]:  # noqa: F821
+        """A real git repo: `src/pkg/thing.py` (in scope) carries a
+        directive comment naming `tests/test_thing.py::test_it` on its
+        one public function; that test file (NOT in scope, pre-existing,
+        never touched by this ticket) is what the directive names.
+        Returns a bug-kind ticket citing that test as its only evidence,
+        plus the REAL `GraphSnapshot` built over this repo."""
+        import subprocess
+
+        from frob.graph import build_graph
+
+        (tmp_path / "src" / "pkg").mkdir(parents=True)
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "src" / "pkg" / "thing.py").write_text(
+            "# frob:tests tests/test_thing.py::test_it\n"
+            "def do_thing() -> int:\n"
+            "    return 1\n"
+        )
+        (tmp_path / "tests" / "test_thing.py").write_text(
+            "def test_it():\n    assert True\n"
+        )
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "t@example.com"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "pre-existing source + test"],
+            cwd=tmp_path,
+            check=True,
+        )
+        snapshot = build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        ticket = _ticket(
+            kind=TicketKind.BUG,
+            # Only the SOURCE file is in scope -- the pre-existing test
+            # file is deliberately NOT, matching F-367's exact repro
+            # (widening scope to include it would be the lie the ticket
+            # names).
+            scope=("src/pkg/thing.py",),
+            evidence=("tests/test_thing.py::test_it",),
+        )
+        return ticket, snapshot
+
+    def test_directive_bound_pre_existing_test_covers_scope(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture: a bug-kind ticket's evidence is a
+        pre-existing, out-of-scope test bound via a REAL `frob:tests`
+        directive to an in-scope symbol -- `evidence_covers_scope`
+        accepts it against a REAL (not hand-built) graph."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective.test_directive_bound_pre_existing_test_covers_scope  # noqa: E501
+        ticket, snapshot = self._bug_kind_repo_with_directive_bound_test(tmp_path)
+        assert evidence_covers_scope(ticket, snapshot) is True
+
+    def test_directive_bound_pre_existing_test_closes_cleanly(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture, end to end: the same ticket actually
+        CLOSES through `transition(..., DONE, covers_scope=...)` once a
+        substantive Done report is attached -- the real close path, not
+        only the coverage predicate in isolation."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective.test_directive_bound_pre_existing_test_closes_cleanly  # noqa: E501
+        ticket, snapshot = self._bug_kind_repo_with_directive_bound_test(tmp_path)
+        ticket = ticket.model_copy(
+            update={
+                "id": "T-0001",
+                "title": "sample",
+                "state": TicketState.IN_PROGRESS,
+                "body": "## Description\nx\n\n## Done report\nFixed do_thing; "
+                "verified via the pre-existing test_it.\n",
+            }
+        )
+        _write(tmp_path, ticket)
+        covers = evidence_covers_scope(ticket, snapshot)
+        result = transition(tmp_path, "T-0001", TicketState.DONE, covers_scope=covers)
+        assert result.is_ok, result.err
+
+    def test_unconnected_pre_existing_test_still_refused(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET: a pre-existing, out-of-scope test with NO
+        `frob:tests` connection to anything in scope is still refused --
+        the binding must do real work, not merely "the evidence file
+        predates the ticket"."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective.test_unconnected_pre_existing_test_still_refused  # noqa: E501
+        ticket, snapshot = self._bug_kind_repo_with_directive_bound_test(tmp_path)
+        unconnected = ticket.model_copy(
+            update={"evidence": ("tests/test_unrelated.py::test_z",)}
+        )
+        assert evidence_covers_scope(unconnected, snapshot) is False
+
+    def test_scope_widened_without_a_touching_diff_remains_detectable(
+        self, tmp_path: Path
+    ) -> None:
+        """THIRD FIXTURE: WHAT TO DO explicitly forbids adopting "a
+        commit-diff entry as scope proof" as the PRIMARY fix, since it
+        would let any kind close with no real test binding at all. This
+        proves the alternative it warns against remains independently
+        checkable rather than silently accepted: a ticket whose `scope`
+        includes a file `working_diff` shows was never touched is a
+        detectable mismatch using EXISTING primitives (`Ticket.scope` vs.
+        `working_diff(root, base).hunks`) -- no new escape hatch was
+        added, and none is needed for this to stay visible."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective.test_scope_widened_without_a_touching_diff_remains_detectable  # noqa: E501
+        from frob.gitio import working_diff
+
+        ticket, _snapshot = self._bug_kind_repo_with_directive_bound_test(tmp_path)
+        # Widen scope (as the rejected alternative fix would encourage)
+        # to also cover the pre-existing test file this diff never
+        # touched at all -- everything here predates "main"'s only commit.
+        widened = ticket.model_copy(
+            update={"scope": ticket.scope + ("tests/test_thing.py",)}
+        )
+        diff = working_diff(tmp_path, "main")
+        touched = {h.file for h in diff.danger_ok.hunks} if diff.is_ok else set()
+        untouched_but_scoped = [g for g in widened.scope if g not in touched]
+        assert "tests/test_thing.py" in untouched_but_scoped
+
+
 # ---------------------------------------------------------------------------
 # D-03: Done report must be substantive, not a bare heading
 # ---------------------------------------------------------------------------

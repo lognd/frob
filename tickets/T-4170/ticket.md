@@ -3,7 +3,7 @@ id: T-4170
 title: 'a bug ticket whose only honest evidence is a pre-existing test cannot close:
   the rule asks whether the test file is in scope, not whether its binding reaches
   in-scope code'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -21,17 +21,26 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_covers_scope
+- tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_closes_cleanly
+- tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_unconnected_pre_existing_test_still_refused
+- tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_scope_widened_without_a_touching_diff_remains_detectable
 designated_repro_test: null
 acceptance:
 - text: given a bug-kind ticket binding a pre-existing test whose own directive names
     a symbol inside the ticket's scope, when the ticket closes, then it closes cleanly
-  evidence: []
+  evidence:
+  - tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_covers_scope
+  - tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_closes_cleanly
 - text: given a bug-kind ticket binding a test with no connection to its scope, when
     it attempts to close, then it is still refused
-  evidence: []
+  evidence:
+  - tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_unconnected_pre_existing_test_still_refused
 - text: given a ticket that widens scope to a file its diff never touched, when the
     ledger is checked, then that remains detectable
-  evidence: []
+  evidence:
+  - tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_scope_widened_without_a_touching_diff_remains_detectable
 threat: null
 component: null
 anchor: false

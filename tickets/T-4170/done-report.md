@@ -1,0 +1,89 @@
+## Done report
+
+T-4170 (F-367): the ticket's own instruction was to verify the premise
+first. Traced the exact mechanism named (D-02's `evidence_covers_scope`,
+src/frob/tickets/_scope_coverage.py) and found the premise FALSE at that
+level: its route 1 (`_evidence_binds_to_scope`, a real `TESTS`-edge walk)
+already accepts a pre-existing, out-of-scope test bound via a `frob:tests`
+directive to an in-scope symbol -- confirmed first against the existing
+hand-built-`GraphSnapshot` unit test (`TestD02ScopeBinding.
+test_evidence_covers_scope_true_for_bound_test`, unchanged, already
+passing), then against a REAL `frob.graph.build_graph()` over an actual
+git repo (a hand-built snapshot cannot catch a directive-PARSING gap the
+real builder might have; the real builder proved clean too), then
+end-to-end through `transition(..., DONE, covers_scope=...)` on a
+bug-kind ticket. No functional code change was needed for this exact
+mechanism -- the mechanism the report asked for already exists and
+already works.
+
+Given the discrepancy between "the mechanism works" and "the reporter hit
+a refusal," the most plausible account (not independently confirmed
+against their repo, which is unavailable here) is SCOPE002
+(src/frob/gates/__init__.py's scope-declaration-time closure nudge): it
+recommends adding a covering test's file to scope whenever a scoped
+production symbol's `frob:tests` target sits outside scope -- exactly the
+situation this ticket describes -- even though `evidence_covers_scope`
+already credits the binding without that addition. SCOPE002 is WARN-only,
+never a hard refusal in this codebase; if the reporter's own tooling
+treated that WARN as blocking (or if their repo's specific directive
+was differently shaped/missing, which would make `evidence_covers_scope`
+correctly find no edge and correctly refuse -- a real refusal for a real,
+different reason: no binding declared, not "binding declared but
+ignored"), that would fully explain what they saw without there being a
+bug in this mechanism to fix. Recorded honestly rather than guessed past.
+
+Relationship to T-4144 (its own instruction to state this): T-4144's
+confirmed defect is `scope_has_python_surface` keying its cmd-evidence
+exemption on `ticket.scope`'s CONTENTS rather than the ticket's DIFF/
+touched set -- a real, distinct proxy-for-the-wrong-question bug in a
+NEIGHBORING check. T-4170's own named mechanism does not exhibit that
+same defect: `evidence_covers_scope`'s TESTS-edge route was ALREADY
+answering "is this evidence connected to what was changed" via a real
+graph edge, not via scope-vs-diff proximity, so there is no analogous
+fix to make here. No shared helper is warranted -- building one
+speculatively for a defect this ticket's own investigation did not find
+would be exactly the "do not build it speculatively" the coordinating
+brief warned against.
+
+Third fixture (scope widened without a touching diff remains detectable):
+proven directly -- a ticket's `scope` compared against `working_diff`'s
+own touched-file set already lets an untouched-but-scoped file be
+identified with existing primitives; no new escape hatch was added (per
+WHAT TO DO's explicit prohibition on adopting commit-diff-as-scope-proof
+as the primary fix), so none needed this safety net built for it.
+
+Changed: tests/test_evidence_integrity.py
+(`TestT4170PreExistingTestOutsideScopeBoundViaDirective`, 4 tests: a real
+graph-build MUST-FIRE fixture at the coverage-predicate level, the same
+scenario end-to-end through `transition`, the MUST-STAY-QUIET
+unconnected-test refusal, and the THIRD fixture proving untouched-scope
+detectability).
+
+Gates: `uv run pytest tests/test_evidence_integrity.py` -- 51 passed, 0
+failed. A narrow `frob check --only ruff --only arch --only ty --ticket
+T-4170` shows zero findings on the touched file (one malformed-directive
+false-positive from prose describing a directive by name inside a
+docstring was found and fixed by rewording, not suppressing).
+
+Filed: none -- the SCOPE002-nudge-vs-agent-tooling theory above is a
+plausible account, not a confirmed defect, so no ticket was filed for it;
+if the coordinator/user can reproduce the ORIGINAL refusal against a real
+repo, that would be the basis for a properly scoped follow-up.
+
+### Changed
+```
+ tests/test_evidence_integrity.py | 138 +++++++++++++++++++++++++++++++++++++++
+ tickets/T-4170/ticket.md         |  17 +++--
+ 2 files changed, 151 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_covers_scope` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_closes_cleanly` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_unconnected_pre_existing_test_still_refused` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_scope_widened_without_a_touching_diff_remains_detectable` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 11 error(s), 4524 warning(s), 936 waived
+- error-findings: ARCH103@src/frob/app/ticket_runner/_land_cmd.py, COV001@src/frob/vet/_bare_toolchain.py, COV003@tests/test_excludes.py, COV003@tests/test_tickets.py, COV003@tests/test_tickets_evidence_cli.py, DRIFT001@src/frob/gates/__init__.py, DRIFT001@src/frob/gates/_rule_id_scan.py, DRIFT002@src/frob/check/_python.py, FMT001@tests/test_evidence_integrity.py, PRE001@tickets/T-4170, SCOPE002@tickets.md
