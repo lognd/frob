@@ -1689,6 +1689,13 @@ node testsuite : trusted {
     // T-3593: vet_suite split -- net.connect observed in these moved test
     // bodies (fail-closed monkeypatched socket/connection tests).
     may "net.connect" via "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py";
+    // T-4145: TestGithubConventionExempt's fixtures write the literal
+    // GitHub template filenames (`PULL_REQUEST_TEMPLATE.md`,
+    // `.github/ISSUE_TEMPLATE/feature_request.yml`) into synthetic
+    // tmp_path fixture files -- a "request" substring needle match, not
+    // a real network call, the same fixture-literal false-positive shape
+    // T-2464's own comment above already documents for this node.
+    may "net.connect" via "tests/test_refs_gate.py";
     // T-2464: TestNetMutateVerbSplit's own fire fixtures contain real
     // `requests.post(`/`httpx.delete(` needle literals (proving the new
     // net-mutate split actually fires), the same self-conformance

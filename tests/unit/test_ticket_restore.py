@@ -302,6 +302,7 @@ class TestArchiveRefusesNonTerminal:
         assert (v2_archive_dir(root, "T-0456") / "ticket.md").exists()
 
 
+# frob:ticket T-4145
 class TestRestoreCli:
     """`_restore` -- the CLI dispatch wrapper (`frob ticket restore`)."""
 
@@ -359,6 +360,7 @@ class TestRestoreCli:
         with pytest.raises(SystemExit):
             _restore(tmp_path, cfg)
 
+    # frob:ticket T-4145
     def test_restore_reason_flag_is_required_by_the_real_parser(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_reason_flag_is\
@@ -368,7 +370,7 @@ class TestRestoreCli:
         must refuse `frob ticket restore <id>` with no `--reason`."""
         import argparse
 
-        from frob._cli_parsers._ticket._closeout import (
+        from frob._cli_parsers._ticket._closeout_evidence import (
             _add_ticket_fail_evidence_archive_parsers,
         )
 

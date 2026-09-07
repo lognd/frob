@@ -1,8 +1,10 @@
 """CLI parser builders: the full `frob ticket` subcommand tree.
 
 Split out of `frob.__main__` (T-1076), then split again into per-concern
-submodules (T-1270: new/query/progress/closeout/metadata) purely to keep
-every file below the large-file gate threshold -- no behavior change, same
+submodules (T-1270: new/query/progress/closeout/metadata), then again
+(T-4145: closeout/closeout_evidence, once T-4106/T-4108's argparse guards
+pushed `_closeout.py` back over the same threshold) purely to keep every
+file below the large-file gate threshold -- no behavior change, same
 argparse tree. This package's public surface (every name importable via
 `from frob._cli_parsers._ticket import ...`) is unchanged from the
 pre-split single-file module.
@@ -18,10 +20,12 @@ from frob._cli_parsers._reporting import (
 from ._closeout import (
     _add_ticket_attach_and_lifecycle_end_parsers,
     _add_ticket_close_parser,
-    _add_ticket_done_report_parser,
-    _add_ticket_fail_evidence_archive_parsers,
     _add_ticket_reverify_parser,
     _add_ticket_review_parser,
+)
+from ._closeout_evidence import (
+    _add_ticket_done_report_parser,
+    _add_ticket_fail_evidence_archive_parsers,
     _add_ticket_sweep_async_parser,
     _add_ticket_waive_audit_parser,
 )

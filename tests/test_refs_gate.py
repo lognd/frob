@@ -332,6 +332,113 @@ class TestDefaultRootManifestExempt:
         assert "REF001" in _rule_ids(violations, "sub/tickets-archive.md")
 
 
+class TestGithubConventionExempt:
+    """T-4145: GitHub's own community-health files and issue/PR templates
+    are exempt from REF001/REF002 with no declaration required -- their
+    real consumer is the GitHub platform itself, reading by fixed path/
+    directory convention, never another tracked file's text."""
+
+    # frob:tests \
+    # tests/test_refs_gate.py::TestGithubConventionExempt.test_standard_community_files\
+    # _and_templates_pass_with_no_waivers kind="unit"
+    # frob:waive SELFAUDIT001 reason="the literal GitHub convention paths this fixture \
+    # writes (feature_request.yml, PULL_REQUEST_TEMPLATE.md) contain a 'request' \
+    # substring the capability scanner reads as a net.connect needle; this only writes \
+    # plain fixture text into a synthetic tmp_path repo, no network call of any kind"
+    def test_standard_community_files_and_templates_pass_with_no_waivers(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture: a repository containing the standard
+        community health files and GitHub templates, and nothing else
+        unusual, passes the reference gate with no waivers -- including
+        `.github/ISSUE_TEMPLATE/config.yml`, which has genuinely ZERO
+        other tracked-file mentions (T-4145's own REF001 case) and the
+        two issue-template `.yml` files and `PULL_REQUEST_TEMPLATE.md`,
+        each of which had exactly one (REF002's case) before this fix."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "README.md", "See CONTRIBUTING.md for details.\n")
+        _write(
+            tmp_path,
+            "CONTRIBUTING.md",
+            "Please open an issue using the templates in "
+            ".github/ISSUE_TEMPLATE/bug_report.yml or "
+            ".github/ISSUE_TEMPLATE/feature_request.yml, and follow "
+            "PULL_REQUEST_TEMPLATE.md for pull requests.\n",
+        )
+        _write(tmp_path, "SECURITY.md", "See README.md for contact info.\n")
+        _write(
+            tmp_path, "CODE_OF_CONDUCT.md", "See README.md for enforcement.\n"
+        )
+        _write(
+            tmp_path,
+            ".github/ISSUE_TEMPLATE/config.yml",
+            "blank_issues_enabled: false\n",
+        )
+        _write(
+            tmp_path,
+            ".github/ISSUE_TEMPLATE/bug_report.yml",
+            "name: Bug report\ndescription: File a bug\n",
+        )
+        _write(
+            tmp_path,
+            ".github/ISSUE_TEMPLATE/feature_request.yml",
+            "name: Feature request\ndescription: Suggest an idea\n",
+        )
+        _write(
+            tmp_path,
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            "## Summary\n## Test plan\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        for f in [
+            ".github/ISSUE_TEMPLATE/config.yml",
+            ".github/ISSUE_TEMPLATE/bug_report.yml",
+            ".github/ISSUE_TEMPLATE/feature_request.yml",
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            "CONTRIBUTING.md",
+            "SECURITY.md",
+            "CODE_OF_CONDUCT.md",
+        ]:
+            assert _rule_ids(violations, f) == [], f"{f} unexpectedly flagged"
+
+    # frob:tests \
+    # tests/test_refs_gate.py::TestGithubConventionExempt.test_a_genuinely_orphaned_fil\
+    # e_outside_the_convention_still_fires_ref001 kind="unit"
+    def test_a_genuinely_orphaned_file_outside_the_convention_still_fires_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET fixture: a genuinely orphaned file -- one no
+        consumer reads, by convention or otherwise -- still fires REF001.
+        The new exemption is a fixed literal/directory-glob list, never a
+        broad "any doc-shaped file" rule."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "ORPHANED_NOTES.md", "Nobody reads this.\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "ORPHANED_NOTES.md")
+
+    def test_non_convention_path_copy_of_a_community_file_still_subject_to_ref_gate(
+        self, tmp_path: Path
+    ) -> None:
+        """The exemption is path-specific: a `CONTRIBUTING.md` copy placed
+        somewhere other than the recognized root/`.github/` convention
+        path is ordinary tracked content, still subject to REF001/REF002."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "docs/archive/CONTRIBUTING.md", "Old copy.\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "docs/archive/CONTRIBUTING.md")
+
+
 class TestNativeStubLinking:
     """T-0449: a `.pyi` sidecar beside a `pyproject.toml` whose
     `[tool.maturin] module-name` matches the stub's stem is a genuine

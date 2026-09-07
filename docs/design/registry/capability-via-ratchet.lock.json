@@ -271,9 +271,9 @@
       "ticket": "T-2488"
     },
     "testsuite::net.connect": {
-      "accepted_count": 3,
-      "reason": "T-3593: tests/test_vet.py split into tests/vet_suite/ newly declares net.connect on testsuite (previously ungranted here) for 3 files (test_capability_scan_python.py, test_fingerprint.py, test_opaque_indirection.py) with fail-closed monkeypatched socket/connection tests -- measured live via-list count.",
-      "ticket": "T-3593"
+      "accepted_count": 4,
+      "reason": "T-4145: tests/test_refs_gate.py newly declares net.connect on testsuite (3 -> 4) for its TestGithubConventionExempt fixtures, which write literal GitHub template filenames (feature_request.yml, PULL_REQUEST_TEMPLATE.md) into synthetic tmp_path fixture files -- a 'request' substring needle match, not a real network call, the same fixture-literal declaration shape T-3593's own entry above documents.",
+      "ticket": "T-4145"
     },
     "testsuite::process-control": {
       "accepted_count": 2,

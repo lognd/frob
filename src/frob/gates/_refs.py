@@ -144,6 +144,15 @@ so it needed the same treatment REF001 already gives root manifests, not
 a per-project `[graph].exclude` a real adopter should never have had to
 write.
 
+T-4145: GitHub's own community-health files and issue/PR templates
+(CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, `.github/PULL_REQUEST_
+TEMPLATE.md`, everything under `.github/ISSUE_TEMPLATE/`) join the same
+default-exempt treatment as `_DEFAULT_ROOT_MANIFEST_EXEMPT` above -- see
+`_is_github_convention_file`'s own docstring for the exact list/glob and
+the recorded decision on whether REF002 should apply to non-code files
+generally (no: this is a narrow, convention-specific carve-out, not a
+file-type-wide one).
+
 A `.md` file's OWN text can also carry an inline `frob:waive REF001
 reason="..."` or `frob:waive REF002 reason="..."` directive, text-scanned
 directly the same way `_docblocks.py` honors `frob:waive DOC004` on a doc
@@ -309,6 +318,76 @@ _DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
         "tickets-archive.md",
     }
 )
+
+
+# frob:ticket T-4145
+#: GitHub's own community-health files and issue/PR templates: read by
+#: THE GITHUB PLATFORM ITSELF by fixed path convention, never by another
+#: tracked in-repo file -- the identical "universal, tooling-consumed,
+#: no per-project judgment call" shape T-3019/T-3031 already carved out
+#: for pyproject.toml/frob.toml/package.json above, extended here to
+#: GitHub's convention-anchored paths (T-4145, filed after T-4131 added
+#: these files here and immediately tripped REF001/REF002 on every one
+#: of them -- the exact "fresh project not gate-clean on day one" shape
+#: T-3931 reported, this time from doing the most ordinary thing a
+#: project can do: adding a contributing guide). CONTRIBUTING.md/
+#: SECURITY.md/CODE_OF_CONDUCT.md are exempted at their ROOT path only
+#: (GitHub also recognizes a `.github/` or `docs/` copy, but a project
+#: using one of those instead can add its own `[[refs.entrypoint]]` line,
+#: same as any other genuinely external-facing file -- this default
+#: covers the common root-file case so a fresh project is not forced to
+#: write that declaration itself). `.github/ISSUE_TEMPLATE/` files are
+#: NOT a fixed list here: GitHub reads EVERY file placed under that one
+#: directory (`.yml`/`.md`) by directory convention, not by name, so
+#: `_is_github_convention_file` below matches the whole directory by
+#: glob instead of enumerating filenames a project might add or rename
+#: (see `_GITHUB_CONVENTION_EXEMPT_GLOBS`).
+#:
+#: DECISION RECORDED (T-4145's own acceptance item: whether REF002's
+#: one-inbound-reference rule should apply to non-code files at all):
+#: NO CHANGE to REF002's general scope. It keeps applying uniformly to
+#: code and non-code tracked files alike. A markdown doc linked exactly
+#: once from README is indeed the ordinary shape for authored docs, not
+#: an inherently fragile one -- but the actual defect this ticket found
+#: was never "REF002 fires on docs", it was "REF002 does not know a
+#: file's real consumer is an external platform reading by path
+#: convention, not another tracked file's text". That is fixed here,
+#: narrowly, the same way T-3019/T-3031 fixed it for build tooling's own
+#: root manifests. Blanket-exempting every non-code file from REF002
+#: instead would trade a real, narrow gap for a much bigger blind spot:
+#: a genuinely single-anchored design doc, changelog fragment, or
+#: abandoned draft (the ordinary way documentation rots) would stop
+#: being flagged at all, for every project that adopts frob, on the
+#: strength of one convention-anchored file family's needs. If a future
+#: case shows REF002 firing wrongly on some OTHER non-code shape, the
+#: fix is the same one applied here -- teach the gate that specific
+#: convention, not disable the rule for a whole file-type class.
+_GITHUB_CONVENTION_EXEMPT = frozenset(
+    {
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "CODE_OF_CONDUCT.md",
+        ".github/PULL_REQUEST_TEMPLATE.md",
+    }
+)
+#: Directory-convention exemption, not a filename list (see the docstring
+#: above): every file GitHub discovers by sitting under this one
+#: directory, regardless of name.
+_GITHUB_CONVENTION_EXEMPT_GLOBS = (".github/ISSUE_TEMPLATE/*",)
+
+
+def _is_github_convention_file(rel_path: str) -> bool:
+    """True if `rel_path` is one of GitHub's own convention-anchored
+    community-health files or templates (T-4145): consumed by the GitHub
+    platform itself by fixed path/directory convention, never by another
+    tracked file's text, so REF001/REF002's premise -- zero or one
+    in-repo anchor is a red flag -- does not apply to it."""
+    if rel_path in _GITHUB_CONVENTION_EXEMPT:
+        return True
+    return any(
+        fnmatch.fnmatchcase(rel_path, pattern)
+        for pattern in _GITHUB_CONVENTION_EXEMPT_GLOBS
+    )
 
 
 # frob:ticket T-3031
@@ -964,6 +1043,7 @@ def _ref_gate_file_violations(
 
     if (
         rel_path in _DEFAULT_ROOT_MANIFEST_EXEMPT
+        or _is_github_convention_file(rel_path)
         or _allowlist_covers(rel_path, allowlist)
         or _is_collectible_test_filename(rel_path)
         or _is_under_vendored_tree(rel_path)

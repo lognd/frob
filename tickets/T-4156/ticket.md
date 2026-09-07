@@ -1,5 +1,5 @@
 ---
-id: T-draft-dabfd0a7
+id: T-4156
 title: 'SCOPE002 closure gap: _ticket CLI parser package + ref_gate''s doc/test anchors
   never terminate under --ticket scoping'
 state: queued
