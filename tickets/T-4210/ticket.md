@@ -2,7 +2,7 @@
 id: T-4210
 title: generated spec-table regen artifacts should use a shared lease or a land-time
   regen step, not an exclusive per-ticket scope item
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-07'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 Consumer F-321 (T-4135). An in-progress ticket's exclusive lease on a generated spec-table file blocked another ticket from committing its own regeneration, forcing a revert-and-refile. A file that is a mechanical artifact of any spec edit should not need an exclusive per-ticket scope item -- share the lease, or make regen a land-time step frob performs itself. Same family as F-292/F-309 per the report. Same source file as T-4172 (stale-lease reconciliation) -- sequence after it to avoid a scope collision, no hard dependency, different mechanism (this is about lease SHARING for generated files, T-4172 is about STALE lease detection). Fixture-testable: YES.
+
+## Drop reason
+- 2026-09-07: duplicate: T-4120 already covers a generated artifact's lease blocking a sibling's mandatory regeneration, filed as a no-exit with two named design options (lease-exempt generated artifacts, or land-time regeneration). F-321 (a shared spec-table regen file blocked by an in-progress ticket's lease) is the same mechanism (F-292/F-309/F-321 all named as repeats). Attach as a further repeat instance on T-4120 rather than a new leaf. (absorbed by T-4120)
