@@ -1,0 +1,125 @@
+## Done report
+
+T-4143 (F-345/F-347): the evidence list's shrinking and empty lifecycle were
+unspecified. Investigation found mechanism ONE (no removal verb) already
+resolved by T-4000, which landed `remove_evidence`/`frob ticket evidence
+--remove EVIDENCE-ID --reason TEXT` with full tests
+(tests/test_tickets_evidence_removal.py) -- confirmed by repro, not assumed:
+a command-shaped `cmd:` entry removes cleanly with a recorded reason and the
+remaining entries/bindings are undisturbed.
+
+Mechanism TWO (the crash) was real and reproduced: an acceptance criterion's
+`evidence: null` (YAML) raised a raw, uncaught `TypeError: 'NoneType' object
+is not iterable` out of `_split_scope_entries` during `Ticket.model_validate`
+-- not a graceful refusal, a crash reaching the CLI. A bare `evidence: null`
+on `Ticket` itself failed `MalformedFrontmatter` (caught, not a crash) but
+still made the ticket unloadable, so no scope/evidence verb could reach it
+either.
+
+The fix lives in src/frob/tickets/_models.py (the actual crash site), not
+src/frob/tickets/_evidence.py where the ticket's original scope pointed --
+scope was widened with a reason (`frob ticket scope T-4143 --add
+src/frob/tickets/_models.py --reason ...`) before editing, per the hard
+rule against silent scope expansion. Fixed at the loader boundary per the
+ticket's own instruction: `_split_scope_entries` (shared by `scope`/
+`labels`/`AcceptanceCriterion.evidence`) now returns `()` for `raw=None`
+instead of crashing on the `for item in raw` iteration; `_coerce_acceptance`
+(backs `Ticket.acceptance`/`TicketSpec.acceptance`) now returns `[]` for
+`value=None` for the same reason; and a new `field_validator("evidence",
+mode="before")` on `Ticket` itself normalizes `None` to `()`, so a bare
+`evidence: null` LOADS successfully (not merely fails gracefully) and every
+downstream scope/evidence verb works on it unchanged.
+
+Audit (WHAT TO DO item 4): tested every other bare tuple-typed ledger field
+on `Ticket` (`blocked_by`, `findings`, `evidence_scope`, `scope_changes`,
+`triage_changes`, `body_changes`, `lease_force_releases`, `kind_history`,
+`designated_repro_changes`, `reviews`, `attachments`,
+`acceptance_amendments`, `evidence_changes`) with `None` -- every one fails
+gracefully with `ValidationError` (caught by `_store._validate`, reported as
+`MalformedFrontmatter`), never a raw crash, because none of them route
+through a custom validator that iterates the raw value unguarded. `scope`
+and `labels` route through the now-fixed `_split_scope_entries` and were
+therefore ALSO exposed to the exact same crash before this fix (not
+mentioned in the ticket body, found by tracing every caller of that shared
+function) -- `scope: null`/`labels: null` on a hand-edited ledger entry
+would have crashed identically; both are fixed by the same one-line loader
+guard. No other field needed a change.
+
+WHAT TO DO item 3 (replace path refusing command-shaped entries): traced
+the actual refusal to `_check_evidence_resolution` checking a `cmd:`-shaped
+`new_node` against a pytest `collected` set it can never appear in (a
+category error, not a deliberate guard against something real) --
+`_check_evidence_passing` already carved out the identical exemption for
+`passed`, this extends it to `collected` too. Fixing that alone would leave
+a `--replace` target with ZERO verification once it is cmd-shaped, so
+`_prepare_replace_evidence` now routes a cmd: `new_node` through
+`reverify_cmd_evidence` (re-run the command, confirm the same stdout
+digest) instead of skipping verification -- preserving the "a replacement
+must prove itself" invariant WHAT TO DO's own instruction called for
+("handle the case, don't delete the guard"), just through the channel that
+actually applies to a cmd: id. That logic was pulled into its own
+`_verify_replace_target` helper to keep `_prepare_replace_evidence` under
+ARCH001's line threshold.
+
+Changed: src/frob/tickets/_models.py (`_split_scope_entries`/
+`_coerce_acceptance` null-guard; `Ticket.evidence` field_validator
+normalizing null to `()`); src/frob/tickets/_evidence.py
+(`_check_evidence_resolution` exempts cmd:-shaped ids; new
+`_verify_replace_target` helper verifies a cmd:-shaped `--replace` target
+via `reverify_cmd_evidence`); tests/test_tickets.py
+(`TestEvidenceNullNormalization`, 5 tests: model-level null-evidence
+normalization, a hand-edited-ledger load, and both scope --add/--remove
+verbs on a null-acceptance-evidence ticket); tests/test_tickets_evidence_cli.py
+(`TestReplaceEvidence` +2 tests: a reproducing cmd: replacement target is
+accepted, a fabricated non-reproducing one is refused with
+`EvidenceCmdFailed`).
+
+Gates: `uv run pytest` on the touched test files -- 339 passed, 0 failed
+(covers tests/test_tickets_evidence_removal.py and
+tests/test_tickets_cmd_evidence.py too, as regression guards on the
+`_check_evidence_resolution`/removal paths this change touches). A narrow
+`frob check --only ruff --only arch --only ty --ticket T-4143` shows zero
+findings on any file this ticket touches: the first pass surfaced two real
+in-scope findings -- `_prepare_replace_evidence` grew past ARCH001's
+60-line long-function threshold (fixed by extracting
+`_verify_replace_target`, not waived), and `ruff-format`/`ty` flagged the
+new code (`_evidence.py` reformatted via `frob format --code`; the two
+deliberate `evidence=None` calls in the null-normalization tests suppressed
+with `# ty: ignore[invalid-argument-type]`, matching this repo's existing
+convention, since the field's STATIC type is `tuple[str, ...]` and only the
+runtime validator accepts `None`) -- both fixed, both reverified. The
+pre-work sweep was re-run (`frob ticket sweep T-4143`) after the scope
+widening. A full, unscoped `frob check --ticket T-4143` was attempted twice
+early on and failed both times with `database is locked` (4+ other `frob
+check` processes running concurrently on this host, per its own `WARNING:
+4 other check(s) already running`) -- fleet contention, not a defect in
+this change; the narrow scoped runs above are the real verification.
+
+Filed: none -- no out-of-scope work found beyond the scope widening
+recorded above, which stayed inside this ticket's own investigation rather
+than becoming a separate concern.
+
+### Changed
+```
+ src/frob/tickets/_evidence.py                    |  73 +++++++++++-
+ src/frob/tickets/_models.py                      |  50 +++++++-
+ tests/test_tickets.py                            | 118 +++++++++++++++++++
+ tests/test_tickets_evidence_replace_cmd_t4143.py | 144 +++++++++++++++++++++++
+ tickets/T-4143/done-report.md                    | 122 +++++++++++++++++++
+ tickets/T-4143/ticket.md                         |  53 ++++++++-
+ 6 files changed, 546 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestEvidenceNullNormalization::test_ticket_level_evidence_null_normalizes_to_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestEvidenceNullNormalization::test_acceptance_criterion_evidence_null_normalizes_to_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestEvidenceNullNormalization::test_hand_edited_ledger_with_null_acceptance_evidence_loads` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_evidence_replace_cmd_t4143.py::TestReplaceEvidenceCmdTarget::test_replace_target_may_be_a_reproducing_cmd_entry` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_evidence_replace_cmd_t4143.py::TestReplaceEvidenceCmdTarget::test_replace_target_cmd_entry_that_no_longer_reproduces_is_rejected` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_drops_id_from_flat_list_and_acceptance` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)

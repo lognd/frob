@@ -3694,3 +3694,121 @@ class TestStaleClaimsGuard:
             debt_sink=lambda tid, what: None,
         )
         assert result.is_ok
+
+
+class TestEvidenceNullNormalization:
+    """T-4143 (F-347): a `null` YAML `evidence:` key -- on `Ticket` itself
+    or on one `acceptance` criterion -- must normalize to the empty tuple
+    at the loader boundary, not crash. Before this fix, `AcceptanceCriterion.
+    evidence: null` raised a raw, uncaught `TypeError: 'NoneType' object is
+    not iterable` out of `_split_scope_entries` (reached via `Ticket.
+    model_validate`), and a bare `evidence: null` on `Ticket` itself failed
+    `MalformedFrontmatter` outright -- either way the ticket could not be
+    loaded, which made `frob ticket scope --add/--remove` on that exact
+    ticket impossible too, with no way back out of the null field."""
+
+    def test_ticket_level_evidence_null_normalizes_to_empty(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::Ticket
+        ticket = Ticket(
+            id="T-0001",
+            title="Sample",
+            state=TicketState.QUEUED,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            evidence=None,  # ty: ignore[invalid-argument-type]
+        )
+        assert ticket.evidence == ()
+
+    def test_acceptance_criterion_evidence_null_normalizes_to_empty(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::_split_scope_entries
+        from frob.tickets._models import AcceptanceCriterion
+
+        criterion = AcceptanceCriterion(
+            text="given/when/then",
+            evidence=None,  # ty: ignore[invalid-argument-type]
+        )
+        assert criterion.evidence == ()
+
+    def test_hand_edited_ledger_with_null_acceptance_evidence_loads(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_models.py::_split_scope_entries
+        tickets_dir = tmp_path / "tickets"
+        tickets_dir.mkdir()
+        text = (
+            "---\n"
+            "id: T-0001\n"
+            "title: Sample\n"
+            "state: in-progress\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            "scope: [a.py]\n"
+            "acceptance:\n"
+            "- text: given/when/then\n"
+            "  evidence: null\n"
+            "---\n"
+            "body\n"
+        )
+        (tickets_dir / "T-0001-sample.md").write_text(text)
+        result = load_queue(tmp_path)
+        assert result.is_ok
+        ticket = result.danger_ok.tickets["T-0001"]
+        assert ticket.acceptance[0].evidence == ()
+
+    def test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_scope.py::mutate_scope
+        from frob.tickets import mutate_scope
+
+        tickets_dir = tmp_path / "tickets"
+        tickets_dir.mkdir()
+        text = (
+            "---\n"
+            "id: T-0001\n"
+            "title: Sample\n"
+            "state: in-progress\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            "scope: [a.py]\n"
+            "acceptance:\n"
+            "- text: given/when/then\n"
+            "  evidence: null\n"
+            "---\n"
+            "body\n"
+        )
+        (tickets_dir / "T-0001-sample.md").write_text(text)
+        result = mutate_scope(tmp_path, "T-0001", add=["b.py"], reason="testing")
+        assert result.is_ok
+        assert "b.py" in result.danger_ok.scope
+
+    def test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_scope.py::mutate_scope
+        from frob.tickets import mutate_scope
+
+        tickets_dir = tmp_path / "tickets"
+        tickets_dir.mkdir()
+        text = (
+            "---\n"
+            "id: T-0001\n"
+            "title: Sample\n"
+            "state: in-progress\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            "scope: [a.py, b.py]\n"
+            "acceptance:\n"
+            "- text: given/when/then\n"
+            "  evidence: null\n"
+            "---\n"
+            "body\n"
+        )
+        (tickets_dir / "T-0001-sample.md").write_text(text)
+        result = mutate_scope(tmp_path, "T-0001", remove=["b.py"], reason="testing")
+        assert result.is_ok
+        assert "b.py" not in result.danger_ok.scope

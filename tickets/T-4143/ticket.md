@@ -44,9 +44,9 @@ evidence:
 - tests/test_tickets.py::TestEvidenceNullNormalization::test_hand_edited_ledger_with_null_acceptance_evidence_loads
 - tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence
 - tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence
-- tests/test_tickets_evidence_cli.py::TestReplaceEvidence::test_replace_target_may_be_a_reproducing_cmd_entry
-- tests/test_tickets_evidence_cli.py::TestReplaceEvidence::test_replace_target_cmd_entry_that_no_longer_reproduces_is_rejected
 - tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_drops_id_from_flat_list_and_acceptance
+- tests/test_tickets_evidence_replace_cmd_t4143.py::TestReplaceEvidenceCmdTarget::test_replace_target_may_be_a_reproducing_cmd_entry
+- tests/test_tickets_evidence_replace_cmd_t4143.py::TestReplaceEvidenceCmdTarget::test_replace_target_cmd_entry_that_no_longer_reproduces_is_rejected
 designated_repro_test: null
 acceptance:
 - text: given a stale evidence entry including a command-shaped one, when the removal

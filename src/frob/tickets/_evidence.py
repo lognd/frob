@@ -1425,7 +1425,23 @@ def _check_evidence_resolution(
             list(node_ids),
         )
         return Ok(None)
-    unresolved = [nid for nid in node_ids if not matches_collected(nid, collected)]
+    # frob:ticket T-4143
+    # A `cmd:` entry (T-0215) is never a pytest node id -- it can never
+    # appear in `collected` (a pytest collector's own id set) no matter
+    # how genuine the underlying command evidence is, so checking it here
+    # would refuse EVERY cmd: entry unconditionally, not just a stale one.
+    # `_check_evidence_passing` immediately below already carves out the
+    # identical exemption for the SAME reason (a cmd: entry is verified by
+    # its own exit-code/digest channel, `reverify_cmd_evidence`, never by
+    # `passed`); this mirrors that precedent so a caller routing a cmd:
+    # entry through this pytest-shaped resolution check (e.g.
+    # `replace_evidence`'s shared `new_node` validation) does not have to
+    # special-case cmd ids itself.
+    unresolved = [
+        nid
+        for nid in node_ids
+        if not is_cmd_evidence(nid) and not matches_collected(nid, collected)
+    ]
     if unresolved:
         if missing_natives:
             remedy = ", ".join(
@@ -1756,13 +1772,60 @@ def _prepare_replace_evidence(
     if normalized_old == normalized_new:
         return Ok((normalized_old, ticket, True))
 
+    verified = _verify_replace_target(ticket_id, normalized_new, collected, passed)
+    if verified.is_err:
+        return Err(verified.danger_err)
+    return Ok((normalized_old, ticket, False))
+
+
+# frob:ticket T-4143
+def _verify_replace_target(
+    ticket_id: str,
+    normalized_new: str,
+    collected: frozenset[str] | None,
+    passed: frozenset[str] | None,
+) -> Result[None, TicketError]:
+    """`_prepare_replace_evidence`'s `new_node` verification (ARCH001
+    split): a cmd:-shaped target proves itself through its OWN channel
+    (`reverify_cmd_evidence` -- re-run the command, confirm it still exits
+    0 with the same stdout digest), a pytest-shaped one through the
+    ordinary resolution/pass checks.
+
+    `_check_evidence_resolution`/`_check_evidence_passing` are pytest-
+    shaped: they both now exempt a `cmd:` id from their own checks
+    (T-4143), since it can never appear in a pytest `collected`/`passed`
+    set no matter how genuine it is. Exempting it there must not mean
+    UNVERIFIED here -- a `--replace` target still has to prove itself,
+    just through the channel that actually applies to it. This is the
+    "handle the real case, don't delete the guard" fix WHAT TO DO asked
+    for: the refusal previously existed because pytest resolution can
+    never pass for a cmd: id, not because a cmd: replacement target is
+    inherently untrustworthy."""
+    if is_cmd_evidence(normalized_new):
+        reverified = reverify_cmd_evidence(normalized_new)
+        if reverified.is_err:
+            _log.warning(
+                "tickets: %s --replace target %r is not a well-formed cmd: entry: %s",
+                ticket_id,
+                normalized_new,
+                reverified.danger_err,
+            )
+            return Err(reverified.danger_err)
+        if not reverified.danger_ok:
+            _log.warning(
+                "tickets: %s --replace target %r does not reproduce (D-10 "
+                "reverify failed) -- refusing to bind an evidence claim "
+                "that does not currently hold",
+                ticket_id,
+                normalized_new,
+            )
+            return Err(TicketError.EvidenceCmdFailed)
+        return Ok(None)
+
     resolution = _check_evidence_resolution(ticket_id, (normalized_new,), collected)
     if resolution.is_err:
         return Err(resolution.danger_err)
-    passing = _check_evidence_passing(ticket_id, (normalized_new,), passed)
-    if passing.is_err:
-        return Err(passing.danger_err)
-    return Ok((normalized_old, ticket, False))
+    return _check_evidence_passing(ticket_id, (normalized_new,), passed)
 
 
 # frob:ticket T-1537

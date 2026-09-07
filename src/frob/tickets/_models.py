@@ -323,7 +323,10 @@ CLI_WIRING_FILES = frozenset(
 
 
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_comma_joined_entry_splits
-def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
+# frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_acceptance_criterion_evidence_null_normalizes_to_empty  # noqa: E501
+# frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_hand_edited_ledger_with_null_acceptance_evidence_loads  # noqa: E501
+# frob:ticket T-4143
+def _split_scope_entries(raw: Sequence[str] | None) -> tuple[str, ...]:
     """Split each entry of `raw` on commas and strip whitespace.
 
     A hand-typed or scripted `--scope 'a/,b/,c/'` previously became ONE
@@ -332,7 +335,18 @@ def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
     against zero files (T-0241). Applied at model-construction time so it
     normalizes both freshly created tickets and tickets loaded from a
     hand-edited ledger.
-    """
+
+    T-4143: `raw=None` (a YAML `null` scalar for any list field this
+    function backs -- `scope`, `labels`, and `AcceptanceCriterion.evidence`
+    all route through it) normalizes to the empty tuple, at THIS single
+    boundary rather than in each caller. Before this guard, `for item in
+    raw` on a `None` raised a raw, uncaught `TypeError: 'NoneType' object
+    is not iterable` straight out of `Ticket.model_validate` -- a crash,
+    not a refusal, on any ledger load (`frob ticket scope --add/--remove`
+    included) touching a ticket whose YAML happened to carry `evidence:
+    null` on an acceptance criterion (F-347)."""
+    if raw is None:
+        return ()
     entries: list[str] = []
     for item in raw:
         for piece in item.split(","):
@@ -1438,7 +1452,9 @@ class AcceptanceCriterion(BaseModel):
         return _split_scope_entries(value)
 
 
-def _coerce_acceptance(value: Sequence[object]) -> list[dict | object]:
+# frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_hand_edited_ledger_with_null_acceptance_evidence_loads  # noqa: E501
+# frob:ticket T-4143
+def _coerce_acceptance(value: Sequence[object] | None) -> list[dict | object]:
     """Accept either the legacy plain-string acceptance list (pre-T-0572
     ledgers: `acceptance: [text, text, ...]`) or the new structured
     `{text, evidence}` mapping form, normalizing the legacy shape to the
@@ -1448,7 +1464,14 @@ def _coerce_acceptance(value: Sequence[object]) -> list[dict | object]:
     before; it simply reads as unbound (empty `evidence`) until someone
     binds it, which is the correct default -- backward compat is about
     never failing to LOAD, not about grandfathering unmapped criteria past
-    the new close gate."""
+    the new close gate.
+
+    T-4143: `value=None` (YAML `null`) normalizes to the empty list --
+    same loader-boundary guard `_split_scope_entries` gained for the same
+    reason (F-347): `for item in value` on `None` raised a raw, uncaught
+    `TypeError`, not a graceful refusal."""
+    if value is None:
+        return []
     coerced: list[dict | object] = []
     for item in value:
         if isinstance(item, str):
@@ -2071,6 +2094,25 @@ class Ticket(BaseModel):
         """Accept legacy plain-string acceptance items alongside the T-0572
         structured `{text, evidence}` form -- see `_coerce_acceptance`."""
         return _coerce_acceptance(value)
+
+    # frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_ticket_level_evidence_null_normalizes_to_empty  # noqa: E501
+    # frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence  # noqa: E501
+    # frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence  # noqa: E501
+    # frob:ticket T-4143
+    @field_validator("evidence", mode="before")
+    @classmethod
+    def _normalize_evidence_field(cls, value: Sequence[str] | None) -> Sequence[str]:
+        """Normalize a YAML `null` `evidence:` key to the empty tuple
+        (T-4143, F-347): without this, `evidence: null` failed
+        `Ticket.model_validate` with `ValidationError` (`tuple_type`),
+        which `_store._validate` catches and reports as
+        `MalformedFrontmatter` -- but a ticket that FAILED to load this
+        way is invisible to every downstream verb, including `frob ticket
+        scope --add/--remove` on that exact ticket, which had no other
+        way to reach and repair the null field. Normalizing at this
+        single loader boundary means no scope/evidence verb downstream
+        has to defend against a `None` evidence list case by case."""
+        return () if value is None else value
 
     # T-1132: deliberately NOT validating `blocked_by`/`parent` here (unlike
     # `TicketSpec` below). `Ticket.model_validate` is also the LEDGER LOAD
