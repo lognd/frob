@@ -2,7 +2,7 @@
 id: T-4124
 title: 'audit: other fnmatch-against-path-glob call sites share T-4102/T-4013''s normcase
   platform-dependence bug'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -147,3 +147,6 @@ matters. When this migration lands, make sure the scope-matching rule is
 documented where a consumer building on the ledger would look for it, and say so
 in the done report. A second matcher in the wild will desync from ours no matter
 how correct ours becomes.
+
+## Failure log
+- 2026-09-07 attempt 1: leaked lease: worktree/process gone (no .claude/worktrees/t-4124, no running frob process), branch t-4124 has only ticket-bookkeeping commits and no code changes; requeuing so T-4145 can proceed on _refs.py
