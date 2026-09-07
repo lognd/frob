@@ -17,10 +17,71 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_refs.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+- tests/test_refs_gate.py
+- tests/unit/test_ticket_restore.py
+- docs/guides/agentic-workflow.md
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: 'T-4145: split _closeout.py required touching the package __init__ and its
+    new sibling module; the closeout-evidence split moved a frob:used-by-adjacent
+    frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
+    gets the new fixture coverage and test_ticket_restore.py needed its import path
+    updated after the split'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+  reason: 'T-4145: split _closeout.py required touching the package __init__ and its
+    new sibling module; the closeout-evidence split moved a frob:used-by-adjacent
+    frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
+    gets the new fixture coverage and test_ticket_restore.py needed its import path
+    updated after the split'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_refs_gate.py
+  reason: 'T-4145: split _closeout.py required touching the package __init__ and its
+    new sibling module; the closeout-evidence split moved a frob:used-by-adjacent
+    frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
+    gets the new fixture coverage and test_ticket_restore.py needed its import path
+    updated after the split'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_ticket_restore.py
+  reason: 'T-4145: split _closeout.py required touching the package __init__ and its
+    new sibling module; the closeout-evidence split moved a frob:used-by-adjacent
+    frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
+    gets the new fixture coverage and test_ticket_restore.py needed its import path
+    updated after the split'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/guides/agentic-workflow.md
+  reason: 'T-4145: split _closeout.py required touching the package __init__ and its
+    new sibling module; the closeout-evidence split moved a frob:used-by-adjacent
+    frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
+    gets the new fixture coverage and test_ticket_restore.py needed its import path
+    updated after the split'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-4145: split _closeout.py required touching the package __init__ and its
+    new sibling module; the closeout-evidence split moved a frob:used-by-adjacent
+    frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
+    gets the new fixture coverage and test_ticket_restore.py needed its import path
+    updated after the split'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a repository containing the standard community health files and GitHub
