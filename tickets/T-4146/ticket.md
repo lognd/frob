@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/vet/test_bare_toolchain.py::TestBareToolchainGate::test_flags_bare_argv_literal
 designated_repro_test: null
 threat: null
 component: null
