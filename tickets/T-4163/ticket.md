@@ -24,6 +24,7 @@ scope:
 - src/frob/process/_project_tool.py
 - src/frob/gates/_rule_id_scan.py
 - docs/modules/gates.md
+- tests/unit/test_project_tool.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -91,6 +92,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: name every gate-registration list in GATERULE001's message; document the
     registration surface and single-point-of-registration decision
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_project_tool.py
+  reason: shape test updated for --no-sync
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
