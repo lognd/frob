@@ -19,10 +19,19 @@ scope:
 - tests/unit/test_check.py
 - tests/test_coverage.py
 - tests/unit/test_flag_coverage_gate.py
+- src/frob/gates/_flag_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_flag_coverage.py
+  reason: T-4171's own body requires distinguishing the two spawn kinds at the flag-coverage
+    resolver call site (CAUSE TWO), which lives in this file; the ticket's declared
+    scope list omitted it
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a read-only tool spawn, when it runs against a target project, then
