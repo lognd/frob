@@ -17,12 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/gates/test_profile_boundary.py
 - tests/unit/strata/test_strata_core_gil.py
-- tests/unit/rapid_sweep_suite/test_filing.py
-- tests/unit/arch_suite/test_misc.py
-- tests/ticket_land_suite/test_wip.py
-- tests/ticket_land_suite/test_land_core.py
 - tests/test_tickets_evidence_cli.py
-- tests/test_ticket_leases.py
 - tests/test_ticket_land_lint_diff_attribution.py
 - tests/test_fuzz.py
 - tests/system/test_cli_ticket.py
@@ -72,6 +67,47 @@ scope_changes:
     file. Narrowing on main is safe here precisely because there is no worktree to
     invalidate. The remaining scope entries should be removed the same way as they
     block others
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_ticket_leases.py
+  reason: T-4243 (child of T-4236) now owns the three named failures in these files
+    (land.lock untracked, normalization-dirty inversion, reclaim-log-line); narrowing
+    to avoid a scope-lease collision
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/ticket_land_suite/test_wip.py
+  reason: T-4243 (child of T-4236) now owns the three named failures in these files
+    (land.lock untracked, normalization-dirty inversion, reclaim-log-line); narrowing
+    to avoid a scope-lease collision
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/ticket_land_suite/test_land_core.py
+  reason: T-4244 (leaf ticket under the same T-4236 epic) now owns and is actively
+    fixing these three path-shape defects; T-3936 has no worktree and its lock is
+    empty (epic-lease-leak pattern, see memory), so this scope entry is a dead lease
+    blocking T-4244's start. Narrowing rather than stealing since there is no live
+    worktree to steal from.
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/arch_suite/test_misc.py
+  reason: T-4244 (leaf ticket under the same T-4236 epic) now owns and is actively
+    fixing these three path-shape defects; T-3936 has no worktree and its lock is
+    empty (epic-lease-leak pattern, see memory), so this scope entry is a dead lease
+    blocking T-4244's start. Narrowing rather than stealing since there is no live
+    worktree to steal from.
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/rapid_sweep_suite/test_filing.py
+  reason: T-4244 (leaf ticket under the same T-4236 epic) now owns and is actively
+    fixing these three path-shape defects; T-3936 has no worktree and its lock is
+    empty (epic-lease-leak pattern, see memory), so this scope entry is a dead lease
+    blocking T-4244's start. Narrowing rather than stealing since there is no live
+    worktree to steal from.
   actor: logan
   at: '2026-09-07'
 body_changes:
