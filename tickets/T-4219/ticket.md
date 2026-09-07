@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'owner narrowed the scope: relative links are fine and must not be flagged,
+    only embedded resources that mis-render. Supersedes the license-link finding I
+    reported, and removes the need for a fragment carve-out since fragments are links'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 6137
+  new_length: 6137
 designated_repro_test: null
 acceptance:
 - text: given a project whose declared long-description file contains a relative image
@@ -112,3 +121,42 @@ ACCEPTANCE
 - The auto-fix question decided: report the remedy shape, or derive the URL from
   a declared repository field, but never guess.
 - All three fixtures committed.
+
+
+SCOPE NARROWED BY THE OWNER: RESOURCES ONLY, NOT LINKS.
+
+Relative LINK targets are fine and must NOT be flagged. A relative link that does
+not navigate on the index is a minor inconvenience, links to repository files are
+a deliberate and common convention, and flagging them would produce noise on
+nearly every project. That includes this README's own license-badge link, which I
+reported above as a second finding -- it is NOT one, and the section above is
+superseded on that point.
+
+FLAG ONLY EMBEDDED RESOURCES, the things that MIS-RENDER rather than merely fail
+to navigate:
+  - an image source, in HTML tag form or markdown image syntax
+  - the same for any other embedded asset the renderer must fetch to display the
+    page correctly
+
+The distinction is what the reader SEES. A relative link looks normal and does
+nothing when clicked. A relative image renders as a broken-image box in the
+middle of the project's front page, on the one surface where most people meet
+the project for the first time. Only the second is worth an error.
+
+SO THE RULE IS:
+  ERROR    a relative embedded resource in the file the manifest declares as the
+           long description
+  WARNING  a relative embedded resource in any other markdown file
+  NOTHING  a relative link target, anywhere
+
+That also simplifies the fragment question raised above: fragment-only references
+are links, so they fall out of scope entirely rather than needing a carve-out.
+
+REVISED FIXTURES
+MUST-FIRE:      a relative image source in the declared long-description file
+                reports an error.
+MUST-STAY-QUIET: a relative LINK target in that same file reports nothing, and a
+                relative image in a non-declared markdown file reports a warning
+                rather than an error.
+THIRD:          a project that declares no long-description file is handled
+                explicitly and does not crash or silently pass.
