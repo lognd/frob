@@ -25,6 +25,8 @@ scope:
 - design/frob.strata
 - tickets/T-4133/ticket.md
 - docs/design/registry/capability-via-ratchet.lock.json
+- src/frob/scaffold/data/shared/python/tests/system/test_build.py.j2
+- src/frob/scaffold/data/types/python-tool/tests/system/test_build.py.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -232,6 +234,26 @@ scope_changes:
   glob: docs/design/registry/capability-via-ratchet.lock.json
   reason: 'T-4132: SELFAUDIT001/SYS111 requires bumping testsuite::exec''s ratchet
     ceiling in the same diff that grows its via-list'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/tests/system/test_build.py.j2
+  reason: 'T-4132: adding a py.typed-presence assertion to both scaffold test_build
+    templates -- required to give the scaffold''s own py.typed a second inbound reference
+    (REF002 fired on a single-reference marker file in the generated project, found
+    via test_scaffold_dx.py''s real frob-check-on-scaffolded-output fixture) and to
+    give downstream generated projects their own regression coverage for this exact
+    defect class'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/tests/system/test_build.py.j2
+  reason: 'T-4132: adding a py.typed-presence assertion to both scaffold test_build
+    templates -- required to give the scaffold''s own py.typed a second inbound reference
+    (REF002 fired on a single-reference marker file in the generated project, found
+    via test_scaffold_dx.py''s real frob-check-on-scaffolded-output fixture) and to
+    give downstream generated projects their own regression coverage for this exact
+    defect class'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
