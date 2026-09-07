@@ -2,7 +2,7 @@
 id: T-4263
 title: split the release upload job per distribution so each new pypi project can
   register its own pending trusted publisher
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
