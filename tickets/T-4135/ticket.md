@@ -32,6 +32,16 @@ body_changes:
   at: '2026-09-07'
   old_length: 43054
   new_length: 45789
+- mode: set
+  reason: 'adds F-355, sized down after checking the code: the live-tracker refusal
+    already names the in-place remedy the reporter needed, so this is a discoverability
+    and message-ordering defect rather than the no-exit it appeared to be. Records
+    that its outcome -- a ticket filed only to satisfy a gate -- is the same shape
+    as the disclosure-phrase defect, and warns against relaxing the rule itself'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 45789
+  new_length: 48492
 designated_repro_test: null
 acceptance:
 - text: given the 24 findings in this epic, when it is decomposed, then each has either
@@ -776,3 +786,47 @@ ordinary message-clarity findings in this epic:
 DO NOT FIX THIS BY SUPPRESSING THE RULE ON AUDIT DOCUMENTS. The finding is about
 which paths the rule consults and how it explains itself, not about which
 documents deserve checking.
+
+ADDENDUM -- F-355, AND A DELIBERATE DECISION TO SIZE IT DOWN. Two items, and I
+checked our code before accepting either at the severity the report implies.
+
+ITEM ONE: the cross-ticket-leakage refusal when two tickets share one worktree
+does not name its remedy. The reporter accepts the RULE as correct and asks only
+that the message say what to do -- close the other ticket in this worktree, or
+move its files out. That is a message fix and this repo's own convention already
+requires violation messages to name a copy-pastable remedy. Straightforward.
+
+ITEM TWO NEEDS A CORRECTION, and it is the reason this is an addendum rather than
+its own critical ticket. The report says a waiver could not cite the ticket it
+sits on (a live-tracker refusal), so their agent filed a throwaway ticket purely
+to have a citable id. That reads as a no-exit, and I nearly filed it as one.
+
+IT IS NOT. Our refusal message already names two remedies, and the second one
+fits their case exactly: "file a successor ticket and re-point these rows, OR
+RE-POINT THEM IN THIS SAME CHANGE". For a waiver whose follow-up is the very
+ticket now closing, the correct action is the second -- the work is done, so the
+citation should be dropped or aimed elsewhere in that same diff. The exit
+existed; the agent took the first branch because it is the one stated first and
+the one that sounds like an instruction.
+
+SO THE REAL FINDING IS DISCOVERABILITY, NOT STRUCTURE, and it should be fixed at
+that level rather than by weakening the rule:
+  - The message should distinguish the SELF-CITATION case, where a waiver on this
+    ticket's own diff cites this ticket. That case has exactly one sensible
+    remedy and the message could say it outright instead of offering a generic
+    pair.
+  - Ordering matters here. Listing "file a successor ticket" first, ahead of the
+    cheaper and usually-correct action, is what produced a junk ticket. Put the
+    in-place remedy first for this case.
+
+WHY IT STILL MATTERS DESPITE BEING SMALLER THAN REPORTED: the outcome was a
+ticket filed for no reason other than to satisfy a gate. That is the same shape
+as the disclosure-phrase defect already filed separately, where declaring that no
+follow-up is needed is read as failing to file one, and the cheapest exit is a
+junk filing. Two rules in this system can be cleared by manufacturing queue
+entries. Neither is a crisis alone; together they are a pattern worth naming,
+because a queue that accumulates tickets filed to satisfy gates loses the
+property that makes it worth reading.
+
+Do NOT relax the live-tracker rule to fix this. It exists so a closing ticket
+cannot strand rows that point at it as their tracker, which is a real hazard.
