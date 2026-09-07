@@ -14,10 +14,32 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_docptr.py
+  reason: DOC006's emitter is _docptr.py:364 (43 references there against 6 in the
+    gates package init, which are dispatch and catalogue only), and test_docptr_gate.py
+    carries the gate's own real-repo zero assertion. Scoped narrowly to those two
+    so this ticket stays disjoint from the registry work in gates/__init__.py that
+    T-4163 is holding
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: DOC006's emitter is _docptr.py:364 (43 references there against 6 in the
+    gates package init, which are dispatch and catalogue only), and test_docptr_gate.py
+    carries the gate's own real-repo zero assertion. Scoped narrowly to those two
+    so this ticket stays disjoint from the registry work in gates/__init__.py that
+    T-4163 is holding
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'describe the bracketed link labels in words: the ticket documenting the
