@@ -20,10 +20,18 @@ scope:
 - CODE_OF_CONDUCT.md
 - README.md
 - .github/**
+- docs/guides/command-reference.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/command-reference.md
+  reason: verb-groups and full command table moved out of README to keep it scannable
+    per T-4131's own acceptance
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a first-time visitor, when they open the repository root, then a contributing
