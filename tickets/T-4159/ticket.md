@@ -19,6 +19,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'records the quiet-window rebuild and the measurement that narrows the cause:
+    of five databases under the frob state directory only cache.db was corrupt, which
+    argues against a storage fault and points at the concurrent store_file_data write
+    path named in every warning. Notes the rebuild is automatic and cheap, and that
+    recurrence under load is the signal that confirms the writer-coordination defect'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 5139
+  new_length: 7354
 designated_repro_test: null
 acceptance:
 - text: given a file whose content changed after a finding was cached for it, when
@@ -122,3 +133,44 @@ ACCEPTANCE
 - A corrupt or untrustworthy cache is rebuilt rather than served.
 - The concurrency question investigated, with findings recorded either way.
 - All three fixtures committed.
+
+REBUILT IN A QUIET WINDOW, 2026-09-07, AND THE RESULT NARROWS THE CAUSE.
+Conditions: zero lands in flight, zero agents, zero concurrent checks, load 4.3.
+A forensic copy of the corrupt database is preserved before deletion.
+
+THE DECISIVE MEASUREMENT IS WHICH DATABASES WERE AFFECTED. Before deleting
+anything I ran an integrity check over EVERY database under the frob state
+directory:
+
+    .frob/cache.db              CORRUPT  (Freelist: size is 2 but should be 5)
+    .frob/gate-cache.db         ok
+    .frob/parse-artifacts.db    ok
+    .frob/dup.db                ok
+    .frob/hotgraph_sketches.db  ok
+
+ONE OF FIVE. That argues strongly AGAINST a general disk, filesystem or WSL
+storage fault -- those would not spare four neighbouring databases, one of them
+249MB. It points at something specific to this database's access pattern.
+
+AND THE ACCESS PATTERN IS THE ONE THING THAT STANDS OUT. Every corruption warning
+observed this session named the same function: `store_file_data`, the write path
+this database receives from every concurrent `frob check`. This session measured
+up to SEVEN concurrent checks against it. The other four databases are written by
+narrower paths.
+
+So the concurrency hypothesis in the section above is now the leading one, and the
+investigation has a specific target rather than a general one: how
+`store_file_data`'s writers coordinate, and whether the journal mode, busy timeout
+and connection lifecycle are correct for N concurrent writer processes rather than
+N threads.
+
+AFTER DELETION, a rebuild happened automatically on the next verb that needed the
+graph, produced a 10.7MB database (down from 23.3MB), and that rebuild passes
+integrity_check. So recovery is cheap and needs no special tooling -- which makes
+the automatic detect-and-rebuild proposed above cheaper than it might have looked.
+
+WATCH FOR RECURRENCE, and treat it as the real signal. A corruption that does not
+come back was a one-off event worth noting and closing. A corruption that returns
+under concurrent load confirms the writer-coordination defect and is the finding
+that matters. Re-run the same five-database integrity sweep after the next heavy
+fleet session and record the result here either way.
