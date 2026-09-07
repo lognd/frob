@@ -2,7 +2,7 @@
 id: T-4265
 title: delete the thirteen obsolete windows hang-diagnosis step blocks from the integration
   workflow, whose six tickets are all closed
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
