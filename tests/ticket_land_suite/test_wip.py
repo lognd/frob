@@ -161,8 +161,24 @@ class TestWipCommitNormalizationOnlyDirty:
 
         # Force text normalization on this worktree and commit an LF file
         # under it -- the committed blob is normalized LF content.
+        #
+        # T-4243: the initial write MUST be `write_bytes` with an explicit
+        # `\n`, never `write_text` -- `Path.write_text`'s default
+        # `newline=None` runs Python's own universal-newlines translation
+        # on WRITE too, so on a real Windows interpreter it silently
+        # emits `\r\n` for every `\n` in the string. That made the
+        # "committed LF blob" premise false on Windows: the file already
+        # held CRLF bytes at commit time (autocrlf's own checkout-time
+        # CRLF rewrite was therefore a no-op), so the `write_bytes(CRLF)`
+        # step below wrote content BYTE-IDENTICAL to what was already on
+        # disk -- no working-tree change at all, hence `git status
+        # --porcelain` measured clean and this test's own next assertion
+        # (tree must be dirty) failed outright. Confirmed on real
+        # Windows (winrun): `write_text` produced `\r\n` bytes on disk
+        # before this fix; an explicit `write_bytes` guarantees actual
+        # LF content on every platform, restoring the fixture's intent.
         _run(["git", "config", "core.autocrlf", "true"], wt)
-        (wt / "src" / "wip_crlf.py").write_text("line one\nline two\n")
+        (wt / "src" / "wip_crlf.py").write_bytes(b"line one\nline two\n")
         _commit_all(wt, "wip crlf ticket bits")
 
         # Simulate the WSL phantom-dirty symptom: the working-tree file now

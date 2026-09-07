@@ -775,13 +775,32 @@ def _land_lock(
     fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
     deadline = _time.monotonic() + timeout
     logged_holder = False
+    # T-4243: snapshotted BEFORE the acquire loop, and updated only from
+    # PRE-acquire reads inside that loop below -- never re-read from
+    # `path` after this process's own `portable_flock_acquire` succeeds.
+    # On POSIX `fcntl.flock` is advisory, so a same-process `Path.
+    # read_text` against `path` after acquiring `fd`'s flock still reads
+    # the file fine -- the original shape here re-read post-acquire and
+    # that was harmless. `msvcrt.locking` (Windows) is MANDATORY, not
+    # advisory: it blocks even a SEPARATE handle in the SAME process from
+    # reading a byte range this process itself just locked. Confirmed on
+    # real Windows (winrun): the post-acquire `Path.read_text` reproduced
+    # here raised `PermissionError` every time, `_read_land_lock_holder`
+    # swallowed it as `OSError -> None`, so `prior_holder` silently came
+    # back `None` and the T-1634 reclaim-disclosure warning below never
+    # fired -- even though the reclaim (re-acquiring and overwriting a
+    # dead holder's lock) genuinely succeeded. Reading the snapshot only
+    # BEFORE this process holds the lock closes that gap on both
+    # platforms.
+    pre_acquire_holder = _read_land_lock_holder(path)
     while True:
         # frob:ticket T-3506
         # frob:ticket T-3506
         if portable_flock_acquire(fd, exclusive=True, blocking=False):
             break
+        holder = _read_land_lock_holder(path)
+        pre_acquire_holder = holder
         if not logged_holder:
-            holder = _read_land_lock_holder(path)
             _log.warning(
                 "land: %s land.lock is held by %s -- waiting up to %.0fs "
                 "before refusing (T-1515: was an unbounded blocking wait)",
@@ -798,15 +817,16 @@ def _land_lock(
                 )
         if _time.monotonic() >= deadline:
             os.close(fd)
-            raise LandLockTimeout(root, _read_land_lock_holder(path)) from None
+            raise LandLockTimeout(root, holder) from None
         _time.sleep(_LAND_LOCK_POLL_S)
     # T-1634: log-only reclaim disclosure -- this call already holds
     # `fd`'s flock and is about to overwrite the file's content below via
     # that SAME fd (the actual reclaim), so there is nothing left to
     # unlink here; unlinking by PATH would sever the path from the inode
     # `fd` is about to write into, leaving the fresh holder metadata
-    # invisible to any reader of `path`.
-    prior_holder = _read_land_lock_holder(path)
+    # invisible to any reader of `path`. T-4243: uses the PRE-acquire
+    # snapshot (see above), never a fresh post-acquire read.
+    prior_holder = pre_acquire_holder
     if prior_holder is not None:
         prior_pid = prior_holder.get("pid")
         if isinstance(prior_pid, int) and prior_pid != os.getpid():

@@ -1,5 +1,5 @@
 ---
-id: T-draft-b488ae79
+id: T-4261
 title: evidence --replace/--remove is not mirrored to the primary checkout, so frob
   ticket land refuses on stale evidence it already rebound away from
 state: queued

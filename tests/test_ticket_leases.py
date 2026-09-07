@@ -156,7 +156,21 @@ def _git_init(root: Path, *, branch: str = "main") -> None:
 
 
 def _commit_all(root: Path, message: str) -> None:
+    """Stage and commit everything dirty in `root`. T-4243: a no-op stage
+    (nothing left to commit) is not an error here -- before the `repo`
+    fixture gitignored `.frob/` (matching every real checkout, see that
+    fixture's own docstring), a caller between two ledger-mutating verbs
+    could rely on `.frob/`'s OWN untracked scratch files (cache.db,
+    telemetry.jsonl) to guarantee something was always dirty enough for
+    `git commit` to succeed -- an accident of an un-gitignored fixture,
+    not a real invariant any caller here actually needs. `--allow-empty`
+    is wrong (it would paper over a genuine "nothing changed" bug this
+    call is meant to snapshot); checking first and skipping cleanly is
+    the honest fix."""
     _run(["git", "add", "-A"], root)
+    diff = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=root, check=False)
+    if diff.returncode == 0:
+        return
     _run(["git", "commit", "-q", "-m", message], root)
 
 
@@ -173,6 +187,22 @@ def repo(tmp_path: Path) -> Path:
     """A main checkout with a real git history and an initialized ledger."""
     main_repo = tmp_path / "main"
     _git_init(main_repo)
+    # T-4243: every real frob checkout gitignores `.frob/` (see
+    # `_porcelain_dirty`'s own docstring in `_land_git_ops.py` -- it is
+    # frob-local scratch state, this repo's own land.lock included, "a
+    # repo is expected to .gitignore anyway"). Without this, a bare `git
+    # status --porcelain` assertion here depends on `.frob/land.lock`
+    # actually getting DELETED by `reclaim_orphaned_squash_residue`'s
+    # `git clean -fd` -- which only happens to hold on POSIX, where
+    # unlinking a file this same process still has open (and flock'd) is
+    # legal. On Windows, deleting an open+locked file fails outright
+    # (measured: `git clean -fd` warns "failed to remove .frob/land.lock:
+    # Invalid argument" and leaves it as an untracked residue), so an
+    # un-gitignored fixture repo made a platform-specific implementation
+    # detail load-bearing for the assertion instead of the real invariant
+    # (a gitignored `.frob/land.lock` never appears in git status at all,
+    # on any platform, `git clean -fd` failing to touch it or not).
+    (main_repo / ".gitignore").write_text(".frob/\n")
     (main_repo / "src").mkdir()
     (main_repo / "src" / "feature.py").write_text("# feature\n")
     ticket_run(
