@@ -3947,6 +3947,60 @@ def _flatten_edges(edges_by_target: dict[str, list[Edge]]) -> list[tuple[str, Ed
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-4138
+# Extension -> collector-language tag, mirroring the four native collectors
+# `_load_tests` merges (`collect_python_tests`/`collect_rust_tests`/
+# `collect_ts_tests`/`collect_cpp_tests`). Only used to decide WHICH
+# collector's failure a given `frob:tests` edge's evidence depends on --
+# never to collect tests itself, so it stays a plain suffix map rather than
+# importing each collector's own file-matching regex.
+_TEST_LANG_BY_SUFFIX: dict[str, str] = {
+    ".py": "python",
+    ".rs": "rust",
+    ".ts": "ts",
+    ".tsx": "ts",
+    ".js": "ts",
+    ".jsx": "ts",
+    ".mts": "ts",
+    ".mjs": "ts",
+    ".c": "cpp",
+    ".cc": "cpp",
+    ".cpp": "cpp",
+    ".cxx": "cpp",
+    ".h": "cpp",
+    ".hpp": "cpp",
+    ".hh": "cpp",
+}
+
+
+# frob:ticket T-4138
+def _test_language_of(symref: str) -> str | None:
+    """The collector-language tag (`_TEST_LANG_BY_SUFFIX`) for `symref`'s
+    file (the `path` half of a `path::qualname` symref), or `None` for an
+    extension no native collector claims. Used to decide whether a
+    `frob:tests` edge's evidence depends on a collector that is known to
+    have failed this run (T-4138), not to collect or validate the edge
+    itself."""
+    path = symref.partition("::")[0]
+    return _TEST_LANG_BY_SUFFIX.get(Path(path).suffix)
+
+
+# frob:ticket T-4138
+def _edge_languages(edges: list[Edge]) -> frozenset[str]:
+    """Every collector-language tag (`_test_language_of`) touched by `edges`
+    -- both `src` and `target` are checked (T-4138), matching
+    `_edge_has_execution_evidence`'s own src-then-target order, since either
+    side may be the test file depending on which `frob:tests` convention
+    was used (see `_valid_edges`'s docstring)."""
+    langs: set[str] = set()
+    for edge in edges:
+        for symref in (edge.src, edge.target):
+            lang = _test_language_of(symref)
+            if lang is not None:
+                langs.add(lang)
+    return frozenset(langs)
+
+
 def _test001_002_one(
     record,  # noqa: ANN001
     unit_edges: dict[str, list[Edge]],
@@ -3954,8 +4008,26 @@ def _test001_002_one(
     cfg: TestPolicy,
     snapshot: GraphSnapshot,
     coverage: Option[CoverageData] = Nothing(),
+    failed_test_languages: frozenset[str] = frozenset(),
 ) -> Violation | None:
-    """The TEST001/TEST002 verdict for one public function/method, or None."""
+    """The TEST001/TEST002 verdict for one public function/method, or None.
+
+    T-4138: `failed_test_languages` (collector-language tags whose native
+    collector errored this run, from `_load_tests`) distinguishes an ABSENT
+    test-collection artifact from a MEASURED zero. Previously `effective`
+    reaching 0 via a failed collector (`_valid_edges` finds no execution
+    evidence because `tests.node_ids` never got that language's entries at
+    all -- e.g. a TypeScript repo whose `npx vitest list --json` run
+    errored) was indistinguishable from a `frob:tests` edge that genuinely
+    collected zero cases, and both rendered as the same TEST002 "0
+    collected unit case(s)" WARN -- an enforced, false claim against every
+    symbol in the failed language (F-340: 135 of them in one report,
+    consumer logand.app-v2). When every edge's language failed to collect
+    at all, this reports UNMEASURED (`Severity.UNRESOLVED`,
+    `_test002_unmeasured`) instead: a measurement gap, not proof the
+    binding is vacuous -- the same posture `_test001_zero_measured_branch_
+    coverage` already takes for coverage.xml, extended here to the
+    test-collection artifact TEST002 actually depends on."""
     edges = unit_edges.get(record.symref, [])
     valid = _valid_edges(edges, tests, snapshot)
     # An explicit frob:tests edge is authoritative -- judge it by its valid
@@ -3971,6 +4043,10 @@ def _test001_002_one(
     if effective == 0 and not edges:
         return _test001_no_unit_test(record)
     if effective < cfg.min_unit_cases:
+        if edges and failed_test_languages:
+            edge_langs = _edge_languages(edges)
+            if edge_langs and edge_langs <= failed_test_languages:
+                return _test002_unmeasured(record, edge_langs)
         return _test002_below_min(record, effective, cfg)
     if cfg.require_branch_coverage_for_test001 and coverage.is_some:
         zero_cov = _test001_zero_measured_branch_coverage(record, coverage.danger_some)
@@ -4061,12 +4137,46 @@ def _test002_below_min(record, effective: int, cfg: TestPolicy) -> Violation:  #
     )
 
 
+# frob:ticket T-4138
+def _test002_unmeasured(record, langs: frozenset[str]) -> Violation:  # noqa: ANN001
+    """TEST002 measurement-gap verdict (T-4138): `record`'s `frob:tests`
+    edge(s) depend ENTIRELY on collector-language(s) `langs` whose native
+    test collector failed to run this pass (see `_load_tests`) -- no
+    execution evidence could possibly have been produced, so this is
+    `Severity.UNRESOLVED`, never the plain TEST002 WARN: a measurement gap
+    read as a measured zero is exactly the false-positive class this rule
+    exists to prevent (F-340), and silently passing instead would be the
+    same defect facing the other way."""
+    langs_str = ", ".join(sorted(langs))
+    _log.debug(
+        "TEST002: %s unmeasured -- %s collector failed this run",
+        record.symref,
+        langs_str,
+    )
+    return Violation(
+        rule="TEST002",
+        severity=Severity.UNRESOLVED,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST002: {record.symref} is UNMEASURED, not zero -- its bound "
+            f"frob:tests edge(s) depend on the {langs_str} test collector, "
+            "which failed to produce any collected test evidence this run "
+            "(see the run_gates log for the collector error); this is a "
+            "measurement gap, not proof the binding has too few cases -- "
+            "fix the collector (toolchain availability, project discovery) "
+            "and re-run"
+        ),
+    )
+
+
 # frob:ticket T-1861
 def _test001_002(
     snapshot: GraphSnapshot,
     tests: CollectedTests,
     cfg: TestPolicy,
     coverage: Option[CoverageData] = Nothing(),
+    failed_test_languages: frozenset[str] = frozenset(),
 ) -> tuple[Violation, ...]:
     """TEST001 (no unit edge) and TEST002 (fewer than min_unit_cases valid edges).
 
@@ -4105,7 +4215,9 @@ def _test001_002(
             or record.id.path.startswith(".claude/hooks/")
         ):
             continue
-        verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot, coverage)
+        verdict = _test001_002_one(
+            record, unit_edges, tests, cfg, snapshot, coverage, failed_test_languages
+        )
         if verdict is not None:
             violations.append(verdict)
     return tuple(violations)
@@ -5336,6 +5448,7 @@ def test_gate(
     coverage: Option[CoverageData],
     tests: CollectedTests,
     cfg: TestPolicy,
+    failed_test_languages: frozenset[str] = frozenset(),
 ) -> tuple[Violation, ...]:
     """TEST001..TEST015. Interfaces derived from packages with public symbols
     (see `_test003`'s docstring for the exact alpha semantics). Coverage is
@@ -5361,9 +5474,15 @@ def test_gate(
     the same spirit: see `_test014_ambiguous_convention`. TEST015 (T-0548)
     is the audit's own B1 repro (`def test_myfunc(): pass` clearing
     TEST001) made loud via T-0549's existing assertion heuristic: see
-    `_test015_vacuous_credit`."""
+    `_test015_vacuous_credit`. T-4138: `failed_test_languages` (from
+    `_load_tests`) tells TEST002 which native test collectors errored this
+    run, so a `frob:tests` edge whose evidence depends entirely on one of
+    them reports UNMEASURED instead of a false measured-zero -- see
+    `_test001_002_one`."""
     violations: list[Violation] = []
-    violations.extend(_test001_002(snapshot, tests, cfg, coverage))
+    violations.extend(
+        _test001_002(snapshot, tests, cfg, coverage, failed_test_languages)
+    )
     violations.extend(_test003(snapshot, tests, cfg))
     violations.extend(_test007_pairs(snapshot, tests, cfg))
     violations.extend(_test004(systems, snapshot, tests))
@@ -6310,6 +6429,8 @@ class _GateInputs:
     diff_load_no_repo: bool = False
     # frob:ticket T-1161
     python_collection_failed: str | None = None
+    # frob:ticket T-4138
+    failed_test_languages: frozenset[str] = frozenset()
 
 
 # frob:ticket T-0550
@@ -6367,7 +6488,7 @@ def _load_diff(root: Path, base: str) -> tuple[Diff, bool, bool]:
     return diff_result.danger_ok, False, False
 
 
-def _load_tests(root: Path) -> tuple[CollectedTests, str | None]:
+def _load_tests(root: Path) -> tuple[CollectedTests, str | None, frozenset[str]]:
     """Collected pytest + cargo + vitest + ctest node ids, degrading each
     collector independently to an empty set on failure (a missing/broken
     toolchain must not halt the whole gates run -- but see `_cov003`: an
@@ -6381,8 +6502,24 @@ def _load_tests(root: Path) -> tuple[CollectedTests, str | None]:
     testing.python_collection_failure_detail()`, `None` when python
     collection succeeded) alongside the merged `CollectedTests` -- `run_gates`
     threads this into `coverage_gate` so a total pytest-collection failure
-    reports as ONE honest `COV003` instead of one per archived evidence id."""
+    reports as ONE honest `COV003` instead of one per archived evidence id.
+
+    T-4138: ALSO returns the (rust/ts/cpp) collector-language tags whose
+    collector errored this run -- `_load_tests` degrades each to an empty
+    set so ONE broken toolchain never blanks every language's node ids
+    (the comment above), but until T-4138 that degrade was invisible past
+    this function: `tests.node_ids` alone cannot tell a caller "this
+    language was never measured" apart from "this language was measured
+    and genuinely has nothing here". `test_gate`/`_test001_002` consumes
+    this to report TEST002 as an honest measurement gap (UNRESOLVED)
+    instead of a false measured-zero (WARN) for a `frob:tests` edge whose
+    evidence depends entirely on a failed collector (F-340). Python is
+    deliberately excluded from this set -- its failure already gets the
+    stronger, dedicated `python_collection_failed` -> COV003 treatment
+    above, and adding it here too would double-report the same gap under
+    two different rules."""
     node_ids: set[str] = set()
+    failed_languages: set[str] = set()
 
     python_result = collect_python_tests(root)
     python_collection_failed: str | None = None
@@ -6398,22 +6535,29 @@ def _load_tests(root: Path) -> tuple[CollectedTests, str | None]:
     rust_result = collect_rust_tests(root)
     if rust_result.is_err:
         _log.error("run_gates: cargo collection failed: %s", rust_result.danger_err)
+        failed_languages.add("rust")
     else:
         node_ids.update(rust_result.danger_ok.node_ids)
 
     ts_result = collect_ts_tests(root)
     if ts_result.is_err:
         _log.error("run_gates: vitest collection failed: %s", ts_result.danger_err)
+        failed_languages.add("ts")
     else:
         node_ids.update(ts_result.danger_ok.node_ids)
 
     cpp_result = collect_cpp_tests(root)
     if cpp_result.is_err:
         _log.error("run_gates: ctest collection failed: %s", cpp_result.danger_err)
+        failed_languages.add("cpp")
     else:
         node_ids.update(cpp_result.danger_ok.node_ids)
 
-    return CollectedTests(node_ids=frozenset(node_ids)), python_collection_failed
+    return (
+        CollectedTests(node_ids=frozenset(node_ids)),
+        python_collection_failed,
+        frozenset(failed_languages),
+    )
 
 
 def _resolve_ticket(
@@ -6608,7 +6752,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     test_policy, systems = _load_test_config(root)
     ticket, sweep = _resolve_ticket(root, cfg, queue)
     diff, diff_load_failed, diff_load_no_repo = _load_diff(root, cfg.base)
-    tests, python_collection_failed = _load_tests(root)
+    tests, python_collection_failed, failed_test_languages = _load_tests(root)
     return _GateInputs(
         root=root,
         repo_root=_repo_root_for(root),
@@ -6630,6 +6774,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         diff_load_failed=diff_load_failed,
         diff_load_no_repo=diff_load_no_repo,
         python_collection_failed=python_collection_failed,
+        failed_test_languages=failed_test_languages,
     )
 
 
@@ -6939,7 +7084,12 @@ def _cacheable_gate_factories(
         ),
         "test": (
             lambda snap: test_gate(
-                snap, st.systems, st.coverage, st.tests, st.test_policy
+                snap,
+                st.systems,
+                st.coverage,
+                st.tests,
+                st.test_policy,
+                st.failed_test_languages,
             ),
             (
                 model_side_channel_key(
@@ -7111,7 +7261,12 @@ def _build_thread_jobs(
             *policy_weakening_gate(st.repo_root),
         ),
         "test": lambda: test_gate(
-            st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
+            st.snapshot,
+            st.systems,
+            st.coverage,
+            st.tests,
+            st.test_policy,
+            st.failed_test_languages,
         ),
         "policy": lambda: policy_gate(st.rules, st.snapshot, st.diff),
         "doclink": lambda: doclink_gate(st.root, st.snapshot),

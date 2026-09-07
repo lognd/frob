@@ -1041,7 +1041,7 @@ class TestCoverageGate:
                 CollectedTests(node_ids=frozenset({"crate/src/lib.rs::tests::foo"}))
             ),
         )
-        merged, python_collection_failed = gates_mod._load_tests(tmp_path)
+        merged, python_collection_failed, _ = gates_mod._load_tests(tmp_path)
         assert merged.node_ids == frozenset(
             {"tests/test_x.py::test_a", "crate/src/lib.rs::tests::foo"}
         )
@@ -1054,7 +1054,7 @@ class TestCoverageGate:
             "collect_rust_tests",
             lambda root: Err(TestingError.CollectFailed),
         )
-        merged2, python_collection_failed2 = gates_mod._load_tests(tmp_path)
+        merged2, python_collection_failed2, _ = gates_mod._load_tests(tmp_path)
         assert merged2.node_ids == frozenset({"tests/test_x.py::test_a"})
         assert python_collection_failed2 is None
 
@@ -1084,7 +1084,7 @@ class TestCoverageGate:
             "collect_rust_tests",
             lambda root: Ok(CollectedTests(node_ids=frozenset())),
         )
-        merged, python_collection_failed = gates_mod._load_tests(tmp_path)
+        merged, python_collection_failed, _ = gates_mod._load_tests(tmp_path)
         assert merged.node_ids == frozenset()
         assert python_collection_failed == "exit 2\nstderr tail"
 

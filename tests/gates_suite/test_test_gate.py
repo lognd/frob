@@ -2342,7 +2342,7 @@ class TestNativeTestCollectors:
             "collect_cpp_tests",
             lambda root: Ok(CollectedTests(node_ids=frozenset({"build::MyTest"}))),
         )
-        merged, python_collection_failed = gates_mod._load_tests(tmp_path)
+        merged, python_collection_failed, _ = gates_mod._load_tests(tmp_path)
         assert merged.node_ids == frozenset(
             {
                 "tests/test_x.py::test_a",
@@ -2361,7 +2361,7 @@ class TestNativeTestCollectors:
             "collect_ts_tests",
             lambda root: Err(TestingError.CollectFailed),
         )
-        merged2, python_collection_failed2 = gates_mod._load_tests(tmp_path)
+        merged2, python_collection_failed2, _ = gates_mod._load_tests(tmp_path)
         assert merged2.node_ids == frozenset(
             {
                 "tests/test_x.py::test_a",
@@ -2434,6 +2434,117 @@ class TestNativeTestCollectors:
         assert "TEST001" not in rule_ids
         assert "TEST002" in rule_ids
         assert "TEST013" not in rule_ids
+
+    # frob:ticket T-4138
+    # frob:tests \
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_unmeas\
+    # ured_when_ts_collector_failed
+    def test_test002_unmeasured_when_ts_collector_failed(self, tmp_path: Path) -> None:
+        """MUST-FIRE (T-4138, F-340): a symbol with a bound `frob:tests`
+        edge to a vitest test and NO collected TS node ids at all, because
+        the vitest collector failed this run (`failed_test_languages=
+        {"ts"}`, `_load_tests`'s new third return value) -- not because the
+        symbol is genuinely untested. This must report UNMEASURED
+        (`Severity.UNRESOLVED`), never the plain TEST002 WARN a genuinely
+        untested symbol gets: the bound test exists and passes under
+        vitest directly, frob simply never got its evidence."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/thing.ts",
+            "export function doThing(): number {\n  return 0;\n}\n",
+        )
+        _write(
+            tmp_path,
+            "src/thing.test.ts",
+            '// frob:tests src/thing.ts::doThing kind="unit"\n'
+            "export function testDoesAThing(): void {\n"
+            "  doThing();\n"
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())  # vitest collection failed
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg, frozenset({"ts"}))
+        test002 = [v for v in violations if v.rule == "TEST002"]
+        assert len(test002) == 1
+        assert test002[0].severity == Severity.UNRESOLVED
+        assert "UNMEASURED" in test002[0].message
+        assert "0 collected unit case(s)" not in test002[0].message
+
+    # frob:ticket T-4138
+    # frob:tests \
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_still_\
+    # fires_when_collector_did_not_fail
+    def test_test002_still_fires_when_collector_did_not_fail(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET (T-4138): the same shape as
+        `test_test002_unmeasured_when_ts_collector_failed`, but with an
+        EMPTY `failed_test_languages` -- the TS collector ran fine and
+        genuinely found nothing for this edge. TEST002 must still fire
+        exactly as before: a plain WARN with the original message, not
+        UNRESOLVED. Regression guard for T-4138's fix not over-firing."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/thing.ts",
+            "export function doThing(): number {\n  return 0;\n}\n",
+        )
+        _write(
+            tmp_path,
+            "src/thing.test.ts",
+            '// frob:tests src/thing.ts::doThing kind="unit"\n'
+            "export function testDoesAThing(): void {\n"
+            "  doThing();\n"
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg, frozenset())
+        test002 = [v for v in violations if v.rule == "TEST002"]
+        assert len(test002) == 1
+        assert test002[0].severity == Severity.WARN
+        assert "0 collected unit case(s)" in test002[0].message
+        assert "UNMEASURED" not in test002[0].message
+
+    # frob:ticket T-4138
+    # frob:tests \
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_absent\
+    # _vs_measured_zero_render_differently
+    def test_test002_absent_vs_measured_zero_render_differently(
+        self, tmp_path: Path
+    ) -> None:
+        """THIRD FIXTURE (T-4138): the absent-collector case and the
+        genuinely-measured-zero case must never print the same sentence --
+        run both variants of the fixture above back to back and assert
+        their messages actually differ, not just their severities."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/thing.ts",
+            "export function doThing(): number {\n  return 0;\n}\n",
+        )
+        _write(
+            tmp_path,
+            "src/thing.test.ts",
+            '// frob:tests src/thing.ts::doThing kind="unit"\n'
+            "export function testDoesAThing(): void {\n"
+            "  doThing();\n"
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        cfg = TestPolicy(min_unit_cases=1)
+        absent = run_test_gate(snap, (), Nothing(), tests, cfg, frozenset({"ts"}))
+        measured_zero = run_test_gate(snap, (), Nothing(), tests, cfg, frozenset())
+        absent_msg = next(v.message for v in absent if v.rule == "TEST002")
+        zero_msg = next(v.message for v in measured_zero if v.rule == "TEST002")
+        assert absent_msg != zero_msg
 
     # frob:ticket T-1266
     def test_cpp_directive_resolves_via_real_ctest_node_id(

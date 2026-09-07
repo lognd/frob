@@ -63,7 +63,7 @@ declaration).
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a missing record (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
-| TEST002 | test | unit edges for a symbol number fewer than `min_unit_cases` |
+| TEST002 | test | unit edges for a symbol number fewer than `min_unit_cases` -- reported as `Severity.UNRESOLVED` ("UNMEASURED", never the plain WARN) when the symbol's bound edge(s) depend entirely on a native test collector (rust/ts/cpp) that failed this run, so an absent test-collection artifact is never rendered as a measured zero; see "TEST002 unmeasured vs measured-zero (T-4138)" below |
 | TEST003 | test | interface (package whose public symbols are imported by another package) has fewer than `min_integration` integration edges |
 | TEST004 | test | declared system has fewer than its `min_e2e` e2e edges |
 | TEST005 | test | measured coverage below threshold (per-symbol branch, per-module line, or per-system line) |
@@ -7768,3 +7768,63 @@ _STAGE_GROUPS/_KNOWN_GATE_RULES as independently-maintained structures).
 Until that lands, GATERULE001's message above is the mitigation: it
 cannot make the six lists into one, so it names all six every time it
 fires instead.
+
+### TEST002 unmeasured vs measured-zero (T-4138)
+
+<!-- frob:describes src/frob/gates/__init__.py::_test001_002_one -->
+<!-- frob:describes src/frob/gates/__init__.py::_test002_unmeasured -->
+<!-- frob:describes src/frob/gates/__init__.py::_load_tests -->
+
+F-340 (logand.app-v2, a TypeScript/vitest consumer): a missing
+test-collection artifact rendered as 135 per-symbol TEST002 "0 collected
+unit case(s)" WARNs, for symbols whose bound vitest tests existed and
+passed. `_test001_002_one`'s `effective` count is computed from
+`_valid_edges`/`_case_count` against `tests: CollectedTests` -- when the
+relevant native collector (`collect_rust_tests`/`collect_ts_tests`/
+`collect_cpp_tests`) fails or degrades to empty (a broken toolchain, a
+project-discovery miss), `tests.node_ids` silently has no entries for
+that language, so a genuinely bound `frob:tests` edge resolves to
+`effective == 0` -- indistinguishable, before this fix, from a symbol
+whose bound test truly collects zero cases.
+
+`_load_tests` now returns a third value, `failed_test_languages`
+(`frozenset[str]`, one of `"rust"`/`"ts"`/`"cpp"` per collector whose
+`Result` was `Err` this run -- python is excluded, since its failure
+already gets the stronger, dedicated `python_collection_failed` ->
+COV003 treatment), threaded through `test_gate`/`_test001_002`/
+`_test001_002_one`. When a record's `frob:tests` edge(s) resolve
+entirely to language(s) in that failed set, `_test001_002_one` reports
+`_test002_unmeasured`: `Severity.UNRESOLVED` (T-1664 -- never counted as
+an error, never silently dropped), an "UNMEASURED" message distinct from
+the plain TEST002 WARN text, and no override toward a silent pass. This
+mirrors `_test001_zero_measured_branch_coverage`'s existing coverage.xml
+posture (a symbol absent from `data.module_line` is a measurement gap,
+not proof of a vacuous binding) -- extended here to the test-collection
+artifact TEST002 actually depends on, not coverage.xml (TEST002's count
+path never reads `CoverageData`; `TEST001`'s optional branch-coverage
+override and `TEST005`'s per-symbol floor already had the correct
+absent-vs-measured-zero posture for coverage.xml before this ticket).
+
+Three states, not two: no test-collection artifact for the edge's
+language at all (collector `Err`, `failed_test_languages` -> UNRESOLVED
+here); an artifact whose node ids simply do not include this edge's test
+(collector `Ok`, genuinely below `min_unit_cases` -> the ordinary TEST002
+WARN, unchanged); a bound edge with enough collected cases (no
+violation). The middle two intentionally collapse "collector ran but
+found nothing for this file" into the same WARN as "collector ran and
+found some cases but not enough" -- `CollectedTests` carries no per-file
+join-fraction the way `CoverageData.module_line` does, so a finer
+three-way split at that granularity is deferred (see T-4176 below), not
+silently assumed equivalent.
+
+T-4176 (filed, not fixed by this ticket): the identical conflation exists
+in TEST001's naming-convention (no explicit edge) path, TEST003
+(integration), TEST004 (e2e, `Severity.ERROR` -- the most consequential
+instance found), and TEST009 (design e2e) -- all four call `_valid_edges`/
+`_case_count` against the same `tests: CollectedTests` with no
+`failed_test_languages` check. Generalizing this fix to all four is
+deferred to its own ticket rather than riding in on T-4138's scope.
+`CoverageData` consumers were also audited: `_test005` (TEST005/008/011/
+012/017/019 family) already treats an entirely absent `coverage.xml` as
+a silent skip, safe because TEST006 independently reports the missing
+coverage stamp as its own loud ERROR -- no conflation found there.

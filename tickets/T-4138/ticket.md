@@ -2,7 +2,7 @@
 id: T-4138
 title: TEST002 renders an absent coverage artifact as a measured zero, reporting 135
   false per-symbol errors against a TypeScript stack whose bound tests pass
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -71,13 +71,16 @@ acceptance:
 - text: given a symbol with bound passing test cases and no coverage artifact, when
     gate TEST runs, then it reports the symbol as unmeasured rather than emitting
     TEST002
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_unmeasured_when_ts_collector_failed
 - text: given a coverage artifact that genuinely records fewer than the minimum cases
     for a symbol, when gate TEST runs, then TEST002 is emitted exactly as today
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_still_fires_when_collector_did_not_fail
 - text: given an absent artifact versus an artifact recording zero for a covered file,
     when each is evaluated, then the two produce different output
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_absent_vs_measured_zero_render_differently
 threat: null
 component: null
 anchor: false
