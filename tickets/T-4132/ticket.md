@@ -22,10 +22,6 @@ scope:
 - src/frob/scaffold/project.py
 - src/frob/scaffold/data/shared/python/py.typed.j2
 - tests/system/test_packaging_py_typed.py
-- design/frob.strata
-- docs/commands/scaffold.md
-- tests/system/test_scaffold_dx.py
-- tests/test_scaffold_worktree_lease_hook.py
 - tickets/T-4133/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -112,6 +108,30 @@ scope_changes:
     closure targets (SCOPE002) which are pure declare-only leases, no edits made to
     them; and the mirrored follow-up ticket T-4133''s own ticket.md needs to be in
     scope since filing it from this worktree wrote that file (SCOPE001).'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: design/frob.strata
+  reason: revert overbroad widen -- design/frob.strata pulls in 241 unrelated closure
+    obligations, need a narrower path for SELFAUDIT001/SCOPE002
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/commands/scaffold.md
+  reason: revert overbroad widen -- design/frob.strata pulls in 241 unrelated closure
+    obligations, need a narrower path for SELFAUDIT001/SCOPE002
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/system/test_scaffold_dx.py
+  reason: revert overbroad widen -- design/frob.strata pulls in 241 unrelated closure
+    obligations, need a narrower path for SELFAUDIT001/SCOPE002
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: revert overbroad widen -- design/frob.strata pulls in 241 unrelated closure
+    obligations, need a narrower path for SELFAUDIT001/SCOPE002
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
