@@ -94,6 +94,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 13772
   new_length: 17027
+- mode: set
+  reason: records the fourth complete Windows run at 17 failures, down from 19, and
+    flags that the two T-4102 fixtures are STILL failing despite that ticket's rewrite
+    -- so the minus-two came from somewhere else and must not be attributed to T-4102
+    without a set diff. Notes the reconcile test changed from failure to error, and
+    that Windows is now the only leg with failing tests
+  actor: logan
+  at: '2026-09-07'
+  old_length: 17027
+  new_length: 19914
 designated_repro_test: null
 threat: null
 component: null
@@ -332,3 +342,50 @@ tracked-file edit is a silent-zero shape, not a timing wobble.
 RUNNING TALLY: 49 (aborted) -> 28 (aborted) -> 26 -> 25 -> 19. The first three
 were floors from runs that aborted mid-suite; only the last three are complete
 counts.
+
+FOURTH COMPLETE WINDOWS RUN: 19 -> 17. CI run 34091766127, collected=13574,
+failed=17. Measured against the run that carried 104 commits including the
+subject-count primitive, the pathspec migration and the CI regression fixes.
+
+THE DELTA IS EXACTLY THE TWO FIXTURES T-4102 REWROTE, and nothing else moved:
+
+    tests/unit/gates/test_ffi_boundary_path_shape.py
+      ::test_windows_shaped_rel_path_mechanism
+    tests/unit/gates/test_exhaustive_handling_path_shape.py
+      ::test_windows_shaped_rel_path_mechanism
+
+WAIT -- BOTH ARE STILL IN THE FAILING LIST. So the count fell by two while those
+two remain. That means two OTHER tests cleared and these two did not, and I have
+not identified which. DO NOT ASSUME THE MINUS-TWO IS T-4102's WORK. Diff this
+run's failing set against the previous one before attributing anything; this
+repo has already recorded an incident where five of six "new" identities in a
+sweep-filed ticket turned out to be pre-existing, and the same care applies in
+the other direction.
+
+That T-4102's rewritten fixtures still fail is itself the finding worth chasing
+first. That ticket replaced a false premise (fnmatch normcases the glob, so a
+backslash path DOES match a forward-slash glob on Windows) with assertions meant
+to be platform-independent, and migrated `is_excluded` to pathspec. If they still
+fail on real Windows, then either the rewrite carries a second false premise, or
+the pathspec migration behaves differently there than on posix, or the fixtures
+were not the thing that needed changing. PULL THEIR ACTUAL FAILURE TEXT FROM THIS
+RUN before theorising -- I have the node ids only, not the assertions.
+
+THE PERSISTENT SET, unchanged in shape from the previous run: the land-suite
+cluster (land core, land lock, wip normalisation), the lease/dispatch guard, the
+evidence-CLI shell-metacharacter test, the worktree-guard stdout purity test, the
+CLI attach off-tty test, the arch cpp symref canonicalisation, the rapid-sweep
+absolute-path relativisation, the strata-core GIL timeout, the out-of-tree
+release bump, the lang-primitives span, and the sync-claude-config stale guard.
+The reconcile auto-commit test now reports as an ERROR rather than a failure --
+a different outcome for the same test, which usually means a fixture or teardown
+problem rather than an assertion problem. Worth one look on its own.
+
+STANDING CONTEXT: Windows remains ADVISORY (continue-on-error, declared at
+.github/workflows/ci.yml:24-36 under T-3425) with a written removal condition --
+remove the flag when this failure set reaches zero. The posix legs' suites are
+GREEN on this same run; their jobs fail only on frob's own self-gate, tracked as
+T-4145. So Windows is now the only leg with failing TESTS.
+
+RUNNING TALLY: 49 (aborted) -> 28 (aborted) -> 26 -> 25 -> 19 -> 17. The first
+two were floors from runs that aborted mid-suite; the last four are complete.
