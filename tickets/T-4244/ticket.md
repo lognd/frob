@@ -2,7 +2,7 @@
 id: T-4244
 title: 'Windows path-shape class: four failures where a backslash-rendered path is
   compared against a forward-slash string'
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -23,16 +23,44 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 fired because the repro test cannot fail-first on this Linux host
+    for a Windows-only defect; documenting the real Windows-measured before/after
+    in lieu of a Linux-provable repro
+  actor: logan
+  at: '2026-09-07'
+  old_length: 2386
+  new_length: 2951
+evidence:
+- tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+- tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
+- tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
 designated_repro_test: null
 acceptance:
 - text: given each of the four comparisons, when run on linux and on Windows, then
     both platforms agree
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+  - tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+  - tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
 - text: given the linux behaviour of each, when the fix lands, then it is unchanged
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+  - tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+  - tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
 - text: given the path conversion, when it is applied, then it routes through the
     existing shared helper rather than a new spelling
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+  - tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+  - tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
 threat: null
 component: null
 anchor: false
@@ -84,3 +112,6 @@ ACCEPTANCE
 - Each assertion measured on real Windows before and after.
 - No fourth conversion spelling introduced.
 - All three fixtures committed.
+
+
+frob:waive BUG002 reason="all four defects are Windows-only path/newline-shape mismatches; the designated repro test only reproduces the failure under win32 path/newline semantics and necessarily PASSES at the parent commit when run on this (Linux) dev host, so a local pass-both-sides result does not indicate the fix is inert. The genuine before/after evidence is a real Windows measurement: reproduced all four failures via winrun against the unfixed tree (measured), then re-measured green against the fixed tree (measured), both recorded in the Done report."
