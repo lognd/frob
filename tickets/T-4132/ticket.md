@@ -22,7 +22,6 @@ scope:
 - src/frob/scaffold/project.py
 - src/frob/scaffold/data/shared/python/py.typed.j2
 - tests/system/test_packaging_py_typed.py
-- tickets/T-4133/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -195,6 +194,13 @@ scope_changes:
   glob: tests/test_scaffold_worktree_lease_hook.py
   reason: revert -- these pull in further closure cascade too; reconsidering the resolution
     path for project.py's frob:doc/frob:tests closure instead of widening scope indefinitely
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tickets/T-4133/ticket.md
+  reason: revert -- SCOPE001 on the mirrored follow-up ticket file is a filing side-effect,
+    not this ticket's work; disclosed via frob:waive SCOPE001 in the Done report instead,
+    same as SCOPE002's disclosed-breadth precedent
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
