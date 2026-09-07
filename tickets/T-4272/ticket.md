@@ -53,6 +53,14 @@ body_changes:
   at: '2026-09-07'
   old_length: 15527
   new_length: 19314
+- mode: append
+  reason: 'identifier allocation across contributors: argues against merge-time assignment
+    because identifiers are embedded in immutable places, and for disjoint per-contributor
+    allocation spaces so no reconciliation is ever needed'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 19314
+  new_length: 23530
 designated_repro_test: null
 acceptance:
 - text: given a claimed epic and a collaborator with no network access, when they
@@ -448,3 +456,74 @@ state, dependencies and leases; remote ownership joins that list as another
 filter, expanded through the epic-implies-leaves rule, and everything downstream
 -- the overlap reporting, the starvation checks, the board -- reads it without
 learning a new vocabulary.
+
+
+
+IDENTIFIER ALLOCATION ACROSS CONTRIBUTORS. Two people working offline will both
+file follow-up tickets, and something has to stop them landing the same number.
+This section argues AGAINST assigning the real number at merge time, and for
+allocating from disjoint spaces so that an identifier is correct when it is
+created and never changes afterwards.
+
+THE PROBLEM IS ALREADY REAL LOCALLY, WHICH IS THE BEST EVIDENCE AVAILABLE. The
+allocator serializes writers that read the taken-identifier set from a stale
+merge-base view, so concurrent filing already produces collisions inside one
+machine. A duplicate was created in this repository today, in the gap between one
+process checking which identifiers were taken and writing its own. Adding
+contributors on other machines, filing while offline, makes that window
+permanent rather than momentary.
+
+WHY ASSIGNING THE REAL NUMBER AT MERGE TIME IS THE WRONG SHAPE, DESPITE BEING THE
+OBVIOUS ONE. It requires every reference to a provisional identifier to be
+rewritten when the real one is assigned, and this project embeds identifiers in
+places that cannot be rewritten:
+
+  Directive comments in source name their ticket, and waivers name a follow-up
+  ticket, both inside code that other tickets may also be editing.
+  Evidence citations, dependency edges, parent links and done reports name
+  tickets across the ledger.
+  Changelog fragments are FILES NAMED FOR THE TICKET.
+  Commit messages name the ticket, and once pushed they are immutable. A rename
+  after that point leaves history permanently naming an identifier that no longer
+  exists, and this project's own rule forbids amending a pushed commit.
+
+So a merge-time rename cannot be complete, and an incomplete rename of an
+identifier is worse than a collision: a collision is loud and immediate, while a
+dangling reference is silent and is discovered much later by whoever needs it.
+This repository has also already had one incident where a renumbering pass
+rewrote hundreds of identifiers at once, which is a demonstration of how much
+blast radius that machinery has.
+
+THE RECOMMENDATION: DISJOINT ALLOCATION SPACES, SO NO RECONCILIATION IS NEEDED.
+Give each contributor a space of identifiers that only they allocate from. A
+number, once handed out, is correct forever, on every machine, online or offline.
+There is nothing to reconcile at merge, because two contributors can never have
+produced the same identifier. Merging is then a pure union, and the integration
+branch holds the master set simply by having received everyone's work.
+
+The cost is that identifiers stop being globally sequential, which is a real loss
+of a small convenience: you can no longer read creation order off the number
+alone. That is worth trading for identifiers that never change, and creation time
+is already recorded in the ticket itself.
+
+TWO WAYS TO SPELL IT, AND THE CHOICE IS COSMETIC RATHER THAN STRUCTURAL. Either
+partition the existing numeric space into per-contributor ranges, which keeps the
+familiar shape exactly, or prefix the identifier with a short contributor tag,
+which makes provenance visible at a glance and removes any question of a range
+being exhausted. Both give the same guarantee. Pick one deliberately and write
+down why, because changing it later means renaming, which is the thing this whole
+section exists to avoid.
+
+WHAT THE DRAFT IDENTIFIER IS ACTUALLY FOR, WHICH IS NOT THIS. The existing draft
+form is useful, but its purpose is a ticket that is not yet committed to the
+queue -- a thought captured before it is real. Promotion turns it into a real
+ticket with a real number. That is a lifecycle distinction, not a collision
+strategy, and using it as a collision strategy would put every ticket every
+contributor files into a provisional state until merge, which is the merge-time
+rename problem again wearing different clothes.
+
+WHAT THE INTEGRATION BRANCH ACTUALLY OWNS, ONCE ALLOCATION IS DISJOINT. Not
+assignment, since nobody needs an assigner. It owns the AUTHORITATIVE UNION: the
+complete set of tickets anyone has landed, which is exactly what it holds today
+by ordinary merging. Contributors filing follow-ups inside an epic they claimed
+never coordinate with anyone to do it.
