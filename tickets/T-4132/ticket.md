@@ -22,6 +22,8 @@ scope:
 - src/frob/scaffold/project.py
 - src/frob/scaffold/data/shared/python/py.typed.j2
 - tests/system/test_packaging_py_typed.py
+- design/frob.strata
+- tickets/T-4133/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -201,6 +203,28 @@ scope_changes:
   reason: revert -- SCOPE001 on the mirrored follow-up ticket file is a filing side-effect,
     not this ticket's work; disclosed via frob:waive SCOPE001 in the Done report instead,
     same as SCOPE002's disclosed-breadth precedent
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4132: the new fixture''s uv-build subprocess exec must be declared in
+    design/frob.strata''s testsuite node (SELFAUDIT001), same pattern tests/system/test_artifact_smoke.py
+    already uses; design/frob.strata is the whole-system architecture file and its
+    scope closure cascades into hundreds of unrelated obligations (same disclosed-breadth
+    class as T-3914/T-4013/T-4019/T-4085''s own accepted SCOPE002 precedent) -- disclosed
+    in the Done report, not suppressed. tickets/T-4133/ticket.md is the mirrored follow-up
+    ticket this ticket filed from this worktree.'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tickets/T-4133/ticket.md
+  reason: 'T-4132: the new fixture''s uv-build subprocess exec must be declared in
+    design/frob.strata''s testsuite node (SELFAUDIT001), same pattern tests/system/test_artifact_smoke.py
+    already uses; design/frob.strata is the whole-system architecture file and its
+    scope closure cascades into hundreds of unrelated obligations (same disclosed-breadth
+    class as T-3914/T-4013/T-4019/T-4085''s own accepted SCOPE002 precedent) -- disclosed
+    in the Done report, not suppressed. tickets/T-4133/ticket.md is the mirrored follow-up
+    ticket this ticket filed from this worktree.'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
