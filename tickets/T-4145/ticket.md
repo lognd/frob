@@ -2,7 +2,7 @@
 id: T-4145
 title: 'the suite is green and the self-gate is not: seven reference errors from adding
   standard community files, plus one oversized module'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -21,7 +21,8 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
-- tickets/T-draft-dabfd0a7/ticket.md
+- tickets/T-4156/ticket.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -465,24 +466,41 @@ scope_changes:
   actor: logan
   at: '2026-09-07'
 - op: add
-  glob: tickets/T-draft-dabfd0a7/ticket.md
-  reason: 'T-4145: this ticket''s own worktree committed the T-draft-dabfd0a7 follow-up
-    ticket file (filed for the SCOPE002 closure gap found while working T-4145), which
-    now shows as diff-touched'
+  glob: tickets/T-4156/ticket.md
+  reason: 'T-4145: this ticket''s own worktree committed the T-4156 follow-up ticket
+    file (filed for the SCOPE002 closure gap found while working T-4145), which now
+    shows as diff-touched'
   actor: logan
   at: '2026-09-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4145: land refused on SELFAUDIT001 (net.connect false-positive from GitHub
+    convention path literals in the new fixture) -- declaring the capability at the
+    source, following this node''s own T-2464 fixture-literal precedent, is required
+    to land; accepting the resulting SCOPE002 closure-cascade debt already filed as
+    its own follow-up ticket'
+  actor: logan
+  at: '2026-09-07'
+evidence:
+- tests/test_refs_gate.py::TestGithubConventionExempt::test_standard_community_files_and_templates_pass_with_no_waivers
+- tests/test_refs_gate.py::TestGithubConventionExempt::test_a_genuinely_orphaned_file_outside_the_convention_still_fires_ref001
+- tests/unit/test_ticket_restore.py::TestRestoreCli::test_restore_reason_flag_is_required_by_the_real_parser
+- tests/test_refs_gate.py::TestGithubConventionExempt::test_non_convention_path_copy_of_a_community_file_still_subject_to_ref_gate
 designated_repro_test: null
 acceptance:
 - text: given a repository containing the standard community health files and GitHub
     templates, when the reference gate runs, then it reports no errors and no waivers
     were added for them
-  evidence: []
+  evidence:
+  - tests/test_refs_gate.py::TestGithubConventionExempt::test_standard_community_files_and_templates_pass_with_no_waivers
 - text: given a genuinely orphaned file that no consumer reads by any convention,
     when the reference gate runs, then REF001 still fires
-  evidence: []
+  evidence:
+  - tests/test_refs_gate.py::TestGithubConventionExempt::test_a_genuinely_orphaned_file_outside_the_convention_still_fires_ref001
 - text: given the closeout parser module, when the size gate runs, then it is under
     the threshold and its existing tests still pass
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_restore.py::TestRestoreCli::test_restore_reason_flag_is_required_by_the_real_parser
 threat: null
 component: null
 anchor: false
