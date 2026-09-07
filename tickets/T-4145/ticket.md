@@ -21,8 +21,6 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
-- docs/guides/agentic-workflow.md
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +78,28 @@ scope_changes:
     frob:doc-carrying symbol whose existing directives point at these two docs; test_refs_gate.py
     gets the new fixture coverage and test_ticket_restore.py needed its import path
     updated after the split'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/guides/agentic-workflow.md
+  reason: 'T-4145: pre-existing scope-closure pointers (ref_gate''s frob:doc anchor
+    into gates.md, and the unrelated attach-parser''s AFFECT001 prose mention of agentic-workflow.md)
+    predate this ticket and are not part of its actual deliverable; pulling either
+    doc in cascades into 375+ unrelated symbols (see scope-closure warning), exactly
+    the disproportionate-scope problem the original AFFECT001 waiver on this symbol
+    already declined for the same doc -- narrowing back out rather than exploding
+    scope'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'T-4145: pre-existing scope-closure pointers (ref_gate''s frob:doc anchor
+    into gates.md, and the unrelated attach-parser''s AFFECT001 prose mention of agentic-workflow.md)
+    predate this ticket and are not part of its actual deliverable; pulling either
+    doc in cascades into 375+ unrelated symbols (see scope-closure warning), exactly
+    the disproportionate-scope problem the original AFFECT001 waiver on this symbol
+    already declined for the same doc -- narrowing back out rather than exploding
+    scope'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
