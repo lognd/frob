@@ -21,6 +21,7 @@ scope:
 - src/frob/gates/_waive.py
 - tests/unit/gates/test_pkg_resources.py
 - docs/modules/gates.md
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +60,12 @@ scope_changes:
   reason: 'T-4219: the general reusable gate the ticket asks for requires a new gate
     module, wiring into run_gates/_KNOWN_GATE_RULES, its unit tests, and the rule-catalog
     doc row -- README.md alone was too narrow'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'T-4219: frob registry audit --sync-gate-rules wrote the required CHK-GATE-PKG00x
+    entries for the new gate rules here'
   actor: logan
   at: '2026-09-07'
 body_changes:
