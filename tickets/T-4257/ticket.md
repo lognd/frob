@@ -51,19 +51,36 @@ scope_changes:
     recursive kernel stack depth on Windows'' smaller default thread stack'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
+- tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
+- tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
 designated_repro_test: null
 acceptance:
 - text: given a changed gate input on Windows, when the gate cache is consulted, then
     it misses rather than returning a stale verdict, and the invalidation key is shown
     to have adequate resolution there
-  evidence: []
+  evidence:
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+  - tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
+  - tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
+  - tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
 - text: given the Windows runner, when the land attribution and out-of-tree release-bump
     tests run, then both pass and the report says whether they shared one cause
-  evidence: []
+  evidence:
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+  - tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
+  - tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
+  - tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
 - text: given the strata core global-interpreter-lock test on Windows, when it is
     diagnosed, then a captured stack shows whether the product deadlocks or the runner
     is merely slow, and the fix matches that finding rather than raising a limit
-  evidence: []
+  evidence:
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+  - tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
+  - tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
+  - tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
 threat: null
 component: null
 anchor: false
