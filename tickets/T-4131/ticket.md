@@ -21,6 +21,7 @@ scope:
 - README.md
 - .github/**
 - docs/guides/command-reference.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
   glob: docs/guides/command-reference.md
   reason: verb-groups and full command table moved out of README to keep it scannable
     per T-4131's own acceptance
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/index.md
+  reason: add a docs/index.md link entry for the moved command-reference page (DOC001
+    fix)
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
