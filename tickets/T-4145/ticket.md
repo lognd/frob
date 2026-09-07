@@ -21,15 +21,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
-- docs/guides/agentic-workflow.md
-- docs/modules/gates.md
-- src/frob/app/ticket_runner/_archive.py
-- src/frob/tickets/_archive.py
-- tests/unit/gates/test_refs.py
-- src/frob/_cli_parsers/_ticket/_metadata.py
-- src/frob/_cli_parsers/_ticket/_new.py
-- src/frob/_cli_parsers/_ticket/_progress.py
-- src/frob/_cli_parsers/_ticket/_query.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -271,6 +263,112 @@ scope_changes:
     doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
     package''s existing private-helper cross-calls between its per-concern submodules)
     that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/guides/agentic-workflow.md
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/app/ticket_runner/_archive.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/tickets/_archive.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/gates/test_refs.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: 'T-4145: revert scope-closure over-expansion -- these SCOPE002 warnings
+    trace to PRE-EXISTING cross-references in files already in scope (ref_gate''s
+    frob:doc, the attach-parser''s doc mention, _archive.py''s own unrelated frob:doc
+    anchors reached transitively) that predate this ticket''s diff and cascade unboundedly
+    (449 warnings at last measurement) rather than terminating; narrowing back to
+    the ticket''s actual touched-file set and handling any real close-time SCOPE002
+    refusal explicitly instead'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4145: declare the new test fixture''s net.connect false-positive capability
+    (SELFAUDIT001), same fixture-literal precedent as this node''s existing T-2464
+    entry'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
