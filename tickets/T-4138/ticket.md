@@ -2,7 +2,7 @@
 id: T-4138
 title: TEST002 renders an absent coverage artifact as a measured zero, reporting 135
   false per-symbol errors against a TypeScript stack whose bound tests pass
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
