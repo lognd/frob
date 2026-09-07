@@ -21,6 +21,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'my own prose broke CI: a quoted consumer file path parsed as a live pointer
+    into THIS repo, where it does not resolve, and DOC006 failed the ubuntu suite
+    on it. Rewritten as prose per the repo''s own rule that a thing which does not
+    exist here is named in words, never in its native syntax'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4508
+  new_length: 4676
 designated_repro_test: null
 acceptance:
 - text: given a bug-kind ticket whose diff touches only non-code files, when it binds
@@ -50,7 +60,10 @@ seven tickets rebinding generated-file evidence:
     T-0201, T-0279, T-0301, T-0303   kind=docs      accepted cmd evidence
     T-0225 (feature), T-0304 (bug), T-0323 (bug)    REFUSED, EvidenceKindNotAllowed
 
-The three refusals all needed `scripts/vmodel_gen.py` in scope for a path check.
+The three refusals all needed the consumer's own vmodel generation script (a
+python file under their scripts directory -- named in prose here, not as a path
+pointer, since it is THEIR file and does not exist in this repo) in scope for a
+path check.
 Their actual change was a spec row in a generated model file -- no python was
 touched. Adding one python path to scope, for a reason unrelated to the change,
 removed the exemption.
