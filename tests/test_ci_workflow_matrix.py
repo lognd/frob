@@ -269,8 +269,7 @@ class TestWindowsTestStepMitigationsStayPinned:
         )
         assert test_step["if"] == "matrix.os == 'windows-latest'"
         assert "continue-on-error" not in test_step, (
-            "the windows Test step itself must not carry its own "
-            "continue-on-error"
+            "the windows Test step itself must not carry its own continue-on-error"
         )
 
 
@@ -324,4 +323,3 @@ class TestTestStepsNoRerunFlakes:
         assert '"--reruns"' not in run_text, (
             "windows Test step's pytest invocation must not carry --reruns (T-3777)"
         )
-
