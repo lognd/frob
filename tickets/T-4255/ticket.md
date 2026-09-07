@@ -23,6 +23,7 @@ scope:
 - src/frob/process/__init__.py
 - src/frob/app/ticket_runner/_new.py
 - tests/unit/test_process_tty.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,19 +58,34 @@ scope_changes:
     helper'
   actor: logan
   at: '2026-09-07'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'T-4255: document the new is_interactive_stdin helper (COV001 requires a
+    frob:doc edge for the new public symbol)'
+  actor: logan
+  at: '2026-09-07'
+evidence:
+- tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
+- tests/test_worktree_guard.py::TestApplyAgentEnv::test_child_subprocess_inherits_the_bound
+- tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_shell_metacharacters_do_not_reach_a_shell
+- tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded
 designated_repro_test: null
 acceptance:
 - text: given the Windows runner, when the ticket CLI system test runs, then it passes
     and its interactivity premise matches what the child process actually observes
     there
-  evidence: []
+  evidence:
+  - tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
 - text: given PowerShell-encoded child output, when the worktree guard test captures
     it, then the captured text decodes correctly and any product-side capture path
     is fixed too
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestApplyAgentEnv::test_child_subprocess_inherits_the_bound
 - text: given a command containing Windows shell metacharacters, when the evidence
     CLI builds it, then it passes an argument vector rather than a shell string
-  evidence: []
+  evidence:
+  - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_shell_metacharacters_do_not_reach_a_shell
+  - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded
 threat: null
 component: null
 anchor: false
