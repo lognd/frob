@@ -125,6 +125,14 @@ acceptance:
     disagree, then the branch set is authoritative and the ticket-side value is treated
     as a cached observation stamped with when it was taken
   evidence: []
+- text: given two contributors filing follow-up tickets offline at the same time,
+    when both land, then neither identifier collides and no identifier was rewritten
+    to achieve that
+  evidence: []
+- text: given a ticket identifier named in a pushed commit message, a changelog fragment
+    filename, and a directive comment in source, when the ticket reaches the integration
+    branch, then every one of those references still resolves
+  evidence: []
 threat: null
 component: null
 anchor: false
