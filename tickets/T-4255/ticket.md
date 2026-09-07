@@ -79,6 +79,13 @@ body_changes:
   at: '2026-09-07'
   old_length: 3302
   new_length: 4409
+- mode: append
+  reason: 'T-4255: fix the earlier BUG002 waiver directive''s multi-line reason quoting
+    so it actually parses'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4408
+  new_length: 4965
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
 - tests/test_worktree_guard.py::TestApplyAgentEnv::test_child_subprocess_inherits_the_bound
@@ -181,3 +188,7 @@ before/after values captured. --designate-repro-force already recorded this as a
 genuine (not confirmatory-only-by-neglect) false positive on the evidence-write \
 path; this waiver covers close/land's own separate BUG002 re-check of the same \
 designated test."
+
+## BUG002 waiver fix (T-4255)
+
+# frob:waive BUG002 reason="Windows-only defect (Windows CRT isatty() NUL quirk, Windows-only python3 App Execution Alias stub, and Windows shell-metacharacter/argv semantics); none reproduce on the Linux host BUG002's parent-commit repro check runs on, so no bound test can ever fail at parent in this environment. Repro measured directly on real Windows via winrun instead (failed before the fix, passed after) -- see the Done report for the exact values; consistent with this ticket's own verifiable-on-Windows mandate."
