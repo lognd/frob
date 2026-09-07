@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'owner directive given after the 19-hour daemon was killed by hand: the
+    daemon must self-terminate after an idle hour, defined by work performed rather
+    than by loop iterations'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3019
+  new_length: 4187
 designated_repro_test: null
 acceptance:
 - text: given a running serve daemon that is idle between polls, when another process
@@ -89,3 +98,24 @@ same payload that its baseline is stale. A delta computed against a stale
 baseline reports pre-existing findings as new, which is a known false-positive
 mechanism in this repository, and a status response that must be paged through
 in chunks is not a status response.
+
+
+
+OWNER DIRECTIVE, ADDED AFTER THE DAEMON WAS KILLED BY HAND: THE DAEMON MUST HAVE
+A LIVENESS CHECK AND TERMINATE ITSELF. More than one hour with nothing to do
+means death. The instance measured here had been running for nineteen hours,
+its last useful result was seven hours stale, and the session that started it
+had gone offline long before; nothing in the system noticed or cared, and the
+only thing that ended it was a person reading open file descriptors by hand.
+
+The self-termination requirement stands on its own and is not satisfied by
+fixing the lock behaviour. Even a daemon that holds no lock while idle should
+not outlive its usefulness by most of a day. Treat the two as separate
+obligations on the same component: release the lock between polls, AND exit
+after an idle hour.
+
+Define idle by work actually performed, not by whether the process loop ran. A
+poll that finds nothing to do is idleness, not activity, or the check will never
+fire on precisely the daemon it needs to catch. The instance measured here was
+polling every few minutes throughout its nineteen hours; a heartbeat-based
+liveness check would have called it healthy the entire time.
