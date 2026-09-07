@@ -5,7 +5,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-09-07'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -19,6 +19,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: high
+  reason: one of the four rules it generalises to (TEST004) emits at ERROR severity,
+    so the collector-degradation conflation can BLOCK a build there rather than merely
+    warn as it did under TEST002 -- the consequence is qualitatively different from
+    the medium-priority cleanup this was filed as
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'carries forward two facts from T-4138''s implementation that cannot be
