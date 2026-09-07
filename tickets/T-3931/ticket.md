@@ -17,6 +17,12 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_root_asset_dirs.py
 - tests/gates_suite/test_invariant.py
+- src/frob/scaffold/data/shared/python/frob.toml.j2
+- src/frob/scaffold/data/shared/cpp/frob.toml.j2
+- src/frob/scaffold/data/types/python-tool/frob.toml.j2
+- src/frob/scaffold/data/types/pybind11-library/frob.toml.j2
+- src/frob/scaffold/data/types/pyo3-library/frob.toml.j2
+- src/frob/scaffold/data/types/web-app/frob.toml.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +38,42 @@ scope_changes:
   glob: tests/gates_suite/test_invariant.py
   reason: 'ROOT001: recognize frob.toml [[refs.entrypoint]] declarations as a fourth
     reference check, matching REF001/REF002/REF003 allowlist'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/frob.toml.j2
+  reason: 'T-3931: MILE003 - add [tickets] default_milestone to every scaffold frob.toml
+    template so a fresh scaffold does not fire MILE003 on its first ticket'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/cpp/frob.toml.j2
+  reason: 'T-3931: MILE003 - add [tickets] default_milestone to every scaffold frob.toml
+    template so a fresh scaffold does not fire MILE003 on its first ticket'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/frob.toml.j2
+  reason: 'T-3931: MILE003 - add [tickets] default_milestone to every scaffold frob.toml
+    template so a fresh scaffold does not fire MILE003 on its first ticket'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pybind11-library/frob.toml.j2
+  reason: 'T-3931: MILE003 - add [tickets] default_milestone to every scaffold frob.toml
+    template so a fresh scaffold does not fire MILE003 on its first ticket'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/frob.toml.j2
+  reason: 'T-3931: MILE003 - add [tickets] default_milestone to every scaffold frob.toml
+    template so a fresh scaffold does not fire MILE003 on its first ticket'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/web-app/frob.toml.j2
+  reason: 'T-3931: MILE003 - add [tickets] default_milestone to every scaffold frob.toml
+    template so a fresh scaffold does not fire MILE003 on its first ticket'
   actor: logan
   at: '2026-09-07'
 body_changes:
