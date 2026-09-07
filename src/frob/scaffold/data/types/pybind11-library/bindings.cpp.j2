@@ -4,7 +4,7 @@
 namespace py = pybind11;
 
 // BIND: add(int a, int b) -> int
-PYBIND11_MODULE(_{{ project.name }}, m) {
+PYBIND11_MODULE(_{{ project.import_name }}, m) {
     m.doc() = "{{ project.name }} Python bindings";
 
     m.def("add", &add, py::arg("a"), py::arg("b"),

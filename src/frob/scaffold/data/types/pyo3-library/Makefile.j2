@@ -23,14 +23,14 @@ lint: $(STAMP) develop
 	uv run ruff format --check python/ tests/
 
 typecheck: $(STAMP) develop
-	uv run ty check python/{{ project.name }}
+	uv run ty check python/{{ project.import_name }}
 
 test: $(STAMP) develop
 	cargo test --workspace
 	uv run pytest tests/
 
 coverage: $(STAMP) develop
-	uv run pytest tests/ --cov={{ project.name }} --cov-report=term-missing --cov-report=xml
+	uv run pytest tests/ --cov={{ project.import_name }} --cov-report=term-missing --cov-report=xml
 
 # ---------- the single gate: frob check ----------
 check: lint typecheck test

@@ -4,11 +4,11 @@ import sys
 
 import pytest
 
-from {{ project.name }}.__main__ import main
+from {{ project.import_name }}.__main__ import main
 
 
 def test_main_prints_help_and_exits_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:
-    # frob:tests src/{{ project.name }}/__main__.py::main kind="unit"
+    # frob:tests src/{{ project.import_name }}/__main__.py::main kind="unit"
     monkeypatch.setattr(sys, "argv", ["{{ project.name }}", "--help"])
     with pytest.raises(SystemExit) as exc:
         main()

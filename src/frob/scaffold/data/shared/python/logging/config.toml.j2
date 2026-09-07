@@ -2,14 +2,14 @@ version = 1
 disable_existing_loggers = false
 
 [filters.below_warning]
-"()" = "{{ project.name }}.logging.filter.BelowLevelFilter"
+"()" = "{{ project.import_name }}.logging.filter.BelowLevelFilter"
 below = "WARNING"
 
 [formatters.stdout_fmt]
-"()" = "{{ project.name }}.logging.formatter.SimpleFormatter"
+"()" = "{{ project.import_name }}.logging.formatter.SimpleFormatter"
 
 [formatters.stderr_fmt]
-"()" = "{{ project.name }}.logging.formatter.SimpleFormatter"
+"()" = "{{ project.import_name }}.logging.formatter.SimpleFormatter"
 show_level = true
 
 [handlers.stdout]

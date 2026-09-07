@@ -40,10 +40,10 @@ jobs:
         run: uv run ruff check python/ tests/ && uv run ruff format --check python/ tests/
 
       - name: typecheck
-        run: uv run ty check python/{{ project.name }}
+        run: uv run ty check python/{{ project.import_name }}
 
       - name: test
-        run: cargo test --workspace && uv run pytest tests/ --cov={{ project.name }} --cov-report=term-missing
+        run: cargo test --workspace && uv run pytest tests/ --cov={{ project.import_name }} --cov-report=term-missing
 
       # See python-tool's ci.yml.j2 for why frob is installed with
       # `|| true`: it is pre-0.1.0 on PyPI. A missing/broken install

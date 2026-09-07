@@ -21,7 +21,7 @@ dev = [
 [tool.maturin]
 manifest-path = "crates/Cargo.toml"
 python-source = "python"
-module-name = "{{ project.name }}._core"
+module-name = "{{ project.import_name }}._core"
 features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]

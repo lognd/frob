@@ -230,3 +230,77 @@ def test_all_registered_types_render_without_error(tmp_path: Path) -> None:
         out = tmp_path / project_type.replace("-", "_")
         result = render_project(project_type, "demo", out)
         assert result.is_ok, f"{project_type}: {result}"
+
+
+# frob:ticket T-3930
+@pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
+@pytest.mark.timeout(300)
+def test_hyphenated_name_scaffold_installs_and_console_script_runs(
+    tmp_path: Path,
+) -> None:
+    """T-3930 end-to-end acceptance: a HYPHENATED project name must produce
+    a project that (1) installs, (2) collects and passes its own generated
+    test suite -- the original bug was not a failing test but an
+    uncollectable one (`from my-test-tool.app import ...` is a
+    SyntaxError) -- and (3) the console-script entry point (which keeps
+    the hyphenated NAME per PyPI convention) resolves and runs."""
+    # frob:tests src/frob/scaffold/project.py::render_project kind="integration"
+    project_dir = tmp_path / "my-test-tool"
+    result = render_project("python-tool", "my-test-tool", tmp_path)
+    assert result.is_ok, result
+
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project_dir, check=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@t.com", "-c", "user.name=t", "add", "-A"],
+        cwd=project_dir,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@t.com",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "-m",
+            "init",
+        ],
+        cwd=project_dir,
+        check=True,
+    )
+
+    sync = subprocess.run(
+        ["uv", "sync"], cwd=project_dir, capture_output=True, text=True
+    )
+    assert sync.returncode == 0, sync.stdout + sync.stderr
+
+    # Collection must succeed -- the original bug made the generated test
+    # module a SyntaxError, which aborts collection rather than failing a
+    # test, so a plain `pytest` run reports a collection error here first.
+    collect = subprocess.run(
+        ["uv", "run", "pytest", "--collect-only", "-q"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        env=_subprocess_env(),
+    )
+    assert collect.returncode == 0, collect.stdout + collect.stderr
+    assert "error" not in collect.stdout.lower(), collect.stdout
+
+    test = subprocess.run(
+        ["uv", "run", "pytest", "tests/", "-q"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        env=_subprocess_env(),
+    )
+    assert test.returncode == 0, test.stdout + test.stderr
+
+    # The console-script NAME stays hyphenated (PyPI/console-script
+    # convention); only the import path underneath it is underscored.
+    script = project_dir / ".venv" / "bin" / "my-test-tool"
+    assert script.is_file(), "console-script entry point was not installed"
+    run = subprocess.run([str(script), "--help"], capture_output=True, text=True)
+    assert run.returncode == 0, run.stdout + run.stderr

@@ -60,7 +60,7 @@ path = "README.md"
 reason = "read by humans/GitHub, a single pyproject.toml reference is expected, not fragile"
 
 [[refs.entrypoint]]
-path = "src/{{ project.name }}/__init__.py"
+path = "src/{{ project.import_name }}/__init__.py"
 reason = "the package's own root module, imported by convention rather than referenced by name from other tracked files"
 
 [[refs.entrypoint]]

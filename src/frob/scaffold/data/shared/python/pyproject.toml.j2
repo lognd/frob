@@ -19,7 +19,7 @@ dependencies = [
 ]
 {% if project.type == "python-tool" %}
 [project.scripts]
-{{ project.name }} = "{{ project.name }}.__main__:main"
+{{ project.name }} = "{{ project.import_name }}.__main__:main"
 {% endif %}
 [dependency-groups]
 dev = [
@@ -33,7 +33,7 @@ dev = [
 packages = { find = { where = ["src"] } }
 
 [tool.setuptools.package-data]
-{{ project.name }} = ["py.typed", "logging/config.toml"]
+{{ project.import_name }} = ["py.typed", "logging/config.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

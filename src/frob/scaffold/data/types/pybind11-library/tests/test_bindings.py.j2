@@ -1,6 +1,6 @@
-import {{ project.name }}
+import {{ project.import_name }}
 
 
 def test_add():
-    assert {{ project.name }}.add(1, 2) == 3
-    assert {{ project.name }}.add(-1, 1) == 0
+    assert {{ project.import_name }}.add(1, 2) == 3
+    assert {{ project.import_name }}.add(-1, 1) == 0

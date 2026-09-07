@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import stat
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,34 +49,35 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         ),
         _ManifestEntry("shared/python/pyproject.toml.j2", "pyproject.toml"),
         _ManifestEntry(
-            "types/python-library/__init__.py.j2", "src/{{ project.name }}/__init__.py"
+            "types/python-library/__init__.py.j2",
+            "src/{{ project.import_name }}/__init__.py",
         ),
         _ManifestEntry(
             # T-4132: package-data declares this marker (pyproject.toml.j2);
             # without this manifest entry the declaration matches zero files
             # and every scaffolded project silently ships untyped.
             "shared/python/py.typed.j2",
-            "src/{{ project.name }}/py.typed",
+            "src/{{ project.import_name }}/py.typed",
         ),
         _ManifestEntry(
             "shared/python/logging/__init__.py.j2",
-            "src/{{ project.name }}/logging/__init__.py",
+            "src/{{ project.import_name }}/logging/__init__.py",
         ),
         _ManifestEntry(
             "shared/python/logging/config.toml.j2",
-            "src/{{ project.name }}/logging/config.toml",
+            "src/{{ project.import_name }}/logging/config.toml",
         ),
         _ManifestEntry(
             "shared/python/logging/filter.py.j2",
-            "src/{{ project.name }}/logging/filter.py",
+            "src/{{ project.import_name }}/logging/filter.py",
         ),
         _ManifestEntry(
             "shared/python/logging/formatter.py.j2",
-            "src/{{ project.name }}/logging/formatter.py",
+            "src/{{ project.import_name }}/logging/formatter.py",
         ),
         _ManifestEntry(
             "shared/python/logging/logger.py.j2",
-            "src/{{ project.name }}/logging/logger.py",
+            "src/{{ project.import_name }}/logging/logger.py",
         ),
         _ManifestEntry("shared/python/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("shared/python/tests/conftest.py.j2", "tests/conftest.py"),
@@ -104,48 +106,51 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         ),
         _ManifestEntry("shared/python/pyproject.toml.j2", "pyproject.toml"),
         _ManifestEntry(
-            "types/python-tool/__init__.py.j2", "src/{{ project.name }}/__init__.py"
+            "types/python-tool/__init__.py.j2",
+            "src/{{ project.import_name }}/__init__.py",
         ),
         _ManifestEntry(
             # T-4132: package-data declares this marker (pyproject.toml.j2);
             # without this manifest entry the declaration matches zero files
             # and every scaffolded project silently ships untyped.
             "shared/python/py.typed.j2",
-            "src/{{ project.name }}/py.typed",
+            "src/{{ project.import_name }}/py.typed",
         ),
         _ManifestEntry(
-            "types/python-tool/__main__.py.j2", "src/{{ project.name }}/__main__.py"
+            "types/python-tool/__main__.py.j2",
+            "src/{{ project.import_name }}/__main__.py",
         ),
         _ManifestEntry(
             "types/python-tool/app/__init__.py.j2",
-            "src/{{ project.name }}/app/__init__.py",
+            "src/{{ project.import_name }}/app/__init__.py",
         ),
         _ManifestEntry(
-            "types/python-tool/app/app.py.j2", "src/{{ project.name }}/app/app.py"
+            "types/python-tool/app/app.py.j2",
+            "src/{{ project.import_name }}/app/app.py",
         ),
         _ManifestEntry(
             "types/python-tool/app/config.py.j2",
-            "src/{{ project.name }}/app/config.py",
+            "src/{{ project.import_name }}/app/config.py",
         ),
         _ManifestEntry(
             "shared/python/logging/__init__.py.j2",
-            "src/{{ project.name }}/logging/__init__.py",
+            "src/{{ project.import_name }}/logging/__init__.py",
         ),
         _ManifestEntry(
             "shared/python/logging/config.toml.j2",
-            "src/{{ project.name }}/logging/config.toml",
+            "src/{{ project.import_name }}/logging/config.toml",
         ),
         _ManifestEntry(
             "shared/python/logging/filter.py.j2",
-            "src/{{ project.name }}/logging/filter.py",
+            "src/{{ project.import_name }}/logging/filter.py",
         ),
         _ManifestEntry(
             "shared/python/logging/formatter.py.j2",
-            "src/{{ project.name }}/logging/formatter.py",
+            "src/{{ project.import_name }}/logging/formatter.py",
         ),
         _ManifestEntry(
             "shared/python/logging/logger.py.j2",
-            "src/{{ project.name }}/logging/logger.py",
+            "src/{{ project.import_name }}/logging/logger.py",
         ),
         _ManifestEntry("types/python-tool/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("shared/python/tests/conftest.py.j2", "tests/conftest.py"),
@@ -252,7 +257,7 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("types/pybind11-library/bindings.cpp.j2", "src/bindings.cpp"),
         _ManifestEntry(
             "types/pybind11-library/python/__init__.py.j2",
-            "{{ project.name }}/__init__.py",
+            "{{ project.import_name }}/__init__.py",
         ),
         _ManifestEntry(
             "types/pybind11-library/tests/test_bindings.py.j2",
@@ -278,7 +283,7 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("types/pyo3-library/crates/lib.rs.j2", "crates/src/lib.rs"),
         _ManifestEntry(
             "types/pyo3-library/python/__init__.py.j2",
-            "python/{{ project.name }}/__init__.py",
+            "python/{{ project.import_name }}/__init__.py",
         ),
         _ManifestEntry(
             "types/pyo3-library/tests/test_bindings.py.j2", "tests/test_bindings.py"
@@ -356,7 +361,24 @@ def _write_manifest_entries(
     return Ok(written)
 
 
+# frob:ticket T-3930
+def _to_import_name(name: str) -> str:
+    """Derive a valid Python import/package identifier from a scaffold
+    project name -- T-3930: a PyPI-style distribution name (`kicad-libsync`)
+    may contain hyphens and dots, neither of which is legal in a Python
+    module/package name, so every generated `import`/`from` reference and
+    the `src/<name>/` package directory must use this underscored form
+    instead of the distribution name verbatim (setuptools applies the same
+    normalization: PEP 503-ish separators collapse to a single `_`)."""
+    return re.sub(r"[-. ]+", "_", name)
+
+
 # frob:doc docs/commands/scaffold.md#public-api
+# frob:waive AFFECT001 reason="T-3930 added project.dist_name/import_name to the \
+# internal template ctx only -- render_project's signature, return type, and \
+# documented behavior are unchanged, so scaffold.md's public-api doc needs no update; \
+# the Jinja variable table is scaffold.md's own separate section, out of this ticket's \
+# scope (T-3930)"
 def render_project(
     project_type: str,
     name: str,
@@ -376,7 +398,14 @@ def render_project(
         loader=FileSystemLoader(str(_DATA_DIR)),
         keep_trailing_newline=True,
     )
-    ctx = {"project": {"name": name, "type": project_type}}
+    ctx = {
+        "project": {
+            "name": name,
+            "dist_name": name,
+            "import_name": _to_import_name(name),
+            "type": project_type,
+        }
+    }
     project_dir = output_dir / name
 
     resolved_result = _resolve_manifest_paths(

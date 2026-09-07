@@ -2,7 +2,7 @@
 id: T-3930
 title: frob scaffold new with a hyphenated name generates an unimportable package
   and a failing generated test
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -336,6 +336,11 @@ body_changes:
   at: '2026-09-07'
   old_length: 3644
   new_length: 5858
+evidence:
+- tests/unit/test_scaffold_project.py::test_hyphenated_name_produces_importable_source_all_types
+- tests/unit/test_scaffold_project.py::test_hyphenated_name_import_paths_are_underscored
+- tests/unit/test_scaffold_project.py::test_single_word_name_unaffected_by_import_name_split
+- tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs
 designated_repro_test: null
 threat: null
 component: null

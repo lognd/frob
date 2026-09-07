@@ -11,7 +11,7 @@ from pathlib import Path
 
 def test_package_imports():
     """The top-level package must be importable with no errors."""
-    importlib.import_module("{{ project.name }}")
+    importlib.import_module("{{ project.import_name }}")
 
 
 def test_py_typed_marker_present():
@@ -19,15 +19,15 @@ def test_py_typed_marker_present():
     must actually exist -- a declaration with no backing file is a
     silent zero-match (setuptools does not error on it) and ships this
     package untyped to every downstream type checker."""
-    marker = Path(__file__).parent.parent.parent / "src" / "{{ project.name }}" / "py.typed"
+    marker = Path(__file__).parent.parent.parent / "src" / "{{ project.import_name }}" / "py.typed"
     assert marker.is_file()
 
 
 def test_cli_help():
     """The CLI entry point must exit 0 with --help."""
-    # frob:tests src/{{ project.name }}/__main__.py kind="integration"
+    # frob:tests src/{{ project.import_name }}/__main__.py kind="integration"
     r = subprocess.run(
-        [sys.executable, "-m", "{{ project.name }}", "--help"],
+        [sys.executable, "-m", "{{ project.import_name }}", "--help"],
         capture_output=True,
         text=True,
     )
@@ -36,23 +36,23 @@ def test_cli_help():
 
 def test_app_package_wires_end_to_end():
     """App + AppConfig construct and run together, exactly as __main__ uses them."""
-    # frob:tests src/{{ project.name }}/app kind="integration"
-    from {{ project.name }}.app import App, AppConfig
+    # frob:tests src/{{ project.import_name }}/app kind="integration"
+    from {{ project.import_name }}.app import App, AppConfig
 
     App(AppConfig())()
 
 
 def test_logging_package_wires_end_to_end():
     """The dictConfig-driven logger initializes and emits without raising."""
-    # frob:tests src/{{ project.name }}/logging kind="integration"
-    from {{ project.name }}.logging import get_logger
+    # frob:tests src/{{ project.import_name }}/logging kind="integration"
+    from {{ project.import_name }}.logging import get_logger
 
     get_logger(__name__).info("smoke test")
 
 
 def test_no_syntax_errors_in_src():
     """All source files must parse without syntax errors."""
-    src_root = Path(__file__).parent.parent.parent / "src" / "{{ project.name }}"
+    src_root = Path(__file__).parent.parent.parent / "src" / "{{ project.import_name }}"
     errors = []
     for py_file in src_root.rglob("*.py"):
         try:

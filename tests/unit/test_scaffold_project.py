@@ -9,6 +9,7 @@ only via a spawned subprocess and does not attribute coverage back to it.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 from jinja2 import DictLoader, Environment
@@ -415,3 +416,68 @@ def test_scaffolded_docs_make_targets_exist_in_makefile(tmp_path: Path) -> None:
         assert "frob check" in text, (
             f"{doc_name} must steer to `frob check` per T-3400/T-3410"
         )
+
+
+# frob:ticket T-3930
+def test_hyphenated_name_produces_importable_source_all_types(tmp_path: Path) -> None:
+    """T-3930: a hyphenated scaffold name (`my-test-tool`) must still yield
+    parseable Python everywhere it is generated -- a bare
+    `from my-test-tool.app import ...` is a SyntaxError that aborts pytest
+    COLLECTION, not a failing test, so this parses every generated `.py`
+    file with `ast.parse` (the same check the acceptance fixture demands)
+    across all seven registered scaffold types."""
+    for project_type in list_project_types():
+        out = tmp_path / project_type
+        out.mkdir()
+        result = render_project(project_type, "my-test-tool", out, force=True)
+        assert result.is_ok, f"{project_type}: {result.err}"
+
+        py_files = [p for p in result.danger_ok if p.suffix == ".py"]
+        for py_file in py_files:
+            try:
+                ast.parse(py_file.read_bytes())
+            except SyntaxError as exc:
+                raise AssertionError(
+                    f"{project_type}: {py_file} is not valid Python: {exc}"
+                ) from exc
+
+
+# frob:ticket T-3930
+def test_hyphenated_name_import_paths_are_underscored(tmp_path: Path) -> None:
+    """T-3930: the package DIRECTORY under `src/` (or `python/` for the
+    binding library types) must be the underscored import name, never the
+    hyphenated distribution name verbatim -- a hyphen there is not a
+    legal Python package/module identifier."""
+    checks = {
+        "python-library": "src/my_test_tool",
+        "python-tool": "src/my_test_tool",
+        "pybind11-library": "my_test_tool",
+        "pyo3-library": "python/my_test_tool",
+    }
+    for project_type, rel in checks.items():
+        out = tmp_path / project_type
+        out.mkdir()
+        result = render_project(project_type, "my-test-tool", out, force=True)
+        assert result.is_ok, f"{project_type}: {result.err}"
+        assert (out / "my-test-tool" / rel).is_dir(), (
+            f"{project_type}: expected import package at {rel!r} under the "
+            "hyphenated project dir"
+        )
+        assert not (out / "my-test-tool" / rel.replace("_", "-")).exists(), (
+            f"{project_type}: a hyphenated package path must not exist"
+        )
+
+
+# frob:ticket T-3930
+def test_single_word_name_unaffected_by_import_name_split(tmp_path: Path) -> None:
+    """T-3930 MUST-STAY-QUIET: a single-word project name has no hyphen to
+    normalize, so `dist_name`/`import_name` collapse to the same value and
+    the generated `__main__.py` import line reads exactly as it always
+    has -- no regression for the case that works today."""
+    out = tmp_path / "python-tool"
+    out.mkdir()
+    result = render_project("python-tool", "mytool", out, force=True)
+    assert result.is_ok, result.err
+    main_py = out / "mytool" / "src" / "mytool" / "__main__.py"
+    assert main_py.is_file()
+    assert "from mytool.app import App, AppConfig" in main_py.read_text()

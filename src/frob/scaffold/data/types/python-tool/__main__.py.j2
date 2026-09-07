@@ -2,7 +2,7 @@ import argparse
 
 from dotenv import load_dotenv
 
-from {{ project.name }}.app import App, AppConfig
+from {{ project.import_name }}.app import App, AppConfig
 
 
 def _build_parser() -> argparse.ArgumentParser:
