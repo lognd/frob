@@ -2,7 +2,7 @@
 id: T-4131
 title: 'release presentation: frob ships with no contributing guide, security policy,
   code of conduct, issue or PR templates, and no README badges'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-06'
