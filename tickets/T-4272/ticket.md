@@ -20,6 +20,15 @@ no_scope_declared: true
 no_scope_declared_reason: tier=epic design record; the implementation surface is not
   known until its leaves are cut, and the design deliberately spans the ticket store,
   the git ref layer, and the CLI rather than one module
+body_changes:
+- mode: append
+  reason: 'owner decisions: the claim is the branch, claiming requires push access,
+    an epic claim implies its leaves; and the stated purpose is work allocation for
+    agents, not only mutual exclusion'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 5030
+  new_length: 9282
 designated_repro_test: null
 acceptance:
 - text: given a claimed epic and a collaborator with no network access, when they
@@ -126,3 +135,76 @@ OPEN QUESTIONS TO SETTLE BEFORE BUILDING.
   claimed epic.
   What the view looks like for someone who has never fetched: the honest answer
   is "unknown", and the design must have a word for that state.
+
+
+
+OWNER DECISIONS, RECORDED. These settle three of the four open questions and
+change the recommended shape, so read them as superseding the design above where
+they conflict.
+
+  A claim BELONGS TO THE BRANCH the person is working on. The branch is the
+  claim; there is no separate claim object to keep in sync with it.
+  Claiming REQUIRES PUSH ACCESS. This is a collaborator feature, not an
+  anonymous-contributor feature.
+  An EPIC CLAIM IMPLIES ITS LEAVES. Claiming the parent claims the subtree.
+
+AND THE PURPOSE, WHICH IS BIGGER THAN MUTUAL EXCLUSION. The goal is not only that
+two people avoid overwriting each other -- version control already fails loudly
+when they do. The goal is that each contributor's AGENTS KNOW WHAT TO WORK ON
+without asking a person. This is a work-allocation problem wearing a locking
+problem's clothes, and the allocation half is the harder and more valuable half.
+
+WHAT BRANCH-AS-CLAIM BUYS, AND IT IS A LOT.
+
+  Atomicity comes free. Creating a branch that does not exist is a
+  compare-and-swap against the remote: two people racing to claim the same epic,
+  one push succeeds and one is rejected. No lock, no negotiation, no server.
+
+  Liveness stops needing a heartbeat entirely. A branch tip only moves when
+  someone commits, so the tip IS the evidence of work, and it cannot be faked by
+  a process that is merely running. This is exactly the property the daemon
+  incident showed a heartbeat does not have.
+
+  The remote payload shrinks to almost nothing. Because the ledger is already
+  distributed and an epic claim implies its leaves, the remote only has to answer
+  "which epics are claimed and what is each tip". Expanding a claimed epic into
+  its subtree, and that subtree into a file surface, is local, offline, and
+  already implemented.
+
+MEASURE STALENESS BY LOCAL OBSERVATION, NOT BY REMOTE TIMESTAMPS. Do not compare
+a commit date written on someone else's machine against this machine's clock;
+that is the clock-skew problem the earlier draft flagged, and it is avoidable
+rather than manageable. Instead record, locally, when this repository FIRST
+OBSERVED a given branch at a given tip. A claim is stale when the tip has not
+changed for longer than the configured duration AS SEEN FROM HERE. Every
+participant reaches the same verdict without trusting anyone's clock, and a
+contributor who is working continuously is never at risk of being reclaimed.
+
+THE ALLOCATION VERB IS THE POINT, AND IT MUST CLAIM BEFORE IT WORKS. There must
+be a way for an agent to ask for the next thing it may work on AND take it in one
+atomic step, retrying on a lost race. Answering "what is available" and then
+separately taking it leaves a window in which two agents both believe they won,
+and they discover the collision only after doing the work -- which is precisely
+the overwriting the owner wants to make very hard. The verb that answers the
+question must be the verb that takes the claim.
+
+RECLAIM WITHOUT DESTROYING. A stale claim must be takeable, but taking it must
+never delete or rewrite the other person's branch. The new claimant publishes
+their own branch and records the takeover, naming the tip they observed as stale
+and for how long. The abandoned branch is left alone. Deleting a colleague's work
+to reclaim a ticket would be a far worse failure than the starvation it fixes.
+
+WHAT STILL PROTECTS AGAINST OVERWRITING, BECAUSE CLAIMS ALONE DO NOT. Claims
+prevent two people from starting the same work. They do not prevent two people
+whose disjoint claims touch the same file from colliding at land time. Keep the
+existing land-time compare-and-swap against the integration branch and the
+existing scope-overlap reporting; a claim system that quietly replaced them would
+trade a loud failure for a silent one.
+
+THE REMAINING OPEN QUESTION. What a second person does when they want ONE leaf of
+a claimed epic. The owner's rule makes the whole subtree claimed, which is the
+right default for avoiding surprise, but the escape hatch matters: either the
+holder can release a leaf explicitly, or the requester can take it with an
+acknowledgement that both parties can see. Decide this before building, because
+retrofitting a partial release into a subtree claim is much harder than designing
+for it.
