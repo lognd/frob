@@ -35,6 +35,13 @@ scope_changes:
     found while testing this ticket's fix
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_completed_run_format_is_unchanged
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_findings_never_fail_the_family
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_count_shown_as_its_own_term_not_folded_into_warn
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved
+- tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
+- tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared
 designated_repro_test: null
 acceptance:
 - text: given the ubuntu CI leg, when the full suite runs, then it reports zero failures
