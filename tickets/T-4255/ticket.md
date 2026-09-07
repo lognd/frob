@@ -2,7 +2,7 @@
 id: T-4255
 title: 'fix the Windows CLI and encoding test failures: TTY presumption, UTF-16 child
   output, and shell metacharacters'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
