@@ -45,6 +45,9 @@ scope:
 - src/frob/scaffold/data/types/cpp-tool/tests.cpp.j2
 - tests/unit/test_scaffold_project.py
 - tests/system/test_scaffold_dx.py
+- docs/commands/scaffold.md
+- tests/test_scaffold_worktree_lease_hook.py
+- src/frob/scaffold
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -254,6 +257,24 @@ scope_changes:
   reason: doc/lease-hook scope closure pulled in unrelated _managed.py/_core.py symbols
     this ticket does not touch; waiving AFFECT001 on render_project instead of updating
     the doc
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: accept scope closure for project.py pre-existing frob:doc/frob:tests bindings
+    unrelated to the T-3930 diff itself
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: accept scope closure for project.py pre-existing frob:doc/frob:tests bindings
+    unrelated to the T-3930 diff itself
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold
+  reason: accept scope closure for project.py pre-existing frob:doc/frob:tests bindings
+    unrelated to the T-3930 diff itself
   actor: logan
   at: '2026-09-07'
 body_changes:
