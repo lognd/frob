@@ -2,7 +2,7 @@
 id: T-4125
 title: a land refused on type errors reproducible in no tree the operator can inspect,
   reporting a bare count with no lines and no statement of which tree it checked
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
