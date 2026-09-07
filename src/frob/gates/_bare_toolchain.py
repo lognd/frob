@@ -53,7 +53,7 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
     return files
 
 
-# frob:doc docs/modules/process.md#project-scoped-toolchain-spawns-t-3887-t-4125
+# frob:doc docs/modules/process.md#project-scoped-toolchain-spawns-t-3887t-4125
 # frob:ticket T-3887
 # frob:ticket T-4125
 # frob:tests tests/unit/vet/test_bare_toolchain.py::TestBareToolchainGate.test_flags_bare_argv_literal  # noqa: E501

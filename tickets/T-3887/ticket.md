@@ -2,7 +2,7 @@
 id: T-3887
 title: several gates execute the target project's code in frob's own interpreter,
   so they cannot measure any non-frob project
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
