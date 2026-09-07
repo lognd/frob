@@ -22,6 +22,7 @@ scope:
 - tests/unit/gates/test_pkg_resources.py
 - docs/modules/gates.md
 - docs/design/registry/check-coverage.yaml
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,12 @@ scope_changes:
   glob: docs/design/registry/check-coverage.yaml
   reason: 'T-4219: frob registry audit --sync-gate-rules wrote the required CHK-GATE-PKG00x
     entries for the new gate rules here'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4219: SELFAUDIT001/SYS100 requires the new gate module and its test file
+    declared in the fs.read/fs.write capability lists'
   actor: logan
   at: '2026-09-07'
 body_changes:
