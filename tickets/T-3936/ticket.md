@@ -113,6 +113,17 @@ body_changes:
   at: '2026-09-07'
   old_length: 17027
   new_length: 19914
+- mode: set
+  reason: 'records the fifth complete Windows run at 25 raw and explains why the rise
+    is imported rather than a Windows regression: the same run''s ubuntu leg gained
+    7 platform-independent failures from T-4171''s no-sync defect, which appear on
+    Windows too. Instructs a set diff before attributing anything, and warns that
+    the tally stops being a burn-down signal while another platform''s regression
+    is in flight'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 19914
+  new_length: 21629
 designated_repro_test: null
 threat: null
 component: null
@@ -398,3 +409,31 @@ T-4145. So Windows is now the only leg with failing TESTS.
 
 RUNNING TALLY: 49 (aborted) -> 28 (aborted) -> 26 -> 25 -> 19 -> 17. The first
 two were floors from runs that aborted mid-suite; the last four are complete.
+
+FIFTH COMPLETE WINDOWS RUN: 17 -> 25, AND THE RISE IS NOT A WINDOWS REGRESSION.
+CI run 34117841048, collected=13617, failed=25.
+
+DO NOT CHASE THIS AS A WINDOWS PROBLEM. The same run's ubuntu leg went from 0
+failures to 7, all in the toolchain-routing work, from a single cause already
+filed as T-4171: a `--no-sync` flag added to fix a mutating tool spawn broke both
+the argv assertions written by the earlier tickets and the flag-coverage gate that
+must import the target project's modules. Those seven are platform-independent --
+they are argv-shape assertions and an import that cannot resolve -- so they appear
+on Windows too. Seventeen plus seven is twenty-four, and the run reports
+twenty-five.
+
+So the Windows-specific delta this run is at most ONE, and may be zero if the
+twenty-fifth is also from that batch. VERIFY BY SET DIFF BEFORE CONCLUDING
+ANYTHING: pull this run's failing node ids and subtract the previous run's, then
+subtract the seven known posix failures. Only what remains is a Windows finding.
+This ticket has already recorded one case where a count moved and the attribution
+was not what it looked like, and the same caution applies in the other direction.
+
+THE PRACTICAL CONSEQUENCE FOR THIS TICKET'S TALLY: the running count is no longer
+a clean measure of Windows-specific health while a posix regression is in flight.
+Record 25 as the raw number and 17-plus-imported as the honest reading, and
+re-measure once T-4171 lands. A tally that silently absorbs another platform's
+regressions stops being the burn-down signal it exists to be.
+
+RUNNING TALLY: 49 (aborted) -> 28 (aborted) -> 26 -> 25 -> 19 -> 17 -> 25 (raw;
+approximately 17 Windows-specific plus an imported posix regression).
