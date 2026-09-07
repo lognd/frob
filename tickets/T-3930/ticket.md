@@ -18,6 +18,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'reproduced on today''s main and upgraded the finding: the generated test
+    file is a SyntaxError, so the scaffolded project''s suite cannot be COLLECTED
+    rather than merely failing. Records that a fix touching only the package dir and
+    console script would leave the generated test source unparseable, and that the
+    fixture must run or parse the generated tests'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3644
+  new_length: 5858
 designated_repro_test: null
 threat: null
 component: null
@@ -91,3 +102,42 @@ ACCEPTANCE
 - A hyphenated scaffold passes its own generated tests end to end -- run it,
   do not reason about it.
 - All three fixtures committed.
+
+REPRODUCED ON TODAY'S MAIN, 2026-09-07, AND IT IS WORSE THAN THE ORIGINAL REPORT.
+Scaffolded a python-tool named with a hyphen into a temp directory and inspected
+the output directly:
+
+    src/my-test-tool/                        hyphenated package DIRECTORY
+    pyproject line 20  my-test-tool = "my-test-tool.__main__:main"
+    pyproject line 34  my-test-tool = ["py.typed", "logging/config.toml"]
+    test_build.py:14   importlib.import_module("my-test-tool")
+    test_build.py:21   [sys.executable, "-m", "my-test-tool", "--help"]
+    test_build.py:31   from my-test-tool.app import App, AppConfig
+
+THE NEW FINDING: THE GENERATED TEST FILE IS NOT VALID PYTHON. Line 31 is a bare
+`from my-test-tool.app import ...`, which is a SyntaxError -- confirmed by
+parsing the generated file with ast:
+
+    SyntaxError line 31: invalid syntax
+        from my-test-tool.app import App, AppConfig
+
+That changes the severity. The original report said the scaffold's own generated
+test FAILS. It does not fail -- it cannot be COLLECTED. A module that raises
+SyntaxError at import aborts pytest's collection for that file, so the new user's
+first `pytest` run reports a collection error rather than a test failure, and
+every other test in that file is never reached. The generated project does not
+have a failing suite; it has no runnable suite at all.
+
+WHY THIS MATTERS FOR THE FIX AND NOT JUST THE WRITE-UP: a fix that only
+underscores the package DIRECTORY and the console-script target would still leave
+line 31 unparseable. The distribution-versus-import split has to be applied to
+every generated reference INCLUDING the ones inside generated test source, and
+the acceptance check must actually run the generated suite rather than confirm
+the package imports. Parse or collect the generated tests as part of the fixture.
+
+SECOND OBSERVATION, ALREADY FILED SEPARATELY: line 34 shows the scaffold
+templating a py.typed package-data entry into every generated project. T-4132
+records that frob's own copy of that declaration matches no file and is absent
+from the built wheel; this confirms the template propagates the same claim
+downstream. Do not fix that here -- it is T-4132's -- but do not be surprised by
+it either.
