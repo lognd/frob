@@ -286,21 +286,42 @@ scope_changes:
     into this ticket's scope
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: 'T-4107 BUG002: platform-conditional defect cannot repro on Linux; documenting
+    per close''s remedy (3)'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4540
+  new_length: 5083
 evidence:
 - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
 - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
 - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_fragment_file_is_forward_slash_separated_in_nested_directory
+- tests/unit/test_dup.py::TestTestsDirectoryFloor::test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob
 designated_repro_test: null
 acceptance:
 - text: given a short fixture-shaped duplicate under a tests directory, when find_duplicates
     runs with the default overrides, then it is retired by the floor on every platform
-  evidence: []
+  evidence:
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_fragment_file_is_forward_slash_separated_in_nested_directory
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob
 - text: given a 20-plus-line genuine shared helper duplicated under tests, when find_duplicates
     runs, then it still registers as a group
-  evidence: []
+  evidence:
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_fragment_file_is_forward_slash_separated_in_nested_directory
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob
 - text: given a fragment in a nested directory, when a CodeFragment is emitted, then
     its file field is forward-slash separated on every platform
-  evidence: []
+  evidence:
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_fragment_file_is_forward_slash_separated_in_nested_directory
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob
 threat: null
 component: null
 anchor: false
@@ -387,3 +408,5 @@ ACCEPTANCE
 - The `startswith`-against-a-derived-path question is decided explicitly.
 - Any sibling bare-prefix comparison found is fixed or ticketed.
 - All three fixtures committed.
+
+frob:waive BUG002 reason="the fix retires a Windows-only path-separator bug (str(path.relative_to(root)) preserves the platform sep); on this Linux dev/CI environment os.sep is already \"/\", so the designated repro test necessarily passes at the parent commit too -- the defect is not reproducible on this platform, only provably fixed via code inspection + the forward-slash-assertion fixture (test_fragment_file_is_forward_slash_separated_in_nested_directory), which pins the POSIX-separator contract directly regardless of host platform"
