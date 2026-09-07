@@ -24,7 +24,6 @@ scope:
 - src/frob/scaffold/data/types/pyo3-library/frob.toml.j2
 - src/frob/scaffold/data/types/web-app/frob.toml.j2
 - tests/unit/test_scaffold_project.py
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -88,6 +87,13 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: 'AFFECT001: document ROOT001 check (d) alongside a-c in its own self-contained
     anchor'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'revert: docs/modules/gates.md describes nearly the whole gates subsystem
+    (2222 unrelated closure warnings) -- same disclosed-breadth class T-4013 already
+    measured/accepted for this exact doc; waiving AFFECT001 instead'
   actor: logan
   at: '2026-09-07'
 body_changes:
