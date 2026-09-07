@@ -33,6 +33,14 @@ body_changes:
   at: '2026-09-07'
   old_length: 4542
   new_length: 6884
+- mode: set
+  reason: 'same defect as T-4144 in the same batch: an illustrative upper-cased path
+    written in path syntax parsed as a live file pointer and failed DOC006 on the
+    ubuntu leg. Rewritten as prose'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 6884
+  new_length: 6891
 designated_repro_test: null
 acceptance:
 - text: given a backslash-separated relative path and a forward-slash glob, when is_excluded
@@ -67,7 +75,7 @@ MEASURED ON BOTH PLATFORMS, same code, same pathspec version:
     windows  is_excluded('vendor\\sub\\mod.py', ('vendor/**',))  ->  True
 
 So the function still answers differently per platform for a backslash-containing
-path. The migration fixed the CASE half -- `VENDOR/sub/mod.py` against
+path. The migration fixed the CASE half -- an upper-cased vendor path against
 `vendor/**` is now False on linux, which fnmatch would have matched on Windows --
 and left the SEPARATOR half intact. pathspec's gitwildmatch evidently normalises
 separators on Windows; on posix a backslash is an ordinary filename character.
