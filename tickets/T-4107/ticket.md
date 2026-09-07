@@ -286,6 +286,10 @@ scope_changes:
     into this ticket's scope
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+- tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
+- tests/unit/test_dup.py::TestTestsDirectoryFloor::test_fragment_file_is_forward_slash_separated_in_nested_directory
 designated_repro_test: null
 acceptance:
 - text: given a short fixture-shaped duplicate under a tests directory, when find_duplicates
