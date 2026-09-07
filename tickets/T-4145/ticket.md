@@ -21,6 +21,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
+- tickets/T-draft-dabfd0a7/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -461,6 +462,13 @@ scope_changes:
     -- another live ticket''s file) and the closure never terminates within this ticket''s
     real deliverable; filing the pre-existing _ticket-package-wide SCOPE002 closure
     gap as its own ticket instead of chasing it here'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tickets/T-draft-dabfd0a7/ticket.md
+  reason: 'T-4145: this ticket''s own worktree committed the T-draft-dabfd0a7 follow-up
+    ticket file (filed for the SCOPE002 closure gap found while working T-4145), which
+    now shows as diff-touched'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
