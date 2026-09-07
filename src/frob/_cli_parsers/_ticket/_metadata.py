@@ -426,12 +426,14 @@ def _add_ticket_accept_parser(ticket_sub):
     - append (default, unchanged since T-1029): `--criterion TEXT... |
       --criterion-file PATH`.
     - `--amend INDEX --text TEXT (--reason TEXT | --reason-file PATH)`:
-      replace criterion INDEX's text -- the supported correction for a
+      replace the Nth criterion's text (INDEX is 1-based; see `frob
+      ticket show`, T-3908) -- the supported correction for a
       MIS-SPECIFIED criterion (T-1422), instead of hand-editing
       `tickets.md`.
-    - `--remove INDEX (--reason TEXT | --reason-file PATH)`: drop
-      criterion INDEX outright -- the supported fix for a criterion that
-      is UNSATISFIABLE BY CONSTRUCTION (T-1422).
+    - `--remove INDEX (--reason TEXT | --reason-file PATH)`: drop the
+      Nth criterion outright (INDEX is 1-based; see `frob ticket show`,
+      T-3908) -- the supported fix for a criterion that is UNSATISFIABLE
+      BY CONSTRUCTION (T-1422).
 
     `--amend`/`--remove` both REQUIRE a reason, recorded in the ticket's
     `acceptance_amendments` audit trail exactly the way `frob ticket
@@ -468,7 +470,8 @@ def _add_ticket_accept_parser(ticket_sub):
         dest="ticket_accept_amend_index",
         type=int,
         metavar="INDEX",
-        help="replace acceptance[INDEX]'s text with --text (T-1422); "
+        help="replace the Nth acceptance criterion's text with --text "
+        "(INDEX is 1-based; see `frob ticket show`, T-1422/T-3908); "
         "requires --text and --reason/--reason-file",
     )
     ticket_accept_p.add_argument(
@@ -482,7 +485,8 @@ def _add_ticket_accept_parser(ticket_sub):
         dest="ticket_accept_remove_index",
         type=int,
         metavar="INDEX",
-        help="drop acceptance[INDEX] outright (T-1422); requires "
+        help="drop the Nth acceptance criterion outright (INDEX is "
+        "1-based; see `frob ticket show`, T-1422/T-3908); requires "
         "--reason/--reason-file",
     )
     ticket_accept_p.add_argument(

@@ -700,13 +700,16 @@ def _resolve_accept_amend_reason(cfg: AppConfig) -> str | None:
 
 
 # frob:ticket T-1422
+# frob:ticket T-3908
 def _accept_amend(root: Path, cfg: AppConfig) -> None:
     """`frob ticket accept <id> --amend INDEX --text TEXT (--reason TEXT |
     --reason-file PATH)`: the ONLY thing this command does is resolve the
     reason (`_resolve_accept_amend_reason`) and forward to `frob.tickets.
     amend_acceptance` -- all validation (terminal-state refusal, index
     range, reason requirement) lives there (T-1422, same "this command
-    does nothing but forward" pattern as `_scope`/`_accept`)."""
+    does nothing but forward" pattern as `_scope`/`_accept`). T-3908:
+    INDEX is 1-based, matching `frob ticket show`'s display and
+    `--accepts`."""
     from frob.tickets import amend_acceptance
 
     if cfg.ticket_accept_amend_text is None:
@@ -736,16 +739,21 @@ def _accept_amend(root: Path, cfg: AppConfig) -> None:
         "%s: acceptance[%d] amended: %s",
         cfg.ticket_id,
         cfg.ticket_accept_amend_index,
-        ticket.acceptance[cfg.ticket_accept_amend_index].text,
+        # T-3908: cfg.ticket_accept_amend_index is 1-based; ticket.acceptance
+        # is a 0-based tuple, so the display lookup must subtract 1.
+        ticket.acceptance[cfg.ticket_accept_amend_index - 1].text,
     )
 
 
 # frob:ticket T-1422
+# frob:ticket T-3908
 def _accept_remove(root: Path, cfg: AppConfig) -> None:
     """`frob ticket accept <id> --remove INDEX (--reason TEXT |
     --reason-file PATH)`: the ONLY thing this command does is resolve the
     reason and forward to `frob.tickets.remove_acceptance` -- all
-    validation lives there (T-1422, mirrors `_accept_amend`)."""
+    validation lives there (T-1422, mirrors `_accept_amend`). T-3908:
+    INDEX is 1-based, matching `frob ticket show`'s display and
+    `--accepts`."""
     from frob.tickets import remove_acceptance
 
     reason = _resolve_accept_amend_reason(cfg)

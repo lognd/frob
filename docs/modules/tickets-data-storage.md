@@ -801,9 +801,16 @@ filing a successor ticket just to carry the same acceptance forward under
 a new id.
 
 `frob.tickets.amend_acceptance(root, ticket_id, index, new_text, *,
-reason)` replaces `acceptance[index]`'s text with `new_text`; `frob.
-tickets.remove_acceptance(root, ticket_id, index, *, reason)` drops
-`acceptance[index]` outright. Both:
+reason)` replaces the criterion at 1-based `index`'s text with `new_text`;
+`frob.tickets.remove_acceptance(root, ticket_id, index, *, reason)` drops
+that criterion outright. **`index` is 1-based** (T-3908), matching `frob
+ticket show`'s own `[1] ...`/`[2] ...` display and `--accepts`'s T-3837
+convention -- `--amend`/`--remove` were left 0-based when T-3837 moved
+`--accepts` and the display to 1-based, which let an operator reading the
+1-based display pass an index that landed INSIDE the old 0-based valid
+range and silently amend/remove the WRONG criterion (worse for `--remove`:
+the audit trail then records a reason against a criterion that was never
+the one dropped). Both:
 
 - REQUIRE a non-blank `reason`, mirroring `mutate_scope`'s `ScopeChangeReasonMissing`
   discipline exactly (`Err(TicketError.AcceptanceAmendReasonMissing)` if
@@ -820,8 +827,10 @@ tickets.remove_acceptance(root, ticket_id, index, *, reason)` drops
   a ticket already DONE or DROPPED -- amending acceptance after close is
   exactly the "quietly move the goalposts after the fact" case this
   ticket exists to make impossible.
-- Refuse an out-of-range `index`
-  (`Err(TicketError.AcceptanceAmendIndexOutOfRange)`).
+- Refuse an out-of-range `index` -- `index < 1` or `index >
+  len(acceptance)` (`Err(TicketError.AcceptanceAmendIndexOutOfRange)`),
+  naming the valid `1..N` range in the log message rather than a raw
+  0-based bracket position.
 - Are held under `ledger_lock` end to end (T-0458 single-writer
   invariant), same as every other mutation here.
 

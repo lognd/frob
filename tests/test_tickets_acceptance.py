@@ -646,7 +646,7 @@ class TestAmendAcceptance:
         result = amend_acceptance(
             tmp_path,
             ticket_id,
-            0,
+            1,
             "a comment naming no in-scope identifier, INCLUDING a poorly "
             "named variable's own trailing comment, must not fire PII012",
             reason=(
@@ -666,7 +666,7 @@ class TestAmendAcceptance:
         assert len(updated.acceptance_amendments) == 1
         entry = updated.acceptance_amendments[0]
         assert entry.op is AcceptanceAmendmentOp.REPLACE
-        assert entry.index == 0
+        assert entry.index == 1
         assert entry.old_text == (
             "a comment naming no in-scope identifier must not fire PII012"
         )
@@ -693,7 +693,7 @@ class TestAmendAcceptance:
         )
         assert bound.is_ok, bound
         result = amend_acceptance(
-            tmp_path, ticket_id, 0, "first criterion, reworded", reason="typo fix"
+            tmp_path, ticket_id, 1, "first criterion, reworded", reason="typo fix"
         )
         assert result.is_ok, result
         assert result.danger_ok.acceptance[0].evidence == ("tests/x.py::test_a",)
@@ -701,7 +701,7 @@ class TestAmendAcceptance:
     def test_amend_refuses_empty_reason(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_empty_reason  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])
-        result = amend_acceptance(tmp_path, ticket_id, 0, "new text", reason="   ")
+        result = amend_acceptance(tmp_path, ticket_id, 1, "new text", reason="   ")
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendReasonMissing
 
@@ -712,13 +712,28 @@ class TestAmendAcceptance:
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendIndexOutOfRange
 
+    def test_amend_refuses_zero_index_not_the_first_criterion(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_zero_index_not_the_first_criterion  # noqa: E501
+        """T-3908: `--amend 0` -- the most likely leftover habit from the
+        old 0-based scheme -- must be a loud typed refusal, never treated
+        as "the first criterion" (which is 1, matching the display)."""
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        result = amend_acceptance(tmp_path, ticket_id, 0, "new text", reason="why")
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceAmendIndexOutOfRange
+        # must-stay-quiet sibling: the criterion is untouched
+        reloaded = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert reloaded.acceptance[0].text == "first criterion"
+
     def test_amend_refuses_on_terminal_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_on_terminal_ticket  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])
         dropped = drop_ticket(tmp_path, ticket_id, "superseded")
         assert dropped.is_ok, dropped
         result = amend_acceptance(
-            tmp_path, ticket_id, 0, "new text", reason="trying to sneak this in"
+            tmp_path, ticket_id, 1, "new text", reason="trying to sneak this in"
         )
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendTerminalState
@@ -737,7 +752,7 @@ class TestAmendAcceptance:
         result = remove_acceptance(
             tmp_path,
             ticket_id,
-            0,
+            1,
             reason=(
                 "unsatisfiable by construction: 196 findings, no single "
                 "dispatch can drive this to 0 -- replaced by triage-shaped "
@@ -751,17 +766,38 @@ class TestAmendAcceptance:
         assert len(updated.acceptance_amendments) == 1
         entry = updated.acceptance_amendments[0]
         assert entry.op is AcceptanceAmendmentOp.REMOVE
-        assert entry.index == 0
+        assert entry.index == 1
         assert entry.old_text == "0 TEST005 findings under src/frob/strata"
         assert entry.new_text is None
         assert "unsatisfiable" in entry.reason
+
+    def test_remove_refuses_zero_index_does_not_drop_the_first_criterion(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_zero_index_does_not_drop_the_first_criterion  # noqa: E501
+        """T-3908, THE DESTRUCTIVE CASE: `--remove 0` must be a loud
+        refusal, never a silent drop of "index 0" under the old 0-based
+        scheme -- that would delete the FIRST criterion (the one the
+        display calls [1]) while the audit trail records a reason against
+        a removal that, from the operator's 1-based mental model, never
+        happened to the thing they named."""
+        ticket_id = _seed_ticket(tmp_path, ["first criterion", "second criterion"])
+        result = remove_acceptance(tmp_path, ticket_id, 0, reason="why")
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceAmendIndexOutOfRange
+        # must-stay-quiet sibling: nothing was dropped
+        reloaded = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert len(reloaded.acceptance) == 2
+        assert reloaded.acceptance[0].text == "first criterion"
+        assert reloaded.acceptance[1].text == "second criterion"
+        assert reloaded.acceptance_amendments == ()
 
     def test_remove_refuses_on_terminal_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_on_terminal_ticket  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])
         dropped = drop_ticket(tmp_path, ticket_id, "superseded")
         assert dropped.is_ok, dropped
-        result = remove_acceptance(tmp_path, ticket_id, 0, reason="goalpost moving")
+        result = remove_acceptance(tmp_path, ticket_id, 1, reason="goalpost moving")
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendTerminalState
 
@@ -783,7 +819,7 @@ class TestAmendAcceptance:
         result = amend_acceptance(
             tmp_path,
             ticket_id,
-            0,
+            1,
             "criterion text with a # hash and a colon: too",
             reason=tricky_reason,
         )
@@ -813,7 +849,7 @@ class TestAcceptCliAmendRemove:
             ticket_command="accept",
             ticket_id=ticket_id,
             ticket_path=tmp_path,
-            ticket_accept_amend_index=0,
+            ticket_accept_amend_index=1,
             ticket_accept_amend_text="corrected criterion",
             ticket_accept_amend_reason="was mis-specified",
         )
@@ -829,7 +865,7 @@ class TestAcceptCliAmendRemove:
             ticket_command="accept",
             ticket_id=ticket_id,
             ticket_path=tmp_path,
-            ticket_accept_remove_index=0,
+            ticket_accept_remove_index=1,
             ticket_accept_amend_reason="unsatisfiable by construction",
         )
         _accept(tmp_path, cfg)
@@ -844,8 +880,66 @@ class TestAcceptCliAmendRemove:
             ticket_command="accept",
             ticket_id=ticket_id,
             ticket_path=tmp_path,
-            ticket_accept_amend_index=0,
+            ticket_accept_amend_index=1,
             ticket_accept_amend_text="corrected criterion",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _accept(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+    def test_cli_amend_missing_reason_refused_before_ticket_is_read(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_amend_missing_reason_refused_before_ticket_is_read  # noqa: E501
+        """F-074: a missing --reason is decidable from argv alone (cheap)
+        and must be refused before ANY expensive work -- reading the
+        ticket off disk included. Proven here by making a ticket read
+        raise if it is ever attempted: the missing-reason refusal must
+        never reach it."""
+        from frob.tickets import _load_ticket_and_queue as real_load
+
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+
+        def _boom(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise AssertionError(
+                "F-074: ticket was read before the missing --reason was "
+                "refused -- cheap argument validation must run first"
+            )
+
+        monkeypatch.setattr("frob.tickets._load_ticket_and_queue", _boom)
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_amend_index=1,
+            ticket_accept_amend_text="corrected criterion",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _accept(tmp_path, cfg)
+        assert exc_info.value.code == 1
+        # sanity: the patch target is real (would have fired for a
+        # request that DOES carry --reason)
+        assert real_load is not None
+
+    def test_cli_remove_missing_reason_refused_before_ticket_is_read(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_remove_missing_reason_refused_before_ticket_is_read  # noqa: E501
+        """F-074, `--remove` sibling of the fixture above."""
+        ticket_id = _seed_ticket(tmp_path, ["only criterion"])
+
+        def _boom(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise AssertionError(
+                "F-074: ticket was read before the missing --reason was "
+                "refused -- cheap argument validation must run first"
+            )
+
+        monkeypatch.setattr("frob.tickets._load_ticket_and_queue", _boom)
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_remove_index=1,
         )
         with pytest.raises(SystemExit) as exc_info:
             _accept(tmp_path, cfg)
@@ -858,14 +952,85 @@ class TestAcceptCliAmendRemove:
             ticket_command="accept",
             ticket_id=ticket_id,
             ticket_path=tmp_path,
-            ticket_accept_amend_index=0,
+            ticket_accept_amend_index=1,
             ticket_accept_amend_text="x",
-            ticket_accept_remove_index=1,
+            ticket_accept_remove_index=2,
             ticket_accept_amend_reason="why",
         )
         with pytest.raises(SystemExit) as exc_info:
             _accept(tmp_path, cfg)
         assert exc_info.value.code == 1
+
+    def test_cli_amend_zero_index_is_rejected_not_the_first_criterion(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_amend_zero_index_is_rejected_not_the_first_criterion  # noqa: E501
+        """T-3908 MUST-FIRE fixture at the CLI layer: `--amend 0` exits
+        nonzero and leaves the criterion untouched -- the exact regression
+        this ticket exists to close (measured on main after T-3837:
+        `--amend 0` was silently accepted as "the first criterion")."""
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_amend_index=0,
+            ticket_accept_amend_text="clobbered",
+            ticket_accept_amend_reason="why",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _accept(tmp_path, cfg)
+        assert exc_info.value.code == 1
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert ticket.acceptance[0].text == "first criterion"
+
+    def test_cli_remove_zero_index_is_rejected_not_the_first_criterion(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_remove_zero_index_is_rejected_not_the_first_criterion  # noqa: E501
+        """T-3908 MUST-FIRE fixture, the destructive path: `--remove 0`
+        exits nonzero and drops NOTHING -- on unfixed main this silently
+        removed the first (only) criterion, matching what `frob ticket
+        show` calls [1]."""
+        ticket_id = _seed_ticket(tmp_path, ["only criterion"])
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_remove_index=0,
+            ticket_accept_amend_reason="why",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _accept(tmp_path, cfg)
+        assert exc_info.value.code == 1
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert ticket.acceptance[0].text == "only criterion"
+
+    def test_cli_amend_one_edits_the_criterion_show_prints_as_one(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_amend_one_edits_the_criterion_show_prints_as_one  # noqa: E501
+        """T-3908 MUST-STAY-QUIET fixture: `--amend 1` edits the criterion
+        `frob ticket show` prints as `[1]` -- the second, untouched
+        criterion survives unchanged."""
+        from frob.app.ticket_runner._query import _render_acceptance
+
+        ticket_id = _seed_ticket(tmp_path, ["first criterion", "second criterion"])
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert "[1] UNBOUND: first criterion" in _render_acceptance(ticket)
+
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_amend_index=1,
+            ticket_accept_amend_text="corrected first criterion",
+            ticket_accept_amend_reason="matches the [1] the display named",
+        )
+        _accept(tmp_path, cfg)
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert ticket.acceptance[0].text == "corrected first criterion"
+        assert ticket.acceptance[1].text == "second criterion"
 
 
 class TestAcceptanceAmendmentsSurfaced:
@@ -878,7 +1043,7 @@ class TestAcceptanceAmendmentsSurfaced:
 
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])
         amend_acceptance(
-            tmp_path, ticket_id, 0, "corrected criterion", reason="was mis-specified"
+            tmp_path, ticket_id, 1, "corrected criterion", reason="was mis-specified"
         )
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         rendered = _render_acceptance(ticket)
@@ -886,6 +1051,9 @@ class TestAcceptanceAmendmentsSurfaced:
         assert "replace" in rendered
         assert "was mis-specified" in rendered
         assert "corrected criterion" in rendered
+        # T-3908: the amendment's own [index] must match the acceptance
+        # list's 1-based display, not a raw 0-based bracket.
+        assert "[1] replace:" in rendered
 
     # frob:ticket T-1855
     def test_show_renders_implicit_cli_wiring_scope(self, tmp_path: Path) -> None:

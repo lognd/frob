@@ -83,10 +83,17 @@ def _validate_amend_request(
     index: int | None, reason: str
 ) -> Result[None, TicketError]:
     """The two request-shape checks `amend_acceptance`/`remove_acceptance`
-    both reject before ever touching the ledger: a non-negative index, and
-    a non-blank `reason` (T-1422, mirrors `_scope._validate_scope_request`)."""
-    if index is None or index < 0:
-        _log.error("tickets: acceptance amendment requires a valid --index")
+    both reject before ever touching the ledger: a valid 1-based index,
+    and a non-blank `reason` (T-1422, mirrors `_scope._validate_scope_
+    request`). T-3908: `index` is 1-based (matching `frob ticket show`'s
+    own `[1] ...`/`[2] ...` display and `--accepts`'s T-3837 convention),
+    so 0 -- the most likely leftover habit from the old 0-based scheme --
+    is refused here, not silently treated as "the first criterion"."""
+    if index is None or index < 1:
+        _log.error(
+            "tickets: acceptance amendment requires a valid 1-based --index "
+            "(0 and negative indices are never valid; see `frob ticket show`)"
+        )
         return Err(TicketError.AcceptanceAmendIndexOutOfRange)
     if not reason.strip():
         _log.error("tickets: acceptance amendment requires --reason")
@@ -95,12 +102,17 @@ def _validate_amend_request(
 
 
 # frob:ticket T-1422
+# frob:ticket T-3908
 def _validate_amend_mutation(
     ticket_id: str, ticket: Ticket, index: int
 ) -> Result[None, TicketError]:
     """The per-request FAIL-LOUD checks shared by amend and remove
     (T-1422): the ticket must not already be in a terminal state, and
-    `index` must actually name a declared acceptance criterion."""
+    `index` must actually name a declared acceptance criterion. T-3908:
+    `index` is 1-based here, so the valid range is `1..len(acceptance)`
+    inclusive -- an index past the end (`index > len(...)`) is refused
+    the same way `--accepts` refuses one (T-3837), naming the valid range
+    rather than a raw 0-based bracket position."""
     if ticket.state in _TERMINAL_STATES:
         _log.error(
             "tickets: %s cannot amend acceptance -- ticket is already %s "
@@ -109,11 +121,13 @@ def _validate_amend_mutation(
             ticket.state.value,
         )
         return Err(TicketError.AcceptanceAmendTerminalState)
-    if index >= len(ticket.acceptance):
+    if index > len(ticket.acceptance):
         _log.error(
-            "tickets: %s cannot amend acceptance[%d], only %d criteria declared",
+            "tickets: %s cannot amend acceptance -- index %d out of range, "
+            "%d criteria declared (valid range: 1..%d)",
             ticket_id,
             index,
+            len(ticket.acceptance),
             len(ticket.acceptance),
         )
         return Err(TicketError.AcceptanceAmendIndexOutOfRange)
@@ -121,6 +135,7 @@ def _validate_amend_mutation(
 
 
 # frob:ticket T-1422
+# frob:ticket T-3908
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_replaces_text_and_records_reason  # noqa: E501
 # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_on_terminal_ticket  # noqa: E501
@@ -132,17 +147,28 @@ def amend_acceptance(
     *,
     reason: str,
 ) -> Result[Ticket, TicketError]:
-    """Replace `ticket_id`'s acceptance criterion at `index` with `new_text`
-    (T-1422) -- the supported alternative to hand-editing `tickets.md` when
-    a criterion was WRONG (mis-specified, e.g. T-1411's criterion [0], which
-    implemented faithfully would have silenced the exact case the rule
-    exists for). The OLD text is always preserved in the appended
-    `AcceptanceAmendmentEntry` (never discarded), so the ledger keeps a
-    full record of what changed and why -- never a silent rewrite. Any
-    evidence already bound to the criterion is carried forward unchanged
-    (amending the TEXT does not invalidate a binding a reviewer already
-    made; a caller that wants the binding re-verified rebinds it via
-    `frob ticket evidence --accepts` as normal).
+    """Replace `ticket_id`'s acceptance criterion at 1-based `index` with
+    `new_text` (T-1422) -- the supported alternative to hand-editing
+    `tickets.md` when a criterion was WRONG (mis-specified, e.g. T-1411's
+    first criterion, which implemented faithfully would have silenced the
+    exact case the rule exists for). The OLD text is always preserved in
+    the appended `AcceptanceAmendmentEntry` (never discarded), so the
+    ledger keeps a full record of what changed and why -- never a silent
+    rewrite. Any evidence already bound to the criterion is carried
+    forward unchanged (amending the TEXT does not invalidate a binding a
+    reviewer already made; a caller that wants the binding re-verified
+    rebinds it via `frob ticket evidence --accepts` as normal).
+
+    T-3908: `index` is 1-based, matching `frob ticket show`'s own display
+    and `--accepts`'s T-3837 convention -- `--amend`/`--remove` were left
+    0-based when T-3837 moved those two surfaces, which let an operator
+    reading the 1-based display pass an index that lands INSIDE the valid
+    0-based range and silently amends/removes the WRONG criterion. `index`
+    is converted to the internal 0-based list position only at the point
+    of use, after `_validate_amend_mutation` has confirmed it is in range;
+    the `AcceptanceAmendmentEntry.index` recorded below stays 1-based, so
+    `frob ticket show`'s `acceptance_amendments:` block names the same
+    position its `acceptance:` block does.
 
     FAILS LOUDLY (`Err`, no partial write) for: an empty `reason`
     (`AcceptanceAmendReasonMissing`), an out-of-range `index`
@@ -177,12 +203,17 @@ def amend_acceptance(
         if mutation_check.is_err:
             return Err(mutation_check.danger_err)
 
-        old_criterion = ticket.acceptance[index]
+        # T-3908: index is 1-based (matching the display/--accepts); the
+        # list is 0-based, so convert only at the point of use, after
+        # _validate_amend_mutation has already confirmed 1 <= index <=
+        # len(acceptance).
+        list_index = index - 1
+        old_criterion = ticket.acceptance[list_index]
         new_criterion = old_criterion.model_copy(update={"text": new_text.strip()})
         new_acceptance = (
-            ticket.acceptance[:index]
+            ticket.acceptance[:list_index]
             + (new_criterion,)
-            + ticket.acceptance[index + 1 :]
+            + ticket.acceptance[list_index + 1 :]
         )
         entry = AcceptanceAmendmentEntry(
             op=AcceptanceAmendmentOp.REPLACE,
@@ -214,21 +245,31 @@ def amend_acceptance(
 
 
 # frob:ticket T-1422
+# frob:ticket T-3908
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_drops_criterion_and_records_reason  # noqa: E501
 # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_on_terminal_ticket  # noqa: E501
 def remove_acceptance(
     root: Path, ticket_id: str, index: int, *, reason: str
 ) -> Result[Ticket, TicketError]:
-    """Drop `ticket_id`'s acceptance criterion at `index` outright (T-1422)
-    -- the supported alternative for a criterion that is UNSATISFIABLE by
-    construction (the "0 findings under package X" burn-down shape) rather
-    than merely mis-worded. Same validation and audit-trail discipline as
-    `amend_acceptance`: a non-blank `reason` is required, the removal is
-    refused on a terminal ticket, and the removed criterion's text is
-    preserved verbatim in the appended `AcceptanceAmendmentEntry` (`new_
-    text=None` marks it as a removal, not a replace) so the ledger records
-    exactly what was dropped and why, never a silent shrink of the list.
+    """Drop `ticket_id`'s acceptance criterion at 1-based `index` outright
+    (T-1422) -- the supported alternative for a criterion that is
+    UNSATISFIABLE by construction (the "0 findings under package X"
+    burn-down shape) rather than merely mis-worded. Same validation and
+    audit-trail discipline as `amend_acceptance`: a non-blank `reason` is
+    required, the removal is refused on a terminal ticket, and the
+    removed criterion's text is preserved verbatim in the appended
+    `AcceptanceAmendmentEntry` (`new_text=None` marks it as a removal, not
+    a replace) so the ledger records exactly what was dropped and why,
+    never a silent shrink of the list.
+
+    T-3908: `index` is 1-based, matching `frob ticket show` and
+    `--accepts` (see `amend_acceptance`'s docstring for the full
+    reasoning) -- this is the DESTRUCTIVE half of that fix: under the old
+    0-based convention, an operator reading the 1-based display and
+    typing what they saw would drop the WRONG criterion outright, with
+    the audit trail recording a reason against a criterion that was never
+    the one removed.
 
     FAILS LOUDLY the same way `amend_acceptance` does; see its docstring
     for the full error list. Held under `ledger_lock` end to end."""
@@ -251,8 +292,12 @@ def remove_acceptance(
         if mutation_check.is_err:
             return Err(mutation_check.danger_err)
 
-        removed_criterion = ticket.acceptance[index]
-        new_acceptance = ticket.acceptance[:index] + ticket.acceptance[index + 1 :]
+        # T-3908: see amend_acceptance's identical conversion note above.
+        list_index = index - 1
+        removed_criterion = ticket.acceptance[list_index]
+        new_acceptance = (
+            ticket.acceptance[:list_index] + ticket.acceptance[list_index + 1 :]
+        )
         entry = AcceptanceAmendmentEntry(
             op=AcceptanceAmendmentOp.REMOVE,
             index=index,

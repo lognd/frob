@@ -2,7 +2,7 @@
 id: T-3908
 title: accept --amend and --remove are still 0-based after T-3837 made the display
   and --accepts 1-based, so --remove drops the wrong criterion
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -83,6 +83,16 @@ body_changes:
   at: '2026-09-05'
   old_length: 4025
   new_length: 4027
+evidence:
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_zero_index_not_the_first_criterion
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_refuses_zero_index_does_not_drop_the_first_criterion
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_zero_index_is_rejected_not_the_first_criterion
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_remove_zero_index_is_rejected_not_the_first_criterion
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_one_edits_the_criterion_show_prints_as_one
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_missing_reason_refused_before_ticket_is_read
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_remove_missing_reason_refused_before_ticket_is_read
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_replaces_text_and_records_reason
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_drops_criterion_and_records_reason
 designated_repro_test: null
 threat: null
 component: null
