@@ -801,17 +801,68 @@ def _cli_violations(
 #: dozens of false ones without it).
 _CONFIG_REF_PROSE_RE = re.compile(r"\[{1,2}([A-Za-z][\w-]*(?:\.[\w-]+)+)\]{1,2}(?!\()")
 
+#: T-3900: a CommonMark reference-link DEFINITION line (`[label]: target`,
+#: optionally indented up to 3 spaces per spec). Collected once per document
+#: so a `[label]` bracket elsewhere in the SAME prose that matches one of
+#: these labels is recognized as a reference-style markdown LINK use, not a
+#: TOML `[section]`/`[section.key]` config pointer that happens to share the
+#: bracket character.
+_LINK_REF_DEF_RE = re.compile(r"^ {0,3}\[([^\]\n]+)\]:\s*\S", re.MULTILINE)
+
+
+def _markdown_link_reference_labels(text: str) -> frozenset[str]:
+    """Lower-cased, whitespace-normalized CommonMark reference-link
+    definition labels (`` `[label]: target` `` lines) found in `text` --
+    CommonMark itself normalizes labels case- and whitespace-insensitively,
+    so lookup must too (T-3900)."""
+    return frozenset(
+        " ".join(match.group(1).split()).lower()
+        for match in _LINK_REF_DEF_RE.finditer(text)
+    )
+
+
+def _is_markdown_link_bracket(
+    text: str, match: re.Match[str], labels: frozenset[str]
+) -> bool:
+    """Whether the bracketed `match` is markdown LINK syntax rather than a
+    genuine `[section]`/`[section.key]` config pointer that merely shares
+    the `[...]` bracket shape (T-3900) -- decided at the PARSE level from
+    the document's own text, never a denylist of specific labels/words:
+
+    - an INLINE link `[text](url)` is already excluded by this regex's own
+      `(?!\\()` lookahead before this function ever runs;
+    - a FULL reference link `[text][label]` -- a second `[`/`[]` bracket
+      immediately follows this one;
+    - a SHORTCUT (or collapsed `[label][]`) reference link -- this
+      bracket's own content, normalized, matches a `[label]: target`
+      definition found anywhere else in the same document.
+
+    Bracketed constructs that were never candidates in the first place
+    (enumerated for T-3900, not handled here because the driving regex
+    already excludes them by shape): footnote references (`[^1]`, no
+    leading letter), task-list markers (`- [ ]`/`- [x]`, no dot segment),
+    and bare numeric/citation markers (`[1]`, no leading letter) -- none of
+    these can match `_CONFIG_REF_PROSE_RE`'s leading-letter, dotted-segment
+    shape to begin with."""
+    tail = text[match.end() : match.end() + 1]
+    if tail == "[":
+        return True
+    return " ".join(match.group(1).split()).lower() in labels
+
 
 def _config_ref_candidates(text: str) -> list[tuple[int, str]]:
     """`(line_no, dotted)` for every `[section]`/`[section.key]`-shaped
     substring in `text`'s prose, OUTSIDE any fenced/inline code span
-    (T-2703) -- see `_CONFIG_REF_PROSE_RE`'s own comment for why this
-    kind cannot share the backtick-derived `_prose_tokens` source every
-    other DOC006 kind uses."""
+    (T-2703) and OUTSIDE markdown link syntax (T-3900) -- see
+    `_CONFIG_REF_PROSE_RE`'s own comment for why this kind cannot share the
+    backtick-derived `_prose_tokens` source every other DOC006 kind uses."""
     stripped = _strip_code_spans(text)
+    labels = _markdown_link_reference_labels(stripped)
     newline_offsets = [i for i, ch in enumerate(stripped) if ch == "\n"]
     candidates: list[tuple[int, str]] = []
     for match in _CONFIG_REF_PROSE_RE.finditer(stripped):
+        if _is_markdown_link_bracket(stripped, match, labels):
+            continue
         line_no = bisect.bisect_right(newline_offsets, match.start()) + 1
         candidates.append((line_no, match.group(1)))
     return candidates

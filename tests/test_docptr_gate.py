@@ -349,6 +349,82 @@ class TestDoc006Config:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:ticket T-3900
+    def test_inline_markdown_link_not_flagged(self, tmp_path: Path) -> None:
+        """T-3900: `[text](url)` is an ordinary inline markdown link, not a
+        `[section.key]` config pointer, even though the bracketed text is
+        dotted-shaped (a version number, as in the real-world Contributor
+        Covenant report)."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Adapted from [version 2.1](https://example.com/v2.1).\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-3900
+    def test_shortcut_reference_link_not_flagged(self, tmp_path: Path) -> None:
+        """T-3900: `[v2.1]` used as a shortcut reference link -- resolved
+        elsewhere in the SAME document via a `[v2.1]: url` definition
+        (the Keep-a-Changelog convention) -- is markdown link syntax, not
+        a config pointer, even though the label is dotted."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "See the [v2.1] release notes.\n\n[v2.1]: https://example.com/v2.1\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-3900
+    def test_full_reference_link_not_flagged(self, tmp_path: Path) -> None:
+        """T-3900: `[text][label]` (full reference link, distinct link
+        text and label) is markdown link syntax -- the dotted TEXT bracket
+        must not be treated as a config pointer even without its own
+        matching definition, because it is immediately followed by a
+        second `[label]` bracket."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Adapted from the [Contributor v2.1][cov] text.\n\n"
+            "[cov]: https://example.com/cov\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-3900
+    def test_bogus_section_still_flagged_alongside_markdown_links(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3900 MUST-FIRE control: a genuine non-resolving `[section]`
+        config pointer in prose is still flagged even in a document that
+        also contains legitimate markdown link syntax -- the fix narrows
+        the matcher, it does not blanket-suppress the whole document/kind."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "See the [v2.1] release notes.\n"
+            "Also add [bogus.section] to frob.toml.\n\n"
+            "[v2.1]: https://example.com/v2.1\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert any("bogus.section" in v.message for v in found)
+        assert not any("v2.1" in v.message for v in found)
+
     def test_all_caps_citation_tag_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `[IN-REPO]`-shaped tokens are prose citation TAGS, not
         `[section]` TOML pointers -- every real config table this repo's
@@ -1513,7 +1589,9 @@ class TestDoc006OldTextNewTextFieldExclusion:
         two prose fields this fix targets."""
         _init_repo(tmp_path)
         clean_text = "given a clean criterion, when it runs, then it passes"
-        violating_text = "given [[check.stack]] is implemented, when it runs, then it passes"
+        violating_text = (
+            "given [[check.stack]] is implemented, when it runs, then it passes"
+        )
         frontmatter = (
             "---\n"
             "id: T-9019\n"

@@ -2,7 +2,7 @@
 id: T-3900
 title: DOC006 reads markdown link syntax as a TOML config pointer, so ordinary reference
   links are hard errors in any consumer repo
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -48,7 +48,23 @@ body_changes:
   at: '2026-09-05'
   old_length: 3573
   new_length: 3659
-designated_repro_test: null
+evidence:
+- tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_real_section_passes
+- tests/test_docptr_gate.py::TestDoc006Config::test_inline_markdown_link_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_shortcut_reference_link_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_full_reference_link_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_still_flagged_alongside_markdown_links
+designated_repro_test: tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_still_flagged_alongside_markdown_links
+evidence_changes:
+- old_node: tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+  new_node: ''
+  reason: 'flaky under concurrent fleet state: pre-existing unrelated DOC006 file/path-pointer
+    findings from sibling ticket T-4174''s body land on main independently of this
+    ticket''s diff (config-pointer kind only); the hermetic TestDoc006Config fixtures
+    plus the designated repro already prove this fix'
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false
