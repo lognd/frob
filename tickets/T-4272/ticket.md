@@ -47,6 +47,21 @@ acceptance:
     on it is started, then the overlap is reported using the existing scope-collision
     machinery rather than a second implementation
   evidence: []
+- text: given two agents on different machines asking for work at the same moment,
+    when both attempt to take the same epic, then exactly one succeeds and the loser
+    is told it lost before doing any work
+  evidence: []
+- text: given a claimed epic, when any contributor asks what is available, then the
+    epic and its entire leaf subtree are excluded without a network call, using only
+    the locally held ledger
+  evidence: []
+- text: given a stale claim, when another contributor takes it, then the takeover
+    is recorded and the original branch is neither deleted nor rewritten
+  evidence: []
+- text: given contributors whose machine clocks disagree, when staleness is evaluated,
+    then the verdict depends only on how long this repository has observed the tip
+    unchanged and never on a timestamp written elsewhere
+  evidence: []
 threat: null
 component: null
 anchor: false
