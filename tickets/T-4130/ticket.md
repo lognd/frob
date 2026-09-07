@@ -19,10 +19,18 @@ scope:
 - tests/unit/test_check_gates_summary.py
 - tests/unit/test_app_runners_batch6.py
 - tests/unit/test_runtime_deps.py
+- tickets/T-draft-ca28d9be/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-ca28d9be/ticket.md
+  reason: T-4130's own new-ticket file, filed for the T-4105 producer/consumer desync
+    found while testing this ticket's fix
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given the ubuntu CI leg, when the full suite runs, then it reports zero failures
