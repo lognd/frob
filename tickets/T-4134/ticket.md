@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-07'
   old_length: 4661
   new_length: 6630
+- mode: set
+  reason: 'widens this ticket from one verb to the ledger verb family on a third report:
+    accept has now blown both a 60s and a 600s budget. Adds the new fact that the
+    stall prints nothing at all, so a caller cannot distinguish lock contention from
+    unbounded analysis from a wedge, and flags F-329''s partial-result half as a correctness
+    claim that must not be lost inside a latency ticket'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 6630
+  new_length: 9222
 designated_repro_test: null
 acceptance:
 - text: given a repository with a large open ticket queue, when a ticket is filed,
@@ -159,3 +169,46 @@ timeout; a follow-up integrity check could not run because the database was stil
 locked by a live agent. Treat corruption as UNCONFIRMED and re-check on an idle
 machine before acting on it -- an unverified corruption claim would send someone
 rebuilding a cache when the real finding is contention.
+
+THIRD REPORT, AND IT IS NOT THE SAME VERB -- WHICH WIDENS THIS TICKET. This one
+filed as `ticket new`; the reporter has now hit the same shape on `ticket accept`
+twice, at two different durations:
+
+    F-329  accept exceeded even a 600 second foreground budget under load, and
+           when re-run, recorded a partial result
+    F-375  two chained accepts did not finish within a 60 second budget and were
+           auto-backgrounded with empty output; a `show` in the meantime proved
+           only the first had landed; re-issuing the third directly succeeded
+           immediately
+
+So the unbounded post-announcement work this ticket describes for filing is not
+specific to filing. At least two ledger verbs can run long enough to blow a
+caller's timeout, and the ticket should be scoped to the verb family rather than
+to one verb. Determine which verbs run analyses after their mutation and report
+the list -- the fix is per-family, not per-verb.
+
+THE PART THAT MAKES F-375 WORSE THAN A SLOW COMMAND, and it is a new fact this
+ticket did not have: THE STALL PRINTS NOTHING. The reporter observed no lease
+message, no lock message, no progress line -- from either the backgrounded run or
+the retry. So a caller cannot distinguish "contending on a lock", "doing unbounded
+analysis", and "wedged" from the outside. They had to infer the cause and marked
+their own guess as uncertain.
+
+That is the operational half of the defect and it deserves its own acceptance
+criterion: a ledger verb that is going to run longer than a second or two must SAY
+WHAT IT IS WAITING ON. This repo already has the shape to copy -- the concurrency
+advisory prints when another check is running, and land status markers record a
+phase. A verb that blocks silently forces every caller to choose between an
+arbitrary long timeout and an auto-backgrounded job with no output, which is
+exactly the bind the reporter describes.
+
+NOTE THE SECOND-ORDER COST THEY NAME: their own dispatch guidance says never let a
+frob command auto-background, and they cannot honour it when a single accept can
+exceed 60 seconds with no diagnostic. A tool whose latency is unpredictable and
+undocumented forces its callers to write rules they cannot keep.
+
+AND NOTE F-329's HALF THAT IS STILL UNADDRESSED HERE: a re-run recorded a PARTIAL
+result. That is more serious than slowness -- it suggests an interrupted verb can
+leave the ledger half-written, which is a correctness claim rather than a
+performance one. Chase it separately if this ticket's scope will not hold it, but
+do not let it be forgotten inside a latency ticket.
