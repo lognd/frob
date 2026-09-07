@@ -7,10 +7,6 @@
   <a href="https://pypi.org/project/frob/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--only-blue.svg" alt="License: GPL-2.0-only"></a>
   <a href="https://github.com/lognd/frob/actions/workflows/ci.yml"><img src="https://github.com/lognd/frob/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
-  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
-  <a href="https://github.com/astral-sh/ty"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v2.json" alt="Checked with ty"></a>
-  <a href="https://docs.pytest.org/"><img src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC.svg" alt="Tested with pytest"></a>
 </p>
 
 # frob
