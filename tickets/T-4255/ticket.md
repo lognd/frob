@@ -19,6 +19,7 @@ scope:
 - tests/test_worktree_guard.py
 - tests/test_tickets_evidence_cli.py
 - src/frob/process/_tty.py
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
   glob: src/frob/process/_tty.py
   reason: 'T-4255: shared cross-platform interactive-stdin check for the attach TTY
     fast-fail (sys.stdin.isatty() misreports True for NUL on Windows)'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: 'T-4255: wire the new cross-platform TTY check into the attach fast-fail
+    path'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
