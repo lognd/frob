@@ -22,6 +22,7 @@ scope:
 - src/frob/gates/_flag_coverage.py
 - docs/modules/process.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
   reason: 'SELFAUDIT001: new real-exec test fixtures (uv run/uv sync spawns) require
     declaring the exec capability for tests/unit/test_check.py and tests/unit/test_flag_coverage_gate.py
     in the testsuite node'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SYS111 ratchet: two files (test_check.py, test_flag_coverage_gate.py) gained
+    new exec via-list entries for real uv subprocess fixtures'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
