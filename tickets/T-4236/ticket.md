@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=epic: Windows-green container; scope belongs on the
+  leaves'
 designated_repro_test: null
 acceptance:
 - text: given the Windows CI leg on current main, when a complete run finishes, then
