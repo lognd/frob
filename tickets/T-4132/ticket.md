@@ -18,10 +18,102 @@ runs_last_parallel_safe_reason: null
 scope:
 - pyproject.toml
 - src/frob/scaffold/data/shared/python/pyproject.toml.j2
+- src/frob/py.typed
+- src/frob/scaffold/project.py
+- src/frob/scaffold/data/shared/python/py.typed.j2
+- tests/system/test_packaging_py_typed.py
+- design/frob.strata
+- docs/commands/scaffold.md
+- tests/system/test_scaffold_dx.py
+- tests/test_scaffold_worktree_lease_hook.py
+- tickets/T-4133/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/py.typed
+  reason: T-4132 requires creating the actual py.typed marker file, wiring it into
+    the scaffold manifest so generated projects get the file (not just the declaration),
+    and a wheel-inspection fixture -- these are the concrete deliverables the ticket
+    body demands; narrower initial scope only covered the two config declarations
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: T-4132 requires creating the actual py.typed marker file, wiring it into
+    the scaffold manifest so generated projects get the file (not just the declaration),
+    and a wheel-inspection fixture -- these are the concrete deliverables the ticket
+    body demands; narrower initial scope only covered the two config declarations
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/py.typed.j2
+  reason: T-4132 requires creating the actual py.typed marker file, wiring it into
+    the scaffold manifest so generated projects get the file (not just the declaration),
+    and a wheel-inspection fixture -- these are the concrete deliverables the ticket
+    body demands; narrower initial scope only covered the two config declarations
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/system/test_packaging_py_typed.py
+  reason: T-4132 requires creating the actual py.typed marker file, wiring it into
+    the scaffold manifest so generated projects get the file (not just the declaration),
+    and a wheel-inspection fixture -- these are the concrete deliverables the ticket
+    body demands; narrower initial scope only covered the two config declarations
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4132 closure requirements: the new fixture''s subprocess exec must be
+    declared in design/frob.strata''s testsuite node (SELFAUDIT001, same pattern test_artifact_smoke.py
+    already uses); widening project.py''s scope pulled in its existing frob:doc/frob:tests
+    closure targets (SCOPE002) which are pure declare-only leases, no edits made to
+    them; and the mirrored follow-up ticket T-4133''s own ticket.md needs to be in
+    scope since filing it from this worktree wrote that file (SCOPE001).'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: 'T-4132 closure requirements: the new fixture''s subprocess exec must be
+    declared in design/frob.strata''s testsuite node (SELFAUDIT001, same pattern test_artifact_smoke.py
+    already uses); widening project.py''s scope pulled in its existing frob:doc/frob:tests
+    closure targets (SCOPE002) which are pure declare-only leases, no edits made to
+    them; and the mirrored follow-up ticket T-4133''s own ticket.md needs to be in
+    scope since filing it from this worktree wrote that file (SCOPE001).'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/system/test_scaffold_dx.py
+  reason: 'T-4132 closure requirements: the new fixture''s subprocess exec must be
+    declared in design/frob.strata''s testsuite node (SELFAUDIT001, same pattern test_artifact_smoke.py
+    already uses); widening project.py''s scope pulled in its existing frob:doc/frob:tests
+    closure targets (SCOPE002) which are pure declare-only leases, no edits made to
+    them; and the mirrored follow-up ticket T-4133''s own ticket.md needs to be in
+    scope since filing it from this worktree wrote that file (SCOPE001).'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: 'T-4132 closure requirements: the new fixture''s subprocess exec must be
+    declared in design/frob.strata''s testsuite node (SELFAUDIT001, same pattern test_artifact_smoke.py
+    already uses); widening project.py''s scope pulled in its existing frob:doc/frob:tests
+    closure targets (SCOPE002) which are pure declare-only leases, no edits made to
+    them; and the mirrored follow-up ticket T-4133''s own ticket.md needs to be in
+    scope since filing it from this worktree wrote that file (SCOPE001).'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tickets/T-4133/ticket.md
+  reason: 'T-4132 closure requirements: the new fixture''s subprocess exec must be
+    declared in design/frob.strata''s testsuite node (SELFAUDIT001, same pattern test_artifact_smoke.py
+    already uses); widening project.py''s scope pulled in its existing frob:doc/frob:tests
+    closure targets (SCOPE002) which are pure declare-only leases, no edits made to
+    them; and the mirrored follow-up ticket T-4133''s own ticket.md needs to be in
+    scope since filing it from this worktree wrote that file (SCOPE001).'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a wheel built from this repository, when its contents are listed, then
