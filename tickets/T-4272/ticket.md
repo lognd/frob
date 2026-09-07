@@ -70,6 +70,17 @@ acceptance:
     then the verdict depends only on how long this repository has observed the tip
     unchanged and never on a timestamp written elsewhere
   evidence: []
+- text: given a claimed epic, when a contributor takes one of its leaves, then a fresh
+    remote read is performed first and the cached view is not accepted for this operation
+  evidence: []
+- text: given an unreachable remote, when a contributor tries to take a leaf out of
+    a claimed epic, then that operation alone is refused while every other verb continues
+    to work offline
+  evidence: []
+- text: given a leaf taken from a claimed epic, when the epic holder next refreshes,
+    then they can see which leaf was taken and by whom, and the record names the epic
+    tip staleness observed at the moment it was taken
+  evidence: []
 threat: null
 component: null
 anchor: false
