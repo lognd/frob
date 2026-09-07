@@ -41,6 +41,9 @@ acceptance:
 - text: given a project that declares no long-description file, when the gate runs,
     then that case is handled explicitly without crashing or silently passing
   evidence: []
+- text: given a relative link target in any markdown file including the declared long
+    description, when the gate runs, then it reports nothing
+  evidence: []
 threat: null
 component: null
 anchor: false
