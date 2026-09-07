@@ -45,6 +45,14 @@ body_changes:
   at: '2026-09-07'
   old_length: 12332
   new_length: 15527
+- mode: append
+  reason: 'records how claims should be modelled: as the existing ledger-ownership
+    dimension re-keyed from worktree to branch, rather than as a new ticket state;
+    corrects the premise that an addressed state form already exists'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 15527
+  new_length: 19314
 designated_repro_test: null
 acceptance:
 - text: given a claimed epic and a collaborator with no network access, when they
@@ -366,3 +374,69 @@ WHAT THE VALVE DOES NOT DO. It does not suppress the conflict, resolve it, or
 promise the resulting merge will be clean. The contributor is accepting the
 conflicts, not being spared them. It also does not release the holder's claim,
 shorten its expiry, or mark the ticket as being worked by the overrider.
+
+
+
+HOW CLAIMS SHOULD BE MODELLED IN THE TICKET SYSTEM: AS AN OWNERSHIP DIMENSION
+ADDRESSED TO A BRANCH, NOT AS A NEW STATE.
+
+A CORRECTION TO THE PREMISE FIRST, BECAUSE IT CHANGES THE COST BUT NOT THE
+DIRECTION. There is no addressed state form in the model today. The state field
+holds one of six plain values and carries no address; the actor who performed a
+transition is recorded on the transition record, not on the ticket as a live
+owner. So an addressed state is a new mechanism rather than an extension of an
+existing one.
+
+BUT THE OWNERSHIP CONCEPT DOES ALREADY EXIST, AND IT IS THE RIGHT FOUNDATION.
+Ledger ownership is real and enforced today: a ticket leased to one worktree may
+be WRITTEN only from that worktree, and any other worktree -- the shared primary
+checkout included -- must refuse rather than clobber the holder's in-flight edit.
+That rule exists because of a measured incident in which a field change written
+from the primary checkout was dropped by a later merge, because the primary
+checkout edited a ticket a worktree owned.
+
+That is precisely the problem the owner wants solved between PEOPLE, already
+solved between WORKTREES. The distributed feature is therefore not a new concept
+bolted on; it is the existing ownership dimension re-keyed from a local worktree
+to a branch that may live on someone else's machine.
+
+WHY AN OWNERSHIP FIELD BEATS A NEW STATE, CONCRETELY.
+
+  State and ownership are orthogonal, and collapsing them destroys information. A
+  claimed ticket may be untouched, or actively worked, or blocked. If `claimed`
+  is a state, what is the state of a claimed ticket someone has started? Either
+  the claim is lost or the progress is, and the answer to that question is the
+  thing every other contributor's agent needs in order to decide what to do.
+
+  The state field is a state machine with defined transitions and terminal
+  states. Ownership is not a stage of work; it comes and goes independently, can
+  expire on its own, and can be overridden without any transition occurring. Rules
+  written for one are wrong for the other.
+
+  A second representation of one fact is this project's most repeated defect
+  shape. Ownership already has a home; adding a state that means the same thing
+  guarantees the two will disagree, and then a person has to decide which is
+  lying.
+
+THE ADDRESS IS THE BRANCH, WHICH THE OWNER ALREADY DECIDED. An ownership entry
+names the branch that holds the claim, which in turn identifies the person, since
+claiming requires push access. Recording the branch rather than a human name also
+means liveness is readable from the same value: the branch tip is the evidence of
+work, so the address and the heartbeat are one field rather than two that can
+disagree.
+
+THE FIELD MUST BE DERIVED, NOT AUTHORED. This is the constraint that keeps the
+design honest. The truth about who holds a claim is the set of branches on the
+remote, because that is what compare-and-swap makes atomic. The ticket-side
+ownership entry is a CACHED VIEW of that truth, refreshed on the verbs that
+already coordinate, and stamped with when it was observed. It must never become a
+field a person edits and commits to the integration branch: that would serialize
+every claim through the one branch this design deliberately avoids touching, and
+it would create a record that can contradict the branches it describes.
+
+WHAT THIS BUYS THE QUEUE. Availability becomes one predicate rather than a
+special case. The verb that answers what an agent may work on already filters on
+state, dependencies and leases; remote ownership joins that list as another
+filter, expanded through the epic-implies-leaves rule, and everything downstream
+-- the overlap reporting, the starvation checks, the board -- reads it without
+learning a new vocabulary.
