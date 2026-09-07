@@ -21,6 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: measured while landing T-4143 in this session
+  actor: logan
+  at: '2026-09-07'
+  old_length: 1910
+  new_length: 2480
 designated_repro_test: null
 threat: null
 component: null
@@ -58,3 +65,6 @@ What to do: audit every ledger-mutating verb for whether it calls
 primary checkout's ticket file directly -- that is the exact anti-pattern
 this repo's "coordinator never dirties root" rule exists to prevent; the
 fix belongs in the mirroring call sites themselves.
+
+
+Refined finding (measured across 3+ retries, no intervening changes): the worktree's OWN tickets/T-4143/ticket.md is confirmed correct (new evidence ids) at every retry, yet frob ticket land repeatedly refuses citing the OLD (already-rebound-away) ids as 'no longer resolves post-merge'. This suggests _load_one(worktree, ticket_id) inside _reverify_evidence_post_merge is not reading the current tip of the --worktree path at that point in _land_locked -- possibly a squash/compose stage reads a stale snapshot. Needs real instrumentation, not more black-box retries.
