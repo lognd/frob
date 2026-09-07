@@ -15,22 +15,205 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/scaffold/**
-- tests/system/test_scaffold_dx.py
+- src/frob/scaffold/project.py
+- src/frob/scaffold/data/shared/python/frob.toml.j2
+- src/frob/scaffold/data/shared/python/pyproject.toml.j2
+- src/frob/scaffold/data/shared/python/docs/index.md.j2
+- src/frob/scaffold/data/shared/python/logging/__init__.py.j2
+- src/frob/scaffold/data/shared/python/logging/config.toml.j2
+- src/frob/scaffold/data/shared/python/tests/system/test_build.py.j2
+- src/frob/scaffold/data/types/python-tool/frob.toml.j2
+- src/frob/scaffold/data/types/python-tool/__main__.py.j2
+- src/frob/scaffold/data/types/python-tool/app/__init__.py.j2
+- src/frob/scaffold/data/types/python-tool/app/app.py.j2
+- src/frob/scaffold/data/types/python-tool/docs/index.md.j2
+- src/frob/scaffold/data/types/python-tool/tests/system/test_build.py.j2
+- src/frob/scaffold/data/types/python-tool/tests/unit/test_app.py.j2
+- src/frob/scaffold/data/types/python-tool/tests/unit/test_logging.py.j2
+- src/frob/scaffold/data/types/python-tool/tests/unit/test_main.py.j2
+- src/frob/scaffold/data/types/pybind11-library/CMakeLists.txt.j2
+- src/frob/scaffold/data/types/pybind11-library/bindings.cpp.j2
+- src/frob/scaffold/data/types/pybind11-library/python/__init__.py.j2
+- src/frob/scaffold/data/types/pybind11-library/tests/test_bindings.py.j2
+- src/frob/scaffold/data/types/pyo3-library/Makefile.j2
+- src/frob/scaffold/data/types/pyo3-library/docs/index.md.j2
+- src/frob/scaffold/data/types/pyo3-library/github/ci.yml.j2
+- src/frob/scaffold/data/types/pyo3-library/pyproject.toml.j2
+- src/frob/scaffold/data/types/pyo3-library/python/__init__.py.j2
+- src/frob/scaffold/data/types/pyo3-library/tests/test_bindings.py.j2
+- src/frob/scaffold/data/types/cpp-library/tests.cpp.j2
+- src/frob/scaffold/data/types/cpp-tool/tests.cpp.j2
 - tests/unit/test_scaffold_project.py
+- tests/system/test_scaffold_dx.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: src/frob/scaffold/**
+  glob: src/frob/scaffold/project.py
   reason: fix hyphen-vs-import-name split across all scaffold templates and generated
     tests
   actor: logan
   at: '2026-09-07'
 - op: add
-  glob: tests/system/test_scaffold_dx.py
+  glob: src/frob/scaffold/data/shared/python/frob.toml.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/pyproject.toml.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/docs/index.md.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/logging/__init__.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/logging/config.toml.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/tests/system/test_build.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/frob.toml.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/__main__.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/app/__init__.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/app/app.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/docs/index.md.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/tests/system/test_build.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/tests/unit/test_app.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/tests/unit/test_logging.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/tests/unit/test_main.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pybind11-library/CMakeLists.txt.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pybind11-library/bindings.cpp.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pybind11-library/python/__init__.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pybind11-library/tests/test_bindings.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/Makefile.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/docs/index.md.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/github/ci.yml.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/pyproject.toml.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/python/__init__.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/pyo3-library/tests/test_bindings.py.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/cpp-library/tests.cpp.j2
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/types/cpp-tool/tests.cpp.j2
   reason: fix hyphen-vs-import-name split across all scaffold templates and generated
     tests
   actor: logan
@@ -42,19 +225,7 @@ scope_changes:
   actor: logan
   at: '2026-09-07'
 - op: add
-  glob: src/frob/scaffold/**
-  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
-    tests
-  actor: logan
-  at: '2026-09-07'
-- op: add
   glob: tests/system/test_scaffold_dx.py
-  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
-    tests
-  actor: logan
-  at: '2026-09-07'
-- op: add
-  glob: tests/unit/test_scaffold_project.py
   reason: fix hyphen-vs-import-name split across all scaffold templates and generated
     tests
   actor: logan
