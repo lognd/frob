@@ -18,6 +18,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'answers the owner''s question with a measurement across every directive
+    kind: frob:tests is the largest win (2143 lines, 45 deep), frob:enforces has the
+    worst concentration (73 deep), doc and waive are not worth it, and four never
+    stack. Records the hard constraint that changes the design -- 8913 of 13689 test
+    bindings contain a space, so a space separator is unambiguous for ticket ids and
+    genuinely ambiguous for test bindings'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3721
+  new_length: 7266
 designated_repro_test: null
 acceptance:
 - text: given a directive naming several ticket ids, when it is parsed, then the symbol
@@ -106,3 +118,70 @@ ACCEPTANCE
   included, each with a fixture.
 - No bulk auto-collapse of existing stacks in this ticket.
 - All three fixtures committed.
+
+WHICH OTHER DIRECTIVES DESERVE THE SAME TREATMENT -- MEASURED, NOT GUESSED. Owner
+asked. Counting consecutive runs of each directive across every tracked python
+file:
+
+    directive          total   stacked   lines saved   worst stack
+    frob:tests         13689      1026          2143       45 deep
+    frob:ticket        10278       977          1322       14 deep
+    frob:enforces        604        70           290       73 deep
+    frob:doc            3007        51            67        5 deep
+    frob:waive          1546        14            14        2 deep
+    frob:invariant       153         0             0        1
+    frob:todo              4         0             0        1
+    frob:describes        46         0             0        1
+    frob:used-by           1         0             0        1
+
+SO THE ANSWER IS THREE DIRECTIVES, NOT ONE, and this ticket was filed on the
+second-biggest of them:
+
+  frob:tests IS THE LARGEST WIN -- 2143 lines, and a worst case of 45 consecutive
+  directive lines above a single symbol. It is also the most natural fit: one
+  symbol legitimately has many tests, so stacking is the EXPECTED shape rather
+  than an accident of history.
+
+  frob:enforces HAS THE WORST CONCENTRATION -- 73 consecutive lines in the
+  evasion-coverage module, the deepest stack of any directive in the repository,
+  though a smaller total.
+
+  frob:doc and frob:waive ARE NOT WORTH IT. Fifty-one and fourteen stacked
+  occurrences, saving 67 and 14 lines. Adding multi-value parsing to them buys
+  almost nothing and widens the surface that every parser and rewriter must
+  handle. Leave them single-valued and say so, so the next reader does not
+  re-litigate it.
+
+  THE REMAINING FOUR NEVER STACK AT ALL. Their worst run is one. They are
+  single-valued by nature and should stay that way.
+
+A HARD CONSTRAINT THAT CHANGES THE DESIGN, AND THE REASON THIS MEASUREMENT
+MATTERED: THE SEPARATOR CANNOT BE A SPACE FOR EVERY DIRECTIVE.
+
+    of 13689 frob:tests values, 8913 CONTAIN A SPACE
+
+They are not bare tokens. A test binding carries trailing attributes and
+suppression comments after the node id, so the value is an id followed by more
+text. Space-separating several ids on one line would be genuinely ambiguous --
+a parser could not tell where one binding's attributes end and the next id
+begins. And test node ids in some ecosystems legitimately contain spaces inside
+the id itself, which this repository has already seen from a consumer whose
+node ids embed a describe-block name with spaces around a separator.
+
+By contrast a ticket id is a short fixed shape with no attributes and no spaces,
+so space separation is unambiguous there. Twelve enforces values contain a
+space, so it sits with tests rather than with ticket.
+
+THEREFORE: do not design one separator for all three. Either use a separator that
+cannot occur inside a value (a comma is the obvious candidate, but CONFIRM against
+real values before committing to it), or keep per-directive rules and document
+them. What must not happen is a space-separated implementation for ticket being
+extended to tests by analogy -- that would silently mis-split most of the bindings
+in the repository.
+
+SEQUENCING
+  1. This ticket, for frob:ticket, with space separation.
+  2. A separate ticket for frob:tests and frob:enforces, whose separator question
+     is genuinely different and must be settled against real values first.
+Do not fold them together: the id shapes differ, the ambiguity differs, and the
+renumber and rewrite paths differ per directive.
