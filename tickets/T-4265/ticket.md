@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'declare no-behavior-change: pure deletion of dead diagnostic scaffolding,
+    no defect to repro'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 2480
+  new_length: 2737
 evidence:
 - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
 - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_includes_windows_and_macos
@@ -134,3 +142,6 @@ MEASURE THE RESULT. Report the windows leg's wall-clock duration before and
 after. If removing the scaffolding does not measurably shorten it, say so
 plainly -- the cleanup is still worth doing, but the timing claim above would
 then be wrong and should be corrected rather than repeated.
+
+
+frob:no-behavior-change reason="deletes dead diagnostic-only CI steps and their matching test coverage; the real Test (windows...) step and its permanent mitigations are unchanged, so there is no defect for a repro test to fail-then-pass against (T-1616)"
