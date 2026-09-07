@@ -570,6 +570,550 @@ scope_changes:
     rest'
   actor: logan
   at: '2026-09-07'
+- op: add
+  glob: scripts/artifact_smoke.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/testing/_runners.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: strata-core/src/parse/grammar_flow.rs
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/system/test_artifact_smoke.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_ci_workflow_actions_pinned.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_hook_frob_suggest.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_mutate.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_refs_gate.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_serve_daemon.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_tickets_acceptance.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_tickets_evidence_removal.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/gates/test_version_coupling.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/graph/test_dsl.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/strata/test_selfconform_kinds.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_artifact_smoke_script.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_dependency_pins.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_graph_cache.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_new_ticket_scope_overlap_warning.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_release_workflow_gate.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_runtime_deps.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_ticket_accept_evidence_hint_t4106.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_ticket_runner_base_forward_t4105.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_verify_language_buckets.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: widen scope to the files the integration run formatter finding names so
+    the ruff-format commit is covered by this ticket rather than tripping SCOPE001/COV002
+    on out-of-scope reformatted files
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: scripts/artifact_smoke.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/gates/_coverage_sites.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/graph/dsl.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/testing/_runners.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: strata-core/src/parse/grammar_flow.rs
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/system/test_artifact_smoke.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_ci_workflow_actions_pinned.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_hook_frob_suggest.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_mutate.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_refs_gate.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_serve_daemon.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_serve_socket.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_tickets_acceptance.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_tickets_evidence_removal.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/gates/test_version_coupling.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/graph/test_dsl.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/strata/test_selfconform_kinds.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_artifact_smoke_script.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_dependency_pins.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_graph_cache.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_new_ticket_scope_overlap_warning.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_release_workflow_gate.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_runtime_deps.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_ticket_accept_evidence_hint_t4106.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_ticket_runner_base_forward_t4105.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_verify_language_buckets.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/verify/test_worker.py
+  reason: 'revert: widening scope to these files opened a SCOPE002 closure cascade
+    (186 distinct missing-file violations, promoted to error in frob.toml) that is
+    disproportionate to a mechanical reformat; splitting the formatter fix so only
+    already-in-scope files land under T-4264 and filing a separate ticket for the
+    rest'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given the integration run's own unscoped gate invocation, when it runs on
