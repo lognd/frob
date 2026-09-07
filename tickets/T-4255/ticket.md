@@ -86,6 +86,13 @@ body_changes:
   at: '2026-09-07'
   old_length: 4408
   new_length: 4965
+- mode: append
+  reason: 'T-4255: fix the earlier SCOPE002 waiver directive''s multi-line reason
+    quoting so it actually parses'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4964
+  new_length: 5615
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
 - tests/test_worktree_guard.py::TestApplyAgentEnv::test_child_subprocess_inherits_the_bound
@@ -192,3 +199,7 @@ designated test."
 ## BUG002 waiver fix (T-4255)
 
 # frob:waive BUG002 reason="Windows-only defect (Windows CRT isatty() NUL quirk, Windows-only python3 App Execution Alias stub, and Windows shell-metacharacter/argv semantics); none reproduce on the Linux host BUG002's parent-commit repro check runs on, so no bound test can ever fail at parent in this environment. Repro measured directly on real Windows via winrun instead (failed before the fix, passed after) -- see the Done report for the exact values; consistent with this ticket's own verifiable-on-Windows mandate."
+
+## SCOPE002 waiver fix (T-4255)
+
+# frob:waive SCOPE002 reason="src/frob/app/ticket_runner/_lifecycle.py and _new.py are large shared CLI-runner modules whose existing frob:doc/frob:tests/private-helper closure spans dozens of unrelated files; T-4255 touches exactly two small functions (_attach's TTY fast-fail, _maybe_attach_clipboard_image's TTY gate). Pulling every pre-existing closure edge into scope would be scope creep out of proportion to a small fix, matching the same doc-anchor/closure-tension precedent already documented by T-1010/T-1937/T-3903/T-1895/T-3847's COV001 waivers for exactly this shape of finding on a large shared file."
