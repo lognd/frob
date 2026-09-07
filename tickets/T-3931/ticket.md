@@ -24,6 +24,9 @@ scope:
 - src/frob/scaffold/data/types/pyo3-library/frob.toml.j2
 - src/frob/scaffold/data/types/web-app/frob.toml.j2
 - tests/unit/test_scaffold_project.py
+- tickets/T-draft-adfa1e8a/ticket.md
+- tickets/T-draft-c432d83d/ticket.md
+- src/frob/scaffold/data/shared/python/scripts/bump_version.py.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -94,6 +97,24 @@ scope_changes:
   reason: 'revert: docs/modules/gates.md describes nearly the whole gates subsystem
     (2222 unrelated closure warnings) -- same disclosed-breadth class T-4013 already
     measured/accepted for this exact doc; waiving AFFECT001 instead'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tickets/T-draft-adfa1e8a/ticket.md
+  reason: own filed follow-up tickets + the bump_version.py.j2 template touched for
+    the COV001 fix
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tickets/T-draft-c432d83d/ticket.md
+  reason: own filed follow-up tickets + the bump_version.py.j2 template touched for
+    the COV001 fix
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/scripts/bump_version.py.j2
+  reason: own filed follow-up tickets + the bump_version.py.j2 template touched for
+    the COV001 fix
   actor: logan
   at: '2026-09-07'
 body_changes:
