@@ -24,6 +24,7 @@ scope:
 - src/frob/scaffold/data/types/pyo3-library/frob.toml.j2
 - src/frob/scaffold/data/types/web-app/frob.toml.j2
 - tests/unit/test_scaffold_project.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -81,6 +82,12 @@ scope_changes:
   glob: tests/unit/test_scaffold_project.py
   reason: 'T-3931: regression test asserting every scaffold type declares [tickets].default_milestone
     (MILE003 day-one fix)'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'AFFECT001: document ROOT001 check (d) alongside a-c in its own self-contained
+    anchor'
   actor: logan
   at: '2026-09-07'
 body_changes:
