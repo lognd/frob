@@ -2,7 +2,7 @@
 id: T-4130
 title: 'all three CI legs red after the 79-commit push: 12 failures in four clusters,
   three of them a landed change with unupdated callers or test doubles'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
