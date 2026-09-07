@@ -45,6 +45,8 @@ scope:
 - src/frob/scaffold/data/types/cpp-tool/tests.cpp.j2
 - tests/unit/test_scaffold_project.py
 - tests/system/test_scaffold_dx.py
+- docs/commands/scaffold.md
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -228,6 +230,18 @@ scope_changes:
   glob: tests/system/test_scaffold_dx.py
   reason: fix hyphen-vs-import-name split across all scaffold templates and generated
     tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: 'scope closure: project.py frob:doc target and existing lease-hook coverage
+    on the same file'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: 'scope closure: project.py frob:doc target and existing lease-hook coverage
+    on the same file'
   actor: logan
   at: '2026-09-07'
 body_changes:
