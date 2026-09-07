@@ -2,7 +2,7 @@
 id: T-4143
 title: the evidence list cannot shrink through any verb, forcing agents to hand-edit
   the ledger, and its null form crashes scope edits
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_evidence.py
 - src/frob/tickets/_models.py
+- tests/test_tickets_evidence_replace_cmd_t4143.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,17 +31,38 @@ scope_changes:
     where the crash actually originates'
   actor: logan
   at: '2026-09-07'
+- op: add
+  glob: tests/test_tickets_evidence_replace_cmd_t4143.py
+  reason: moved the two --replace cmd-target tests out of tests/test_tickets_evidence_cli.py
+    into a new dedicated file to resolve CrossTicketLeakage against T-3936 (which
+    claims that whole file), without touching T-3936's own scope
+  actor: logan
+  at: '2026-09-07'
+evidence:
+- tests/test_tickets.py::TestEvidenceNullNormalization::test_ticket_level_evidence_null_normalizes_to_empty
+- tests/test_tickets.py::TestEvidenceNullNormalization::test_acceptance_criterion_evidence_null_normalizes_to_empty
+- tests/test_tickets.py::TestEvidenceNullNormalization::test_hand_edited_ledger_with_null_acceptance_evidence_loads
+- tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence
+- tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence
+- tests/test_tickets_evidence_cli.py::TestReplaceEvidence::test_replace_target_may_be_a_reproducing_cmd_entry
+- tests/test_tickets_evidence_cli.py::TestReplaceEvidence::test_replace_target_cmd_entry_that_no_longer_reproduces_is_rejected
+- tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_drops_id_from_flat_list_and_acceptance
 designated_repro_test: null
 acceptance:
 - text: given a stale evidence entry including a command-shaped one, when the removal
     verb is run with a reason, then the entry is dropped and the reason is recorded
-  evidence: []
+  evidence:
+  - tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_drops_id_from_flat_list_and_acceptance
 - text: given an evidence removal, when it completes, then the remaining entries keep
     their order and their acceptance-criterion bindings
-  evidence: []
+  evidence:
+  - tests/test_tickets_evidence_removal.py::TestRemoveEvidence::test_remove_drops_id_from_flat_list_and_acceptance
 - text: given a ticket whose evidence key is YAML null, when a scope add or remove
     runs, then it succeeds and no crash occurs
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence
+  - tests/test_tickets.py::TestEvidenceNullNormalization::test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence
+  - tests/test_tickets.py::TestEvidenceNullNormalization::test_hand_edited_ledger_with_null_acceptance_evidence_loads
 threat: null
 component: null
 anchor: false
