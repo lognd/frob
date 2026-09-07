@@ -20,6 +20,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'a fourth report refutes the call-shape diagnosis this ticket was filed
+    on: the consumer restructured a module-scope call into an ordinary function-body
+    call and WIRE001 still flagged it, plus a conventional _build_arg_parser/main
+    pair. The real mechanism is that a new caller of a new callee in the SAME DIFF
+    is not seen at all, regardless of shape, and frob explore xref resolves the very
+    edge the wiring gate misses -- an internal contradiction that should be reproduced
+    before any design'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4440
+  new_length: 7620
 designated_repro_test: null
 acceptance:
 - text: given a genuinely uncalled new symbol, when the wiring gate runs, then WIRE001
@@ -114,3 +127,55 @@ ACCEPTANCE
 - All three consumer shapes verified quiet, with a fixture each.
 - The string-in-a-list shapes proven still caught.
 - All three fixtures committed.
+
+A FOURTH REPORT ARRIVED AND IT CORRECTS THE MECHANISM I WROTE ABOVE. F-354 is the
+result of the consumer ACTING on F-352's theory, and the experiment came back
+negative in a way that is more useful than a confirmation.
+
+They restructured the module-scope call into an ordinary call from inside a
+function body -- the exact shape F-352 implied would be traced. WIRE001 STILL
+FLAGGED IT. It also flagged a second, entirely conventional pair in the same run:
+a `_build_arg_parser` called from `main` in the plainest possible way.
+
+SO "MODULE-SCOPE STATEMENTS ARE NOT TRACED" IS THE WRONG DIAGNOSIS, and my
+grouping of F-330/F-335/F-352 above as three variations of call-shape blindness
+is too generous to the gate. The actual gap they identified:
+
+    WIRE001 CANNOT SEE A CALL FROM A NEW CALLER TO A NEW CALLEE
+    ADDED IN THE SAME DIFF -- regardless of call shape.
+
+F-335 fits this exactly and I had filed it under call shape: its
+`resolve_cmd_entry -> _tokenize_cmd` pair was also both-new-in-one-diff. So at
+least three of the four reports are one mechanism, and it is not about syntax.
+
+THE DECISIVE EVIDENCE IS AN INTERNAL CONTRADICTION IN OUR OWN TOOLING, and it
+should be the first thing reproduced: `frob explore xref` FINDS the call site
+correctly, while `frob check --only wire` reports the symbol unwired, on the same
+tree in the same state. Two frob commands disagree about whether a call exists.
+The one that is right is the one WIRE001 does not consult. That is the clearest
+possible demonstration that the substrate to answer shape 1 already exists and
+this gate is not using it -- stronger than anything I argued above from the
+module docstring.
+
+WHAT THIS CHANGES ABOUT THE FIX
+  - The must-stay-quiet fixtures above are necessary but NOT sufficient. Add the
+    real one: a diff that adds BOTH a new helper and a new caller of it, in
+    non-test files, reports nothing. Prove it for a function-body call AND a
+    module-scope call, so a fix for one shape cannot be mistaken for a fix for
+    the mechanism.
+  - Before designing anything, run the contradiction: take one of their pairs (or
+    plant an equivalent), confirm that xref resolves the edge and the wiring gate
+    does not, and record both outputs on this ticket. That measurement decides
+    whether the fix is "consult the existing graph" or something larger.
+  - CHECK WHETHER THE SAME-DIFF EXCLUSION IS DELIBERATE. The gate's stated
+    question is whether the new symbol has a caller outside the diff's own TEST
+    files -- which reads as excluding tests, not as excluding the diff's own
+    non-test code. If some code path is excluding all same-diff callers, find out
+    whether that was intended and say so. If it WAS intended, then the rule as
+    designed fires on every genuinely new subsystem, which is a design defect
+    rather than an implementation one and needs to be argued, not patched.
+
+THE CONSUMER PAID FOR THIS FINDING TWICE, which is worth noting for priority:
+they restructured working code on a theory the gate's behaviour implied, and the
+restructure bought nothing. A false positive that is also MISLEADING about its
+own cause costs more than one that is merely wrong.
