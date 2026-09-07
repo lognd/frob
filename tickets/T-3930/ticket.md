@@ -45,9 +45,6 @@ scope:
 - src/frob/scaffold/data/types/cpp-tool/tests.cpp.j2
 - tests/unit/test_scaffold_project.py
 - tests/system/test_scaffold_dx.py
-- docs/commands/scaffold.md
-- tests/test_scaffold_worktree_lease_hook.py
-- src/frob/scaffold
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -275,6 +272,27 @@ scope_changes:
   glob: src/frob/scaffold
   reason: accept scope closure for project.py pre-existing frob:doc/frob:tests bindings
     unrelated to the T-3930 diff itself
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/scaffold
+  reason: 'revert: src/frob/scaffold package glob opened 97 unrelated scope-closure
+    warnings across _pool.py/_managed.py docs; narrowing back to the actual T-3930
+    diff'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/commands/scaffold.md
+  reason: 'revert: src/frob/scaffold package glob opened 97 unrelated scope-closure
+    warnings across _pool.py/_managed.py docs; narrowing back to the actual T-3930
+    diff'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: 'revert: src/frob/scaffold package glob opened 97 unrelated scope-closure
+    warnings across _pool.py/_managed.py docs; narrowing back to the actual T-3930
+    diff'
   actor: logan
   at: '2026-09-07'
 body_changes:
