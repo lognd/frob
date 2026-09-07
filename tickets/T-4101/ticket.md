@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'adds a consumer report that names the exact boundary of the existing promotion
+    sweep: it rewrites citations in ticket markdown but explicitly not in source files,
+    so waiver follow-up directive values go stale and must be fixed by hand. Records
+    why the declined half is the more serious one (a waiver gate parses those values)
+    and that the reporter''s narrower fix reuses a parser the system already has'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3686
+  new_length: 6284
 designated_repro_test: null
 threat: null
 component: null
@@ -95,3 +106,44 @@ ACCEPTANCE
 - Retargeting at promote/close time, plus a durable draft->real mapping for
   history that must not be edited.
 - All four fixtures committed.
+A CONSUMER HAS NOW HIT THIS AND NAMED THE EXACT BOUNDARY OF THE EXISTING SWEEP.
+logand.app-v2 F-378, and it is more specific than my own measurement above:
+
+    the promotion machinery rewrites citations inside tracked ticket markdown
+    files automatically -- but explicitly does NOT rewrite citations inside
+    SOURCE FILES (waiver follow-up directive values, docstring prose),
+    printing a warning naming the exact files left stale
+
+So the sweep exists, works, and stops at a boundary. Two of their source files
+needed a manual find-and-replace after a close, fixing three follow-up citations
+and one docstring mention. That refines my count of dangling draft ids: some
+portion of them are not orphaned records at all, they are source-comment
+citations the sweep declined to touch by design.
+
+WHY THE DECLINED HALF IS THE MORE SERIOUS ONE. A stale citation in a ticket file
+is a broken cross-reference in a record. A stale follow-up citation in a WAIVER
+DIRECTIVE is different in kind: the waiver gate parses that value, and a rule
+elsewhere in this system requires an escape hatch to bind to a real, open
+follow-up ticket. A directive pointing at an id that no longer resolves is
+therefore either permanently in violation or silently satisfied by a reference to
+nothing -- which is the same question this ticket already asks and now has a
+concrete, reported instance of.
+
+THE REPORTER'S FIRST SUGGESTION IS THE RIGHT ONE AND IS NARROWER THAN IT SOUNDS:
+extend the sweep to waiver follow-up directive VALUES in source. As they note,
+the system ALREADY PARSES those values for the waiver gates, so the sweep is not
+inventing a parser -- it is reusing one that must already be correct. That is a
+bounded, mechanical rewrite over a set the codebase can already enumerate, and it
+is strictly smaller than rewriting arbitrary prose.
+
+THEIR SECOND SUGGESTION SHOULD BE CONSIDERED SEPARATELY AND MAY BE BETTER: hand
+back a real id at filing time for the common single-ticket case, rather than
+deferring the rename to close. That removes the rewrite problem instead of
+solving it. It is a larger change and it interacts with why draft ids exist at
+all, so do not fold it in silently -- if it is rejected, record why.
+
+DO NOT EXTEND THE SWEEP TO FREE PROSE. Docstring mentions are the remaining
+category and they are exactly where a mechanical rewrite is unsafe: prose can
+quote an id for historical reasons, and this repo has already established that
+landed records must not be rewritten. Fix the directive values, warn about the
+prose, and say so in the message rather than silently leaving both.
