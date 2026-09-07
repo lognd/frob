@@ -44,6 +44,10 @@ acceptance:
     the proof distinguishes an unmeasured verification caused by an infrastructure
     failure from a genuine skip
   evidence: []
+- text: given a serve daemon that has performed no useful work for more than one hour,
+    when the liveness check runs, then the daemon terminates itself, and idleness
+    is measured by work performed rather than by poll iterations
+  evidence: []
 threat: null
 component: null
 anchor: false
