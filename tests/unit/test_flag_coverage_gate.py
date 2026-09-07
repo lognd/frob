@@ -75,6 +75,26 @@ def _write_fixture_project(
     if with_forwarded:
         lines.append('forwarded = "fixture_mod:forwarded_fields"')
     (tmp_path / "frob.toml").write_text("\n".join(lines) + "\n")
+    # T-4147: the resolver now runs `uv run --project tmp_path python -c
+    # ...` in a real project environment, so tmp_path needs a real
+    # pyproject.toml (package=false: a virtual, buildless project -- this
+    # fixture has no installable package of its own, just a loose module
+    # on the project root importable via uv's default rootdir-on-sys.path
+    # behavior) declaring `pydantic` so `fixture_mod`'s own import resolves.
+    (tmp_path / "pyproject.toml").write_text(
+        textwrap.dedent(
+            """
+            [project]
+            name = "flagcov-fixture"
+            version = "0.0.1"
+            requires-python = ">=3.11"
+            dependencies = ["pydantic"]
+
+            [tool.uv]
+            package = false
+            """
+        )
+    )
     return tmp_path
 
 
@@ -169,7 +189,10 @@ class TestFlagCoverageGate:
         violations = flag_coverage_gate(tmp_path)
         assert len(violations) == 1
         assert violations[0].severity == Severity.UNRESOLVED
-        assert "could not resolve parser=" in violations[0].message
+        assert "parser=" in violations[0].message
+        assert (
+            "failed to resolve in its own project environment" in violations[0].message
+        )
 
     # frob:tests src/frob/gates/_flag_coverage.py::flag_coverage_gate kind="unit"
     def test_non_callable_non_set_forwarded_is_unresolved(self, tmp_path: Path) -> None:
@@ -191,4 +214,71 @@ class TestFlagCoverageGate:
         violations = flag_coverage_gate(tmp_path)
         assert len(violations) == 1
         assert violations[0].severity == Severity.UNRESOLVED
-        assert "not a frozenset" in violations[0].message
+        assert "forwarded=" in violations[0].message
+        assert "not a set" in violations[0].message
+
+    # frob:tests src/frob/gates/_flag_coverage.py::flag_coverage_gate kind="unit"
+    def test_project_dependency_not_in_frobs_own_interpreter_still_resolves(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3887's own off-repo doctrine, applied directly: `fixture_mod`
+        here imports `cattrs` at module scope -- a real package NOT
+        installed in frob's own interpreter (verified in this same test,
+        not assumed) but declared as this fixture project's own
+        dependency. Pre-T-4147, `resolve_dotted_symbol`'s plain
+        `importlib.import_module` ran in frob's interpreter and this would
+        have failed with ImportError, reporting UNRESOLVED forever. Post-
+        T-4147, the resolver spawns inside the fixture project's own `uv
+        run --project` environment, where `cattrs` genuinely is installed
+        -- a MEASURED, clean pass proves the fix, not merely that some
+        `pytest` in this repo's own env still exercises the code path."""
+        import importlib.util
+
+        assert importlib.util.find_spec("cattrs") is None, (
+            "cattrs must NOT be importable from frob's own interpreter for "
+            "this test to prove anything -- if this fails, frob's own "
+            "dependency set changed and this fixture needs a different "
+            "marker package"
+        )
+        _write_fixture_project(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            textwrap.dedent(
+                """
+                [project]
+                name = "flagcov-fixture"
+                version = "0.0.1"
+                requires-python = ">=3.11"
+                dependencies = ["pydantic", "cattrs"]
+
+                [tool.uv]
+                package = false
+                """
+            )
+        )
+        (tmp_path / "fixture_mod.py").write_text(
+            textwrap.dedent(
+                """
+                import argparse
+                import cattrs  # noqa: F401 -- proves this module resolved in ITS OWN env
+                from pydantic import BaseModel
+
+                class FixtureConfig(BaseModel):
+                    model_config = {}
+                    known_flag: bool = False
+                    dropped_flag: bool = False
+
+                def build_parser():
+                    p = argparse.ArgumentParser(prog="fixture")
+                    p.add_argument("--known-flag", dest="known_flag", action="store_true")
+                    p.add_argument(
+                        "--dropped-flag", dest="dropped_flag", action="store_true"
+                    )
+                    return p
+
+                def forwarded_fields():
+                    return frozenset({"known_flag", "dropped_flag"})
+                """
+            )
+        )
+        violations = flag_coverage_gate(tmp_path)
+        assert violations == ()

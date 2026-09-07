@@ -1,7 +1,7 @@
 ---
 id: T-4147
 title: route FLAGCOV001 parser import through the target project's own interpreter
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -47,6 +47,10 @@ scope_changes:
     as a known pre-existing SCOPE002 condition instead'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_project_dependency_not_in_frobs_own_interpreter_still_resolves
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_now_fire_reports_the_genuinely_dropped_flag
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_this_repos_own_frob_toml_reports_zero
 designated_repro_test: null
 threat: null
 component: null
