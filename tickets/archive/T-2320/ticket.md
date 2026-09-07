@@ -49,7 +49,7 @@ evidence:
 - tests/unit/test_check.py::TestRunRuffSplitSkip::test_skip_format_runs_only_check
 - tests/unit/test_check.py::TestRunRuffSplitSkip::test_skip_both_returns_empty
 - tests/unit/test_check.py::TestRunRuffSplitSkip::test_neither_skipped_runs_both_unchanged
-- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
 - tests/unit/test_check.py::TestRunRuffAutofix::test_missing_binary_yields_two_typed_results
 - tests/unit/test_check.py::TestRunRuffAutofix::test_kill_switch_disabled_yields_two_typed_results
 - tests/unit/test_check.py::TestRunRuffAutofix::test_check_fix_nonzero_exit_still_runs_format
@@ -61,6 +61,13 @@ evidence:
 - tests/unit/test_check.py::TestRuffFixModeDispatch::test_unavailable_tool_exits_nonzero
 - tests/unit/test_check.py::TestRuffFixModeDispatch::test_remaining_lint_violations_do_not_fail_the_command
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
+  new_node: tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
+  reason: 'T-4125: renamed to reflect the corrected project_tool_argv routing (T-3019''s
+    bare-ruff choice superseded); same assertion coverage, new test name'
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

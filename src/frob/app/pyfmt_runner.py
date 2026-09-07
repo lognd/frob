@@ -37,6 +37,7 @@ from frob.app.config import AppConfig
 from frob.check._python import _run_ruff, _run_ruff_autofix
 from frob.logging import get_logger
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
+from frob.process._project_tool import project_tool_argv
 from frob.process.parsers.common import (
     ToolResult,
     tool_disabled_result,
@@ -194,7 +195,9 @@ def _run_ruff_check_fix_select_imports(root: Path) -> ToolResult:
     `_run_ruff_autofix`'s own handling of its first stage."""
     try:
         run_result = guarded_subprocess_run(
-            ["uv", "run", "ruff", "check", "--fix", "--select", "I", str(root)],
+            project_tool_argv(
+                root, "ruff", "check", "--fix", "--select", "I", str(root)
+            ),
             capture_output=True,
             text=True,
         )
@@ -223,7 +226,7 @@ def _run_ruff_check_select_imports_no_fix(root: Path) -> ToolResult:
     T-3906's `--check` gap for the `--select-imports-only` scope."""
     try:
         run_result = guarded_subprocess_run(
-            ["ruff", "check", "--select", "I", str(root)],
+            project_tool_argv(root, "ruff", "check", "--select", "I", str(root)),
             capture_output=True,
             text=True,
         )
@@ -250,7 +253,9 @@ def _ruff_format_write_only(root: Path) -> list[ToolResult]:
     failure handling as `_run_ruff_autofix`'s second stage."""
     try:
         run_result = guarded_subprocess_run(
-            ["uv", "run", "ruff", "format", str(root)], capture_output=True, text=True
+            project_tool_argv(root, "ruff", "format", str(root)),
+            capture_output=True,
+            text=True,
         )
     except FileNotFoundError:
         return [tool_unavailable_result("ruff-format-write", "ruff")]
@@ -279,7 +284,9 @@ def _ruff_format_check_only(root: Path) -> ToolResult:
     `--check` gap for that scope."""
     try:
         run_result = guarded_subprocess_run(
-            ["ruff", "format", "--check", str(root)], capture_output=True, text=True
+            project_tool_argv(root, "ruff", "format", "--check", str(root)),
+            capture_output=True,
+            text=True,
         )
     except FileNotFoundError:
         return tool_unavailable_result("ruff-format", "ruff")

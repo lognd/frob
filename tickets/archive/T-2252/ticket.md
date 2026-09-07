@@ -41,9 +41,16 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
 - tests/unit/test_check.py::TestRunRuffRealPaths::test_success_parses_ruff_json_and_appends_format_result
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+  new_node: tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
+  reason: 'T-4125: renamed to reflect the corrected project_tool_argv routing (T-3019''s
+    bare-ruff choice superseded); same assertion coverage, new test name'
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

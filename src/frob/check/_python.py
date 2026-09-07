@@ -28,6 +28,7 @@ from frob.process._guard import (
     ProcessGuardError,
     guarded_subprocess_run,
 )
+from frob.process._project_tool import project_tool_argv
 from frob.process.parsers.common import (
     Diagnostic,
     Severity,
@@ -114,11 +115,15 @@ def _run_ruff(
     failing ToolResult for each requested stage, never a raw
     FileNotFoundError.
 
-    T-2252/T-3019: a bare `ruff` argv, not `uv run ruff` -- the latter
-    resolves its "project" from the subprocess cwd (the project BEING
-    CHECKED) and silently creates an untracked `uv.lock` there; frob's own
-    `bin/` is already on `PATH` for children, so the bare call still
-    resolves the identical pinned version.
+    T-2252/T-3019 previously chose a bare `ruff` argv here on the theory
+    that frob's own `bin/` on `PATH` already resolved the identical
+    pinned version for children -- T-4125 measured that theory false: a
+    bare name resolves whatever is FIRST on PATH, which is not
+    necessarily frob's pin and is never the checked PROJECT's own
+    version. `project_tool_argv` (T-3887/T-4125) resolves `ruff` through
+    `uv run --project <root>` instead, scoped explicitly to `root` so it
+    does not depend on the subprocess cwd the way an unscoped `uv run
+    ruff` would -- the untracked-`uv.lock` hazard T-3019 was avoiding.
 
     T-2320: `skip_check`/`skip_format` let a caller run just one of the
     two sub-invocations (the split `--skip-ruff-check`/`--skip-ruff-
@@ -133,7 +138,9 @@ def _run_ruff(
     if not skip_check:
         try:
             run_result = guarded_subprocess_run(
-                ["ruff", "check", "--output-format", "json", str(root)],
+                project_tool_argv(
+                    root, "ruff", "check", "--output-format", "json", str(root)
+                ),
                 capture_output=True,
                 text=True,
             )
@@ -161,15 +168,14 @@ def _ruff_format_result(root: Path) -> ToolResult:
     """The `ruff format --check` outcome as one ToolResult, or a typed
     failure (T-0142) if `ruff` is not on PATH.
 
-    T-2252/T-3019: invoked as a bare `ruff` binary (not `uv run ruff`),
-    matching `_run_ruff`'s own T-3019 reasoning above -- both
-    sub-invocations must agree on which `ruff` they are running, and
-    neither may route through `uv run` against the TARGET project's own
-    cwd (the untracked-`uv.lock`-creation hazard `_run_ruff`'s docstring
-    documents)."""
+    T-3887/T-4125: routed through `project_tool_argv` (`uv run --project
+    <root> ruff ...`), matching `_run_ruff`'s own updated reasoning above
+    -- both sub-invocations must agree on which `ruff` they are running,
+    and it must be the CHECKED PROJECT's own pinned version, not
+    whatever a bare name resolves to on PATH."""
     try:
         run_result = guarded_subprocess_run(
-            ["ruff", "format", "--check", str(root)],
+            project_tool_argv(root, "ruff", "format", "--check", str(root)),
             capture_output=True,
             text=True,
         )
@@ -236,17 +242,17 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
 
     T-2252/T-3019: invoked as a bare `ruff` binary (not `uv run ruff`),
     same reasoning as `_run_ruff`/`_ruff_format_result` -- both stages
-    must agree on which `ruff` is doing the rewrite, and `uv run ruff`
-    against the target project's own cwd silently creates an untracked
-    `uv.lock` there as a resolution side effect (see `_run_ruff`'s T-3019
-    docstring). A missing `ruff` binary (T-0142) is a typed failing
+    must agree on which `ruff` is doing the rewrite, and it must be the
+    checked project's own pinned version (`project_tool_argv`, T-3887/
+    T-4125) rather than whatever a bare name resolves to on PATH. A
+    missing `ruff` binary (T-0142) is a typed failing
     ToolResult for both stages, never a raw FileNotFoundError; the second
     stage still runs even if the first fails to invoke, so a caller sees
     the real state of both rather than a short-circuited guess."""
     out: list[ToolResult] = []
     try:
         run_result = guarded_subprocess_run(
-            ["ruff", "check", "--fix", str(root)],
+            project_tool_argv(root, "ruff", "check", "--fix", str(root)),
             capture_output=True,
             text=True,
         )
@@ -267,7 +273,7 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
             )
     try:
         format_result = guarded_subprocess_run(
-            ["ruff", "format", str(root)],
+            project_tool_argv(root, "ruff", "format", str(root)),
             capture_output=True,
             text=True,
         )
@@ -358,7 +364,7 @@ def _ty_base_cmd(root: Path) -> tuple[list[str], Path]:
     `root` regardless of what ancestor directories contain, independent of
     a `ty.toml`."""
     scan = root if root.is_dir() else root.parent
-    cmd = ["ty", "check", str(root)]
+    cmd = project_tool_argv(scan, "ty", "check", str(root))
     src_dir = scan / "src"
     if src_dir.is_dir():
         cmd += ["--extra-search-path", str(src_dir.resolve())]

@@ -49,6 +49,10 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_lock.py::portable_flock_release -->
 <!-- frob:describes src/frob/process/_lock.py::lock_backend_available -->
 <!-- frob:describes src/frob/process/_derived_lock.py::DerivedStateLockUnavailable -->
+<!-- frob:describes src/frob/process/_project_tool.py::ProjectToolError -->
+<!-- frob:describes src/frob/process/_project_tool.py::project_tool_argv -->
+<!-- frob:describes src/frob/process/_project_tool.py::ToolIdentity -->
+<!-- frob:describes src/frob/process/_project_tool.py::resolve_project_tool -->
 
 ```python
 # frob/process/parsers/common.py -- the shared result shapes every parser below produces
@@ -599,6 +603,57 @@ the kind of code the 4-point bisect above is built to implicate or
 clear.
 
 <!-- frob:invariant INV-019 -->
+
+## Project-scoped toolchain spawns (T-3887/T-4125)
+
+<!-- frob:describes src/frob/vet/_bare_toolchain.py::BareToolchainFinding -->
+<!-- frob:describes src/frob/vet/_bare_toolchain.py::bare_toolchain_findings -->
+<!-- frob:describes src/frob/gates/_bare_toolchain.py::bare_toolchain_gate -->
+
+`frob.process._project_tool` is the ONE mechanism every project-toolchain
+spawn (`ty`, `ruff`, `pytest`, ...) routes through, so the binary that
+actually runs is always resolved from the CHECKED PROJECT's own `uv`-
+managed environment -- never a bare name resolving through whatever the
+spawning process's own PATH happens to hold.
+
+T-4125 measured the defect this closes directly in this repo: a bare
+`["ty", "check", ...]` argv in the land's pre-land type-check stage
+resolved via PATH to a globally installed `ty` (0.0.58) while this
+project's own venv pinned `ty` 0.0.46 -- so a land refused a ticket on
+findings from a checker version the project neither uses nor pins. A
+consumer independently reported the identical defect in the OPPOSITE
+version direction, which is why the fix never compares versions or
+assumes a direction: it simply never lets a bare name resolve at all.
+
+```python
+# frob/process/_project_tool.py -- one project-scoped tool spawn mechanism
+def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
+    ...  # ["uv", "run", "--project", str(root), tool, *args]
+
+def resolve_project_tool(
+    root: Path, tool: str
+) -> Result[ToolIdentity, ProjectToolError]:
+    ...  # resolved absolute path + `--version` output, from INSIDE root's env
+```
+
+`project_tool_argv(root, tool, *args)` is the only correct argv shape --
+`frob.check._python`'s `_run_ruff`/`_ruff_format_result`/
+`_run_ruff_autofix`/`_ty_base_cmd`, `frob.app.pyfmt_runner`'s four ruff
+call sites, and `frob.app.ticket_runner._land_cmd`'s `_ty_check_files`/
+`_ruff_check_files` all route through it now. `resolve_project_tool`
+additionally names the RESOLVED binary path and version for a caller
+that needs to put that in a diagnostic message -- the land's pre-land
+type-check refusal (`_assert_touched_files_type_check_pre_land`) does
+exactly this, so a refusal names not just each error's file/line/text
+but which `ty` binary produced them.
+
+`frob.gates._bare_toolchain.bare_toolchain_gate` (BARETOOL001, WARN-tier)
+is the regrowth guard: an AST scan (`frob.vet._bare_toolchain`) over
+every git-tracked `.py` file for a `List`/`Tuple` literal whose first
+element is a hardcoded bare toolchain name (`ty`/`ruff`/`pytest`/`mypy`/
+`black`/`isort`/`pyright`) -- catching both a literal built directly at
+a spawn call site and one built into an intermediate `cmd =` variable
+several lines earlier (T-4125's own measured `_land_cmd.py` shape).
 
 ## Derived-state lock (T-0859)
 

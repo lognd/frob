@@ -20,12 +20,13 @@ scope:
 - src/frob/app/pyfmt_runner.py
 - src/frob/gates/_bare_toolchain.py
 - tests/unit/test_project_tool.py
-- tests/unit/test_bare_toolchain.py
 - tests/unit/test_pyfmt_runner.py
 - tests/unit/check/test_python_runners.py
 - docs/modules/process.md
 - docs/modules/check.md
 - tests/unit/test_check.py
+- src/frob/vet/_bare_toolchain.py
+- tests/unit/vet/test_bare_toolchain.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -108,6 +109,31 @@ scope_changes:
     project_tool_argv routing instead'
   actor: logan
   at: '2026-09-07'
+- op: remove
+  glob: tests/unit/test_bare_toolchain.py
+  reason: 'T-3887/T-4125: fix path -- the finder module and its test live under vet/,
+    not directly under src/frob or tests/unit; the earlier --add of these paths failed
+    atomically due to an unrelated gates/__init__.py lease conflict'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/vet/_bare_toolchain.py
+  reason: 'T-3887/T-4125: fix path -- the finder module and its test live under vet/,
+    not directly under src/frob or tests/unit; the earlier --add of these paths failed
+    atomically due to an unrelated gates/__init__.py lease conflict'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/vet/test_bare_toolchain.py
+  reason: 'T-3887/T-4125: fix path -- the finder module and its test live under vet/,
+    not directly under src/frob or tests/unit; the earlier --add of these paths failed
+    atomically due to an unrelated gates/__init__.py lease conflict'
+  actor: logan
+  at: '2026-09-07'
+evidence:
+- tests/unit/test_project_tool.py::TestResolveProjectTool::test_ok_resolves_path_and_version
+- tests/unit/vet/test_bare_toolchain.py::TestBareToolchainFindings::test_clean_on_project_tool_argv_spelling
+- tests/unit/vet/test_bare_toolchain.py::TestBareToolchainGate::test_clean_on_project_tool_argv_spelling
 designated_repro_test: null
 threat: null
 component: null

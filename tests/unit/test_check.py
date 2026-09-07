@@ -2030,26 +2030,28 @@ class TestRunRuffRealPaths:
         assert not results[1].passed
 
     # frob:ticket T-3019
-    def test_invokes_pinned_ruff_via_uv_run_not_bare_ruff(
+    # frob:ticket T-3887
+    # frob:ticket T-4125
+    def test_invokes_ruff_via_project_tool_argv_not_bare_ruff(
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestRunRuffRealPaths.test_invokes_pinned_ruff_via_u\
-        # v_run_not_bare_ruff
-        """T-3019 (MUST FAIL FIRST on the pre-fix `uv run ruff` shape):
-        `uv run ruff <target>` resolves `uv`'s "project" from the
-        subprocess's cwd -- the project BEING CHECKED, not frob's own
-        installation -- and silently creates an untracked `uv.lock`/
-        `*.egg-info/` there as a side effect when that project has none
-        yet, which PRE001/SCOPE001 then report as a spurious diff on an
-        otherwise clean project. `_run_ruff` must invoke a bare `ruff`
-        (matching `_run_ty`'s own convention), never `uv run ruff`, for
-        both the ruff-check and ruff-format subprocess invocations. T-2252
-        (superseded by this ticket's fix): the pinned-version guarantee
-        that originally motivated `uv run ruff` still holds under a bare
-        call, since `frob` itself always runs from within its own
-        resolved environment with that environment's `bin/` already on
-        `PATH`."""
+        # tests/unit/test_check.py::TestRunRuffRealPaths.test_invokes_ruff_via_project_\
+        # tool_argv_not_bare_ruff
+        """T-4125 SUPERSEDES T-3019's bare-`ruff` choice: T-3019 avoided
+        `uv run ruff` because an UNSCOPED `uv run ruff <target>` resolves
+        its "project" from the subprocess cwd and can silently create an
+        untracked `uv.lock`/`*.egg-info/` there. T-4125 measured T-3019's
+        own bare-name fix as a DIFFERENT real defect: a bare `ruff` argv
+        resolves through the SPAWNING process's own PATH, which is not
+        necessarily the CHECKED project's own pinned version (confirmed
+        directly in this repo for `ty`, at a different call site, and
+        independently by a consumer in the opposite version direction).
+        `_run_ruff` must now invoke `project_tool_argv(root, "ruff",
+        ...)` -- `uv run --project <root> ruff ...`, EXPLICITLY scoped to
+        `root` rather than the subprocess cwd, which is what closes
+        T-3019's original untracked-lockfile hazard while still routing
+        through the project's own resolved environment."""
         from typani import Ok
 
         import frob.check._python as python_mod
@@ -2067,8 +2069,8 @@ class TestRunRuffRealPaths:
         assert len(results) == 2
         assert len(seen_argvs) == 2, seen_argvs
         for argv in seen_argvs:
-            assert argv[0] == "ruff", argv
-            assert argv[:2] != ["uv", "run"], argv
+            assert argv[:4] == ["uv", "run", "--project", str(tmp_path)], argv
+            assert argv[4] == "ruff", argv
 
 
 # frob:ticket T-2320
@@ -2293,12 +2295,16 @@ class TestRunRuffAutofix:
     """`_run_ruff_autofix` (T-2320): the genuine `ruff check --fix` +
     `ruff format` WRITE pass, distinct from the Tier-A/B/C fixers."""
 
-    def test_success_runs_fix_then_format_via_uv_run(
+    def test_success_runs_fix_then_format_via_project_tool_argv(
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests src/frob/check/_python.py::_run_ruff_autofix kind="unit"
-        # T-3019: bare `ruff` argv, never `uv run ruff` (see _run_ruff's
-        # T-3019 docstring for the untracked-uv.lock hazard this avoids).
+        # T-3887/T-4125: routed through project_tool_argv (`uv run --project
+        # <root> ruff ...`), never a bare `ruff` (T-4125's measured defect:
+        # a bare name resolves the SPAWNING process's PATH, not the checked
+        # project's own pinned version) nor an unscoped `uv run ruff` (the
+        # untracked-uv.lock hazard T-3019 originally avoided -- closed here
+        # by `--project <root>` being explicit rather than cwd-derived).
         from typani import Ok
 
         import frob.check._python as python_mod
@@ -2314,8 +2320,9 @@ class TestRunRuffAutofix:
         assert [r.tool for r in results] == ["ruff-check-fix", "ruff-format-write"]
         assert all(r.exit_code == 0 for r in results)
         assert len(seen_argvs) == 2
-        assert seen_argvs[0] == ["ruff", "check", "--fix", str(tmp_path)]
-        assert seen_argvs[1] == ["ruff", "format", str(tmp_path)]
+        prefix = ["uv", "run", "--project", str(tmp_path)]
+        assert seen_argvs[0] == [*prefix, "ruff", "check", "--fix", str(tmp_path)]
+        assert seen_argvs[1] == [*prefix, "ruff", "format", str(tmp_path)]
 
     def test_missing_binary_yields_two_typed_results(
         self, tmp_path: Path, monkeypatch

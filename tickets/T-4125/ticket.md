@@ -2,7 +2,7 @@
 id: T-4125
 title: a land refused on type errors reproducible in no tree the operator can inspect,
   reporting a bare count with no lines and no statement of which tree it checked
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -50,18 +50,31 @@ body_changes:
   at: '2026-09-07'
   old_length: 3984
   new_length: 8427
+evidence:
+- tests/unit/test_project_tool.py::TestProjectToolArgv::test_shape
+- tests/unit/vet/test_bare_toolchain.py::TestBareToolchainFindings::test_flags_bare_argv_literal
+- tests/unit/vet/test_bare_toolchain.py::TestBareToolchainGate::test_flags_bare_argv_literal
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
+- tests/unit/test_pyfmt_runner.py::TestRun::test_default_delegates_to_run_ruff_autofix
+- tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_genuinely_new_finding_still_refuses
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error
+- tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_pre_existing_finding_that_merely_shifted_lines_does_not_refuse
 designated_repro_test: null
 acceptance:
 - text: given a land refused by the type stage, when the refusal is printed, then
     it names each error's file, line and text, plus which tree was checked and the
     commit it was composed against
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error
 - text: given a genuine new type error in the ticket's own touched files, when the
     land runs, then it is still refused
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_genuinely_new_finding_still_refuses
 - text: given a type error present before the merge with the target branch but absent
     after it, when the land runs, then the land is not refused
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_pre_existing_finding_that_merely_shifted_lines_does_not_refuse
 threat: null
 component: null
 anchor: false

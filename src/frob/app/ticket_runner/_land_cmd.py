@@ -46,6 +46,7 @@ from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
+from frob.process._project_tool import project_tool_argv, resolve_project_tool
 from frob.tickets._land_git_ops import _describe_git_failure, _land_internal_git_env
 from frob.tickets._leases import refuse_if_worktree_in_use
 
@@ -4044,7 +4045,7 @@ def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
 
     from frob.process.parsers import parse_ty
 
-    cmd = ["ty", "check", *py_files]
+    cmd = project_tool_argv(worktree, "ty", "check", *py_files)
     src_dir = worktree / "src"
     if src_dir.is_dir():
         cmd += ["--extra-search-path", str(src_dir.resolve())]
@@ -4244,7 +4245,16 @@ def _assert_touched_files_type_check_pre_land(
     worktree failed, `ty` could not run there), this degrades to the
     pre-T-3116 file-scoped behavior rather than silently waiving
     everything -- an unmeasurable baseline is not license to treat every
-    current finding as pre-existing."""
+    current finding as pre-existing.
+
+    T-4125: the refusal message names each new error's file, line and
+    text (`Diagnostic.as_text()`), the exact worktree path and commit
+    the check ran against, and the RESOLVED `ty` binary path and version
+    (`resolve_project_tool`) -- the diagnostic gap the original report
+    identified was a refusal naming only a count, produced by a `ty`
+    resolved via a bare PATH lookup that could differ in version from
+    the project's own pinned one (`_ty_check_files` now spawns through
+    `project_tool_argv`, never a bare `ty`)."""
     py_files = _touched_py_files(worktree, touched_paths)
     if not py_files:
         return
@@ -4281,17 +4291,49 @@ def _assert_touched_files_type_check_pre_land(
             len(errors),
         )
         return
+    _refuse_touched_files_type_check(worktree, ticket_id, new_errors)
+
+
+# frob:ticket T-4125
+def _refuse_touched_files_type_check(
+    worktree: Path, ticket_id: str, new_errors: list
+) -> None:  # noqa: ANN001
+    """`sys.exit(1)` with the T-4125 refusal message for `_assert_
+    touched_files_type_check_pre_land`: each new error's file/line/text
+    (`Diagnostic.as_text()`), the exact worktree and commit the check
+    ran against, and the RESOLVED `ty` binary path/version
+    (`resolve_project_tool`) -- split out of the caller purely to keep
+    that function under ARCH001's length threshold (T-2214), zero
+    behavior change."""
+    head_result = run_argv(["git", "-C", str(worktree), "rev-parse", "HEAD"])
+    head_sha = (
+        head_result.danger_ok.stdout.strip()
+        if head_result.is_ok and head_result.danger_ok.returncode == 0
+        else "<unresolved HEAD>"
+    )
+    tool_identity = resolve_project_tool(worktree, "ty")
+    tool_desc = (
+        tool_identity.danger_ok.describe()
+        if tool_identity.is_ok
+        else f"<unresolved: {tool_identity.danger_err}>"
+    )
+    findings_text = "\n".join(f"  {d.as_text()}" for d in new_errors)
     _log.error(
         "ticket land: %s refused -- `ty check` found %d NEW error(s) in "
-        "this ticket's own touched file(s) (%s); a scoped `frob check "
-        "--only ty`/`frob check` re-run before retrying `frob ticket land "
-        "%s` names the exact line(s) (T-1907: this family is not relaxed "
-        "by the rapid profile; T-3116: pre-existing findings that did not "
-        "worsen are excluded)",
+        "this ticket's own touched file(s), checked against the WORKTREE "
+        "%s at commit %s using %s (T-4125: the resolved tool path and "
+        "version are named here specifically so this refusal is "
+        "reproducible by hand -- run the identical `ty check` through "
+        "that exact binary, not whatever a bare `ty` resolves to on your "
+        "own PATH):\n%s\n"
+        "(T-1907: this family is not relaxed by the rapid profile; "
+        "T-3116: pre-existing findings that did not worsen are excluded)",
         ticket_id,
         len(new_errors),
-        ", ".join(sorted({d.file for d in new_errors})),
-        ticket_id,
+        worktree,
+        head_sha,
+        tool_desc,
+        findings_text,
     )
     sys.exit(1)
 
@@ -4303,11 +4345,14 @@ def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
     `worktree` and return its parsed `ToolResult`, or `None` if the spawn
     itself could not run (no `ruff` binary, or it hung past the timeout).
     Mirrors `_ty_check_files`'s exact shape one function up in this same
-    module -- bare `ruff` argv per `frob.check._python._run_ruff`'s own
-    T-2252/T-3019 note (frob's `bin/` is already on `PATH` for children,
-    so `uv run ruff` is unnecessary and would create an untracked
-    `uv.lock` in the checked repo), scoped to explicit touched files
-    rather than a whole-root run since this is a touched-set check.
+    module -- routed through `project_tool_argv` (T-3887/T-4125: `uv run
+    --project <worktree> ruff ...`) rather than a bare `ruff` argv, so
+    the version that runs is THIS worktree's own pinned `ruff`, not
+    whatever a bare name resolves to on the land process's PATH (T-4125's
+    measured defect: a bare `ty` invocation two functions up refused a
+    land on a PATH-resolved checker version the project neither uses nor
+    pins) -- scoped to explicit touched files rather than a whole-root
+    run since this is a touched-set check.
 
     T-3061: this is the fix for a real incident -- `[profile]
     override_ratchet = true` (T-1681) turns off the T-1514 pre-commit
@@ -4324,7 +4369,9 @@ def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
 
     from frob.process.parsers import parse_ruff_json
 
-    cmd = ["ruff", "check", "--output-format", "json", *py_files]
+    cmd = project_tool_argv(
+        worktree, "ruff", "check", "--output-format", "json", *py_files
+    )
     try:
         proc = subprocess.run(
             cmd,

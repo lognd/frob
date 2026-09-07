@@ -106,8 +106,8 @@ triage_changes:
 evidence:
 - tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_root_pyproject_and_frob_toml_are_exempt_with_no_declaration
 - tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_nested_pyproject_toml_still_subject_to_ref001
-- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
-- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
 - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
 - tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
 designated_repro_test: null
@@ -124,6 +124,18 @@ evidence_changes:
     T-2320
   actor: logan
   at: '2026-08-26'
+- old_node: tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+  new_node: tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_ruff_via_project_tool_argv_not_bare_ruff
+  reason: 'T-4125: renamed to reflect the corrected project_tool_argv routing (T-3019''s
+    bare-ruff choice superseded); same assertion coverage, new test name'
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
+  new_node: tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_project_tool_argv
+  reason: 'T-4125: renamed to reflect the corrected project_tool_argv routing (T-3019''s
+    bare-ruff choice superseded); same assertion coverage, new test name'
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

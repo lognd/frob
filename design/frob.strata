@@ -1318,7 +1318,10 @@ node vet : trusted {
     may "ffi" via "src/frob/vet/_popular_pypi.py";
     // T-3029: `_source.py`'s shared `read_text_or_none`-shaped helper
     // (T-2378's de-duplicated copy) is a real, new fs.read site.
-    may "fs.read" via "src/frob/vet/_allow.py", "src/frob/vet/_closedworld.py", "src/frob/vet/_containment.py", "src/frob/vet/_ecosystem.py", "src/frob/vet/_lifecycle.py", "src/frob/vet/_lockfile.py", "src/frob/vet/_obfuscation.py", "src/frob/vet/_scan.py", "src/frob/vet/_source.py", "src/frob/vet/_supplychain.py", "src/frob/vet/_taint.py";
+    // T-3887/T-4125: bare_toolchain_findings reads the target .py file's
+    // source text to AST-parse it for a hardcoded bare toolchain-name
+    // argv literal (BARETOOL001's regrowth guard).
+    may "fs.read" via "src/frob/vet/_allow.py", "src/frob/vet/_closedworld.py", "src/frob/vet/_containment.py", "src/frob/vet/_ecosystem.py", "src/frob/vet/_lifecycle.py", "src/frob/vet/_lockfile.py", "src/frob/vet/_obfuscation.py", "src/frob/vet/_scan.py", "src/frob/vet/_source.py", "src/frob/vet/_supplychain.py", "src/frob/vet/_taint.py", "src/frob/vet/_bare_toolchain.py";
     may "install-hook" via "src/frob/vet/_ecosystem.py";
     may "net" via "src/frob/vet/_popular_npm.py";
     attr flag=frob_vet_net_kill_switch;
@@ -1562,6 +1565,14 @@ node testsuite : trusted {
     // so the T-1439-incident waive clause this comment used to carry is
     // removed in favor of an honest `may` declaration below.
     may "process-control" via "tests/conftest.py", "tests/test_serve_socket.py";
+    // T-3887/T-4125: TestResolveProjectTool patches guarded_subprocess_run
+    // itself (no real spawn), but its call sites still lexically match the
+    // exec-capability scanner; TestBareToolchainFindings/TestFlagsBareArgv*
+    // construct string literals containing "subprocess.run(...)" as FIXTURE
+    // TEXT for the AST finder under test to parse (never actually executed,
+    // same disclosed shape as test_wire001_multiprocessing_target.py's
+    // T-3576 fixture-literal note above).
+    may "exec" via "tests/unit/test_project_tool.py", "tests/unit/vet/test_bare_toolchain.py";
     // T-3516: tests/conftest.py's worker-crash marker (pytest_runtest_
     // logstart/logfinish, T-3516) writes/removes .frob/xdist-crash-marker/
     // <workerid>.json; tests/unit/test_conftest_stackdump.py's own
@@ -1579,7 +1590,7 @@ node testsuite : trusted {
     // T-4000: TestEvidenceCmdCwdFlag writes a real marker.txt under a
     // tmp_path subdirectory to prove --evidence-cmd --cwd runs against
     // the named subdirectory, not the ticket root.
-    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_advisories.py", "tests/vet_suite/test_capability_scan_c.py", "tests/vet_suite/test_capability_scan_cpp.py", "tests/vet_suite/test_capability_scan_embedded.py", "tests/vet_suite/test_capability_scan_kotlin.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_capability_scan_rust.py", "tests/vet_suite/test_capability_scan_ts.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_lockfile.py", "tests/vet_suite/test_opaque_indirection.py", "tests/vet_suite/test_scan_tree.py", "tests/vet_suite/test_supply_chain.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_check_summary.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_land.py", "tests/unit/coordinator_suite/test_fleet_report.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/gates/test_win32_kill_signal.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py", "tests/test_tickets_evidence_removal.py";
+    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_advisories.py", "tests/vet_suite/test_capability_scan_c.py", "tests/vet_suite/test_capability_scan_cpp.py", "tests/vet_suite/test_capability_scan_embedded.py", "tests/vet_suite/test_capability_scan_kotlin.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_capability_scan_rust.py", "tests/vet_suite/test_capability_scan_ts.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_lockfile.py", "tests/vet_suite/test_opaque_indirection.py", "tests/vet_suite/test_scan_tree.py", "tests/vet_suite/test_supply_chain.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_check_summary.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_land.py", "tests/unit/coordinator_suite/test_fleet_report.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/gates/test_win32_kill_signal.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py", "tests/test_tickets_evidence_removal.py", "tests/unit/vet/test_bare_toolchain.py";
     // T-3516: _infer_worker_crash_cause reads back its own marker file.
     may "fs.read" via "tests/conftest.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_report.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py";
     // T-3516: TestWorkerCrashReportIntegration spawns a real
