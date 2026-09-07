@@ -2,7 +2,7 @@
 id: T-4267
 title: evidence --replace/--remove is not mirrored to the primary checkout, so frob
   ticket land refuses on stale evidence it already rebound away from
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
