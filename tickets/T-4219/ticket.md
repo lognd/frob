@@ -23,6 +23,7 @@ scope:
 - docs/modules/gates.md
 - docs/design/registry/check-coverage.yaml
 - src/frob/gates/_doclink_docanchor.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -86,6 +87,13 @@ scope_changes:
   reason: 'T-4219: reverted -- using code-level frob:waive SELFAUDIT001 instead of
     expanding the design capability lists, to avoid design/frob.strata''s huge doc-closure
     fan-out'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4219: SELFAUDIT001/SYS100 matches its waiver against design/frob.strata''s
+    own via-list, not code-level frob:waive comments -- declaring the new module/test
+    file''s fs.read/fs.write here is the real fix, same as T-2492''s precedent'
   actor: logan
   at: '2026-09-07'
 body_changes:
