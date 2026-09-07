@@ -1,7 +1,7 @@
 ---
 id: T-4243
 title: Fix three Windows land/lease test failures
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
