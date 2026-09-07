@@ -33,6 +33,12 @@ body_changes:
   at: '2026-09-07'
   old_length: 4440
   new_length: 7620
+- mode: append
+  reason: record fixture-vs-production scoping observation per T-4191 acceptance
+  actor: logan
+  at: '2026-09-07'
+  old_length: 7620
+  new_length: 8297
 designated_repro_test: null
 acceptance:
 - text: given a genuinely uncalled new symbol, when the wiring gate runs, then WIRE001
@@ -179,3 +185,6 @@ THE CONSUMER PAID FOR THIS FINDING TWICE, which is worth noting for priority:
 they restructured working code on a theory the gate's behaviour implied, and the
 restructure bought nothing. A false positive that is also MISLEADING about its
 own cause costs more than one that is merely wrong.
+
+
+OBSERVATION (from T-4191): WIRE001's follow-up requirement (WIRE002) is correct for a production symbol awaiting wiring but wrong for a private per-file test fixture helper -- a fixture will never be wired to production code, so requiring a follow-up ticket for it forces manufacturing a queue entry nobody will ever work. T-4191 pointed such a waiver's follow-up at this ticket instead of inventing one, since this ticket already owns reconsidering WIRE001's subject. This is a scoping question for WIRE002 (or its interaction with WIRE001) worth resolving when this ticket is worked: can the gate distinguish a private test fixture from a production symbol awaiting wiring.
