@@ -21,6 +21,15 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
+- docs/guides/agentic-workflow.md
+- docs/modules/gates.md
+- src/frob/app/ticket_runner/_archive.py
+- src/frob/tickets/_archive.py
+- tests/unit/gates/test_refs.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- src/frob/_cli_parsers/_ticket/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -100,6 +109,87 @@ scope_changes:
     the disproportionate-scope problem the original AFFECT001 waiver on this symbol
     already declined for the same doc -- narrowing back out rather than exploding
     scope'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/guides/agentic-workflow.md
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_archive.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/tickets/_archive.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: 'T-4145: close scope-closure gap SCOPE002 flagged after the closeout split
+    -- pre-existing cross-references (ref_gate''s frob:doc into gates.md, the attach-parser''s
+    doc mention of agentic-workflow.md, existing frob:tests bindings, and the _ticket
+    package''s existing private-helper cross-calls between its per-concern submodules)
+    that predate this ticket but are only now surfaced by scope validation'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
