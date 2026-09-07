@@ -64,6 +64,14 @@ scope_changes:
     frob:doc edge for the new public symbol)'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: 'T-4255: document the SCOPE002 waiver for touching two functions inside
+    large shared _lifecycle.py/_new.py modules'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 2437
+  new_length: 3302
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
 - tests/test_worktree_guard.py::TestApplyAgentEnv::test_child_subprocess_inherits_the_bound
@@ -132,3 +140,17 @@ string is the wrong repair if the vector form is available.
 WHAT ONE FIX LOOKS LIKE. Prefer one mechanism over three local corrections
 wherever two of these share a cause. If they genuinely have three causes, say so
 explicitly in the done report and fix all three.
+
+
+## SCOPE002 waiver (T-4255)
+
+# frob:waive SCOPE002 reason="src/frob/app/ticket_runner/_lifecycle.py and \
+_new.py are large shared CLI-runner modules whose existing frob:doc/frob:tests/ \
+private-helper closure spans dozens of unrelated files (docs/modules/gates.md, \
+docs/modules/tickets*.md, tests/test_tickets*.py, tests/unit/test_app_runners_*.py, \
+and more); T-4255 touches exactly two small functions (_attach's TTY fast-fail, \
+_maybe_attach_clipboard_image's TTY gate) in these files. Pulling every pre-existing \
+closure edge those files already carry into this ticket's scope would be scope creep \
+out of proportion to a 6-line fix, matching the same doc-anchor/closure-tension \
+precedent already documented by T-1010/T-1937/T-3903/T-1895/T-3847's COV001 waivers \
+(see their Done reports) for exactly this shape of finding on a large shared file."
