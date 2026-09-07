@@ -58,6 +58,7 @@ from typani.result import Result
 from frob.excludes import is_test_file
 from frob.gates._arch import arch_gate
 from frob.gates._arch_schema import arch_schema_gate
+from frob.gates._bare_toolchain import bare_toolchain_gate
 from frob.gates._baseline import (
     delta_violations,
     is_baseline_stale,
@@ -6146,6 +6147,13 @@ _ALL_GATES = frozenset(
         # that ticket because this one needs a ticket_id argument.
         "cross_ticket_leakage",
         "archgate",
+        # T-4146: BARETOOL001, WARN-tier first-turn-on regrowth guard for a
+        # bare toolchain-name argv literal (frob.gates._bare_toolchain.
+        # bare_toolchain_gate) -- registered here (and in
+        # _CANONICAL_GATE_ORDER below) so `selected = cfg.gates or
+        # _ALL_GATES` actually includes it on a full run; without this a
+        # `_build_process_jobs` entry alone is unreachable dead wiring.
+        "bare_toolchain",
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
         # indirection obligation (frob.gates._opaque.opaque_gate).
         "opaque",
@@ -6658,6 +6666,7 @@ _PROCESS_POOL_GATES: frozenset[str] = frozenset(
 )
 
 # frob:ticket T-0415
+# frob:ticket T-4146
 # The exact gate-name order `_build_jobs` used to assemble its single dict
 # in, before the CPU-bound subset moved to a second (process) pool. Merging
 # thread-pool and process-pool results back into this fixed order (T-0415)
@@ -6682,6 +6691,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "decisions",
     "sys",
     "secrets",
+    # T-4146: BARETOOL001, same position as its own _ALL_GATES entry above.
+    "bare_toolchain",
     # T-0665: OPAQUE001.
     "opaque",
     "tickets",
@@ -6864,6 +6875,8 @@ _CACHEABLE_PROCESS_GATES: frozenset[str] = frozenset(
         "sys",
         "secrets",
         "taint",
+        # T-4146: BARETOOL001, same tracked-file-scan shape as taint above.
+        "bare_toolchain",
         "opaque",
         "archgate",
         "exhaustive_handling",
@@ -7308,6 +7321,11 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # T-0688 promotion posture) -- repo-writable .git/.frob state
         # reaching a subprocess argv sink with no validator hop or `--`.
         "taint": _ProcessJob(taint_gate, (st.root,)),
+        # T-4146: BARETOOL001, WARN-tier at first turn-on (same opaque_gate/
+        # taint_gate T-0688/T-0973 promotion posture) -- a bare toolchain
+        # name in an argv literal resolves through the spawning process's
+        # own PATH instead of the checked project's own uv-managed env.
+        "bare_toolchain": _ProcessJob(bare_toolchain_gate, (st.root,)),
         # T-0665: OPAQUE001, WARN-tier at first turn-on (see opaque_gate's
         # own docstring for the T-0688/T-0973 promotion precedent this
         # follows) -- same repo-wide tracked-file scan shape as secrets.
