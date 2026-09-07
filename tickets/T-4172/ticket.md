@@ -20,6 +20,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'corrects this ticket against the reporter''s follow-up: their repository
+    had NO stale lease file, and their collision came from the worktree''s own per-branch
+    ledger copy reading in-progress because the close was mirrored only to main. Records
+    both collision paths, keeps the first-party stale-lease finding which stands independently,
+    and records my own unfounded leap from a mechanism confirmed here to a diagnosis
+    of their repo'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4652
+  new_length: 7777
 designated_repro_test: null
 acceptance:
 - text: given a lease file whose ticket state is terminal, when a new ticket with
@@ -115,3 +127,54 @@ ACCEPTANCE
 - Every exit path from IN_PROGRESS enumerated and proven to remove the lease.
 - A supported reclaim path exists that is not manual file deletion.
 - All three fixtures committed.
+
+CORRECTION -- THERE ARE TWO COLLISION PATHS, AND THE REPORTED CASE WAS THE OTHER
+ONE. The reporter checked their git common dir at my suggestion and found NO lease
+file for the ticket named in the refusal. Their collision resolved the moment they
+mirrored main's done copy of that ticket into their worktree and re-ran start.
+
+WHY: their worktree is based on a PARKED BRANCH. The ticket had closed on a
+DIFFERENT parked branch and was mirrored only to main, so the parked branch's own
+`tickets/<id>/ticket.md` still read `state: in-progress`. The collision check read
+THAT copy -- the worktree's own ledger tree -- not the lease directory. The
+refusal named the ticket as in-progress on that basis, and it was telling the
+literal truth about the only ledger it could see.
+
+So the reconciliation this ticket asks for has TWO sources to reconcile, not one:
+
+    1. LEASE FILE vs TICKET STATE
+       (my finding; confirmed first-party by T-3811 holding a lease while
+       its ticket reads queued -- that stale file is real and independent)
+    2. WORKTREE LEDGER COPY vs PRIMARY-CHECKOUT LEDGER
+       (the reporter's actual cause; a per-branch ticket file that is stale
+       relative to main because the close was mirrored elsewhere)
+
+Both produce the identical symptom -- start refuses naming an in-progress ticket
+that reads done everywhere the operator thinks to look -- and both are invisible
+to `frob ticket show` and `frob ticket list` from the primary checkout. A fix for
+either alone leaves the other producing the same dead end.
+
+MY OWN ERROR HERE, RECORDED BECAUSE IT IS THE FOURTH OF THIS SHAPE TODAY: I found
+a real mechanism, confirmed it in THIS repository, and asserted it explained THEIR
+report without any evidence from their repository. The lease-file finding stands
+on its own -- T-3811 is genuinely stale here. What was unfounded was the leap from
+"this mechanism exists and is stale here" to "this is what blocked you there". I
+even gave them a remediation that did not apply. Same pattern as the other three:
+a true local observation promoted to a claim about a system I had not measured.
+
+THIS ALSO MATCHES SOMETHING THIS REPO ALREADY KNOWS AND I DID NOT CONNECT: the
+lease check reads each worktree's OWN ticket file, which is why narrowing a scope
+on main does not reach a worktree that already exists. That is the same
+per-branch-ledger property, seen from the other side. The reporter's case is that
+property plus a close mirrored to only one branch.
+
+REVISED DIRECTION
+  - Reconcile BOTH sources at the collision point, and say which one produced the
+    verdict. A refusal that names an in-progress ticket must also say WHERE it
+    read that state: the lease directory, or this worktree's ledger copy.
+  - For the worktree-ledger case, the honest check is against the primary
+    checkout's view, since that is where a close is mirrored. Determine whether
+    the collision check can consult it, and if not, say why.
+  - Note the two fixes are independent and can land separately. Do not let the
+    simpler lease-file reconciliation close this ticket while the ledger-copy path
+    remains.
