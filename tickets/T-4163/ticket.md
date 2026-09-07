@@ -24,6 +24,10 @@ scope:
 - src/frob/process/_project_tool.py
 - src/frob/gates/_rule_id_scan.py
 - tests/unit/test_project_tool.py
+- docs/design/registry/check-coverage.yaml
+- docs/modules/lang.md
+- docs/modules/process.md
+- src/frob/lang/_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -103,6 +107,54 @@ scope_changes:
   reason: scoping the whole shared doc file pulls every symbol documenting into it
     into SCOPE002 -- narrower than intended, reverting; the new section rides along
     on the code-file scope instead
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/lang.md
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/process.md
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/lang.md
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/process.md
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: docs touched to satisfy AFFECT001/DOCENUM001, registry synced for BARETOOL001,
+    package-audit registration
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
