@@ -45,6 +45,8 @@ scope:
 - src/frob/scaffold/data/types/cpp-tool/tests.cpp.j2
 - tests/unit/test_scaffold_project.py
 - tests/system/test_scaffold_dx.py
+- docs/commands/scaffold.md
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -293,6 +295,20 @@ scope_changes:
   reason: 'revert: src/frob/scaffold package glob opened 97 unrelated scope-closure
     warnings across _pool.py/_managed.py docs; narrowing back to the actual T-3930
     diff'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: close SCOPE002 doc/test edges for project.py pre-existing symbols (ScaffoldError,
+    install_worktree_lease_hook, list_project_types) unrelated to this diff but co-located
+    in the touched file
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: close SCOPE002 doc/test edges for project.py pre-existing symbols (ScaffoldError,
+    install_worktree_lease_hook, list_project_types) unrelated to this diff but co-located
+    in the touched file
   actor: logan
   at: '2026-09-07'
 body_changes:
