@@ -26,6 +26,8 @@ scope:
 - docs/commands/scaffold.md
 - tests/system/test_scaffold_dx.py
 - tests/test_scaffold_worktree_lease_hook.py
+- src/frob/_cli_parsers/_core.py
+- src/frob/scaffold/_managed.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -156,6 +158,18 @@ scope_changes:
   reason: 'T-4132 closure: project.py''s existing frob:doc target (docs/commands/scaffold.md)
     and frob:tests targets (pre-existing coverage this ticket does not modify) must
     be in scope to satisfy scope closure'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_core.py
+  reason: 'T-4132 closure cascade: docs/commands/scaffold.md''s #usage and #managed-blocks-t-0736
+    anchors describe these symbols; declare-only leases, no edits planned'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/_managed.py
+  reason: 'T-4132 closure cascade: docs/commands/scaffold.md''s #usage and #managed-blocks-t-0736
+    anchors describe these symbols; declare-only leases, no edits planned'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
