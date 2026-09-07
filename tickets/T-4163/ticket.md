@@ -14,10 +14,54 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_waive.py
+- src/frob/gates/_bare_toolchain.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_package_audit*.py
+- src/frob/vet/**
+- src/frob/check/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
+    fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_bare_toolchain.py
+  reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
+    fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
+    fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_package_audit*.py
+  reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
+    fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/vet/**
+  reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
+    fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: register BARETOOL001 in known-rules, package audit, exports, stage groups;
+    fix advisory exit-code
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a gate rule literal added without registering it, when a check runs,
