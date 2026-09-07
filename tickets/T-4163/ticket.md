@@ -23,7 +23,6 @@ scope:
 - src/frob/vet/__init__.py
 - src/frob/process/_project_tool.py
 - src/frob/gates/_rule_id_scan.py
-- docs/modules/gates.md
 - tests/unit/test_project_tool.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -97,6 +96,13 @@ scope_changes:
 - op: add
   glob: tests/unit/test_project_tool.py
   reason: shape test updated for --no-sync
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: scoping the whole shared doc file pulls every symbol documenting into it
+    into SCOPE002 -- narrower than intended, reverting; the new section rides along
+    on the code-file scope instead
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
