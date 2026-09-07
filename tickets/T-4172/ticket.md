@@ -32,6 +32,16 @@ body_changes:
   at: '2026-09-07'
   old_length: 4652
   new_length: 7777
+- mode: set
+  reason: 'adds a third source of the same state disagreement, on a different gate:
+    a close succeeded in a worktree, that branch''s ledger read done, and the cross-ticket
+    gate scanning that same tree still reported in-progress -- which branch skew cannot
+    explain, making a cached read the leading candidate. Three independent reports
+    now converge on the same requirement: the tool must name which ledger it consulted'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 7777
+  new_length: 9910
 designated_repro_test: null
 acceptance:
 - text: given a lease file whose ticket state is terminal, when a new ticket with
@@ -178,3 +188,39 @@ REVISED DIRECTION
   - Note the two fixes are independent and can land separately. Do not let the
     simpler lease-file reconciliation close this ticket while the ledger-copy path
     remains.
+
+A THIRD SOURCE OF THE SAME DISAGREEMENT, ON A DIFFERENT GATE. logand.app-v2
+F-382: after a close SUCCEEDED in a shared worktree, the cross-ticket gate still
+reported that ticket as in-progress, while THE LEDGER ON THAT SAME BRANCH ALREADY
+READ DONE.
+
+That is distinct from both paths recorded above and it narrows the problem
+usefully:
+
+    path 1  a lease FILE outliving its ticket           (confirmed first-party)
+    path 2  a worktree's per-branch ledger copy stale
+            relative to main                             (the reporter's F-372)
+    path 3  a gate reading a state that disagrees with
+            the ledger IN THE VERY TREE IT IS SCANNING   (this report)
+
+Path 3 cannot be explained by branch skew the way path 2 was. The close landed in
+that worktree, the branch's own ledger says done, and the gate scanning that
+worktree still said in-progress. So something in the read path is consulting a
+different source, or a cached one, from the tree it is nominally examining.
+CACHED STATE IS THE OBVIOUS CANDIDATE and it is testable: this repository has an
+open ticket recording that the gate cache can serve a stale result after the
+underlying file changed, with a measured corruption of the cache database itself.
+Check whether the cross-ticket gate's ticket-state read goes through that cache
+before designing anything.
+
+THEIR ASK IS THE SAME ONE THIS TICKET ALREADY MAKES, ARRIVED AT INDEPENDENTLY:
+the gate should read the state from the same tree it scans, OR SAY WHICH LEDGER IT
+CONSULTED. That is now three separate reports converging on the same requirement.
+It should be treated as the primary acceptance criterion rather than a diagnostic
+nicety: while the tool asserts a ticket state without naming its source, every one
+of these three paths is indistinguishable from the others, and an operator cannot
+tell a stale lease from a branch skew from a cache hit.
+
+RAISE THE FIXTURE COVERAGE ACCORDINGLY: the must-fire set above covers a terminal
+ticket's lease. Add one for a gate whose scanned tree's ledger says done -- it must
+not report in-progress -- and make the message name its source in both cases.
