@@ -2,7 +2,7 @@
 id: T-4207
 title: BUG002/EvidenceConfirmatoryOnly must exempt classes of tickets that structurally
   cannot demonstrate a local red state
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 Consolidates F-324 (a docs-only correction, kind=bug because the doc was wrong, refused as confirmatory-only because the same test passes before and after -- true for every doc-only bug) and F-387/T-0412 (a live-deployment-only prodtest assertion, same refusal, no local repro is possible). Add a kind: docs bug-of-documentation exemption, or exempt tickets whose diff is docs/spec-only or whose only assertion is inherently non-local, instead of a routine hand-waiver every time. Same source file as T-4168 (a different BUG002 detection gap) -- sequence after it to avoid a scope collision, no hard dependency. Fixture-testable: YES.
+
+## Drop reason
+- 2026-09-07: duplicate: T-4168 already covers BUG002/EvidenceConfirmatoryOnly false positives on repro tests that cannot demonstrate a local red state, and was extended today with the live-deployment-only shape (F-387/T-0412). F-324 (docs-only bug refused as confirmatory because the same test passes before/after) is the same mechanism -- a bug-kind ticket that structurally cannot show red-then-green locally. Attach as a third named shape on T-4168 rather than a new leaf. (absorbed by T-4168)
