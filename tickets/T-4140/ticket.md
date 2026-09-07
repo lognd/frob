@@ -19,6 +19,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'records a third consumer report (F-343) and resolves its open disjunction
+    by measurement: drafts are invisible to git status because filing auto-commits
+    them, not because anything hides them -- no draft pattern exists in this checkout''s
+    exclude or ignore files, and filing this ticket produced its own commit. Adds
+    the residual disclosure fix and warns against removing the auto-commit, which
+    exists to prevent half-filed tickets dirtying the shared root'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3745
+  new_length: 6025
 designated_repro_test: null
 acceptance:
 - text: given an agent that files a follow-up ticket mid-work, when the filing ticket's
@@ -100,3 +112,40 @@ ACCEPTANCE
 - The full population of frob-written-on-behalf files enumerated and reported.
 - The hand-edit case proven still caught.
 - All three fixtures committed.
+
+A THIRD REPORT ARRIVED (logand.app-v2 F-343) AND I RESOLVED ITS OPEN QUESTION
+AGAINST THIS REPOSITORY. Their agent ran a status check immediately after filing
+and the new draft file did not appear as untracked, although it existed on disk
+and was committed later by promotion. They offered a disjunction and could not
+settle it: either frob commits the draft immediately, or an exclude entry hides
+it.
+
+MEASURED HERE: IT IS THE FIRST. There is no draft-hiding entry -- this
+checkout's personal git exclude file contains only agent-harness paths, nothing
+under the ledger directory, and the ignore file has no draft pattern either.
+What actually happens is that filing AUTO-COMMITS: the filing verb carries a
+documented flag whose only purpose is to skip that commit, and filing this very
+ticket produced commit 2b866b4e7 with a file-the-ticket message. So the file is
+invisible to a status check because it is already COMMITTED, not because it is
+hidden.
+
+THAT SETTLES THE CAUSAL ORDER FOR THIS TICKET, and it is the reason F-343 is
+recorded here rather than filed separately. The reporter's own conclusion follows
+directly: if the draft is committed immediately, then the status behaviour is
+correct and the scope finding is the real defect -- which is this ticket. Three
+reports, one mechanism.
+
+ONE RESIDUAL ITEM WORTH FIXING HERE RATHER THAN LEAVING, small but real: an agent
+that files a follow-up and then audits its own tree is surprised twice, first by
+seeing nothing in status and then by seeing a scope finding for a file it never
+knowingly wrote. Both surprises come from the same silent auto-commit. Whatever
+provenance mechanism this ticket lands should also make the filing SAY what it
+did -- name the commit it created and the path it wrote. A verb that commits on
+your behalf and does not tell you leaves the agent's model of its own worktree
+wrong, and this repo has already recorded several incidents that began with an
+agent reasoning from a stale picture of its tree.
+
+DO NOT SOLVE THE SURPRISE BY REMOVING THE AUTO-COMMIT. It exists so a killed or
+interrupted verb cannot leave a half-filed ticket dirtying the shared checkout,
+which is a failure mode this repo has hit and which blocks every other agent's
+land. The fix is disclosure, not behaviour change.
