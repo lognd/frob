@@ -130,6 +130,15 @@ scope_changes:
     atomically due to an unrelated gates/__init__.py lease conflict'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: T-4125's own fixtures already carry the real fail-at-main/pass-at-fix repro
+    for the shared defect class; T-3887's own evidence proves the mechanism's contract,
+    not a second independent repro
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4766
+  new_length: 5685
 evidence:
 - tests/unit/test_project_tool.py::TestResolveProjectTool::test_ok_resolves_path_and_version
 - tests/unit/vet/test_bare_toolchain.py::TestBareToolchainFindings::test_clean_on_project_tool_argv_spelling
@@ -225,3 +234,5 @@ ACCEPTANCE
 - Missing-tool paths loud and typed.
 - The no-runner-declared policy decided and stated.
 - Fixtures committed, with the off-repo verification described.
+
+frob:waive BUG002 reason="T-3887 is a partial close riding on T-4125's own landed repro: the real fail-at-main/pass-at-fix demonstration of this defect class (a bare toolchain-name argv resolving the wrong environment) is T-4125's own MUST-FIRE fixture (tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_genuinely_new_finding_still_refuses and the real-ty-error CLI end-to-end test), landed as commit bc23acd391ea908155d925ead66d432fde36092f before this land. T-3887's own bound evidence (TestResolveProjectTool/TestBareToolchainFindings) proves the SHARED MECHANISM's contract, not a second independent repro of the same already-landed defect -- writing a second fail-at-main test for code that already only exists post-fix would be circular. The unfixed remainder of T-3887's own body (F-012/F-017/F-018, filed as T-4147/T-4148/T-4149) is explicitly NOT claimed done here."
