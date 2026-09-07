@@ -2,7 +2,7 @@
 id: T-4143
 title: the evidence list cannot shrink through any verb, forcing agents to hand-edit
   the ledger, and its null form crashes scope edits
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -16,10 +16,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'F-347''s crash (evidence: null -> TypeError not iterable) is raised inside
+    _models.py''s _split_scope_entries/_coerce_acceptance/Ticket.evidence field, not
+    _evidence.py; the loader-boundary fix per the ticket''s own instruction must land
+    where the crash actually originates'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a stale evidence entry including a command-shaped one, when the removal
