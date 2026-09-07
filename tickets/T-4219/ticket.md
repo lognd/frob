@@ -16,10 +16,51 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - README.md
+- src/frob/gates/_pkg_resources.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_waive.py
+- tests/unit/gates/test_pkg_resources.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_pkg_resources.py
+  reason: 'T-4219: the general reusable gate the ticket asks for requires a new gate
+    module, wiring into run_gates/_KNOWN_GATE_RULES, its unit tests, and the rule-catalog
+    doc row -- README.md alone was too narrow'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-4219: the general reusable gate the ticket asks for requires a new gate
+    module, wiring into run_gates/_KNOWN_GATE_RULES, its unit tests, and the rule-catalog
+    doc row -- README.md alone was too narrow'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-4219: the general reusable gate the ticket asks for requires a new gate
+    module, wiring into run_gates/_KNOWN_GATE_RULES, its unit tests, and the rule-catalog
+    doc row -- README.md alone was too narrow'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/gates/test_pkg_resources.py
+  reason: 'T-4219: the general reusable gate the ticket asks for requires a new gate
+    module, wiring into run_gates/_KNOWN_GATE_RULES, its unit tests, and the rule-catalog
+    doc row -- README.md alone was too narrow'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-4219: the general reusable gate the ticket asks for requires a new gate
+    module, wiring into run_gates/_KNOWN_GATE_RULES, its unit tests, and the rule-catalog
+    doc row -- README.md alone was too narrow'
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'owner narrowed the scope: relative links are fine and must not be flagged,
