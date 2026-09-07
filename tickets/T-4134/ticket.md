@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'records first-party evidence captured while filing this ticket: the advisory
+    graph build contended on the shared cache lock for 30s and gave up AFTER the ticket
+    was already created and committed, demonstrating the mechanism and showing the
+    cost is superlinear under fleet load rather than merely slow'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4661
+  new_length: 6630
 designated_repro_test: null
 acceptance:
 - text: given a repository with a large open ticket queue, when a ticket is filed,
@@ -116,3 +126,36 @@ ACCEPTANCE
 - A documented way to skip the advisory analyses exists.
 - The three costs measured separately and the numbers recorded on this ticket.
 - All three fixtures committed.
+
+FIRST-PARTY EVIDENCE, OBSERVED WHILE FILING THIS VERY TICKET. The filing command
+that created this ticket emitted, in this order:
+
+    WARNING: cache: store_file_data(...) hit a stale/corrupt connection,
+             reopening ... and retrying (attempt 1/3): database disk image is
+             malformed
+    ERROR:   cache: store_file_data(...) still locked after 30s, giving up
+    ERROR:   build_graph: cache lock never released: database is locked
+
+The ticket WAS created and committed. What failed was the post-announcement
+advisory analysis -- the graph build behind the scope-closure warnings -- because
+three agents were running checks against the same cache at the same time.
+
+THAT IS THIS TICKET'S OWN MECHANISM, DEMONSTRATED. The filing verb's mandatory
+path succeeded; the unbounded advisory path then contended for thirty seconds on
+a shared resource and gave up. A caller watching only the tail of that output
+would conclude the filing failed. It did not.
+
+AND IT SHARPENS THE FIX. The advisory analyses do not merely take a long time --
+they take a SHARED LOCK on the graph cache, so N concurrent filings or checks
+serialise against each other. That makes the cost superlinear in fleet size
+rather than merely additive, which is consistent with the reporter seeing 26 and
+45 minutes specifically while several of our own checks were running. Whatever
+bound is chosen must account for contention, not just single-process runtime:
+measure the analyses under concurrent load, not on an idle machine.
+
+DO NOT CONCLUDE THE CACHE IS CORRUPT FROM THE FIRST LINE. The "malformed" message
+came with an automatic reopen-and-retry and the run continued to the lock
+timeout; a follow-up integrity check could not run because the database was still
+locked by a live agent. Treat corruption as UNCONFIRMED and re-check on an idle
+machine before acting on it -- an unverified corruption claim would send someone
+rebuilding a cache when the real finding is contention.
