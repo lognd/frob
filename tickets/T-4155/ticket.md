@@ -22,6 +22,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'adds the traced mechanism and the one-argument fix: pathspec derives its
+    separator-normalisation set from os.sep/os.altsep at import, so passing an explicit
+    separators collection makes matching host-independent. Records that we escaped
+    fnmatch''s normcase only to inherit pathspec''s os.sep-derived behaviour, and
+    flags the sibling pathspec call site in policy as carrying the same unpinned default'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4542
+  new_length: 6884
 designated_repro_test: null
 acceptance:
 - text: given a backslash-separated relative path and a forward-slash glob, when is_excluded
@@ -115,3 +126,43 @@ ACCEPTANCE
 - Neither fixture skipped on Windows.
 - The chosen contract documented on the function.
 - All three fixtures committed.
+
+MECHANISM CONFIRMED, WITH THE EXACT LEVER TO PULL. I traced why the answer
+differs, so nobody has to rediscover it:
+
+    pathspec.util.NORMALIZE_PATH_SEPS  ->  []   on this linux box
+    os.sep = '/'   os.altsep = None
+
+    normalize_file('vendor\\sub\\mod.py')                    -> 'vendor\\sub\\mod.py'
+    normalize_file('vendor\\sub\\mod.py', separators=['\\']) -> 'vendor/sub/mod.py'
+
+pathspec derives its separator-normalisation set FROM THE HOST OS at import time.
+On posix `os.altsep` is None so the set is empty and a backslash is an ordinary
+filename character. On Windows `os.sep` is a backslash and `os.altsep` is a
+forward slash, so the set is non-empty and pathspec rewrites backslashes to
+forward slashes before matching. Hence True there and False here, from identical
+code.
+
+THE FIX IS ONE ARGUMENT: `normalize_file` (and the matching entry points that
+call it) accept an explicit `separators` collection. Passing one makes the result
+deterministic and host-independent, as the second line above demonstrates. That
+is almost certainly preferable to normalising the string ourselves before calling
+pathspec -- it keeps one normalisation instead of two, and it cannot drift out of
+step with whatever pathspec does internally.
+
+AND HERE IS THE LESSON THAT OUTLIVES THIS TICKET, which I want recorded because
+this project has now made the same mistake twice in the same file. We migrated
+from fnmatch to pathspec specifically to escape a host-derived behaviour --
+fnmatch runs both operands through `os.path.normcase`, which folds case and
+rewrites separators on Windows. We landed on a library whose separator handling
+is ALSO derived from the host, just through a different attribute
+(`os.sep`/`os.altsep` rather than `normcase`). The migration removed the
+case-folding half and preserved the separator half, and we called it
+platform-independent because we only measured the half that changed.
+
+SO THE RULE IS NOT "PREFER LIBRARY X OVER LIBRARY Y". It is: any matcher that
+reads the host's path conventions is platform-dependent until you pin those
+conventions explicitly. When this lands, check the OTHER pathspec call site
+(`src/frob/policy/__init__.py`, migrated earlier under a separate ticket) for the
+same unpinned default -- it will have inherited the identical defect, and nothing
+has measured it on Windows either.
