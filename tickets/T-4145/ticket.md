@@ -21,6 +21,11 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- src/frob/_cli_parsers/_ticket/_query.py
+- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -376,6 +381,46 @@ scope_changes:
     unboundedly (260+ warnings) for a one-line capability declaration; fixed the underlying
     false-positive by removing the trigger substring from the test fixture text instead,
     no design/frob.strata edit needed'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-4145: close the private-helper-call and frob:tests halves of SCOPE002''s
+    closure check -- the _ticket package''s per-concern submodules already cross-call
+    each other''s exported helpers (pre-existing, not introduced by this split) and
+    tests/unit/gates/test_refs.py already binds frob:tests to ref_gate'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: 'T-4145: close the private-helper-call and frob:tests halves of SCOPE002''s
+    closure check -- the _ticket package''s per-concern submodules already cross-call
+    each other''s exported helpers (pre-existing, not introduced by this split) and
+    tests/unit/gates/test_refs.py already binds frob:tests to ref_gate'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'T-4145: close the private-helper-call and frob:tests halves of SCOPE002''s
+    closure check -- the _ticket package''s per-concern submodules already cross-call
+    each other''s exported helpers (pre-existing, not introduced by this split) and
+    tests/unit/gates/test_refs.py already binds frob:tests to ref_gate'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: 'T-4145: close the private-helper-call and frob:tests halves of SCOPE002''s
+    closure check -- the _ticket package''s per-concern submodules already cross-call
+    each other''s exported helpers (pre-existing, not introduced by this split) and
+    tests/unit/gates/test_refs.py already binds frob:tests to ref_gate'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: 'T-4145: close the private-helper-call and frob:tests halves of SCOPE002''s
+    closure check -- the _ticket package''s per-concern submodules already cross-call
+    each other''s exported helpers (pre-existing, not introduced by this split) and
+    tests/unit/gates/test_refs.py already binds frob:tests to ref_gate'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
