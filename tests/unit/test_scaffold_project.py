@@ -481,3 +481,55 @@ def test_single_word_name_unaffected_by_import_name_split(tmp_path: Path) -> Non
     main_py = out / "mytool" / "src" / "mytool" / "__main__.py"
     assert main_py.is_file()
     assert "from mytool.app import App, AppConfig" in main_py.read_text()
+
+
+# frob:ticket T-3931
+def test_every_scaffold_type_declares_default_milestone(tmp_path: Path) -> None:
+    """T-3931: MILE003 fires on a freshly scaffolded project's first
+    ticket because frob.toml has no [tickets].default_milestone -- "a
+    fresh repo has no way to know it must set one until the first frob
+    check". Every registered scaffold type's rendered frob.toml must
+    declare one (0.1.0, matching the generated pyproject.toml version)."""
+    import tomllib
+
+    for project_type in list_project_types():
+        out = tmp_path / project_type
+        out.mkdir()
+        result = render_project(project_type, "demo", out, force=True)
+        assert result.is_ok, f"{project_type}: {result.err}"
+        frob_toml = next((p for p in result.danger_ok if p.name == "frob.toml"), None)
+        assert frob_toml is not None, f"{project_type}: no rendered frob.toml"
+        with frob_toml.open("rb") as f:
+            doc = tomllib.load(f)
+        assert doc.get("tickets", {}).get("default_milestone") == "0.1.0", (
+            f"{project_type}: frob.toml missing [tickets].default_milestone"
+        )
+
+
+# frob:ticket T-3931
+def test_bump_version_script_constant_is_private(tmp_path: Path) -> None:
+    """T-3931: COV001 fired on the generated scripts/bump_version.py's
+    module-level PYPROJECT constant on a freshly scaffolded, untouched
+    project -- a day-one finding the user did not cause. A standalone
+    release script has no public API to document; the fix is a leading
+    underscore (frob's own private-symbol convention, which COV001
+    already skips), not a scaffold-shipped waiver."""
+    out = tmp_path / "python-library"
+    out.mkdir()
+    result = render_project("python-library", "demo", out, force=True)
+    assert result.is_ok, result.err
+    script = next(p for p in result.danger_ok if p.name == "bump_version.py")
+    tree = ast.parse(script.read_bytes())
+    top_level_constant_names = {
+        target.id
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+        if isinstance(target, ast.Name) and target.id.isupper()
+    }
+    assert top_level_constant_names, "fixture drifted: no top-level constant found"
+    for name in top_level_constant_names:
+        assert name.startswith("_"), (
+            f"bump_version.py's top-level constant {name!r} is not private "
+            "-- COV001 will fire on it as a day-one scaffold finding"
+        )

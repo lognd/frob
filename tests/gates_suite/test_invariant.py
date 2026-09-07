@@ -659,6 +659,64 @@ class TestRootAssetDirGate:
         _git_init(tmp_path)
         assert root_asset_dir_gate(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
+    def test_directory_with_refs_entrypoint_declaration_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """Check (d) (T-3931): a repo-root directory with a tracked file
+        covered by frob.toml's own `[[refs.entrypoint]]` allowlist -- the
+        SAME allowlist REF001/REF002/REF003 read -- is not flagged, even
+        with no other reference. T-3931's actual finding: a freshly
+        scaffolded project's frob.toml already declares
+        `.github/workflows/*.yml` and `invariants/.gitkeep` as
+        entrypoints for REF*, and ROOT001 used to ignore that and flag
+        both directories anyway -- a scaffold-provided config not
+        satisfying a scaffold-provided gate."""
+        self._pyproject(tmp_path)
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, ".github/workflows/ci.yml", "name: ci\n")
+        _write(tmp_path, "invariants/.gitkeep", "")
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[[refs.entrypoint]]\n"
+            'path = ".github/workflows/*.yml"\n'
+            'reason = "read by GitHub Actions"\n\n'
+            "[[refs.entrypoint]]\n"
+            'path = "invariants/.gitkeep"\n'
+            'reason = "placeholder"\n',
+        )
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
+    def test_refs_entrypoint_coverage_does_not_leak_across_directories(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3931 mutation-kill: check (d) requires the COVERED tracked
+        file to live under the CANDIDATE directory itself (`rel.
+        startswith(prefix) and _allowlist_covers(...)`) -- an
+        `[[refs.entrypoint]]` declaration covering a file in one
+        directory must not silence an UNRELATED, genuinely-unreferenced
+        directory just because some entrypoint-covered file exists
+        somewhere else in the repo."""
+        self._pyproject(tmp_path)
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "invariants/.gitkeep", "")
+        _write(tmp_path, "orphan/file.txt", "x\n")
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[[refs.entrypoint]]\n"
+            'path = "invariants/.gitkeep"\n'
+            'reason = "placeholder"\n',
+        )
+        _git_init(tmp_path)
+        violations = root_asset_dir_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ROOT001"
+        assert violations[0].file == "orphan"
+
     def test_makefile_referenced_directory_is_silent(self, tmp_path: Path) -> None:
         """The ticket's own "scripts a Makefile target actually invokes"
         exemption clause: a directory literally named in the Makefile is

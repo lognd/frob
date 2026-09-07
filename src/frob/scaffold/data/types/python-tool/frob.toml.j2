@@ -12,6 +12,12 @@ profile = "rapid"
 # (see frob's own frob.toml for what that dial looks like once a repo
 # has un-annotated legacy surface to grandfather in). Every rule below
 # stays at its hard-error default.
+# T-3931: a fresh repo has no way to know it must set this until the
+# first `frob check` fires MILE003 on its own first ticket -- declare
+# a sane starting point (matching the version above) day one instead.
+[tickets]
+default_milestone = "0.1.0"
+
 [gates.severity]
 
 # Thresholds sized for a fresh, minimal scaffold on day one -- raise them

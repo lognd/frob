@@ -2,7 +2,7 @@
 id: T-3931
 title: 'a freshly scaffolded untouched project is not gate-clean: eight findings the
   user did not cause on day one'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -24,8 +24,8 @@ scope:
 - src/frob/scaffold/data/types/pyo3-library/frob.toml.j2
 - src/frob/scaffold/data/types/web-app/frob.toml.j2
 - tests/unit/test_scaffold_project.py
-- tickets/T-draft-adfa1e8a/ticket.md
-- tickets/T-draft-c432d83d/ticket.md
+- tickets/T-4153/ticket.md
+- tickets/T-4154/ticket.md
 - src/frob/scaffold/data/shared/python/scripts/bump_version.py.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -100,13 +100,13 @@ scope_changes:
   actor: logan
   at: '2026-09-07'
 - op: add
-  glob: tickets/T-draft-adfa1e8a/ticket.md
+  glob: tickets/T-4153/ticket.md
   reason: own filed follow-up tickets + the bump_version.py.j2 template touched for
     the COV001 fix
   actor: logan
   at: '2026-09-07'
 - op: add
-  glob: tickets/T-draft-c432d83d/ticket.md
+  glob: tickets/T-4154/ticket.md
   reason: own filed follow-up tickets + the bump_version.py.j2 template touched for
     the COV001 fix
   actor: logan
@@ -128,6 +128,11 @@ body_changes:
   at: '2026-09-06'
   old_length: 4969
   new_length: 5514
+evidence:
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_directory_with_refs_entrypoint_declaration_is_silent
+- tests/unit/test_scaffold_project.py::test_every_scaffold_type_declares_default_milestone
+- tests/unit/test_scaffold_project.py::test_bump_version_script_constant_is_private
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_refs_entrypoint_coverage_does_not_leak_across_directories
 designated_repro_test: null
 threat: null
 component: null

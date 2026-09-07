@@ -33,6 +33,15 @@ hold, or the directory is flagged (surfaced, never auto-deleted):
       declaration exists in any tracked markdown file -- a real, checkable
       claim that some process OUTSIDE this repo's own code reads it (the
       harness-config case), instead of an inferred one.
+  (d) frob.toml's own `[[refs.entrypoint]]` allowlist (T-3931) -- the SAME
+      per-path/glob allowlist REF001/REF002/REF003 already read via
+      `frob.gates._refs._load_allowlist`/`_allowlist_covers` -- covers at
+      least one tracked file under the directory. A scaffold-provided
+      frob.toml declaring `.github/workflows/*.yml` or
+      `invariants/.gitkeep` as an entrypoint is exactly this claim made
+      once, for REF*, and previously ignored by ROOT001 -- a
+      scaffold-provided config not satisfying a scaffold-provided gate
+      (T-3931).
 
 A directory satisfying none of these is flagged: the next audit starts
 from a measured "zero code references" fact instead of re-deriving it from
@@ -46,6 +55,7 @@ import re
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
+from frob.gates._refs import _allowlist_covers, _load_allowlist
 from frob.gates._tracked_files import tracked_files as _tracked_files
 from frob.lang import declared_project_package_name, declared_source_prefixes
 from frob.logging import get_logger
@@ -154,6 +164,25 @@ def _external_reader_declared(root: Path, tracked: tuple[str, ...], name: str) -
     return False
 
 
+# frob:ticket T-3931
+def _entrypoint_declared(root: Path, tracked: tuple[str, ...], name: str) -> bool:
+    """Check (d) (T-3931): does frob.toml's own `[[refs.entrypoint]]`
+    allowlist -- the SAME allowlist REF001/REF002/REF003 read via
+    `frob.gates._refs._load_allowlist`/`_allowlist_covers` -- cover at
+    least one tracked file under this top-level directory? A
+    scaffold-provided frob.toml already declares
+    `.github/workflows/*.yml` and `invariants/.gitkeep` as entrypoints
+    for REF*; before this check ROOT001 ignored that declaration
+    entirely and flagged the same directories anyway."""
+    allowlist = _load_allowlist(root)
+    if not allowlist:
+        return False
+    prefix = f"{name}/"
+    return any(
+        rel.startswith(prefix) and _allowlist_covers(rel, allowlist) for rel in tracked
+    )
+
+
 # frob:waive DUP001 reason="sibling UNRESOLVED-pkg-name-violation builders: this is \
 # ROOT001's own, _port_selfcheck.py's is PORT001's -- same fail-loudly \
 # log-then-UNRESOLVED-Violation shape (T-2391 convention), independently-evolving rule \
@@ -216,20 +245,30 @@ def _root001_violation(name: str) -> Violation:
             "not referenced in pyproject.toml, and no "
             f'<!-- frob:external-reader dir="{name}" reason="..." '
             "--> declaration names an external process that reads "
-            "it (T-1611/T-1784: this is exactly the shape that "
-            "made agents/ and skills/ look live-read by name-"
-            "matching alone). Either wire a real reference, add "
-            "the external-reader declaration if something outside "
-            "this repo's own code genuinely reads it, or delete it."
+            "it, and no frob.toml [[refs.entrypoint]] entry covers "
+            "any tracked file under it (T-1611/T-1784: this is "
+            "exactly the shape that made agents/ and skills/ look "
+            "live-read by name-matching alone). Either wire a real "
+            "reference, add the external-reader declaration or a "
+            "[[refs.entrypoint]] entry if something outside this "
+            "repo's own code genuinely reads it, or delete it."
         ),
     )
 
 
 # frob:doc docs/modules/gates.md#root001-t-1784
+# frob:waive AFFECT001 reason="docs/modules/gates.md describes nearly the whole gates \
+# subsystem (2222 unrelated doc-anchor/symbol closure warnings when added to scope) \
+# for a one-function fourth-check addition that touches \
+# src/frob/gates/_root_asset_dirs.py alone; narrowing would require pulling in most of \
+# src/frob/gates/** -- same disclosed-breadth class already measured and accepted for \
+# this exact doc file by T-3914/T-4013/T-4019/T-4132. The module's own top-of-file \
+# docstring documents check (d) in full (T-3931); docs/modules/gates.md#root001-t-1784 \
+# needs the identical addition and is not updated here for the reason above"
 def root_asset_dir_gate(root: Path) -> tuple[Violation, ...]:
     """ROOT001: flag every repo-root top-level directory with zero code
     references -- not `src/`/`tests/`, not on the named allowlist, not
-    exempted by a Makefile reference, and satisfying none of the three
+    exempted by a Makefile reference, and satisfying none of the four
     reference checks documented on the module. UNRESOLVED (not a silent
     clean pass) if this project's own package name cannot be resolved
     from pyproject.toml (T-2391 fail-loudly doctrine -- check (a) has no
@@ -260,6 +299,8 @@ def root_asset_dir_gate(root: Path) -> tuple[Violation, ...]:
         if _referenced_in_pyproject(root, name):
             continue
         if _external_reader_declared(root, tracked, name):
+            continue
+        if _entrypoint_declared(root, tracked, name):
             continue
         violations.append(_root001_violation(name))
     return tuple(violations)
