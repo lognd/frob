@@ -2,14 +2,14 @@
 id: T-4136
 title: test_land_cmd_drain_wiring double missing target_branch kwarg (T-4105 producer/consumer
   desync)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
 priority: medium
 parent: null
 tier: ticket
-sprint: alpha-gate
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_land_cmd_drain_wiring.py::TestRapidLandDrainWiring::test_real_rapid_land_spawns_both_sweep_and_drain
 designated_repro_test: null
 threat: null
 component: null

@@ -51,7 +51,9 @@ class TestRapidLandDrainWiring:
         monkeypatch.setattr(
             rapid_sweep_mod,
             "spawn_deferred_post_land_sweep",
-            lambda root, ticket_id, final_id, commit_sha: calls.append("sweep"),
+            lambda root, ticket_id, final_id, commit_sha, target_branch=None: (
+                calls.append("sweep")
+            ),
         )
         monkeypatch.setattr(
             drain_mod,
