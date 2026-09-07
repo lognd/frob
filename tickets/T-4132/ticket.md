@@ -23,8 +23,6 @@ scope:
 - src/frob/scaffold/data/shared/python/py.typed.j2
 - tests/system/test_packaging_py_typed.py
 - tickets/T-4133/ticket.md
-- tests/system/test_scaffold_dx.py
-- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -185,6 +183,18 @@ scope_changes:
   glob: docs/commands/scaffold.md
   reason: revert -- docs/commands/scaffold.md's closure cascades unboundedly through
     the shared CLI parser file; needs a different resolution than scope widening
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/system/test_scaffold_dx.py
+  reason: revert -- these pull in further closure cascade too; reconsidering the resolution
+    path for project.py's frob:doc/frob:tests closure instead of widening scope indefinitely
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: revert -- these pull in further closure cascade too; reconsidering the resolution
+    path for project.py's frob:doc/frob:tests closure instead of widening scope indefinitely
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
