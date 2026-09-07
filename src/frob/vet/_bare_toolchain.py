@@ -46,6 +46,7 @@ __all__ = ["BareToolchainFinding", "BARE_TOOLCHAIN_NAMES", "bare_toolchain_findi
 #: and flagging it would be a false-positive generator with no fix this
 #: mechanism can offer (`project_tool_argv` only routes tools the
 #: PROJECT's own `uv`-managed environment can resolve).
+# frob:doc docs/modules/process.md#project-scoped-toolchain-spawns-t-3887t-4125
 BARE_TOOLCHAIN_NAMES: frozenset[str] = frozenset(
     {"ty", "ruff", "pytest", "mypy", "black", "isort", "pyright"}
 )

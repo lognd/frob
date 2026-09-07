@@ -288,9 +288,7 @@ class TestAcceptsOneBasedMisBinding:
         assert ticket.evidence == ()
         assert all(c.evidence == () for c in ticket.acceptance)
 
-    def test_must_fire_one_past_the_end_is_a_loud_refusal(
-        self, tmp_path: Path
-    ) -> None:
+    def test_must_fire_one_past_the_end_is_a_loud_refusal(self, tmp_path: Path) -> None:
         """`--accepts N+1` on an N-criterion ticket (the 1-based upper
         boundary) must refuse loudly, not silently bind nothing or wrap."""
         self._seed_four(tmp_path)

@@ -245,19 +245,19 @@ class TestDoneReportBaseResolution:
         monkeypatch.setattr(
             verify_mod, "_shared_check_spawn_fn", _fake_shared_check_spawn_fn
         )
+        monkeypatch.setattr(verify_mod, "_resolve_done_report_why", lambda cfg: "why")
         monkeypatch.setattr(
-            verify_mod, "_resolve_done_report_why", lambda cfg: "why"
+            verify_mod, "_run_tests_count_fn", lambda root: lambda: None
         )
-        monkeypatch.setattr(verify_mod, "_run_tests_count_fn", lambda root: (lambda: None))
         monkeypatch.setattr(
             verify_mod,
             "_check_gates_summary_fn",
-            lambda root, ticket_id, spawn=None: (lambda: None),
+            lambda root, ticket_id, spawn=None: lambda: None,
         )
         monkeypatch.setattr(
             verify_mod,
             "_check_gate_findings_fn",
-            lambda root, ticket_id, spawn=None: (lambda: None),
+            lambda root, ticket_id, spawn=None: lambda: None,
         )
 
         import frob.tickets as tickets_mod
@@ -385,7 +385,8 @@ class TestRapidSweepBaseHandoff:
         assert "FROB_LAND_TARGET_BRANCH" not in env
 
     def test_spawn_true_count_check_forwards_base_from_env(
-        self, monkeypatch  # noqa: ANN001
+        self,
+        monkeypatch,  # noqa: ANN001
     ) -> None:
         captured: dict = {}
 
@@ -406,7 +407,8 @@ class TestRapidSweepBaseHandoff:
         assert captured["argv"][captured["argv"].index("--base") + 1] == "release/v1"
 
     def test_spawn_true_count_check_omits_base_when_env_unset(
-        self, monkeypatch  # noqa: ANN001
+        self,
+        monkeypatch,  # noqa: ANN001
     ) -> None:
         captured: dict = {}
 

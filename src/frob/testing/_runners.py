@@ -379,8 +379,10 @@ def _cargo_env() -> Result[dict[str, str], TestingError]:
     if sys.platform == "win32":
         python_dir = Path(python).resolve().parent
         existing_path = os.environ.get("PATH", "")
-        path_val = f"{python_dir}{os.pathsep}{existing_path}" if existing_path else str(
-            python_dir
+        path_val = (
+            f"{python_dir}{os.pathsep}{existing_path}"
+            if existing_path
+            else str(python_dir)
         )
         _log.info("cargo_env: PYO3_PYTHON=%s PATH+=%s (win32)", python, python_dir)
         return Ok({"PYO3_PYTHON": python, "PATH": path_val})

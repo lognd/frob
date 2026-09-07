@@ -109,7 +109,12 @@ def _run_edit_hook(
         capture_output=True,
         text=True,
         check=False,
-        env={**_BASE_ENV_NO_ACK, "HOME": str(home), "USERPROFILE": str(home), **(env or {})},
+        env={
+            **_BASE_ENV_NO_ACK,
+            "HOME": str(home),
+            "USERPROFILE": str(home),
+            **(env or {}),
+        },
     )
 
 

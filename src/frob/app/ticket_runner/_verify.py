@@ -2776,9 +2776,7 @@ def _apply_evidence(
     collected_ids = (
         python_ids
         | rust_ids
-        | _other_language_collected_ids(
-            root, exclude=frozenset({"python", "rust"})
-        )
+        | _other_language_collected_ids(root, exclude=frozenset({"python", "rust"}))
     )
 
     normalized_ids = [normalize_evidence_separator(n) for n in node_ids]
@@ -2877,9 +2875,7 @@ def _apply_replace_evidence(
     collected_ids = (
         python_ids
         | rust_ids
-        | _other_language_collected_ids(
-            root, exclude=frozenset({"python", "rust"})
-        )
+        | _other_language_collected_ids(root, exclude=frozenset({"python", "rust"}))
     )
 
     normalized_new = normalize_evidence_separator(new_node)

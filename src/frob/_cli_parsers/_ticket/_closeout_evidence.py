@@ -67,7 +67,8 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         action=_RefuseRepeatedEvidenceCmd,
         metavar="COMMAND",
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
-        "exit/digest as evidence -- " + _EVIDENCE_CMD_KIND_HELP
+        "exit/digest as evidence -- "
+        + _EVIDENCE_CMD_KIND_HELP
         + " NOT repeatable (T-4108): the SAME single-command/accumulating-"
         "--accepts asymmetry F-306 found on `close` exists here identically "
         "-- one invocation binds one command to every --accepts index "
@@ -110,14 +111,18 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     )
     # frob:ticket T-1561
     ticket_evidence_p.add_argument(
-        "--archived", dest="ticket_evidence_archived", action="store_true",
+        "--archived",
+        dest="ticket_evidence_archived",
+        action="store_true",
         help="with --replace/--remove, target an ARCHIVED ticket instead of "
         "an active one -- a stale binding on an already-archived ticket "
         "needs this to be reachable at all (T-1561)",
     )
     # frob:ticket T-4000
     ticket_evidence_p.add_argument(
-        "--remove", dest="ticket_evidence_remove", metavar="EVIDENCE-ID",
+        "--remove",
+        dest="ticket_evidence_remove",
+        metavar="EVIDENCE-ID",
         help="permanently drop one evidence id -- for a false/no-op `cmd:` "
         "entry --replace cannot correct (F-215). Requires --reason",
     )

@@ -224,7 +224,9 @@ def test_run_mutations_sets_mutation_run_sentinel_in_child_env(tmp_path):
         f"sys.exit(0 if os.environ.get({MUTATION_RUN_ENV!r}) == '1' else 1)\n"
     )
     (tmp_path / "probe.py").write_text(probe, encoding="utf-8")
-    report = run_mutations(tmp_path, Path("m.py"), (sys.executable, "probe.py")).danger_ok
+    report = run_mutations(
+        tmp_path, Path("m.py"), (sys.executable, "probe.py")
+    ).danger_ok
     assert report.total >= 1
     assert report.killed == 0  # every mutant "survived": sentinel was seen
 

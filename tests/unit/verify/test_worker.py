@@ -1041,7 +1041,9 @@ class TestDefaultVerifyFnRecordsUnmeasurableReason:
             _land_cmd_mod, "unscoped_error_findings", lambda root, sha, full=False: None
         )
         _worker_mod._LAST_UNMEASURABLE_REASON.pop("sha-unmeasurable", None)
-        result = _worker_mod._default_verify_fn(Path("/nonexistent"), "sha-unmeasurable")
+        result = _worker_mod._default_verify_fn(
+            Path("/nonexistent"), "sha-unmeasurable"
+        )
         assert result is None
         assert "sha-unmeasurable" in _worker_mod._LAST_UNMEASURABLE_REASON
         del _worker_mod._LAST_UNMEASURABLE_REASON["sha-unmeasurable"]
@@ -1052,7 +1054,9 @@ class TestDefaultVerifyFnRecordsUnmeasurableReason:
 
         findings = frozenset({("RULE1", "a.py")})
         monkeypatch.setattr(
-            _land_cmd_mod, "unscoped_error_findings", lambda root, sha, full=False: findings
+            _land_cmd_mod,
+            "unscoped_error_findings",
+            lambda root, sha, full=False: findings,
         )
         _worker_mod._LAST_UNMEASURABLE_REASON.pop("sha-measured", None)
         result = _worker_mod._default_verify_fn(Path("/nonexistent"), "sha-measured")

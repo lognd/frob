@@ -228,9 +228,7 @@ class TestReadRootEmptyRowGuard:
         _force_empty_rows_for_column(conn, "value")
 
     # frob:ticket T-4047
-    def test_empty_root_row_is_a_clean_miss_not_a_crash(
-        self, tmp_path: Path
-    ) -> None:
+    def test_empty_root_row_is_a_clean_miss_not_a_crash(self, tmp_path: Path) -> None:
         """`get_root` returns `None`, not `IndexError`, when `fetchone()`
         yields `()` for an otherwise-present `meta.root` row (T-4047)."""
         conn = graph_cache.connect(tmp_path / "cache.db")

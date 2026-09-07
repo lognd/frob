@@ -694,9 +694,7 @@ def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
             # baseline's `src/caller.py`, so every file's current count
             # would default against a phantom 0 baseline and DEPR005 would
             # fire on files that never grew past their baseline.
-            rel = (
-                path.relative_to(root).as_posix() if root.is_dir() else path.name
-            )
+            rel = path.relative_to(root).as_posix() if root.is_dir() else path.name
         except ValueError:
             rel = path.as_posix()
 

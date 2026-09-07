@@ -87,9 +87,7 @@ class TestRuntimeDepsDeclared:
                 if dist is None:
                     unmapped.setdefault(name, set()).add(str(path.relative_to(_REPO)))
                 elif dist not in declared:
-                    undeclared.setdefault(name, set()).add(
-                        str(path.relative_to(_REPO))
-                    )
+                    undeclared.setdefault(name, set()).add(str(path.relative_to(_REPO)))
         messages = []
         if unmapped:
             messages.append(

@@ -185,7 +185,9 @@ _EVIDENCE_CMD_KIND_HELP = (
 def _add_evidence_cwd_arg(parser) -> None:  # noqa: ANN001
     """Register `--cwd DIR` (T-4000, F-215), shared by close/reverify/evidence."""
     parser.add_argument(
-        "--cwd", dest="ticket_evidence_cwd", metavar="DIR",
+        "--cwd",
+        dest="ticket_evidence_cwd",
+        metavar="DIR",
         help="with --evidence-cmd: run COMMAND from DIR under the ticket's "
         "--path root, not the root itself (F-215, vs. `cd DIR && cmd`/`npx "
         "--prefix DIR`)",
@@ -211,15 +213,20 @@ def _add_ticket_close_parser(ticket_sub):
         action=_RefuseRepeatedEvidenceCmd,
         metavar="COMMAND",
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
-        "exit/digest as evidence before closing -- " + _EVIDENCE_CMD_KIND_HELP
+        "exit/digest as evidence before closing -- "
+        + _EVIDENCE_CMD_KIND_HELP
         + " NOT repeatable (T-4108): a single invocation binds one command "
         "to every --accepts index given; a second --evidence-cmd is "
         "refused rather than silently discarding the first.",
     )
     _add_evidence_cwd_arg(ticket_close_p)
     ticket_close_p.add_argument(
-        "--accepts", dest="ticket_accepts", action="append", type=int,
-        default=[], metavar="INDEX",
+        "--accepts",
+        dest="ticket_accepts",
+        action="append",
+        type=int,
+        default=[],
+        metavar="INDEX",
         help="T-0572: 1-based ticket.acceptance position (T-3837; see "
         "`frob ticket show`'s [N] list) that --evidence/--evidence-cmd's "
         "id(s) also bind to (repeatable); an unbound acceptance criterion "
@@ -227,7 +234,9 @@ def _add_ticket_close_parser(ticket_sub):
     )
     # frob:ticket T-0571
     ticket_close_p.add_argument(
-        "--strict", dest="ticket_close_strict", action="store_true",
+        "--strict",
+        dest="ticket_close_strict",
+        action="store_true",
         help="require an approve-verdict `frob ticket review` record "
         "naming the current commit before closing (T-0571); combined with "
         "`[tickets] require_review_for_close` in frob.toml, which must "

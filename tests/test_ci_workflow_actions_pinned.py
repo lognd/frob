@@ -31,7 +31,11 @@ class TestGitHubActionsArePinnedToShas:
         # frob:tests .github/workflows/ci.yml
         refs = _uses_refs(_WORKFLOWS_DIR / "ci.yml")
         assert refs, "expected at least one uses: line in ci.yml"
-        unpinned = [ref for ref in refs if "@" not in ref or not _SHA_PIN_RE.match(ref.split("@", 1)[1])]
+        unpinned = [
+            ref
+            for ref in refs
+            if "@" not in ref or not _SHA_PIN_RE.match(ref.split("@", 1)[1])
+        ]
         assert not unpinned, (
             f"ci.yml has mutable (non-SHA-pinned) action ref(s): {unpinned!r} "
             "-- pin to a 40-hex commit SHA with a trailing version comment"
@@ -41,7 +45,11 @@ class TestGitHubActionsArePinnedToShas:
         # frob:tests .github/workflows/release.yml
         refs = _uses_refs(_WORKFLOWS_DIR / "release.yml")
         assert refs, "expected at least one uses: line in release.yml"
-        unpinned = [ref for ref in refs if "@" not in ref or not _SHA_PIN_RE.match(ref.split("@", 1)[1])]
+        unpinned = [
+            ref
+            for ref in refs
+            if "@" not in ref or not _SHA_PIN_RE.match(ref.split("@", 1)[1])
+        ]
         assert not unpinned, (
             f"release.yml has mutable (non-SHA-pinned) action ref(s): "
             f"{unpinned!r} -- pin to a 40-hex commit SHA with a trailing "

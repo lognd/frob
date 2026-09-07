@@ -32,8 +32,9 @@ class TestAcceptEvidenceFlagHint:
     `accept` produces a message naming `frob ticket evidence` and
     `--accepts`."""
 
-    @pytest.mark.parametrize("flag,value", [("--evidence-cmd", "pytest foo"),
-                                             ("--accepts", "3")])
+    @pytest.mark.parametrize(
+        "flag,value", [("--evidence-cmd", "pytest foo"), ("--accepts", "3")]
+    )
     def test_evidence_flag_on_accept_names_the_evidence_verb(
         self, flag: str, value: str, capsys
     ) -> None:
@@ -45,9 +46,7 @@ class TestAcceptEvidenceFlagHint:
         assert "frob ticket evidence" in err
         assert "--accepts" in err
 
-    def test_bare_evidence_flag_on_accept_names_the_evidence_verb(
-        self, capsys
-    ) -> None:
+    def test_bare_evidence_flag_on_accept_names_the_evidence_verb(self, capsys) -> None:
         """`--evidence` is not a real flag anywhere, but is a plausible
         guess (it matches the confused mental model this ticket
         describes) -- trapped the same way as the two real flags above."""
@@ -63,9 +62,7 @@ class TestAcceptUnrelatedFlagUnchanged:
     evidence gets the ordinary argparse error, with no evidence-hint
     text appended."""
 
-    def test_unrelated_unrecognized_flag_gets_the_ordinary_error(
-        self, capsys
-    ) -> None:
+    def test_unrelated_unrecognized_flag_gets_the_ordinary_error(self, capsys) -> None:
         parser = main_module._build_parser()
         with pytest.raises(SystemExit) as exc_info:
             parser.parse_args(["ticket", "accept", "T-0001", "--bogus-flag", "x"])
@@ -112,8 +109,14 @@ class TestCorrectInvocationsUnaffected:
         --accepts) must still parse exactly as before."""
         parser = main_module._build_parser()
         ns = parser.parse_args(
-            ["ticket", "evidence", "T-0001", "tests/test_x.py::test_y",
-             "--accepts", "1"]
+            [
+                "ticket",
+                "evidence",
+                "T-0001",
+                "tests/test_x.py::test_y",
+                "--accepts",
+                "1",
+            ]
         )
         assert ns.ticket_evidence_ids == ["tests/test_x.py::test_y"]
         assert ns.ticket_accepts == [1]
@@ -123,9 +126,10 @@ class TestEvidenceCriterionFlagHintMirror:
     """The documented mirror direction: `--criterion`/`--criterion-file`/
     `--amend` on `evidence` hint back to `accept`."""
 
-    @pytest.mark.parametrize("flag,value", [("--criterion", "text"),
-                                             ("--criterion-file", "/tmp/x"),
-                                             ("--amend", "1")])
+    @pytest.mark.parametrize(
+        "flag,value",
+        [("--criterion", "text"), ("--criterion-file", "/tmp/x"), ("--amend", "1")],
+    )
     def test_criterion_flag_on_evidence_names_the_accept_verb(
         self, flag: str, value: str, capsys
     ) -> None:

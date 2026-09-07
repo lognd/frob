@@ -51,7 +51,10 @@ class TestUnbucketedIdsAreLoud:
                 lambda root: Ok(CollectedTests(node_ids=frozenset())),
             )
         outcomes = ticket_runner._verify_unbucketed_ids(
-            tmp_path, ("mystery.spec::does a thing",), tried=("python", "rust"), runners=()
+            tmp_path,
+            ("mystery.spec::does a thing",),
+            tried=("python", "rust"),
+            runners=(),
         )
         assert set(outcomes) == {"mystery.spec::does a thing"}
         outcome = outcomes["mystery.spec::does a thing"]
@@ -79,9 +82,7 @@ class TestUnbucketedIdsAreLoud:
                 language,
                 lambda root: Ok(CollectedTests(node_ids=frozenset())),
             )
-        monkeypatch.setattr(
-            _testing_mod, "run_selected", _fake_run_selected_always_ok
-        )
+        monkeypatch.setattr(_testing_mod, "run_selected", _fake_run_selected_always_ok)
         outcomes = ticket_runner._verify_unbucketed_ids(
             tmp_path, (cpp_id,), tried=("python", "rust"), runners=()
         )
@@ -146,9 +147,7 @@ class TestVerifyIdsPassingFallsThroughToOtherCollectors:
         # frob:tests src/frob/app/ticket_runner/_verify.py::_verify_ids_passing
         import frob.testing as _testing_mod
 
-        monkeypatch.setattr(
-            _testing_mod, "run_selected", _fake_run_selected_always_ok
-        )
+        monkeypatch.setattr(_testing_mod, "run_selected", _fake_run_selected_always_ok)
         outcomes = ticket_runner._verify_ids_passing(
             tmp_path,
             ("tests/x.py::a",),

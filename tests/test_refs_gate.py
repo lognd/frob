@@ -366,9 +366,7 @@ class TestGithubConventionExempt:
             "PULL_REQUEST_TEMPLATE.md for pull requests.\n",
         )
         _write(tmp_path, "SECURITY.md", "See README.md for contact info.\n")
-        _write(
-            tmp_path, "CODE_OF_CONDUCT.md", "See README.md for enforcement.\n"
-        )
+        _write(tmp_path, "CODE_OF_CONDUCT.md", "See README.md for enforcement.\n")
         _write(
             tmp_path,
             ".github/ISSUE_TEMPLATE/config.yml",
@@ -939,9 +937,7 @@ class TestTicketLedgerV2Exempt:
     # frob:tests \
     # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_done_report_md_is_exempt_w\
     # ith_no_declaration kind="unit"
-    def test_done_report_md_is_exempt_with_no_declaration(
-        self, tmp_path: Path
-    ) -> None:
+    def test_done_report_md_is_exempt_with_no_declaration(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
         _write(tmp_path, "tickets/T-0001/ticket.md", "# T-0001\n")
@@ -966,17 +962,13 @@ class TestTicketLedgerV2Exempt:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
         _write(tmp_path, "tickets/archive/T-0001/ticket.md", "# T-0001\n")
-        _write(
-            tmp_path, "tickets/archive/T-0001/done-report.md", "# Done report\n"
-        )
+        _write(tmp_path, "tickets/archive/T-0001/done-report.md", "# Done report\n")
         _git(tmp_path, "add", "-A")
 
         violations = ref_gate(tmp_path)
 
         assert _rule_ids(violations, "tickets/archive/T-0001/ticket.md") == []
-        assert (
-            _rule_ids(violations, "tickets/archive/T-0001/done-report.md") == []
-        )
+        assert _rule_ids(violations, "tickets/archive/T-0001/done-report.md") == []
 
     # frob:ticket T-4153
     # frob:tests \

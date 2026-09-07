@@ -167,7 +167,12 @@ class TestCiStatusGate:
         doc = _load(_RELEASE_WORKFLOW)
         needs = doc["jobs"]["upload"]["needs"]
         needs_set = {needs} if isinstance(needs, str) else set(needs)
-        assert needs_set == {"build", "build-sdists", "verify-ci-status", "artifact-smoke"}
+        assert needs_set == {
+            "build",
+            "build-sdists",
+            "verify-ci-status",
+            "artifact-smoke",
+        }
 
     def test_artifact_smoke_job_needs_build_and_build_sdists(self) -> None:
         """T-3884: `artifact-smoke` must depend on `build` (this
@@ -185,7 +190,8 @@ class TestCiStatusGate:
         cover every target `build`'s own matrix covers."""
         doc = _load(_RELEASE_WORKFLOW)
         build_targets = {
-            entry["target"] for entry in doc["jobs"]["build"]["strategy"]["matrix"]["include"]
+            entry["target"]
+            for entry in doc["jobs"]["build"]["strategy"]["matrix"]["include"]
         }
         smoke_targets = {
             entry["target"]

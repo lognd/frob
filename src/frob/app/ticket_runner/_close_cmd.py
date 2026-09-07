@@ -404,7 +404,9 @@ def _matching_gate_claim_files(
 
 # frob:ticket T-1410
 def _close_gate_claims_for_ticket(
-    root: Path, ticket, base: str | None = None  # noqa: ANN001
+    root: Path,
+    ticket,
+    base: str | None = None,  # noqa: ANN001
 ) -> bool | None:
     """T-1410 CLI wiring: whether every acceptance criterion on `ticket`
     shaped as a package-wide gate-outcome claim ("0 <RULE> findings under
@@ -881,7 +883,9 @@ def _own_obligations_diff_findings(
 
 # frob:ticket T-1387
 def _close_own_obligations_for_ticket(
-    root: Path, ticket, base: str | None = None  # noqa: ANN001
+    root: Path,
+    ticket,
+    base: str | None = None,  # noqa: ANN001
 ) -> bool | None:
     """T-1387 CLI wiring for T-1384's `own_obligations_clean` guard:
     whether `ticket`'s OWN diff (every file `working_diff(root, "main")`

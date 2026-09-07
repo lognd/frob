@@ -90,9 +90,10 @@ class TestArtifactSmokeMustFire:
             pytest.skip("frob-core/strata-core not built locally")
         core_wheels_dir = tmp_path / "core-wheels"
         core_wheels_dir.mkdir()
-        for whl in list(core_core.glob("frob_core-*.whl"))[:1] + list(
-            core_strata.glob("strata_core-*.whl")
-        )[:1]:
+        for whl in (
+            list(core_core.glob("frob_core-*.whl"))[:1]
+            + list(core_strata.glob("strata_core-*.whl"))[:1]
+        ):
             shutil.copy2(whl, core_wheels_dir)
 
         broken_src = _copy_source_tree(tmp_path, serve_pin="mcp>=1.28.1")
@@ -169,8 +170,7 @@ class TestArtifactSmokeAbsentCores:
         assert "strata-core" in combined
         assert "not found in the package registry" not in combined, (
             "the raw resolver trace leaked through -- the preflight should "
-            "have caught this before any pip install was attempted:\n"
-            + combined
+            "have caught this before any pip install was attempted:\n" + combined
         )
 
 
@@ -190,9 +190,10 @@ class TestArtifactSmokeMustStayQuiet:
             pytest.skip("frob-core/strata-core not built locally")
         core_wheels_dir = tmp_path / "core-wheels"
         core_wheels_dir.mkdir()
-        for whl in list(core_core.glob("frob_core-*.whl"))[:1] + list(
-            core_strata.glob("strata_core-*.whl")
-        )[:1]:
+        for whl in (
+            list(core_core.glob("frob_core-*.whl"))[:1]
+            + list(core_strata.glob("strata_core-*.whl"))[:1]
+        ):
             shutil.copy2(whl, core_wheels_dir)
 
         fixed_src = _copy_source_tree(tmp_path, serve_pin="mcp>=1.28.1,<2")

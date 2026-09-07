@@ -609,6 +609,7 @@ clear.
 
 <!-- frob:describes src/frob/vet/_bare_toolchain.py::BareToolchainFinding -->
 <!-- frob:describes src/frob/vet/_bare_toolchain.py::bare_toolchain_findings -->
+<!-- frob:describes src/frob/vet/_bare_toolchain.py::BARE_TOOLCHAIN_NAMES -->
 <!-- frob:describes src/frob/gates/_bare_toolchain.py::bare_toolchain_gate -->
 
 `frob.process._project_tool` is the ONE mechanism every project-toolchain

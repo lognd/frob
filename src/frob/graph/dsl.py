@@ -1146,7 +1146,7 @@ def _parse_target(
                 line=lineno,
                 reason=(
                     f"target {target!r} contains a literal '\"' -- quote "
-                    "the whole target (frob:%s \"...\") if it must "
+                    'the whole target (frob:%s "...") if it must '
                     "contain spaces or quotes" % verb
                 ),
             )

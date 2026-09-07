@@ -130,10 +130,10 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # actually examined this run) -- kept as an explicit waiver rather than removed \
 # because static call-graph analysis of _load_family_reporters' dict-dispatch call \
 # site is fragile, same posture T-1942 already established for the archgate reporter's \
-# own waivers below. follow_up re-pointed to T-3504 (the open successor \
-# tracking strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 \
-# requires a live open ticket citation, not because that ticket is expected to touch \
-# this specific waiver" follow_up="T-3504"
+# own waivers below. follow_up re-pointed to T-3504 (the open successor tracking \
+# strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 requires \
+# a live open ticket citation, not because that ticket is expected to touch this \
+# specific waiver" follow_up="T-3504"
 # frob:ticket T-2575
 def _perf_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's PERF-family
@@ -305,8 +305,7 @@ def _vet_examined_sites(root: Path) -> frozenset[str]:
 # call-graph analysis of that dynamic-report-construction call site is fragile. \
 # follow_up re-pointed to T-2011 (the open ticket wiring perf/strata/graph/ vet \
 # examined-sites into WAIVE004) since WIRE002 requires a live open ticket citation, \
-# not because that ticket is expected to remove this waiver itself" \
-# follow_up="T-3504"
+# not because that ticket is expected to remove this waiver itself" follow_up="T-3504"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to

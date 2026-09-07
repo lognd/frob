@@ -2933,6 +2933,42 @@
       "old_digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
       "reason": "probe: testing whether --facet is honored at all",
       "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-07",
+      "facet": "body",
+      "new_digest": "11963f9db5895cd54bf195a465f7c04b81eaaa7a1cd3fd099752607cf0edb3f5",
+      "old_digest": null,
+      "reason": "T-4138 (landed 564f2eb41) added an optional failed_test_languages: frozenset[str] = frozenset() parameter to test_gate, moving the sig digest -- verified docs/modules/gates.md#public-api's description of test_gate's public contract is unaffected: the new parameter is additive with a default that preserves prior behavior for every existing caller, used only to suppress TEST001/002 false positives when a native test collector failed this run",
+      "ref": "src/frob/gates/__init__.py::test_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-07",
+      "facet": "sig",
+      "new_digest": "fd091f50fe5fbdd84ba078d1b2bdd8ed3bd8b73848b15feccdd5a878fb634961",
+      "old_digest": "9d54802ceab4033db2ea30804f1fa7aa9c581ccd186686a6ea3931c66e979251",
+      "reason": "T-4138 (landed 564f2eb41) added an optional failed_test_languages: frozenset[str] = frozenset() parameter to test_gate, moving the sig digest -- verified docs/modules/gates.md#public-api's description of test_gate's public contract is unaffected: the new parameter is additive with a default that preserves prior behavior for every existing caller, used only to suppress TEST001/002 false positives when a native test collector failed this run",
+      "ref": "src/frob/gates/__init__.py::test_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-07",
+      "facet": "body",
+      "new_digest": "ed171ac4b42dd7d468076c71ce549495c1390c4db0f0403023f3d773ad293f48",
+      "old_digest": "3b2aea393e2f82a84fc8386dece67b54904aaf0fc4a917c995884aed81cadf56",
+      "reason": "T-4163 (landed a51287e63) extended the RULE_UNREGISTERED error message with guidance pointing at the new docs/modules/gates.md#registering-a-new-gate-t-4163 section, moving the body digest -- verified that anchor exists and accurately lists the additional registration points (_ALL_GATES, _CANONICAL_GATE_ORDER, _build_process_jobs, _CACHEABLE_PROCESS_GATES, _STAGE_GROUPS); no change to the function's actual scan/comparison behavior, message-text only",
+      "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-07",
+      "facet": "sig",
+      "new_digest": "2a8a84a3f7ae2cd4d6b2c2351afc820b008ef20ce8f3d883c1607f35e122dad9",
+      "old_digest": "2a8a84a3f7ae2cd4d6b2c2351afc820b008ef20ce8f3d883c1607f35e122dad9",
+      "reason": "T-4163 (landed a51287e63) extended the RULE_UNREGISTERED error message with guidance pointing at the new docs/modules/gates.md#registering-a-new-gate-t-4163 section, moving the body digest -- verified that anchor exists and accurately lists the additional registration points (_ALL_GATES, _CANONICAL_GATE_ORDER, _build_process_jobs, _CACHEABLE_PROCESS_GATES, _STAGE_GROUPS); no change to the function's actual scan/comparison behavior, message-text only",
+      "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
     }
   ],
   "entries": [
@@ -3277,7 +3313,12 @@
       "ref": "src/frob/gates/__init__.py::scope_gate"
     },
     {
-      "digest": "9d54802ceab4033db2ea30804f1fa7aa9c581ccd186686a6ea3931c66e979251",
+      "digest": "11963f9db5895cd54bf195a465f7c04b81eaaa7a1cd3fd099752607cf0edb3f5",
+      "facet": "body",
+      "ref": "src/frob/gates/__init__.py::test_gate"
+    },
+    {
+      "digest": "fd091f50fe5fbdd84ba078d1b2bdd8ed3bd8b73848b15feccdd5a878fb634961",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::test_gate"
     },
@@ -3487,7 +3528,7 @@
       "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
     },
     {
-      "digest": "3b2aea393e2f82a84fc8386dece67b54904aaf0fc4a917c995884aed81cadf56",
+      "digest": "ed171ac4b42dd7d468076c71ce549495c1390c4db0f0403023f3d773ad293f48",
       "facet": "body",
       "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
     },

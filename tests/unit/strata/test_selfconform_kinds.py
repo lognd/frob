@@ -75,9 +75,7 @@ class TestZeroMatchNodeCodeIds:
     # frob:tests src/frob/strata/_selfconform_kinds.py::_zero_match_node_code_ids \
     # kind="unit"
     def test_node_with_no_code_glob_at_all_is_skipped(self, tmp_path: Path) -> None:
-        model = KernelModel(
-            nodes=(Node(id="widget", trust="trusted", attrs=()),)
-        )
+        model = KernelModel(nodes=(Node(id="widget", trust="trusted", attrs=()),))
         assert _zero_match_node_code_ids(model, tmp_path) == frozenset()
 
     # frob:tests src/frob/strata/_selfconform_kinds.py::_zero_match_node_code_ids \
@@ -123,9 +121,7 @@ class TestZeroMatchViaEntries:
                     attrs=("code=src/frob/widget/**",),
                     may=("net",),
                     may_grants=(
-                        MayGrant(
-                            atom="net", via=("src/frob/widget/_net_typo.py",)
-                        ),
+                        MayGrant(atom="net", via=("src/frob/widget/_net_typo.py",)),
                     ),
                 ),
             )
@@ -221,8 +217,6 @@ class TestZeroMatchViaEntries:
     # frob:tests src/frob/strata/_selfconform_kinds.py::_zero_match_via_entries \
     # kind="unit"
     def test_node_with_no_may_grants_yields_nothing(self, tmp_path: Path) -> None:
-        model = KernelModel(
-            nodes=(Node(id="widget", trust="trusted", attrs=()),)
-        )
+        model = KernelModel(nodes=(Node(id="widget", trust="trusted", attrs=()),))
         binding = CodeBinding(owner={})
         assert _zero_match_via_entries(model, binding, tmp_path) == []

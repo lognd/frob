@@ -1485,9 +1485,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         out_of_scope_violations = _render001_checker(repo, out_of_scope_path, text)
 
         assert bool(in_scope_violations) == render001_scans(repo, in_scope_path)
-        assert bool(out_of_scope_violations) == render001_scans(
-            repo, out_of_scope_path
-        )
+        assert bool(out_of_scope_violations) == render001_scans(repo, out_of_scope_path)
         assert in_scope_violations
         assert not out_of_scope_violations
 

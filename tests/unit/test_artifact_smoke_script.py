@@ -22,7 +22,9 @@ import pytest
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "artifact_smoke.py"
 _spec = importlib.util.spec_from_file_location("artifact_smoke", _SCRIPT_PATH)
-assert _spec is not None and _spec.loader is not None, f"could not load spec for {_SCRIPT_PATH}"
+assert _spec is not None and _spec.loader is not None, (
+    f"could not load spec for {_SCRIPT_PATH}"
+)
 artifact_smoke = importlib.util.module_from_spec(_spec)
 # frob:waive OPAQUE001 reason="standard importlib.util.module_from_spec recipe for loading a standalone script (scripts/ is not an importable package) as a module under test; this sys.modules entry is a private name registered once at collection time, never mutated per-test, not a runtime swap of a name other code resolves via import elsewhere in the process"  # noqa: E501
 sys.modules["artifact_smoke"] = artifact_smoke
@@ -311,7 +313,9 @@ class TestMain:
     """`main`: end-to-end argv parsing and the aggregate pass/fail exit
     code, with every underlying command mocked."""
 
-    def test_all_checks_pass_exits_zero(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    def test_all_checks_pass_exits_zero(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture
+    ) -> None:
         """Every check green -> exit 0, "all N check(s) passed" printed."""
         wheel = tmp_path / "frob-0.1.0-py3-none-any.whl"
         wheel.write_bytes(b"")
@@ -360,7 +364,9 @@ class TestMain:
             )
         assert code == 1
 
-    def test_skip_native_runs_only_two_checks(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    def test_skip_native_runs_only_two_checks(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture
+    ) -> None:
         """`--skip-native` must drop the native-extra check entirely, not
         just make it always pass."""
         wheel = tmp_path / "frob.whl"

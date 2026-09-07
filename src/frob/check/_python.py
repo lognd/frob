@@ -225,7 +225,9 @@ def _guard_err_result(run_result, tool: str, binary: str) -> ToolResult:  # noqa
 
 
 # frob:ticket T-2320
-# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_success_runs_fix_then_format_via_uv_run  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestRunRuffAutofix.test_success_runs_fix_then_format_via_pr\
+# oject_tool_argv
 # frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_missing_binary_yields_two_typed_results  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_kill_switch_disabled_yields_two_typed_results  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_check_fix_nonzero_exit_still_runs_format  # noqa: E501

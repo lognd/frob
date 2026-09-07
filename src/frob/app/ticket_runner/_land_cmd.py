@@ -4191,12 +4191,6 @@ def _ty_new_errors(
 # frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_pre_existing_finding_that_merely_shifted_lines_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_genuinely_new_finding_still_refuses  # noqa: E501
 # frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_baseline_unmeasurable_falls_back_to_file_scoped_refusal  # noqa: E501
-# frob:waive ARCH103 reason="this IS _assert_design_loads_pre_land's own established \
-# guard shape one function up in this same module (filter/spawn/decide-refuse-or-not, \
-# three short-circuit returns): the decision points are early-outs for 'nothing to \
-# check' and 'could not measure', not independent sub-concerns to split out, and the \
-# filtering/spawning halves are already extracted into \
-# _touched_py_files/_ty_check_files above"
 def _assert_touched_files_type_check_pre_land(
     worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
 ) -> None:
@@ -4295,6 +4289,18 @@ def _assert_touched_files_type_check_pre_land(
 
 
 # frob:ticket T-4125
+# frob:waive ARCH103 reason="T-4264: this waiver previously sat on \
+# _assert_touched_files_type_check_pre_land above (its symref no longer matches any \
+# ARCH103 finding -- that function stayed clean after the T-2214 split), while THIS \
+# function is the one the gate actually flags for mixing I/O (git rev-parse HEAD, \
+# resolve_project_tool), string-formatting (findings_text, the log message), and 3 \
+# decision points (head_sha's ok/err branch, tool_desc's ok/err branch, the per-error \
+# join) in one body. It is a deliberate whole: every branch feeds the SAME single \
+# `_log.error` + `sys.exit(1)` call, split out of its caller purely to keep that \
+# caller under ARCH001's length threshold (T-2214) -- splitting further would thread \
+# head_sha/tool_desc/findings_text across new boundaries for one call site, adding \
+# indirection without reducing the sequential logic itself, the same posture this \
+# module's other extracted refusal-formatter helpers already take"
 def _refuse_touched_files_type_check(
     worktree: Path, ticket_id: str, new_errors: list
 ) -> None:  # noqa: ANN001

@@ -187,9 +187,7 @@ def _require_core_wheels(core_wheels_dir: Path) -> None:
             continue
         bad = [w for w in found if not _wheel_matches_host_platform(w)]
         if bad and len(bad) == len(found):
-            wrong_platform.append(
-                f"{name} ({', '.join(w.name for w in bad)})"
-            )
+            wrong_platform.append(f"{name} ({', '.join(w.name for w in bad)})")
     if missing:
         raise SmokeCheckError(
             "core-wheels-preflight",

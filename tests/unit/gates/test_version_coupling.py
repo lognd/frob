@@ -151,9 +151,7 @@ class TestVersionCouplingGate:
         `native`) fires -- proof the gate matches by package name across
         every `[project.optional-dependencies]` entry, not a hardcoded
         list of extras to look inside."""
-        root = _write_repo(
-            tmp_path, extra_extras={"other": ["frob-core==9.9.9"]}
-        )
+        root = _write_repo(tmp_path, extra_extras={"other": ["frob-core==9.9.9"]})
         violations = version_coupling_gate(root)
         assert any(
             v.rule == "VERSION001"

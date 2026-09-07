@@ -104,7 +104,9 @@ class TestTzdataDeclaredForWindows:
         pyproject = _load_pyproject()
         req = _requirement_named(pyproject["dependency-groups"]["dev"], "tzdata")
         assert req is not None, "tzdata must be declared in the dev group for win32"
-        assert req.marker is not None, "tzdata must be gated by a marker, not unconditional"
+        assert req.marker is not None, (
+            "tzdata must be gated by a marker, not unconditional"
+        )
         assert req.marker.evaluate({"sys_platform": "win32"})
         assert not req.marker.evaluate({"sys_platform": "linux"})
         assert not req.marker.evaluate({"sys_platform": "darwin"})
@@ -119,7 +121,9 @@ class TestTzdataDeclaredForWindows:
         wrong reason (this repo's runtime, not just its tests, would then
         pull an unused package on Linux/macOS)."""
         pyproject = _load_pyproject()
-        assert _requirement_named(pyproject["project"]["dependencies"], "tzdata") is None
+        assert (
+            _requirement_named(pyproject["project"]["dependencies"], "tzdata") is None
+        )
 
     def test_non_windows_installs_gain_no_tzdata(self) -> None:
         """MUST-STAY-QUIET: the marker must actually exclude Linux/macOS,

@@ -37,12 +37,41 @@ class TestSecondEvidenceCmdIsRefused:
     @pytest.mark.parametrize(
         "argv",
         [
-            ["ticket", "close", "T-0001", "--evidence-cmd", "cmd A",
-             "--accepts", "1", "--evidence-cmd", "cmd B", "--accepts", "2"],
-            ["ticket", "reverify", "T-0001", "--evidence-cmd", "cmd A",
-             "--accepts", "1", "--evidence-cmd", "cmd B", "--accepts", "2"],
-            ["ticket", "evidence", "T-0001", "--evidence-cmd", "cmd A",
-             "--evidence-cmd", "cmd B"],
+            [
+                "ticket",
+                "close",
+                "T-0001",
+                "--evidence-cmd",
+                "cmd A",
+                "--accepts",
+                "1",
+                "--evidence-cmd",
+                "cmd B",
+                "--accepts",
+                "2",
+            ],
+            [
+                "ticket",
+                "reverify",
+                "T-0001",
+                "--evidence-cmd",
+                "cmd A",
+                "--accepts",
+                "1",
+                "--evidence-cmd",
+                "cmd B",
+                "--accepts",
+                "2",
+            ],
+            [
+                "ticket",
+                "evidence",
+                "T-0001",
+                "--evidence-cmd",
+                "cmd A",
+                "--evidence-cmd",
+                "cmd B",
+            ],
         ],
         ids=["close", "reverify", "evidence"],
     )
@@ -68,8 +97,17 @@ class TestOneCommandManyAcceptsUnchanged:
     def test_close_one_command_several_accepts(self) -> None:
         parser = main_module._build_parser()
         ns = parser.parse_args(
-            ["ticket", "close", "T-0001", "--evidence-cmd", "pytest foo",
-             "--accepts", "1", "--accepts", "2"]
+            [
+                "ticket",
+                "close",
+                "T-0001",
+                "--evidence-cmd",
+                "pytest foo",
+                "--accepts",
+                "1",
+                "--accepts",
+                "2",
+            ]
         )
         assert ns.ticket_evidence_cmd == "pytest foo"
         assert ns.ticket_accepts == [1, 2]
@@ -77,8 +115,17 @@ class TestOneCommandManyAcceptsUnchanged:
     def test_reverify_one_command_several_accepts(self) -> None:
         parser = main_module._build_parser()
         ns = parser.parse_args(
-            ["ticket", "reverify", "T-0001", "--evidence-cmd", "pytest foo",
-             "--accepts", "1", "--accepts", "2"]
+            [
+                "ticket",
+                "reverify",
+                "T-0001",
+                "--evidence-cmd",
+                "pytest foo",
+                "--accepts",
+                "1",
+                "--accepts",
+                "2",
+            ]
         )
         assert ns.ticket_evidence_cmd == "pytest foo"
         assert ns.ticket_accepts == [1, 2]
@@ -86,8 +133,17 @@ class TestOneCommandManyAcceptsUnchanged:
     def test_evidence_one_command_several_accepts(self) -> None:
         parser = main_module._build_parser()
         ns = parser.parse_args(
-            ["ticket", "evidence", "T-0001", "--evidence-cmd", "pytest foo",
-             "--accepts", "1", "--accepts", "2"]
+            [
+                "ticket",
+                "evidence",
+                "T-0001",
+                "--evidence-cmd",
+                "pytest foo",
+                "--accepts",
+                "1",
+                "--accepts",
+                "2",
+            ]
         )
         assert ns.ticket_evidence_cmd == "pytest foo"
         assert ns.ticket_accepts == [1, 2]
@@ -100,8 +156,15 @@ class TestUnaffectedFlagsStillAccumulate:
     def test_close_evidence_node_ids_still_accumulate(self) -> None:
         parser = main_module._build_parser()
         ns = parser.parse_args(
-            ["ticket", "close", "T-0001", "--evidence", "tests/a.py::t1",
-             "--evidence", "tests/b.py::t2"]
+            [
+                "ticket",
+                "close",
+                "T-0001",
+                "--evidence",
+                "tests/a.py::t1",
+                "--evidence",
+                "tests/b.py::t2",
+            ]
         )
         assert ns.ticket_evidence_ids == ["tests/a.py::t1", "tests/b.py::t2"]
 

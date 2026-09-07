@@ -60,7 +60,9 @@ class TestRemoveEvidence:
         assert recorded.is_ok
         entry = recorded.danger_ok.evidence[0]
 
-        removed = remove_evidence(tmp_path, ticket_id, entry, reason="was a false claim")
+        removed = remove_evidence(
+            tmp_path, ticket_id, entry, reason="was a false claim"
+        )
         assert removed.is_ok
         ticket = removed.danger_ok
         assert entry not in ticket.evidence

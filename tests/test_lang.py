@@ -709,6 +709,13 @@ class TestBash:
     # frob:ticket T-1604
     def test_walks_top_level_function(self) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
+        # frob:waive COV006 reason="genuinely reachable via parse_file -> \
+        # frob.lang.extract -> frob.lang._extract.extract's _WALKERS[language] dict \
+        # dispatch -> _walk_bash, but frob.graph.callgraph has no rescue heuristic for \
+        # a dict-keyed dispatch table (only the dunder/validator-decorator shapes \
+        # _cov006_implicit_dispatch_reachable covers) -- same best-effort-BFS blind \
+        # spot as this repo's other dict-dispatch/decorator-dispatch COV006 precedent \
+        # waivers (T-1604)"
         pf = parse_file(_FIXTURES / "sample.sh").danger_ok
         assert pf.language == "bash"
         fn = _symbol(pf, "add")
@@ -719,6 +726,12 @@ class TestBash:
     # frob:ticket T-1604
     def test_private_symbol_is_not_public(self) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_bash_public
+        # frob:waive COV006 reason="genuinely reachable via parse_file -> \
+        # frob.lang.extract -> frob.lang._extract.extract's _WALKERS[language] dict \
+        # dispatch -> _walk_bash -> _bash_public, but frob.graph.callgraph has no \
+        # rescue heuristic for a dict-keyed dispatch table -- same best-effort-BFS \
+        # blind spot as this repo's other dict-dispatch/decorator-dispatch COV006 \
+        # precedent waivers (T-1604)"
         pf = parse_file(_FIXTURES / "sample.sh").danger_ok
         hidden = _symbol(pf, "_hidden")
         assert hidden.kind == SymbolKind.FUNCTION
@@ -727,6 +740,12 @@ class TestBash:
     # frob:ticket T-1604
     def test_top_level_variable_assignment(self) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_bash_const_symbol
+        # frob:waive COV006 reason="genuinely reachable via parse_file -> \
+        # frob.lang.extract -> frob.lang._extract.extract's _WALKERS[language] dict \
+        # dispatch -> _walk_bash -> _bash_const_symbol, but frob.graph.callgraph has \
+        # no rescue heuristic for a dict-keyed dispatch table -- same best-effort-BFS \
+        # blind spot as this repo's other dict-dispatch/decorator-dispatch COV006 \
+        # precedent waivers (T-1604)"
         pf = parse_file(_FIXTURES / "sample.sh").danger_ok
         const = _symbol(pf, "MAX_WIDGETS")
         assert const.kind == SymbolKind.CONST
@@ -735,12 +754,24 @@ class TestBash:
     # frob:ticket T-1604
     def test_leading_comment_binds_as_doc_text(self) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
+        # frob:waive COV006 reason="genuinely reachable via parse_file -> \
+        # frob.lang.extract -> frob.lang._extract.extract's _WALKERS[language] dict \
+        # dispatch -> _walk_bash, but frob.graph.callgraph has no rescue heuristic for \
+        # a dict-keyed dispatch table -- same best-effort-BFS blind spot as this \
+        # repo's other dict-dispatch/decorator-dispatch COV006 precedent waivers \
+        # (T-1604)"
         pf = parse_file(_FIXTURES / "sample.sh").danger_ok
         assert any("sum them" in c.text for c in pf.comments)
 
     # frob:ticket T-1604
     def test_nested_assignment_is_not_a_symbol(self, tmp_path: Path) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
+        # frob:waive COV006 reason="genuinely reachable via parse_file -> \
+        # frob.lang.extract -> frob.lang._extract.extract's _WALKERS[language] dict \
+        # dispatch -> _walk_bash, but frob.graph.callgraph has no rescue heuristic for \
+        # a dict-keyed dispatch table -- same best-effort-BFS blind spot as this \
+        # repo's other dict-dispatch/decorator-dispatch COV006 precedent waivers \
+        # (T-1604)"
         source = "outer() {\n    LOCAL_ONLY=1\n    echo $LOCAL_ONLY\n}\n"
         path = _write(tmp_path, "nested.sh", source)
         pf = parse_file(path).danger_ok
@@ -1808,6 +1839,7 @@ class TestFromImportSubmoduleResolution:
         importer = _write(tmp_path, "pkg_user.py", "from pkg import *\n")
         assert self._resolve_all(tmp_path, importer) == {"pkg/__init__.py"}
 
+
 # frob:ticket T-3895
 class TestNativeIndependentParsing:
     """T-3895 (FROBLEMS F-021): the reporter's diagnosis was that C-family
@@ -1869,8 +1901,7 @@ class TestNativeIndependentParsing:
         import sys
 
         saved_modules = {
-            name: sys.modules.pop(name, None)
-            for name in ("frob_core", "strata_core")
+            name: sys.modules.pop(name, None) for name in ("frob_core", "strata_core")
         }
         finder = self._BlockNatives()
         # frob:waive OPAQUE001 reason="T-3895 differential test: sys.meta_path is \
@@ -1881,7 +1912,9 @@ class TestNativeIndependentParsing:
         sys.meta_path.insert(0, finder)
         try:
             reset_parse_cache()
-            return {name: parse_file(_FIXTURES / name).danger_ok for name in self._CORPUS}
+            return {
+                name: parse_file(_FIXTURES / name).danger_ok for name in self._CORPUS
+            }
         finally:
             sys.meta_path.remove(finder)
             for name, mod in saved_modules.items():
@@ -1903,8 +1936,7 @@ class TestNativeIndependentParsing:
         import sys
 
         saved_modules = {
-            name: sys.modules.pop(name, None)
-            for name in ("frob_core", "strata_core")
+            name: sys.modules.pop(name, None) for name in ("frob_core", "strata_core")
         }
         finder = self._BlockNatives()
         # frob:waive OPAQUE001 reason="T-3895 sanity check on the blocking harness \

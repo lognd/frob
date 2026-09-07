@@ -923,15 +923,13 @@ class TestQuotedPositionalTarget:
         assert len(edges) == 1
         assert edges[0].target == "src/x.test.ts a title with spaces"
 
-    def test_unquoted_target_with_space_is_still_an_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unquoted_target_with_space_is_still_an_error(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_line
         # MUST-FIRE (T-3893): no silent truncation of an unquoted value
         # that contains a space -- it must still fail to parse.
         src = (
             "def foo() -> None:\n"
-            '    # frob:tests src/x.test.ts a title with spaces\n'
+            "    # frob:tests src/x.test.ts a title with spaces\n"
             "    pass\n"
         )
         pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
@@ -962,11 +960,7 @@ class TestQuotedPositionalTarget:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_line
-        src = (
-            "def foo() -> None:\n"
-            '    # frob:tests "never closed\n'
-            "    pass\n"
-        )
+        src = 'def foo() -> None:\n    # frob:tests "never closed\n    pass\n'
         pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
         edges, malformed = parse_directives(pf)
         assert not edges
@@ -988,9 +982,7 @@ class TestQuotedPositionalTarget:
         assert len(edges) == 1
         assert edges[0].attrs["reason"] == "a reason with spaces"
 
-    def test_quoted_target_round_trips_through_fmt_wrap(
-        self, tmp_path: Path
-    ) -> None:
+    def test_quoted_target_round_trips_through_fmt_wrap(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_line
         # T-3893/T-3889: a quoted span wrapped mid-string by `frob fmt`
         # must read back as the identical value once unfolded.
@@ -1001,8 +993,7 @@ class TestQuotedPositionalTarget:
             'several words in it" kind="unit"'
         )
         expected_target = (
-            "src/x.test.ts a fairly long describe title with several "
-            "words in it"
+            "src/x.test.ts a fairly long describe title with several words in it"
         )
         src_template = "def foo() -> None:\n    # {}\n    pass\n"
         original = src_template.format(logical)
