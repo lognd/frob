@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/_coverage*.py
 - tests/**/test_test002*
 - tests/**/*coverage*
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
   glob: tests/**/*coverage*
   reason: TEST002 conflates absent coverage artifact with measured zero; fix distinguishes
     three states and audits shared loader consumers
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: gates.py frob:doc targets live here
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
