@@ -1,0 +1,63 @@
+name: Bug report
+description: Report unexpected or incorrect behavior in frob
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. The more precise the
+        reproduction, the faster this can be fixed.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear description of the incorrect or unexpected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: >
+        The exact command(s) you ran, and the smallest repository shape
+        that reproduces the issue. A small fixture repo or a short shell
+        transcript is ideal.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen instead.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: frob version
+      description: 'Run: frob --version'
+      placeholder: "0.530.0"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Python version and OS
+      placeholder: "Python 3.12.4, Ubuntu 22.04"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: doctor-checked
+    attributes:
+      label: Sanity check
+      options:
+        - label: I ran `frob doctor` and it reported native extensions available
+          required: false

@@ -18,6 +18,9 @@ real.
   install paths, and why the standalone tool needs --with for the crates.
 - `docs/guides/quickstart.md` -- a real end-to-end walkthrough: build the graph,
   file a ticket, annotate code, hit a violation, fix it, ack, test, close.
+- `docs/guides/command-reference.md` -- the seven verb groups (explore,
+  quality, design, ops, ticket, vet, serve) and the full top-level
+  command table.
 - `docs/guides/agentic-workflow.md` -- the human/AI split: how planner, implementer,
   reviewer, prover, and the auditors use the ticket queue and gates as the
   shared work surface, including the worktree-per-agent pattern.

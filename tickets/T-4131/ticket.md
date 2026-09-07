@@ -2,7 +2,7 @@
 id: T-4131
 title: 'release presentation: frob ships with no contributing guide, security policy,
   code of conduct, issue or PR templates, and no README badges'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-06'
@@ -39,18 +39,27 @@ scope_changes:
     fix)
   actor: logan
   at: '2026-09-07'
+evidence:
+- cmd:bash /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/t4131_fixture_check.sh
+  exit=0 sha256=bfaa03835d0b
 designated_repro_test: null
 acceptance:
 - text: given a first-time visitor, when they open the repository root, then a contributing
     guide, a security policy and a code of conduct are present and non-empty
-  evidence: []
+  evidence:
+  - cmd:bash /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/t4131_fixture_check.sh
+    exit=0 sha256=bfaa03835d0b
 - text: given the README, when it is rendered, then it carries badges for PyPI version,
     Python versions, license, CI status and the uv/ty/ruff/pytest toolchain, each
     linking to a real target
-  evidence: []
+  evidence:
+  - cmd:bash /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/t4131_fixture_check.sh
+    exit=0 sha256=bfaa03835d0b
 - text: given the repository, when a contributor opens a pull request or an issue,
     then a template is offered
-  evidence: []
+  evidence:
+  - cmd:bash /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/t4131_fixture_check.sh
+    exit=0 sha256=bfaa03835d0b
 threat: null
 component: null
 anchor: false
