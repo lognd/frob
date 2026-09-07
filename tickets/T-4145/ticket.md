@@ -2,7 +2,7 @@
 id: T-4145
 title: 'the suite is green and the self-gate is not: seven reference errors from adding
   standard community files, plus one oversized module'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
