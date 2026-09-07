@@ -27,9 +27,16 @@ acceptance:
   evidence: []
 - text: given the four retained badges, when each URL is requested, then it resolves
   evidence: []
-- text: given the README outside the badge block, when diffed against main, then it
-    is unchanged
-  evidence: []
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: given the README outside the badge block, when diffed against main, then
+    it is unchanged
+  new_text: null
+  reason: 'owner: no tests needed for a README badge deletion; a diff-is-unchanged
+    criterion is ceremony on a four-line docs change'
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false
