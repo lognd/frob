@@ -22,6 +22,8 @@ scope:
 - src/frob/check/__init__.py
 - src/frob/vet/__init__.py
 - src/frob/process/_project_tool.py
+- src/frob/gates/_rule_id_scan.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -77,6 +79,18 @@ scope_changes:
   glob: src/frob/process/_project_tool.py
   reason: uv run --project side-effect creates untracked uv.lock in target repo, tripping
     PRE001/SCOPE001 on a clean check
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_rule_id_scan.py
+  reason: name every gate-registration list in GATERULE001's message; document the
+    registration surface and single-point-of-registration decision
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: name every gate-registration list in GATERULE001's message; document the
+    registration surface and single-point-of-registration decision
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
