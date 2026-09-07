@@ -16,10 +16,27 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land_ty_diff_attribution.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land_ty_diff_attribution.py
+  reason: 'T-4125: the pre-land ty refusal message format changed (now names file/line/text,
+    tree, commit, and resolved tool path+version); existing fixtures assert against
+    it'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-4125: the pre-land ty refusal message format changed (now names file/line/text,
+    tree, commit, and resolved tool path+version); existing fixtures assert against
+    it'
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'answers this ticket''s open mechanism question: it is neither the pre-merge
