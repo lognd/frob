@@ -68,7 +68,16 @@ class TestDiagSeverity:
 
 
 class TestGatesFamilyResultUnresolved:
-    def test_unresolved_findings_never_fail_the_family(self) -> None:
+    """T-3985 made `root` a required positional on `_gates_family_result`
+    (it drives `_family_subject_count`'s real filesystem probes, so a
+    default risks silently computing a subject count against the wrong
+    tree rather than failing loudly) -- every call site here passes
+    `tmp_path` rather than reverting the signature. "REF" has no
+    registered subject-count probe (only PROFILE001 does), so these
+    calls are inert to `root`'s value; `tmp_path` keeps them isolated
+    from this repo's own config regardless."""
+
+    def test_unresolved_findings_never_fail_the_family(self, tmp_path) -> None:
         # frob:tests src/frob/check/_python.py::_gates_family_result
         # A family with ONLY unresolved findings (no errors) must still
         # exit 0 -- UNRESOLVED is visible/countable, never a silent
@@ -76,13 +85,13 @@ class TestGatesFamilyResultUnresolved:
         from frob.check._python import _gates_family_result
 
         violations = [_violation("REF001", Severity.UNRESOLVED)]
-        result = _gates_family_result("REF", violations, [])
+        result = _gates_family_result("REF", violations, [], tmp_path)
         assert result.exit_code == 0
         assert "1 unresolved" in result.summary
         assert "0 errors" in result.summary
 
     def test_unresolved_count_shown_as_its_own_term_not_folded_into_warn(
-        self,
+        self, tmp_path
     ) -> None:
         # frob:tests src/frob/check/_python.py::_gates_family_result
         from frob.check._python import _gates_family_result
@@ -91,11 +100,13 @@ class TestGatesFamilyResultUnresolved:
             _violation("REF001", Severity.WARN),
             _violation("REF001", Severity.UNRESOLVED),
         ]
-        result = _gates_family_result("REF", violations, [])
+        result = _gates_family_result("REF", violations, [], tmp_path)
         assert "1 warning" in result.summary
         assert "1 unresolved" in result.summary
 
-    def test_errors_still_fail_the_family_regardless_of_unresolved(self) -> None:
+    def test_errors_still_fail_the_family_regardless_of_unresolved(
+        self, tmp_path
+    ) -> None:
         # frob:tests src/frob/check/_python.py::_gates_family_result
         from frob.check._python import _gates_family_result
 
@@ -103,7 +114,7 @@ class TestGatesFamilyResultUnresolved:
             _violation("REF001", Severity.ERROR),
             _violation("REF001", Severity.UNRESOLVED),
         ]
-        result = _gates_family_result("REF", violations, [])
+        result = _gates_family_result("REF", violations, [], tmp_path)
         assert result.exit_code == 1
 
 

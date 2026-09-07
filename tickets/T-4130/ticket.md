@@ -2,7 +2,7 @@
 id: T-4130
 title: 'all three CI legs red after the 79-commit push: 12 failures in four clusters,
   three of them a landed change with unupdated callers or test doubles'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -19,7 +19,7 @@ scope:
 - tests/unit/test_check_gates_summary.py
 - tests/unit/test_app_runners_batch6.py
 - tests/unit/test_runtime_deps.py
-- tickets/T-draft-ca28d9be/ticket.md
+- tickets/T-4136/ticket.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'SCOPE002 closure-explosion class (T-3299/T-3902/T-3957/T-4098/T-4103):
   these test files'' pre-existing (untouched by T-4130) frob:tests bindings to src/frob/app/check_runner.py
@@ -30,7 +30,7 @@ no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-ca28d9be/ticket.md
+  glob: tickets/T-4136/ticket.md
   reason: T-4130's own new-ticket file, filed for the T-4105 producer/consumer desync
     found while testing this ticket's fix
   actor: logan
@@ -45,14 +45,17 @@ evidence:
 designated_repro_test: null
 acceptance:
 - text: given the ubuntu CI leg, when the full suite runs, then it reports zero failures
-  evidence: []
+  evidence:
+  - tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_completed_run_format_is_unchanged
 - text: given the four landed changes named in this ticket, when the regression is
     fixed, then none of them is reverted
-  evidence: []
+  evidence:
+  - tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved
 - text: given an import name absent from the runtime-deps mapping table, when the
     test fails, then its message says the name is unmapped rather than claiming the
     dependency is undeclared
-  evidence: []
+  evidence:
+  - tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared
 threat: null
 component: null
 anchor: false

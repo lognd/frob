@@ -28,6 +28,8 @@ _DIST_FOR_IMPORT = {
     "yaml": "pyyaml",
     "jinja2": "jinja2",
     "packaging": "packaging",
+    # frob:ticket T-4130
+    "pathspec": "pathspec",
 }
 
 # imports that are intentionally NOT runtime deps: optional extras (their
@@ -65,19 +67,42 @@ class TestRuntimeDepsDeclared:
     # frob:ticket T-0152
 
     def test_every_unguarded_third_party_import_is_declared(self) -> None:
+        # T-4130: an import name absent from `_DIST_FOR_IMPORT` (the table
+        # is unmaintained for it) is a DIFFERENT state from a name present
+        # in the table whose distribution is genuinely undeclared in
+        # pyproject.toml -- the pathspec incident (T-4130) was the first
+        # kind reported as the second, which sends whoever reads the
+        # message to "add the dep" when the dep is already declared and
+        # the fix needed is a table entry. Two separate buckets, two
+        # separate sentences, so the message always names the fix that
+        # actually clears the finding.
         declared = _declared_dists()
-        missing: dict[str, set[str]] = {}
+        unmapped: dict[str, set[str]] = {}
+        undeclared: dict[str, set[str]] = {}
         for path in sorted(_SRC.rglob("*.py")):
             for name in _top_level_imports(path):
                 if name in sys.stdlib_module_names or name in _ALLOWED_UNDECLARED:
                     continue
                 dist = _DIST_FOR_IMPORT.get(name)
-                if dist is None or dist not in declared:
-                    missing.setdefault(name, set()).add(str(path.relative_to(_REPO)))
-        assert not missing, (
-            "unguarded top-level imports with no [project].dependencies "
-            f"declaration (add the dep or guard the import): {missing}"
-        )
+                if dist is None:
+                    unmapped.setdefault(name, set()).add(str(path.relative_to(_REPO)))
+                elif dist not in declared:
+                    undeclared.setdefault(name, set()).add(
+                        str(path.relative_to(_REPO))
+                    )
+        messages = []
+        if unmapped:
+            messages.append(
+                "import name(s) absent from _DIST_FOR_IMPORT (the table is "
+                f"unmaintained for them, add a table entry): {unmapped}"
+            )
+        if undeclared:
+            messages.append(
+                "import name(s) mapped to a distribution NOT declared in "
+                f"[project].dependencies (add the dep or guard the import): "
+                f"{undeclared}"
+            )
+        assert not messages, "; ".join(messages)
 
     def test_packaging_regression_is_locked(self) -> None:
         # The exact T-0152 incident: packaging imported by vet._cve.

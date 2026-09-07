@@ -57,6 +57,26 @@ def _load_conftest():
     return load_conftest_module("_t3246_conftest_under_test")
 
 
+# frob:ticket T-4130
+class _FakeTerminalWriter:
+    """Stand-in for `TerminalReporter._tw` (T-4103): tracks column-zero
+    state via `width_of_current_line` so `pytest_sessionfinish`'s width
+    check is a no-op here, mirroring `TestSuiteResultLine._FakeTerminalWriter`
+    in tests/unit/test_conftest_stackdump.py without importing across
+    test modules."""
+
+    # frob:ticket T-4130
+    def __init__(self) -> None:
+        self.width_of_current_line = 0
+
+    # frob:ticket T-4130
+    def line(self, s: str = "") -> None:
+        """No-op: this module's fakes always report column zero, so the
+        real hook never calls this in practice; kept only to match the
+        real `TerminalWriter` surface `pytest_sessionfinish` reaches."""
+        self.width_of_current_line = 0
+
+
 # frob:ticket T-3246
 class _FakeReporter:
     """Records every `write_line` call so a test can assert on exactly what
@@ -65,12 +85,22 @@ class _FakeReporter:
     # frob:ticket T-3246
     def __init__(self) -> None:
         self.lines: list[str] = []
+        # frob:ticket T-4130
+        self._tw = _FakeTerminalWriter()
 
     # frob:ticket T-3246
     def write_line(self, line: str, **_markup: bool) -> None:
         """Append `line` to the recorded transcript, mirroring the subset
         of `TerminalReporter.write_line`'s signature this hook uses."""
         self.lines.append(line)
+
+    # frob:ticket T-4130
+    def ensure_newline(self) -> None:
+        """No-op: this module's fakes are always at column zero (matching
+        `TerminalReporter.ensure_newline`'s real no-op-when-already-at-
+        start-of-line behavior), so `pytest_sessionfinish`'s call here
+        never mutates `.lines`."""
+        return None
 
 
 # frob:ticket T-3246

@@ -1,0 +1,106 @@
+## Done report
+
+Per-cluster fix:
+1. Read tests/conftest.py::pytest_sessionfinish's ACTUAL current mechanism
+   (T-4103's final implementation, not its original ask): it calls
+   reporter.ensure_newline() AND backs it up with
+   reporter._tw.width_of_current_line / reporter._tw.line("") because
+   ensure_newline() alone was measured to no-op under -q -q. Gave
+   test_conftest_suite_result_status.py's _FakeReporter both an
+   ensure_newline() no-op and a _tw stub (width_of_current_line=0,
+   line()) matching that real surface -- module's fakes are always at
+   column zero so neither call mutates recorded .lines, matching this
+   file's existing assertions.
+2. Traced _gates_family_result's required root param to T-3985 --
+   it feeds _family_subject_count's real filesystem probes (own_repo,
+   severity overrides). DECIDED: keep it required, not defaulted. A
+   default would let a caller silently compute a subject count against
+   an arbitrary/wrong tree instead of failing loudly; that is exactly
+   the silent-zero failure class T-3985 exists to prevent. Updated the
+   three stale call sites in test_check_gates_summary.py to pass
+   tmp_path (family "REF" has no registered subject-count probe, so the
+   value is inert to these tests; tmp_path keeps them isolated from
+   this repo's own config regardless).
+3. CONTRACT DECISION (explicit, not a test edit alone): the new
+   subject_count key belongs in every ToolResult payload, including
+   this "fake" tool's. Per T-3985's own documented three-state design
+   (ToolResult.subject_count docstring), None is NOT the silent-zero
+   shape the primitive exists to catch -- it is the distinct, honest
+   "this call site has not been migrated yet" state, which is a
+   different claim from a populated 0. Suppressing the key to preserve
+   byte-identity would hide that a real schema change happened.
+   Updated the test's expected payload to include "subject_count": None
+   and documented the resulting compatibility contract inline: the key
+   is now part of every ToolResult JSON shape (present, null, for any
+   unmigrated tool) -- a consumer must treat a missing key and a null
+   key identically, never assume the key's absence.
+4. Confirmed pathspec is declared at pyproject.toml:26 (test's own
+   remedy already applied) -- the failure was a hardcoded
+   import-name-to-distribution-name table gap, not an undeclared dep.
+   Added the pathspec entry AND split the failure message into two
+   buckets (unmapped import name vs. mapped-but-undeclared
+   distribution) so the two states print different sentences and this
+   cannot recur as the same "add the dep" no-exit. Did not change the
+   table to a derived one (out of this ticket's scope; the message fix
+   alone satisfies the THIRD FIXTURE) -- worth a follow-up ticket if
+   the repo wants that structurally prevented.
+
+Producer-side guard: NONE found. All three of clusters 1-3 (and a
+fourth instance discovered while verifying broadly, see Filed) are the
+same class -- a landed change updated a producer/call site and each
+ticket verified only its OWN files, never the sibling module doubling
+or calling the same surface. No xref-on-signature-change or
+double-staleness detector exists in this repo today; this is worth its
+own ticket (not filed here -- it is a new capability, not a bug fix,
+and out of T-4130's scope).
+
+Evidence (bound + --check-repro verified against merge-base
+6571b73a1): tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_completed_run_format_is_unchanged (FAILED_AT_PARENT confirmed -- genuine repro), tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_findings_never_fail_the_family, tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_count_shown_as_its_own_term_not_folded_into_warn, tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved, tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active, tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared.
+
+Broader verification: full tests/unit suite run (6417 collected) --
+0 failures in this ticket's scope; found ONE additional, unrelated
+failure (test_land_cmd_drain_wiring.py, a T-4105 desync of the exact
+same class, different file, out of T-4130's scope) and filed it rather
+than fixing it in-scope.
+
+Filed: T-4136 -- test_land_cmd_drain_wiring.py's
+spawn_deferred_post_land_sweep double lacks T-4105's new target_branch
+kwarg; same producer/consumer desync class, out of T-4130's scope.
+
+Gates: frob check --ticket T-4130 clean except:
+- gate:SCOPE 10x SCOPE002 -- the T-4103-precedent closure-explosion
+  class (T-3299/T-3902/T-3957/T-4098/T-4103): these test files'
+  PRE-EXISTING frob:tests bindings pull in unrelated modules this
+  ticket does not touch. No frob:waive-addressable mechanism exists for
+  a tickets.md:0 finding; acked via frob ticket scope-ack T-4130 per
+  the T-4103 precedent rather than absorbing unrelated files into
+  scope.
+- gate:LARGE 1x LARGE001 on src/frob/_cli_parsers/_ticket/_closeout.py
+  (922 lines) -- pre-existing on main, untouched by this ticket,
+  unrelated file.
+- gate:PRE clean after frob ticket sweep T-4130 (pre-work sweep run
+  mid-ticket).
+
+### Changed
+```
+ tests/unit/test_app_runners_batch6.py           | 12 ++++++++
+ tests/unit/test_check_gates_summary.py          | 23 +++++++++++----
+ tests/unit/test_conftest_suite_result_status.py | 30 +++++++++++++++++++
+ tests/unit/test_runtime_deps.py                 | 39 ++++++++++++++++++++-----
+ tickets/T-4130/ticket.md                        | 25 ++++++++++++++--
+ tickets/T-4136/ticket.md              | 30 +++++++++++++++++++
+ 6 files changed, 143 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_completed_run_format_is_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_findings_never_fail_the_family` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_count_shown_as_its_own_term_not_folded_into_warn` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active` (pytest node id, verified passing when recorded)
+- `tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 2 error(s), 4463 warning(s), 935 waived
+- error-findings: LARGE001@src/frob/_cli_parsers/_ticket/_closeout.py, SCOPE002@tickets.md

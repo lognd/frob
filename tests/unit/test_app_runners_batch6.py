@@ -703,6 +703,18 @@ class TestJsonStdoutStructuralGuard:
                 # the correct default-shim value for a bare "fake" tool.
                 "measurement": "measured",
                 "measurement_reason": "",
+                # T-3985/T-4130: `subject_count` is a deliberate, additive
+                # ToolResult field, not a per-site opt-in -- `None` here
+                # is the documented "not yet migrated" state (see
+                # ToolResult.subject_count's own docstring), which is a
+                # DIFFERENT claim from a populated `0`, so it belongs in
+                # the payload rather than being suppressed to preserve
+                # byte-identity. The compatibility contract is: this key
+                # is now part of every ToolResult JSON shape, present and
+                # `null` for any tool that has not been migrated to
+                # populate it -- a consumer must treat a missing key and
+                # a `null` key the same way, not assume the key's absence.
+                "subject_count": None,
             }
         ]
 
