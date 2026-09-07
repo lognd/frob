@@ -2,7 +2,7 @@
 id: T-3887
 title: several gates execute the target project's code in frob's own interpreter,
   so they cannot measure any non-frob project
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -14,10 +14,92 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/process/_project_tool.py
+- src/frob/check/_python.py
+- src/frob/app/pyfmt_runner.py
+- src/frob/gates/_bare_toolchain.py
+- tests/unit/test_project_tool.py
+- tests/unit/test_bare_toolchain.py
+- tests/unit/test_pyfmt_runner.py
+- tests/unit/check/test_python_runners.py
+- docs/modules/process.md
+- docs/modules/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_project_tool.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/app/pyfmt_runner.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_bare_toolchain.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_project_tool.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_bare_toolchain.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_pyfmt_runner.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/check/test_python_runners.py
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/check.md
+  reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
+    through the project''s own environment via one helper, plus a regrowth-preventing
+    gate check'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 threat: null
 component: null
