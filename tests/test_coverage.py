@@ -595,7 +595,7 @@ class TestComputeWorkerCount:
         assert _refresh_mod._available_memory_mb() is None
 
     def test_pytest_argv_appends_computed_n_flag(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_appends_computed_n_flag  # noqa: E501
         """`-n <computed>` must land AFTER `pytest`'s own base args so it
@@ -603,20 +603,114 @@ class TestComputeWorkerCount:
         wins for xdist's plain argparse `store` option)."""
         monkeypatch.setattr(_refresh_mod, "_compute_worker_count", lambda: 4)
         argv = _refresh_mod._pytest_argv(
-            targets=(), cov_target="src/frob", append=False
+            tmp_path, targets=(), cov_target="src/frob", append=False
         )
         assert "-n" in argv
         assert argv[argv.index("-n") + 1] == "4"
 
     def test_pytest_argv_omits_n_flag_when_unmeasurable(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_omits_n_flag_when_unmeasurable  # noqa: E501
         monkeypatch.setattr(_refresh_mod, "_compute_worker_count", lambda: None)
         argv = _refresh_mod._pytest_argv(
-            targets=(), cov_target="src/frob", append=False
+            tmp_path, targets=(), cov_target="src/frob", append=False
         )
         assert "-n" not in argv
+
+    def test_pytest_argv_routes_through_project_env(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_routes_throug\
+        # h_project_env
+        """T-4148 (F-017): argv[0] must be `uv`, spawning `pytest` via
+        `uv run --project <root>` -- never a bare `"pytest"` argv[0],
+        which resolves through the SPAWNING process's own PATH (a global
+        shim with no visibility into `root`'s own `.venv`, three
+        consumer repos' own independently-reported symptom) instead of
+        `root`'s own environment."""
+        argv = _refresh_mod._pytest_argv(
+            tmp_path, targets=(), cov_target="src/frob", append=False
+        )
+        assert argv[:4] == ["uv", "run", "--project", str(tmp_path)]
+        assert "pytest" in argv
+        assert argv.index("pytest") == 4
+
+    def test_pytest_argv_off_repo_project_not_importable_from_frob(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_off_repo_proj\
+        # ect_not_importable_from_frob
+        """T-4148's own off-repo doctrine, applied directly against the
+        real bug T-3887 F-017 reported three times: a genuine `uv`
+        project (real `uv sync`, real `.venv`) whose own package
+        (`demo`) is asserted directly to be UNIMPORTABLE from frob's own
+        interpreter -- the pre-fix bare `"pytest"` argv[0] would resolve
+        through frob's own PATH/interpreter and either import-error or
+        (worse) silently run zero of `demo`'s own tests via a global
+        shim. Post-fix, `_pytest_argv`'s `uv run --project <tmp_path>
+        pytest` argv, spawned for real through `_pytest_outcome`, must
+        pass GREEN with `demo`'s own single real test collected and
+        run."""
+        import importlib.util
+
+        assert importlib.util.find_spec("demo") is None, (
+            "'demo' must NOT be importable from frob's own interpreter "
+            "for this test to prove anything"
+        )
+        (tmp_path / "pyproject.toml").write_text(
+            textwrap.dedent(
+                """
+                [project]
+                name = "demo"
+                version = "0.0.1"
+                requires-python = ">=3.11"
+                dependencies = ["pytest", "pytest-cov", "pytest-xdist"]
+
+                [tool.uv]
+                package = true
+
+                [build-system]
+                requires = ["hatchling"]
+                build-backend = "hatchling.build"
+
+                [tool.hatch.build.targets.wheel]
+                packages = ["src/demo"]
+                """
+            )
+        )
+        src_dir = tmp_path / "src" / "demo"
+        src_dir.mkdir(parents=True)
+        (src_dir / "__init__.py").write_text("def add(a, b):\n    return a + b\n")
+        tests_dir = tmp_path / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "test_demo.py").write_text(
+            textwrap.dedent(
+                """
+                from demo import add
+
+                def test_add():
+                    assert add(1, 2) == 3
+                """
+            )
+        )
+        sync = subprocess.run(  # noqa: S603, S607 -- real uv sync, this test's whole point
+            ["uv", "sync"], cwd=tmp_path, capture_output=True, text=True, timeout=120
+        )
+        assert sync.returncode == 0, f"uv sync failed: {sync.stderr}"
+
+        argv = _refresh_mod._pytest_argv(
+            tmp_path, targets=(), cov_target="demo", append=False
+        )
+        env = _refresh_mod._pytest_subprocess_env(tmp_path, cov_target="demo")
+        result = _refresh_mod._pytest_outcome(argv, cwd=tmp_path, env=env)
+        assert result.is_ok
+        outcome = result.danger_ok
+        assert outcome.exit_code == 0, (
+            f"expected a clean pytest pass through {tmp_path}'s own uv-managed "
+            f"env; got exit={outcome.exit_code} (argv={argv})"
+        )
+        assert outcome.degraded is False
 
 
 # frob:ticket T-1516
@@ -663,7 +757,7 @@ class TestNativeCoverageRefresh:
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
-        assert calls[0][0] == "pytest"
+        assert "pytest" in calls[0]
         assert "--cov-append" not in calls[0]
         assert calls[1] == ["coverage", "xml", "-i"]
         assert len(stamp_calls) == 1
@@ -690,7 +784,7 @@ class TestNativeCoverageRefresh:
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
-        assert calls[0][0] == "pytest"
+        assert "pytest" in calls[0]
         assert "--cov-append" in calls[0]
         assert "tests/test_foo.py::test_widget" in calls[0]
 
@@ -740,7 +834,7 @@ class TestNativeCoverageRefresh:
 
         def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
-            code = 1 if argv[0] == "pytest" else 0
+            code = 1 if "pytest" in argv else 0
             return Ok(subprocess.CompletedProcess(argv, code))
 
         monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
@@ -748,7 +842,7 @@ class TestNativeCoverageRefresh:
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
-        assert calls[0][0] == "pytest"
+        assert "pytest" in calls[0]
         assert ["coverage", "xml", "-i"] in calls
         assert len(stamp_calls) == 1
 
@@ -777,7 +871,7 @@ class TestNativeCoverageRefresh:
 
         def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
-            if argv[0] == "pytest" and "-n" in argv:
+            if "pytest" in argv and "-n" in argv:
                 return Ok(subprocess.CompletedProcess(argv, 3, stdout=crash_output))
             return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
 
@@ -796,7 +890,7 @@ class TestNativeCoverageRefresh:
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
 
-        pytest_calls = [c for c in calls if c[0] == "pytest"]
+        pytest_calls = [c for c in calls if "pytest" in c]
         assert len(pytest_calls) == 2
         first, retry = pytest_calls
         assert "-n" in first
@@ -1665,7 +1759,7 @@ class TestNativeCoverageRefreshAbort:
         xml_calls: list[list[str]] = []
 
         def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
-            if argv[0] == "pytest":
+            if "pytest" in argv:
                 return Err(spawn_error)
             xml_calls.append(list(argv))
             return Ok(subprocess.CompletedProcess(argv, 0))

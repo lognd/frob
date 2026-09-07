@@ -1,7 +1,7 @@
 ---
 id: T-4148
 title: route frob.testing coverage pytest spawn and xdist check through project env
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -52,6 +52,10 @@ scope_changes:
     polish is filed as a follow-up instead of forced through a leased file'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/test_coverage.py::TestComputeWorkerCount::test_pytest_argv_off_repo_project_not_importable_from_frob
+- tests/test_coverage.py::TestComputeWorkerCount::test_pytest_argv_routes_through_project_env
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 designated_repro_test: null
 threat: null
 component: null

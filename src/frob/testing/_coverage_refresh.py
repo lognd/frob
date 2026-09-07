@@ -82,6 +82,7 @@ from typani.unit import Unit
 
 from frob.logging import get_logger
 from frob.process._guard import exec_enabled
+from frob.process._project_tool import project_tool_argv
 from frob.testing._incremental_coverage import python_coverage_targets
 from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
@@ -645,12 +646,22 @@ class _PytestPass:
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_full_run_when_no_stamp_exists  # noqa: E501
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_incremental_run_uses_touched_set_targets  # noqa: E501
 def _pytest_argv(
+    root: Path,
     *,
     targets: tuple[str, ...],
     cov_target: str,
     append: bool,
 ) -> list[str]:
     """The `pytest` argv for one refresh pass (T-1516).
+
+    T-4148 (F-017): spawned via `frob.process._project_tool.
+    project_tool_argv(root, "pytest", ...)` -- `uv run --project <root>
+    pytest ...` -- rather than a bare `"pytest"` argv[0], which resolves
+    through the SPAWNING process's own PATH: three consumer repos
+    independently reported `frob coverage --full` reporting the suite RED
+    because a global pytest shim (no visibility into `root`'s own `.venv`
+    site-packages) collected zero of the project's tests, while the
+    identical arguments run via `root`'s own environment passed clean.
 
     `append=True` (an incremental, touched-set-restricted pass) adds
     `--cov-append` so a PRIOR full run's per-file data for every file this
@@ -668,7 +679,7 @@ def _pytest_argv(
     (silently keeps `-n auto`) when memory cannot be measured (non-Linux)
     or `FROB_COVERAGE_MAX_WORKERS=0` opts out explicitly."""
     argv = [
-        "pytest",
+        *project_tool_argv(root, "pytest"),
         f"--cov={cov_target}",
         "--cov-report=",
     ]
@@ -1211,7 +1222,7 @@ def _run_full_suite(
     to keep that function under the ARCH001 line threshold. `reason` is a
     human-readable log label only (e.g. "explicit --full")."""
     _log.info("coverage_refresh: %s -- running the full suite", reason)
-    argv = _pytest_argv(targets=(), cov_target=cov_target, append=False)
+    argv = _pytest_argv(root, targets=(), cov_target=cov_target, append=False)
     env = _pytest_subprocess_env(root, cov_target=cov_target)
     ran = _pytest_outcome(argv, cwd=root, env=env)
     if ran.is_err:
@@ -1240,7 +1251,7 @@ def _run_incremental_or_restamp(
     targets = python_coverage_targets(root, snapshot, base)
     if targets:
         _log.info("coverage_refresh: incremental run, %d target(s)", len(targets))
-        argv = _pytest_argv(targets=targets, cov_target=cov_target, append=True)
+        argv = _pytest_argv(root, targets=targets, cov_target=cov_target, append=True)
         env = _pytest_subprocess_env(root, cov_target=cov_target)
         ran = _pytest_outcome(argv, cwd=root, env=env)
         if ran.is_err:
