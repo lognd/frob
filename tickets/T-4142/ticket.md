@@ -18,6 +18,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'retracts this ticket''s premise against a CI measurement: 0 failures across
+    13610 tests on an unloaded machine, versus 9 locally. Six of the nine were self-scan
+    tests reading this checkout''s ~20 agent worktrees and two were memory-induced
+    worker deaths; records the standing rule that self-scan behaviour is measured
+    where the tree is clean, and narrows the remaining work to excluding nested worktrees
+    from those tests'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 5009
+  new_length: 7907
 designated_repro_test: null
 acceptance:
 - text: given the full test suite, when it is run on a machine with enough headroom
@@ -122,3 +134,52 @@ ACCEPTANCE
 - No self-scan assertion loosened to reach green.
 - The two suspected-OOM tests re-measured in isolation.
 - All three fixtures committed.
+
+CORRECTION, MEASURED ON CI 2026-09-07: NONE OF THE NINE REPRODUCE. This ticket's
+premise above is wrong and is left in place only as the record of what a loaded
+machine reported. The authoritative measurement is CI run 34091766127, ubuntu
+leg, on the same tree plus the two regression fixes:
+
+    SUITE-RESULT: exitstatus=0 collected=13610 failed=0
+
+Zero test failures across 13610 tests. macOS's suite step also passed. Both legs'
+JOBS still failed, but on a later step (`frob check` self-gate, 8 errors) which
+is now tracked separately as T-4145 -- not on any test.
+
+WHY THE LOCAL RUN SAW NINE AND CI SAW ZERO, which is the durable lesson and the
+reason this correction is worth more than the retraction:
+
+  SIX OF THE NINE WERE SELF-SCAN TESTS -- the protocol real-repo scan, the four
+  registry burn-downs, and the zero-errors-on-real-repo waiver test. Those
+  measure THIS CHECKOUT rather than a fixture. This checkout carries roughly
+  twenty agent worktrees under the agent-config directory that CI does not have,
+  each holding a different branch's files. A test that scans "the repository"
+  here is scanning twenty overlapping trees.
+
+  THE TWO WORKER DEATHS WERE MEMORY, NOT CODE. They died with no timeout dump
+  while the machine was measured at high load with swap in use, exactly as the
+  ticket suspected. CI, unloaded, ran them.
+
+SO THE STANDING RULE IS: MEASURE SELF-SCAN BEHAVIOUR WHERE THE TREE IS CLEAN.
+A local full-suite result on a coordinator machine running a fleet is not
+evidence about the repository; it is evidence about the fleet. This is the same
+nested-worktree contamination a consumer already reported from the other side --
+their checkout's type stage scanned agent worktrees and reported unresolved
+imports for files that exist only on other branches, and they had to exclude the
+directory in three separate config files. We have now hit the identical class in
+our own test suite without recognising it for what it was.
+
+WHAT REMAINS OF THIS TICKET. The acceptance criteria still stand, but the work is
+smaller and different than filed:
+  - A complete, non-aborted full-suite run: ACHIEVED, on CI. Record CI as the
+    place that measurement happens, not this machine.
+  - Classify every failure: DONE by this correction -- all nine were environmental,
+    none were regressions or debt.
+  - Do not loosen self-scan assertions: still binding, and now more clearly right.
+    Had anyone "fixed" those six by weakening them, they would have destroyed
+    real checks to satisfy a measurement artefact.
+The residual work worth keeping is the LAST acceptance criterion only: prove each
+retained self-scan test still fails when a real finding of its kind is
+introduced, and additionally make those tests either skip or exclude nested agent
+worktrees so a local run is meaningful again. That second half is the same fix a
+consumer asked for and is worth doing here.
