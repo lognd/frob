@@ -36,9 +36,18 @@ body_changes:
   old_length: 1889
   new_length: 2671
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_midrun_watchdog_seconds
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_midrun_watchdog_seconds
 - tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_stamp_baseline_is_bare_not_chunked_by_only
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_midrun_watchdog_seconds
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_midrun_watchdog_seconds
+  reason: T-4265 deleted the diagnostic-step-only test classes and moved this still-valid
+    Test-step-mitigation assertion from TestWindowsDiagStepDoesNotGateTheJob into
+    the new TestWindowsTestStepMitigationsStayPinned class; same test, same assertion,
+    new home
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

@@ -30,10 +30,7 @@ scope_changes:
   actor: logan
   at: '2026-08-31'
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepFixtureIsAClassifiableProject::test_fixture_gets_a_pyproject_toml
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepRunsUnbudgeted::test_diag_invocation_has_no_budget_flag
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_continue_on_error
@@ -42,6 +39,35 @@ evidence_changes:
     rebind stale COV003 evidence citation'
   actor: logan
   at: '2026-09-02'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
+  reason: T-4265 deleted the diagnostic-step-only test classes and moved this still-valid
+    Test-step-mitigation assertion from TestWindowsDiagStepDoesNotGateTheJob into
+    the new TestWindowsTestStepMitigationsStayPinned class; same test, same assertion,
+    new home
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepFixtureIsAClassifiableProject::test_fixture_gets_a_pyproject_toml
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepRunsUnbudgeted::test_diag_invocation_has_no_budget_flag
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

@@ -21,7 +21,7 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_win32_test_step_raises_per_test_timeout_to_600
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_raises_per_test_timeout_to_600
 designated_repro_test: null
 evidence_changes:
 - old_node: cmd:uv run python -m pytest tests/test_ci_workflow_matrix.py tests/unit/test_release_workflow_gate.py
@@ -32,6 +32,14 @@ evidence_changes:
     regression test that asserts --timeout=600 in ci.yml
   actor: logan
   at: '2026-09-04'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_win32_test_step_raises_per_test_timeout_to_600
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_raises_per_test_timeout_to_600
+  reason: T-4265 deleted the diagnostic-step-only test classes and moved this still-valid
+    Test-step-mitigation assertion from TestWindowsDiagStepDoesNotGateTheJob into
+    the new TestWindowsTestStepMitigationsStayPinned class; same test, same assertion,
+    new home
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

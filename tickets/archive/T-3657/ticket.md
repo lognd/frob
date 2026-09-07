@@ -29,13 +29,56 @@ evidence:
 - tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_installs_and_removes_handler_when_requested
 - tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_handler_swallows_ctrl_c_and_ctrl_break
 - tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_handler_passes_through_other_events
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_exists_and_runs_on_windows
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_has_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_sets_frob_disable_exec_before_main
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_reuses_the_same_fixture
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_pins_project_to_checkout
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_precedes_the_windows_test_step
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_exists_and_runs_on_windows
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_has_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_sets_frob_disable_exec_before_main
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_reuses_the_same_fixture
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_pins_project_to_checkout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_precedes_the_windows_test_step
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

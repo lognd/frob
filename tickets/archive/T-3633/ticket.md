@@ -20,10 +20,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-evidence:
-- tests/test_ci_workflow_matrix.py::TestCodeLinesArrayLiteralIsSyntacticallyBalanced::test_last_array_element_has_no_trailing_comma
-- tests/test_ci_workflow_matrix.py::TestCodeLinesArrayLiteralIsSyntacticallyBalanced::test_every_non_last_element_line_ends_with_a_comma
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestCodeLinesArrayLiteralIsSyntacticallyBalanced::test_last_array_element_has_no_trailing_comma
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestCodeLinesArrayLiteralIsSyntacticallyBalanced::test_every_non_last_element_line_ends_with_a_comma
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

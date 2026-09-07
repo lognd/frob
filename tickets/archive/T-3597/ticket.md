@@ -34,10 +34,24 @@ scope_changes:
     test file
   actor: logan
   at: '2026-08-31'
-evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_still_scans_the_fixture_not_the_repo
 designated_repro_test: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; this ticket's other bound
+    evidence (the real code-level test/fix) still stands as proof it was done
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_still_scans_the_fixture_not_the_repo
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; this ticket's other bound
+    evidence (the real code-level test/fix) still stands as proof it was done
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

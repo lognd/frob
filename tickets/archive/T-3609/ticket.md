@@ -21,9 +21,7 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_uses_start_process_not_a_native_pwsh_command
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_does_not_redirect_stderr
@@ -40,6 +38,28 @@ evidence_changes:
     invariant
   actor: logan
   at: '2026-09-01'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_is_untouched_and_still_windows_only
+  reason: T-4265 deleted the diagnostic-step-only test classes and moved this still-valid
+    Test-step-mitigation assertion from TestWindowsDiagStepDoesNotGateTheJob into
+    the new TestWindowsTestStepMitigationsStayPinned class; same test, same assertion,
+    new home
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_uses_start_process_not_a_native_pwsh_command
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

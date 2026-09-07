@@ -19,9 +19,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; this ticket's other bound
+    evidence (the real code-level test/fix) still stands as proof it was done
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

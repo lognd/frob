@@ -40,18 +40,96 @@ evidence:
 - tests/unit/test_process_guard.py::TestPoolPreloadEnabled::test_falsy_value_stays_enabled
 - tests/unit/test_gates_pool_preload.py::TestRunProcessJobsSerially::test_runs_every_job_and_populates_accumulators
 - tests/unit/test_gates_pool_preload.py::TestRunProcessJobsSerially::test_empty_jobs_is_a_noop
-- tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_exists_and_runs_on_windows
-- tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_has_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_never_invokes_uv
-- tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_resolves_venv_python_under_workspace
-- tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_reuses_the_same_diag_script_and_fixture
-- tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_exists_and_runs_on_windows
-- tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_has_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_sets_env_var_before_main
-- tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_keeps_uv_ancestry
-- tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_reuses_the_same_fixture
-- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_precedes_the_windows_test_step
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_exists_and_runs_on_windows
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_has_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_never_invokes_uv
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_resolves_venv_python_under_workspace
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDirectPythonDiagVariant::test_directpython_diag_step_reuses_the_same_diag_script_and_fixture
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_exists_and_runs_on_windows
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_has_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_sets_env_var_before_main
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_keeps_uv_ancestry
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsNoPoolPreloadDiagVariant::test_nopoolpreload_diag_step_reuses_the_same_fixture
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_precedes_the_windows_test_step
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

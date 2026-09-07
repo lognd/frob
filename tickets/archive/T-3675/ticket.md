@@ -39,11 +39,7 @@ scope_changes:
   actor: logan
   at: '2026-09-01'
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_points_have_their_own_step
-- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_have_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_sets_its_own_matching_point
-- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_reuses_variant_a_script_and_fixture
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_hard_exit
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_hard_exit
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_false_when_env_unset
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_true_only_for_the_matching_point
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_unrecognized_value_matches_nothing
@@ -84,6 +80,46 @@ evidence_changes:
     4 to 7 points
   actor: logan
   at: '2026-09-01'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_hard_exit
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_hard_exit
+  reason: T-4265 deleted the diagnostic-step-only test classes and moved this still-valid
+    Test-step-mitigation assertion from TestWindowsDiagStepDoesNotGateTheJob into
+    the new TestWindowsTestStepMitigationsStayPinned class; same test, same assertion,
+    new home
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_points_have_their_own_step
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_have_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_sets_its_own_matching_point
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_reuses_variant_a_script_and_fixture
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false

@@ -32,22 +32,7 @@ scope_changes:
   actor: logan
   at: '2026-09-01'
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_exists_and_runs_on_windows
-- tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_has_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_never_imports_frob
-- tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_installs_the_signal_logger
-- tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_just_sleeps
-- tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_keeps_uv_ancestry
-- tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_exists_and_runs_on_windows
-- tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_has_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_imports_frob_and_nothing_else
-- tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_imports_before_sleeping
-- tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_exists_and_runs_on_windows
-- tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_has_a_bounded_timeout
-- tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_sets_the_env_var
-- tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_reuses_variant_a_script_and_fixture
-- tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_fails_the_step_on_exit_130
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_ignore_console_ctrl
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_ignore_console_ctrl
 - tests/unit/test_conftest_console_ctrl_guard.py::TestTestConsoleCtrlIgnoreRequested::test_false_on_non_win32_even_when_env_set
 - tests/unit/test_conftest_console_ctrl_guard.py::TestTestConsoleCtrlIgnoreRequested::test_false_on_win32_when_env_unset
 - tests/unit/test_conftest_console_ctrl_guard.py::TestTestConsoleCtrlIgnoreRequested::test_false_on_falsy_value
@@ -58,6 +43,135 @@ evidence:
 - tests/unit/test_conftest_console_ctrl_guard.py::TestInstallAndUninstallTestConsoleCtrlIgnoreGuard::test_uninstall_without_install_is_a_no_op
 - tests/unit/test_conftest_console_ctrl_guard.py::TestRealPlatformNeverRequestsGuardByDefault::test_unset_in_this_repos_own_default_env
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_ignore_console_ctrl
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_ignore_console_ctrl
+  reason: T-4265 deleted the diagnostic-step-only test classes and moved this still-valid
+    Test-step-mitigation assertion from TestWindowsDiagStepDoesNotGateTheJob into
+    the new TestWindowsTestStepMitigationsStayPinned class; same test, same assertion,
+    new home
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_exists_and_runs_on_windows
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_has_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_never_imports_frob
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_installs_the_signal_logger
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_just_sleeps
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsTrivialPythonDiagVariant::test_trivialpython_diag_step_keeps_uv_ancestry
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_exists_and_runs_on_windows
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_has_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_imports_frob_and_nothing_else
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsImportOnlyDiagVariant::test_importonly_diag_step_imports_before_sleeping
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_exists_and_runs_on_windows
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_has_a_bounded_timeout
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_sets_the_env_var
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_reuses_variant_a_script_and_fixture
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsMitigationDiagVariant::test_mitigation_diag_step_fails_the_step_on_exit_130
+  new_node: ''
+  reason: T-4265 deleted this diagnostic-only step and its matching test outright
+    (not renamed) -- the windows hang investigation this test's diagnostic characterized
+    is fixed and its 6 originating tickets are all closed; other evidence bound to
+    this ticket (code-level tests) still stands
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false
