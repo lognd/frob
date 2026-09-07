@@ -16,8 +16,11 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=epic: a decomposition container for 24 consumer findings
+  spanning gates, the ticket runner, the comment DSL, the call graph and four whole
+  verbatim audits; scope belongs on the leaves where it can be disjoint enough to
+  dispatch in parallel'
 designated_repro_test: null
 acceptance:
 - text: given the 24 findings in this epic, when it is decomposed, then each has either
