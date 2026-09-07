@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'adds a fourth finding the reporter verified after filing: the unknown-evidence
+    refusal names two verbs as self-refreshing the cache, and only one of them writes
+    it -- the test verb ran twice, once with the cache deleted, and wrote nothing.
+    Records this as the fifth refusal-message defect of the drive and the first that
+    is actively misleading rather than merely uninformative'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4288
+  new_length: 6765
 designated_repro_test: null
 acceptance:
 - text: given a repository containing a nested worktree with its own tests, when the
@@ -107,3 +118,45 @@ ACCEPTANCE
   mechanism if one fits.
 - The un-fixturable-here limitation stated explicitly in the done report.
 - All three fixtures committed.
+
+A FOURTH FINDING, VERIFIED BY THE REPORTER AFTER THIS TICKET WAS FILED, AND IT IS
+THE SHARPEST ONE OPERATIONALLY: THE REFUSAL NAMES A REMEDY THAT DOES NOT WORK.
+
+The unknown-evidence message says the collection cache self-refreshes on the next
+`frob test` or `frob check` run. They tested both:
+
+    frob test --lang typescript --all .   run TWICE, once with the cache
+                                          deleted -- green, 12s, exit 0,
+                                          wrote NO cache file
+    frob check --only cov .               regenerated the cache, 259 ids,
+                                          including the previously-missing
+                                          tests, in the correct id shape
+
+So only one of the two named commands actually writes it. An operator following
+the message's own instruction runs the test verb, sees it succeed, retries the
+evidence binding, and gets the identical refusal -- with no indication that the
+remedy did nothing. That is how their agent burned a cycle before reaching for
+the other verb.
+
+THIS IS THE WRONG-REMEDY SHAPE, and it is the fifth refusal-message defect in this
+drive. The others reported a count with no lines, blamed the operator for the
+tool's own edit, asserted a ticket state without naming its source, and collapsed
+two causes onto one error name. This one is worse in a specific way: the previous
+four were UNINFORMATIVE, while this one is ACTIVELY MISLEADING -- it sends the
+reader to a command that cannot fix their problem.
+
+TWO POSSIBLE FIXES AND THEY ARE NOT EQUIVALENT -- DECIDE, DO NOT PICK THE EASY ONE:
+  a. Make the test verb write the cache, so the message becomes true. This is
+     probably right: a verb that runs a language's tests is the natural place to
+     record what it collected, and a user who has just run the tests reasonably
+     expects the collection to be current.
+  b. Correct the message to name only the verb that works. Cheaper, but it leaves
+     a surprising split where running the tests does not refresh the record of
+     which tests exist.
+If (a) is chosen, check whether the test verb ALREADY collects and simply discards
+the result -- that would make this a plumbing fix rather than new work, and it
+would explain why the message was written the way it was.
+
+ADD TO THE FIXTURE SET: after the cache is deleted, the verb the refusal message
+names must regenerate it -- whichever verb that ends up being, the message and the
+behaviour must agree.
