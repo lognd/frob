@@ -19,10 +19,38 @@ scope:
 - tests/test_ticket_land_lint_diff_attribution.py
 - tests/unit/test_land_release_out_of_tree.py
 - tests/unit/strata/test_strata_core_gil.py
+- src/frob/graph/__init__.py
+- src/frob/tickets/_land_release.py
+- strata-core/src/lib.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/__init__.py
+  reason: 'the gate-cache/release-bump/GIL-timeout Windows failures each root-cause
+    into product code, not the tests themselves: frob/graph''s stat-first graph cache
+    trust gap, _land_release.py''s disposable-worktree line-ending handling, and strata-core''s
+    recursive kernel stack depth on Windows'' smaller default thread stack'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/tickets/_land_release.py
+  reason: 'the gate-cache/release-bump/GIL-timeout Windows failures each root-cause
+    into product code, not the tests themselves: frob/graph''s stat-first graph cache
+    trust gap, _land_release.py''s disposable-worktree line-ending handling, and strata-core''s
+    recursive kernel stack depth on Windows'' smaller default thread stack'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: strata-core/src/lib.rs
+  reason: 'the gate-cache/release-bump/GIL-timeout Windows failures each root-cause
+    into product code, not the tests themselves: frob/graph''s stat-first graph cache
+    trust gap, _land_release.py''s disposable-worktree line-ending handling, and strata-core''s
+    recursive kernel stack depth on Windows'' smaller default thread stack'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a changed gate input on Windows, when the gate cache is consulted, then
