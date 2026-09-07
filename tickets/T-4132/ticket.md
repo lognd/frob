@@ -23,11 +23,8 @@ scope:
 - src/frob/scaffold/data/shared/python/py.typed.j2
 - tests/system/test_packaging_py_typed.py
 - tickets/T-4133/ticket.md
-- docs/commands/scaffold.md
 - tests/system/test_scaffold_dx.py
 - tests/test_scaffold_worktree_lease_hook.py
-- src/frob/_cli_parsers/_core.py
-- src/frob/scaffold/_managed.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -170,6 +167,24 @@ scope_changes:
   glob: src/frob/scaffold/_managed.py
   reason: 'T-4132 closure cascade: docs/commands/scaffold.md''s #usage and #managed-blocks-t-0736
     anchors describe these symbols; declare-only leases, no edits planned'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_core.py
+  reason: revert -- docs/commands/scaffold.md's closure cascades unboundedly through
+    the shared CLI parser file; needs a different resolution than scope widening
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/scaffold/_managed.py
+  reason: revert -- docs/commands/scaffold.md's closure cascades unboundedly through
+    the shared CLI parser file; needs a different resolution than scope widening
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: docs/commands/scaffold.md
+  reason: revert -- docs/commands/scaffold.md's closure cascades unboundedly through
+    the shared CLI parser file; needs a different resolution than scope widening
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
