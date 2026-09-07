@@ -1,7 +1,7 @@
 ---
 id: T-4153
 title: 'REF001: exempt ledger-v2 tickets/T-*/ticket.md and done-report.md'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
