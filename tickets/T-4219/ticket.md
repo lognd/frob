@@ -1,0 +1,114 @@
+---
+id: T-4219
+title: 'relative image and link targets in the declared long-description file break
+  on the package index: fix this README and add a cross-project gate'
+state: queued
+kind: bug
+origin: human
+created: '2026-09-07'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- README.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: given a project whose declared long-description file contains a relative image
+    source, when the gate runs, then it reports an error
+  evidence: []
+- text: given the same relative reference in a markdown file that is not the declared
+    long description, when the gate runs, then it reports a warning rather than an
+    error
+  evidence: []
+- text: given a project that declares no long-description file, when the gate runs,
+    then that case is handled explicitly without crashing or silently passing
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+THE README'S BANNER AND LICENSE LINK ARE RELATIVE, SO BOTH BREAK ON THE PACKAGE
+INDEX. Owner request, and it has bitten them on more than one project.
+
+MEASURED HERE:
+
+    pyproject declares   readme = "README.md"
+    relative references in that file:
+        src="docs/assets/frob-banner.svg"     the banner image
+        href="LICENSE"                         the license badge target
+
+The index renders a project's long description with NO REPOSITORY CONTEXT. A
+relative path has nothing to resolve against there, so the banner renders as a
+broken image and the license badge links nowhere. On the repository host both
+resolve fine, which is exactly why this survives review: the file looks correct
+everywhere the author looks at it.
+
+THE FIX FOR THIS REPOSITORY: point the banner at the raw host URL on the default
+branch, matching what the sibling project already does -- its README uses an
+absolute raw URL for its own banner, which is why it renders on the index and
+ours will not. Decide the license link separately: an absolute link to the
+repository's license file is the obvious counterpart, and it should be settled
+rather than left relative by omission.
+
+THE GENERAL FIX THE OWNER ASKED FOR, AND IT IS THE MORE VALUABLE HALF: make this
+a gate, for every project frob checks rather than for this one.
+
+  ERROR, on the file the manifest DECLARES as the long description. Do not
+  hardcode a filename. A consumer may declare a different file, or none at all,
+  and a gate that assumes the conventional name would silently pass the very
+  projects most likely to get this wrong. Read the declared value, and if none is
+  declared, say so rather than guessing.
+
+  WARNING, on every other markdown file. Relative links there resolve on the
+  repository host and are usually correct; they are only a problem when the
+  document is rendered somewhere without repository context. A warning states the
+  risk without forcing a fix that would often be wrong.
+
+WHAT COUNTS AS A FINDING, and this needs deciding rather than assuming: image
+sources are the visible bite, but relative LINK targets break the same way. Cover
+both, and treat a fragment-only reference (a link to an anchor within the same
+document) as fine, because it resolves wherever the document is rendered.
+
+DECIDE THE HOST-URL QUESTION EXPLICITLY. The remedy is an absolute URL naming a
+host, an owner, a repository and a branch. That is four facts the gate cannot
+invent, and a naive auto-fix would guess them. Prefer reporting the finding with
+the remedy's SHAPE over generating the URL, unless the manifest already declares
+a repository URL the gate can derive it from -- in which case say so and use it.
+Note also that pinning a branch name in the URL means the asset moves if the
+branch is renamed; that tradeoff belongs in the message, not in a silent choice.
+
+THIS IS THE SAME CLASS AS TWO FINDINGS ALREADY IN THIS QUEUE, which is the
+argument for making it a gate rather than a one-off edit: a packaging claim that
+is true in the configuration and false in the built artifact, invisible until a
+consumer hits it. The typed-marker defect fixed today was exactly that shape --
+declared in package data, absent from the wheel, unnoticed for months. A relative
+banner is the same failure with a visual symptom instead of a silent one.
+
+MUST-FIRE FIXTURE:   a project whose declared long-description file contains a
+                     relative image source reports an error.
+MUST-STAY-QUIET:     the same relative reference in a non-declared markdown file
+                     reports a warning, not an error; and a fragment-only link
+                     reports nothing anywhere.
+THIRD FIXTURE:       a project that declares no long-description file is handled
+                     explicitly and does not crash or silently pass.
+
+ACCEPTANCE
+- This repository's banner and license references resolve when rendered without
+  repository context.
+- The gate keys on the manifest's declared long-description file, never a
+  hardcoded name.
+- Non-declared markdown warns rather than errors.
+- The auto-fix question decided: report the remedy shape, or derive the URL from
+  a declared repository field, but never guess.
+- All three fixtures committed.
