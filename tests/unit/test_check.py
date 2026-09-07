@@ -2572,6 +2572,81 @@ class TestRunTyRealPaths:
         result = python_mod._run_ty(f)
         assert result.tool == "ty"
 
+    # frob:ticket T-4154
+    def test_nested_claude_worktrees_are_excluded(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-4154: a real git worktree under `.claude/worktrees/` (the
+        `frob ticket work`/`land` agent-dispatch convention) is passed to
+        `ty check` as an `--exclude` glob, so unresolved imports from a
+        sibling agent's own unmerged branch never surface here."""
+        # frob:tests src/frob/check/_python.py::_ty_base_cmd kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        worktree = tmp_path / ".claude" / "worktrees" / "t-9999"
+        worktree.mkdir(parents=True)
+        (worktree / ".git").touch()
+        seen_cmd = {}
+
+        def _fake_run(cmd, **kw):
+            seen_cmd["cmd"] = cmd
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        python_mod._run_ty(tmp_path)
+        cmd = seen_cmd["cmd"]
+        assert "--exclude" in cmd
+        idx = cmd.index("--exclude")
+        assert cmd[idx + 1] == ".claude/worktrees/t-9999/**"
+
+    # frob:ticket T-4154
+    def test_no_worktrees_dir_adds_no_exclude(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-4154 control: no `.claude/worktrees/` directory means no
+        `--exclude` argv is added -- ty scans the whole tree unchanged."""
+        # frob:tests src/frob/check/_python.py::_ty_base_cmd kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        seen_cmd = {}
+
+        def _fake_run(cmd, **kw):
+            seen_cmd["cmd"] = cmd
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        python_mod._run_ty(tmp_path)
+        assert "--exclude" not in seen_cmd["cmd"]
+
+    # frob:ticket T-4154
+    def test_non_worktree_dir_under_worktrees_not_excluded(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-4154 control: a plain (non-git) subdirectory under
+        `.claude/worktrees/` -- e.g. a stale leftover with its `.git`
+        already removed -- is not a real nested worktree
+        (`_is_nested_worktree` is the truth, not the directory name/
+        location alone) and must not be excluded."""
+        # frob:tests src/frob/check/_python.py::_ty_base_cmd kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        (tmp_path / ".claude" / "worktrees" / "stale").mkdir(parents=True)
+        seen_cmd = {}
+
+        def _fake_run(cmd, **kw):
+            seen_cmd["cmd"] = cmd
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        python_mod._run_ty(tmp_path)
+        assert "--exclude" not in seen_cmd["cmd"]
+
 
 # frob:ticket T-3191
 class TestRunTyMultiPlatform:

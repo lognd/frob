@@ -1,7 +1,7 @@
 ---
 id: T-4154
 title: 'ty check: exclude .claude/worktrees to stop nested-worktree false positives'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -20,7 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_check.py::TestRunTyRealPaths::test_nested_claude_worktrees_are_excluded
+- tests/unit/test_check.py::TestRunTyRealPaths::test_no_worktrees_dir_adds_no_exclude
+- tests/unit/test_check.py::TestRunTyRealPaths::test_non_worktree_dir_under_worktrees_not_excluded
+designated_repro_test: tests/unit/test_check.py::TestRunTyRealPaths::test_nested_claude_worktrees_are_excluded
 threat: null
 component: null
 anchor: false

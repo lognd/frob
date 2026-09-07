@@ -20,7 +20,7 @@ import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from frob.excludes import iter_files
+from frob.excludes import _is_nested_worktree, iter_files
 from frob.findings import Severity as _GateSeverity
 from frob.logging import get_logger
 from frob.process._guard import (
@@ -339,6 +339,35 @@ def _run_ty(root: Path) -> ToolResult:
     return _merge_ty_results(results, platforms)
 
 
+# frob:ticket T-4154
+# frob:tests \
+# tests/unit/test_check.py::TestRunTyRealPaths.test_nested_claude_worktrees_are_excluded
+def _nested_worktree_ty_excludes(scan: Path) -> list[str]:
+    """`ty check --exclude` glob argv entries for every git worktree
+    directly under `scan`'s `.claude/worktrees/` (T-4154).
+
+    `frob ticket work`/`frob ticket land` dispatch agents into
+    `.claude/worktrees/<name>/` -- each one its own git checkout, sitting
+    (unmerged) on its own branch. `ty` walks the filesystem itself (it has
+    no knowledge of frob's dispatch convention or `[graph] exclude`), so
+    without this it reports unresolved imports for files that exist only
+    on those other branches, not on the one actually being checked. Reuses
+    `frob.excludes._is_nested_worktree` -- the same git-checkout signal
+    `frob`'s own tree-walking gates prune by (T-0239) -- rather than
+    matching on the `agent-*`/ticket-id naming convention, so a worktree
+    parked under a different name is still excluded. Returns `[]` (ty
+    scans everything) when `.claude/worktrees` does not exist or holds no
+    real git checkouts."""
+    worktrees_dir = scan / ".claude" / "worktrees"
+    if not worktrees_dir.is_dir():
+        return []
+    return [
+        f".claude/worktrees/{child.name}/**"
+        for child in sorted(worktrees_dir.iterdir())
+        if child.is_dir() and _is_nested_worktree(child, scan)
+    ]
+
+
 # frob:ticket T-0996
 # frob:ticket T-3191
 def _ty_base_cmd(root: Path) -> tuple[list[str], Path]:
@@ -365,6 +394,8 @@ def _ty_base_cmd(root: Path) -> tuple[list[str], Path]:
     a `ty.toml`."""
     scan = root if root.is_dir() else root.parent
     cmd = project_tool_argv(scan, "ty", "check", str(root))
+    for pattern in _nested_worktree_ty_excludes(scan):
+        cmd += ["--exclude", pattern]
     src_dir = scan / "src"
     if src_dir.is_dir():
         cmd += ["--extra-search-path", str(src_dir.resolve())]
