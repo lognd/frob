@@ -14,10 +14,51 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/scaffold/**
+- tests/system/test_scaffold_dx.py
+- tests/unit/test_scaffold_project.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/**
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/system/test_scaffold_dx.py
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_scaffold_project.py
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/scaffold/**
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/system/test_scaffold_dx.py
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_scaffold_project.py
+  reason: fix hyphen-vs-import-name split across all scaffold templates and generated
+    tests
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: set
   reason: 'reproduced on today''s main and upgraded the finding: the generated test
