@@ -28,8 +28,14 @@ scope:
 - docs/modules/lang.md
 - docs/modules/process.md
 - src/frob/lang/_support.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: T-4163 must touch src/frob/gates/_waive.py, src/frob/gates/__init__.py,
+  and src/frob/check/__init__.py to register a new gate rule id -- these are foundational,
+  hundreds-of-symbols files whose SCOPE002 doc/test closure pulls in a large, pre-existing
+  and unrelated set of docs (docs/commands/check.md, docs/modules/app.md, docs/modules/perf.md,
+  docs/modules/release.md, docs/modules/serve.md, docs/modules/gates.md) and source
+  files that this ticket does not touch or intend to own; expanding scope to cover
+  them would misrepresent this ticket's actual footprint
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
