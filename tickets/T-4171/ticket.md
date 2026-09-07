@@ -2,7 +2,7 @@
 id: T-4171
 title: 'the no-sync fix for a mutating tool spawn broke the gate that must import
   the target project''s modules: one setting serving two incompatible callers'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
