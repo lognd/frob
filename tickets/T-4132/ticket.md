@@ -3,7 +3,7 @@ id: T-4132
 title: py.typed is declared in package-data but does not exist and is absent from
   the built wheel, so frob ships untyped and every scaffolded project inherits the
   same false claim
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
