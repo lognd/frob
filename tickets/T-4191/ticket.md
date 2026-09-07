@@ -2,7 +2,7 @@
 id: T-4191
 title: 'CI red on WIRE002: a private test fixture''s WIRE001 waiver needs a follow-up
   ticket for wiring that will never happen'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
