@@ -21,6 +21,17 @@ no_scope_declared_reason: 'tier=epic: a decomposition container for 24 consumer 
   spanning gates, the ticket runner, the comment DSL, the call graph and four whole
   verbatim audits; scope belongs on the leaves where it can be disjoint enough to
   dispatch in parallel'
+body_changes:
+- mode: set
+  reason: 'adds F-339, which arrived after filing: a doc-pointer rule that is silent
+    or refusing for the same unchanged citation depending on unrelated tree state,
+    consulting gitignored agent-worktree scratch it should never read. Records that
+    this is the second consumer report of nested worktrees leaking into gate inputs,
+    and that its unexplained attribution is the same diagnostic gap as T-4125'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 43054
+  new_length: 45789
 designated_repro_test: null
 acceptance:
 - text: given the 24 findings in this epic, when it is decomposed, then each has either
@@ -723,3 +734,45 @@ sys.path insert in the test file. A frob-side check that the configured
 (( test.runner )) invocation resolves the same rootdir for every path it
 may be given would catch this class (the agent-playbook's "run from the
 repo root" rule is not enough when the runner selects files).
+
+ADDENDUM -- F-339, WHICH ARRIVED AFTER THIS EPIC WAS FILED. Include it in the
+decomposition; the epic's title range should be read as F-315 through F-339.
+
+  F-339: the doc-pointer rule fires at land time on an audit report's citation
+  of a path under the agent-worktree directory, but ONLY once that path starts to
+  exist on the main branch. While main had no such file the rule was silent; the
+  land that first adds the file was then refused, naming a doc the land never
+  touched, attributed to it through the newly added file. The reporter worked
+  around it by switching to a branch-qualified citation.
+
+WHY THIS ONE IS SHARPER THAN ITS SIZE SUGGESTS, and worth ranking above the
+ordinary message-clarity findings in this epic:
+
+  1. IT IS A STATE-DEPENDENT SILENT RULE. The same citation is accepted or
+     refused depending on whether an unrelated file exists elsewhere in the tree.
+     A rule that is quiet in one state and refuses in the other, for text that
+     never changed, cannot be reasoned about locally -- and the quiet state is
+     the one that looks correct.
+  2. THE SCRATCH DIRECTORY SHOULD NEVER HAVE BEEN CONSULTED EITHER WAY. Paths
+     under the agent-worktree directory are gitignored scratch that frob itself
+     creates. The reporter's first ask is the right one and is not a judgement
+     call: the rule must treat those paths identically in both states. Note this
+     is the SECOND consumer report about nested agent worktrees leaking into a
+     gate's inputs -- an earlier one had a checkout's type stage scanning agent
+     worktrees and reporting unresolved imports for files that exist only on
+     their branches, and that consumer had to exclude the directory in three
+     separate config files. Fix the class, not the rule: enumerate every gate
+     that walks the tree and confirm each one skips nested worktrees, since frob
+     creates them and therefore knows where they are.
+  3. THE ATTRIBUTION IS UNEXPLAINED. A land was refused because of a file it did
+     not touch, and nothing in the message said why that file was in scope. The
+     reporter's second ask -- that the refusal explain why an untouched file is
+     attributed to the land -- is the same diagnostic gap as T-4125, where a
+     refusal reported a count with no lines and no statement of which tree it
+     checked. Two independent refusals, both unfalsifiable from their own
+     output. Whatever is done for T-4125's message should be done here too;
+     consider whether one change to how refusals are rendered covers both.
+
+DO NOT FIX THIS BY SUPPRESSING THE RULE ON AUDIT DOCUMENTS. The finding is about
+which paths the rule consults and how it explains itself, not about which
+documents deserve checking.
