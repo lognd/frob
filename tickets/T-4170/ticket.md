@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: T-4170 is a verify-the-premise ticket; the fix it asked for already existed,
+    so its own new tests pass at main too (BUG002 front door, T-2393)
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3914
+  new_length: 4120
 evidence:
 - tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_covers_scope
 - tests/test_evidence_integrity.py::TestT4170PreExistingTestOutsideScopeBoundViaDirective::test_directive_bound_pre_existing_test_closes_cleanly
@@ -112,3 +120,5 @@ ACCEPTANCE
 - The relationship to T-4144's identical subject error stated, and a shared
   helper used if one is warranted.
 - All three fixtures committed.
+
+frob:no-behavior-change reason="verification ticket -- traced the premise and found evidence_covers_scope already accepts a directive-bound out-of-scope test; no functional code change was needed or made"
