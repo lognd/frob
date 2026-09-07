@@ -23,6 +23,7 @@ scope:
 - docs/modules/gates.md
 - docs/design/registry/check-coverage.yaml
 - design/frob.strata
+- src/frob/gates/_doclink_docanchor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -73,6 +74,12 @@ scope_changes:
   glob: design/frob.strata
   reason: 'T-4219: SELFAUDIT001/SYS100 requires the new gate module and its test file
     declared in the fs.read/fs.write capability lists'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: 'T-4219: pkg_resources_gate reuses _doclink_docanchor._line_index for offset->line
+    resolution rather than duplicating PERF002''s fix'
   actor: logan
   at: '2026-09-07'
 body_changes:
