@@ -183,7 +183,11 @@ class TestCliEvidenceEnforcementEndToEnd:
         )
         out = result.stdout + result.stderr
         assert result.returncode != 0, out
-        assert "MissingEvidence" in out, out
+        # T-4167: this close call records real evidence first (--evidence
+        # above) -- the ONLY failing precondition is the empty Done report
+        # (D-03's own bare-heading repro), so the refusal now names THAT
+        # (`MissingDoneReport`), not the unrelated `MissingEvidence`.
+        assert "MissingDoneReport" in out, out
 
         show = run("ticket", "show", "T-0001", "--path", str(root))
         assert "[in-progress]" in (show.stdout + show.stderr)

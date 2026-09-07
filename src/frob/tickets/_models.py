@@ -2334,7 +2334,12 @@ class TicketError(ErrorSet):
     )
     MalformedFrontmatter = "Ticket file failed schema validation"
     InvalidTransition = "State change not allowed by the state machine"
-    MissingEvidence = "done requires evidence and a Done report"
+    MissingEvidence = "done requires bound evidence -- none is recorded"
+    # frob:ticket T-4167
+    MissingDoneReport = (
+        "done requires a substantive '## Done report' section -- none was "
+        "recognised in the ticket body"
+    )
     # frob:ticket T-3195
     HollowDoneReport = (
         "Done report records zero evidence AND zero changed files -- refused "

@@ -524,15 +524,39 @@ def _done_transition_structural_guard(
     # `land`'s evidence check exists to enforce, and a docs-kind rapid
     # ticket already has the dedicated, visible `_hollow_done_report_
     # exempt` escape hatch for the genuinely evidence-free case.
-    if not ticket.evidence or not _has_done_report(ticket.body):
+    # frob:ticket T-4167
+    # T-4167: this used to be a single `if not A or not B` disjunction
+    # collapsed onto ONE error name (`MissingEvidence`) regardless of
+    # which half failed -- "no evidence bound" and "no Done report
+    # recognised" are different facts with different remedies (bind
+    # evidence vs. write/fix a Done report), and a ticket that HAD both
+    # was refused as though it had neither (F-363's own incident: closed
+    # with real evidence and a real Done report, refused MissingEvidence
+    # anyway, because the heading was not preceded by a blank line -- see
+    # `_is_real_done_report_heading`). Reporting each precondition
+    # separately means the refusal message actually names what to fix.
+    if not ticket.evidence:
         _log.warning(
-            "tickets: %s cannot close, missing evidence or a substantive "
-            "Done report -- `frob ticket land` refuses this unconditionally "
-            "(NotCloseable) regardless of profile, so close no longer "
-            "accepts it under rapid either (T-3336)",
+            "tickets: %s cannot close, no evidence bound -- `frob ticket "
+            "land` refuses this unconditionally (NotCloseable) regardless "
+            "of profile, so close no longer accepts it under rapid either "
+            "(T-3336)",
             ticket.id,
         )
         return Err(TicketError.MissingEvidence)
+    if not _has_done_report(ticket.body):
+        _log.warning(
+            "tickets: %s cannot close, no substantive '## Done report' "
+            "section was recognised in the ticket body (T-4167) -- a "
+            "genuine `## Done report` heading must be the first line of "
+            "the body or preceded by a blank line (T-0853's own "
+            "impersonation guard), or it is treated as narrative prose, "
+            "not a real section; `frob ticket land` refuses this "
+            "unconditionally (NotCloseable) regardless of profile, so "
+            "close no longer accepts it under rapid either (T-3336)",
+            ticket.id,
+        )
+        return Err(TicketError.MissingDoneReport)
     # frob:ticket T-3195
     if _is_hollow_done_report(ticket.body) and not _hollow_done_report_exempt(
         ticket, ticket.body, rapid=rapid

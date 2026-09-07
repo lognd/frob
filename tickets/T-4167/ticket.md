@@ -2,7 +2,7 @@
 id: T-4167
 title: close reports MissingEvidence for two unrelated causes, one of which is a Done-report
   heading unrecognised without a preceding blank line
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -29,18 +29,31 @@ scope_changes:
     in _close_cmd.py may also need a new hint entry
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_done_report_present_no_evidence_names_missing_evidence
+- tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_heading_without_preceding_blank_line_is_not_missing_evidence
+- tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_stale_prework_sweep_never_surfaces_as_missing_evidence
+- tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_close_rejects_empty_done_report
+- tests/test_tickets.py::TestStateMachine::test_done_without_report_section_errs
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_empty_done_report
 designated_repro_test: null
 acceptance:
 - text: given a ticket with a Done report but no bound evidence, when close runs,
     then the refusal names the missing evidence
-  evidence: []
+  evidence:
+  - tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_done_report_present_no_evidence_names_missing_evidence
 - text: given a ticket with evidence and a Done-report heading not preceded by a blank
     line, when close runs, then it either succeeds or refuses with a message naming
     the blank-line requirement
-  evidence: []
+  evidence:
+  - tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_heading_without_preceding_blank_line_is_not_missing_evidence
+  - tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_close_rejects_empty_done_report
+  - tests/test_tickets.py::TestStateMachine::test_done_without_report_section_errs
+  - tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_empty_done_report
 - text: given a stale pre-work sweep, when close runs, then the refusal names the
     stale sweep rather than reporting missing evidence
-  evidence: []
+  evidence:
+  - tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_stale_prework_sweep_never_surfaces_as_missing_evidence
 threat: null
 component: null
 anchor: false

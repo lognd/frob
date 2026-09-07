@@ -850,6 +850,9 @@ class TestStateMachine:
         assert result.danger_err is TicketError.MissingEvidence
 
     def test_done_without_report_section_errs(self, tmp_path: Path) -> None:
+        # T-4167: this ticket HAS evidence -- the missing Done report is
+        # the only failing precondition, so the refusal names THAT
+        # (`MissingDoneReport`), not the unrelated `MissingEvidence`.
         _write(
             tmp_path,
             _ticket(
@@ -860,7 +863,7 @@ class TestStateMachine:
         )
         result = transition(tmp_path, "T-0001", TicketState.DONE)
         assert result.is_err
-        assert result.danger_err is TicketError.MissingEvidence
+        assert result.danger_err is TicketError.MissingDoneReport
 
     def test_start_with_open_blocker_errs(self, tmp_path: Path) -> None:
         _write(

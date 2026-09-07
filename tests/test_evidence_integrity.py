@@ -447,6 +447,11 @@ class TestD03SubstantiveDoneReport:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_close_rej\
         # ects_empty_done_report
+        # T-4167: this ticket HAS evidence -- an empty Done report is the
+        # ONLY missing precondition, so the refusal must name THAT
+        # (`MissingDoneReport`), not the unrelated `MissingEvidence` the
+        # pre-T-4167 disjunction collapsed onto regardless of which half
+        # actually failed.
         ticket = _ticket(
             state=TicketState.IN_PROGRESS,
             evidence=("tests/test_thing.py::test_it",),
@@ -455,7 +460,83 @@ class TestD03SubstantiveDoneReport:
         _write(tmp_path, ticket)
         result = transition(tmp_path, "T-0001", TicketState.DONE)
         assert result.is_err
+        assert result.danger_err == TicketError.MissingDoneReport
+
+
+# frob:ticket T-4167
+class TestT4167SplitMissingEvidenceDisjunction:
+    """F-363: `close`'s `MissingEvidence` used to be ONE error name for
+    TWO unrelated preconditions (no evidence bound; no Done report
+    recognised) -- split so each reports itself."""
+
+    def test_done_report_present_no_evidence_names_missing_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture: a ticket with a real Done report but no
+        bound evidence refuses naming the missing evidence."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction.test_done_report_present_no_evidence_names_missing_evidence  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            evidence=(),
+            body="## Description\nx\n\n## Done report\nAll good.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_err
         assert result.danger_err == TicketError.MissingEvidence
+
+    def test_heading_without_preceding_blank_line_is_not_missing_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET: a ticket WITH bound evidence, whose `## Done
+        report` heading is not preceded by a blank line (T-0853's
+        impersonation guard correctly does not recognise it as a real
+        heading here -- see that guard's own docstring for why loosening
+        it is the wrong fix), refuses -- but as `MissingDoneReport`,
+        naming the blank-line requirement, never as `MissingEvidence`."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction.test_heading_without_preceding_blank_line_is_not_missing_evidence  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/test_thing.py::test_it",),
+            # No blank line before "## Done report" -- it reads as a
+            # continuation of the prior paragraph, not a real heading.
+            body="## Description\nx\n## Done report\nAll good.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_err
+        assert result.danger_err == TicketError.MissingDoneReport
+        assert result.danger_err != TicketError.MissingEvidence
+
+    def test_stale_prework_sweep_never_surfaces_as_missing_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """THIRD FIXTURE: WHAT TO DO item 3 asked where the stale
+        pre-work-sweep precondition the F-363 reporter also hit (cause
+        (a)) reaches `MissingEvidence` at all. TRACED, NOT FOUND: `frob
+        ticket close`'s own guard chain (`_done_transition_structural_
+        guard`/`_done_transition_evidence_kind_and_scope_guard`) never
+        reads pre-work-sweep state at all -- PRE001 (a stale sweep) is
+        exclusively a `frob check` gate finding, a wholly separate
+        command from `close`. This fixture proves it directly: a ticket
+        with real evidence and a real Done report closes successfully
+        even though nothing here ever refreshed its pre-work sweep --
+        there is no code path in `close` for a stale sweep to be
+        misreported as `MissingEvidence` (or anything else) through,
+        because `close` never consults sweep state in the first place."""
+        # frob:tests tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction.test_stale_prework_sweep_never_surfaces_as_missing_evidence  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/test_thing.py::test_it",),
+            body="## Description\nx\n\n## Done report\nAll good.\n",
+        )
+        _write(tmp_path, ticket)
+        # No `frob ticket sweep` was ever run for this ticket -- its
+        # pre-work sweep record does not exist at all, the most extreme
+        # form of "stale." `close`'s own guard chain must be entirely
+        # unaffected by that.
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_ok
 
 
 # ---------------------------------------------------------------------------

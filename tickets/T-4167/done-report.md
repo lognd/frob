@@ -1,0 +1,116 @@
+## Done report
+
+T-4167 (F-363): `close`'s DONE-transition guard collapsed two unrelated
+preconditions onto one error name -- confirmed by repro at the exact code
+site the ticket named (src/frob/tickets/_evidence.py's
+`_done_transition_structural_guard`): `if not ticket.evidence or not
+_has_done_report(ticket.body): ... return Err(TicketError.MissingEvidence)`.
+A ticket with real evidence and only a missing/empty/unrecognised Done
+report was refused as though evidence itself were absent.
+
+Split the disjunction into two independent checks, each returning its own
+error: `TicketError.MissingEvidence` (evidence check, unchanged meaning,
+now checked and reported alone) and a new `TicketError.MissingDoneReport`
+(the Done-report check, checked second so a ticket already failing the
+evidence check still gets that answer first, matching the original
+precedence). Every existing test asserting `MissingEvidence` for a
+scenario that ALSO had a missing/empty Done report was auditted and fixed
+where the scenario had real evidence bound (four call sites: two in
+tests/test_evidence_integrity.py, one in tests/test_tickets.py, one system
+test in tests/system/test_cli_evidence_enforcement.py) -- each now expects
+`MissingDoneReport`, since evidence genuinely was NOT the failing
+precondition in those fixtures. Scenarios with genuinely empty evidence
+(e.g. tests/system/test_cli_ticket.py's close-without-evidence test) are
+unaffected -- the evidence check still runs first and still reports
+`MissingEvidence` when evidence really is the failing half.
+
+The blank-line question (WHAT TO DO item 2): decided explicitly, NOT
+loosened. `_is_real_done_report_heading` (T-0853) requires a genuine `##
+Done report` heading be the first line of the body or preceded by a blank
+line, specifically to distinguish a real section from a mid-paragraph
+line-wrap that happens to read identically (that guard's own docstring
+names the exact false-positive it exists to prevent). Loosening it back
+open would reintroduce that false-positive; instead, the now-distinct
+`MissingDoneReport` refusal NAMES the blank-line requirement explicitly in
+its warning log line, so a ticket in this state gets an actionable message
+instead of a misleading one. MUST-STAY-QUIET's own wording ("either
+succeeds or refuses with a message naming the requirement") accepted this
+as the second, valid option.
+
+WHAT TO DO item 3 (the stale pre-work-sweep precondition, cause (a) in the
+original report): traced exhaustively through `close`'s entire guard chain
+(`_done_transition_structural_guard`,
+`_done_transition_evidence_kind_and_scope_guard`, `_done_transition_guard`,
+`_done_transition_diff_derived_guard`) -- NONE of them read pre-work-sweep
+state at all. PRE001 (a stale sweep) is exclusively a `frob check` gate
+finding; `frob ticket close` never consults it, so there is no code path
+here for a stale sweep to be misreported as `MissingEvidence` through. A
+new fixture proves this directly: a ticket that never ran `frob ticket
+sweep` at all (the most extreme "stale" case) still closes successfully
+given real evidence and a real Done report. Conclusion recorded plainly:
+this is NOT a collapse in our code -- the original reporter's causes (a)
+and (b) are two independently-encountered, unrelated refusals from two
+different commands (`frob check`'s PRE001, and `close`'s MissingEvidence),
+not one conflated code path.
+
+WHAT TO DO item 4 (audit other multi-cause refusals on this path): grepped
+every `if ... or ...` / `and not` conditional in src/frob/tickets/_evidence.py
+guarding a DONE-transition error return. The fixed disjunction was the
+ONLY instance of this shape; every other guard in the chain (HollowDoneReport,
+StaleClaimsInDoneReport, OpenDescendant, EvidenceKindNotAllowed,
+EvidenceScopeUnbound, AcceptanceUnbound, MissingApprovedReview,
+EvidenceConfirmatoryOnly, EvidenceNotPassing, OwnObligationsUnclean,
+GateClaimUnverified, LiveTrackerCited, NewGateRuleUnaccepted,
+UnregisteredGateRuleConstructed) is already a single condition mapped to
+its own single, distinct error name.
+
+Changed: src/frob/tickets/_models.py (new `TicketError.MissingDoneReport`;
+reworded `MissingEvidence`'s own description to say only "no evidence
+bound", since it no longer also means "or no Done report"); src/frob/tickets/_evidence.py
+(`_done_transition_structural_guard` splits the disjunction into two
+checks); tests/test_evidence_integrity.py (new
+`TestT4167SplitMissingEvidenceDisjunction`, 3 tests: MUST-FIRE, MUST-STAY-QUIET,
+THIRD fixture; one existing test's assertion corrected to the now-accurate
+error); tests/test_tickets.py (one existing test's assertion corrected);
+tests/system/test_cli_evidence_enforcement.py (one existing system test's
+assertion corrected).
+
+Gates: `uv run pytest` on every touched/relevant test file -- 243 (evidence
+integrity + cmd-evidence + ticket-store + claim-close + hint tests) + 204
+(test_tickets.py) + 16 (system CLI evidence/ticket tests) all passed, 0
+failed. One unrelated system test
+(`test_new_does_not_prompt_or_hang_without_a_tty`) hit a 10s subprocess
+timeout in the same combined run under heavy host CPU contention (this
+session ran alongside a large concurrent agent fleet); reran in isolation
+and it passed cleanly -- confirmed flaky/environmental, not a regression
+from this change. A narrow `frob check --only ruff --only arch --only ty
+--ticket T-4167` shows zero findings on any file this ticket touches
+beyond two pre-existing, unrelated ones (a repo-wide `ruff-format` baseline
+item in a different file, and a pre-existing waived long-function/lock-
+identity note on `add_evidence`, unrelated to this change).
+
+Filed: none.
+
+### Changed
+```
+ src/frob/tickets/_evidence.py                 | 34 +++++++++--
+ src/frob/tickets/_models.py                   |  7 ++-
+ tests/system/test_cli_evidence_enforcement.py |  6 +-
+ tests/test_evidence_integrity.py              | 81 +++++++++++++++++++++++++++
+ tests/test_tickets.py                         |  5 +-
+ tickets/T-4167/ticket.md                      | 30 ++++++++--
+ 6 files changed, 151 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_done_report_present_no_evidence_names_missing_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_heading_without_preceding_blank_line_is_not_missing_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT4167SplitMissingEvidenceDisjunction::test_stale_prework_sweep_never_surfaces_as_missing_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_close_rejects_empty_done_report` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestStateMachine::test_done_without_report_section_errs` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_empty_done_report` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 12 error(s), 4529 warning(s), 936 waived
+- error-findings: AFFECT001@src/frob/tickets/_models.py, ARCH103@src/frob/app/ticket_runner/_land_cmd.py, COV001@src/frob/vet/_bare_toolchain.py, COV003@tests/test_excludes.py, COV003@tests/test_tickets.py, COV003@tests/test_tickets_evidence_cli.py, DRIFT001@src/frob/gates/__init__.py, DRIFT001@src/frob/gates/_rule_id_scan.py, DRIFT002@src/frob/check/_python.py, FMT001@tests/test_evidence_integrity.py, PRE001@tickets/T-4167, SCOPE002@tickets.md
