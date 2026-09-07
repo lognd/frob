@@ -25,6 +25,7 @@ scope:
 - tests/unit/check/test_python_runners.py
 - docs/modules/process.md
 - docs/modules/check.md
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -98,6 +99,13 @@ scope_changes:
   reason: 'T-3887/T-4125 shared mechanism: route project toolchain invocations (ty/ruff/pytest)
     through the project''s own environment via one helper, plus a regrowth-preventing
     gate check'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'T-3887/T-4125: TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+    asserted the now-superseded bare-ruff behavior T-3019 chose; must assert the corrected
+    project_tool_argv routing instead'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
