@@ -21,6 +21,7 @@ scope:
 - src/frob/gates/_package_audit*.py
 - src/frob/check/__init__.py
 - src/frob/vet/__init__.py
+- src/frob/process/_project_tool.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +71,12 @@ scope_changes:
 - op: add
   glob: src/frob/vet/__init__.py
   reason: narrow to the one file needing the new re-export
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: src/frob/process/_project_tool.py
+  reason: uv run --project side-effect creates untracked uv.lock in target repo, tripping
+    PRE001/SCOPE001 on a clean check
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
