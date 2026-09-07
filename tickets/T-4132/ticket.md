@@ -23,6 +23,9 @@ scope:
 - src/frob/scaffold/data/shared/python/py.typed.j2
 - tests/system/test_packaging_py_typed.py
 - tickets/T-4133/ticket.md
+- docs/commands/scaffold.md
+- tests/system/test_scaffold_dx.py
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -132,6 +135,27 @@ scope_changes:
   glob: tests/test_scaffold_worktree_lease_hook.py
   reason: revert overbroad widen -- design/frob.strata pulls in 241 unrelated closure
     obligations, need a narrower path for SELFAUDIT001/SCOPE002
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: 'T-4132 closure: project.py''s existing frob:doc target (docs/commands/scaffold.md)
+    and frob:tests targets (pre-existing coverage this ticket does not modify) must
+    be in scope to satisfy scope closure'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/system/test_scaffold_dx.py
+  reason: 'T-4132 closure: project.py''s existing frob:doc target (docs/commands/scaffold.md)
+    and frob:tests targets (pre-existing coverage this ticket does not modify) must
+    be in scope to satisfy scope closure'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: 'T-4132 closure: project.py''s existing frob:doc target (docs/commands/scaffold.md)
+    and frob:tests targets (pre-existing coverage this ticket does not modify) must
+    be in scope to satisfy scope closure'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
