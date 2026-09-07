@@ -21,11 +21,6 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 - tests/test_refs_gate.py
 - tests/unit/test_ticket_restore.py
-- src/frob/_cli_parsers/_ticket/_metadata.py
-- src/frob/_cli_parsers/_ticket/_new.py
-- src/frob/_cli_parsers/_ticket/_progress.py
-- src/frob/_cli_parsers/_ticket/_query.py
-- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -421,6 +416,51 @@ scope_changes:
     closure check -- the _ticket package''s per-concern submodules already cross-call
     each other''s exported helpers (pre-existing, not introduced by this split) and
     tests/unit/gates/test_refs.py already binds frob:tests to ref_gate'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-4145: revert -- these siblings'' own frob:doc/frob:tests edges reach
+    further (docs/guides/agentic-workflow.md, tests/unit/test_land_finish_guard.py
+    -- another live ticket''s file) and the closure never terminates within this ticket''s
+    real deliverable; filing the pre-existing _ticket-package-wide SCOPE002 closure
+    gap as its own ticket instead of chasing it here'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: 'T-4145: revert -- these siblings'' own frob:doc/frob:tests edges reach
+    further (docs/guides/agentic-workflow.md, tests/unit/test_land_finish_guard.py
+    -- another live ticket''s file) and the closure never terminates within this ticket''s
+    real deliverable; filing the pre-existing _ticket-package-wide SCOPE002 closure
+    gap as its own ticket instead of chasing it here'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'T-4145: revert -- these siblings'' own frob:doc/frob:tests edges reach
+    further (docs/guides/agentic-workflow.md, tests/unit/test_land_finish_guard.py
+    -- another live ticket''s file) and the closure never terminates within this ticket''s
+    real deliverable; filing the pre-existing _ticket-package-wide SCOPE002 closure
+    gap as its own ticket instead of chasing it here'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: 'T-4145: revert -- these siblings'' own frob:doc/frob:tests edges reach
+    further (docs/guides/agentic-workflow.md, tests/unit/test_land_finish_guard.py
+    -- another live ticket''s file) and the closure never terminates within this ticket''s
+    real deliverable; filing the pre-existing _ticket-package-wide SCOPE002 closure
+    gap as its own ticket instead of chasing it here'
+  actor: logan
+  at: '2026-09-07'
+- op: remove
+  glob: tests/unit/gates/test_refs.py
+  reason: 'T-4145: revert -- these siblings'' own frob:doc/frob:tests edges reach
+    further (docs/guides/agentic-workflow.md, tests/unit/test_land_finish_guard.py
+    -- another live ticket''s file) and the closure never terminates within this ticket''s
+    real deliverable; filing the pre-existing _ticket-package-wide SCOPE002 closure
+    gap as its own ticket instead of chasing it here'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
