@@ -22,6 +22,7 @@ scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 - src/frob/process/__init__.py
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_process_tty.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,12 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_new.py
   reason: 'T-4255: reuse the same is_interactive_stdin mechanism for the clipboard-offer
     TTY gate, one mechanism instead of two ad hoc isatty() checks'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_process_tty.py
+  reason: 'T-4255: unit coverage for the new is_interactive_stdin cross-platform TTY
+    helper'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
