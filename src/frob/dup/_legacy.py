@@ -145,6 +145,21 @@ class DupResult(BaseModel):
 _MIN_LINES_OVERRIDES: tuple[tuple[str, int], ...] = (("tests/", 20),)
 
 
+def _posix_rel(path: Path, root: Path) -> str:
+    """`path` relative to `root`, forward-slash separated on every platform.
+
+    T-4107: the ONE conversion every indexer site must route through --
+    `str(path.relative_to(root))` keeps the platform separator, which
+    silently defeats the `tests/`-prefix `_MIN_LINES_OVERRIDES` table on
+    Windows (a bare `startswith` never matches a backslash-separated rel).
+    """
+    return path.relative_to(root).as_posix()
+
+
+# frob:ticket T-4107
+# frob:waive AFFECT001 reason="T-4107 only adds a docstring note about the caller's \
+# rel-shape contract (no behavior, signature, or documented public-API contract \
+# changed); docs/modules/dup.md needs no edit"
 def _effective_min_lines(
     rel: str, base_min_lines: int, overrides: tuple[tuple[str, int], ...]
 ) -> int:
@@ -152,7 +167,16 @@ def _effective_min_lines(
     `base_min_lines` and the first `overrides` entry whose prefix matches
     `rel` (T-2970) -- an override only ever RAISES the floor for its
     directory, never lowers it below what a caller explicitly asked for
-    (e.g. a test that passes `min_lines=3` to see everything)."""
+    (e.g. a test that passes `min_lines=3` to see everything).
+
+    T-4107: `rel` MUST already be POSIX-separated (`_posix_rel`) -- this
+    function does not normalize or assert that shape itself. The prefix
+    table is matched by a bare `startswith`, which is silently
+    unsatisfiable against a backslash-separated key; the chosen fix is to
+    normalize once at the two producer sites (`_scan_py_file`,
+    `_scan_cpp_file`) rather than defend here too, so there is exactly one
+    place a caller can get this wrong instead of two.
+    """
     for prefix, floor in overrides:
         if rel.startswith(prefix):
             return max(base_min_lines, floor)
@@ -213,7 +237,7 @@ def _scan_py_file(
         _log.warning("parse failed for %s: %s", path, parsed.err)
         return
     tree, src, _language = parsed.danger_ok
-    rel = str(path.relative_to(root))
+    rel = _posix_rel(path, root)
     for func_node, symbol in _iter_functions_py(tree.root_node):
         _index_function(
             func_node,
@@ -244,7 +268,7 @@ def _scan_cpp_file(
         _log.warning("parse failed for %s: %s", path, parsed.err)
         return
     tree, src, _language = parsed.danger_ok
-    rel = str(path.relative_to(root))
+    rel = _posix_rel(path, root)
     for func_node, symbol in _iter_functions_cpp(tree.root_node):
         _index_function(
             func_node,
@@ -374,7 +398,7 @@ def _walk(root: Path):
         # walk_pruned only prunes DIRECTORIES against exclude_globs; a glob
         # that targets individual files (not a directory prefix) still
         # needs this post-hoc check.
-        rel = path.relative_to(root)
-        if exclude_globs and is_excluded(rel.as_posix(), exclude_globs):
+        rel = _posix_rel(path, root)
+        if exclude_globs and is_excluded(rel, exclude_globs):
             continue
         yield path

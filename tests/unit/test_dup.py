@@ -225,6 +225,90 @@ class TestTestsDirectoryFloor:
         symbols = {f.symbol for g in result.groups for f in g.fragments}
         assert {"assert_ticket_is_clean", "assert_ticket_is_clean_copy"} <= symbols
 
+    # frob:tests \
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_fragment_file_is_forward_sla\
+    # sh_separated_in_nested_directory
+    def test_fragment_file_is_forward_slash_separated_in_nested_directory(
+        self, tmp_path
+    ):
+        """T-4107: a `CodeFragment.file` built from a nested path is
+        forward-slash separated on every platform. `str(path.relative_to(root))`
+        (the pre-fix indexer form) preserves the platform separator, which on
+        Windows silently defeats the `tests/`-prefix `_MIN_LINES_OVERRIDES`
+        table (a bare `rel.startswith("tests/")` never matches a
+        backslash-separated rel) -- a bare filename has no separator to get
+        wrong, so this requires a nested directory to catch a regression."""
+        nested = tmp_path / "tests" / "nested"
+        nested.mkdir(parents=True)
+        helper = (
+            "def assert_ticket_is_clean(ticket):\n"
+            "    assert ticket.state in ('queued', 'done')\n"
+            "    assert ticket.scope, 'scope must be declared'\n"
+            "    assert ticket.acceptance, 'acceptance must be declared'\n"
+            "    for entry in ticket.acceptance:\n"
+            "        assert entry.index >= 0\n"
+            "        assert entry.text, 'acceptance text must be non-empty'\n"
+            "        if entry.bound:\n"
+            "            assert entry.evidence, 'bound acceptance needs evidence'\n"
+            "        else:\n"
+            "            assert not entry.required, 'required acceptance needs binding'\n"
+            "    if ticket.blocked_by:\n"
+            "        for dep in ticket.blocked_by:\n"
+            "            assert dep != ticket.id, 'cannot block on itself'\n"
+            "            assert dep.startswith('T-'), 'blocked_by id must be a ticket id'\n"
+            "    assert ticket.tier in ('leaf', 'epic')\n"
+            "    if ticket.tier == 'epic':\n"
+            "        assert ticket.children, 'epic must have children'\n"
+            "        for child in ticket.children:\n"
+            "            assert child.parent == ticket.id, 'child must point back'\n"
+            "    assert ticket.priority in ('low', 'normal', 'high')\n"
+        )
+        (nested / "test_helpers_one.py").write_text(helper)
+        (nested / "test_helpers_two.py").write_text(
+            helper.replace("assert_ticket_is_clean", "assert_ticket_is_clean_copy")
+        )
+
+        result = find_duplicates(tmp_path, min_lines=6)
+        assert result.groups, (
+            f"expected the nested tests/ helper duplicate to still fire; "
+            f"got groups={result.groups!r}"
+        )
+        for group in result.groups:
+            for frag in group.fragments:
+                assert "\\" not in frag.file, (
+                    f"CodeFragment.file must be forward-slash separated on "
+                    f"every platform, got {frag.file!r}"
+                )
+                assert frag.file == "tests/nested/test_helpers_one.py" or (
+                    frag.file == "tests/nested/test_helpers_two.py"
+                )
+
+    # frob:tests \
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_walk_does_not_exclude_a_file\
+    # _that_matches_no_configured_exclude_glob
+    def test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob(
+        self, tmp_path
+    ):
+        """T-4107: `_walk`'s post-hoc exclude check is
+        `exclude_globs and is_excluded(rel, exclude_globs)` -- both operands
+        must hold for a file to be skipped. A non-empty `[graph] exclude`
+        that does not match this file must NOT exclude it; a boolop-swap to
+        `or` would exclude every file the instant exclude_globs is
+        non-empty, regardless of whether it actually matches, so this needs
+        a configured-but-non-matching glob to catch that regression."""
+        (tmp_path / "frob.toml").write_text('[graph]\nexclude = ["build/**"]\n')
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        body = "    a = 1\n    b = 2\n    c = 3\n    d = 4\n    e = 5\n    f = 6\n"
+        (src_dir / "one.py").write_text(f"def helper_one():\n{body}")
+        (src_dir / "two.py").write_text(f"def helper_two():\n{body}")
+
+        result = find_duplicates(tmp_path, min_lines=6)
+        assert result.groups, (
+            "a non-matching [graph] exclude entry must not suppress "
+            f"unrelated files from being walked; got groups={result.groups!r}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # output format
