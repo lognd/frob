@@ -20,8 +20,12 @@ scope:
 - tests/unit/test_app_runners_batch6.py
 - tests/unit/test_runtime_deps.py
 - tickets/T-draft-ca28d9be/ticket.md
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'SCOPE002 closure-explosion class (T-3299/T-3902/T-3957/T-4098/T-4103):
+  these test files'' pre-existing (untouched by T-4130) frob:tests bindings to src/frob/app/check_runner.py
+  etc. pull in unrelated modules this ticket does not touch. No frob:waive-addressable
+  mechanism exists for a tickets.md:0 finding; acked per the T-4103 precedent rather
+  than absorbing unrelated files into scope.'
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
