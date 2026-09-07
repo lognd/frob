@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'completes this ticket''s own audit item: 37 of 334 open tickets'' scope
+    entries match zero tracked files, of which only 2 are the space-joined shape this
+    ticket was filed on. Records the two larger causes (34 paths that no longer exist,
+    mostly from renames and ticket archiving; 3 real but untracked paths) and reframes
+    the fix so the general zero-match check leads rather than the whitespace decision'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 4401
+  new_length: 7416
 designated_repro_test: null
 acceptance:
 - text: given a scope entry containing a space, when it is declared, then it is either
@@ -114,3 +125,55 @@ ACCEPTANCE
 - Reuse of the existing zero-subject machinery evaluated rather than a new check
   invented.
 - All three fixtures committed.
+
+THE QUEUE AUDIT THIS TICKET ASKS FOR IS DONE, and the answer is larger than the
+one instance that prompted it. Measured 2026-09-07 against 10081 tracked files,
+using frob's own `scope_matches`:
+
+    open tickets carrying a scope block          334
+    scope entries matching ZERO tracked files     37
+
+    of those 37:
+      34  the path does not exist on disk at all
+       3  the path exists but is untracked
+       2  contain a space (this ticket's own shape)
+
+SO THE SPACE-JOINED SHAPE IS THE SMALLEST OF THREE CAUSES, and this ticket was
+filed on the rarest one. The other two matter more:
+
+  A. THIRTY-FOUR ENTRIES NAME PATHS THAT DO NOT EXIST. Spot-checking the list, the
+     dominant cause is a file that MOVED after the ticket was filed --
+     `tests/test_gates.py` (twice), `tests/unit/test_land_cmd.py`,
+     `src/frob/app/ticket_runner/_land.py`, `src/frob/gates/_scan_timeout.py`.
+     Those are modules this repo has split or renamed during its own refactors.
+     A second group names ticket directories that have since been ARCHIVED --
+     `tickets/T-2384/ticket.md`, `tickets/T-3227/**`, `tickets/T-0450/`. So a
+     ticket scoping another ticket goes dead the moment that ticket is archived,
+     which is routine housekeeping nobody would expect to break a live scope.
+
+  B. THREE ENTRIES NAME REAL PATHS THAT ARE UNTRACKED -- `.claude/worktrees/`,
+     `.frob/rapid-debt.jsonl`, `.claude/hooks/protect-secrets.py`. These are NOT
+     obviously defects: a ticket may legitimately declare intent over gitignored
+     state. But they match nothing under a tracked-file matcher, so every
+     scope-derived judgement about them is just as vacuous as a typo's. Decide
+     whether declaring untracked state in scope is supported. If it is, the
+     matcher needs to know; if it is not, the declaration should be refused.
+
+WHAT THIS CHANGES ABOUT THE FIX. Splitting or refusing whitespace addresses 2 of
+37. The general check -- warn when a declared scope entry matches zero tracked
+files -- addresses all of them, and would have caught every one at declaration
+time or at the first check afterwards. Build the general check FIRST; the
+whitespace decision is then a small refinement rather than the headline.
+
+AND IT ADDS A REQUIREMENT NOBODY ASKED FOR: a scope entry can go dead LONG AFTER
+it was written, by a rename or an archive elsewhere in the repo. So a
+declaration-time warning is necessary but not sufficient -- the check has to run
+against the CURRENT tree, not only when the scope is authored. This repo already
+records that refactors invalidate out-of-scope edges; the same mechanism is
+quietly hollowing out scope declarations, and 34 live tickets are carrying the
+result.
+
+DO NOT MASS-REPAIR THE 37. Some name files that were split into several successors
+and the right target is a judgement call; some belong to tickets that should be
+dropped instead. Report them, and let each ticket's owner decide. A blanket
+rewrite would replace a visible dead entry with a plausible wrong one.
