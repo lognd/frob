@@ -2,7 +2,7 @@
 id: T-4246
 title: 'Windows land and lease failures: an unreclaimed lock, an inverted dirty check,
   and a reclaim that logs nothing'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -90,3 +90,6 @@ ACCEPTANCE
 - Live defects fixed, not accommodated.
 - The ignore-the-lock question decided repo-wide rather than per test.
 - All three fixtures committed.
+
+## Drop reason
+- 2026-09-07: duplicate of T-4243, which the implementer working these three failures filed first and is already using. I filed this one after checking for existing leaves and finding none -- the agent's filing landed in the gap between my check and my write. Its content adds nothing T-4243 lacks; the classification instruction (live defect versus platform-invalid premise) and the repo-wide ignore-the-lock question are being carried to that agent directly instead
