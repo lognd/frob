@@ -31,6 +31,15 @@ body_changes:
   at: '2026-09-07'
   old_length: 4401
   new_length: 7416
+- mode: set
+  reason: 'rewrites this ticket''s own dead-path list as prose: an agent working a
+    neighbouring ticket reported DOC006 findings against this body, because a ticket
+    about paths that do not resolve necessarily quotes paths that do not resolve.
+    Verified zero non-resolving path-shaped tokens remain'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 7416
+  new_length: 7986
 designated_repro_test: null
 acceptance:
 - text: given a scope entry containing a space, when it is declared, then it is either
@@ -143,16 +152,16 @@ filed on the rarest one. The other two matter more:
 
   A. THIRTY-FOUR ENTRIES NAME PATHS THAT DO NOT EXIST. Spot-checking the list, the
      dominant cause is a file that MOVED after the ticket was filed --
-     `tests/test_gates.py` (twice), `tests/unit/test_land_cmd.py`,
-     `src/frob/app/ticket_runner/_land.py`, `src/frob/gates/_scan_timeout.py`.
+     the former top-level gates test module (twice), the former land-command unit
+     test module, the pre-split land command runner, and a scan-timeout gate module.
      Those are modules this repo has split or renamed during its own refactors.
      A second group names ticket directories that have since been ARCHIVED --
-     `tickets/T-2384/ticket.md`, `tickets/T-3227/**`, `tickets/T-0450/`. So a
+     three archived ticket directories. So a
      ticket scoping another ticket goes dead the moment that ticket is archived,
      which is routine housekeeping nobody would expect to break a live scope.
 
-  B. THREE ENTRIES NAME REAL PATHS THAT ARE UNTRACKED -- `.claude/worktrees/`,
-     `.frob/rapid-debt.jsonl`, `.claude/hooks/protect-secrets.py`. These are NOT
+  B. THREE ENTRIES NAME REAL PATHS THAT ARE UNTRACKED -- the agent-worktree tree,
+     the rapid-debt journal, and a secrets-protection hook script. These are NOT
      obviously defects: a ticket may legitimately declare intent over gitignored
      state. But they match nothing under a tracked-file matcher, so every
      scope-derived judgement about them is just as vacuous as a typo's. Decide
@@ -177,3 +186,13 @@ DO NOT MASS-REPAIR THE 37. Some name files that were split into several successo
 and the right target is a judgement call; some belong to tickets that should be
 dropped instead. Report them, and let each ticket's owner decide. A blanket
 rewrite would replace a visible dead entry with a plausible wrong one.
+
+
+A NOTE ON THIS TICKET'S OWN PROSE, because the subject matter sets the trap: an
+earlier revision listed the dead paths in path syntax, and the doc-pointer gate
+correctly resolved them and failed -- a ticket ABOUT paths that do not resolve
+necessarily wants to quote paths that do not resolve. They are now named in prose.
+This is the second time in this session my own ticket body has broken a gate the
+same way. The rule the repo already carries is exact and I keep relearning it:
+when quoting something that does not exist here, name it in words, never in its
+native syntax.
