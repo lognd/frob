@@ -628,7 +628,7 @@ assumes a direction: it simply never lets a bare name resolve at all.
 ```python
 # frob/process/_project_tool.py -- one project-scoped tool spawn mechanism
 def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
-    ...  # ["uv", "run", "--project", str(root), tool, *args]
+    ...  # ["uv", "run", "--no-sync", "--project", str(root), tool, *args]
 
 def resolve_project_tool(
     root: Path, tool: str
@@ -646,6 +646,18 @@ that needs to put that in a diagnostic message -- the land's pre-land
 type-check refusal (`_assert_touched_files_type_check_pre_land`) does
 exactly this, so a refusal names not just each error's file/line/text
 but which `ty` binary produced them.
+
+T-4163: `--no-sync` is load-bearing, not cosmetic. Plain `uv run
+--project <root>` lazily locks/syncs the TARGET project's own
+environment on first use, writing an untracked `uv.lock` (and creating
+`.venv/`) inside that project's working tree as a side effect of what
+the caller intended as a read-only lint/typecheck spawn. `frob check`
+diffing that same tree a few gates later then refuses on the file its
+own tool invocation just wrote (PRE001/SCOPE001 on a "clean" project).
+`--no-sync` runs `tool` against whatever environment already exists
+without touching the lockfile or venv; `resolve_project_tool`'s
+which-probe spawn goes through `project_tool_argv` for the same reason
+rather than hand-rolling a second `uv run` argv next to it.
 
 `frob.gates._bare_toolchain.bare_toolchain_gate` (BARETOOL001, WARN-tier)
 is the regrowth guard: an AST scan (`frob.vet._bare_toolchain`) over

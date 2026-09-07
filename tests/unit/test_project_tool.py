@@ -22,14 +22,33 @@ class TestProjectToolArgv:
     """`project_tool_argv` -- the one correct argv shape."""
 
     def test_shape(self, tmp_path: Path) -> None:
-        """`uv run --project <root> <tool> <*args>`, in that order."""
+        """`uv run --no-sync --project <root> <tool> <*args>`, in that
+        order -- T-4163: `--no-sync` stops a read-only tool spawn from
+        lazily writing an untracked uv.lock/.venv into the target's own
+        working tree."""
         argv = project_tool_argv(tmp_path, "ty", "check", "x.py")
-        assert argv == ["uv", "run", "--project", str(tmp_path), "ty", "check", "x.py"]
+        assert argv == [
+            "uv",
+            "run",
+            "--no-sync",
+            "--project",
+            str(tmp_path),
+            "ty",
+            "check",
+            "x.py",
+        ]
 
     def test_no_args(self, tmp_path: Path) -> None:
         """Works with zero trailing args too."""
         argv = project_tool_argv(tmp_path, "pytest")
-        assert argv == ["uv", "run", "--project", str(tmp_path), "pytest"]
+        assert argv == [
+            "uv",
+            "run",
+            "--no-sync",
+            "--project",
+            str(tmp_path),
+            "pytest",
+        ]
 
 
 class TestToolIdentity:

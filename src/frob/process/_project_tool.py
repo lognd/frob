@@ -65,8 +65,22 @@ def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
     never construct its own `["uv", "run", ...]` or bare-name argv by
     hand -- one mechanism, not a second correct spelling living next to
     the wrong one (T-4125's own `pyfmt_runner.py` finding: both spellings
-    existed four lines apart)."""
-    return ["uv", "run", "--project", str(root), tool, *args]
+    existed four lines apart).
+
+    T-4163: `--no-sync` is load-bearing, not an optimization -- plain
+    `uv run --project <root>` lazily locks/syncs that project's OWN
+    environment on first use, writing an untracked `uv.lock` (and
+    creating `.venv/`) INSIDE the target project's working tree as a
+    side effect of a read-only lint/typecheck spawn. When `frob check`
+    is the caller diffing that same tree a few gates later, its own
+    tool invocation manufactures the dirty file PRE001/SCOPE001 then
+    refuse on -- a check that never touched the target's source still
+    exits nonzero over a file `frob` itself just wrote. `--no-sync` runs
+    `tool` against whatever environment already exists without
+    resolving/writing a lockfile or venv; a project that genuinely needs
+    a fresh sync should run `uv sync` itself as an explicit step, not
+    have it triggered as a hidden side effect of `frob check`."""
+    return ["uv", "run", "--no-sync", "--project", str(root), tool, *args]
 
 
 # frob:doc docs/modules/process.md#public-api
@@ -93,6 +107,8 @@ class ToolIdentity:
         """`ToolIdentity(path=..., version=...)`, for logs/assertions."""
         return f"ToolIdentity(path={self.path!r}, version={self.version!r})"
 
+    # frob:doc docs/modules/process.md#public-api
+    # frob:tests tests/unit/test_project_tool.py::TestToolIdentity.test_describe
     def describe(self) -> str:
         """One-line `<path> (<version>)` rendering for embedding in a
         gate refusal or diagnostic message."""
@@ -129,16 +145,7 @@ def resolve_project_tool(
     probe itself was imperfect would defeat this function's whole
     purpose (T-4125: the refusal message must name the tool regardless)."""
     which_result = guarded_subprocess_run(
-        [
-            "uv",
-            "run",
-            "--project",
-            str(root),
-            "python",
-            "-c",
-            _WHICH_PROBE,
-            tool,
-        ],
+        project_tool_argv(root, "python", "-c", _WHICH_PROBE, tool),
         capture_output=True,
         text=True,
         timeout=timeout_s,

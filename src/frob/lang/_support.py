@@ -1265,6 +1265,21 @@ LANGUAGE_SENSITIVE_PACKAGES: dict[str, PackageAudit] = {
             "above, not a second axis."
         ),
     ),
+    # frob:ticket T-4163
+    "frob.process": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.process._project_tool.resolve_project_tool's 'python' "
+            "literal names the interpreter used to run its OWN which-"
+            "probe script inside the target project's uv-managed "
+            "environment (`uv run --project <root> python -c "
+            "<probe>`) -- a fixed implementation detail of how the probe "
+            "is executed, not a per-language behavioral branch: the "
+            "function resolves ANY caller-supplied `tool` name (cargo, "
+            "npm, ...) identically regardless of the target project's "
+            "own language."
+        ),
+    ),
     "frob._cli_parsers": PackageAudit(
         axis=PackageLanguageAxis.AGNOSTIC,
         detail=(

@@ -2,7 +2,7 @@
 id: T-4163
 title: 'eight ubuntu failures after the self-gate batch: a new gate, rule literal,
   package and exports were added without reaching the registries that enumerate them'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -163,17 +163,35 @@ scope_changes:
     package-audit registration
   actor: logan
   at: '2026-09-07'
-designated_repro_test: null
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_unregistered_id_reported_as_error
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+- tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
+- tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered
+- tests/unit/test_project_tool.py::TestProjectToolArgv::test_shape
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_writes_to_stderr_not_stdout
+designated_repro_test: tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
 acceptance:
 - text: given a gate rule literal added without registering it, when a check runs,
     then it fails with a message naming every list the rule must appear in
-  evidence: []
+  evidence:
+  - tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_unregistered_id_reported_as_error
+  - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_writes_to_stderr_not_stdout
 - text: given the previously green ubuntu suite, when it runs after this fix, then
     it reports zero failures
-  evidence: []
+  evidence:
+  - tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_unregistered_id_reported_as_error
+  - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_writes_to_stderr_not_stdout
 - text: given a check run while another check runs on the same host, when it completes,
     then it exits zero and the concurrency advisory is still printed
-  evidence: []
+  evidence:
+  - tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_unregistered_id_reported_as_error
+  - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_writes_to_stderr_not_stdout
 threat: null
 component: null
 anchor: false

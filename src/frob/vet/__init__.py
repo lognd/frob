@@ -11,6 +11,7 @@ out of scope (VET006-VET010, most of VET-C, dynamic detonation).
 
 from __future__ import annotations
 
+from frob.vet._bare_toolchain import BareToolchainFinding, bare_toolchain_findings
 from frob.vet._cache import ttl_cache_get, ttl_cache_set
 from frob.vet._capability import (
     is_self_pattern_path,
@@ -73,6 +74,7 @@ __all__ = [
     "LIVE",
     "UNMODELED",
     "UNVERIFIED",
+    "BareToolchainFinding",
     "CapabilityModeError",
     "ClosedWorldAccounting",
     "ContainmentFinding",
@@ -92,6 +94,7 @@ __all__ = [
     "VetError",
     "VetReport",
     "Violation",
+    "bare_toolchain_findings",
     "build_containment_report",
     "canonical_declared_kind",
     "capability_diff",

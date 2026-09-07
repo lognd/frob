@@ -1245,6 +1245,9 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # registered-but-unreachable omission shape as ffi_boundary/
             # suppress/milestone etc. above.
             "win32_kill_signal",
+            # T-4146/T-4163: BARETOOL001 -- thread-pool, sub-second, same
+            # registered-but-unreachable shape as win32_kill_signal above.
+            "bare_toolchain",
             "excludehazard",
             "debt",
             # frob:ticket T-0797

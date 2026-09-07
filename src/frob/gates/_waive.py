@@ -327,6 +327,11 @@ _KNOWN_GATE_RULES = frozenset(
         # (T-1824's `frob.gates._coverage._suspect_deflated_symbols`),
         # distinct from TEST017's aggregate/repo-wide join-fraction signal.
         "TEST019",
+        # T-4146/T-4163: a project-tool argv literal spelled with its bare
+        # name instead of the project-tool spelling that survives an
+        # unqualified PATH shadow; see
+        # `frob.gates._bare_toolchain.bare_toolchain_findings`.
+        "BARETOOL001",
         "TODO001",
         "TODO002",
         # T-0783: a frob:todo edge bound to a still-open ticket whose

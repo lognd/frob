@@ -839,9 +839,10 @@ happens to share a language's name).
 
 `frob.lang._support.LANGUAGE_SENSITIVE_PACKAGES` is the declared half of
 the answer: every `frob.*` package T-2996's survey found branching on
-language identity (18 in total, including 5 an AST literal scan turned
-up that a manual density-ranking pass had missed: `frob.bind`,
-`frob.deploy`, `frob.docs`, `frob.natives`, `frob.xref`), each mapped to
+language identity (19 in total as of T-4163's `frob.process` addition --
+the original 18 included 5 an AST literal scan turned up that a manual
+density-ranking pass had missed: `frob.bind`, `frob.deploy`,
+`frob.docs`, `frob.natives`, `frob.xref`), each mapped to
 a `PackageAudit` recording which axis accounts for it --
 `PackageLanguageAxis.FACET`/`CAPABILITY` (an existing FACETS/
 ADAPTER_CAPABILITIES cell already tracks it end to end) or `AGNOSTIC`

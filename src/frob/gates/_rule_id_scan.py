@@ -590,7 +590,15 @@ def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
                 "lands, or the ticket that constructs it cannot close "
                 "(T-1937/T-1956's own close-time gate will refuse it "
                 "anyway; this surfaces the SAME gap earlier, before it "
-                "blocks anyone's land)"
+                "blocks anyone's land). T-4163: if this rule id belongs "
+                "to a NEW gate (not an added rule on an existing one), "
+                "this is only ONE of the lists that gate must also reach "
+                "-- also check frob.gates._ALL_GATES, frob.gates."
+                "_CANONICAL_GATE_ORDER, frob.gates._build_process_jobs, "
+                "frob.gates._CACHEABLE_PROCESS_GATES (if cacheable), and "
+                "frob.check._STAGE_GROUPS (see docs/modules/gates.md"
+                "#registering-a-new-gate-t-4163 for the full list and "
+                "why no single point of registration replaces it yet)"
             ),
             symref=rule_id,
         )
