@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_flag_coverage.py
+- tests/unit/test_flag_coverage_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
   reason: 'T-4147: FLAGCOV001''s resolve_dotted_symbol call sites need to resolve/build
     the parser and config in the TARGET project''s own interpreter, not frob''s --
     the fix lives in this gate module, reusing frob.process._project_tool'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_flag_coverage_gate.py
+  reason: test coverage for the project-env resolution fix lives alongside the existing
+    gate tests
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
