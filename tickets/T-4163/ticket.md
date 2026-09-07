@@ -2,7 +2,7 @@
 id: T-4163
 title: 'eight ubuntu failures after the self-gate batch: a new gate, rule literal,
   package and exports were added without reaching the registries that enumerate them'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
