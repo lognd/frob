@@ -21,6 +21,7 @@ scope:
 - tests/unit/test_flag_coverage_gate.py
 - src/frob/gates/_flag_coverage.py
 - docs/modules/process.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,13 @@ scope_changes:
   glob: docs/modules/process.md
   reason: 'AFFECT001: project_tool_argv/project_import_argv changed and their frob:doc
     target lives here; update the doc in the same change'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: new real-exec test fixtures (uv run/uv sync spawns) require
+    declaring the exec capability for tests/unit/test_check.py and tests/unit/test_flag_coverage_gate.py
+    in the testsuite node'
   actor: logan
   at: '2026-09-07'
 designated_repro_test: null
