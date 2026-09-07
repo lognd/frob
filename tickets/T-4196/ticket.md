@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-07'
   old_length: 3721
   new_length: 7266
+- mode: set
+  reason: 'corrects my own measurement, which scanned only python files: the owner
+    was right that describes stacks, and it is the third largest win at 1121 lines
+    and 60 deep, with 1591 of its 1673 occurrences in markdown. Reframes the ticket
+    as a blanket directive-family capability per the owner''s ask, while keeping the
+    separator question per-directive because most test bindings contain spaces'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 7266
+  new_length: 10790
 designated_repro_test: null
 acceptance:
 - text: given a directive naming several ticket ids, when it is parsed, then the symbol
@@ -185,3 +195,64 @@ SEQUENCING
      is genuinely different and must be settled against real values first.
 Do not fold them together: the id shapes differ, the ambiguity differs, and the
 renumber and rewrite paths differ per directive.
+
+CORRECTION -- MY MEASUREMENT ABOVE SCANNED ONLY PYTHON FILES AND IS WRONG FOR AT
+LEAST ONE DIRECTIVE. The owner said they had seen the describes directive
+stacked; my table reported it as never stacking. They were right and I was
+measuring a subset. Re-measured across EVERY tracked file, and counting the
+markdown comment form as well as the python comment form:
+
+    directive               total   stacked   saved   worst
+    frob:tests              13822      1030    2155    45 deep
+    frob:ticket             10466       992    1339    14 deep
+    frob:describes           1673       212    1121    60 deep
+    frob:enforces             616        70     290    73 deep
+    frob:doc                 3197        52      68     5 deep
+    frob:waive               2083        40      56    11 deep
+    frob:used-by               78        10      15     7 deep
+    frob:invariant            232         1       1     2 deep
+    frob:todo / enumerates     37         2       2     2 deep
+    frob:external-reader       13         0       0     1
+    frob:no-behavior-change    13         0       0     1
+
+frob:describes is the THIRD LARGEST WIN, not a non-participant: 1121 lines and a
+sixty-deep worst case. The reason my first pass missed it entirely is that 1591
+of its 1673 occurrences live in markdown files and only 73 in python -- I scanned
+python and reported a conclusion about the directive. Same error I have made
+repeatedly today in a different costume: a true measurement of a subset promoted
+to a claim about the whole. The lesson for anyone working this ticket is to
+enumerate the directive's real file types before drawing any conclusion about it.
+
+THE OWNER'S ASK IS THEREFORE THE RIGHT ONE: treat this as a BLANKET capability
+rather than a per-directive feature. Four directives clear a thousand lines each
+or better -- tests, ticket, describes, enforces -- and the remainder cost nothing
+extra once the parser is generic. Roughly 4900 lines of pure directive stacking
+disappear.
+
+BUT THE SEPARATOR QUESTION IS STILL PER-DIRECTIVE, and it is the whole
+engineering problem. Values differ in shape:
+
+  UNAMBIGUOUS WITH A SPACE: ticket ids are a short fixed shape with no attributes
+  and no internal spaces.
+
+  AMBIGUOUS WITH A SPACE: 8913 of 13822 test bindings contain a space, because
+  the value is a node id followed by attributes and suppression comments. Test
+  node ids in some ecosystems also contain spaces INSIDE the id. Enforces and
+  waive values carry attributes too.
+
+  NEEDS CHECKING: describes and used-by target paths and anchors. Measure whether
+  any real value contains a space before choosing, rather than assuming.
+
+So a blanket capability does NOT mean a blanket separator. Either pick one
+delimiter that cannot occur inside any value -- measure it against every real
+value first, do not reason about it -- or define it per directive and document
+each. The failure to avoid is implementing space separation because it works for
+ticket ids and extending it by analogy, which would silently mis-split the
+majority of the test bindings in this repository.
+
+REVISED SCOPE FOR THIS TICKET: it now covers the directive family, not just the
+ticket verb. Keep the sequencing though -- land the parser and the separator
+decision first, and do NOT bulk-collapse existing stacks here, because a sibling
+ticket records that the land's auto-fix currently rewraps directive comments and
+splits a node id across the break, silently breaking the binding while the
+comment still reads correctly.
