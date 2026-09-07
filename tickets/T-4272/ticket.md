@@ -109,6 +109,14 @@ acceptance:
     names whose claim was overridden and why, and the override record travels on the
     next push without the override itself having required the network
   evidence: []
+- text: given a claimed ticket that its holder has started working, when its state
+    and ownership are read, then both facts are representable at once and neither
+    displaces the other
+  evidence: []
+- text: given the remote branch set and the ticket-side ownership view, when they
+    disagree, then the branch set is authoritative and the ticket-side value is treated
+    as a cached observation stamped with when it was taken
+  evidence: []
 threat: null
 component: null
 anchor: false
