@@ -2,7 +2,7 @@
 id: T-3900
 title: DOC006 reads markdown link syntax as a TOML config pointer, so ordinary reference
   links are hard errors in any consumer repo
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
