@@ -33,6 +33,7 @@ from frob.process._guard import (
     exec_enabled,
     guarded_subprocess_run,
 )
+from frob.process._tty import is_interactive_stdin
 
 if TYPE_CHECKING:
     from frob.tickets._reconcile import ReconcileReport
@@ -1376,7 +1377,13 @@ def _attach(root: Path, cfg: AppConfig) -> None:
     # No path means "read from clipboard" -- but a non-interactive agent
     # session has no clipboard to paste from, and would otherwise hang or
     # spawn a clipboard backend that can never produce an image (T-0098).
-    if cfg.ticket_attach_path is None and not sys.stdin.isatty():
+    # T-4255: `is_interactive_stdin()`, not a bare `sys.stdin.isatty()` --
+    # measured on real Windows, `isatty()` alone returns `True` even for
+    # `stdin=subprocess.DEVNULL` (the Windows CRT calls NUL a character
+    # device same as a console), so this fast-fail never fired there and
+    # `attach` fell through into a doomed clipboard read instead. See
+    # `frob.process._tty`'s module docstring for the full measurement.
+    if cfg.ticket_attach_path is None and not is_interactive_stdin():
         _log.error(
             "frob ticket attach %s: no path given and stdin is not a TTY "
             "(non-interactive session cannot paste from the clipboard); "

@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.process._tty import is_interactive_stdin
 from frob.tickets._leases import LeaseError
 
 from ._verify import _apply_evidence
@@ -887,7 +888,11 @@ def _maybe_attach_clipboard_image(root: Path, ticket_id: str) -> None:
     """Interactively (TTY only, AND only when `FROB_TICKET_NEW_CLIPBOARD`
     is explicitly set, T-3322) offer to attach a clipboard image to
     `ticket_id`."""
-    if not sys.stdin.isatty():
+    # T-4255: `is_interactive_stdin()` (shared with `_attach`'s TTY
+    # fast-fail), not a bare `sys.stdin.isatty()` -- see
+    # `frob.process._tty`'s module docstring for why the bare check
+    # misreports True off a real console on win32.
+    if not is_interactive_stdin():
         return
     if not _clipboard_prompt_enabled():
         return

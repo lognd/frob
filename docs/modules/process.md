@@ -1023,6 +1023,22 @@ nothing is silently skipped because nothing is skipped at all. A future
 enforced-limit direction, if one is chosen later, would need its own
 visible-deferral mechanism at that point.
 
+## Cross-platform interactive-stdin check (T-4255)
+
+`frob.process._tty.is_interactive_stdin()` is the single home for "is
+stdin a real terminal a human could type into", used by `frob ticket
+attach`'s TTY fast-fail and `frob ticket new`'s clipboard-image offer.
+
+`sys.stdin.isatty()` alone is not that check on win32: measured on real
+Windows via `winrun`, `sys.stdin.isatty()` returns `True` for a child
+spawned with `stdin=subprocess.DEVNULL` -- the Windows CRT's `_isatty()`
+reports `True` for any character device, and `NUL` is a character device,
+not only a real console. `is_interactive_stdin()` follows a `False`-only
+`isatty()` result with `GetConsoleMode` (via `ctypes`) on win32, which
+succeeds only for a handle genuinely attached to a console, to rule out
+`NUL` and other non-console character devices doing the same. Off win32,
+`sys.stdin.isatty()` is the whole answer.
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`

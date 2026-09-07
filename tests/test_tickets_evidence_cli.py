@@ -19,6 +19,8 @@ resolution/routing plumbing, not re-proving D-01's pass/fail behavior
 
 from __future__ import annotations
 
+import shlex
+import sys
 from pathlib import Path
 
 import pytest
@@ -28,6 +30,29 @@ from frob.app.config import AppConfig
 from frob.app.ticket_runner import _close, _new
 from frob.testing._models import CollectedTests
 from frob.tickets import TicketState, load_queue
+
+#: T-4255: `TestRunEvidenceCommandNoShell`'s crafted commands used to spawn
+#: the POSIX `printf` utility to get a text-echoing argv[0] for their
+#: shell-injection checks. `printf` is not a native Windows executable
+#: (Windows CI runners put Git's `cmd/` on PATH, not its `usr/bin/`, so
+#: `printf` is absent there) -- measured on real Windows via `winrun`:
+#: every one of these tests failed with `guarded_subprocess_run`'s own
+#: `SpawnFailed` (`[WinError 2] The system cannot find the file
+#: specified`), never reaching the shell-injection assertion at all. This
+#: helper echoes `sys.argv[1]` back on stdout via the SAME Python
+#: interpreter running the tests, which exists on every platform by
+#: construction, replacing the `printf`-specific argv the crafted command
+#: strings build.
+_ECHO_ARGV1 = [sys.executable, "-c", "import sys; sys.stdout.write(sys.argv[1])"]
+
+#: T-4255: same portability fix as `_ECHO_ARGV1` for the plain "runs and
+#: exits 0" evidence commands (`TestCmdEvidenceAcceptsBinding`) that used
+#: to spawn `printf ok` -- also absent from Windows PATH there. Must
+#: print SOMETHING on stdout: `_run_evidence_command`'s T-1892 guard
+#: refuses to record a cmd-evidence entry whose stdout+stderr came back
+#: empty (indistinguishable from a silent no-op like `true`), which a
+#: bare `pass` would have hit.
+_OK_ARGV_STR = shlex.join([sys.executable, "-c", "print('ok')"])
 
 
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
@@ -445,20 +470,18 @@ class TestRunEvidenceCommandNoShell:
 
         marker = tmp_path / "shell_ran"
         # If this string ever reached a shell, `;` would sequence a second
-        # command that touches `marker`. Quoted, `shlex.split` keeps the
-        # whole thing as a SINGLE argv element passed to `printf` -- inert
-        # literal text, never shell-interpreted.
+        # command that touches `marker`. Quoted (via `shlex.quote` inside
+        # `shlex.join`), `shlex.split` keeps the whole thing as a SINGLE
+        # argv element passed to `_ECHO_ARGV1` -- inert literal text, never
+        # shell-interpreted.
         #
-        # T-3518: the string must stay one argv token, not four. Unquoted
-        # (`f"printf hi; touch {marker}"`), `shlex.split` produces
-        # ['printf', 'hi;', 'touch', str(marker)] -- a format string with
-        # no '%' conversion plus two extra positional operands. GNU printf
-        # (Linux) silently ignores the extras and exits 0; BSD printf
-        # (macOS) refuses them ('printf: missing format character') and
-        # exits nonzero, which `run_cmd_evidence` correctly reports as a
-        # non-ok result -- a real printf(1) implementation difference,
-        # nothing to do with shell-safety, the actual property under test.
-        crafted = f'printf "hi; touch {marker}"'
+        # T-3518: the string must stay one argv token, not four -- see
+        # `_ECHO_ARGV1`'s own docstring for why this uses the running
+        # interpreter instead of the POSIX `printf` this test used before
+        # T-4255 (not on Windows PATH there, so the crafted command never
+        # even launched).
+        literal = f"hi; touch {marker}"
+        crafted = shlex.join([*_ECHO_ARGV1, literal])
         result = run_cmd_evidence(crafted)
         assert result.is_ok
         assert not marker.exists()
@@ -473,18 +496,21 @@ class TestRunEvidenceCommandNoShell:
         # assertion passed identically under the old `shell=True` code and
         # never actually observed the child process. This version instead
         # inspects the CHILD'S OWN STDOUT via `_run_evidence_command`
-        # directly: under argv execution `printf` receives the literal
-        # 2-element argv `["printf", "$(whoami)"]` and echoes that text
-        # back unexpanded; under a shell, `$(whoami)` would be substituted
-        # BEFORE printf ever ran and stdout would be the real username
-        # instead. Asserting the literal string on stdout -- and asserting
-        # the actual username is NOT what came back -- can only pass
-        # against genuine no-shell argv execution.
+        # directly: under argv execution the echoing interpreter
+        # (`_ECHO_ARGV1`, T-4255 -- see its docstring for why this
+        # replaced `printf`) receives the literal argv element
+        # `"$(whoami)"` and writes that text back unexpanded; under a
+        # shell, `$(whoami)` would be substituted BEFORE the child ever
+        # ran and stdout would be the real username instead. Asserting
+        # the literal string on stdout -- and asserting the actual
+        # username is NOT what came back -- can only pass against
+        # genuine no-shell argv execution.
         import getpass
 
         from frob.tickets import _run_evidence_command
 
-        result = _run_evidence_command("printf $(whoami)")
+        crafted = shlex.join([*_ECHO_ARGV1, "$(whoami)"])
+        result = _run_evidence_command(crafted)
         assert result.is_ok
         stdout = result.danger_ok.stdout
         assert stdout == "$(whoami)"
@@ -557,7 +583,7 @@ class TestCmdEvidenceAcceptsBinding:
             ticket_command="evidence",
             ticket_id="T-0001",
             ticket_path=tmp_path,
-            ticket_evidence_cmd="printf ok",
+            ticket_evidence_cmd=_OK_ARGV_STR,
             ticket_accepts=[1],
         )
         _evidence(tmp_path, cfg)
@@ -578,7 +604,7 @@ class TestCmdEvidenceAcceptsBinding:
             ticket_command="close",
             ticket_id="T-0001",
             ticket_path=tmp_path,
-            ticket_evidence_cmd="printf ok",
+            ticket_evidence_cmd=_OK_ARGV_STR,
             ticket_accepts=[1],
         )
         _close(tmp_path, cfg)

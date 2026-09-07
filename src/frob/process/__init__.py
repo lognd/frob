@@ -30,6 +30,7 @@ from frob.process._reap import (
     reap_active_multiprocessing_children,
     reap_orphaned_forkservers,
 )
+from frob.process._tty import is_interactive_stdin
 from frob.process.parsers import (
     Diagnostic,
     TestCase,
@@ -58,6 +59,7 @@ __all__ = [
     "net_enabled",
     "DEFAULT_ORPHAN_AGE_FLOOR_S",
     "install_sigterm_reaper",
+    "is_interactive_stdin",
     "reap_active_multiprocessing_children",
     "reap_orphaned_forkservers",
     "PytestSpawnError",

@@ -288,6 +288,53 @@ class TestTicketAttachNonInteractive:
         assert "TTY" in out
         assert "T-0001" in out
 
+    def test_attach_with_explicit_path_succeeds_off_tty(self, tmp_path):
+        # frob:tests \
+        # tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_w\
+        # ith_explicit_path_succeeds_off_tty
+        """T-4255: an explicit attachment PATH is given, so the "no path
+        means clipboard" TTY fast-fail must NOT fire even off a TTY --
+        this is the mutation-kill counterpart to `test_attach_without_
+        path_fails_fast_off_tty` above: `_attach`'s guard is `path is
+        None AND not interactive`, and a mutant swapping that `and` for
+        `or` would wrongly refuse this call (a real path, still no TTY)
+        with the same "no TTY" error the other test expects -- only
+        exercising both halves together proves it is `and`, not `or`."""
+        _init_repo(tmp_path)
+        new = run(
+            "ticket",
+            "new",
+            "--title",
+            "needs a real file",
+            "--kind",
+            "bug",
+            "--path",
+            str(tmp_path),
+        )
+        assert new.returncode == 0, new.stdout + new.stderr
+
+        attachment = tmp_path / "screenshot.png"
+        attachment.write_bytes(b"\x89PNG\r\n\x1a\n")
+
+        r = subprocess.run(
+            FROB
+            + [
+                "ticket",
+                "attach",
+                "T-0001",
+                str(attachment),
+                "--path",
+                str(tmp_path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            stdin=subprocess.DEVNULL,
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+        assert "TTY" not in out
+
 
 # frob:ticket T-1882
 class TestBulkRenumberCliRemoved:

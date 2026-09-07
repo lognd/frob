@@ -286,9 +286,14 @@ class TestApplyAgentEnv:
         assert result.is_ok
         expected = result.danger_ok[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
 
+        # `sys.executable`, not the literal "python3": on windows-latest,
+        # "python3" resolves to the Microsoft Store App Execution Alias
+        # stub (`WindowsApps\python3.exe`), which prints a remedy message
+        # and exits 9009 instead of running any code -- there is no
+        # "python3" on PATH pointing at a real interpreter there.
         proc = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "-c",
                 f"import os; print(os.environ.get({PYTEST_XDIST_AUTO_NUM_WORKERS_ENV!r}, ''))",
             ],
