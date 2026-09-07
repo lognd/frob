@@ -37,6 +37,14 @@ body_changes:
   at: '2026-09-07'
   old_length: 9282
   new_length: 12332
+- mode: append
+  reason: 'owner requirement: a remote claim must never hard-block local work; an
+    explicit acknowledgement with a reason unblocks it and the contributor accepts
+    ordinary merge conflicts as the consequence'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 12332
+  new_length: 15527
 designated_repro_test: null
 acceptance:
 - text: given a claimed epic and a collaborator with no network access, when they
@@ -291,3 +299,58 @@ claimed epic, record who took it, who held the epic, and the epic tip's observed
 staleness at that moment. That last part is what makes a later disagreement
 resolvable: the taker can show the epic looked cold, or the record shows it did
 not and the taker proceeded anyway. Both are useful; a bare "taken" is not.
+
+
+
+THE ESCAPE VALVE: A REMOTE CLAIM MUST NEVER HARD-BLOCK WORK ON YOUR OWN MACHINE.
+Owner requirement. Someone else's claim is information, not permission. A
+contributor who decides to edit claimed files anyway must be able to, provided
+they say so explicitly, and the consequence they accept is ordinary merge
+conflicts.
+
+THIS IS WHY THE FEATURE IS SAFE TO BUILD AT ALL. Version control already fails
+loudly when two people change the same lines, and it fails at the moment the
+change is integrated rather than at the moment it is written. The claim layer
+exists to stop people from WASTING work, not to stop them from DOING it. Once
+that is understood, an escape valve is not a weakening of the design; it is what
+keeps the design from becoming a lock that can strand a contributor behind an
+absent colleague.
+
+DISTINGUISH THE ESCAPE VALVE FROM TAKING A LEAF, BECAUSE THEY ARE DIFFERENT ACTS.
+Taking a leaf out of a claimed epic is CLAIMING: ownership transfers, a branch is
+published, and it requires a fresh remote read. The escape valve is working
+ANYWAY WITHOUT CLAIMING: nothing transfers, no ownership is asserted, and the
+holder keeps the claim. The second must not silently perform the first.
+
+WHAT EXPLICIT HAS TO MEAN, OR THE VALVE BECOMES THE DEFAULT. This project has a
+name for gates whose cheapest clearing action degrades the record, and a
+one-character flag that unblocks an agent is exactly that: it will be pasted into
+every command in every script within a week, and the claim system will then be
+decoration. So:
+
+  The acknowledgement carries a REASON in the contributor's own words, and the
+  operation is refused without one. A reason cannot be supplied by reflex.
+  It is scoped to the specific claim being overridden, not a blanket setting.
+  It expires, rather than persisting for the life of a checkout.
+  It must NOT be settable once as ambient configuration or an environment
+  variable that a session inherits. A per-session switch is indistinguishable
+  from turning the feature off, and it would be turned on once and never
+  reconsidered.
+
+RECORD IT LOCALLY, PUBLISH IT OPPORTUNISTICALLY. The valve has to work offline,
+so the record is written locally at the moment of the override. On the next push,
+that record travels, and the claim holder can see that someone worked over their
+claim, when, and why. Overriding is then socially visible rather than silent,
+without making the override itself depend on the network. Do not require a
+network round trip here; that would defeat the valve's purpose in the exact
+situation it exists for.
+
+SURFACE IT AT LAND TIME, WHERE A HUMAN IS ALREADY LOOKING. When work done under
+an override is landed, the land output should say so plainly and name whose claim
+was overridden. That is the moment the information is most useful and least
+avoidable, and it costs nothing because landing already requires the network.
+
+WHAT THE VALVE DOES NOT DO. It does not suppress the conflict, resolve it, or
+promise the resulting merge will be clean. The contributor is accepting the
+conflicts, not being spared them. It also does not release the holder's claim,
+shorten its expiry, or mark the ticket as being worked by the overrider.
