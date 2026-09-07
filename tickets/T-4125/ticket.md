@@ -20,6 +20,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'answers this ticket''s open mechanism question: it is neither the pre-merge
+    tree nor a config difference but a bare command name resolving through PATH to
+    a different checker VERSION than the project''s own -- confirmed in this repo
+    (land runs ty 0.0.58 from PATH while the venv holds 0.0.46). Records the full
+    population of 7 bare toolchain invocations, including one file carrying both spellings
+    four lines apart, and links the same root cause to T-3887 and the coverage bare-pytest
+    report'
+  actor: logan
+  at: '2026-09-07'
+  old_length: 3984
+  new_length: 8427
 designated_repro_test: null
 acceptance:
 - text: given a land refused by the type stage, when the refusal is printed, then
@@ -109,3 +122,79 @@ ACCEPTANCE
 - Mechanism (a) versus (b) determined by measurement and stated.
 - The gate is not weakened; if the check moves trees, say which and why.
 - All three fixtures committed.
+
+THE OPEN QUESTION ON THIS TICKET IS ANSWERED, AND THE ANSWER IS NEITHER OF MY TWO
+CANDIDATES. I proposed (a) the stage checking a pre-merge tree, or (b) a
+different checker configuration. The consumer's follow-up (logand.app-v2 F-328)
+names the real mechanism, and I then CONFIRMED IT IN THIS REPOSITORY:
+
+    the land's type stage runs a DIFFERENT VERSION OF THE TYPE CHECKER
+    than the project itself uses.
+
+MEASURED HERE, 2026-09-07:
+
+    src/frob/app/ticket_runner/_land_cmd.py:4047   cmd = ["ty", "check", ...]
+    PATH resolution   /home/logan/.local/bin/ty     ty 0.0.58
+    project venv      uv run ty                     ty 0.0.46
+
+A BARE COMMAND NAME resolves through PATH to a globally installed tool, not to
+the project's own environment. So the land refuses a ticket on the verdict of a
+checker the project does not use and does not pin. Note the direction differs by
+machine and is therefore not something a fix can assume: here the PATH copy is
+NEWER than the project's (0.0.58 against 0.0.46), while the consumer reports the
+opposite (0.0.58 against their venv's 0.0.78). Both are wrong in the same way --
+the answer does not come from the project's declared toolchain -- but a fix that
+assumes one direction will look correct on one machine and fail on the other.
+
+THIS FULLY EXPLAINS THE ORIGINAL REPORT. The operator's checker was clean on the
+worktree and clean after merging main because they ran THEIR ty. The land ran a
+different binary at a different version, which produced two diagnostics theirs
+does not. That is why the errors were reproducible in no tree they could inspect:
+they were not tree-dependent at all. The retry then landed because... the same
+skew persisted but the diff had changed. Do not treat the successful retry as
+evidence the errors were transient.
+
+THE POPULATION IS LARGER THAN THIS ONE CALL SITE, and the general form is what
+should be fixed. Measured across src:
+
+    _land_cmd.py:4047        ["ty", "check", ...]                      bare
+    _land_cmd.py:4327        ["ruff", "check", "--output-format", ...] bare
+    check/_python.py:136     ["ruff", "check", "--output-format", ...] bare
+    check/_python.py:172     ["ruff", "format", "--check", ...]        bare
+    check/_python.py:249     ["ruff", "check", "--fix", ...]           bare
+    pyfmt_runner.py:226      ["ruff", "check", "--select", "I", ...]   bare
+    pyfmt_runner.py:282      ["ruff", "format", "--check", ...]        bare
+
+    pyfmt_runner.py:197      ["uv", "run", "ruff", "check", ...]       correct
+    pyfmt_runner.py:253      ["uv", "run", "ruff", "format", ...]      correct
+
+ONE FILE CONTAINS BOTH SPELLINGS, four lines apart. That is the desync this
+project exists to prevent, sitting in our own source: two ways to invoke the same
+tool, one right and one wrong, with nothing choosing between them.
+
+THIS IS THE SAME ROOT CAUSE AS TWO DEFECTS ALREADY IN THE QUEUE, and they should
+be fixed together or at least by one mechanism:
+  - T-3887, several gates executing the target project's code in frob's own
+    interpreter rather than the project's.
+  - The coverage failure a third consumer diagnosed independently: a bare pytest
+    resolving to a global shim without the plugins the project depends on, where
+    running it through the project's runner with identical arguments succeeds.
+Three consumers have now reported the same class from three directions. The fix
+is one rule -- never invoke a project's toolchain by bare name -- and it wants a
+gate of its own so a fourth spelling cannot appear later.
+
+REVISED GUIDANCE FOR THIS TICKET
+- The diagnostic half stands unchanged and is still worth doing first: the
+  refusal must name each error's file, line and text, and say which tree it
+  checked. Add to that: it must name the RESOLVED TOOL PATH AND VERSION. Had it
+  done so, this would have been a five-minute diagnosis instead of a consumer
+  round trip.
+- Route every toolchain invocation through the project's environment.
+- Add a check that fails on a bare toolchain name in an argv literal, so the
+  population cannot regrow.
+
+MUST-FIRE FIXTURE (added):  a repository whose PATH holds a different version of
+                            the checker than its own environment gets the
+                            environment's verdict, not the PATH one.
+THIRD FIXTURE (revised):    the refusal message names the resolved tool path and
+                            version alongside the findings.
