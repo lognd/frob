@@ -299,14 +299,24 @@ class TestTestStepsNoRerunFlakes:
 
     def test_macos_test_step_no_reruns_flakes(self) -> None:
         """The macos Test step's pytest invocation must not carry
-        --reruns/--reruns-delay (T-3777)."""
+        --reruns/--reruns-delay (T-3777).
+
+        T-4274: the invocation itself changed from `uv run pytest -q` to
+        `.venv/bin/python -m pytest -q` (backgrounding `uv run` put the
+        wrong pid behind `$!`, so the step's own SIGABRT-for-a-stack-dump
+        aborted `uv` instead of the interpreter -- see
+        TestMacosTestStepSignalsTheRealInterpreter in
+        test_ci_workflow_timeout.py for the full T-4274 lock) -- this
+        test's own concern (no --reruns flag) is invocation-shape
+        agnostic, so it checks for `pytest -q` rather than the specific
+        `uv run` prefix."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
             step for step in steps if step.get("name", "").startswith("Test (macos")
         )
         run_text = test_step.get("run", "")
-        assert "uv run pytest -q" in run_text
+        assert "pytest -q" in run_text
         assert "--reruns" not in run_text, (
             "macos Test step's pytest invocation must not carry --reruns (T-3777)"
         )

@@ -290,8 +290,30 @@ jobs:
           # ubuntu's `timeout`/pipefail shape (macOS has no GNU `timeout`,
           # T-3250) to lean on for that distinction.
           # T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs under xdist on py3.14 (macos), turning a rare flake into a whole-suite abort; flakes are handled by fixing the specific flaky tests instead (T-3775).
-          uv run pytest -q > >(tee /tmp/pytest-macos.log) 2>&1 &
+          # T-4274: `$!` after backgrounding `uv run pytest ...` was `uv`'s
+          # OWN pid, not pytest's -- `uv run` forks and supervises a real
+          # child process rather than exec'ing into it (measured directly:
+          # backgrounding `uv run python -c '...'` and comparing `$!` to the
+          # child python's own pid via `ps --ppid` shows they differ; sending
+          # that pid SIGABRT aborts `uv` itself -- "Aborted (core dumped)",
+          # exit 134 -- exactly this ticket's own incident, and `uv` has no
+          # `PYTHONFAULTHANDLER` of its own so nothing is ever dumped).
+          # Reproduced and fixed locally: invoking the ALREADY-synced venv's
+          # own interpreter directly (`.venv/bin/python -m pytest`, no `uv
+          # run` supervisor in between) backgrounds the real python process
+          # itself, so `$!` is the correct pid and `kill -ABRT` reaches the
+          # process that actually has `PYTHONFAULTHANDLER=1` installed --
+          # verified with a deliberately hung script under this exact
+          # background+watcher+ABRT-then-KILL shape: a stack appears with
+          # the direct-interpreter form and does not with `uv run`. The
+          # preceding "Sync deps" step already ran `uv sync --all-extras
+          # --all-groups`, so `.venv/bin/python` is the exact interpreter
+          # `uv run` would have selected anyway -- this changes WHICH
+          # process receives the signal, not which environment the suite
+          # runs in.
+          .venv/bin/python -m pytest -q > >(tee /tmp/pytest-macos.log) 2>&1 &
           pid=$!
+          started=$(date +%s)
           (
             sleep "$budget"
             if kill -0 "$pid" 2>/dev/null; then
@@ -305,6 +327,15 @@ jobs:
           wait "$pid"
           status=$?
           kill "$watcher" 2>/dev/null || true
+          # T-4274 acceptance [3]: report the margin between how long the
+          # step actually took and its budget, on EVERY completion (not
+          # only a failure) -- a pass with the margin nearly gone (as the
+          # 39m-of-40m run before this incident was) must be visible
+          # before it becomes the next failure, not discovered in
+          # hindsight from two runs' timestamps.
+          elapsed=$(( $(date +%s) - started ))
+          remaining=$(( budget - elapsed ))
+          echo "::notice::macOS Test step finished in ${elapsed}s against a ${budget}s budget (${remaining}s margin)"
           exit "$status"
       # T-3250: Windows' default `run:` shell is pwsh, which has no `kill
       # -ABRT` equivalent -- there is no portable way for an external

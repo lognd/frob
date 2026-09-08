@@ -2,7 +2,7 @@
 id: T-4274
 title: the macos test step exceeds its budget and is killed with no result, and the
   abort-signal stack dump built to diagnose exactly this produced no stack
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -35,19 +35,27 @@ scope_changes:
     assertion in the sibling matrix test that the invocation-shape change broke
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_ci_workflow_timeout.py::TestMacosTestStepSignalsTheRealInterpreter::test_macos_step_backgrounds_the_interpreter_directly_not_uv_run
+- tests/test_ci_workflow_timeout.py::TestMacosTestStepSignalsTheRealInterpreter::test_macos_step_reports_its_own_margin_on_completion
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
 designated_repro_test: null
 acceptance:
 - text: given a process deliberately hung under the macos step's own harness, when
     the budget expires and the abort signal is sent, then a stack dump appears in
     the step output or the teed log
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_timeout.py::TestMacosTestStepSignalsTheRealInterpreter::test_macos_step_backgrounds_the_interpreter_directly_not_uv_run
 - text: given that working stack dump, when the macos leg next exceeds its budget,
     then the decision between a slow suite, a genuine hang, and an undersized budget
     is made from the stack rather than assumed
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+  - tests/test_ci_workflow_timeout.py::TestMacosTestStepSignalsTheRealInterpreter::test_macos_step_backgrounds_the_interpreter_directly_not_uv_run
 - text: given the macos leg, when it completes, then the margin between its duration
     and its budget is reported so a near-miss is visible before it becomes a failure
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_timeout.py::TestMacosTestStepSignalsTheRealInterpreter::test_macos_step_reports_its_own_margin_on_completion
 threat: null
 component: null
 anchor: false

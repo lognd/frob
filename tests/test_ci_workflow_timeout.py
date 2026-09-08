@@ -27,6 +27,39 @@ def _load_ci_workflow() -> dict:
     return yaml.safe_load(text)
 
 
+# frob:ticket T-4274
+def _all_pytest_steps() -> list[dict]:
+    """Every `build` job step whose `run` invokes pytest at all -- the
+    one "walk every step, keep the pytest-invoking ones" scan shared by
+    `_pytest_test_step` (below) and
+    `TestUbuntuTestStepIsTimedWithStackDump.test_a_non_gated_pytest_step_
+    still_exists_for_other_platforms` (DUP001 extraction, T-4274): both
+    used to independently re-derive this identical list comprehension."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return [s for s in steps if isinstance(s.get("run"), str) and "pytest" in s["run"]]
+
+
+# frob:ticket T-4274
+# frob:waive WIRE001 reason="genuinely wired -- called by \
+# test_macos_step_backgrounds_the_interpreter_directly_not_uv_run below and by \
+# TestUbuntuTestStepIsTimedWithStackDump._ubuntu_test_step/TestMacosTestStepSignalsTheR\
+# ealInterpreter._macos_test_step, both themselves called by every test method in \
+# their class; a pure workflow-YAML-inspection test helper has no production caller to \
+# reach it through by construction, the same shape this file's own pre-existing \
+# _load_ci_workflow/_ubuntu_test_step helpers are in" follow_up="T-4274"
+def _pytest_test_step(name_prefix: str) -> dict:
+    """The single pytest-invoking `build` job step whose `name` starts
+    with `name_prefix` -- shared by `TestUbuntuTestStepIsTimedWithStack
+    Dump`/`TestMacosTestStepSignalsTheRealInterpreter` (DUP001 extraction,
+    T-4274): both classes located "their" platform's Test step the same
+    way modulo the matched prefix, so this is that one lookup with the
+    prefix as its only parameter."""
+    candidates = [s for s in _all_pytest_steps() if s.get("name", "").startswith(name_prefix)]
+    assert candidates, f"no step named {name_prefix!r} invokes pytest at all"
+    return candidates[0]
+
+
 # frob:ticket T-3192
 class TestBuildJobHasATimeoutBackstop:
     """A hang landing in a step other than Test (Sync deps, native build,
@@ -59,21 +92,19 @@ class TestUbuntuTestStepIsTimedWithStackDump:
     actually dumps a stack instead of the process just dying silently."""
 
     def _ubuntu_test_step(self) -> dict:
-        workflow = _load_ci_workflow()
-        steps = workflow["jobs"]["build"]["steps"]
-        candidates = [
-            s for s in steps if isinstance(s.get("run"), str) and "pytest" in s["run"]
-        ]
-        assert candidates, "no step invokes pytest at all"
-        ubuntu_steps = [
-            s for s in candidates if "timeout" in s["run"] and "ABRT" in s["run"]
-        ]
-        assert ubuntu_steps, (
+        # T-4274: delegates to the shared `_pytest_test_step` lookup
+        # (DUP001 extraction -- this used to independently re-derive the
+        # same "find the pytest-invoking step for this platform" logic
+        # `TestMacosTestStepSignalsTheRealInterpreter._macos_test_step`
+        # also needed); still asserts the ABRT-specific detail this
+        # class's own tests actually verify.
+        step = _pytest_test_step("Test (ubuntu")
+        assert "timeout" in step["run"] and "ABRT" in step["run"], (
             "no pytest-invoking step uses `timeout -s ABRT` -- a hang here "
             "still produces no failure signal beyond the job-level backstop, "
             "and none of the stack-dump-on-hang behavior T-3192 exists for"
         )
-        return ubuntu_steps[0]
+        return step
 
     def test_ubuntu_test_step_wraps_pytest_in_timeout_abrt(self) -> None:
         # frob:tests .github/workflows/ci.yml
@@ -107,13 +138,76 @@ class TestUbuntuTestStepIsTimedWithStackDump:
         additive for ubuntu, not a replacement that silently drops
         coverage on the other two platforms."""
         # frob:tests .github/workflows/ci.yml
-        workflow = _load_ci_workflow()
-        steps = workflow["jobs"]["build"]["steps"]
-        pytest_steps = [
-            s for s in steps if isinstance(s.get("run"), str) and "pytest" in s["run"]
-        ]
+        pytest_steps = _all_pytest_steps()
         assert len(pytest_steps) >= 2, (
             "expected at least two pytest-invoking steps (ubuntu-timed + "
             "windows/macos-plain) -- found fewer, so a platform may have "
             "silently lost its Test step"
+        )
+
+
+# frob:ticket T-4274
+class TestMacosTestStepSignalsTheRealInterpreter:
+    """T-4274: the macOS step's stack-dump-on-hang mechanism sends
+    `kill -ABRT` to `$!` right after backgrounding the pytest invocation.
+    `uv run <cmd>` forks and supervises a real child process rather than
+    exec'ing into it (measured directly, see the step's own T-4274 inline
+    comment), so `$!` after `uv run pytest ... &` is `uv`'s OWN pid --
+    aborting it produces "Aborted (core dumped)"/exit 134 with no
+    `PYTHONFAULTHANDLER` stack at all, exactly this ticket's incident.
+    These lock the fix: the step must background the venv's own
+    interpreter directly, never `uv run`, so `$!` is the real process
+    that has `PYTHONFAULTHANDLER=1` installed."""
+
+    def _macos_test_step(self) -> dict:
+        return _pytest_test_step("Test (macos")
+
+    def test_macos_step_backgrounds_the_interpreter_directly_not_uv_run(
+        self,
+    ) -> None:
+        # frob:tests .github/workflows/ci.yml
+        step = _pytest_test_step("Test (macos")
+        run = step["run"]
+        assert "pid=$!" in run, (
+            "macOS step no longer captures a pid via $! at all -- the "
+            "ABRT-for-a-stack-dump mechanism has nothing to target"
+        )
+        # The line that backgrounds the pytest invocation (ends in `&`,
+        # feeds `/tmp/pytest-macos.log`) must invoke the interpreter
+        # DIRECTLY -- `uv run pytest` on that exact line is the T-4274
+        # regression: `$!` would then be `uv`'s pid, not pytest's.
+        backgrounding_lines = [
+            line
+            for line in run.splitlines()
+            if "pytest-macos.log" in line and line.rstrip().endswith("&")
+        ]
+        assert backgrounding_lines, (
+            "no line backgrounds a pytest invocation into pytest-macos.log"
+        )
+        assert not any("uv run pytest" in line for line in backgrounding_lines), (
+            "macOS step backgrounds `uv run pytest` directly -- `$!` right "
+            "after this is `uv`'s own pid, not the real pytest/python "
+            "process's, so `kill -ABRT \"$pid\"` below aborts `uv` (which "
+            "has no PYTHONFAULTHANDLER) instead of the interpreter that "
+            "does; this is the exact T-4274 regression -- background the "
+            "venv's own interpreter directly (e.g. `.venv/bin/python -m "
+            "pytest`) instead"
+        )
+
+    def test_macos_step_reports_its_own_margin_on_completion(self) -> None:
+        """T-4274 acceptance [3]: the margin between actual duration and
+        budget must be visible on every completion, not discovered only
+        after a near-miss becomes a failure."""
+        # frob:tests .github/workflows/ci.yml
+        step = self._macos_test_step()
+        run = step["run"]
+        assert "started=$(date +%s)" in run, (
+            "macOS step never records a start time -- it cannot report "
+            "how close a passing run came to its own budget"
+        )
+        assert "::notice::" in run and "margin" in run, (
+            "macOS step never emits a margin notice -- a run finishing "
+            "with almost no budget left (as measured before this "
+            "ticket's own incident) is invisible until it becomes the "
+            "next failure"
         )
