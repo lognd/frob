@@ -65,6 +65,11 @@ scope_changes:
     as WARN/non-blocking (T-0998), pre-existing content this diff does not touch
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_changelog_prose_quoting_a_follow_up_attribute_is_not_a_citation
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_real_directive_in_changelog_dir_path_still_flagged
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_comment_waiver_follow_up_attribute
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_ledger_prose_quoting_a_waiver_attribute_is_not_a_citation
 designated_repro_test: null
 threat: null
 component: null
