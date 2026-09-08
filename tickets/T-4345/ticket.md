@@ -1,7 +1,7 @@
 ---
 id: T-4345
 title: Playbook doc edge names the moved stage-group mapping and no longer resolves
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
