@@ -58,9 +58,16 @@ evidence:
 - tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_reads_a_written_marker
 - tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_missing_marker_returns_none
 - tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none
-- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_no_marker_renders_nothing
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_no_marker_renders_nothing
 - tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_marker_renders_phase_ticket_and_pid
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_no_marker_renders_nothing
+  new_node: tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_no_marker_renders_nothing
+  reason: 'T-4266: renamed TestLandStatusMarkerLine -> TestLandStatusMarkerLines (multi-entry
+    marker fix)'
+  actor: logan
+  at: '2026-09-07'
 threat: null
 component: null
 anchor: false
