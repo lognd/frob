@@ -285,6 +285,61 @@ def _drop_escaped_mentions(lines: tuple[str, ...], pattern: str) -> tuple[str, .
     return tuple(kept)
 
 
+# frob:ticket T-4320
+# The two REAL directive-line shapes a `ticket=`/`follow_up=` attribute
+# hit is required to sit inside, mirroring (not importing -- see this
+# module's own docstring on why it stays independent of `frob.gates`'s
+# graph-building machinery) the canonical grammars `frob.gates.
+# _waive_comments._WAIVE_SINGLE_LINE_RE` (comment channel: a `#`/`//`
+# line led by `frob:waive <RULE>`) and `_STRATA_WAIVE_RE` (the `.strata`
+# `waive "RULE" reason "..." [ticket "..."]` clause) already parse for
+# WAIVE006. Both grammars are single-line by construction (documented on
+# `_STRATA_WAIVE_RE` itself), so a genuine directive's `ticket=`/
+# `follow_up=` attribute always shares its line with one of these two
+# markers.
+_COMMENT_DIRECTIVE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+\S+\b")
+_STRATA_DIRECTIVE_LINE_RE = re.compile(r'waive\s+"[^"]+"\s+reason\s+"(?:[^"\\]|\\.)*"')
+
+
+# frob:ticket T-4320
+def _drop_non_directive_waiver_mentions(lines: tuple[str, ...]) -> tuple[str, ...]:
+    """T-4320: a `ticket=`/`follow_up=` attribute hit is only a REAL
+    citation when its own line is shaped like an actual directive (see
+    `_COMMENT_DIRECTIVE_LINE_RE`/`_STRATA_DIRECTIVE_LINE_RE` above) --
+    never merely because the attribute text appears somewhere on the
+    line. The measured incident: `changelog.d/T-4299.md`'s own historical
+    Done-report narrative quoted `follow_up=T-4303` verbatim inside prose
+    ("...WIRE001 waived with follow_up=T-4303)...") while DESCRIBING a
+    directive already discharged during that same land -- the identical
+    "quotes a directive's exact text without being one" shape T-1633's
+    ledger exclusion and T-1970's `frob:quote(...)` escape already handle
+    for their own sites, but neither covers changelog prose (CHANGELOG.md/
+    changelog.d/**  are land-owned -- see T-0731/T-2445 -- so unlike the
+    ledger they can NEVER be re-pointed or escaped by any worktree once a
+    citation like this lands, making a false hit there a permanent
+    close/land deadlock, not ordinary friction).
+
+    Deliberately NOT a changelog-path exclusion: that would only patch
+    this one site and leave the SAME prose-quoting shape live in every
+    other narrative location (a commit message excerpt in a doc, a
+    design-note draft, ...). Requiring the match to sit inside an actual
+    parsed-shaped directive line is the general fix -- standing doctrine
+    here is that checks parse and compare symbols, never grep free-form
+    prose -- and it composes with `_WAIVER_PATHSPEC`'s existing ledger
+    exclusion rather than replacing it (the ledger scan is still skipped
+    outright; this filter is the backstop for every OTHER location,
+    changelog prose included, that quotes the same attribute shape)."""
+    kept: list[str] = []
+    for line in lines:
+        parts = line.split(":", 2)
+        text = parts[2] if len(parts) >= 3 else line
+        if _COMMENT_DIRECTIVE_LINE_RE.search(text) or _STRATA_DIRECTIVE_LINE_RE.search(
+            text
+        ):
+            kept.append(line)
+    return tuple(kept)
+
+
 def _content_key(line: str) -> str:
     """The `(file, text)` identity of one `git grep -n` result line
     (`file:line:text`), dropping the line NUMBER -- an unrelated edit
@@ -307,6 +362,7 @@ def _content_key(line: str) -> str:
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
 # frob:ticket T-1559
+# frob:ticket T-4320
 def live_tracker_citations(
     root: Path, ticket_id: str, *, base_ref: str = "main"
 ) -> tuple[str, ...]:
@@ -356,14 +412,17 @@ def live_tracker_citations(
 
     def _scan(revision: str | None) -> tuple[str, ...] | None:
         found: list[str] = []
-        for pattern, pathspec in (
-            (_registry_pattern(ticket_id), _REGISTRY_PATHSPEC),
-            (_waiver_pattern(ticket_id), _WAIVER_PATHSPEC),
+        for pattern, pathspec, is_waiver in (
+            (_registry_pattern(ticket_id), _REGISTRY_PATHSPEC, False),
+            (_waiver_pattern(ticket_id), _WAIVER_PATHSPEC, True),
         ):
             result = _git_grep(root, pattern, pathspec=pathspec, revision=revision)
             if result is None:
                 return None
-            found.extend(_drop_escaped_mentions(result, pattern))
+            result = _drop_escaped_mentions(result, pattern)
+            if is_waiver:
+                result = _drop_non_directive_waiver_mentions(result)
+            found.extend(result)
         return tuple(found)
 
     current = _scan(None)

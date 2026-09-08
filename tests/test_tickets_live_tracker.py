@@ -71,6 +71,7 @@ def _write_ticket(root: Path, ticket: Ticket, slug: str = "sample") -> Path:
     return path
 
 
+# frob:ticket T-4320
 class TestLiveTrackerCitations:
     """Unit tests over the grep-shaped scan itself, against a real (tiny)
     git repo -- `git grep` needs a real work tree, not a bare tmp dir."""
@@ -151,6 +152,54 @@ class TestLiveTrackerCitations:
         _commit_all(tmp_path, "real citations")
         citations = live_tracker_citations(tmp_path, "T-0605")
         assert len(citations) == 2
+
+    # frob:ticket T-4320
+    def test_changelog_prose_quoting_a_follow_up_attribute_is_not_a_citation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4320: the measured incident. `changelog.d/T-4299.md`'s own
+        historical Done-report narrative quoted a directive's exact
+        `follow_up=T-4303` text verbatim while DESCRIBING work already
+        done -- not inside a `# frob:waive ...` line at all. Both
+        CHANGELOG.md and changelog.d/**  are land-owned (T-0731/T-2445):
+        no worktree can ever re-point a citation there, so a false hit
+        on this shape is a PERMANENT close/land deadlock, not ordinary
+        friction -- the exact bug this test forces."""
+        _init_repo(tmp_path)
+        changelog_dir = tmp_path / "changelog.d"
+        changelog_dir.mkdir()
+        (changelog_dir / "T-4299.md").write_text(
+            "T-4299 landed the WIRE001 rework (WIRE001 waived with "
+            "follow_up=T-4303) and closed cleanly.\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "CHANGELOG.md").write_text(
+            "## T-4299\n\nT-4299 landed the WIRE001 rework (WIRE001 waived "
+            "with follow_up=T-4303) and closed cleanly.\n",
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "changelog prose quoting a discharged directive")
+        assert live_tracker_citations(tmp_path, "T-4303") == ()
+
+    # frob:ticket T-4320
+    def test_real_directive_in_changelog_dir_path_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4320's other half: the fix must not become a changelog-path
+        exclusion -- a genuine `frob:waive` directive that happens to sit
+        under `changelog.d/` (or any other path) is still a real, live
+        citation and must still be caught."""
+        _init_repo(tmp_path)
+        changelog_dir = tmp_path / "changelog.d"
+        changelog_dir.mkdir()
+        (changelog_dir / "notes.py").write_text(
+            '# frob:waive WIRE001 reason="pending wiring" follow_up="T-4303"\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "real directive under changelog.d")
+        citations = live_tracker_citations(tmp_path, "T-4303")
+        assert len(citations) == 1
+        assert "notes.py" in citations[0]
 
     def test_finds_registry_tracked_by_disposition(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_tracked_by_disposition  # noqa: E501

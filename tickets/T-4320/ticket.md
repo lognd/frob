@@ -1,7 +1,7 @@
 ---
 id: T-4320
 title: LiveTrackerCited can permanently refuse close/land against a land-owned file
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'

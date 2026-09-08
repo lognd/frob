@@ -1297,6 +1297,38 @@ escape `frob.graph.dsl`'s own directive parser honors
 the directive text it is explaining without either scanner reading it
 as live.
 
+**Waiver hits must sit inside a genuine directive LINE, not merely
+contain the attribute text (T-4320).** T-1633/T-1970 above narrow WHERE
+a hit can be exempted (the ledger, an escaped mention); neither covers a
+narrative site that quotes a directive's exact `ticket=`/`follow_up=`
+text OUTSIDE the ledger and unescaped -- the measured incident:
+`changelog.d/T-4299.md`'s own historical Done-report prose, copied
+verbatim into the changelog fragment at T-4299's own land, read
+"...WIRE001 waived with follow_up=T-4303)..." while DESCRIBING a
+directive already discharged; both `CHANGELOG.md`'s generated aggregate
+and the fragment matched the same free-form text. Unlike the ledger,
+`CHANGELOG.md`/`changelog.d/**` are land-owned (T-0731/T-2445) -- no
+worktree can ever edit either file to re-point a citation there, so a
+false hit on this shape is a PERMANENT close/land deadlock for the exact
+ticket the citation names as its own follow-up, not ordinary friction.
+Rather than add a third path exclusion (which would only patch this one
+location and leave the identical prose-quoting shape live anywhere else
+narrative text quotes a directive), `_drop_non_directive_waiver_mentions`
+requires each waiver-pattern hit's own line to be shaped like a REAL
+directive -- `_COMMENT_DIRECTIVE_LINE_RE` (a `#`/`//` line led by
+`frob:waive <RULE>`, mirroring `frob.gates._waive_comments.
+_WAIVE_SINGLE_LINE_RE`) or `_STRATA_DIRECTIVE_LINE_RE` (a `waive "RULE"
+reason "..."` clause, mirroring `_STRATA_WAIVE_RE`) -- before counting it
+as a citation at all. A hit whose line is ordinary prose, wherever it
+lives, no longer matches; a genuine directive under `changelog.d/` (or
+any other path) still does. `CHANGELOG.md`/`changelog.d/**` are
+deliberately NOT excluded by path: they were never given a special case,
+because nothing in their land-owned status makes a REAL directive
+impossible to place there in principle -- the general "is this line
+actually a directive" filter already makes any accidental prose-quoting
+false positive on this class of file (or any other) impossible, without
+needing to reason about which paths are land-owned at all.
+
 ## Land hardening (T-0577)
 
 Three gaps found in one real landing session, closed together:
