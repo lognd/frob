@@ -20,7 +20,6 @@ scope:
 - src/frob/process/parsers/common.py
 - tests/unit/test_main_entry.py
 - tests/unit/test_parser_failure_diagnostics.py
-- docs/modules/logging.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -138,6 +137,14 @@ scope_changes:
     root-cause fix, the same tension src/frob/gates/_rule_id_scan.py''s own T-2608
     comment documents for identically-shaped monolithic doc files; main()''s pre-existing
     frob:doc target stays a documented, unresolved SCOPE002 finding instead'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/logging.md
+  reason: 'reverted: same T-2608 monolithic-doc SCOPE002 fan-out tension as app.md
+    (measured: pulls in ~20 unrelated src/frob/logging/* symbols) -- accepting SCOPE002
+    as a documented, unresolved gate finding for this ticket''s touched files instead
+    of an unbounded scope expansion'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
