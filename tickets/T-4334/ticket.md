@@ -18,9 +18,6 @@ scope:
 - invariants/INV-052.md
 - docs/index.md
 - tests/unit/test_rapid_debt.py
-- src/frob/app/verify_runner.py
-- tests/unit/verify/test_verify_runner.py
-- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -123,6 +120,27 @@ scope_changes:
   reason: 'close SCOPE002 (now error-severity in frob.toml): the doc''s pre-existing
     describes-edge to verify_runner.py and the test file''s pre-existing frob:tests
     edge into _evidence.py both need their target in scope'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/app/verify_runner.py
+  reason: revert the wide code-file additions; SCOPE002 for this deliberately narrow
+    doc-only ticket is handled via scope-breadth-ack (T-4310), the mechanism built
+    for exactly this narrower-than-graph-closure case
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/unit/verify/test_verify_runner.py
+  reason: revert the wide code-file additions; SCOPE002 for this deliberately narrow
+    doc-only ticket is handled via scope-breadth-ack (T-4310), the mechanism built
+    for exactly this narrower-than-graph-closure case
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/tickets/_evidence.py
+  reason: revert the wide code-file additions; SCOPE002 for this deliberately narrow
+    doc-only ticket is handled via scope-breadth-ack (T-4310), the mechanism built
+    for exactly this narrower-than-graph-closure case
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
