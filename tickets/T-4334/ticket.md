@@ -17,7 +17,6 @@ scope:
 - docs/modules/verify-rapid-debt-visibility.md
 - invariants/INV-052.md
 - docs/index.md
-- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +56,13 @@ scope_changes:
     (record_rapid_debt) for the new INV-052 this doc's genuine append-only claim needs;
     the T-4324 doc's existing describes-anchor to verify_runner.py stays out of scope
     since that file needs no edit
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/tickets/_evidence.py
+  reason: 'INV002''s code-anchor requirement is satisfied by a frob:invariant marker
+    in the doc itself (dsl.py: verb table applies uniformly to markdown and source);
+    no code file needs touching'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
