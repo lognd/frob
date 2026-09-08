@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
+- tests/test_gates_tick005.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_tick005.py
+  reason: 'T-4341: add v2-ledger regression coverage for TICK005 alongside the code
+    fix'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
