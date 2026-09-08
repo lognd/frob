@@ -2,7 +2,7 @@
 id: T-4270
 title: the release version parser truncates pre-release and development suffixes,
   so a pre-release and its final release compare as equal
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
