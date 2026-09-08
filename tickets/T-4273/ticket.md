@@ -17,10 +17,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_leases.py
 - src/frob/app/ticket_runner/_close_cmd.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: tests for the T-4273 fix live in this file; it already carries hundreds
+    of pre-existing frob:tests directives from _leases.py so adding it in scope also
+    resolves the pre-existing SCOPE002 breadth debt against it
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a ledger commit that exits non-zero, when the failure is logged, then
