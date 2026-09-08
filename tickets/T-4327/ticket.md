@@ -16,8 +16,16 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/__init__.py
 - src/frob/testing/_collect.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: src/frob/testing/_collect.py's public symbols share module-wide
+  frob:doc anchors (docs/modules/testing.md#public-api, docs/guides/install.md) and
+  a repo-wide frob:tests fixture (tests/test_testing.py) with dozens of unrelated
+  functions; SCOPE002's doc/test closure for the whole file transitively pulls in
+  doctor.py, derived_state.py, daemon_proxy.py, gitio.py, and more. This ticket's
+  actual change is confined to one private helper (_run_collect_only) inside that
+  file; taking full closure would balloon the write lease across most of the codebase
+  for a one-function fix, so scope stays narrowed to __init__.py + _collect.py and
+  the resulting SCOPE002 breadth is acknowledged rather than chased
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
