@@ -2,7 +2,7 @@
 id: T-4302
 title: clear the two residual unformatted files that predate the land-time formatting
   gate
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -36,10 +36,14 @@ designated_repro_test: null
 acceptance:
 - text: given the integration run's formatter check, when it runs after this lands,
     then no file in the repository would be reformatted
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+  - tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_clean_exit_is_never_a_reason
 - text: given the set of drifting files, when it is measured before acting, then the
     report names the set actually found rather than the two quoted in this ticket
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+  - tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_clean_exit_is_never_a_reason
 threat: null
 component: null
 anchor: false

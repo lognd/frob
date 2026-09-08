@@ -335,9 +335,7 @@ class TestLandProofInfraUnmeasured:
         ) -> tuple[bool, str, bool]:
             return (True, "done", True)
 
-        monkeypatch.setattr(
-            _land_cmd, "_land_proof_checks", _fake_land_proof_checks
-        )
+        monkeypatch.setattr(_land_cmd, "_land_proof_checks", _fake_land_proof_checks)
         report = _fake_report("T-9201")
         _LAST_CLAIMS_OUTCOME["T-9201"] = _ClaimsReverifyOutcome.INFRA_UNMEASURED
         _LAST_CLAIMS_INFRA_REASON["T-9201"] = (
@@ -381,9 +379,7 @@ class TestLandProofInfraUnmeasured:
         ) -> tuple[bool, str, bool]:
             return (True, "done", True)
 
-        monkeypatch.setattr(
-            _land_cmd, "_land_proof_checks", _fake_land_proof_checks
-        )
+        monkeypatch.setattr(_land_cmd, "_land_proof_checks", _fake_land_proof_checks)
         report = _fake_report("T-9202")
         _LAST_CLAIMS_OUTCOME["T-9202"] = _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
         _LAST_CLAIMS_INFRA_REASON.pop("T-9202", None)

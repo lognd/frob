@@ -1564,7 +1564,9 @@ class TestUnmeasuredReasonFromResult:
                 "(frob serve)"
             ),
         )
-        reason = _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc))
+        reason = _unmeasured_reason_from_result(
+            cast("subprocess.CompletedProcess", proc)
+        )
         assert reason is not None
         assert "graph cache lock contention" in reason
         assert "held by pid 12345" in reason
@@ -1577,7 +1579,9 @@ class TestUnmeasuredReasonFromResult:
         from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
 
         proc = _FakeProc(2, stderr="Traceback...\nValueError: boom")
-        reason = _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc))
+        reason = _unmeasured_reason_from_result(
+            cast("subprocess.CompletedProcess", proc)
+        )
         assert reason == "frob check exited 2 (see stderr for detail)"
 
     # frob:ticket T-4281
@@ -1588,4 +1592,7 @@ class TestUnmeasuredReasonFromResult:
         from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
 
         proc = _FakeProc(0, stdout="not json")
-        assert _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc)) is None
+        assert (
+            _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc))
+            is None
+        )
