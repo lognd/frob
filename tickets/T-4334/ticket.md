@@ -18,6 +18,9 @@ scope:
 - invariants/INV-052.md
 - docs/index.md
 - tests/unit/test_rapid_debt.py
+- src/frob/app/verify_runner.py
+- tests/unit/verify/test_verify_runner.py
+- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -99,6 +102,27 @@ scope_changes:
   reason: avoid record_rapid_debt's dense pre-existing frob:doc web (12+ scope-closure
     obligations); anchor INV-052 on its own evidence test file instead, a clean file
     with only 2 pre-existing directives
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/app/verify_runner.py
+  reason: 'close SCOPE002 (now error-severity in frob.toml): the doc''s pre-existing
+    describes-edge to verify_runner.py and the test file''s pre-existing frob:tests
+    edge into _evidence.py both need their target in scope'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/verify/test_verify_runner.py
+  reason: 'close SCOPE002 (now error-severity in frob.toml): the doc''s pre-existing
+    describes-edge to verify_runner.py and the test file''s pre-existing frob:tests
+    edge into _evidence.py both need their target in scope'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'close SCOPE002 (now error-severity in frob.toml): the doc''s pre-existing
+    describes-edge to verify_runner.py and the test file''s pre-existing frob:tests
+    edge into _evidence.py both need their target in scope'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
