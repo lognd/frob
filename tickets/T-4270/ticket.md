@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/__init__.py
+- docs/modules/release.md
+- tests/test_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/release.md
+  reason: T-4270's PEP 440 rewrite touches release.md's design notes and adds ordering-verification
+    tests to test_release.py
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_release.py
+  reason: T-4270's PEP 440 rewrite touches release.md's design notes and adds ordering-verification
+    tests to test_release.py
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a development build, a pre-release, and a final release of the same
