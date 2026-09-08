@@ -1,7 +1,7 @@
 ---
 id: T-4336
 title: Make gate stage-group membership mandatory at declaration
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-08'
