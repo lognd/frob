@@ -2,7 +2,7 @@
 id: T-3936
 title: 'Windows CI: 19 remaining platform-specific failures (49 -> 28 -> 19 after
   shared causes removed)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -501,3 +501,6 @@ regressions stops being the burn-down signal it exists to be.
 
 RUNNING TALLY: 49 (aborted) -> 28 (aborted) -> 26 -> 25 -> 19 -> 17 -> 25 (raw;
 approximately 17 Windows-specific plus an imported posix regression).
+
+## Failure log
+- 2026-09-08 attempt 1: Lease leak with no worktree: ticket sat in-progress with no worktree and no owning agent, so no work can be in flight and the lease is pure residue. Requeued to release it. Windows is advisory-only (continue-on-error, T-3425) so this is not release-blocking; re-dispatch after the alpha. No work is lost -- verified no worktree exists for this ticket.
