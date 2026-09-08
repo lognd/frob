@@ -21,7 +21,9 @@ scope:
 - src/frob/_cli_parsers/_root.py
 - src/frob/_cli_parsers/__init__.py
 - tests/unit/test_main_entry.py
-- tests/system/test_cli_check.py
+- README.md
+- docs/modules/app.md
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +82,30 @@ scope_changes:
     tests/unit/test_main_entry.py already has an exhaustive TestHelpListsDirectDispatchVerbs
     class this ticket extends; tests/system/test_cli_check.py is the every-verb-reachable
     coverage the ticket body names as a candidate to check'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/system/test_cli_check.py
+  reason: 'measured: this file tests frob check CLI flags only, no top-level verb
+    enumeration relevant to whereis; not needed'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: README.md
+  reason: 'gate:DOC DOC005/DOC012 findings: README command table + generated cli.md
+    table + a dedicated Runners-section doc bullet for the new frob whereis verb'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'gate:DOC DOC005/DOC012 findings: README command table + generated cli.md
+    table + a dedicated Runners-section doc bullet for the new frob whereis verb'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'gate:DOC DOC005/DOC012 findings: README command table + generated cli.md
+    table + a dedicated Runners-section doc bullet for the new frob whereis verb'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
