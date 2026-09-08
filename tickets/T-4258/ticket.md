@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/serve/_daemon.py
 - src/frob/serve/_warm.py
+- tests/test_serve_daemon.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_serve_daemon.py
+  reason: test file for _daemon.py's new idle-self-termination code, required by frob:tests
+    directives added in the same change
+  actor: logan
+  at: '2026-09-08'
 body_changes:
 - mode: append
   reason: 'owner directive given after the 19-hour daemon was killed by hand: the
@@ -30,12 +38,25 @@ body_changes:
   at: '2026-09-07'
   old_length: 3019
   new_length: 4187
+evidence:
+- tests/test_serve_daemon.py::TestIdleSelfTermination::test_record_useful_work_updates_the_timestamp
+- tests/test_serve_daemon.py::TestIdleSelfTermination::test_never_having_worked_is_measured_from_start_time
+- tests/test_serve_daemon.py::TestIdleSelfTermination::test_idle_under_one_hour_is_not_terminal
+- tests/test_serve_daemon.py::TestIdleSelfTermination::test_idle_over_one_hour_is_terminal
+- tests/test_serve_daemon.py::TestIdleSelfTermination::test_loop_self_terminates_after_the_idle_ceiling
+- tests/test_serve_daemon.py::TestIdleSelfTermination::test_loop_does_not_terminate_while_work_keeps_happening
 designated_repro_test: null
 acceptance:
 - text: given a serve daemon that has performed no useful work for more than one hour,
     when the liveness check runs, then the daemon terminates itself, and idleness
     is measured by work performed rather than by poll iterations
-  evidence: []
+  evidence:
+  - tests/test_serve_daemon.py::TestIdleSelfTermination::test_record_useful_work_updates_the_timestamp
+  - tests/test_serve_daemon.py::TestIdleSelfTermination::test_never_having_worked_is_measured_from_start_time
+  - tests/test_serve_daemon.py::TestIdleSelfTermination::test_idle_under_one_hour_is_not_terminal
+  - tests/test_serve_daemon.py::TestIdleSelfTermination::test_idle_over_one_hour_is_terminal
+  - tests/test_serve_daemon.py::TestIdleSelfTermination::test_loop_self_terminates_after_the_idle_ceiling
+  - tests/test_serve_daemon.py::TestIdleSelfTermination::test_loop_does_not_terminate_while_work_keeps_happening
 acceptance_amendments:
 - op: remove
   index: 3
