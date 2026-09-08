@@ -18,6 +18,8 @@ scope:
 - src/frob/__init__.py
 - tests/system/test_public_api_from_wheel.py
 - src/frob/tickets/__init__.py
+- docs/guides/python-api.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +50,20 @@ scope_changes:
     imports it, so AttributeError fires on access -- exactly the class of defect T-4150
     exists to catch (an advertised name that does not actually import), so fixing
     it belongs in this ticket rather than a separate one'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/guides/python-api.md
+  reason: acceptance criterion requires the advertised public API surface to be written
+    down somewhere a consumer can find it; adding a dedicated guide and one index
+    link
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/index.md
+  reason: acceptance criterion requires the advertised public API surface to be written
+    down somewhere a consumer can find it; adding a dedicated guide and one index
+    link
   actor: logan
   at: '2026-09-08'
 body_changes:
