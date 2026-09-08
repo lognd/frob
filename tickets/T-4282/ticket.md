@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
 - src/frob/graph/__init__.py
+- tests/unit/test_graph_lock_holder_naming.py
+- tests/unit/test_graph_ingest_batching.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +48,20 @@ scope_changes:
   reason: 'reverting: adding these huge shared test files to scope pulled in their
     pre-existing unrelated private-helper cross-references (SCOPE002 under-capture),
     a repo-wide cascade unrelated to this ticket''s actual fix'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_graph_lock_holder_naming.py
+  reason: new dedicated test files for T-4282's lock-holder-naming and incremental-commit
+    fixes; kept out of the large shared test_graph.py/test_graph_cache.py files to
+    avoid their unrelated private-helper scope-closure fan-out
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_graph_ingest_batching.py
+  reason: new dedicated test files for T-4282's lock-holder-naming and incremental-commit
+    fixes; kept out of the large shared test_graph.py/test_graph_cache.py files to
+    avoid their unrelated private-helper scope-closure fan-out
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
