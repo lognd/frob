@@ -66,6 +66,9 @@ if TYPE_CHECKING:
     # frob:ticket T-2215
     from frob.gates import Violation
 
+    # frob:ticket T-4271
+    from frob.graph._models import LockFile
+
     # frob:ticket T-1979
     from frob.testing._models import CollectedTests
 
@@ -5102,9 +5105,98 @@ def _sibling_branch_touched_path(root: Path, branch: str, path: str) -> bool | N
     return other_blob.danger_ok.stdout != root_blob.danger_ok.stdout
 
 
+# frob:ticket T-4271
+_LOCK_ENTRY_AWARE_PATHS = frozenset({"frob.lock"})
+
+
+# frob:ticket T-4271
+def _lock_file_from_blob(text: str) -> LockFile | None:
+    """Best-effort `LockFile` parse of a git-blob's raw text (T-4271) --
+    `None` on any parse failure (malformed JSON, schema mismatch), never
+    raises; callers treat `None` the same conservative "cannot tell, keep
+    the hit" way `_sibling_branch_touched_path`'s own unreadable-branch
+    case already does."""
+    from pydantic import ValidationError
+
+    from frob.graph._models import LockFile
+
+    try:
+        return LockFile.model_validate(json.loads(text))
+    except (json.JSONDecodeError, ValidationError):
+        return None
+
+
+# frob:ticket T-4271
+def _lock_entry_keys_changed(
+    base: LockFile, other: LockFile
+) -> frozenset[tuple[str, str]]:
+    """The `(ref, facet)` keys `other` added or re-acked at a different
+    digest than `base` (T-4271) -- the additive-JSON-structure analogue
+    of a line-level diff for `frob.lock`'s own `entries` list, so two
+    tickets' disjoint acks on the same file can be told apart from a
+    real collision on the same symbol."""
+    base_by_key = {(e.ref, e.facet): e.digest for e in base.entries}
+    return frozenset(
+        (e.ref, e.facet)
+        for e in other.entries
+        if base_by_key.get((e.ref, e.facet)) != e.digest
+    )
+
+
+# frob:ticket T-4271
+# frob:tests \
+# tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_dis\
+# joint_frob_lock_ack_entries_do_not_block
+# frob:tests \
+# tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_col\
+# liding_frob_lock_ack_entry_still_refuses
+def _frob_lock_edits_disjoint(root: Path, worktree: Path, branch: str) -> bool | None:
+    """T-4271: whether `branch`'s (an OTHER ticket's) `frob.lock` edits and
+    `worktree`'s (the LANDING ticket's) own `frob.lock` edits touch
+    entirely disjoint `(ref, facet)` keys, relative to `root`'s current
+    HEAD -- `frob.lock` is an additive, per-symbol-keyed JSON structure
+    (docs/modules/graph.md), so two tickets acking unrelated symbols in
+    the same land window edit the same FILE but never the same ENTRY;
+    `_sibling_branch_touched_path`'s byte-level compare cannot see that
+    distinction and flags every such pair as a genuine overlap (T-4271:
+    the incident class where a routine `frob ack` DRIFT001 remedy on one
+    ticket tripped CROSSTICKET001 against an unrelated in-progress
+    ticket's own `frob.lock` scope claim, even though the two tickets'
+    entries never collided). Called ONLY to narrow an existing byte-level
+    `True` verdict for `frob.lock` specifically -- never widens: `None`
+    on any parse/read failure keeps the existing hit, matching every
+    other T-2948 narrowing's own fail-safe posture.
+
+    `True` (real overlap, keep the hit): the two sides' changed keys
+    intersect -- a genuine collision on the same acked symbol. `False`
+    (safe to drop): both sides changed `frob.lock` but their changed key
+    sets are disjoint. `None`: any of the three blobs (root's HEAD,
+    `branch`'s, or `worktree`'s own HEAD) could not be read or parsed, or
+    one side's changed-key set came back empty by this same comparison --
+    conservative, keeps the hit rather than claim a disjointness this
+    cannot actually see."""
+    root_blob = run_argv(["git", "-C", str(root), "show", "HEAD:frob.lock"])
+    other_blob = run_argv(["git", "-C", str(root), "show", f"{branch}:frob.lock"])
+    landing_blob = run_argv(["git", "-C", str(worktree), "show", "HEAD:frob.lock"])
+    for result in (root_blob, other_blob, landing_blob):
+        if result.is_err or result.danger_ok.returncode != 0:
+            return None
+    base = _lock_file_from_blob(root_blob.danger_ok.stdout)
+    other_lock = _lock_file_from_blob(other_blob.danger_ok.stdout)
+    landing_lock = _lock_file_from_blob(landing_blob.danger_ok.stdout)
+    if base is None or other_lock is None or landing_lock is None:
+        return None
+    other_keys = _lock_entry_keys_changed(base, other_lock)
+    landing_keys = _lock_entry_keys_changed(base, landing_lock)
+    if not other_keys or not landing_keys:
+        return None
+    return bool(other_keys & landing_keys)
+
+
 # frob:ticket T-2948
+# frob:ticket T-4271
 def _drop_hits_other_branch_never_touched(
-    root: Path, landing_id: str, other_id: str, hits: list[str]
+    root: Path, worktree: Path, landing_id: str, other_id: str, hits: list[str]
 ) -> list[str]:
     """`_leaked_hits_for_candidate`'s own ARCH001 split -- the T-2948
     per-path narrowing: a declared scope hit alone is not enough even
@@ -5117,7 +5209,14 @@ def _drop_hits_other_branch_never_touched(
     current tip) -- a pure declared-scope overlap, never a real edit.
     `None` (unresolvable branch, or an ambiguous per-path read) never
     drops a hit -- this can only ever narrow an existing refusal, never
-    widen a gap."""
+    widen a gap.
+
+    T-4271: a `True` verdict on a path in `_LOCK_ENTRY_AWARE_PATHS`
+    (`frob.lock`) gets ONE further narrowing -- `_frob_lock_edits_
+    disjoint` -- since two tickets both touching that additive, per-
+    symbol-keyed file is routine (`frob ack`) and does not by itself mean
+    their edits collide. Same fail-safe posture: only a `False` (proven
+    disjoint) drops the hit; `True`/`None` keep it."""
     branch = _sibling_branch_ref(root, other_id)
     if branch is None:
         return hits
@@ -5137,6 +5236,22 @@ def _drop_hits_other_branch_never_touched(
                 branch,
             )
             continue
+        if touched is True and path in _LOCK_ENTRY_AWARE_PATHS:
+            disjoint = _frob_lock_edits_disjoint(root, worktree, branch)
+            if disjoint is False:
+                _log.info(
+                    "land: %s cross-ticket leakage check exempting %s's "
+                    "scope hit on %s (T-4271: %s's own branch %s and this "
+                    "land's own frob.lock edits touch entirely disjoint "
+                    "(ref, facet) entries -- an additive-JSON file overlap, "
+                    "never a real collision on the same acked symbol)",
+                    landing_id,
+                    other_id,
+                    path,
+                    other_id,
+                    branch,
+                )
+                continue
         kept.append(path)
     return kept
 
@@ -5226,7 +5341,9 @@ def _leaked_hits_for_candidate(
     if not hits:
         return None
 
-    hits = _drop_hits_other_branch_never_touched(root, landing_id, other_id, hits)
+    hits = _drop_hits_other_branch_never_touched(
+        root, worktree, landing_id, other_id, hits
+    )
     if not hits:
         return None
 

@@ -1,0 +1,112 @@
+## Done report
+
+VERIFIED before acting: T-3799 is still `in-progress` with `frob.lock` in
+its declared scope, and its own live worktree carries a real (legitimate)
+uncommitted diff to `frob.lock` right now. The premise is not stale --
+`src/frob/gates/invariants.py` and `src/frob/tickets/_evidence.py` currently
+carry live `frob:waive AFFECT001/DRIFT001` reasons from T-4019 and T-3837
+naming this exact T-3799 `frob.lock` lease conflict as why they could not
+run `frob ack` themselves. This is a currently-live blocker, not a historical
+one.
+
+Why the suggested "remove `frob.lock` from T-3799's scope" fix does not work:
+T-3799's own live worktree diff already writes real content to `frob.lock`
+(for its own doc acks), so removing `frob.lock` from ITS declared scope
+would make T-3799's own future `frob ticket land` fail SCOPE001 on its own
+diff -- trading one ticket's starvation for another's breakage, not a fix.
+
+Real fix (the ticket's other suggestion): CROSSTICKET001 now treats
+`frob.lock` as what it actually is -- an additive, per-`(ref, facet)`-keyed
+JSON structure -- instead of a plain byte-level blob. `_check_cross_ticket_
+leakage`'s existing T-2948 per-path narrowing (`_drop_hits_other_branch_
+never_touched`) gained one further step for `frob.lock` specifically:
+`_frob_lock_edits_disjoint` parses both sides' `frob.lock` (root's HEAD,
+the sibling's own branch, and the landing branch's own HEAD) via the
+existing `LockFile`/`LockEntry` models, computes the `(ref, facet)` keys
+each side actually changed relative to root, and only keeps the hit when
+those two key sets intersect -- a genuine collision on the same acked
+symbol. Two tickets independently acking different symbols in the same
+land window (the overwhelmingly common case, per the ticket's own
+"disjoint entries" framing) no longer collides; a real collision (same
+symref, different digest) still refuses exactly as before. Same fail-safe
+posture every other T-2948 narrowing already carries: `None` (unreadable/
+unparseable blob, or nothing measurably changed by this comparison) always
+keeps the existing hit, never manufactures a drop it cannot actually prove.
+
+Changed:
+- src/frob/tickets/_land.py::_LOCK_ENTRY_AWARE_PATHS (new constant)
+- src/frob/tickets/_land.py::_lock_file_from_blob (new, best-effort
+  LockFile parse of a git-blob's text)
+- src/frob/tickets/_land.py::_lock_entry_keys_changed (new, the
+  (ref, facet) keys changed between two LockFile snapshots)
+- src/frob/tickets/_land.py::_frob_lock_edits_disjoint (new, the T-4271
+  entry-aware overlap check)
+- src/frob/tickets/_land.py::_drop_hits_other_branch_never_touched (now
+  takes `worktree`, applies the new narrowing for frob.lock specifically)
+- its one caller (_leaked_hits_for_candidate) updated to pass `worktree`
+- tests/unit/test_land_cross_ticket_leakage.py: two new real-git-fixture
+  tests -- test_sibling_disjoint_frob_lock_ack_entries_do_not_block (must-
+  fire: disjoint acks no longer collide) and test_sibling_colliding_frob_
+  lock_ack_entry_still_refuses (must-still-refuse: a genuine same-symref
+  collision still blocks the land)
+
+Evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_disjoint_frob_lock_ack_entries_do_not_block (designated repro: genuinely fails at fec13e8cf, passes at b9a1e24a0)
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_colliding_frob_lock_ack_entry_still_refuses
+Full tests/unit/test_land_cross_ticket_leakage.py suite: 26/26 pass, no
+regression to any existing T-1355/T-1390/T-1639/T-1855/T-1967/T-1999/T-2948
+scenario. `frob test --base main` touched-set run (13 selected): exit=0.
+
+Filed: none (no out-of-scope defect discovered and deliberately left).
+
+SCOPE002 DISCLOSURE (frob:waive SCOPE002, same disclosed-breadth class
+T-3914/T-4013/T-4019/T-4132/T-3930/T-3931/T-4270 already measured and
+accepted -- SCOPE002's own violation location is the machine-managed
+tickets.md ledger, not a source line a code comment can anchor to, so it
+is disclosed here rather than suppressed in code): scope was widened from
+the ticket's original `tickets/T-3799/ticket.md` to also cover
+`src/frob/tickets/_land.py` and `tests/unit/test_land_cross_ticket_
+leakage.py`, since the real, safe fix could not live in T-3799's own
+ticket file (see above). `_land.py` is this repo's single largest land-
+orchestration module and its own doc anchor (`docs/modules/tickets-
+landing.md`) individually describes 259 OTHER symbols/doc-anchors/tests in
+that module, none of which this diff touches -- measured via `frob ticket
+scope --add`'s own closure warning count. Widening scope to satisfy
+SCOPE002's closure would pull in the entire landing subsystem's doc file
+and its own further closure for a four-function, one-file-family fix;
+declined as out of proportion, same posture T-3930/T-3931's own shared-
+doc-file SCOPE002 hits already measured and disclosed.
+
+Gates: `frob check --ticket T-4271` clean except:
+- gate:SCOPE (53 SCOPE002 findings) -- disclosed above, all from
+  `_land.py`'s pre-existing doc/test coverage graph, none touched by this
+  diff's own four new functions or the two new tests.
+- gate:COV (9 errors) -- confirmed pre-existing and unrelated: all 9 are
+  T-4178's stale evidence-id (COV003) findings against
+  tests/test_excludes.py; zero touch _land.py or the new test file.
+- gate:LARGE (1 error, src/frob/serve/_daemon.py) and frob-arch (1 error,
+  a lock-order-cycle in src/frob/serve/_daemon.py) are both pre-existing
+  and in a file this diff never touches (confirmed via `git diff --stat`
+  showing zero lines changed there).
+- ruff-format "5 files would be reformatted" is repo-wide pre-existing
+  drift (frob format --code/--directives on the touched files reports 0
+  further changes after the fixes above).
+`frob test --base main`: exit=0, 4 outcomes recorded (plus the full
+26/26 pass on the directly-relevant suite).
+
+### Changed
+```
+ src/frob/tickets/_land.py                    | 123 ++++++++++++++++++++++++++-
+ tests/unit/test_land_cross_ticket_leakage.py | 123 +++++++++++++++++++++++++++
+ tickets/T-4271/ticket.md                     |  32 ++++++-
+ 3 files changed, 273 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_disjoint_frob_lock_ack_entries_do_not_block` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_colliding_frob_lock_ack_entry_still_refuses` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 5 error(s), 4631 warning(s), 950 waived
+- error-findings: COV003@tests/test_excludes.py, COV007@src/frob/gates/_tdd_order.py, LARGE001@src/frob/serve/_daemon.py, SCOPE002@tickets.md, lock-order-cycle@src/frob/serve/_daemon.py

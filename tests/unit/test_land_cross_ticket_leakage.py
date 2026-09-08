@@ -14,6 +14,7 @@ says is still open."""
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -735,6 +736,128 @@ class TestCrossTicketLeakage:
         assert result.danger_err == LandError.CrossTicketLeakage
         assert not (repo / "src" / "fix.py").exists()
         assert not (repo / "src" / "held.py").exists()
+
+    @staticmethod
+    def _lock_json(entries: list[tuple[str, str, str]]) -> str:
+        """A minimal valid `frob.lock` document (`LockFile` shape) with
+        one `LockEntry` per `(ref, facet, digest)` triple (T-4271)."""
+        return json.dumps(
+            {
+                "version": 1,
+                "entries": [
+                    {"ref": ref, "facet": facet, "digest": digest}
+                    for ref, facet, digest in entries
+                ],
+                "ack_log": [],
+            }
+        )
+
+    # frob:ticket T-4271
+    def test_sibling_disjoint_frob_lock_ack_entries_do_not_block(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sib\
+        # ling_disjoint_frob_lock_ack_entries_do_not_block
+        """T-4271 must-fire: `held_id` (an unrelated, IN_PROGRESS sibling)
+        declares `frob.lock` in its own scope and genuinely commits an ack
+        entry to it -- but for a DIFFERENT symref than the landing
+        ticket's own routine `frob ack`. `frob.lock` is additive and
+        per-symbol-keyed, so these two edits never actually collide; the
+        land must succeed despite both branches touching the same file."""
+        (repo / "frob.lock").write_text(self._lock_json([]))
+        _commit_all(repo, "seed empty frob.lock")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-t4271-a", str(wt)], repo)
+        wt2 = repo.parent / "wt2"
+        _run(["git", "worktree", "add", "-b", "other-agent-t4271-a", str(wt2)], repo)
+
+        held = new_ticket(
+            wt2, _spec("Unrelated ack, own symbol", scope=("frob.lock",))
+        )
+        assert held.is_ok
+        held_id = held.danger_ok.id
+        assert transition(wt2, held_id, TicketState.PLANNED).is_ok
+        assert transition(wt2, held_id, TicketState.IN_PROGRESS).is_ok
+        (wt2 / "frob.lock").write_text(
+            self._lock_json([("moduleA.py::funcA", "sig", "digest-a")])
+        )
+        _commit_all(wt2, f"{held_id}: ack moduleA.py::funcA")
+
+        held_ticket = load_all(wt2).danger_ok[held_id]
+        assert write_ticket(wt, held_ticket).is_ok
+        _commit_all(wt, f"seed {held_id}'s ledger record onto the landing worktree")
+
+        landing = new_ticket(
+            wt, _spec("Independent ack, own symbol", scope=("frob.lock",))
+        )
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "frob.lock").write_text(
+            self._lock_json([("moduleB.py::funcB", "sig", "digest-b")])
+        )
+        _commit_all(wt, f"{landing_id}: ack moduleB.py::funcB")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        landed = json.loads((repo / "frob.lock").read_text())
+        assert {e["ref"] for e in landed["entries"]} == {"moduleB.py::funcB"}
+
+    # frob:ticket T-4271
+    def test_sibling_colliding_frob_lock_ack_entry_still_refuses(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sib\
+        # ling_colliding_frob_lock_ack_entry_still_refuses
+        """T-4271 must-still-refuse: the mirror of the disjoint-ack case
+        directly above -- `held_id` and the landing ticket both ack the
+        SAME symref at a DIFFERENT digest, a genuine collision on one
+        entry, not merely two edits to the same file. The entry-level
+        narrowing must never let a real collision through."""
+        (repo / "frob.lock").write_text(self._lock_json([]))
+        _commit_all(repo, "seed empty frob.lock")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-t4271-b", str(wt)], repo)
+        wt2 = repo.parent / "wt2"
+        _run(["git", "worktree", "add", "-b", "other-agent-t4271-b", str(wt2)], repo)
+
+        held = new_ticket(
+            wt2, _spec("Colliding ack, shared symbol", scope=("frob.lock",))
+        )
+        assert held.is_ok
+        held_id = held.danger_ok.id
+        assert transition(wt2, held_id, TicketState.PLANNED).is_ok
+        assert transition(wt2, held_id, TicketState.IN_PROGRESS).is_ok
+        (wt2 / "frob.lock").write_text(
+            self._lock_json([("shared.py::func", "sig", "digest-held")])
+        )
+        _commit_all(wt2, f"{held_id}: ack shared.py::func at digest-held")
+
+        held_ticket = load_all(wt2).danger_ok[held_id]
+        assert write_ticket(wt, held_ticket).is_ok
+        _commit_all(wt, f"seed {held_id}'s ledger record onto the landing worktree")
+
+        landing = new_ticket(
+            wt, _spec("Colliding ack, landing side", scope=("frob.lock",))
+        )
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "frob.lock").write_text(
+            self._lock_json([("shared.py::func", "sig", "digest-landing")])
+        )
+        _commit_all(wt, f"{landing_id}: ack shared.py::func at digest-landing")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.CrossTicketLeakage
+        assert json.loads((repo / "frob.lock").read_text())["entries"] == []
 
 
 # frob:ticket T-1618

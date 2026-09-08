@@ -2,7 +2,7 @@
 id: T-4271
 title: T-3799's whole-file scope claim on frob.lock blocks concurrent frob ack from
   other tickets
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -45,7 +45,10 @@ scope_changes:
     T-3799's own future SCOPE001 land check instead of fixing the real gap
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_disjoint_frob_lock_ack_entries_do_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_colliding_frob_lock_ack_entry_still_refuses
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_disjoint_frob_lock_ack_entries_do_not_block
 threat: null
 component: null
 anchor: false
