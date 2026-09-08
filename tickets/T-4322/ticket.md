@@ -30,6 +30,14 @@ scope_changes:
     renumbered at land'
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'BUG002: designated repro test cannot fail on this Linux host by construction
+    (posix venv path is always correct here); the defect only manifests on win32'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2844
+  new_length: 3224
 evidence:
 - tests/system/test_public_api_from_wheel.py::test_advertised_public_api_imports_from_a_built_wheel
 designated_repro_test: null
@@ -87,3 +95,5 @@ scoped against a denominator.
 NOTE ON PRIORITY: this platform is advisory in the workflow and does not block the
 release, so do not let it displace release-blocking work. But it must not be
 described as "advisory, some failures remain" while the true state is "unmeasured".
+
+frob:waive BUG002 reason="Windows-only defect: venv_dir/bin/python only fails to exist on win32 (Scripts/python.exe there); on this Linux land host the posix path is always correct, so no test in the suite can fail at the parent commit to prove a genuine repro -- same posture T-3754s BUG002 waiver took for the identical class of Windows-runner-only crash with no Linux repro."
