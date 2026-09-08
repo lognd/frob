@@ -1,7 +1,7 @@
 ---
 id: T-4337
 title: docs/modules/verify-rapid-debt-visibility.md fails INV003/INV004/REF002
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-09-08'
@@ -45,3 +45,6 @@ Add the missing frob:invariant marker(s) for the claims INV003/INV004
 flag, and either add a second real consumer/reference to the doc or
 demote/waive REF002 with a reasoned justification if a single anchor is
 correct here.
+
+## Drop reason
+- 2026-09-08: Duplicate of T-4334, which was filed earlier for the identical findings (INV003/INV004/REF002 on docs/modules/verify-rapid-debt-visibility.md, introduced by T-4324) and is already in progress with an implementer. INV004 has since been demoted to warn by T-4328's severity audit, leaving INV003 and REF002, both owned by T-4334. No work is lost: T-4337 was filed in good faith as an out-of-scope discovery by the T-4319 agent, which could not have seen T-4334 from its worktree.
