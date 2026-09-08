@@ -1,7 +1,7 @@
 ---
 id: T-4339
 title: frob ticket new reported creating a ticket that was never written
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -34,6 +34,11 @@ scope_changes:
     both failure seams per the ticket's own verification requirement
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_ticket_new_readback_guard_t4339.py::TestReadbackGuardForcesLoudFailure::test_land_in_progress_rollback_prints_no_success_line
+- tests/unit/test_ticket_new_readback_guard_t4339.py::TestReadbackGuardForcesLoudFailure::test_readback_miss_after_reported_success_prints_no_success_line
+- tests/unit/test_ticket_new_readback_guard_t4339.py::TestNormalPathStillCommitsAndReportsSuccess::test_ordinary_filing_prints_success_and_reads_back
+- tests/unit/test_ticket_new_readback_guard_t4339.py::TestNormalPathStillCommitsAndReportsSuccess::test_json_path_still_reports_success_and_reads_back
 designated_repro_test: null
 threat: null
 component: null

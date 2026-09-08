@@ -946,6 +946,51 @@ def _commit_new_ticket_ledger_change_or_exit(  # noqa: ANN001
         sys.exit(1)
 
 
+# frob:ticket T-4339
+def _confirm_new_ticket_readback_or_exit(root: Path, ticket) -> None:  # noqa: ANN001
+    """T-4339 silent-success guard: read `ticket.id` back from the store
+    (`load_all`) before `_new` prints or JSON-emits ANY success line for
+    it -- closes exactly the window T-4339 fell through. The write under
+    `allocator_lock`/`ledger_lock`/`ticket_lock` (`new_ticket`) durably
+    persists the ticket, but `_commit_new_ticket_ledger_change_or_exit`'s
+    own commit step runs AFTER that write and can still discard it: on a
+    `LandInProgress` timeout, `commit_ticket_ledger_change`'s
+    `rollback_on_land_in_progress=True` path (`_rollback_pathspecs`) runs
+    `git clean -fd` over the just-written, still-untracked ticket path,
+    which is a real design tradeoff (an uncommitted brand-new ticket is
+    safe to discard and re-allocate) but previously left NOTHING re-
+    checking disk before the CLI told the caller the ticket exists.
+    T-4339's own incident is this exact shape: the rollback fired, the
+    `created T-4313: ...` line had already printed moments before (the
+    old code logged it BEFORE this commit step ran at all), and the only
+    surviving trace was an orphaned `.frob/tickets/T-4313.lock` -- the
+    per-ticket `ticket_lock` file, which lives under `.frob/` and so was
+    never a candidate for the pathspec-scoped `git clean` in the first
+    place, next to a `tickets/T-4313/` directory that no longer existed.
+
+    A read-back is cheap relative to filing a ticket at all (`load_all`
+    is the same whole-store read every other verb already pays); this
+    runs unconditionally, not just on the rollback path, so it also
+    catches a currently-unknown fifth seam the same way. `sys.exit(1)`
+    on a miss, naming the id explicitly and telling the caller not to
+    trust it -- never repeats the `created <id>` line that caused the
+    original loss."""
+    from frob.tickets import load_all
+
+    loaded = load_all(root)
+    if loaded.is_err or ticket.id not in loaded.danger_ok:
+        _log.error(
+            "ticket new: %s was written and reported committed, but an "
+            "immediate read-back of the store found NO trace of it (%s) "
+            "-- do NOT treat this id as filed; retry `frob ticket new` "
+            "(T-4339 read-back guard, closing the exact silent-loss "
+            "window T-4339 was filed over)",
+            ticket.id,
+            loaded.danger_err if loaded.is_err else "id absent from load_all",
+        )
+        sys.exit(1)
+
+
 # frob:ticket T-3308
 def _log_scope_plausibility_warnings(
     root: Path, title: str, scope: list[str], body: str
@@ -1031,10 +1076,12 @@ def _new(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket new failed: %s", result.danger_err)
         sys.exit(1)
     ticket = result.danger_ok
-    if not cfg.ticket_json:
-        _log.info("created %s: %s", ticket.id, ticket.title)
     _emit_new_ticket_side_effects(root, cfg, ticket, body)
     _commit_new_ticket_ledger_change_or_exit(root, ticket, cfg.ticket_no_commit)
+    # frob:ticket T-4339
+    _confirm_new_ticket_readback_or_exit(root, ticket)
+    if not cfg.ticket_json:
+        _log.info("created %s: %s", ticket.id, ticket.title)
 
     # frob:ticket T-3308
     if cfg.ticket_json:
