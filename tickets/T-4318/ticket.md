@@ -36,6 +36,14 @@ scope_changes:
     lives here; adding it to scope so gate:SCOPE/COV can bind this diff to the ticket
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: disclose SCOPE002 acceptance for _land_cmd.py's pre-existing closure, per
+    T-4301/T-4289/T-4255/T-4310 precedent
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2780
+  new_length: 4372
 designated_repro_test: null
 threat: null
 component: null
@@ -87,3 +95,26 @@ unverified/debt marker at all. An UNMEASURABLE sweep currently reaches
 nobody outside a log file nobody reads -- this needs its own fix,
 independent of the budget fix above, so a commit that stays unverified is
 visible wherever a verified result would be.
+
+
+# frob:waive SCOPE002 reason="src/frob/app/ticket_runner/_land_cmd.py is a large
+shared land-command module whose pre-existing frob:doc/frob:tests/private-helper
+closure spans dozens of unrelated files (docs/modules/tickets-landing.md,
+docs/modules/tickets-verify-sweep.md, docs/modules/tickets-merge-driver.md,
+docs/design/registry/EXHAUSTIVENESS-GATE.md, docs/modules/gates.md, plus ~20
+test files covering land/merge-driver/verify-sweep/release-bump behavior this
+ticket's actual diff never touches). T-4318's real change is two lines: (1)
+_measure_fresh_and_write_baseline (src/frob/app/ticket_runner/_rapid_sweep.py,
+already in scope) now passes full=True to _unscoped_error_findings instead of
+defaulting to a --budget ceiling tuned for an inline foreground land, and (2)
+a regression test asserting that. Pulling the whole transitive closure of
+_land_cmd.py's pre-existing symbols (unrelated to this fix) into scope would
+be scope creep out of proportion to the actual change -- same doc-anchor/
+scope-closure tension already documented and accepted by T-4301, T-4289, and
+T-4255's identical SCOPE002 waivers on other large shared CLI-runner modules.
+Per T-4310's own measured finding, this frob:waive SCOPE002 directive is
+DEAD TEXT under the current tickets/T-####/ticket.md-per-file ledger layout
+(gate:SCOPE's SCOPE002 violation is hardcoded to file='tickets.md', which the
+graph walker never parses in this format, so no WAIVE edge is ever created) --
+disclosed here per the same accepted-gap precedent, not as a claim that this
+directive mechanically clears the gate finding."
