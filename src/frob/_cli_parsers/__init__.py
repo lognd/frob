@@ -32,6 +32,7 @@ from ._core import (
     _add_parse_output_args,
     _add_parse_parser,
     _add_scaffold_parser,
+    _add_whereis_parser,
     _add_worktree_parser,
     _add_xref_parser,
 )
@@ -199,6 +200,7 @@ __all__ = [
     "_add_status_parser",
     "_add_verify_parser",
     "_add_vet_parser",
+    "_add_whereis_parser",
     "_add_worktree_parser",
     "_add_xref_parser",
 ]

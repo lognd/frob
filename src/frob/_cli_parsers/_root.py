@@ -63,6 +63,7 @@ from frob._cli_parsers import (
     _add_ticket_parser,
     _add_verify_parser,
     _add_vet_parser,
+    _add_whereis_parser,
     _add_worktree_parser,
     _add_xref_parser,
 )
@@ -445,6 +446,7 @@ def _add_analysis_subparsers(sub) -> None:
     _add_bind_parser(sub)
     _add_agent_parser(sub)
     _add_worktree_parser(sub)
+    _add_whereis_parser(sub)
     # T-3125: registered here for `--help`/discoverability only, mirroring
     # `agent`/`worktree` above -- `_dispatch` still routes `refactor`/
     # `narrative` by a raw argv[0] scan BEFORE this tree is ever parsed

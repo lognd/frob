@@ -157,6 +157,7 @@ Use `frob <verb> --help` for flags.
 | `frob ticket` | Group: the statically-checkable ticket queue -- see docs/guides/command-reference.md |
 | `frob verify` | The unverified-window tracker: depth/age/quarantine status |
 | `frob vet` | Group: dependency capability/CVE/supply-chain vetting -- see docs/guides/command-reference.md |
+| `frob whereis` | Print the interpreter/site-packages path of the frob actually running |
 | `frob worktree` | Manage dispatched-agent git worktrees |
 | `frob xref` | Find where a symbol is defined and every file that references it |
 

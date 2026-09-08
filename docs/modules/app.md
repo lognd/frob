@@ -421,6 +421,8 @@ lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
   tooling can inject the guard env mechanically; parses its own argv
   rather than taking `AppConfig`, dispatched the same way `bind_runner`
   is.
+- `frob.__main__._dispatch_whereis` -- `frob whereis [--json]` (T-4299):
+  see "`frob whereis`" below.
 - `clean_runner.run` -- `frob clean [--all|--deep] [-y]` (T-0457,
   docs/modules/clean.md).
 - `debt_runner.run` -- `frob debt`: lists outstanding `frob:debt` entries (T-0412).
@@ -472,6 +474,41 @@ lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
   this now runs before the dirty/lease/age gates.
 - `ticket_runner._waive_audit.run` -- `frob ticket waive-audit {scan,
   complete}` (T-2467): see "Waive audit (T-2467)" below.
+
+## `frob whereis` (T-4299)
+
+Prints the interpreter/site-packages path of the frob package ACTUALLY
+EXECUTING this invocation: `sys.executable`, the frob package's own
+resolved `__file__`, and `site.getsitepackages()` -- never a `shutil.
+which`-style PATH lookup or a hardcoded install-layout guess. This repo
+already warns elsewhere (the CLI-surface-skew warning `frob --version`
+alone cannot detect, per the frob-usage reference) that an invoked
+binary's source identity can silently diverge from a given checkout, so
+answering "where is the frob I am actually running" needs the live
+process's own values, not a resolution done any other way.
+
+Turns a real consumer workaround (T-4150's report: a fragile `shutil.
+which`-based tool-venv shim, shipped with a warning in the consumer's own
+code because they knew it was unsound) into a supported one-liner:
+
+```
+$ frob whereis
+executable: /path/to/.venv/bin/python
+frob package: /path/to/.venv/lib/python3.11/site-packages/frob
+site-packages: /path/to/.venv/lib/python3.11/site-packages
+
+$ frob whereis --json
+{"executable": "...", "frob_package": "...", "site_packages": [...]}
+```
+
+Dispatched directly by `frob.__main__._dispatch`'s raw argv[0] scan
+(bypassing `AppConfig` entirely), the same shape `bind`/`agent`/`worktree`
+already use -- see this module's own "Runners" section above for why that
+precedent exists. `--json` is parsed off the raw argv inside `_dispatch_
+whereis` itself, never through `AppConfig` (its `_add_whereis_parser`
+registration on the real parser tree exists purely for `--help`
+discoverability, matching `bind`/`agent`/`worktree`'s own `--help`-only
+parsers).
 
 ## Waive audit (T-2467)
 

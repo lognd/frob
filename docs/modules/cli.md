@@ -593,6 +593,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob ticket` | the statically-checkable ticket queue |
 | `frob verify` | the T-1686 unverified window: depth/age/quarantine status, force a drain, explain an attribution, dispose a quarantined finding |
 | `frob vet` | dependency-vetting: lockfile allow conformance, quarantine, typosquat, lifecycle scripts, osv advisories |
+| `frob whereis` | print the interpreter/site-packages path of the frob ACTUALLY RUNNING this invocation (T-4299) |
 | `frob worktree` | manage dispatched-agent git worktrees (T-0836) |
 | `frob xref` | find where a symbol is defined and every file that uses it -- also available as `frob explore xref` (T-1238) |
 

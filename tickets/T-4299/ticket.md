@@ -2,7 +2,7 @@
 id: T-4299
 title: add a path-reporting verb naming the running frob's own interpreter/site-packages
   location
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-08'
@@ -138,6 +138,12 @@ scope_changes:
     as T-4300 (docs/modules/tickets-landing.md case)
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_main_entry.py::TestWhereis::test_help_lists_whereis
+- tests/unit/test_main_entry.py::TestWhereis::test_prints_executable_and_package_dir
+- tests/unit/test_main_entry.py::TestWhereis::test_json_flag_emits_parseable_json
+- tests/unit/test_main_entry.py::TestWhereis::test_dispatch_routes_whereis_argv
+- tests/unit/test_main_entry.py::TestWhereis::test_two_different_installs_report_different_paths
 designated_repro_test: null
 threat: null
 component: null

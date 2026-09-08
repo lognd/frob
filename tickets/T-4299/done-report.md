@@ -1,0 +1,83 @@
+## Done report
+
+`frob whereis [--json]` (T-4299): a direct-dispatch verb, same shape as
+`bind`/`agent`/`worktree` (registered on the real parser tree in
+`_cli_parsers/_core.py` for `--help` discoverability only, actually
+dispatched by `_dispatch`'s raw argv[0] scan in `frob.__main__`). Prints
+`sys.executable`, the frob package's own resolved `__file__`, and
+`site.getsitepackages()` for the frob ACTUALLY EXECUTING the invocation
+-- never a `shutil.which`-style PATH lookup or a hardcoded install-layout
+assumption. Uses `frob.render.Renderer` for stdout, matching
+`agent_runner`'s own precedent (avoids RENDER001).
+
+Measured the exhaustive registration set first, per the ticket's own
+instruction, using `bind`/`agent`/`worktree` as the reference shape:
+`_cli_parsers/_core.py` (parser def), `_cli_parsers/_root.py`
+(`_add_analysis_subparsers` wiring), `_cli_parsers/__init__.py`
+(import/re-export), `__main__.py` (re-export + `_dispatch` branch +
+`_dispatch_whereis` itself). No new runner module or `_RUNNER_RUN_MODULES`
+entry needed -- `whereis` is self-contained in `__main__.py`, same as
+`agent`/`worktree`. `--json` is parsed off raw argv, never through
+`AppConfig` (T-4302, filed below, tracks a real WIRE001 exemption for this
+whole verb class instead of a per-verb waiver).
+
+Verified the "two different installs report different paths" acceptance
+directly: the globally `uv tool install`-ed frob (0.530.0, no `whereis`
+verb at all) versus this worktree's build (0.530.1.dev1, has it) --
+real, observed version/surface skew, exactly the T-4150 motivation.
+`test_two_different_installs_report_different_paths` covers the same
+claim as a unit test (monkeypatching the resolved package `__file__`
+between two calls).
+
+Evidence:
+- tests/unit/test_main_entry.py::TestWhereis::test_help_lists_whereis
+- tests/unit/test_main_entry.py::TestWhereis::test_prints_executable_and_package_dir
+- tests/unit/test_main_entry.py::TestWhereis::test_json_flag_emits_parseable_json
+- tests/unit/test_main_entry.py::TestWhereis::test_dispatch_routes_whereis_argv
+- tests/unit/test_main_entry.py::TestWhereis::test_two_different_installs_report_different_paths
+- `frob test --base main`: PASS (exit=0); full `tests/unit/test_main_entry.py`
+  suite (43 tests, including the pre-existing `TestHelpListsDirectDispatchVerbs`
+  class this ticket's own tests mirror): PASS.
+
+Filed (out of scope, discovered while working this ticket):
+- T-4303: WIRE001 fires on every NEW direct-dispatch verb's
+  --help-only argparse dest (bind/agent/worktree/sync-skills never got
+  flagged only because no later diff touched them) -- needs a real
+  exemption instead of a per-verb waiver each time. Waived on
+  `_add_whereis_parser` pending this.
+
+Gates: `frob check --ticket T-4299` -- gate:DOC/gate:FMT/gate:WIRE(this
+ticket's own new finding) all clean after fixes (docs/modules/cli.md
+regenerated via `frob docs --sync-commands`, README.md row added, a
+dedicated `## frob whereis (T-4299)` section added to docs/modules/app.md,
+WIRE001 waived with follow_up=T-4303). Remaining gate:SCOPE
+SCOPE002 fan-out (~80 findings) is the SAME pre-existing tooling gap
+already filed as T-4300 during T-4184: docs/modules/app.md and
+docs/modules/cli.md are giant shared reference docs describing dozens of
+unrelated runner modules/parsers under one `## Runners`/generated-table
+section, so adding either file to scope (required for gate:SCOPE001's own
+file-level check) pulls in every OTHER symbol's own `frob:doc`/`frob:
+describes` edge as a SCOPE002 "add this too" suggestion. Not fixable
+within this ticket's own scope; T-4300 tracks the tooling fix.
+ARCH103/SELFAUDIT001/WIRE002(test_ci_workflow_timeout.py)/the two
+unrelated ruff-format files are pre-existing and untouched by this diff.
+
+### Changed
+```
+ tickets/T-4299/done-report.md      | 78 ++++++++++++++++++++++++++++++++++++++
+ tickets/T-4299/ticket.md           | 66 +++++++++++++++++++++++++++++++-
+ tickets/T-4303/ticket.md | 29 ++++++++++++++
+ 3 files changed, 171 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_main_entry.py::TestWhereis::test_help_lists_whereis` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestWhereis::test_prints_executable_and_package_dir` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestWhereis::test_json_flag_emits_parseable_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestWhereis::test_dispatch_routes_whereis_argv` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestWhereis::test_two_different_installs_report_different_paths` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 5 error(s), 4677 warning(s), 953 waived
+- error-findings: ARCH103@src/frob/graph/cache.py, SCOPE002@tickets.md, SELFAUDIT001@design, TODO002@src/frob/gates/_land_format.py, WIRE002@tests/test_ci_workflow_timeout.py

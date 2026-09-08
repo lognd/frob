@@ -540,3 +540,32 @@ def _add_worktree_parser(sub) -> None:
         metavar="HOURS",
         help="skip worktrees whose HEAD commit is newer than this many hours",
     )
+
+
+# frob:ticket T-4299
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
+# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as this repo's \
+# other cross-package DEAD001 waivers (T-1024 precedent), matching \
+# bind/agent/worktree's own identical waiver directly above"
+def _add_whereis_parser(sub) -> None:
+    """Register the `frob whereis` subcommand for `--help` discovery only
+    -- actual dispatch bypasses this parser entirely (see `_dispatch`
+    below and `_dispatch_whereis`'s own docstring), mirroring `bind`/
+    `agent`/`worktree`'s own precedent (T-4299)."""
+    whereis_p = sub.add_parser(
+        "whereis",
+        help="print the interpreter/site-packages path of the frob "
+        "ACTUALLY RUNNING this invocation (T-4299)",
+    )
+    # frob:waive WIRE001 follow_up="T-4303" reason="whereis_json exists purely so \
+    # --json shows up in --help/arg-shape validation on the real parser tree -- this \
+    # dest is NEVER read through AppConfig, because _dispatch_whereis (like \
+    # _dispatch_bind/_dispatch_agent/_dispatch_worktree above) bypasses AppConfig \
+    # entirely and parses --json straight off the raw argv _dispatch hands it. Every \
+    # direct-dispatch verb's own dests share this exact structurally-unwired shape; \
+    # T-4303 tracks giving WIRE001 a real exemption for it instead of a per-verb \
+    # waiver each time"
+    whereis_p.add_argument(
+        "--json", dest="whereis_json", action="store_true", help="emit JSON"
+    )

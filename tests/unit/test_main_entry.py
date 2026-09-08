@@ -190,6 +190,95 @@ class TestHelpListsDirectDispatchVerbs:
         assert "narrative" in out
 
 
+# frob:ticket T-4299
+class TestWhereis:
+    """`frob whereis` (T-4299) -- a direct-dispatch verb, same shape as
+    `bind`/`agent`/`worktree`/`refactor`/`narrative` above: registered on
+    the real parser tree for `--help` discoverability only, actually
+    dispatched by `_dispatch`'s raw argv[0] scan."""
+
+    def test_help_lists_whereis(self, capsys) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestWhereis.test_help_lists_whereis
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["--help"])
+        assert "whereis" in capsys.readouterr().out
+
+    def test_prints_executable_and_package_dir(self, capsys) -> None:
+        # frob:tests \
+        # tests/unit/test_main_entry.py::TestWhereis.test_prints_executable_and_package\
+        # _dir
+        import sys
+
+        main_module._dispatch_whereis([])
+        out = capsys.readouterr().out
+        assert sys.executable in out
+        assert "frob package:" in out
+        assert "site-packages:" in out
+
+    def test_json_flag_emits_parseable_json(self, capsys) -> None:
+        # frob:tests \
+        # tests/unit/test_main_entry.py::TestWhereis.test_json_flag_emits_parseable_json
+        import json
+        import sys
+
+        main_module._dispatch_whereis(["--json"])
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["executable"] == sys.executable
+        assert payload["frob_package"].endswith("frob")
+        assert isinstance(payload["site_packages"], list)
+
+    def test_dispatch_routes_whereis_argv(self, monkeypatch) -> None:
+        # frob:tests \
+        # tests/unit/test_main_entry.py::TestWhereis.test_dispatch_routes_whereis_argv
+        """`_dispatch` (the actual routing table, not `_build_parser`'s
+        argparse tree) recognizes `whereis` as argv[0], same class of
+        proof `TestMainSigint` above already applies to the dispatch
+        seam."""
+        calls: list[list[str]] = []
+        monkeypatch.setattr(
+            main_module, "_dispatch_whereis", lambda argv: calls.append(argv)
+        )
+        main_module._dispatch(["whereis", "--json"])
+        assert calls == [["--json"]]
+
+    def test_two_different_installs_report_different_paths(
+        self, tmp_path, capsys
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_main_entry.py::TestWhereis.test_two_different_installs_report\
+        # _different_paths
+        """Acceptance: invoked from two different `frob` package
+        locations, `whereis` reports two different paths -- simulated
+        here by monkeypatching the resolved package `__file__` between
+        two calls, the same seam a genuinely different install's `frob`
+        binary would resolve independently through its own import."""
+        import json
+
+        import frob as frob_pkg
+
+        first_dir = tmp_path / "install-one" / "frob"
+        second_dir = tmp_path / "install-two" / "frob"
+        first_dir.mkdir(parents=True)
+        second_dir.mkdir(parents=True)
+
+        original_file = frob_pkg.__file__
+        try:
+            frob_pkg.__file__ = str(first_dir / "__init__.py")
+            main_module._dispatch_whereis(["--json"])
+            first_payload = json.loads(capsys.readouterr().out)
+
+            frob_pkg.__file__ = str(second_dir / "__init__.py")
+            main_module._dispatch_whereis(["--json"])
+            second_payload = json.loads(capsys.readouterr().out)
+        finally:
+            frob_pkg.__file__ = original_file
+
+        assert first_payload["frob_package"] != second_payload["frob_package"]
+        assert first_payload["frob_package"] == str(first_dir)
+        assert second_payload["frob_package"] == str(second_dir)
+
+
 # frob:ticket T-0578
 class TestDidYouMean:
     """`_build_parser`'s `_SuggestingArgumentParser` appends a "did you

@@ -58,6 +58,7 @@ from frob._cli_parsers import (
     _add_ticket_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_verify_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_vet_parser,  # noqa: F401 -- re-exported: prior __main__ surface
+    _add_whereis_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_worktree_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_xref_parser,  # noqa: F401 -- re-exported: prior __main__ surface
 )
@@ -183,6 +184,53 @@ def _dispatch_worktree(argv: list[str]) -> None:
     from frob.app.worktree_runner import run as _worktree_run
 
     _worktree_run(argv)
+
+
+# frob:ticket T-4299
+def _dispatch_whereis(argv: list[str]) -> None:
+    """`frob whereis` (T-4299) -- print the interpreter/site-packages path
+    of the frob package ACTUALLY EXECUTING this invocation, dispatched
+    directly (mirroring `bind`/`agent`/`worktree` above) rather than
+    resolved from anything else: this repo already warns elsewhere (the
+    CLI-surface-skew warning `frob --version` alone cannot detect, per
+    the frob-usage reference) that an invoked binary's source identity
+    can silently diverge from a given checkout, so a consumer asking
+    "where is the frob I am actually running" needs the LIVE process's
+    own `sys.executable`/package `__file__`, never a `shutil.which`-style
+    PATH lookup or a hardcoded install-layout assumption -- the exact
+    fragile shim T-4150's report describes a consumer resorting to,
+    complete with a warning in their own code because they knew it was
+    unsound. Turns that into a supported one-liner."""
+    import json
+    import site
+    import sys
+
+    import frob as _frob_pkg
+    from frob.render import Renderer
+
+    package_dir = str(Path(_frob_pkg.__file__).resolve().parent)
+    try:
+        site_packages = site.getsitepackages()
+    except AttributeError:
+        # T-4299: some venvs (built without site.ENABLE_USER_SITE support)
+        # lack getsitepackages entirely -- fall back to the package
+        # directory's own parent, which IS the site-packages dir for a
+        # normally-installed package, so this never reports nothing.
+        site_packages = [str(Path(package_dir).parent)]
+
+    payload = {
+        "executable": sys.executable,
+        "frob_package": package_dir,
+        "site_packages": site_packages,
+    }
+    renderer = Renderer.for_stream(sys.stdout)
+    if "--json" in argv:
+        renderer.line(json.dumps(payload, indent=2))
+        return
+    renderer.line(f"executable: {payload['executable']}")
+    renderer.line(f"frob package: {payload['frob_package']}")
+    for path in payload["site_packages"]:
+        renderer.line(f"site-packages: {path}")
 
 
 # frob:ticket T-2241
@@ -355,6 +403,8 @@ def _dispatch(argv: list[str]) -> None:
         _dispatch_agent(argv[1:])
     elif argv and argv[0] == "worktree":
         _dispatch_worktree(argv[1:])
+    elif argv and argv[0] == "whereis":
+        _dispatch_whereis(argv[1:])
     elif argv and argv[0] == "sync-skills":
         _dispatch_sync_skills(argv[1:])
     elif _is_release_publish(argv):
