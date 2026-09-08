@@ -2,7 +2,7 @@
 id: T-4345
 title: Playbook doc edge names the moved stage-group mapping and no longer resolves
 state: done
-kind: bug
+kind: docs
 origin: human
 created: '2026-09-08'
 priority: critical
@@ -19,9 +19,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: 'Filed by me as kind=bug, but the change is documentation-only: repointing
+    a frob:enumerates edge to the post-T-4336 declaration site and rewriting the surrounding
+    prose. COV003 correctly refuses cmd: evidence for kind=bug (allowed only for docs/ux),
+    and the recorded evidence is gate runs because a doc-edge repoint has no meaningful
+    pytest node id. Correcting the kind rather than fabricating test evidence.'
+  actor: logan
+  at: '2026-09-08'
 evidence:
 - cmd:uv run frob check --only docblocks --json exit=0 sha256=8404bae9255b
 - cmd:uv run frob check --only drift --json exit=0 sha256=fc1acb10ba0c
+kind_history:
+- 2026-09-08 bug->docs evidence=2 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
