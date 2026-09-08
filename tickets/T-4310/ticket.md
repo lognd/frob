@@ -16,8 +16,12 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
 - src/frob/gates/__init__.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'T-4310: SCOPE002''s synthetic tickets.md:0 finding is unwaivable
+  under the per-ticket ledger layout; this ticket''s own fix restores scope_breadth_ack
+  as SCOPE002''s acceptance path (mirroring TICK009), demonstrated here on the ticket
+  that landed it -- scope stays src/frob/gates/_waive.py + src/frob/gates/__init__.py,
+  no widening'
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
