@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_create.py
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_ticket_new_readback_guard_t4339.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_new.py
   reason: declared scope src/frob/tickets/_create.py does not exist; the frob ticket
     new success line and the read-back guard actually live in frob.app.ticket_runner._new
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_ticket_new_readback_guard_t4339.py
+  reason: new test file added to force and verify the T-4339 read-back guard, forcing
+    both failure seams per the ticket's own verification requirement
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
