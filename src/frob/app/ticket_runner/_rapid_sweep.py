@@ -3748,9 +3748,10 @@ def _check_claim_divergence_post_land(
 # frob:ticket T-2571
 # frob:ticket T-2595
 # frob:ticket T-4318
+# frob:ticket T-4335
 # frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_calls_unscoped_error_findings_with_full_true  # noqa: E501
-def _measure_fresh_and_write_baseline(
+def _measure_fresh_sweep_state(
     root: Path, final_id: str, commit_sha: str
 ) -> Result[
     tuple[
@@ -3758,14 +3759,28 @@ def _measure_fresh_and_write_baseline(
     ],
     RapidSweepError,
 ]:
-    """T-2929 (ARCH001 split of `run_deferred_post_land_sweep`):
-    the measure-and-persist half of the sweep -- run the unscoped check,
-    normalize/filter the fresh set, and CAS-write it as the new rolling
-    baseline. Returns `(fresh, prior_baseline, prev_baseline_commit,
-    actual_head)`, where `prior_baseline` is `None` on a first sweep (no
-    baseline existed yet -- the caller's own signal to record-and-file-
-    nothing) and `Err(Unmeasurable)` when the check itself produced no
-    parsable error set.
+    """T-2929 (ARCH001 split of `run_deferred_post_land_sweep`); T-4335
+    (split OFF the unconditional baseline write this function used to do
+    -- see `_persist_baseline` and the T-4335 note on its former write
+    site below): the measure-only half of the sweep -- run the unscoped
+    check and normalize/filter the fresh set, WITHOUT touching the
+    persisted baseline. Returns `(fresh, prior_baseline, prev_baseline_
+    commit, actual_head)`, where `prior_baseline` is `None` on a first
+    sweep (no baseline existed yet -- the caller's own signal to record-
+    and-file-nothing) and `Err(Unmeasurable)` when the check itself
+    produced no parsable error set.
+
+    T-4335: the caller alone decides what to persist and when, AFTER it
+    knows whether `fresh`'s new identities (relative to `prior_baseline`)
+    got filed as a regression ticket. This function used to CAS-write
+    `fresh` unconditionally right here, before that filing decision even
+    ran -- which meant a new error identity that `run_deferred_post_land_
+    sweep` went on to REFUSE to file (T-2929's stale-verification-queue
+    guard) was already baked into the baseline as tolerated debt, so
+    every later sweep compared against a baseline that had silently
+    absorbed it and reported CLEAN forever. Moving the write to the
+    caller, after the filing decision, lets an unfiled new identity stay
+    OUT of what gets persisted so the next sweep still sees it as new.
 
     T-4318: calls `_unscoped_error_findings` with `full=True`. This
     function runs ONLY inside the detached `frob ticket sweep-async`
@@ -3831,11 +3846,37 @@ def _measure_fresh_and_write_baseline(
     fresh = _filter_phantom_deleted_findings(final_id, fresh, deleted_files)
 
     baseline = _read_baseline(root)
+    # T-4335: the baseline write used to happen right here, unconditionally,
+    # before the caller had even computed `new_findings` let alone decided
+    # whether they got filed. See `_persist_baseline` -- the caller now
+    # calls it once it knows exactly what should be persisted.
+    return Ok((fresh, baseline, prev_baseline_commit, actual_head))
+
+
+# frob:ticket T-4335
+# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestPersistBaseline.test_writes_and_logs_survival_warning_on_loss  # noqa: E501
+def _persist_baseline(
+    root: Path,
+    final_id: str,
+    to_persist: frozenset[tuple[str, str]],
+    actual_head: str,
+) -> None:
+    """T-4335 (extracted from the former unconditional write inside what
+    is now `_measure_fresh_sweep_state`): CAS-write `to_persist` as the
+    rolling baseline the NEXT deferred sweep diffs against, and warn if a
+    concurrent sweep's fresher write is detected to have been lost.
+
+    Callers choose `to_persist` deliberately -- it is NOT always `fresh`.
+    A new identity that `run_deferred_post_land_sweep` filed a ticket for
+    (or that was already establishing the first-ever baseline) belongs in
+    it; a new identity that sweep explicitly REFUSED to file (T-2929's
+    stale-verification-queue guard) must NOT be in it, or it is absorbed
+    as tolerated debt with no ticket ever tracking it (T-4335's bug)."""
     # T-2595: was an unconditional, unlocked `_write_baseline` -- now a
     # locked compare-and-swap that refuses to overwrite a concurrent
     # sweep's FRESHER write with this sweep's stale one (see `_write_
     # baseline_cas`'s docstring for the full race this closes).
-    wrote = _write_baseline_cas(root, fresh, actual_head)
+    wrote = _write_baseline_cas(root, to_persist, actual_head)
     # T-2571 acceptance criterion 0: detect (never silently trust) a
     # concurrent sweep clobbering this write before the next sweep ever
     # reads it -- root is the SHARED checkout every land's own detached
@@ -3857,7 +3898,6 @@ def _measure_fresh_and_write_baseline(
             final_id,
             actual_head[:12],
         )
-    return Ok((fresh, baseline, prev_baseline_commit, actual_head))
 
 
 # frob:doc \
@@ -3894,6 +3934,23 @@ def _measure_fresh_and_write_baseline(
 # unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
 # waivers"
 # frob:ticket T-2938
+# frob:ticket T-4335
+# frob:tests \
+# tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refusal_is_still_new_on_the_next_sweep  # noqa: E501
+# frob:tests \
+# tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_inherited_debt_is_reported_as_debt_not_clean  # noqa: E501
+# frob:tests \
+# tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_genuinely_zero_errors_still_says_clean  # noqa: E501
+# frob:waive DRIFT001 reason="T-4335 DOES change this function's external contract (a \
+# new identity is now only rolled into the rolling baseline once it is actually \
+# filed/accounted for, never on a stale-verification-queue refusal) -- the fix to \
+# docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684 is \
+# real, needed work, not skippable, but filed as a separate ticket (see T-4335's Done \
+# report) because this doc's own frob:describes network pulls in ~170 unrelated \
+# symbols across the whole verify/land subsystem on scope closure the moment the file \
+# enters a ticket's scope -- the same disproportionate-closure shape T-2521's existing \
+# AFFECT001 waiver just above already accepted on this identical file for the same \
+# reason (a shared doc many in-flight tickets touch)"
 def run_deferred_post_land_sweep(
     root: Path, final_id: str, commit_sha: str
 ) -> Result[str | None, RapidSweepError]:
@@ -3918,8 +3975,23 @@ def run_deferred_post_land_sweep(
     function's return value -- that stays exactly what it was before
     (the filed regression ticket id, if any) -- a caller that wants to
     know whether claim divergence specifically fired reads the quarantine
-    record or the log."""
-    measured = _measure_fresh_and_write_baseline(root, final_id, commit_sha)
+    record or the log.
+
+    T-4335: WHAT GETS PERSISTED as the next baseline is now decided HERE,
+    per branch, via `_persist_baseline` -- never inside the measurement
+    step. A rolling baseline is the right tool for INHERITED debt (an
+    identity already present in the prior baseline): tolerating it without
+    re-filing is correct and unchanged. It must never be the tool for an
+    identity that FIRST APPEARS in `fresh` relative to the prior baseline
+    (`new_findings` below) unless that identity is actually accounted for
+    -- either filed as a regression ticket just now, or (the `baseline is
+    None` branch) there was no prior baseline to compare against at all,
+    so recording everything found is establishing the initial baseline,
+    not growing an existing one. The one case that used to slip through
+    both of those (T-2929's stale-verification-queue refusal below) is
+    filed nowhere, so its identities are deliberately EXCLUDED from what
+    gets persisted -- the next sweep must still see them as new."""
+    measured = _measure_fresh_sweep_state(root, final_id, commit_sha)
     if measured.is_err:
         return Err(measured.danger_err)
     fresh, baseline, prev_baseline_commit, actual_head = measured.danger_ok
@@ -3927,10 +3999,17 @@ def run_deferred_post_land_sweep(
     _check_claim_divergence_post_land(root, final_id, actual_head, fresh)
 
     if baseline is None:
+        # T-4335: no prior baseline at all -- ESTABLISHING an initial
+        # baseline, not growing one. Recording everything found here is
+        # correct (the alternative is filing the entire pre-existing
+        # backlog as "new" the moment a baseline is reset), and every
+        # identity here is accounted for by that same act of establishing.
+        _persist_baseline(root, final_id, fresh, actual_head)
         _log.warning(
-            "rapid sweep: %s had no rolling baseline -- recorded %d "
-            "error(s) as the baseline and filed nothing; the NEXT land's "
-            "sweep is the first one that can attribute a regression",
+            "rapid sweep: %s had no rolling baseline -- ESTABLISHED an "
+            "initial baseline of %d error(s) and filed nothing; the NEXT "
+            "land's sweep is the first one that can attribute a "
+            "regression against it",
             final_id,
             len(fresh),
         )
@@ -3945,24 +4024,49 @@ def run_deferred_post_land_sweep(
     _close_and_log_resolved_sweep_tickets(root, final_id, baseline, fresh)
 
     if not new_findings:
-        _log.info(
-            "rapid sweep: %s deferred unscoped sweep CLEAN (%d error(s), "
-            "none new vs the previous sweep)",
-            final_id,
-            len(fresh),
-        )
+        _persist_baseline(root, final_id, fresh, actual_head)
+        if fresh:
+            # T-4335: this used to say "CLEAN (%d error(s))" -- a summary
+            # naming a nonzero error count must never also claim CLEAN.
+            # These are pre-existing (inherited) identities the rolling
+            # baseline is deliberately tolerating, not zero errors.
+            _log.info(
+                "rapid sweep: %s deferred unscoped sweep found 0 NEW "
+                "identit(ies) vs the previous baseline -- %d pre-existing "
+                "error(s) remain as TOLERATED DEBT, not clean",
+                final_id,
+                len(fresh),
+            )
+        else:
+            _log.info(
+                "rapid sweep: %s deferred unscoped sweep CLEAN (0 error(s))",
+                final_id,
+            )
         return Ok(None)
 
     if _refuse_filing_for_stale_verification_queue(
         root, final_id, new_findings, actual_head
     ):
+        # T-4335: the refused identities are NOT filed anywhere, so they
+        # must not enter the persisted baseline either -- only what was
+        # already known (`fresh - new_findings`) is safe to roll forward.
+        # The next sweep will recompute the SAME `new_findings` against
+        # this unchanged tolerated set and get another chance to file
+        # once the verification queue is current again.
+        tolerated = fresh - new_findings
+        _persist_baseline(root, final_id, tolerated, actual_head)
         return Ok(None)
 
-    return Ok(
-        _attribute_and_file_regression(
-            root, final_id, prev_baseline_commit, actual_head, new_findings
-        )
+    filed = _attribute_and_file_regression(
+        root, final_id, prev_baseline_commit, actual_head, new_findings
     )
+    # T-4335: only NOW, once the new identities are actually accounted for
+    # (filed as a fresh regression ticket, or disposed to an existing
+    # duplicate that already tracks them), is it safe to persist `fresh`
+    # -- otherwise a filed-but-then-lost ticket would leave them absorbed
+    # with nothing tracking them, the exact shape this ticket fixes.
+    _persist_baseline(root, final_id, fresh, actual_head)
+    return Ok(filed)
 
 
 # frob:ticket T-2009

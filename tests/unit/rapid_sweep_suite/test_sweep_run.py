@@ -13,6 +13,7 @@ from frob.app.ticket_runner import _rapid_sweep
 from frob.app.ticket_runner._rapid_sweep import (
     RapidSweepError,
     _check_claim_divergence_post_land,
+    _persist_baseline,
     _read_baseline,
     _write_baseline,
     run_deferred_post_land_sweep,
@@ -20,7 +21,25 @@ from frob.app.ticket_runner._rapid_sweep import (
 )
 
 
+# frob:ticket T-4335
+class TestPersistBaseline:
+    """`_persist_baseline` -- the extracted, caller-controlled write half
+    of what used to be `_measure_fresh_and_write_baseline`'s unconditional
+    write (T-4335)."""
+
+    # frob:ticket T-4335
+    def test_writes_and_logs_survival_warning_on_loss(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """A normal write persists exactly what the caller asked for."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestPersistBaseline.test_writes_and_logs_survival_warning_on_loss  # noqa: E501
+        to_persist = frozenset({("COV003", "a.py")})
+        _persist_baseline(tmp_path, "T-0001", to_persist, "deadbeef" * 5)
+        assert _read_baseline(tmp_path) == to_persist
+
+
 # frob:ticket T-4318
+# frob:ticket T-4335
 class TestDeferredSweepRun:
     """`run_deferred_post_land_sweep` files, never reverts."""
 
@@ -138,6 +157,7 @@ class TestDeferredSweepRun:
         assert _read_baseline(tmp_path) == fresh
 
     # frob:ticket T-2929
+    # frob:ticket T-4335
     def test_stale_baseline_refuses_to_file_and_records_debt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -189,9 +209,13 @@ class TestDeferredSweepRun:
             ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline"),
             ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline"),
         ]
-        # Rebaselined regardless -- the next sweep should start from a
-        # fresh, current comparison point once the debt is drained.
-        assert _read_baseline(tmp_path) == fresh
+        # T-4335: the REFUSED (unfiled) new identity must NOT be rolled
+        # into the baseline -- only the previously-known identity is. A
+        # sweep that already refused to file this on attribution grounds
+        # must not also teach the rolling baseline that it is normal;
+        # the next sweep must still see it as new so it gets a real
+        # chance to be filed once the verification queue is current.
+        assert _read_baseline(tmp_path) == frozenset({("COV003", "a.py")})
 
     # frob:ticket T-2929
     def test_fresh_baseline_files_normally_no_new_noise(
@@ -235,6 +259,109 @@ class TestDeferredSweepRun:
         assert seen == [frozenset({("DOC011", "b.md")})]
         assert debts == []
         assert _read_baseline(tmp_path) == fresh
+
+    # frob:ticket T-4335
+    def test_stale_baseline_refusal_is_still_new_on_the_next_sweep(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4335's whole point, forced end-to-end: an identity a sweep
+        REFUSED to file (stale verification queue) must not be absorbed
+        into the baseline -- a SECOND sweep, run immediately after with
+        the SAME fresh set and the staleness now cleared, must still see
+        it as new and file it. This is the exact shape the bug report
+        measured from the real sweep logs (T-4324 -> T-4329): a refused
+        identity that a `frob check` --json read shows is still present
+        must eventually be tracked by a ticket, never silently absorbed."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refusal_is_still_new_on_the_next_sweep  # noqa: E501
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "old")
+        fresh = frozenset({("COV003", "a.py"), ("DOC006", "tickets/T-0002/ticket.md")})
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: fresh,
+        )
+        monkeypatch.setattr(
+            "frob.tickets._evidence.record_rapid_debt", lambda *a, **k: None
+        )
+        monkeypatch.setattr(_rapid_sweep, "_commit_rapid_debt", lambda *a, **k: None)
+
+        # First sweep: verification queue is stale -- refuse to file.
+        monkeypatch.setattr(
+            "frob.verify.rapid_soft_warning", lambda root: "stale queue"
+        )
+        filed_first: list[object] = []
+        monkeypatch.setattr(
+            _rapid_sweep,
+            "_file_regression_ticket",
+            lambda *a, **k: filed_first.append(a),
+        )
+        result_1 = run_deferred_post_land_sweep(tmp_path, "T-0001", "abc123")
+        assert result_1.is_ok
+        assert result_1.danger_ok is None
+        assert filed_first == []
+        assert _read_baseline(tmp_path) == frozenset({("COV003", "a.py")})
+
+        # Second sweep: same fresh set, queue is current now -- must file.
+        monkeypatch.setattr("frob.verify.rapid_soft_warning", lambda root: None)
+        filed_second: list[frozenset[tuple[str, str]]] = []
+
+        def _fake_file(root, final_id, commit, new_findings):  # noqa: ANN001, ANN202
+            filed_second.append(new_findings)
+            return "T-9999"
+
+        monkeypatch.setattr(_rapid_sweep, "_file_regression_ticket", _fake_file)
+        result_2 = run_deferred_post_land_sweep(tmp_path, "T-0002", "def456")
+        assert result_2.is_ok
+        assert result_2.danger_ok == "T-9999"
+        assert filed_second == [frozenset({("DOC006", "tickets/T-0002/ticket.md")})]
+        assert _read_baseline(tmp_path) == fresh
+
+    # frob:ticket T-4335
+    def test_inherited_debt_is_reported_as_debt_not_clean(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """A sweep that finds zero NEW identities but a nonzero fresh
+        count (pre-existing, already-baselined debt) must not log the
+        contradictory 'CLEAN (N error(s))' line -- it must say the debt
+        is tolerated, not clean."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_inherited_debt_is_reported_as_debt_not_clean  # noqa: E501
+        existing = frozenset({("COV003", "a.py")})
+        _write_baseline(tmp_path, existing, "old")
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: existing,
+        )
+        import logging
+
+        with caplog.at_level(
+            logging.INFO, logger="frob.app.ticket_runner._rapid_sweep"
+        ):
+            result = run_deferred_post_land_sweep(tmp_path, "T-0001", "abc123")
+        assert result.is_ok
+        assert result.danger_ok is None
+        messages = [r.message for r in caplog.records]
+        assert not any("CLEAN" in m and "1 error" in m for m in messages), messages
+        assert any("TOLERATED DEBT" in m for m in messages), messages
+
+    # frob:ticket T-4335
+    def test_genuinely_zero_errors_still_says_clean(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """The genuinely-zero case must still say CLEAN plainly."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_genuinely_zero_errors_still_says_clean  # noqa: E501
+        _write_baseline(tmp_path, frozenset(), "old")
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset(),
+        )
+        import logging
+
+        with caplog.at_level(
+            logging.INFO, logger="frob.app.ticket_runner._rapid_sweep"
+        ):
+            result = run_deferred_post_land_sweep(tmp_path, "T-0001", "abc123")
+        assert result.is_ok
+        messages = [r.message for r in caplog.records]
+        assert any("CLEAN (0 error(s))" in m for m in messages), messages
 
 
 # frob:ticket T-2938

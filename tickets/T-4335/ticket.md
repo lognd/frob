@@ -2,7 +2,7 @@
 id: T-4335
 title: Post-land sweep absorbs newly-introduced errors into its baseline and reports
   CLEAN
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
