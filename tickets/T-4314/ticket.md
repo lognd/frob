@@ -15,10 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'SCOPE002: T-4314''s scope symbols already carry frob:tests directives into
+    this file (88 pre-existing) plus this ticket''s own new forcing tests; add it
+    so evidence coverage resolves in-scope'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
