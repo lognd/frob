@@ -15,10 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/__init__.py
+- src/frob/testing/_collect.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_collect.py
+  reason: the hardcoded uv run pytest --collect-only argv this ticket must fix lives
+    in _collect.py, not __init__.py; __init__.py only re-exports the package's public
+    API and has no spawn logic of its own
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
