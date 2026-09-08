@@ -21,6 +21,8 @@ scope:
 - docs/guides/python-api.md
 - docs/index.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
+- docs/guides/install.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -72,6 +74,18 @@ scope_changes:
   reason: new system test's fs.read/fs.write/exec capabilities (building wheels, installing
     into a venv, running the probe script) need declaring against the testsuite node
     per SELFAUDIT001
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet needs bumping for the new testsuite via-list entries; a second
+    inbound reference to the new python-api.md guide clears REF002
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/guides/install.md
+  reason: SYS111 ratchet needs bumping for the new testsuite via-list entries; a second
+    inbound reference to the new python-api.md guide clears REF002
   actor: logan
   at: '2026-09-08'
 body_changes:
