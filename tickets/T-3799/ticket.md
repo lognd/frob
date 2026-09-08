@@ -1,7 +1,7 @@
 ---
 id: T-3799
 title: resolve PATH executables via shutil.which in gitio.run_argv for win32 PATHEXT
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'

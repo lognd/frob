@@ -24,7 +24,10 @@ under `frob.testing`.
 from __future__ import annotations
 
 import contextvars
+import os
+import shutil
 import subprocess
+import sys
 import threading
 from collections import Counter
 from collections.abc import Iterator, Mapping, Sequence
@@ -164,6 +167,38 @@ def excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
     return "\n".join(["...(truncated)...", *parts[-lines:]])
 
 
+# frob:ticket T-3799
+def _resolve_win32_executable(name: str) -> str:
+    """Resolve a BARE command name (`"gh"`, `"cargo"`, ...) to its full path
+    via `shutil.which()` on win32 ONLY -- a no-op everywhere else, and a
+    no-op for anything that already looks like a path (contains a
+    separator) or that `which` cannot find.
+
+    T-3799: `subprocess`/`CreateProcess` on Windows appends only the
+    `.exe` extension to an extensionless argv[0] -- it never consults the
+    rest of `PATHEXT` (`.bat`/`.cmd`/...), unlike a real shell. A PATH
+    entry shadowing `gh`/`git`/`cargo` with a `.bat`/`.cmd` script (a CI
+    shim, a dev wrapper, a test fixture) is therefore silently skipped in
+    favor of whatever `.exe` answers further down PATH -- with no error,
+    just the wrong binary running. `shutil.which()` performs the real
+    PATHEXT-aware search Windows itself does for a shell-launched command,
+    so resolving through it here restores that seam's behavior to what a
+    caller reasonably expects `argv[0]="gh"` to mean.
+
+    Never used to CHANGE what runs when resolution can't improve on the
+    status quo: an absolute path, a path containing a separator, or a name
+    `which` cannot find at all all pass through unchanged, so a genuinely
+    missing binary still fails exactly as it does today (`FileNotFoundError`
+    surfacing the same way through `run_argv`'s existing except clause)."""
+    if sys.platform != "win32":
+        return name
+    if os.sep in name or (os.altsep and os.altsep in name):
+        return name  # already a path, not a bare command name
+    resolved = shutil.which(name)
+    return resolved if resolved is not None else name
+
+
+# frob:ticket T-3799
 # frob:doc docs/modules/testing.md#public-api
 def run_argv(
     argv: Sequence[str],
@@ -196,9 +231,19 @@ def run_argv(
     if recorder is not None:
         recorder.record(full_argv)
     _log.debug("gitio: spawning %s (cwd=%s, timeout=%gs)", full_argv, cwd, timeout_s)
+    # T-3799: resolve a bare argv[0] through PATHEXT on win32 only -- see
+    # _resolve_win32_executable's docstring. `full_argv` (used for logging,
+    # the spawn recorder, and the returned ProcResult) stays exactly what
+    # the caller passed; only the argv actually handed to the subprocess
+    # is adjusted.
+    spawn_argv = (
+        (_resolve_win32_executable(full_argv[0]), *full_argv[1:])
+        if full_argv
+        else full_argv
+    )
     try:
         guarded = guarded_subprocess_run(
-            list(full_argv),
+            list(spawn_argv),
             cwd=str(cwd) if cwd is not None else None,
             capture_output=True,
             timeout=timeout_s,

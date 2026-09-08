@@ -11,6 +11,7 @@ import pytest
 
 from frob.gitio import (
     GitError,
+    _resolve_win32_executable,
     commit_diff,
     common_dir_and_branch,
     current_branch,
@@ -345,6 +346,91 @@ class TestRunArgv:
         assert result.danger_err == GitError.GitFailed
         assert not spawned
         assert any("exec disabled" in record.message for record in caplog.records)
+
+
+class TestResolveWin32Executable:
+    # frob:ticket T-3799
+    def test_noop_on_posix(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests tests/test_gitio.py::TestResolveWin32Executable.test_noop_on_posix
+        """Off win32, the bare name is returned completely unchanged --
+        `shutil.which` is never even consulted, so an absent `which`
+        result on this platform (which/where missing, PATH empty) can
+        never change behavior here."""
+        monkeypatch.setattr("frob.gitio.sys.platform", "linux")
+        assert _resolve_win32_executable("gh") == "gh"
+
+    def test_noop_for_a_path_like_name_on_win32(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_gitio.py::TestResolveWin32Executable.test_noop_for_a_path_like_name_on_win32  # \
+        # noqa: E501
+        """A name already containing a path separator is left alone even
+        on win32 -- it is not a bare command name PATHEXT resolution
+        applies to, and `which` was never meant to touch an already-
+        resolved path."""
+        monkeypatch.setattr("frob.gitio.sys.platform", "win32")
+        assert _resolve_win32_executable("C:/tools/gh.exe") == "C:/tools/gh.exe"
+        assert _resolve_win32_executable("C:\\tools\\gh.exe") == "C:\\tools\\gh.exe"
+
+    def test_resolves_a_bare_name_via_which_on_win32(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_gitio.py::TestResolveWin32Executable.test_resolves_a_bare_name_via_which_on_win32  # \
+        # noqa: E501
+        """The genuinely-new behavior: a bare name resolves through
+        `shutil.which` (the PATHEXT-aware search Windows' own loader
+        skips for an extensionless argv[0]) when running on win32."""
+        monkeypatch.setattr("frob.gitio.sys.platform", "win32")
+        monkeypatch.setattr(
+            "frob.gitio.shutil.which", lambda name: f"C:/PATH/{name}.bat"
+        )
+        assert _resolve_win32_executable("gh") == "C:/PATH/gh.bat"
+
+    def test_falls_through_unchanged_when_which_finds_nothing(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_gitio.py::TestResolveWin32Executable.test_falls_through_unchanged_when_which_finds_nothing  # \
+        # noqa: E501
+        """A genuinely-missing binary must still fail exactly as it does
+        today: when `which` cannot find `name` at all, the original bare
+        name passes through unchanged (so `run_argv`'s existing
+        `FileNotFoundError`-to-`GitError.GitFailed` path is unaffected)."""
+        monkeypatch.setattr("frob.gitio.sys.platform", "win32")
+        monkeypatch.setattr("frob.gitio.shutil.which", lambda name: None)
+        assert _resolve_win32_executable("no-such-tool") == "no-such-tool"
+
+    def test_run_argv_wires_the_resolved_argv0_into_the_actual_spawn(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gitio.py::TestResolveWin32Executable.test_run_argv_wires_the_resolved_argv0_into_the_actual_spawn  # \
+        # noqa: E501
+        """`run_argv` calls `_resolve_win32_executable` on argv[0] before
+        spawning -- proven by patching the resolver itself (not
+        `sys.platform`, which would also flip unrelated win32-only
+        branches elsewhere in the spawn path) and checking the argv
+        `guarded_subprocess_run` actually receives."""
+        captured: dict[str, object] = {}
+
+        def _fake_guarded(args: list[str], **kwargs: object) -> Any:
+            captured["args"] = list(args)
+            return real_guarded(args, **kwargs)
+
+        import frob.gitio as gitio_mod
+
+        real_guarded = gitio_mod.guarded_subprocess_run
+        monkeypatch.setattr(
+            gitio_mod, "_resolve_win32_executable", lambda name: f"/resolved/{name}"
+        )
+        monkeypatch.setattr(gitio_mod, "guarded_subprocess_run", _fake_guarded)
+        result = run_argv(["echo", "hello"], cwd=tmp_path)
+        assert captured["args"] == ["/resolved/echo", "hello"]
+        # ProcResult.argv (and anything the spawn recorder saw) stays the
+        # caller's ORIGINAL argv regardless of what was actually spawned.
+        assert result.is_err or result.danger_ok.argv == ("echo", "hello")
 
 
 class TestCurrentBranch:

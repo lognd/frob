@@ -396,6 +396,16 @@ def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
     # reverse. `env`, when given, replaces the spawned process's
     # environment entirely (T-2005) -- `None` means inherit the caller's
     # environment unchanged, matching subprocess.run's own semantics.
+    # T-3799: on win32 only, a BARE argv[0] (no path separator) is
+    # resolved through shutil.which() before spawning -- Windows'
+    # CreateProcess appends only .exe to an extensionless name, never the
+    # rest of PATHEXT, so a PATH entry shadowing e.g. "gh" with a .bat/.cmd
+    # script is otherwise silently skipped for a same-named .exe further
+    # down PATH. A no-op on POSIX, for an already-pathlike argv[0], and
+    # when which() finds nothing (falls through unchanged, so a genuinely
+    # missing binary still fails the same way). The logged/recorded/
+    # returned argv (ProcResult.argv, the spawn recorder) is always the
+    # CALLER's original argv, never the resolved one.
 
 @contextmanager
 def spawn_recorder() -> Iterator[SpawnRecorder]

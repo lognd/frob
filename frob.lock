@@ -2969,6 +2969,24 @@
       "old_digest": "2a8a84a3f7ae2cd4d6b2c2351afc820b008ef20ce8f3d883c1607f35e122dad9",
       "reason": "T-4163 (landed a51287e63) extended the RULE_UNREGISTERED error message with guidance pointing at the new docs/modules/gates.md#registering-a-new-gate-t-4163 section, moving the body digest -- verified that anchor exists and accurately lists the additional registration points (_ALL_GATES, _CANONICAL_GATE_ORDER, _build_process_jobs, _CACHEABLE_PROCESS_GATES, _STAGE_GROUPS); no change to the function's actual scan/comparison behavior, message-text only",
       "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-08",
+      "facet": "body",
+      "new_digest": "a671fced223ea61adb5b7bbfcb99ef9fcdd2fbe9a0e19acf4da349ddcd4ce45c",
+      "old_digest": "1c4a92f260f78ebe0824248e0751f56f51cb98759b6647a369b61a317c085985",
+      "reason": "T-3799: re-verified docs/modules/testing.md's run_argv doc still describes the function correctly after adding the win32 PATHEXT resolution step; the doc was updated in the same change to cover the new behavior",
+      "ref": "src/frob/gitio.py::run_argv"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-08",
+      "facet": "sig",
+      "new_digest": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
+      "old_digest": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
+      "reason": "T-3799: re-verified docs/modules/testing.md's run_argv doc still describes the function correctly after adding the win32 PATHEXT resolution step; the doc was updated in the same change to cover the new behavior",
+      "ref": "src/frob/gitio.py::run_argv"
     }
   ],
   "entries": [
@@ -3573,7 +3591,7 @@
       "ref": "src/frob/gitio.py::repo_root"
     },
     {
-      "digest": "1c4a92f260f78ebe0824248e0751f56f51cb98759b6647a369b61a317c085985",
+      "digest": "a671fced223ea61adb5b7bbfcb99ef9fcdd2fbe9a0e19acf4da349ddcd4ce45c",
       "facet": "body",
       "ref": "src/frob/gitio.py::run_argv"
     },
