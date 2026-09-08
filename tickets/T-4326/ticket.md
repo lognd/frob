@@ -15,10 +15,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_gitio.py
+- src/frob/gitio.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gitio.py
+  reason: 'T-4326: the win32 test failure traces to a defect in _resolve_win32_executable
+    itself (hardcoded os.sep/os.altsep instead of Windows'' two literal separators),
+    not merely a missing test guard -- fixing it requires touching the production
+    helper'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/gitio.py
+  reason: 'T-4326: the win32 test failure traces to a defect in _resolve_win32_executable
+    itself (hardcoded os.sep/os.altsep instead of Windows'' two literal separators),
+    not merely a missing test guard -- fixing it requires touching the production
+    helper'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
