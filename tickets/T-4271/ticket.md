@@ -2,7 +2,7 @@
 id: T-4271
 title: T-3799's whole-file scope claim on frob.lock blocks concurrent frob ack from
   other tickets
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -16,10 +16,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-3799/ticket.md
+- src/frob/tickets/_land.py
+- tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: the ticket's stated fix (frob.lock's whole-file scope claim blocking concurrent
+    frob ack) requires an entry-aware disjoint-edit narrowing in _check_cross_ticket_leakage's
+    byte-level _sibling_branch_touched_path/_drop_hits_other_branch_never_touched
+    machinery in _land.py; tickets/T-3799/ticket.md alone cannot hold this fix since
+    T-3799 has live real (legitimate) uncommitted edits to frob.lock in its own worktree
+    right now, so removing frob.lock from T-3799's own declared scope would break
+    T-3799's own future SCOPE001 land check instead of fixing the real gap
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: the ticket's stated fix (frob.lock's whole-file scope claim blocking concurrent
+    frob ack) requires an entry-aware disjoint-edit narrowing in _check_cross_ticket_leakage's
+    byte-level _sibling_branch_touched_path/_drop_hits_other_branch_never_touched
+    machinery in _land.py; tickets/T-3799/ticket.md alone cannot hold this fix since
+    T-3799 has live real (legitimate) uncommitted edits to frob.lock in its own worktree
+    right now, so removing frob.lock from T-3799's own declared scope would break
+    T-3799's own future SCOPE001 land check instead of fixing the real gap
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
