@@ -17,7 +17,7 @@ scope:
 - docs/modules/verify-rapid-debt-visibility.md
 - invariants/INV-052.md
 - docs/index.md
-- src/frob/app/verify_runner.py
+- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,6 +71,20 @@ scope_changes:
   reason: INV002 requires a real code-side frob:invariant anchor at an enforcing site
     for INV-052; verify_runner.py is already the doc's own pre-existing describes
     target
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/app/verify_runner.py
+  reason: verify_runner.py sits exactly at the 800-line LARGE001 threshold, so any
+    added anchor line trips a new error there; _evidence.py already carries a blanket
+    frob:waive LARGE001, so the anchor goes at record_rapid_debt instead
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: verify_runner.py sits exactly at the 800-line LARGE001 threshold, so any
+    added anchor line trips a new error there; _evidence.py already carries a blanket
+    frob:waive LARGE001, so the anchor goes at record_rapid_debt instead
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
