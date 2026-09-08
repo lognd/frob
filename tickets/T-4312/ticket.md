@@ -1,7 +1,7 @@
 ---
 id: T-4312
 title: Warn at ticket-close time when closing strands a live WIRE001 follow_up waiver
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
