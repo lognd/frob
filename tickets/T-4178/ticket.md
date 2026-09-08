@@ -2,7 +2,7 @@
 id: T-4178
 title: the tree walk honours a hardcoded skip list but never consults the repository
   ignore file, so content-reading gates can reach the secrets file
-state: done
+state: queued
 kind: security
 origin: human
 created: '2026-09-07'
@@ -131,3 +131,6 @@ ACCEPTANCE
 - No content-reading gate can reach the secrets file by any path, verified rather
   than assumed.
 - All three fixtures committed.
+
+## Reopen log
+- 2026-09-08: falsely closed: state=done but NO code reached main -- _load_repo_ignore_globs is absent from src/frob/excludes.py on main and all seven cited evidence tests exist nowhere in tests/, which is why the seven COV003 findings did not clear when the ticket was marked landed. The work is intact on branch t-4178 (measured: 4 occurrences of the function in src/frob/excludes.py there); its worktree directory is gone but the branch survives, so this needs re-landing from that branch rather than reimplementing
