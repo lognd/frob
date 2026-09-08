@@ -17,6 +17,7 @@ scope:
 - docs/modules/verify-rapid-debt-visibility.md
 - invariants/INV-052.md
 - docs/index.md
+- src/frob/app/verify_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -63,6 +64,13 @@ scope_changes:
   reason: 'INV002''s code-anchor requirement is satisfied by a frob:invariant marker
     in the doc itself (dsl.py: verb table applies uniformly to markdown and source);
     no code file needs touching'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/app/verify_runner.py
+  reason: INV002 requires a real code-side frob:invariant anchor at an enforcing site
+    for INV-052; verify_runner.py is already the doc's own pre-existing describes
+    target
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
