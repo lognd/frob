@@ -2,7 +2,7 @@
 id: T-4260
 title: TDD001 reports a self-referential tests edge as an unfixable ordering violation
   and a backwards edge as a reorder instruction
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tdd_order.py
+- tests/gates/test_tdd_order.py
+- changelog.d/T-4260.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates/test_tdd_order.py
+  reason: 'T-4260: adds regression tests for the new role-validation messages, plus
+    the standard per-ticket changelog fragment'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: changelog.d/T-4260.md
+  reason: 'T-4260: adds regression tests for the new role-validation messages, plus
+    the standard per-ticket changelog fragment'
+  actor: logan
+  at: '2026-09-07'
 designated_repro_test: null
 acceptance:
 - text: given a tests edge whose source and target are the same symbol, when TDD001
