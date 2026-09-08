@@ -130,10 +130,38 @@ _WAIVER_TICKET_PATTERN = (
 # quoting the very pattern that misfired. Scanning prose for declarations
 # refused two real lands (T-1582, twice) and would keep doing so however
 # precise the regex became.
+#
+# frob:ticket T-4325
+# T-4325 extends the SAME exclusion, for the SAME reason, to the generated
+# changelog fragments: CHANGELOG.md and changelog.d/*.md. Both are, like the
+# ledger above, narrative GENERATED FROM Done-report prose and never
+# writable by any worktree once landed (T-0731/T-2445) -- the discriminator
+# is that pairing (generated-from-prose AND unwritable), not "land-owned"
+# by itself, and not "under changelog.d/" by itself either. T-4320 narrowed
+# the directive-line-shape filter below specifically so a path exclusion
+# would not be needed for THIS class of false hit, and that narrowing is
+# still correct and still in force -- but the fix's own changelog fragment
+# then quoted the complete, well-formed directive its regression test
+# plants (to describe what the fix does), which genuinely IS shaped like a
+# real directive by the narrowed filter's own rule, permanently deadlocking
+# the ticket that introduced it (CHANGELOG.md and changelog.d/T-4320.md can
+# never be edited by a worktree to fix this after the fact). A prose file
+# that is generated from Done reports will keep re-manufacturing this exact
+# shape indefinitely, so it cannot safely be a source of blocking citations
+# regardless of what its line looks like -- the same conclusion already
+# reached for tickets.md/tickets-archive.md/tickets/** above, extended to
+# the other generated-narrative file this repo has. Scoped to the
+# `*.md` fragment files specifically (not `changelog.d/**`): an ORDINARY
+# source file that happens to sit under `changelog.d/` -- not itself
+# generated narrative, and editable like any other file -- must still be
+# scanned and still block on a genuine directive (see
+# `test_real_directive_in_changelog_dir_path_still_flagged`).
 _WAIVER_PATHSPEC = (
     ":(exclude)tickets.md",
     ":(exclude)tickets-archive.md",
     ":(exclude)tickets/**",
+    ":(exclude)CHANGELOG.md",
+    ":(exclude)changelog.d/*.md",
 )
 
 
@@ -361,8 +389,14 @@ def _content_key(line: str) -> str:
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_citation_outside_own_scope_still_flagged  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
+# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_changelog_fragment_quoting_whole_directive_not_a_citation  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as _json_guard.py's identical FMT001 \
+# waiver for this exact directive class"
 # frob:ticket T-1559
 # frob:ticket T-4320
+# frob:ticket T-4325
 def live_tracker_citations(
     root: Path, ticket_id: str, *, base_ref: str = "main"
 ) -> tuple[str, ...]:

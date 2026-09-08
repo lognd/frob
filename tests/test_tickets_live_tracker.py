@@ -72,6 +72,7 @@ def _write_ticket(root: Path, ticket: Ticket, slug: str = "sample") -> Path:
 
 
 # frob:ticket T-4320
+# frob:ticket T-4325
 class TestLiveTrackerCitations:
     """Unit tests over the grep-shaped scan itself, against a real (tiny)
     git repo -- `git grep` needs a real work tree, not a bare tmp dir."""
@@ -200,6 +201,40 @@ class TestLiveTrackerCitations:
         citations = live_tracker_citations(tmp_path, "T-4303")
         assert len(citations) == 1
         assert "notes.py" in citations[0]
+
+    # frob:ticket T-4325
+    def test_changelog_fragment_quoting_whole_directive_not_a_citation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4325: the T-4320 fix recreated the deadlock it fixed, one
+        level up. T-4320's OWN generated changelog fragment (CHANGELOG.md
+        and changelog.d/T-4320.md) describes its fix by quoting a
+        complete, well-formed `# frob:waive ... follow_up="T-4303"`
+        directive -- the exact text its own regression test plants -- so
+        the narrowed directive-line-shape filter (correctly, by its own
+        rule) matches it. Both sites are land-owned and generated from
+        Done-report prose, so no worktree can ever re-point either one:
+        a permanent deadlock, not ordinary friction. Fixed by excluding
+        the generated changelog fragments themselves (CHANGELOG.md,
+        changelog.d/*.md) from the waiver scan, the same pathspec
+        exclusion already applied to the ticket ledger for the identical
+        generated-from-prose-and-unwritable reason."""
+        _init_repo(tmp_path)
+        changelog_dir = tmp_path / "changelog.d"
+        changelog_dir.mkdir()
+        directive = '# frob:waive WIRE001 reason="pending" follow_up="T-4303"'
+        (changelog_dir / "T-4320.md").write_text(
+            "## T-4320\n\nNarrowed the citation scan so a match only counts "
+            "when the matched line is itself directive-shaped, fixing the "
+            f"regression its own test plants:\n\n    {directive}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "CHANGELOG.md").write_text(
+            f"## T-4320\n\n    {directive}\n",
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "T-4320 changelog fragment quoting its own directive")
+        assert live_tracker_citations(tmp_path, "T-4303") == ()
 
     def test_finds_registry_tracked_by_disposition(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_tracked_by_disposition  # noqa: E501

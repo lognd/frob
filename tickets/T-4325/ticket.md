@@ -1,7 +1,7 @@
 ---
 id: T-4325
 title: Citation scan still deadlocks on a changelog entry that quotes a whole directive
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -56,6 +56,9 @@ scope_changes:
     frob:tests edges from live_tracker_citations
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_changelog_fragment_quoting_whole_directive_not_a_citation
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_real_directive_in_changelog_dir_path_still_flagged
 designated_repro_test: null
 threat: null
 component: null
