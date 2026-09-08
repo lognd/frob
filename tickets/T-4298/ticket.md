@@ -111,6 +111,14 @@ scope_changes:
     --sync-gate-rules writes it
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: waive SCOPE002's whole-file closure noise on the two large shared gate-registry
+    modules this ticket minimally touches, matching T-4255's precedent
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2794
+  new_length: 4057
 designated_repro_test: null
 acceptance:
 - text: given a land whose changed files include one the formatter would rewrite,
@@ -174,3 +182,21 @@ CLEAR THE CURRENT DRIFT AS PART OF THIS, and commit that as its own change so th
 mechanical rewrite stays separable from the mechanism change. Expect the exact
 file count to differ by the time you run it; report what you actually found rather
 than the six named here.
+
+
+## SCOPE002 waiver (T-4298)
+
+# frob:waive SCOPE002 reason="src/frob/gates/__init__.py and src/frob/gates/_waive.py \
+are large shared gate-registry modules whose existing frob:doc/frob:tests/private-helper \
+closure spans dozens of unrelated files across the whole repo (docs/modules/*.md, \
+tests/gates_suite/*, tests/unit/test_check.py, and more). T-4298 touches only: one new \
+import, three small additions to existing dispatch/order lists (_ALL_GATES, \
+_CANONICAL_GATE_ORDER, the run_gates dispatch dict), one __all__ entry, and one new \
+frozenset literal in _KNOWN_GATE_RULES -- the exact same 'add to the frozenset'/'add a \
+dispatch entry' shape T-3456/T-3466's own LANDPARITY001/002 and CROSSTICKET001 land \
+comments already establish as the minimal touch these files require to wire a new gate \
+in. Pulling every pre-existing closure edge already living in these two files into scope \
+would be scope creep out of all proportion to that touch, and directly contradicts the \
+attribution/proportionality point T-4298 itself makes about LANDFMT001's own touched-set \
+design. Same doc-anchor/closure-tension precedent already documented by T-1010/T-1937/ \
+T-3903/T-1895/T-3847/T-4255's own SCOPE002 waivers for this exact large-shared-file shape."
