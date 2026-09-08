@@ -15,10 +15,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
+- src/frob/excludes.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/excludes.py
+  reason: 'T-4306 root cause confirmed via positive control: T-4178''s _load_repo_ignore_globs
+    merges .gitignore negation lines into walk_pruned''s exclude set, but _should_prune_dir''s
+    synthetic /. probe for directory-level exclusion cannot see negations for children
+    below the probed dir -- .claude/* + !.claude/hooks/** wrongly prunes .claude wholesale
+    before descent, so claude_hooks''s four capabilities are never observed (scanner
+    never visits the files, confirmed directly: walk_pruned(root) yields 0 files under
+    .claude/hooks even though the files are tracked, non-ignored, and dispatch-telemetry.py
+    contains a confirmed subprocess call)'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
