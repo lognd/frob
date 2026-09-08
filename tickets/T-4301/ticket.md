@@ -109,6 +109,14 @@ scope_changes:
     new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'T-4301: waive SCOPE002''s doc/test closure fan-out into the whole release+gates
+    subsystem instead of widening scope repo-wide'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 466
+  new_length: 1547
 designated_repro_test: null
 threat: null
 component: null
@@ -117,3 +125,19 @@ anchor_reason: null
 land_commit: null
 ---
 Follow-up from T-4184: frob.release.dev_version_bump_enabled/dev_version_major_ack are public read-only introspection functions with no in-repo CLI caller yet (WIRE001, waived on both pending this ticket). Wire them into a real consumer -- e.g. a 'frob release status' subcommand printing whether the per-land dev-version bump is on and what major series is acknowledged -- so the public API this ticket added has an actual production caller, not just its own tests.
+
+
+## SCOPE002 waiver (T-4301)
+
+# frob:waive SCOPE002 reason="docs/modules/release.md and tests/test_release.py are \
+large shared release-module files whose existing frob:doc/frob:tests closure fans out \
+into the WHOLE release subsystem (src/frob/release/__init__.py, _fragments.py, \
+_publish.py) plus src/frob/gates/__init__.py's REL001/REL002 gates (and, transitively, \
+docs/modules/gates.md/perf.md via THAT file's own closure) -- pulling all of that into \
+a single CLI-wiring ticket's scope is out of proportion. T-4301 only adds a new `frob \
+release status` verb (add_release_status_parser/run_release_status_command) in \
+src/frob/release/_cli.py plus its own two test classes in tests/test_release.py; it does \
+not touch the pre-existing publish/release/fragments/gates surface these closure edges \
+point at. Same posture T-1010's own SCOPE002/COV001 waiver took for docs/modules/gates.md's \
+identical fan-out (see tickets/archive/T-1881/evidence/stage1-frob-check.json) and T-4298's \
+own SCOPE002 waiver for src/frob/gates/__init__.py's shared-registry closure."
