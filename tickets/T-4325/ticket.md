@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_live_tracker.py
+- tests/test_tickets_live_tracker.py
 evidence_scope:
 - docs/modules/tickets-landing.md
 - tests/test_tickets_live_tracker.py
@@ -47,6 +48,12 @@ scope_changes:
   reason: these are pre-existing frob:doc/frob:tests closure targets for live_tracker_citations;
     evidence-only avoids pulling in the whole shared tickets-landing.md doc's unrelated
     closure (same tension T-1010's COV001 waivers document)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: regression test added for T-4325's fix, plus this file already carries pre-existing
+    frob:tests edges from live_tracker_citations
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
