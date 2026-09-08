@@ -47,11 +47,24 @@ All three jobs write into `_DaemonStatus`, a single in-process cache keyed
 by repo root (mirroring `frob.serve._warm._STATES`'s shape) that
 `frob_daemon_status` (`_tools.py`) reads back verbatim -- no disk polling
 required to answer the MCP query, only to refresh it.
+
+IDLE SELF-TERMINATION (T-4258, owner directive): a 19-hour-old daemon
+that had polled faithfully but found nothing to do for most of a day was
+only ever stopped by a person reading open file descriptors by hand.
+`_start_daemon`'s loop now measures idleness by USEFUL WORK actually
+performed (`_record_useful_work`/`_idle_seconds`) -- a post-land re-verify
+that actually ran, a rebase-bot pass that actually simulated a live
+worktree's merge, or a coalescing-verify tick that actually ran a pass --
+never by whether the loop merely executed. More than `IDLE_TERMINATION_S`
+(one hour) since the last such event and the daemon terminates itself
+(SIGTERM to its own pid by default, injectable for tests).
 """
 
 from __future__ import annotations
 
 import threading
+import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -79,6 +92,94 @@ _ttl_skip_logged: set[tuple[Path, str]] = set()
 
 # frob:doc docs/modules/serve.md#daemon-jobs
 DEFAULT_POLL_INTERVAL_S = 20.0
+
+# frob:ticket T-4258
+# Owner directive (added after a real 19-hour-old daemon had to be killed
+# by hand): more than one hour with nothing to do means death. This is a
+# SEPARATE obligation from releasing the graph-cache lock between polls
+# (T-4258's other finding) -- a daemon that holds no lock at all could
+# still, in principle, outlive its usefulness for most of a day with
+# nobody noticing. `_run_daemon_cycle` records a fresh timestamp here only
+# when a cycle did USEFUL WORK (see `_record_useful_work` and its call
+# sites in `_poll_post_land`/`_poll_rebase_bot`/`_poll_verify_worker`
+# below) -- never merely because the poll loop executed. The instance
+# measured here had been polling faithfully, finding nothing to do, every
+# few minutes for nineteen hours straight; a heartbeat/loop-ran signal
+# would have called that healthy the entire time.
+# frob:waive COV001 reason="covered by this module's own new docstring section \
+# (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
+# docs/modules/serve.md file for one constant -- same doc-anchor scope-closure tension \
+# this file's own COV007 waivers document (T-1010/T-1937/T-3903)"
+IDLE_TERMINATION_S = 3600.0
+
+#: Last time ANY daemon job for a given root actually performed useful
+#: work (`time.monotonic()`, comparable only within this process's own
+#: lifetime -- never persisted, never compared across a restart), keyed
+#: the same way `_STATUS`/`_VERIFY_WORKERS` are (`str(root.resolve())`).
+#: Absent key means "no useful work recorded yet for this root in this
+#: process" -- `_start_daemon` seeds it to the daemon's own start time so
+#: a freshly-started daemon with a genuinely idle repo gets the full
+#: `IDLE_TERMINATION_S` grace period before its first self-check, rather
+#: than reading as already-idle-since-the-epoch on its very first cycle.
+_LAST_USEFUL_WORK_MONOTONIC: dict[str, float] = {}
+#: T-4258: guards `_LAST_USEFUL_WORK_MONOTONIC` -- the module's other
+#: `_LOCK` is defined later in this file, so this gets its own, matching
+#: `_VERIFY_WORKER_LAST_HEAD_LOCK`'s precedent of one lock per
+#: independently-updated dict.
+_LAST_USEFUL_WORK_LOCK = threading.Lock()
+
+
+# frob:doc docs/modules/serve.md#daemon-jobs
+# frob:tests \
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_t\
+# he_timestamp kind="unit"
+# frob:waive AFFECT001 reason="new symbol, covered by this module's own new docstring \
+# section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
+# docs/modules/serve.md file -- same doc-anchor scope-closure tension this file's own \
+# COV007 waivers document"
+def _record_useful_work(
+    root: Path, *, now_fn: Callable[[], float] = time.monotonic
+) -> None:
+    """Mark that `root` had a daemon job perform real work THIS cycle
+    (T-4258): a post-land re-verify that actually ran (main moved), a
+    rebase-bot pass that actually simulated at least one live worktree's
+    merge, or a coalescing-verify tick that actually ran a pass -- never
+    merely "the poll loop executed", which is exactly the heartbeat-shaped
+    signal the owner's directive says must NOT count as alive."""
+    key = str(root.resolve())
+    with _LAST_USEFUL_WORK_LOCK:
+        _LAST_USEFUL_WORK_MONOTONIC[key] = now_fn()
+
+
+# frob:doc docs/modules/serve.md#daemon-jobs
+# frob:tests \
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_t\
+# erminal kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_is_termin\
+# al kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_is_measu\
+# red_from_start_time kind="unit"
+# frob:waive AFFECT001 reason="new symbol, covered by this module's own new docstring \
+# section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
+# docs/modules/serve.md file -- same doc-anchor scope-closure tension this file's own \
+# COV007 waivers document"
+def _idle_seconds(
+    root: Path,
+    *,
+    started_at_monotonic: float,
+    now_fn: Callable[[], float] = time.monotonic,
+) -> float:
+    """Seconds since `root` last had a daemon job do useful work (T-4258),
+    measured against `started_at_monotonic` (the daemon's own start time)
+    when no work has ever been recorded yet -- a daemon over a freshly
+    quiet repo gets the full grace period from when IT started, not from
+    an absent timestamp read as "idle since forever"."""
+    key = str(root.resolve())
+    with _LAST_USEFUL_WORK_LOCK:
+        last = _LAST_USEFUL_WORK_MONOTONIC.get(key, started_at_monotonic)
+    return now_fn() - last
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
@@ -191,6 +292,10 @@ def _main_head(root: Path) -> str | None:
 # every real caller, including tests, already accessed it module-qualified) but \
 # remains the thing the doc section describes, and the doc text/directives were \
 # updated to the new name"
+# frob:waive AFFECT001 reason="T-4258 added a single _record_useful_work() call when a \
+# real re-verify runs (head moved); the doc's own description of this job's \
+# cache-hit/re-verify behavior is unchanged -- same doc-anchor scope-closure tension \
+# this file's own COV007 waivers document, applied to AFFECT001 instead"
 def _poll_post_land(root: Path, *, run_tests: bool = True) -> _PostLandVerdict | None:
     """One post-land re-verify cycle (T-0733, job 1): if `main`'s HEAD has
     not moved since the last recorded `_PostLandVerdict` for `root`, return
@@ -212,6 +317,7 @@ def _poll_post_land(root: Path, *, run_tests: bool = True) -> _PostLandVerdict |
         return status.post_land
 
     _log.info("serve: daemon: post-land: main moved to %s, re-verifying", head[:12])
+    _record_useful_work(root)
     _warm._invalidate(root)
     delta_result = frob_check_delta(root, None, "main", verify=False)
     if delta_result.is_err:
@@ -304,6 +410,10 @@ def _get_verify_worker(root: Path) -> CoalescingWorker:
 # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks \
 # kind="unit"
 # frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-4258 added a single _record_useful_work() call when \
+# tick() actually runs; the doc's own description of this job's \
+# debounce/floor/backpressure behavior is unchanged -- same doc-anchor scope-closure \
+# tension this file's own COV007 waivers document, applied to AFFECT001 instead"
 def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None:
     """One coalescing-verify-worker cycle (T-1688, job 3): `notify()` the
     cached `CoalescingWorker` for `root` if `main`'s HEAD moved since the
@@ -342,6 +452,7 @@ def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None
             )
     result = worker.tick()
     if result is not None:
+        _record_useful_work(root)
         if result.is_ok:
             _log.info(
                 "serve: daemon: verify-worker: tick ran, outcome=%s",
@@ -479,6 +590,10 @@ def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | Non
 # every real caller, including tests, already accessed it module-qualified) but \
 # remains the thing the doc section describes, and the doc text/directives were \
 # updated to the new name"
+# frob:waive AFFECT001 reason="T-4258 added a single _record_useful_work() call inside \
+# the existing loop body; the doc's own description of this job's purpose (simulate \
+# merges, publish conflict warnings) is unchanged -- same doc-anchor scope-closure \
+# tension this file's own COV007 waivers document, applied to AFFECT001 instead"
 def _poll_rebase_bot(root: Path) -> tuple[_RebaseWarning, ...]:
     """One rebase-bot cycle (T-0733, job 2): for every in-flight worktree
     branch (`_worktree_branches`), simulate merging current `main` into it
@@ -496,6 +611,12 @@ def _poll_rebase_bot(root: Path) -> tuple[_RebaseWarning, ...]:
     for ticket_id, worktree, branch in _worktree_branches(root):
         if not branch:
             continue
+        # T-4258: actually simulating a live worktree's merge is real work
+        # (a `git merge-base` + `git merge-tree` subprocess pair), distinct
+        # from a cycle that found zero live leases and did nothing -- see
+        # `_record_useful_work`'s own docstring on why "the loop ran" must
+        # never count on its own.
+        _record_useful_work(root)
         conflicts = _merge_would_conflict(root, branch, head)
         if conflicts is True:
             warning = _RebaseWarning(
@@ -555,18 +676,59 @@ def _run_daemon_cycle(root: Path, *, run_tests: bool = True) -> _DaemonStatus:
     return daemon_status(root)
 
 
+# frob:waive AFFECT001 reason="new private helper, covered by this module's own new \
+# docstring section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the \
+# shared docs/modules/serve.md file -- same doc-anchor scope-closure tension this \
+# file's own COV007 waivers document"
+def _default_terminate() -> None:
+    """T-4258: the real self-termination action -- SIGTERM to this process's
+    own PID, the same signal a person or supervisor would send to stop it
+    cleanly, rather than `os._exit` (skips atexit/finally cleanup) or a bare
+    `sys.exit()` (only ends the calling thread, not this background daemon
+    thread's owning process). Deferred imports (`os`/`signal`) so importing
+    this module costs nothing extra for the overwhelming majority of callers
+    that never reach this line (every test that injects its own `terminate_fn`
+    among them)."""
+    import os
+    import signal
+
+    _log.critical(
+        "serve: daemon: sending SIGTERM to this process's own pid %d "
+        "(T-4258: idle self-termination)",
+        os.getpid(),
+    )
+    os.kill(os.getpid(), signal.SIGTERM)
+
+
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_st\
+# ops kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates_after_t\
+# he_idle_ceiling kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_terminate_whil\
+# e_work_keeps_happening kind="unit"
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
 # documents this daemon internal; demoted to private in this ticket (frob-exports: \
 # every real caller, including tests, already accessed it module-qualified) but \
 # remains the thing the doc section describes, and the doc text/directives were \
 # updated to the new name"
+# frob:waive AFFECT001 reason="docs/modules/serve.md#daemon-jobs already describes \
+# this loop's overall shape (T-0733); T-4258's idle-self-termination addition is \
+# covered by this module's own new docstring section (see the top of this file, 'IDLE \
+# SELF-TERMINATION') rather than by re-touching the shared docs/modules/serve.md file \
+# for one function's internal behavior change -- same doc-anchor scope-closure tension \
+# this file's own COV007 waivers document (T-1010/T-1937/T-3903)"
 def _start_daemon(
     root: Path,
     *,
     interval_s: float = DEFAULT_POLL_INTERVAL_S,
     run_tests: bool = True,
+    idle_termination_s: float = IDLE_TERMINATION_S,
+    now_fn: Callable[[], float] = time.monotonic,
+    terminate_fn: Callable[[], None] = _default_terminate,
 ) -> threading.Event:
     """Start `_run_daemon_cycle` on a repeating background daemon thread
     (T-0733), once every `interval_s` seconds, so a fresh post-land
@@ -575,11 +737,22 @@ def _start_daemon(
     acceptance bar at the `DEFAULT_POLL_INTERVAL_S` default. Returns a
     `threading.Event`; setting it (`.set()`) stops the loop after its
     current sleep -- `run_stdio` sets it on shutdown, tests use it to
-    tear down cleanly without waiting a full interval."""
+    tear down cleanly without waiting a full interval.
+
+    T-4258 (owner directive): after every cycle, if `root` has gone more
+    than `idle_termination_s` (default `IDLE_TERMINATION_S`, one hour)
+    since a daemon job last did USEFUL WORK for it (`_idle_seconds` --
+    never merely "the loop ran"), calls `terminate_fn()` (real production
+    default: SIGTERM to this process) and stops the loop itself. `now_fn`/
+    `terminate_fn` are injectable so a test can prove the idle-ceiling
+    decision deterministically, without a real hour of sleep and without
+    actually killing the test process."""
     stop = threading.Event()
+    started_at = now_fn()
 
     def _loop() -> None:
-        """The background thread body: cycle, sleep, repeat until `stop` is set."""
+        """The background thread body: cycle, check idleness, sleep, repeat
+        until `stop` is set or the idle ceiling fires termination."""
         _log.info(
             "serve: daemon: background loop started for %s, interval=%gs",
             root,
@@ -590,6 +763,20 @@ def _start_daemon(
                 _run_daemon_cycle(root, run_tests=run_tests)
             except Exception:  # noqa: BLE001
                 _log.exception("serve: daemon: cycle raised, continuing loop")
+            idle_for = _idle_seconds(
+                root, started_at_monotonic=started_at, now_fn=now_fn
+            )
+            if idle_for > idle_termination_s:
+                _log.critical(
+                    "serve: daemon: %s idle for %.0fs (> %.0fs ceiling) with no "
+                    "useful work done -- self-terminating (T-4258 owner directive)",
+                    root,
+                    idle_for,
+                    idle_termination_s,
+                )
+                stop.set()
+                terminate_fn()
+                break
             stop.wait(interval_s)
         _log.info("serve: daemon: background loop stopped for %s", root)
 
@@ -600,13 +787,16 @@ def _start_daemon(
 
 __all__ = [
     "DEFAULT_POLL_INTERVAL_S",
+    "IDLE_TERMINATION_S",
     "_DaemonStatus",
     "_PostLandVerdict",
     "_RebaseWarning",
     "daemon_status",
+    "_idle_seconds",
     "_poll_post_land",
     "_poll_rebase_bot",
     "_poll_verify_worker",
+    "_record_useful_work",
     "_run_daemon_cycle",
     "_start_daemon",
 ]

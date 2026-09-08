@@ -2,7 +2,7 @@
 id: T-4258
 title: the serve daemon holds an exclusive write lock on the graph cache for its whole
   lifetime, starving every other process's graph build into a silent unmeasured pass
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -19,8 +19,8 @@ scope:
 - src/frob/serve/_warm.py
 - tests/test_serve_daemon.py
 - tests/test_serve.py
-- tickets/T-draft-d015a2a1/ticket.md
-- tickets/T-draft-f40f5848/ticket.md
+- tickets/T-4281/ticket.md
+- tickets/T-4282/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,13 +76,13 @@ scope_changes:
   actor: logan
   at: '2026-09-08'
 - op: add
-  glob: tickets/T-draft-d015a2a1/ticket.md
+  glob: tickets/T-4281/ticket.md
   reason: the two follow-up tickets filed by this ticket to split out its out-of-scope
     acceptance criteria; their ticket.md files are new/touched in this same worktree
   actor: logan
   at: '2026-09-08'
 - op: add
-  glob: tickets/T-draft-f40f5848/ticket.md
+  glob: tickets/T-4282/ticket.md
   reason: the two follow-up tickets filed by this ticket to split out its out-of-scope
     acceptance criteria; their ticket.md files are new/touched in this same worktree
   actor: logan
@@ -122,10 +122,10 @@ acceptance_amendments:
     the proof distinguishes an unmeasured verification caused by an infrastructure
     failure from a genuine skip
   new_text: null
-  reason: 'split to T-draft-d015a2a1: the fix lives in src/frob/tickets/_land_verify.py
-    + _land.py, outside this ticket''s src/frob/serve/_daemon.py + src/frob/serve/_warm.py
-    scope, and is a large enough land-proof-semantics change to deserve its own ticket
-    rather than widen this one''s blast radius'
+  reason: 'split to T-4281: the fix lives in src/frob/tickets/_land_verify.py + _land.py,
+    outside this ticket''s src/frob/serve/_daemon.py + src/frob/serve/_warm.py scope,
+    and is a large enough land-proof-semantics change to deserve its own ticket rather
+    than widen this one''s blast radius'
   actor: logan
   at: '2026-09-08'
 - op: remove
@@ -134,8 +134,8 @@ acceptance_amendments:
     failure, then the message names the holding process rather than saying only that
     the database is locked
   new_text: null
-  reason: 'split to T-draft-f40f5848: naming the holding process on CacheLocked requires
-    editing src/frob/graph/cache.py, outside this ticket''s declared scope'
+  reason: 'split to T-4282: naming the holding process on CacheLocked requires editing
+    src/frob/graph/cache.py, outside this ticket''s declared scope'
   actor: logan
   at: '2026-09-08'
 - op: remove
@@ -144,8 +144,8 @@ acceptance_amendments:
     process opens the graph cache, then it acquires the lock and completes its build
     rather than timing out
   new_text: null
-  reason: 'split to T-draft-f40f5848: releasing/avoiding the write lock and allowing
-    concurrent readers requires editing src/frob/graph/cache.py (journal-mode/transaction-length
+  reason: 'split to T-4282: releasing/avoiding the write lock and allowing concurrent
+    readers requires editing src/frob/graph/cache.py (journal-mode/transaction-length
     decisions there), outside this ticket''s declared scope -- see that ticket''s
     body for the WAL/T-3644 dead-end investigation and the plausible real mechanism
     (unthrottled re-verify on every main-HEAD move in a busy fleet root) this ticket''s

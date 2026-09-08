@@ -419,6 +419,124 @@ class TestStartDaemon:
             stop.set()
 
 
+# frob:ticket T-4258
+class TestIdleSelfTermination:
+    """Owner directive: a daemon that has performed no USEFUL WORK for
+    more than an hour terminates itself -- idleness measured by work
+    actually performed, never by whether the poll loop merely ran."""
+
+    def test_record_useful_work_updates_the_timestamp(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_u\
+        # pdates_the_timestamp
+        clock = [100.0]
+        _daemon._record_useful_work(repo, now_fn=lambda: clock[0])
+        idle = _daemon._idle_seconds(
+            repo, started_at_monotonic=0.0, now_fn=lambda: clock[0] + 5.0
+        )
+        assert idle == 5.0
+
+    def test_never_having_worked_is_measured_from_start_time(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_\
+        # is_measured_from_start_time
+        # A root this process has never recorded work for reads as idle
+        # since the DAEMON'S OWN start time, not since epoch zero -- a
+        # fresh daemon over a quiet repo must not read as already-idle-
+        # forever on its very first cycle.
+        other_root = repo.parent / "never-touched-by-daemon"
+        idle = _daemon._idle_seconds(
+            other_root, started_at_monotonic=1000.0, now_fn=lambda: 1042.0
+        )
+        assert idle == 42.0
+
+    def test_idle_under_one_hour_is_not_terminal(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_\
+        # is_not_terminal
+        clock = [0.0]
+        _daemon._record_useful_work(repo, now_fn=lambda: clock[0])
+        idle = _daemon._idle_seconds(
+            repo, started_at_monotonic=0.0, now_fn=lambda: 3599.0
+        )
+        assert idle < _daemon.IDLE_TERMINATION_S
+
+    def test_idle_over_one_hour_is_terminal(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_i\
+        # s_terminal
+        clock = [0.0]
+        _daemon._record_useful_work(repo, now_fn=lambda: clock[0])
+        idle = _daemon._idle_seconds(
+            repo, started_at_monotonic=0.0, now_fn=lambda: 3601.0
+        )
+        assert idle > _daemon.IDLE_TERMINATION_S
+
+    def test_loop_self_terminates_after_the_idle_ceiling(
+        self, repo: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates\
+        # _after_the_idle_ceiling
+        # MUST-FIRE: a daemon whose jobs never record useful work (main
+        # never moves, no live leases, no verify tick) self-terminates
+        # once the injected clock crosses the idle ceiling -- a real hour
+        # of sleep is never required, matching this codebase's own
+        # "never a real sleep-and-observe timing test" convention
+        # (frob.verify._worker.CoalescingWorker's docstring).
+        monkeypatch.setattr(_daemon, "_run_daemon_cycle", lambda root, **kw: None)
+        clock = [0.0]
+        terminated = threading.Event()
+
+        stop = _daemon._start_daemon(
+            repo,
+            interval_s=0.01,
+            run_tests=False,
+            idle_termination_s=100.0,
+            now_fn=lambda: clock[0],
+            terminate_fn=terminated.set,
+        )
+        try:
+            clock[0] = 150.0
+            assert terminated.wait(timeout=5.0)
+            assert stop.is_set()
+        finally:
+            stop.set()
+
+    def test_loop_does_not_terminate_while_work_keeps_happening(
+        self, repo: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_termin\
+        # ate_while_work_keeps_happening
+        # MUST-STAY-QUIET: a daemon whose cycles keep recording useful
+        # work never crosses the idle ceiling, however many cycles run.
+        clock = [0.0]
+
+        def _spy(root: Path, **kw):
+            _daemon._record_useful_work(root, now_fn=lambda: clock[0])
+
+        monkeypatch.setattr(_daemon, "_run_daemon_cycle", _spy)
+        terminated = threading.Event()
+
+        stop = _daemon._start_daemon(
+            repo,
+            interval_s=0.01,
+            run_tests=False,
+            idle_termination_s=100.0,
+            now_fn=lambda: clock[0],
+            terminate_fn=terminated.set,
+        )
+        try:
+            for _ in range(20):
+                clock[0] += 10.0
+                time.sleep(0.02)
+            assert not terminated.is_set()
+            assert not stop.is_set()
+        finally:
+            stop.set()
+
+
 class TestFrobDaemonStatus:
     def test_reads_current_status(self, repo: Path) -> None:
         # frob:tests \
