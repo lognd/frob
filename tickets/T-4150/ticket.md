@@ -2,7 +2,7 @@
 id: T-4150
 title: 'frob exports a public Python API no consumer can import: installed as an isolated
   tool, with no published release carrying the current API'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/__init__.py
 - tests/system/test_public_api_from_wheel.py
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,15 @@ scope_changes:
     for the path-reporting verb and any workflow change are expected to be added with
     their own recorded reason once the implementer has measured what the verb actually
     needs'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'wheel-import probe found a genuine pre-existing bug on-topic for this ticket''s
+    own subject: frob.tickets.__all__ advertises ClipboardError but __init__.py never
+    imports it, so AttributeError fires on access -- exactly the class of defect T-4150
+    exists to catch (an advertised name that does not actually import), so fixing
+    it belongs in this ticket rather than a separate one'
   actor: logan
   at: '2026-09-08'
 body_changes:
