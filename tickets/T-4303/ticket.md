@@ -70,6 +70,12 @@ body_changes:
   at: '2026-09-08'
   old_length: 925
   new_length: 2323
+- mode: append
+  reason: Record the T-4325 blocker and stop repeated land attempts
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2322
+  new_length: 3629
 evidence:
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_inside_appconfig_bypass_parser_func_is_not_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_outside_appconfig_bypass_parser_func_still_flagged
@@ -104,3 +110,30 @@ land-owned guard -- that is `frob ticket land`'s own internal marker, not
 an agent's escape hatch. T-4303 is left in-progress with its work complete
 and committed on this worktree's branch, pending either T-4320's fix or a
 deliberate human-approved override.
+
+
+## BLOCKED on T-4325 (recorded by coordinator 2026-09-08)
+
+The fix for this ticket is COMPLETE and its merge with main is already committed
+in the worktree /home/logan/projects/frob/.claude/worktrees/t-4303. Nothing is
+wrong with the code. Do NOT re-run `frob ticket land T-4303` until T-4325 lands --
+it has now failed three times for the same reason and will keep failing.
+
+Why it cannot close: the live-tracker citation scan reports two sites still citing
+T-4303, both land-owned and therefore uneditable by any worktree:
+  - CHANGELOG.md:1087
+  - changelog.d/T-4320.md:2
+
+Both are T-4320's own changelog entry, which describes T-4320's fix by QUOTING a
+complete, well-formed directive (the text its regression test plants). T-4320
+correctly narrowed the scan to match only directive-shaped lines rather than
+excluding the changelog by path -- and the quoted line genuinely is
+directive-shaped, so it matches. The deadlock T-4320 fixed reappeared one level up
+in T-4320's own history entry.
+
+The genuine in-source citation that previously blocked this ticket
+(src/frob/_cli_parsers/_core.py:561) is already discharged by this ticket's own
+fix and is NOT among the remaining two.
+
+Once T-4325 lands, retry:
+  uv run frob ticket land T-4303 --worktree /home/logan/projects/frob/.claude/worktrees/t-4303
