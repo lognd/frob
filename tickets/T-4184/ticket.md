@@ -17,10 +17,68 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/release/__init__.py
+- src/frob/tickets/_land_release.py
+- pyproject.toml
+- src/frob/scaffold/data/**/pyproject.toml.j2
+- docs/modules/release.md
+- tests/test_release.py
+- tests/ticket_land_suite/test_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/release/__init__.py
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/tickets/_land_release.py
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: pyproject.toml
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/scaffold/data/**/pyproject.toml.j2
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/release.md
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_release.py
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/ticket_land_suite/test_release.py
+  reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
+    land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
+    frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given two lands in sequence, when each completes, then the project version
