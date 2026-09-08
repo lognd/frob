@@ -624,12 +624,6 @@ def next_dev_version(version: str) -> Result[str, ReleaseError]:
 # frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
 # frob:ticket T-4184
 # frob:tests tests/test_release.py::test_dev_version_bump_enabled_defaults_true_and_reads_pyproject kind="unit"  # noqa: E501
-# frob:waive WIRE001 follow_up="T-4301" reason="deliberate public read-only \
-# introspection API for any consumer that wants to ask whether the toggle is on \
-# outside a land (the 'inherited by using frob' contract this ticket asks for) -- frob \
-# ticket land's own internal decision correctly calls the git-object-safe sibling \
-# reader in frob.tickets._land_release instead (see this function's own docstring); \
-# T-4301 wires this into a real 'frob release status' CLI consumer"
 def dev_version_bump_enabled(root: Path) -> bool:
     """Whether `root`'s `pyproject.toml` `[tool.frob]` table has the
     automatic per-land dev-version bump (T-4184) turned on -- read
@@ -654,10 +648,6 @@ def dev_version_bump_enabled(root: Path) -> bool:
 # frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
 # frob:ticket T-4184
 # frob:tests tests/test_release.py::test_dev_version_major_ack_defaults_zero_and_reads_pyproject kind="unit"  # noqa: E501
-# frob:waive WIRE001 follow_up="T-4301" reason="same posture as \
-# dev_version_bump_enabled directly above -- deliberate public read-only introspection \
-# API, land's own internal refusal check uses the git-object-safe sibling reader \
-# instead; same follow-up wires both into 'frob release status'"
 def dev_version_major_ack(root: Path) -> int:
     """The major version series `root`'s `pyproject.toml` `[tool.frob]`
     table has explicitly acknowledged continuing to auto-bump dev builds

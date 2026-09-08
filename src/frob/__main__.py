@@ -147,6 +147,16 @@ def _is_release_publish(argv: list[str]) -> bool:
     )
 
 
+# frob:ticket T-4301
+def _is_release_status(argv: list[str]) -> bool:
+    """`True` for `frob release status ...` (T-4301) -- mirrors
+    `_is_release_publish` directly above; `frob.release._cli.run_release_
+    status_command` takes a parsed `argparse.Namespace` from its own
+    dedicated parser, same reason as `publish`'s own special case (see
+    `frob.release._cli`'s module docstring)."""
+    return bool(argv) and argv[0] == "release" and len(argv) > 1 and argv[1] == "status"
+
+
 # frob:ticket T-0574
 def _dispatch_bind(argv: list[str]) -> None:
     """`frob bind ...` (and, via `_dispatch_quality_bind` below, `frob
@@ -262,6 +272,25 @@ def _dispatch_release_publish(argv: list[str]) -> None:
     add_release_publish_parser(release_sub)
     release_args = release_parser.parse_args(argv)
     _sys.exit(run_release_publish_command(release_args))
+
+
+# frob:ticket T-4301
+def _dispatch_release_status(argv: list[str]) -> None:
+    """`frob release status ...` (T-4301) -- dispatched directly,
+    mirroring `_dispatch_release_publish` directly above -- own dedicated
+    parser, `argparse.Namespace` in, exit code out."""
+    import sys as _sys
+
+    from frob.release._cli import (
+        add_release_status_parser,
+        run_release_status_command,
+    )
+
+    release_parser = argparse.ArgumentParser(prog="frob")
+    release_sub = release_parser.add_subparsers(dest="subcommand")
+    add_release_status_parser(release_sub)
+    release_args = release_parser.parse_args(argv)
+    _sys.exit(run_release_status_command(release_args))
 
 
 # frob:ticket T-1483
@@ -389,6 +418,7 @@ def _apply_verbose_env_override(argv: list[str]) -> None:
 # frob:ticket T-1808
 # frob:ticket T-2443
 # frob:ticket T-2452
+# frob:ticket T-4301
 def _dispatch(argv: list[str]) -> None:
     """`main`'s actual argv-to-`App` dispatch, split out so `main` can wrap
     only this in the `KeyboardInterrupt` handler (T-0355) without also
@@ -409,6 +439,8 @@ def _dispatch(argv: list[str]) -> None:
         _dispatch_sync_skills(argv[1:])
     elif _is_release_publish(argv):
         _dispatch_release_publish(argv)
+    elif _is_release_status(argv):
+        _dispatch_release_status(argv)
     elif argv and argv[0] == "refactor":
         _dispatch_refactor(argv)
     elif argv and argv[0] == "narrative":

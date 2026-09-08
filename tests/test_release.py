@@ -1013,6 +1013,102 @@ class TestAddReleasePublishParser:
         assert args.dry_run is True
 
 
+# frob:ticket T-4301
+class TestAddReleaseStatusParser:
+    """`add_release_status_parser` (T-4301): the argparse builder
+    `frob.__main__._dispatch`'s `release status` special case constructs
+    its own throwaway parser from -- self-contained, same shape as
+    `add_release_publish_parser` above, deliberately NOT sharing a
+    `release_sub` with it (see this module's own docstring)."""
+
+    # frob:ticket T-4301
+    # frob:tests \
+    # tests/test_release.py::TestAddReleaseStatusParser.test_registers_release_status
+    def test_registers_release_status(self):
+        import argparse
+
+        from frob.release._cli import add_release_status_parser
+
+        parser = argparse.ArgumentParser(prog="frob")
+        sub = parser.add_subparsers(dest="subcommand")
+        add_release_status_parser(sub)
+
+        args = parser.parse_args(["release", "status", "some/path"])
+        assert args.path == "some/path"
+
+
+# frob:ticket T-4301
+class TestRunReleaseStatusCommand:
+    """`run_release_status_command` (T-4301): one command reporting the
+    authoritative version, the T-4184 dev-version-bump toggle/ack, and
+    the release gate's own bump verdict."""
+
+    # frob:ticket T-4301
+    # frob:tests \
+    # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_bump_required_whe\
+    # n_gate_refuses
+    def test_reports_bump_required_when_gate_refuses(self, tmp_path, capsys):
+        import argparse
+
+        from frob.release._cli import run_release_status_command
+
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text("")
+        (pkg / "mod.py").write_text(
+            "def hello():\n    '''Say hi.'''\n    return 'hi'\n"
+        )
+        _write_pyproject(tmp_path, "0.1.0")
+        snapshot_result = build_graph(tmp_path, tmp_path / ".frob" / "cache.db")
+        stamp(tmp_path, snapshot_result.danger_ok, "0.1.0")
+        (pkg / "mod.py").write_text(
+            "def hello():\n    '''Say hi.'''\n    return 'hi'\n\n"
+            "def new_public():\n    '''New.'''\n    return 1\n"
+        )
+
+        args = argparse.Namespace(path=str(tmp_path))
+        exit_code = run_release_status_command(args)
+
+        assert exit_code == 1
+        out = capsys.readouterr().out
+        assert "version: 0.1.0" in out
+        assert "dev-version bump: on (major ack: none)" in out
+        assert "BUMP REQUIRED" in out
+
+    # frob:ticket T-4301
+    # frob:tests \
+    # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_ok_and_dev_bump_t\
+    # oggle_state
+    def test_reports_ok_and_dev_bump_toggle_state(self, tmp_path, capsys):
+        import argparse
+
+        from frob.release._cli import run_release_status_command
+
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text("")
+        (pkg / "mod.py").write_text(
+            "def hello():\n    '''Say hi.'''\n    return 'hi'\n"
+        )
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "0.1.0"\n\n'
+            "[tool.frob]\ndev_version_bump = false\n"
+            "dev_version_major_ack = 2\n",
+            encoding="utf-8",
+        )
+        snapshot_result = build_graph(tmp_path, tmp_path / ".frob" / "cache.db")
+        stamp(tmp_path, snapshot_result.danger_ok, "0.1.0")
+
+        args = argparse.Namespace(path=str(tmp_path))
+        exit_code = run_release_status_command(args)
+
+        assert exit_code == 0
+        out = capsys.readouterr().out
+        assert "version: 0.1.0" in out
+        assert "dev-version bump: off (major ack: 2)" in out
+        assert "OK" in out
+
+
 class TestNoStrayFragmentForNonDoneTicket:
     """T-2641: after T-2615's generator fix, the real repo's `changelog.d/`
     must never carry a fragment for a ticket that is not DONE -- a live

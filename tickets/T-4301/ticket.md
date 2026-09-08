@@ -1,7 +1,7 @@
 ---
 id: T-4301
 title: expose dev-version-bump toggle/ack via a CLI surface (frob release status)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-08'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_cli.py
 - tests/test_release.py
+- src/frob/release/__init__.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: SCOPE002's doc/test closure over docs/modules/release.md
   and tests/test_release.py both fan out into the WHOLE release subsystem (release/__init__.py,
@@ -122,6 +123,13 @@ scope_changes:
     scope at all'
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: src/frob/release/__init__.py
+  reason: 'T-4301: closing this ticket requires re-pointing/resolving the two WIRE001
+    waivers in dev_version_bump_enabled/dev_version_major_ack that cite T-4301 as
+    their follow_up -- now wired, so the waivers are satisfied and must be removed'
+  actor: logan
+  at: '2026-09-08'
 body_changes:
 - mode: append
   reason: 'T-4301: waive SCOPE002''s doc/test closure fan-out into the whole release+gates
@@ -130,6 +138,10 @@ body_changes:
   at: '2026-09-08'
   old_length: 466
   new_length: 1547
+evidence:
+- tests/test_release.py::TestRunReleaseStatusCommand::test_reports_bump_required_when_gate_refuses
+- tests/test_release.py::TestRunReleaseStatusCommand::test_reports_ok_and_dev_bump_toggle_state
+- tests/test_release.py::TestAddReleaseStatusParser::test_registers_release_status
 designated_repro_test: null
 threat: null
 component: null
