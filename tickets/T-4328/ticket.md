@@ -2,7 +2,7 @@
 id: T-4328
 title: Audit the 308 rules a blanket ratchet promoted to error on a zero-findings
   criterion
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 requires a repro test pair, but this ticket corrects config-table
+    severity entries against documentation, not a reproducible code defect
+  actor: logan
+  at: '2026-09-08'
+  old_length: 3183
+  new_length: 3573
+evidence:
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml
 designated_repro_test: null
 threat: null
 component: null
@@ -76,3 +86,5 @@ verified it can be satisfied and cleared when it fires.
 
 VERIFY that the unscoped gate run still reports zero errors after any change you
 make, and quote the summary line. Do not regress it.
+
+frob:waive BUG002 reason="config-table severity demotion, not a code defect: there is no failing/passing test pair that reproduces a wrongly-error-severity rule in frob.toml, the correction is verified by test_gates_table_schema.py::test_must_still_pass_this_repos_own_frob_toml (schema validity) plus the frob check --ticket T-4328 before/after error-count comparison in the Done report"
