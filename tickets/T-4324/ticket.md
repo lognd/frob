@@ -82,6 +82,24 @@ scope_changes:
     it only cascades into unrelated _watermark.py test-target closure'
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: design/frob.strata
+  reason: declare the new fs.read call sites (.read_text) this ticket's fix adds in
+    verify_runner.py, per SELFAUDIT001
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: design/frob.strata
+  reason: 'revert: fixing SELFAUDIT001 there cascades into ~240 unrelated design-doc
+    closure obligations; filing as separate pre-existing-debt ticket instead'
+  actor: logan
+  at: '2026-09-08'
+evidence:
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_no_baseline_is_live
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_later_baseline_clears
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_uncovered_stays_live
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_other_skip_reasons_are_not_counted
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_clean_status_has_no_live_rapid_debt
 designated_repro_test: null
 threat: null
 component: null
