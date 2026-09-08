@@ -16,6 +16,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_land_format.py
 - tickets/T-draft-99f20919/**
+- docs/modules/gates.md
+- tests/unit/test_land_format_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +26,16 @@ scope_changes:
 - op: add
   glob: tickets/T-draft-99f20919/**
   reason: filing the auto-apply follow-up ticket this fix rebinds the frob:todo to
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/gates.md
+  reason: close SCOPE002 doc/test closure surfaced by the frob:todo rebind edit
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_format_gate.py
+  reason: close SCOPE002 doc/test closure surfaced by the frob:todo rebind edit
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
