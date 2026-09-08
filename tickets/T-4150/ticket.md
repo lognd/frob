@@ -40,6 +40,15 @@ scope_changes:
     needs'
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: scoped for dispatch; records why the verb wiring and the workflow are deliberately
+    left out of the initial scope, and names the exports-policy closure hint the scope
+    change reported
+  actor: logan
+  at: '2026-09-08'
+  old_length: 4715
+  new_length: 6483
 designated_repro_test: null
 acceptance:
 - text: given a wheel built from this repository installed alone in an environment,
@@ -132,3 +141,36 @@ ACCEPTANCE
 - A path-reporting verb exists and reports the running frob's environment.
 - No publish performed from this ticket; the owner decides that separately.
 - All three fixtures committed.
+
+
+
+COORDINATOR NOTE ADDED WHILE SCOPING THIS FOR DISPATCH.
+
+This ticket was unstartable because it had no scope; it now names the package
+init and a test file that does not yet exist, which is the home the must-fire
+fixture needs. That scope is deliberately minimal rather than complete.
+
+The wiring for the path-reporting verb is NOT in scope yet, because the number of
+places a new verb must be registered is not obvious from outside: this repository
+has already had a defect where a verb was added and missed several of the lists
+that enumerate verbs, so guessing the file set here would either over-claim leases
+or under-claim them. Measure what the verb actually needs, then widen with a
+recorded reason.
+
+The integration workflow is also NOT in scope, and is contended by other in-flight
+tickets. Note that a job already exists there which builds a bare wheel, installs
+it into a clean environment, and asserts the tool starts without native
+extensions. That job is the natural home for the from-a-wheel import check, and
+extending it is likely cheaper and more honest than building a wheel inside the
+test suite. Coordinate rather than racing for that file.
+
+A CLOSURE HINT THE SCOPE CHANGE ITSELF REPORTED: the package init is already
+covered by an exports-policy test elsewhere in the tree, which is not in scope.
+Decide deliberately whether that test needs to move or widen, rather than
+discovering it at land time.
+
+ONE THING TO CHECK BEFORE BUILDING ANYTHING: the owner has decided the imminent
+publish is a plain final release. Publishing is what actually closes this
+ticket's first cause, and it is not yours to do. What IS yours is making sure
+that when it happens, the advertised names import from the artifact rather than
+merely existing in the tree.
