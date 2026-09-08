@@ -16,9 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
 - tests/test_gates_tick009_tick010.py
-- docs/modules/gates.md
-- docs/modules/tickets-data-storage.md
-- docs/modules/tickets-lifecycle.md
 - tests/gates_suite/test_fix_engine.py
 - tests/gates_suite/test_tick.py
 - tests/test_gates_tickets_hygiene.py
@@ -26,7 +23,6 @@ scope:
 - tests/test_tick013_gate.py
 - tests/test_tickets_collision.py
 - tests/test_tickets_migration.py
-- src/frob/gates/_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -138,6 +134,42 @@ scope_changes:
     function this shared multi-rule file already carries directives for; adding them
     here (most demoted to evidence-only next) is a mechanical land requirement of
     touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'T-4319: reverting an over-broad closure widening -- these pre-existing
+    frob:doc/dependency edges belong to OTHER pre-existing _tickN_* functions this
+    ticket does not touch; docs/modules/gates.md alone cascades into 700+ unrelated
+    closure warnings (a shared project-wide catalog doc), which is chronic-breadth
+    territory (TICK009), not a real dependency of this change. Using scope-ack instead.'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'T-4319: reverting an over-broad closure widening -- these pre-existing
+    frob:doc/dependency edges belong to OTHER pre-existing _tickN_* functions this
+    ticket does not touch; docs/modules/gates.md alone cascades into 700+ unrelated
+    closure warnings (a shared project-wide catalog doc), which is chronic-breadth
+    territory (TICK009), not a real dependency of this change. Using scope-ack instead.'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'T-4319: reverting an over-broad closure widening -- these pre-existing
+    frob:doc/dependency edges belong to OTHER pre-existing _tickN_* functions this
+    ticket does not touch; docs/modules/gates.md alone cascades into 700+ unrelated
+    closure warnings (a shared project-wide catalog doc), which is chronic-breadth
+    territory (TICK009), not a real dependency of this change. Using scope-ack instead.'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: 'T-4319: reverting an over-broad closure widening -- these pre-existing
+    frob:doc/dependency edges belong to OTHER pre-existing _tickN_* functions this
+    ticket does not touch; docs/modules/gates.md alone cascades into 700+ unrelated
+    closure warnings (a shared project-wide catalog doc), which is chronic-breadth
+    territory (TICK009), not a real dependency of this change. Using scope-ack instead.'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
