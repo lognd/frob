@@ -40,6 +40,12 @@ scope_changes:
   reason: unit tests added for _resolve_win32_executable and run_argv wiring
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/test_gitio.py::TestResolveWin32Executable::test_noop_on_posix
+- tests/test_gitio.py::TestResolveWin32Executable::test_noop_for_a_path_like_name_on_win32
+- tests/test_gitio.py::TestResolveWin32Executable::test_resolves_a_bare_name_via_which_on_win32
+- tests/test_gitio.py::TestResolveWin32Executable::test_falls_through_unchanged_when_which_finds_nothing
+- tests/test_gitio.py::TestResolveWin32Executable::test_run_argv_wires_the_resolved_argv0_into_the_actual_spawn
 designated_repro_test: null
 threat: null
 component: null
