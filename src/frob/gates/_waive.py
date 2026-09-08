@@ -502,6 +502,10 @@ _KNOWN_GATE_RULES = frozenset(
         # rule above this comment already needed.
         "LANDPARITY001",
         "LANDPARITY002",
+        # T-4298: LANDFMT001 (frob.gates._land_format) -- same "add to the
+        # frozenset" step LANDPARITY001/002 immediately above already
+        # needed.
+        "LANDFMT001",
         # T-3466: CROSSTICKET001 (frob.tickets._land.cross_ticket_leakage_
         # gate) -- same "add to the frozenset" step LANDPARITY001/002
         # immediately above already needed.

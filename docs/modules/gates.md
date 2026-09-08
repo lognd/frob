@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,AUTOFIX001,BARETOOL001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,COV008,CPLACE001,CPLACE002,CPPTHROW001,CROSSTICKET001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DEPR006,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOC013,DOCARCH001,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,F401,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATES001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,I001,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV009,INV051,KRB001,KRB002,KRB003,KRB004,LANDPARITY001,LANDPARITY002,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NARR001,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PKG001,PKG002,PKG003,PLACE001,PLATFORM001,PLATFORM002,PORT001,PORT001-DEFAULT,PORT001-IDENT,PORT001-PATH,PRE001,PROFILE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUBJECT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS113,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TDD001,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TICK014,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VERSION001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,VMOD001,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WAIVE010,WAIVE011,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,AUTOFIX001,BARETOOL001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,COV008,CPLACE001,CPLACE002,CPPTHROW001,CROSSTICKET001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DEPR006,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOC013,DOCARCH001,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,F401,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATES001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,I001,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV009,INV051,KRB001,KRB002,KRB003,KRB004,LANDFMT001,LANDPARITY001,LANDPARITY002,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NARR001,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PKG001,PKG002,PKG003,PLACE001,PLATFORM001,PLATFORM002,PORT001,PORT001-DEFAULT,PORT001-IDENT,PORT001-PATH,PRE001,PROFILE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUBJECT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS113,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TDD001,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TICK014,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VERSION001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,VMOD001,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WAIVE010,WAIVE011,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -161,6 +161,7 @@ declaration).
 | KRB002 | sys | (error) a node declares an `spn` (service principal name) -- every declared SPN is presumed roastable (Kerberoasting exposure); `std.krb` has no vocabulary distinguishing a gMSA/machine-account principal from a human-memorable one, so this fires until re-declared or waived with a written attestation (`frob.strata._krb_movement`) |
 | KRB003 | sys | (error) a `delegation constrained` node's transitive closure of `target` SPNs (S4U2Proxy chaining) reaches a node whose trust is strictly higher than the delegating node's own -- constrained-delegation blast-radius proof (`frob.strata._krb_movement`) |
 | KRB004 | sys | (error) a node in a lower-trust realm reaches a higher-trust node's realm purely via a domain-trust edge -- cross-realm-containment proof over `_krb.py::krb_trust_flows` synthesized flows (`frob.strata._krb_movement`) |
+| LANDFMT001 | land_format | (T-4298) this diff touches a `.py` file `ruff format --check` would rewrite -- closes the gap left by FMT001, which by design only ever covers over-length `frob:` directive comment lines, never general code-layout drift. Scoped to this diff's own touched files, never a whole-tree scan (`frob.gates._land_format.land_format_gate`) |
 | LANDPARITY001 | land_parity | (T-3456) a new public top-level symbol in this diff has no `frob:doc`/`frob:tests` directive (or matching `frob:waive`) directly above it -- the SAME check `frob ticket land`'s own T-2114 pre-land assertion already refuses on, now visible to `frob check --ticket <id>`/`frob ticket close` too instead of only surfacing at land time (`frob.gates._land_parity`, reuses `frob.app.ticket_runner._land_cmd._new_public_symbols_missing_doc_or_test_edge` unchanged) |
 | LANDPARITY002 | land_parity | (T-3456) a function this diff adds or modifies now crosses ARCH001's long-AND-complex threshold and was NOT already over it at merge-base -- the SAME diff-scoped check `frob ticket land`'s own T-2214 pre-land assertion already refuses on. A deliberately distinct rule id from plain ARCH001 (that rule reports every over-threshold function an unscoped walk finds, new or pre-existing; this one reports only what THIS diff newly pushed over the line) (`frob.gates._land_parity`, reuses `frob.app.ticket_runner._land_cmd._new_or_worsened_long_functions_in_diff` unchanged) |
 | CROSSTICKET001 | cross_ticket_leakage | (T-3466) `--ticket <id>`'s worktree branch carries a DIFFERENT, still-IN_PROGRESS ticket's committed work, covered by that ticket's own declared scope -- the SAME T-1355 check `frob ticket land`'s own preflight/post-mutation `_check_cross_ticket_leakage` already refuses on, now visible to `frob check --ticket <id>` too instead of only surfacing at land time (`frob.tickets._land.cross_ticket_leakage_gate`, reuses `_check_cross_ticket_leakage`'s own pure pieces -- `_branch_changed_files`/`_machinery_owned_leakage_exempt_paths`/`_load_leakage_ledgers`/`_find_leaked_tickets` -- unchanged) |
@@ -892,6 +893,57 @@ free -- it was held by a concurrent ticket for this entire session) should
 MOVE the reused pure functions into `frob.gates._land_parity` for real,
 so `_land_cmd.py` imports FROM the gates layer instead of the reverse.
 (T-3467 did exactly this move.)
+
+### Land format (LANDFMT001, T-4298)
+
+FMT001 (`frob.gates._todo_fmt`) is diff-scoped to over-length `frob:`
+directive comment lines by design, and its own scope note says so
+plainly: it never scans a file's general code layout, and a clean result
+from it is not a claim the repository is formatter-clean. Nothing else on
+the land path covered what FMT001 deliberately excludes, so ordinary
+`ruff format` drift in a land's own changed files reached main unnoticed
+-- caught only by the next whole-tree integration run, minutes to an hour
+later, attributed to nobody in particular. Measured twice in one release
+day: a self-gate run found four files `ruff format` would rewrite; a
+ticket cleared exactly those four; a fresh check immediately afterward
+found SIX, because several lands in between introduced new drift of
+their own. Clearing the count was not a fix -- it refilled.
+
+**LANDFMT001** closes this the same way T-3456/T-3467's LANDPARITY001/002
+did: a pure `(root, touched_paths)` function (`frob.gates._land_format.
+land_format_gate`) `run_gates` can dispatch, using the SAME `working_diff
+(root, "main")` touched-file set `_land_parity_diff` computes, restricted
+to `.py` files, and running `ruff format --check` against exactly that
+list -- never a whole-tree scan. This keeps the cost proportional to one
+land's own diff and keeps attribution exact: the person who introduced
+the drift is the one `frob check --ticket <id>`/`frob ticket close` tells
+about it, while it is still cheap to fix, rather than a coordinator
+untangling it from an unattributed integration-run finding later.
+
+Because `frob ticket land` already spawns an UNSCOPED `frob check --json`
+as part of its own pre-mutation gate pass (`_land_cmd.py`'s
+`_check_gate_findings_fn`), wiring LANDFMT001 into `run_gates` was
+sufficient on its own to make a land refuse on this drift -- no change to
+`frob.tickets._land`/`frob.app.ticket_runner._land_cmd` was needed for
+the REFUSE half of this, and none was made: both files carried an
+in-progress scope lease held by a concurrent ticket (T-4281) for the
+whole of this ticket's session.
+
+**Design decision (REFUSE, not auto-apply, for now):** `ruff format` is
+deterministic and this project already auto-fixes other rule families
+(Tier-A) on the land path via `_absorb_pre_land_fixes`, which already
+runs `frob fmt` (directive canonicalization only) against a land's
+touched set before `land()`'s own merge/wip-commit step -- extending
+that same absorption to also run `ruff format` on the touched set is very
+likely the right end state, and refusing over a rewrite formatters are
+chosen specifically for being deterministic about is friction a rewrite
+could remove instead. That extension is recorded as a `frob:todo T-4298`
+directive in `frob.gates._land_format` rather than built here, because it
+requires editing `_land_cmd.py`, which this ticket could not touch for
+the reason above. LANDFMT001 refusing today still fully closes the
+attribution gap this ticket exists to close; a future ticket can turn the
+refusal into a rewrite once that file's lease is free, on top of a
+touched-set detection this change already proves correct.
 
 ### Cross-ticket leakage (CROSSTICKET001, T-3466)
 

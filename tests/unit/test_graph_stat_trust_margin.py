@@ -101,7 +101,9 @@ class TestMtimeGranularityCaching:
             calls["n"] += 1
             return real_probe(root)
 
-        monkeypatch.setattr(graph_module, "_probe_mtime_granularity_ns", _counting_probe)
+        monkeypatch.setattr(
+            graph_module, "_probe_mtime_granularity_ns", _counting_probe
+        )
 
         first = graph_module._mtime_granularity_ns(tmp_path)
         second = graph_module._mtime_granularity_ns(tmp_path)
@@ -123,7 +125,9 @@ class TestMtimeGranularityCaching:
         def _fail_if_called(root):  # noqa: ANN001, ANN202, ARG001
             raise AssertionError("must not re-probe: the on-disk cache is fresh")
 
-        monkeypatch.setattr(graph_module, "_probe_mtime_granularity_ns", _fail_if_called)
+        monkeypatch.setattr(
+            graph_module, "_probe_mtime_granularity_ns", _fail_if_called
+        )
         second = graph_module._mtime_granularity_ns(tmp_path)
         assert second == first
 
@@ -137,7 +141,9 @@ class TestMtimeGranularityCaching:
         underlying cause (e.g. a momentarily read-only root) clears."""
         graph_module._mtime_granularity_cache.clear()
         monkeypatch.setattr(
-            graph_module, "_probe_mtime_granularity_ns", lambda root: None  # noqa: ARG005
+            graph_module,
+            "_probe_mtime_granularity_ns",
+            lambda root: None,  # noqa: ARG005
         )
         result = graph_module._mtime_granularity_ns(tmp_path)
         assert result is None
@@ -160,7 +166,9 @@ class TestStatTrustMarginAndTrustworthy:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         monkeypatch.setattr(
-            graph_module, "_mtime_granularity_ns", lambda root: 1_000_000  # noqa: ARG005
+            graph_module,
+            "_mtime_granularity_ns",
+            lambda root: 1_000_000,  # noqa: ARG005
         )
         margin = graph_module._stat_trust_margin_ns(tmp_path)
         assert margin == 1_000_000 * graph_module._STAT_TRUST_SAFETY_MULTIPLIER
@@ -170,7 +178,9 @@ class TestStatTrustMarginAndTrustworthy:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         monkeypatch.setattr(
-            graph_module, "_mtime_granularity_ns", lambda root: None  # noqa: ARG005
+            graph_module,
+            "_mtime_granularity_ns",
+            lambda root: None,  # noqa: ARG005
         )
         assert graph_module._stat_trust_margin_ns(tmp_path) is None
 
@@ -207,7 +217,9 @@ class TestStatTrustMarginAndTrustworthy:
         must NOT be trusted. The old fixed-250ms behavior would have
         wrongly trusted it and returned a stale verdict."""
         monkeypatch.setattr(
-            graph_module, "_mtime_granularity_ns", lambda root: 2_000_000_000  # noqa: ARG005
+            graph_module,
+            "_mtime_granularity_ns",
+            lambda root: 2_000_000_000,  # noqa: ARG005
         )
         margin_ns = graph_module._stat_trust_margin_ns(tmp_path)
         one_second_ago_ns = time.time_ns() - 1_000_000_000

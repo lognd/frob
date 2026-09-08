@@ -55,7 +55,9 @@ def _pytest_test_step(name_prefix: str) -> dict:
     T-4274): both classes located "their" platform's Test step the same
     way modulo the matched prefix, so this is that one lookup with the
     prefix as its only parameter."""
-    candidates = [s for s in _all_pytest_steps() if s.get("name", "").startswith(name_prefix)]
+    candidates = [
+        s for s in _all_pytest_steps() if s.get("name", "").startswith(name_prefix)
+    ]
     assert candidates, f"no step named {name_prefix!r} invokes pytest at all"
     return candidates[0]
 
@@ -187,7 +189,7 @@ class TestMacosTestStepSignalsTheRealInterpreter:
         assert not any("uv run pytest" in line for line in backgrounding_lines), (
             "macOS step backgrounds `uv run pytest` directly -- `$!` right "
             "after this is `uv`'s own pid, not the real pytest/python "
-            "process's, so `kill -ABRT \"$pid\"` below aborts `uv` (which "
+            'process\'s, so `kill -ABRT "$pid"` below aborts `uv` (which '
             "has no PYTHONFAULTHANDLER) instead of the interpreter that "
             "does; this is the exact T-4274 regression -- background the "
             "venv's own interpreter directly (e.g. `.venv/bin/python -m "

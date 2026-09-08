@@ -675,8 +675,7 @@ def _connect_with_backoff(path: Path) -> sqlite3.Connection:
             holder = _describe_lock_holders(path)
             if remaining <= 0:
                 _log.error(
-                    "cache: connect(%s) still locked after %.0fs, giving "
-                    "up (%s)",
+                    "cache: connect(%s) still locked after %.0fs, giving up (%s)",
                     path,
                     _LOCK_TOTAL_TIMEOUT_SECONDS,
                     holder,

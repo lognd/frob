@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 300,
-      "reason": "T-4150: adds tests/system/test_public_api_from_wheel.py to the exec via-list -- real `uv build`/`uvx maturin build`/`uv venv`/`uv pip install` subprocess spawns building frob-core/strata-core/frob wheels and installing them into a clean venv, proving the advertised public API imports from a built artifact rather than the source tree. Bumping the ceiling 299 -> 300, one new site.",
-      "ticket": "T-4150"
+      "accepted_count": 301,
+      "reason": "T-4298: adds tests/unit/test_land_format_gate.py to the exec via-list -- a real git-fixture subprocess spawn (git init/config/add/commit), same shape tests/unit/test_land_parity_gate.py's own entry already carries. Bumping the ceiling 300 -> 301, one new site.",
+      "ticket": "T-4298"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-4150"
     },
     "testsuite::fs.write": {
-      "accepted_count": 516,
-      "reason": "T-4150: adds tests/system/test_public_api_from_wheel.py to the fs.write via-list (writing the generated import-probe script and building wheels into tmp_path) -- bumping the ceiling 515 -> 516, one new site.",
-      "ticket": "T-4150"
+      "accepted_count": 517,
+      "reason": "T-4298: adds tests/unit/test_land_format_gate.py to the fs.write via-list -- write_text on a real git-fixture repo's tracked .py file, same shape tests/unit/test_land_parity_gate.py's own entry already carries. Bumping the ceiling 516 -> 517, one new site.",
+      "ticket": "T-4298"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

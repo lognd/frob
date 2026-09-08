@@ -2947,8 +2947,7 @@ class TestScopePrivateHelperGaps:
         _write(
             tmp_path,
             "flat/test_a.py",
-            "from flat.helpers_a import _write\n\n\n"
-            "def test_x():\n    _write()\n",
+            "from flat.helpers_a import _write\n\n\ndef test_x():\n    _write()\n",
         )
         _write(tmp_path, "flat/helpers_a.py", "def _write():\n    pass\n")
         _write(tmp_path, "flat/helpers_b.py", "def _write():\n    pass\n")

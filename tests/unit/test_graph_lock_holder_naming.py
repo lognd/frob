@@ -72,7 +72,9 @@ class TestLockHolderNaming:
     def test_describe_lock_holders_reports_pid_and_command(self, monkeypatch) -> None:
         monkeypatch.setattr(graph_cache, "_lock_holder_pids", lambda path: (4242,))  # noqa: ARG005
         monkeypatch.setattr(
-            graph_cache, "_holder_cmdline", lambda pid: "frob serve --root /repo"  # noqa: ARG005
+            graph_cache,
+            "_holder_cmdline",
+            lambda pid: "frob serve --root /repo",  # noqa: ARG005
         )
         desc = graph_cache._describe_lock_holders(Path("/fake/cache.db"))
         assert "4242" in desc
@@ -83,7 +85,9 @@ class TestLockHolderNaming:
         assert "holder unknown" in graph_cache._describe_lock_holders(None)
 
     # frob:tests src/frob/graph/cache.py::_describe_lock_holders
-    def test_describe_lock_holders_degrades_with_no_pid_found(self, monkeypatch) -> None:
+    def test_describe_lock_holders_degrades_with_no_pid_found(
+        self, monkeypatch
+    ) -> None:
         monkeypatch.setattr(graph_cache, "_lock_holder_pids", lambda path: ())  # noqa: ARG005
         desc = graph_cache._describe_lock_holders(Path("/fake/cache.db"))
         assert "no process found" in desc
@@ -94,7 +98,9 @@ class TestLockHolderNaming:
     ) -> None:
         monkeypatch.setattr(graph_cache, "_lock_holder_pids", lambda path: (4242,))  # noqa: ARG005
         monkeypatch.setattr(
-            graph_cache, "_holder_cmdline", lambda pid: "frob serve --root /repo"  # noqa: ARG005
+            graph_cache,
+            "_holder_cmdline",
+            lambda pid: "frob serve --root /repo",  # noqa: ARG005
         )
         monkeypatch.setattr(graph_cache, "_LOCK_TOTAL_TIMEOUT_SECONDS", 0.03)
 

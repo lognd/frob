@@ -773,9 +773,7 @@ class TestCrossTicketLeakage:
         wt2 = repo.parent / "wt2"
         _run(["git", "worktree", "add", "-b", "other-agent-t4271-a", str(wt2)], repo)
 
-        held = new_ticket(
-            wt2, _spec("Unrelated ack, own symbol", scope=("frob.lock",))
-        )
+        held = new_ticket(wt2, _spec("Unrelated ack, own symbol", scope=("frob.lock",)))
         assert held.is_ok
         held_id = held.danger_ok.id
         assert transition(wt2, held_id, TicketState.PLANNED).is_ok

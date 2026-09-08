@@ -144,6 +144,7 @@ from frob.gates._inv import (
     inv004_gate,
     invariant_gate,
 )
+from frob.gates._land_format import land_format_gate
 from frob.gates._land_parity import (
     land_parity_doc_test_gate,
     land_parity_long_function_gate,
@@ -6260,6 +6261,12 @@ _ALL_GATES = frozenset(
         # rules, immediately after "vmodel" (same position as its own
         # dispatch-dict entry below).
         "land_parity",
+        # T-4298: LANDFMT001 (frob.gates._land_format.land_format_gate),
+        # immediately after "land_parity" -- same diff-scoped, touched-
+        # set-only shape as LANDPARITY001/002 above, closing the gap left
+        # by FMT001 (frob:` directive lines only) for ordinary `ruff
+        # format` code-layout drift.
+        "land_format",
         # T-3466: CROSSTICKET001 (frob.tickets._land.cross_ticket_leakage_
         # gate), immediately after "land_parity" -- same "frob check
         # --ticket <id> sees what frob ticket land would refuse on"
@@ -6853,6 +6860,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # T-3456: LANDPARITY001/LANDPARITY002, same position as its own
     # _ALL_GATES entry above.
     "land_parity",
+    # T-4298: LANDFMT001, same position as its own _ALL_GATES entry above.
+    "land_format",
     # T-3466: CROSSTICKET001, same position as its own _ALL_GATES entry
     # above.
     "cross_ticket_leakage",
@@ -7362,6 +7371,11 @@ def _build_thread_jobs(
             *land_parity_doc_test_gate(st.root),
             *land_parity_long_function_gate(st.root),
         ),
+        # T-4298: LANDFMT001, same `st.root` as "land_parity" above --
+        # `land_format_gate` computes its own `working_diff(root, "main")`
+        # touched-file set exactly the way `_land_parity_diff` does, so no
+        # extra state from `st` is needed here.
+        "land_format": lambda: land_format_gate(st.root),
         # T-3466: CROSSTICKET001, same `st.root` as "land_parity" above,
         # plus `st.ticket.id` (the "which ticket is landing" context this
         # check specifically needs, T-3456's own scoping-out reason) --
@@ -9007,6 +9021,7 @@ __all__ = [
     "policy_weakening_gate",
     "land_parity_doc_test_gate",
     "land_parity_long_function_gate",
+    "land_format_gate",
     "cross_ticket_leakage_gate",
     "invariant_gate",
     "known_gate_rule_ids",
