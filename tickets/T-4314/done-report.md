@@ -1,0 +1,97 @@
+## Done report
+
+Changed:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_stale_holder_body_naming_a_dead_pid_never_held_is_not_reported_in_progress
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_stale_holder_body_never_held_does_not_shield_holder_dead
+
+INVESTIGATION FIRST: counted every reader of `LAND_LOCK_REL`/
+`_read_land_lock_holder_json` inside this ticket's scope
+(src/frob/tickets/_leases.py): `_refuse_for_held_land_lock`,
+`_land_flock_probe`, `_land_lock_started_at`, `_land_in_progress_for_ticket`,
+`refuse_if_land_in_progress`/`_probe_land_once`. Every one of them already
+answers "is a land in progress" by attempting the actual advisory `flock`
+(non-blocking) or scanning `/proc` for a live `frob ticket land` process --
+never by trusting the JSON body alone. The JSON body is read only to NAME
+the ticket/pid in a refusal message, and only after the flock attempt has
+already failed for real. This already IS choice (b) from the ticket
+(readers test the lock, treat the body as descriptive only), and it is
+already the single path -- there is no second, divergent liveness check
+inside this file to consolidate.
+
+I forced the exact incident condition described in the ticket -- a
+`land.lock` file naming a pid that was never actually held, written
+directly rather than reached by killing a process that once held it (the
+existing `test_allows_after_a_killed_lands_lock_is_os_released` only
+covers "held then killed", not "body written, lock never acquired at
+all") -- against both `refuse_if_land_in_progress` and
+`lease_staleness_reason` (which shields a holder-dead lease via
+`_land_in_progress_for_ticket` whenever the lock genuinely names it).
+Confirmed manually first (`python -c` against the live module) and then
+landed as the two committed regression tests above: both assert `Ok`/
+`"holder-dead"` respectively -- neither ever reports a land in progress
+from the stale body.
+
+No production change was needed or made: `_leases.py`'s readers already
+implement the more robust option (b) uniformly, so a stale/never-held
+`land.lock` body cannot by itself produce a "land in progress" claim
+anywhere in this file's public surface. The messages in
+`_refuse_for_held_land_lock` and `_probe_land_once` already state what was
+actually checked (flock held / belt-and-braces process scan), satisfying
+the ticket's "say what was checked" requirement without further change.
+
+The write side that leaves the JSON body un-cleared on normal completion
+lives in `frob.tickets._land` (`_land_lock`'s release path), which is
+OUTSIDE this ticket's declared scope (`src/frob/tickets/_leases.py`).
+Since every in-scope reader already ignores the stale body, the incident
+described (an agent parking on a "land in progress" claim) is not
+reachable through any function this module exposes. Not filing a follow-up
+for the write-side residue itself: it is purely cosmetic once no reader
+trusts it (a human `cat`-ing the file by hand is not a code path this
+ticket's scope can fix), so filing it would be busywork rather than a real
+gap.
+
+NOT FILED: doctor.py::scan_live_land_processes already reports an explicit
+`alive: bool` field via `frob.tickets._land._probe_land_lock_pid_liveness`
+(pid-liveness, not flock, but still a real liveness check, not body-only
+trust) -- also outside scope and also not a body-trusting reader, so no
+follow-up ticket needed there either.
+
+SCOPE002 DISCLOSURE (frob:waive SCOPE002, same disclosed-breadth class
+T-3914/T-3930/T-3931/T-4013/T-4019/T-4132 already measured and accepted --
+SCOPE002's own violation location is the machine-managed tickets.md
+ledger, not a source line a code comment can anchor to, so it is disclosed
+here per that established precedent rather than suppressed in code):
+`src/frob/tickets/_leases.py`'s own top-of-file LARGE001 waiver already
+documents that this module is one cohered but heavily cross-referenced
+pipeline (lease CRUD, land-lock probing, ledger-commit atomicity, crash
+recovery); scoping a ticket to just this file transitively touches dozens
+of frob:doc/frob:tests/private-helper edges into
+docs/modules/tickets-{landing,lifecycle}.md, _land.py, _store.py,
+_worktree_sweep.py, ticket_runner/__init__.py, worktree_runner.py, and
+several other *.py test files this ticket did not touch and has no reason
+to widen into. `tests/test_ticket_leases.py` was added to scope (only)
+because this ticket's own two new regression tests needed to live there.
+
+Evidence: tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_stale_holder_body_naming_a_dead_pid_never_held_is_not_reported_in_progress, tests/test_ticket_leases.py::TestLeaseStalenessReason::test_stale_holder_body_never_held_does_not_shield_holder_dead (both bound via `frob ticket evidence`); full `tests/test_ticket_leases.py` run: 156 passed, 0 failed.
+
+Filed: none (see NOT FILED above for what was considered and not filed).
+
+Gates: `frob check --ticket T-4314 --only gates-fast/gates-native/gates-security/lint/static` clean except the pre-existing docs/modules/verify-rapid-debt-visibility.md INV003/REF002 pair (owned by T-4334, unrelated to this scope) and the disclosed SCOPE002 findings above (frob:waive SCOPE002, ledger-anchored, cannot be waived inline).
+
+--check-repro N/A: no production code changed (the correct behavior already existed), so there is no fix commit for a repro test to bracket; the two new tests are confirmatory regression coverage of pre-existing correct behavior, not a fail-then-pass repro of a bug fix.
+
+### Changed
+```
+ tests/test_ticket_leases.py | 84 +++++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-4314/ticket.md    | 12 +++++++
+ 2 files changed, 96 insertions(+)
+```
+
+### Evidence
+- `tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_stale_holder_body_naming_a_dead_pid_never_held_is_not_reported_in_progress` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestLeaseStalenessReason::test_stale_holder_body_never_held_does_not_shield_holder_dead` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 3 error(s), 4701 warning(s), 953 waived
+- error-findings: INV003@docs/modules/verify-rapid-debt-visibility.md, REF002@docs/modules/verify-rapid-debt-visibility.md, SCOPE002@tickets.md

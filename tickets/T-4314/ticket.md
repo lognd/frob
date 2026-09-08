@@ -1,7 +1,7 @@
 ---
 id: T-4314
 title: Land lock file names a dead holder after completion, read as a live land
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -28,6 +28,9 @@ scope_changes:
     so evidence coverage resolves in-scope'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_stale_holder_body_naming_a_dead_pid_never_held_is_not_reported_in_progress
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_stale_holder_body_never_held_does_not_shield_holder_dead
 designated_repro_test: null
 threat: null
 component: null

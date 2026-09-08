@@ -1708,6 +1708,7 @@ class TestCommitFullLedgerChange:
 
 
 # frob:ticket T-1619
+# frob:ticket T-4314
 class TestRefuseIfLandInProgress:
     """T-1619: `refuse_if_land_in_progress` -- the exclusive-lease probe
     every ledger-committing verb now runs (via `_add_and_commit_tickets_md`)
@@ -1817,6 +1818,46 @@ class TestRefuseIfLandInProgress:
             if holder.poll() is None:
                 holder.kill()
                 holder.wait(timeout=5)
+
+    # frob:ticket T-4314
+    def test_stale_holder_body_naming_a_dead_pid_never_held_is_not_reported_in_progress(
+        self, repo: Path
+    ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_stale_holder_bod\
+        # y_naming_a_dead_pid_never_held_is_not_reported_in_progress
+        # T-4314: this is the exact incident shape -- a `land.lock` file
+        # whose JSON body names a pid, session id, and ticket id, but the
+        # lock itself was NEVER held by this test (no process ever
+        # acquired the flock, distinguishing this from `test_allows_after_
+        # a_killed_lands_lock_is_os_released`'s "held then killed" shape).
+        # The body alone must never be read as "a land is in progress":
+        # the advisory lock is the state, the JSON is residue. Uses a pid
+        # guaranteed not to exist (a fixed, implausibly large value) rather
+        # than a killed real pid, so this also covers the case where the
+        # normal completion path never even ran the cleanup that would
+        # have killed anything.
+        import json
+
+        from frob.tickets._leases import LAND_LOCK_REL, refuse_if_land_in_progress
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text(
+            json.dumps(
+                {
+                    "pid": 999999999,
+                    "session_id": "pid-999999999",
+                    "started_at": datetime.now(UTC).isoformat(),
+                    "ticket_id": "T-9999",
+                }
+            )
+        )
+
+        result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
+        assert result.is_ok
 
     # frob:ticket T-1961
     def test_waits_then_succeeds_once_the_lock_frees(self, repo: Path, caplog) -> None:
@@ -2648,6 +2689,7 @@ class TestReleaseOrphanedLease:
 
 # frob:ticket T-1806
 # frob:ticket T-2264
+# frob:ticket T-4314
 class TestLeaseStalenessReason:
     """`lease_staleness_reason` -- the single predicate `orphaned_leases`/
     `release_orphaned_lease` now both build on, unifying the three
@@ -2750,6 +2792,48 @@ class TestLeaseStalenessReason:
         finally:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
+
+    # frob:ticket T-4314
+    def test_stale_holder_body_never_held_does_not_shield_holder_dead(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_stale_holder_body_\
+        # never_held_does_not_shield_holder_dead
+        # T-4314: `land.lock` names THIS lease's own ticket_id, but the
+        # lock was never actually held (a dead pid, never acquired here) --
+        # the same residue shape `test_land_shields_lease` exercises with a
+        # GENUINELY held lock. `_land_in_progress_for_ticket` must key off
+        # the advisory lock's live state, not the body alone, so a stale
+        # body naming this exact ticket must NOT shield it from
+        # "holder-dead".
+        import json
+        from datetime import timedelta
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LEASE_TTL_SECONDS,
+            _LeaseRecord,
+            lease_staleness_reason,
+        )
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text(json.dumps({"pid": 999999999, "ticket_id": "T-0001"}))
+
+        stale_time = (
+            datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 60)
+        ).isoformat()
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=stale_time,
+        )
+        assert lease_staleness_reason(repo, record) == "holder-dead"
 
     # frob:ticket T-2264
     def test_other_land_no_shield(self, repo: Path, second_worktree: Path) -> None:
