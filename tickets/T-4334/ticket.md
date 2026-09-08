@@ -1,7 +1,7 @@
 ---
 id: T-4334
 title: New verify-rapid-debt doc carries the tree's only three gate errors
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
