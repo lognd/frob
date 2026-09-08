@@ -27,6 +27,7 @@ scope:
 - tests/ticket_land_suite/test_release.py
 - tests/ticket_land_suite/test_land_core.py
 - tests/unit/test_land_release_coherence.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -107,6 +108,11 @@ scope_changes:
   reason: T-4184 default-on dev-version-bump changes two pre-existing tests bump_version=>Ok(None)
     fixtures expected an untouched pyproject version; both need an explicit dev_version_bump=false
     in their fixtures to keep testing what they always tested
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'AFFECT001: _apply_release_bump changed and its frob:doc target lives here'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
