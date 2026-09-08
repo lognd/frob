@@ -15,10 +15,131 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
+- tests/test_gates_tick009_tick010.py
+- docs/modules/gates.md
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets-lifecycle.md
+- tests/gates_suite/test_fix_engine.py
+- tests/gates_suite/test_tick.py
+- tests/test_gates_tickets_hygiene.py
+- tests/test_tick012_gate.py
+- tests/test_tick013_gate.py
+- tests/test_tickets_collision.py
+- tests/test_tickets_migration.py
+- src/frob/gates/_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_tick009_tick010.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/gates_suite/test_fix_engine.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/gates_suite/test_tick.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_tick012_gate.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_tick013_gate.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: 'T-4319: widening TICK010 (whole-file scope) triggers SCOPE002''s exhaustive
+    frob:doc/frob:tests coverage requirement over every OTHER pre-existing _tickN_*
+    function this shared multi-rule file already carries directives for; adding them
+    here (most demoted to evidence-only next) is a mechanical land requirement of
+    touching this file at all, not new work content.'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
