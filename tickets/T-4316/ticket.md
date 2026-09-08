@@ -1,7 +1,7 @@
 ---
 id: T-4316
 title: Closing T-4298 stranded its own frob:todo directive, failing the gate step
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
