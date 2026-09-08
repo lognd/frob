@@ -97,6 +97,51 @@ def test_required_version_and_satisfies():
     assert not satisfies("1.9.9", "2.0.0")
 
 
+# frob:ticket T-4270
+def test_dev_prerelease_and_final_sort_in_pep440_order():
+    """T-4270: verify by ORDERING, not by parsing -- a development build, a
+    pre-release, and the final release of the same version must sort in
+    the order PEP 440 requires (dev < pre-release < final), which a
+    truncate-to-three-integers parser could never distinguish since all
+    three used to parse to the identical (1, 2, 3) tuple."""
+    from packaging.version import Version
+
+    versions = ["1.2.3", "1.2.3.dev1", "1.2.3rc1"]
+    ordered = sorted(versions, key=Version)
+    assert ordered == ["1.2.3.dev1", "1.2.3rc1", "1.2.3"]
+
+
+# frob:ticket T-4270
+def test_prerelease_does_not_satisfy_its_final_release_minimum():
+    """T-4270 acceptance [2]: a pre-release must not be treated as
+    satisfying the minimum-version check for its own final release --
+    the exact distinction a truncating parser was blind to."""
+    assert not satisfies("1.2.3rc1", "1.2.3")
+    assert satisfies("1.2.3", "1.2.3rc1")
+
+
+# frob:ticket T-4270
+def test_trailing_hyphen_number_parses_as_post_release_not_prerelease():
+    """T-4270: a trailing hyphen-number (`1.2.3-1`) reads like a semver
+    pre-release but PEP 440 parses it as a POST-release, so it sorts
+    AFTER the final version, not before it."""
+    assert satisfies("1.2.3-1", "1.2.3")
+    assert not satisfies("1.2.3", "1.2.3-1")
+
+
+# frob:ticket T-4270
+def test_unparseable_version_is_inspectable_failure_not_truncated_value():
+    """T-4270 acceptance [3]: a version string the parser cannot interpret
+    produces `None`/`Err`, never a confident value silently computed from
+    a truncated prefix."""
+    from frob.release import _parse
+
+    assert _parse("not-a-version-at-all!!!") is None
+    result = required_version("not-a-version-at-all!!!", BumpClass.PATCH)
+    assert result.is_err
+    assert result.danger_err == ReleaseError.BadVersion
+
+
 # frob:ticket T-1281
 def test_load_manifest_malformed_json_is_err(tmp_path):
     # frob:tests src/frob/release/__init__.py::load_manifest

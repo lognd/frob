@@ -21,6 +21,7 @@ import re
 from enum import IntEnum
 from pathlib import Path
 
+from packaging.version import InvalidVersion, Version
 from pydantic import BaseModel, ConfigDict
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
@@ -33,7 +34,6 @@ from frob.tickets._worktree_guard import enforce_worktree_lease
 _log = get_logger(__name__)
 
 _MANIFEST_NAME = ".frob-release.json"
-_VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)")
 
 
 # frob:doc docs/modules/release.md#public-api
@@ -512,12 +512,28 @@ def diff_class(manifest: ReleaseManifest, snapshot: GraphSnapshot) -> BumpClass:
     return BumpClass.NONE
 
 
-def _parse(version: str) -> tuple[int, int, int] | None:
-    """`(major, minor, patch)` from an X.Y.Z(-suffix) string, or None."""
-    match = _VERSION_RE.match(version.strip())
-    if match is None:
+# frob:ticket T-4270
+# frob:tests tests/test_release.py::test_dev_prerelease_and_final_sort_in_pep440_order
+# frob:tests \
+# tests/test_release.py::test_unparseable_version_is_inspectable_failure_not_truncated_\
+# value
+def _parse(version: str) -> Version | None:
+    """Full PEP 440 parse of `version` (T-4270), or `None` if the packaging
+    standard cannot interpret it. Replaces a hand-rolled `^(\\d+)\\.(\\d+)\\.
+    (\\d+)` regex that matched only a leading X.Y.Z and silently discarded
+    any pre-release/dev/post-release suffix past that point, so a
+    pre-release and its final release parsed to an identical tuple and
+    every comparison in this module was blind to the distinction. Using
+    `packaging.version.Version` -- the library this project already
+    depends on for exactly this -- means ordering across dev/pre/final/
+    post builds is the ecosystem's own PEP 440 rule, not a hand-rolled one
+    (a bare hyphen-number suffix, for instance, is a POST-release under
+    PEP 440 and sorts AFTER the final version, not before it as a
+    semver-style reading would suggest)."""
+    try:
+        return Version(version.strip())
+    except InvalidVersion:
         return None
-    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
 
 # frob:doc docs/modules/release.md#public-api
@@ -526,7 +542,7 @@ def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError
     parsed = _parse(previous)
     if parsed is None:
         return Err(ReleaseError.BadVersion)
-    major, minor, patch = parsed
+    major, minor, patch = (tuple(parsed.release) + (0, 0, 0))[:3]
     if bump == BumpClass.MAJOR:
         # semver spec section 4: "Major version zero (0.y.z) is for initial
         # development. Anything MAY change at any time." So a BREAKING change
@@ -545,8 +561,19 @@ def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:ticket T-4270
+# frob:tests tests/test_release.py::test_required_version_and_satisfies
+# frob:tests \
+# tests/test_release.py::test_prerelease_does_not_satisfy_its_final_release_minimum
+# frob:tests \
+# tests/test_release.py::test_trailing_hyphen_number_parses_as_post_release_not_prerele\
+# ase
 def satisfies(current: str, minimum: str) -> bool:
-    """True if `current` >= `minimum` by (major, minor, patch) ordering."""
+    """True if `current` >= `minimum` under full PEP 440 ordering (T-4270:
+    was (major, minor, patch)-only, so a pre-release/dev build of `minimum`'s
+    final version compared equal to it; `packaging.version.Version`
+    ordering correctly ranks dev < pre-release < final < post-release, so a
+    pre-release no longer satisfies its own final release's minimum)."""
     c, m = _parse(current), _parse(minimum)
     if c is None or m is None:
         return False

@@ -2,7 +2,7 @@
 id: T-4270
 title: the release version parser truncates pre-release and development suffixes,
   so a pre-release and its final release compare as equal
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -43,7 +43,7 @@ evidence:
 - tests/test_release.py::test_unparseable_version_is_inspectable_failure_not_truncated_value
 - tests/test_release.py::test_required_version_bad_previous_is_err
 - tests/test_release.py::test_satisfies_unparseable_inputs_are_false
-designated_repro_test: null
+designated_repro_test: tests/test_release.py::test_prerelease_does_not_satisfy_its_final_release_minimum
 acceptance:
 - text: given a development build, a pre-release, and a final release of the same
     version, when they are sorted, then the order matches what the python packaging

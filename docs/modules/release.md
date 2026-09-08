@@ -329,5 +329,9 @@ on the should-never-happen I/O failure path, original manifest untouched.
   refactor is not a breaking change, which is exactly semver's contract.
 - **Opt-in, not on by default.** Like `[gates.severity]`, a repo turns the
   release discipline on deliberately; unstamped repos are unaffected.
-- **PEP440 pre-release suffixes are tolerated** (parsed to X.Y.Z); the
-  bump comparison ignores the suffix. Full PEP440 ordering is future work.
+- **Full PEP 440 ordering (T-4270).** `_parse`/`satisfies`/`required_
+  version` delegate to `packaging.version.Version` rather than a
+  truncate-to-X.Y.Z regex, so dev builds, pre-releases, and post-releases
+  compare correctly instead of parsing identically to their final
+  release. A version string the standard cannot interpret is `None`/
+  `Err(BadVersion)`, never a confident value computed from a truncation.
