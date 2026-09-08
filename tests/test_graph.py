@@ -2829,7 +2829,7 @@ class TestScopePrivateHelperGaps:
         _write(
             tmp_path,
             "pkg/a.py",
-            "def public_fn() -> None:\n    _helper()\n",
+            "from pkg.b import _helper\n\n\ndef public_fn() -> None:\n    _helper()\n",
         )
         _write(tmp_path, "pkg/b.py", "def _helper() -> None:\n    pass\n")
         gaps = scope_private_helper_gaps(
@@ -2850,7 +2850,7 @@ class TestScopePrivateHelperGaps:
         _write(
             tmp_path,
             "pkg/a.py",
-            "def public_fn() -> None:\n    _helper()\n",
+            "from pkg.b import _helper\n\n\ndef public_fn() -> None:\n    _helper()\n",
         )
         _write(tmp_path, "pkg/b.py", "def _helper() -> None:\n    pass\n")
         gaps = scope_private_helper_gaps(
@@ -2865,7 +2865,7 @@ class TestScopePrivateHelperGaps:
         _write(
             tmp_path,
             "pkg/a.py",
-            "def public_fn() -> None:\n    _helper()\n",
+            "from pkg.b import _helper\n\n\ndef public_fn() -> None:\n    _helper()\n",
         )
         _write(tmp_path, "pkg/b.py", "def _helper() -> None:\n    pass\n")
         gaps = scope_private_helper_gaps(
@@ -2917,6 +2917,7 @@ class TestScopePrivateHelperGaps:
         _write(
             tmp_path,
             "flat/test_a.py",
+            "from flat.test_b import _git\n\n\n"
             "def _snapshot():\n    pass\n\ndef test_x():\n    _snapshot()\n    _git()\n",
         )
         _write(tmp_path, "flat/test_b.py", "def _git():\n    pass\n")
@@ -2926,6 +2927,46 @@ class TestScopePrivateHelperGaps:
         assert len(gaps) == 1
         assert gaps[0].caller == "flat/test_a.py::test_x"
         assert gaps[0].callee == "flat/test_b.py::_git"
+
+    # frob:ticket T-4286
+    def test_flat_dir_imported_helper_shared_name_only_flags_the_real_import(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4286: the residual false-positive T-1012 did not cover -- a
+        caller that reaches a shared private helper through a real
+        IMPORT (not a same-file definition of its own) used to resolve
+        against every sibling file in the flat directory defining the
+        same short name, one false gap per unrelated sibling. Here three
+        sibling files each define their own private `_write`; the caller
+        imports ONLY `flat/helpers_a.py`'s -- only that one may be
+        flagged, the other two same-named, never-imported `_write`
+        definitions must not appear at all."""
+        # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
+        from frob.graph.callgraph import scope_private_helper_gaps
+
+        _write(
+            tmp_path,
+            "flat/test_a.py",
+            "from flat.helpers_a import _write\n\n\n"
+            "def test_x():\n    _write()\n",
+        )
+        _write(tmp_path, "flat/helpers_a.py", "def _write():\n    pass\n")
+        _write(tmp_path, "flat/helpers_b.py", "def _write():\n    pass\n")
+        _write(tmp_path, "flat/helpers_c.py", "def _write():\n    pass\n")
+        gaps = scope_private_helper_gaps(
+            tmp_path,
+            ("flat/test_a.py",),
+            (
+                "flat/test_a.py",
+                "flat/helpers_a.py",
+                "flat/helpers_b.py",
+                "flat/helpers_c.py",
+            ),
+        )
+        assert len(gaps) == 1
+        assert gaps[0].caller == "flat/test_a.py::test_x"
+        assert gaps[0].callee == "flat/helpers_a.py::_write"
+        assert gaps[0].definition_file == "flat/helpers_a.py"
 
 
 # frob:ticket T-2683

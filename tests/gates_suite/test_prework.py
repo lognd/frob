@@ -679,6 +679,7 @@ class TestScope002ClosureGate:
         _write(
             tmp_path,
             "src/pkg/a.py",
+            "from src.pkg.b import _helper\n\n\n"
             "def public_fn() -> None:\n    _helper()\n",
         )
         _write(tmp_path, "src/pkg/b.py", "def _helper() -> None:\n    pass\n")

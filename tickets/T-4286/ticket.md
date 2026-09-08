@@ -2,7 +2,7 @@
 id: T-4286
 title: SCOPE002 private-helper check resolves bare-name test helpers across the whole
   repo, flooding unrelated findings
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -74,7 +74,15 @@ scope_changes:
     has since landed'
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_only_used_by_scope_true_when_no_external_caller
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_clean_when_callee_also_in_scope
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_same_name_self_match_is_silent
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_genuine_cross_file_helper_still_fires
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_imported_helper_shared_name_only_flags_the_real_import
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
+designated_repro_test: tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_imported_helper_shared_name_only_flags_the_real_import
 threat: null
 component: null
 anchor: false

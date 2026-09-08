@@ -590,12 +590,21 @@ def build_call_graph(
     implemented, tested, and correct in isolation (see `tests/test_
     graph.py`'s cross-file-import-verification cases) -- it is
     deliberately NOT wired into any of `build_call_graph`'s three named
-    consumers (COV006, DEAD001, PROTO001-005) yet. The one caller that
-    DOES pass `verify_imports=False` explicitly (redundant with the
-    default, kept for documentation clarity) is `scope_private_helper_
-    gaps` (T-0998/T-1012), which has a genuinely different, permanent
-    correctness requirement independent of this blocker -- see its own
-    call site for why.
+    consumers (COV006, DEAD001, PROTO001-005) yet.
+
+    T-2195 UPDATE: the src-layout gap above IS closed
+    (`resolve_local_import`'s absolute-import branch now walks every
+    `pyproject.toml`-declared source root via `_declared_python_source_
+    roots`, not just bare `root`). That does not retroactively clear
+    COV006/DEAD001/PROTO001-005 -- nobody has re-measured their blast
+    radius against the fixed resolver, so they keep the default. One
+    caller, `scope_private_helper_gaps` (T-0998/T-1012/T-4286), now DOES
+    pass `verify_imports=True` explicitly: T-4286 measured that this
+    consumer's flat-test-directory false positives were exactly the
+    bare-short-name-without-import-check defect this flag exists to
+    close, re-verified the fix does not regress T-1012's own cases, and
+    is isolated to this one call site -- see that function's own
+    docstring for the full before/after.
 
     T-0809: when `mark_unresolved` (default `False`), a call target that
     LOOKS like it should resolve under Python's leading-underscore naming
@@ -1359,6 +1368,9 @@ def _short_name_of_symref(symref: str) -> str:
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_clean_when_callee_also_in_scope  # noqa: E501
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_same_name_self_match_is_silent  # noqa: E501
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_genuine_cross_file_helper_still_fires  # noqa: E501
+# frob:tests \
+# tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_imported_helper_shared_\
+# name_only_flags_the_real_import
 def scope_private_helper_gaps(
     root: Path, scope: tuple[str, ...] | list[str], files: Sequence[str]
 ) -> tuple[PrivateHelperGap, ...]:
@@ -1374,34 +1386,31 @@ def scope_private_helper_gaps(
     bounded the way `build_call_graph`'s own docstring assumes (a
     per-package scan, not a whole-tree one).
 
-    T-1012: over a FLAT top-level directory with hundreds of sibling
-    files (`tests/`), "same parent directory as a scoped file" widens
-    `candidate_paths` to the whole directory, and `build_call_graph`'s
-    bare-short-name matching (by design -- see `_resolve_edges_python`)
-    resolves a caller's own local helper call (e.g. `test_perf.py`
-    calling ITS OWN `_snapshot`) against EVERY same-named private symbol
-    across every sibling file, not just its own -- `test_perf.py::
-    test_x -> test_docptr_gate.py::_snapshot` fires purely from name
-    collision, not an actual cross-file dependency. Suppressed here by a
-    same-short-name same-file check: if `caller`'s own file ALSO defines
-    a private symbol under a callee's exact short name, that local
-    definition is overwhelmingly the real target in a flat, single-
-    directory scan -- every OTHER same-named file's candidate is dropped
-    for that name, for this caller, without touching `build_call_graph`'s
-    own general (multi-match) resolution semantics other consumers rely
-    on. A genuine cross-file private helper (no same-name candidate in
-    the caller's own file at all, e.g. `tests/test_B.py` calling a
-    helper ONLY `tests/test_A.py` defines) is unaffected and still
-    flagged."""
+    T-1012: over a FLAT directory (`tests/`), a caller's own local
+    helper call (e.g. `test_perf.py` calling its own `_snapshot`) used
+    to also match every OTHER same-named private symbol in a sibling
+    file, purely from name collision. Suppressed by a same-short-name
+    same-file check: if `caller`'s own file ALSO defines that short
+    name, every other file's same-named candidate is dropped for it. A
+    genuine cross-file helper (no same-name candidate in the caller's
+    own file) is unaffected and still flagged.
+
+    T-4286: `verify_imports=True` now (was `False`) -- T-1012's residual
+    gap: an IMPORTED (not same-file) shared helper used to resolve
+    against every same-named flat-dir sibling. Viable since T-2195; see
+    `build_call_graph`'s docstring."""
     from frob.tickets._models import scope_matches
 
     all_files = tuple(files)
     scope_files = {f for f in all_files if scope_matches(f, scope)}
     if not scope_files:
         return ()
-    # T-2188: verify_imports=False -- see this function's own docstring.
+    # T-4286: verify_imports=True -- see this function's own docstring
+    # (T-2195 closed the src-layout gap that blocked this for T-2188's
+    # other three consumers; this call site's isolated flip is unaffected
+    # by whatever those three still measure).
     graph = build_call_graph(
-        root, _scope_candidate_paths(all_files, scope_files), verify_imports=False
+        root, _scope_candidate_paths(all_files, scope_files), verify_imports=True
     )
 
     callers_of: dict[str, set[str]] = {}

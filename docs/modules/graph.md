@@ -466,12 +466,21 @@ exercises that positive case directly (an absolute same-directory
 import, unaffected by the src-layout/relative gap this ticket closed),
 so it was never actually blocked on this fix; re-verifying it against a
 src-layout positive case specifically remains open work for whichever
-ticket flips a real consumer's default. The `scope_private_helper_gaps`
-(T-0998/T-1012) consumer passes `verify_
-imports=False` explicitly (matching the default, kept for documentation
-clarity) -- it has a permanent, different correctness requirement (same-
-directory co-location, not import reachability) unrelated to this
-blocker.
+ticket flips a real consumer's default. **T-4286 update:** `scope_
+private_helper_gaps` (T-0998/T-1012) is that ticket for ITS OWN call
+site -- it now passes `verify_imports=True`, no longer the `False`
+default this section previously said it kept "for documentation
+clarity". Same-directory co-location was never actually sufficient on
+its own: a flat directory (`tests/`) with hundreds of siblings meant a
+caller reaching a shared helper through a real import (not a same-file
+definition) resolved against every sibling defining the same short
+name, flooding SCOPE002 with one false gap per unrelated sibling (T-1012
+only suppressed the same-file-definition case, not this imported one).
+`verify_imports=True` closes it directly instead of adding a second
+heuristic beside T-1012's. COV006/DEAD001/PROTO001-005 are unaffected --
+this flip is scoped to `scope_private_helper_gaps`'s own call site only;
+their own re-measurement against the now-fixed resolver remains separate,
+open work.
 
 ### Self-disclosure of a silently degraded capability (T-2683)
 

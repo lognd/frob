@@ -60,7 +60,11 @@ every gate trusts). Verified with source reads of the whole package plus
 ### `callgraph.py` -- best-effort private-callee call graph
 - `_called_names`: identifier-followed-by-`(` token scan. `build_call_graph`:
   records edges to PRIVATE (`_`-prefixed) callees only; `closure`: depth+node
-  capped BFS. Explicitly documented as unsound triage aid.
+  capped BFS. Explicitly documented as unsound triage aid. `verify_imports`
+  (default `False`, opt-in per caller): a cross-file candidate resolves
+  only when the caller's file actually imports it (T-2188); `scope_private_
+  helper_gaps` opts in (T-4286) to stop bare-short-name collisions across
+  unrelated sibling files in a flat directory.
 
 ### `lock.py` -- ack + drift
 - `acknowledge`: ref must be an edge endpoint AND resolve; records

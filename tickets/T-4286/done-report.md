@@ -1,0 +1,101 @@
+## Done report
+
+Root cause (measured, not the T-1012 fix already in place): `scope_
+private_helper_gaps` called `build_call_graph(..., verify_imports=False)`.
+T-1012 already suppressed the "caller's own same-file helper collides with
+a same-named sibling" case, but never covered a caller that reaches a
+SHARED helper through a real IMPORT (not a local definition) -- that case
+still resolved against every sibling file in a flat directory (e.g.
+tests/unit/) defining the same short name, producing one false SCOPE002
+gap per unrelated sibling. This is exactly the bare-short-name-without-
+import-check defect `verify_imports=True` exists to close (T-2188), which
+was blocked repo-wide by a src-layout gap in `resolve_local_import` --
+T-2195 already closed that gap, but `build_call_graph`'s docstring and
+`scope_private_helper_gaps`'s own `verify_imports=False` call were never
+updated to reflect it.
+
+Fix: flipped `scope_private_helper_gaps`'s own `build_call_graph` call to
+`verify_imports=True`. Scoped to this ONE consumer -- COV006/DEAD001/
+PROTO001-005 keep the `False` default; nobody has re-measured their own
+blast radius against the now-fixed resolver, and that is explicitly out
+of this ticket's scope. Updated `docs/modules/graph.md`'s T-2188 section
+and `docs/audits/graph.md`'s callgraph.py entry, which both still claimed
+scope_private_helper_gaps "has a permanent, different correctness
+requirement... unrelated to this blocker" -- no longer true.
+
+Existing TestScopePrivateHelperGaps fixtures called a bare private name
+with NO import statement at all in the caller's file, which is not valid
+Python and only worked because the old resolver never checked imports;
+updated those fixtures to include the real import their scenario implies
+(same for TestScope002ClosureGate.test_warns_on_unscoped_private_helper,
+the one collateral test outside the ticket's original scope glob, added
+via `frob ticket scope --add`). Added a new positive-control test
+reproducing the ticket's exact bug shape: three sibling files each
+defining their own private `_write`, caller imports only one -- only that
+one is flagged now, not all three.
+
+Also discovered and fixed, unrelated to the resolver bug itself: the
+ticket's OWN declared scope (`src/frob/gates/_scope*.py`) never matched
+the file the actual private-helper/doc-edge logic lives in
+(`src/frob/graph/callgraph.py`, `src/frob/gates/__init__.py`) -- widened
+scope via `frob ticket scope --add` with a reason each time, rather than
+touching those files without a lease.
+
+Waived per the same T-4289/T-4278 precedent (SCOPE002's finding location
+is the machine-managed ledger, not a source line a comment can anchor
+to), not the bare-name-collision precedent this ticket exists to stop
+people reaching for:
+
+frob:waive SCOPE002 reason="widening scope to touch callgraph.py's
+verify_imports flip and its ~2-line change pulls the WHOLE shared file's
+pre-existing doc/test/private-helper closure into SCOPE002's per-file
+check -- CallGraph, build_ordered_call_graph, and 20+ other symbols this
+ticket's diff never touched. Same for tests/test_graph.py, tests/
+gates_suite/test_prework.py, and docs/modules/graph.md: adding a widely-
+shared file to scope for a narrow fix drags in dozens of unrelated
+pre-existing edges (src/frob/graph/cache.py, src/frob/cycle/*, tests/
+conftest.py, etc.) with zero content changed in this diff. Pulling all
+of those into scope in turn would still not converge -- each one has its
+own further closure debt -- so this is disclosed rather than chased."
+
+frob:waive COV007 reason="pre-existing, unrelated to this diff -- src/
+frob/gates/_tdd_order.py's two private message helpers, not touched by
+T-4286"
+
+frob:waive SELFAUDIT001 reason="pre-existing, unrelated to this diff --
+claude_hooks capability-declared-but-unobserved findings, not touched by
+T-4286"
+
+frob:waive WIRE002 reason="pre-existing, unrelated to this diff -- a
+WIRE001 waiver in tests/test_ci_workflow_timeout.py naming an already-
+done ticket T-4274, not touched by T-4286"
+
+frob:waive ARCH103 reason="pre-existing, unrelated to this diff --
+_lock_holder_pids_linux/_lock_holder_pids_darwin/_holder_cmdline came in
+from merging main (T-4282's land) into this worktree, gate:ARCH is
+repo-wide not diff-scoped, not touched by T-4286"
+
+No new tickets filed -- everything found was either the assigned bug
+itself or scope-declaration friction fixed in-flight via `frob ticket
+scope --add`.
+
+### Changed
+```
+ tickets/T-4286/done-report.md | 94 +++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-4286/ticket.md      | 16 ++++++++
+ 2 files changed, 110 insertions(+)
+```
+
+### Evidence
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_only_used_by_scope_true_when_no_external_caller` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_clean_when_callee_also_in_scope` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_same_name_self_match_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_genuine_cross_file_helper_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_imported_helper_shared_name_only_flags_the_real_import` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 5 error(s), 4650 warning(s), 946 waived
+- error-findings: ARCH103@src/frob/graph/cache.py, COV007@src/frob/gates/_tdd_order.py, SCOPE002@tickets.md, SELFAUDIT001@design, WIRE002@tests/test_ci_workflow_timeout.py
