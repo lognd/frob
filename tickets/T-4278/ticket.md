@@ -3,7 +3,7 @@ id: T-4278
 title: 'five remaining windows failures with no owner: worktree-guard stdout purity,
   clipboard attach, two shared-identifier-counter cases, and the claude-config stale
   guard'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -20,10 +20,22 @@ scope:
 - tests/unit/test_app_runners_batch7.py
 - tests/unit/test_process_lock.py
 - tests/unit/test_sync_claude_config_stale_guard_t3408.py
+- .claude/hooks/sync-claude-config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: T-4278's claude-config stale-guard failure is a genuine production bug in
+    the hook itself (main()'s dest_rel = str(dest.relative_to(_HOME_CLAUDE)) uses
+    the native separator, backslash on Windows, while dest_to_source is keyed by MANAGED's
+    forward-slash strings -- the lookup misses on Windows so the stale-skip branch
+    never triggers), not a test-only fix; adding the hook file to scope to fix it
+    directly, the same class of separator bug T-4155 just fixed in frob.excludes
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given the windows runner, when these five cases run, then all five pass and
