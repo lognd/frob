@@ -16,10 +16,20 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/gates/_wire.py
+- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: T-4312 generalizes the strand check across frob:waive/todo/debt/deprecated;
+    the single correct wiring point covering close+drop+any terminal transition uniformly
+    is frob.tickets._evidence.transition, not per-CLI-command call sites (close_cmd.py,
+    _reporting.py) which would duplicate the hook
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
