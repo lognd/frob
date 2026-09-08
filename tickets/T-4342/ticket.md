@@ -34,6 +34,14 @@ scope_changes:
     _leases.py
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_lock_gone_ticket_is_orphaned
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_real_ticket_not_orphaned
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_archived_ticket_not_orphaned
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_live_holder_not_orphaned
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_bad_ledger_degrades_to_none
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_warn_logs_once_per_id
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_land_guard_surfaces_warning
 designated_repro_test: null
 threat: null
 component: null
