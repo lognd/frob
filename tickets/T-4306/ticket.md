@@ -16,6 +16,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - src/frob/excludes.py
+- tests/test_excludes.py
+- docs/modules/app.md
+- tests/unit/gates/test_ffi_boundary_path_shape.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +51,45 @@ scope_changes:
 - op: add
   glob: src/frob/excludes.py
   reason: test reason short
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'T-4306''s fix lives in src/frob/excludes.py (already added to scope); these
+    three are the closure set that follows directly from THAT file''s own frob:doc/frob:tests
+    edges -- tests/test_excludes.py (edited: new regression test + directive updates),
+    docs/modules/app.md (excludes.py''s shared frob:doc anchor), tests/unit/gates/test_ffi_boundary_path_shape.py
+    (existing frob:tests edge off is_excluded/_compiled_globs). The much larger remaining
+    SCOPE002 set (docs/strata/roadmap.md, docs/strata/threat.md, docs/guides/claude-hooks.md,
+    etc.) is design/frob.strata''s OWN pre-existing doc-closure surface, unrelated
+    to this fix and already present the moment T-4306 was auto-planned with scope=[''design/frob.strata''],
+    before any code change'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-4306''s fix lives in src/frob/excludes.py (already added to scope); these
+    three are the closure set that follows directly from THAT file''s own frob:doc/frob:tests
+    edges -- tests/test_excludes.py (edited: new regression test + directive updates),
+    docs/modules/app.md (excludes.py''s shared frob:doc anchor), tests/unit/gates/test_ffi_boundary_path_shape.py
+    (existing frob:tests edge off is_excluded/_compiled_globs). The much larger remaining
+    SCOPE002 set (docs/strata/roadmap.md, docs/strata/threat.md, docs/guides/claude-hooks.md,
+    etc.) is design/frob.strata''s OWN pre-existing doc-closure surface, unrelated
+    to this fix and already present the moment T-4306 was auto-planned with scope=[''design/frob.strata''],
+    before any code change'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/gates/test_ffi_boundary_path_shape.py
+  reason: 'T-4306''s fix lives in src/frob/excludes.py (already added to scope); these
+    three are the closure set that follows directly from THAT file''s own frob:doc/frob:tests
+    edges -- tests/test_excludes.py (edited: new regression test + directive updates),
+    docs/modules/app.md (excludes.py''s shared frob:doc anchor), tests/unit/gates/test_ffi_boundary_path_shape.py
+    (existing frob:tests edge off is_excluded/_compiled_globs). The much larger remaining
+    SCOPE002 set (docs/strata/roadmap.md, docs/strata/threat.md, docs/guides/claude-hooks.md,
+    etc.) is design/frob.strata''s OWN pre-existing doc-closure surface, unrelated
+    to this fix and already present the moment T-4306 was auto-planned with scope=[''design/frob.strata''],
+    before any code change'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
