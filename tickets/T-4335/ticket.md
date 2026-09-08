@@ -52,6 +52,12 @@ scope_changes:
     both directions per the ticket's acceptance)
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refusal_is_still_new_on_the_next_sweep
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_inherited_debt_is_reported_as_debt_not_clean
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_genuinely_zero_errors_still_says_clean
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestPersistBaseline::test_writes_and_logs_survival_warning_on_loss
 designated_repro_test: null
 threat: null
 component: null
