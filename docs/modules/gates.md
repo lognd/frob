@@ -7780,10 +7780,24 @@ ticket, the lists a genuinely new gate (name + rule id) must appear in:
    when the gate is a root-scanning, deterministically-cacheable process
    job; skippable for gates that are not, so this one is conditional,
    not universal.
-5. `frob.check._STAGE_GROUPS` (`src/frob/check/__init__.py`) -- which
-   `--only <group>` presets reach the gate; checked by
-   `tests/system/test_cli_check.py::TestCheckStageGroups.
-   test_available_stages_cover_every_gate_and_tool`.
+5. `frob.gates._GATE_STAGE_GROUPS` (same file, T-4336) -- which
+   `--only <group>` preset(s) (`gates-fast`/`gates-native`/
+   `gates-security`) reach the gate, declared right next to the gate's
+   own `_ALL_GATES` entry. Before T-4336 this was a sixth, separately
+   hand-maintained list (`frob.check._stage_groups`, `src/frob/check/
+   __init__.py`) that a gate could reach `_ALL_GATES` without ever
+   touching -- the exact omission `test_available_stages_cover_every_
+   gate_and_tool` (`tests/system/test_cli_check.py::
+   TestCheckStageGroups`) caught eight separate times, most recently
+   T-4307. Omitting a gate here now fails an import-time `assert` in
+   `frob.gates` (the same shape `_CANONICAL_GATE_ORDER`'s own assert
+   uses below) the moment `frob` is invoked at all, scoped `--only` runs
+   included -- not just when the test suite happens to run.
+   `frob.check._stage_groups()`'s `"gates-fast"`/`"gates-native"`/
+   `"gates-security"` members are now DERIVED from this mapping, so
+   there is exactly one place group membership is decided; the test
+   above stays as a second, now-unfalsifiable proof of the same
+   property (see its own docstring) rather than the sole guard.
 6. `frob.gates._waive._KNOWN_GATE_RULES` -- every rule id literal the
    gate can emit; checked by `gate_rule_registry_violations` (GATERULE001,
    this section), and (separately, at ticket-close time) by
@@ -7823,6 +7837,16 @@ _STAGE_GROUPS/_KNOWN_GATE_RULES as independently-maintained structures).
 Until that lands, GATERULE001's message above is the mitigation: it
 cannot make the six lists into one, so it names all six every time it
 fires instead.
+
+T-4336 narrowed list 5 specifically (the one that alone accounted for
+eight of the repeat incidents this section exists to name) without
+waiting on the full T-4165 unification: it stays a second declaration
+site, but is now `frob.gates._GATE_STAGE_GROUPS`, right next to
+`_ALL_GATES` itself, closed by the same import-time `assert` shape
+`_CANONICAL_GATE_ORDER` already used successfully -- so silently
+skipping it is no longer possible, only detected. The other five lists
+are untouched and still carry their own silent-omission risk pending
+T-4165.
 
 ### TEST002 unmeasured vs measured-zero (T-4138)
 

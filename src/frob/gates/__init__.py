@@ -6960,6 +6960,122 @@ assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
 )
 
 
+# frob:ticket T-4336
+#: Which stage-group(s) (frob.check._STAGE_GROUPS's "gates-fast"/
+#: "gates-native"/"gates-security" buckets) each gate belongs to,
+#: declared HERE alongside _ALL_GATES/_CANONICAL_GATE_ORDER so adding a
+#: gate without saying where it runs under `--only <group>` is a dict
+#: literal you cannot half-write, not a second hand-maintained list an
+#: agent can forget (T-4307 and 7 earlier incidents: a gate registered
+#: in _ALL_GATES but never added to a frob.check._STAGE_GROUPS member
+#: still passes its own tests and a full unscoped run, and only goes
+#: silently missing on the selective `--only` paths people actually use
+#: day to day). frob.check._STAGE_GROUPS's own gates-fast/gates-native/
+#: gates-security members are DERIVED from this mapping (inverted), so
+#: there is exactly one place membership is decided, not two that must
+#: be kept in sync by hand. A gate may sit in more than one group (not
+#: used today, kept expressible for e.g. a gate that is both diff-
+#: scoped and security-relevant).
+_GATE_STAGE_GROUPS: dict[str, frozenset[str]] = {
+    "affect_drift": frozenset(["gates-fast"]),
+    "arch_schema": frozenset(["gates-fast"]),
+    "archgate": frozenset(["gates-native"]),
+    "bare_toolchain": frozenset(["gates-fast"]),
+    "cache": frozenset(["gates-security"]),
+    "capability_conformance": frozenset(["gates-fast"]),
+    "clones": frozenset(["gates-native"]),
+    "comment_placement": frozenset(["gates-fast"]),
+    "compliance": frozenset(["gates-fast"]),
+    "coverage": frozenset(["gates-fast"]),
+    "cross_ticket_leakage": frozenset(["gates-fast"]),
+    "dead_symbols": frozenset(["gates-security"]),
+    "debt": frozenset(["gates-fast"]),
+    "decisions": frozenset(["gates-fast"]),
+    "deprecated": frozenset(["gates-fast"]),
+    "docanchor": frozenset(["gates-fast"]),
+    "docblocks": frozenset(["gates-fast"]),
+    "docblocks_schema": frozenset(["gates-fast"]),
+    "doclink": frozenset(["gates-fast"]),
+    "docmake": frozenset(["gates-fast"]),
+    "docseverity": frozenset(["gates-fast"]),
+    "docstatus": frozenset(["gates-fast"]),
+    "drift": frozenset(["gates-fast"]),
+    "dup_schema": frozenset(["gates-fast"]),
+    "env_var_docs": frozenset(["gates-fast"]),
+    "excludehazard": frozenset(["gates-fast"]),
+    "exhaustive_handling": frozenset(["gates-native"]),
+    "ffi_boundary": frozenset(["gates-fast"]),
+    "flag_coverage": frozenset(["gates-fast"]),
+    "fmt": frozenset(["gates-fast"]),
+    "fuzz": frozenset(["gates-fast"]),
+    "gates_schema": frozenset(["gates-fast"]),
+    "graph_schema": frozenset(["gates-fast"]),
+    "invariant": frozenset(["gates-fast"]),
+    "land_format": frozenset(["gates-fast"]),
+    "land_parity": frozenset(["gates-fast"]),
+    "lang_conformance": frozenset(["gates-fast"]),
+    "lang_project_conformance": frozenset(["gates-fast"]),
+    "lexcheck": frozenset(["gates-fast"]),
+    "milestone": frozenset(["gates-fast"]),
+    "narrative_blocks": frozenset(["gates-fast"]),
+    "native_schema": frozenset(["gates-fast"]),
+    "opaque": frozenset(["gates-security"]),
+    "parse_failures": frozenset(["gates-fast"]),
+    "perf": frozenset(["gates-native"]),
+    "pii_structural": frozenset(["gates-security"]),
+    "policy": frozenset(["gates-fast"]),
+    "prework": frozenset(["gates-fast"]),
+    "profile_boundary": frozenset(["gates-fast"]),
+    "profile_schema": frozenset(["gates-fast"]),
+    "protocol_summary": frozenset(["gates-security"]),
+    "refs": frozenset(["gates-fast"]),
+    "refs_schema": frozenset(["gates-fast"]),
+    "registry": frozenset(["gates-fast"]),
+    "release": frozenset(["gates-fast"]),
+    "render_lint": frozenset(["gates-fast"]),
+    "root_asset_dirs": frozenset(["gates-fast"]),
+    "scope": frozenset(["gates-fast"]),
+    "secrets": frozenset(["gates-security"]),
+    "suppress": frozenset(["gates-fast"]),
+    "sys": frozenset(["gates-security"]),
+    "test": frozenset(["gates-fast"]),
+    "test_runner_schema": frozenset(["gates-fast"]),
+    "testing_schema": frozenset(["gates-fast"]),
+    "tickets": frozenset(["gates-fast"]),
+    "toplevel_scalar_schema": frozenset(["gates-fast"]),
+    "vmodel": frozenset(["gates-fast"]),
+    "walk_lint": frozenset(["gates-fast"]),
+    "win32_kill_signal": frozenset(["gates-fast"]),
+    "wire": frozenset(["gates-security"]),
+}
+
+# T-4336: same T-0839 import-time-guard shape as the
+# _CANONICAL_GATE_ORDER/_ALL_GATES assert above -- fires on every
+# `frob` invocation (including a scoped `--only` one), not only when
+# the full test suite happens to run.
+assert set(_GATE_STAGE_GROUPS) == _ALL_GATES, (
+    "_GATE_STAGE_GROUPS and _ALL_GATES have drifted apart -- every gate "
+    "in _ALL_GATES must have a _GATE_STAGE_GROUPS entry so it stays "
+    "reachable via `frob check --only <group>`, not just a full run"
+)
+assert all(_GATE_STAGE_GROUPS.values()), (
+    "every _GATE_STAGE_GROUPS entry must name at least one stage group -- "
+    "an empty frozenset is the same unreachable-via---only omission this "
+    "mapping exists to make impossible to express"
+)
+_KNOWN_GATE_STAGE_GROUP_NAMES = frozenset(
+    {"gates-fast", "gates-native", "gates-security"}
+)
+assert (
+    frozenset().union(*_GATE_STAGE_GROUPS.values()) <= _KNOWN_GATE_STAGE_GROUP_NAMES
+), (
+    "_GATE_STAGE_GROUPS names a stage group outside "
+    "_KNOWN_GATE_STAGE_GROUP_NAMES -- frob.check._STAGE_GROUPS only "
+    "recognizes gates-fast/gates-native/gates-security for gate names "
+    '("lint"/"static" are tool-name groups, not gate groups)'
+)
+
+
 # frob:ticket T-0415
 @dataclass(frozen=True)
 class _ProcessJob:

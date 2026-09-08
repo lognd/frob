@@ -497,7 +497,7 @@ list, since new groups may be added later. Add `--ticket T-XXXX` /
 `--json` / `--delta` to each iteration exactly as you would to a single
 `frob check` call; every existing flag composes with `--only` unchanged.
 A stage-group name is just a preset `--only` value (see
-`frob.check._STAGE_GROUPS`) -- naming an individual tool (`ruff`) or gate
+`frob.check._stage_groups()`) -- naming an individual tool (`ruff`) or gate
 (`doclink`) directly still works exactly as before, unaffected.
 
 `frob check --stamp-baseline` used to share this exact hazard (it ran one

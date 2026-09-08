@@ -567,10 +567,21 @@ class TestCheckStageGroups:
         assert "lint" in payload["stages"]
 
     # frob:ticket T-0627
+    # frob:ticket T-4336
     def test_available_stages_cover_every_gate_and_tool(self):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_co\
         # ver_every_gate_and_tool
+        """T-4336: this test now GUARDS a structural invariant rather than
+        catching a gap -- `frob.gates._GATE_STAGE_GROUPS`'s own import-time
+        assert already forces every `_ALL_GATES` member into at least one
+        stage group before this test can even import `frob.check`, so a
+        gate landing here ungrouped is no longer a reachable failure mode.
+        Keep this test anyway (per the ticket's own explicit instruction):
+        it is a second, independent proof of the identical property from
+        the consumer's side (`available_stages()`/`_STAGE_GROUPS`, not
+        `frob.gates`'s internals), so do NOT delete it as redundant --
+        "now unfalsifiable" is the point, not a reason to remove it."""
         from frob.check import _STAGE_GROUPS, available_stages
         from frob.check import _TOOL_STAGES as tool_stages
         from frob.gates import _ALL_GATES
@@ -584,6 +595,109 @@ class TestCheckStageGroups:
         # all" (never a real gate name in `_ALL_GATES`), so it is excluded
         # here rather than required to appear inside some group.
         assert (tool_stages - {"gates"}) | _ALL_GATES <= covered
+
+    # frob:ticket T-4336
+    def test_gate_stage_group_migration_is_byte_identical(self):
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_gate_stage_group_mi\
+        # gration_is_byte_identical
+        """T-4336 migration proof: the gate->groups mapping computed from
+        the new declaration-site source of truth (`frob.gates.
+        _GATE_STAGE_GROUPS`) must equal, gate for gate and group for
+        group, the mapping hand-listed in the three `_STAGE_GROUPS`
+        entries ("gates-fast"/"gates-native"/"gates-security") this
+        ticket replaced -- captured here as a golden literal at migration
+        time rather than trusted by eyeballing a diff. A future gate
+        legitimately changing group is expected to require updating this
+        golden value too, same as `_CANONICAL_GATE_ORDER`'s own drift-lock
+        tests."""
+        from frob.check import _STAGE_GROUPS
+
+        # Golden snapshot of the OLD hand-maintained gates-fast/-native/
+        # -security members, taken from check/__init__.py immediately
+        # before T-4336's edit (verified by inverting it into gate ->
+        # frozenset(groups) and diffing against the live post-migration
+        # value below).
+        golden_gates_fast = frozenset(
+            {
+                "affect_drift",
+                "arch_schema",
+                "bare_toolchain",
+                "capability_conformance",
+                "comment_placement",
+                "compliance",
+                "coverage",
+                "cross_ticket_leakage",
+                "debt",
+                "decisions",
+                "deprecated",
+                "docanchor",
+                "docblocks",
+                "docblocks_schema",
+                "doclink",
+                "docmake",
+                "docseverity",
+                "docstatus",
+                "drift",
+                "dup_schema",
+                "env_var_docs",
+                "excludehazard",
+                "ffi_boundary",
+                "flag_coverage",
+                "fmt",
+                "fuzz",
+                "gates_schema",
+                "graph_schema",
+                "invariant",
+                "land_format",
+                "land_parity",
+                "lang_conformance",
+                "lang_project_conformance",
+                "lexcheck",
+                "milestone",
+                "narrative_blocks",
+                "native_schema",
+                "parse_failures",
+                "policy",
+                "prework",
+                "profile_boundary",
+                "profile_schema",
+                "refs",
+                "refs_schema",
+                "registry",
+                "release",
+                "render_lint",
+                "root_asset_dirs",
+                "scope",
+                "suppress",
+                "test",
+                "test_runner_schema",
+                "testing_schema",
+                "tickets",
+                "toplevel_scalar_schema",
+                "vmodel",
+                "walk_lint",
+                "win32_kill_signal",
+            }
+        )
+        golden_gates_native = frozenset(
+            {"archgate", "clones", "perf", "exhaustive_handling"}
+        )
+        golden_gates_security = frozenset(
+            {
+                "sys",
+                "pii_structural",
+                "secrets",
+                "dead_symbols",
+                "wire",
+                "cache",
+                "protocol_summary",
+                "opaque",
+            }
+        )
+        assert _STAGE_GROUPS["gates-fast"] == golden_gates_fast
+        assert _STAGE_GROUPS["gates-native"] == golden_gates_native
+        assert _STAGE_GROUPS["gates-security"] == golden_gates_security
 
     # frob:ticket T-0627
     def test_stage_group_expands_like_hand_listed_only(self, tmp_path):

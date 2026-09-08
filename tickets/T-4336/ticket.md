@@ -1,7 +1,7 @@
 ---
 id: T-4336
 title: Make gate stage-group membership mandatory at declaration
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-08'
@@ -43,6 +43,19 @@ scope_changes:
     in sync with the new frob.gates._GATE_STAGE_GROUPS source of truth'
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): T-4336 is a preventive/structural refactor
+    of gate-declaration machinery: at HEAD every gate is already grouped (all 70 pass
+    test_available_stages_cover_every_gate_and_tool both before and after), so there
+    is no currently-failing runtime defect to reproduce fail-then-pass. The fix makes
+    a FUTURE omission impossible to express (an import-time assert), it does not change
+    today''s --only behavior for any existing gate -- proven by test_gate_stage_group_migration_is_byte_identical''s
+    byte-identical-mapping assertion.'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2643
+  new_length: 3194
 evidence:
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_gate_stage_group_migration_is_byte_identical
@@ -76,3 +89,5 @@ RELATED, do not duplicate: T-4329 landed the same class of fix for pytest's heav
 This is a refactor of live enforcement machinery -- land it on its own.
 
 NOTE: this work was originally assigned as T-4313, but no such ticket exists anywhere in this repo's git history, tickets/, tickets/archive/, or any worktree -- only a stale .frob/tickets/T-4313.lock residue (T-4314-class leftover from an id-allocation attempt that never completed). Filed fresh under this id after exhaustive search found no T-4313 to resume; see Done report.
+
+frob:no-behavior-change reason="T-4336 is a preventive/structural refactor of gate-declaration machinery: at HEAD every gate is already grouped (all 70 pass test_available_stages_cover_every_gate_and_tool both before and after), so there is no currently-failing runtime defect to reproduce fail-then-pass. The fix makes a FUTURE omission impossible to express (an import-time assert), it does not change today's --only behavior for any existing gate -- proven by test_gate_stage_group_migration_is_byte_identical's byte-identical-mapping assertion."

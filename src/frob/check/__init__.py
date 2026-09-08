@@ -26,6 +26,7 @@ import atexit
 import concurrent.futures
 import concurrent.futures.thread
 import contextlib
+import functools
 import json
 import logging
 import os
@@ -35,7 +36,7 @@ import time
 import traceback
 import types
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Any, Callable, Iterator
 
 from pydantic import BaseModel
 
@@ -1325,189 +1326,75 @@ def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
 #: cheap/I/O-bound gate (also well under budget on its own).
 # frob:ticket T-0788
 # frob:ticket T-0665
-_STAGE_GROUPS: dict[str, frozenset[str]] = {
+#: `lint`/`static` name tools (this module's own `_TOOL_STAGES`), never
+#: gates, so they are safe to hand-list directly.
+_TOOL_ONLY_STAGE_GROUPS: dict[str, frozenset[str]] = {
     "lint": frozenset({"ruff", "ty"}),
     "static": frozenset({"cycle", "dup", "arch", "bind", "exports"}),
-    "gates-fast": frozenset(
-        {
-            "drift",
-            "coverage",
-            "invariant",
-            "test",
-            "policy",
-            "doclink",
-            "docanchor",
-            "docstatus",
-            "docmake",
-            "docseverity",
-            "fuzz",
-            "release",
-            "decisions",
-            "tickets",
-            "refs",
-            "registry",
-            "compliance",
-            "docblocks",
-            "walk_lint",
-            # T-3696: PLATFORM002 (frob.gates._win32_kill_signal.
-            # win32_kill_signal_gate) was registered in frob.gates.
-            # _ALL_GATES (thread-pool, same repo-wide os.kill(<pid>, 0)
-            # AST-scan shape as walk_lint immediately above, per
-            # frob.gates.__init__'s own job-table ordering comment) but
-            # never added to a _STAGE_GROUPS member -- the identical
-            # registered-but-unreachable omission shape as ffi_boundary/
-            # suppress/milestone etc. above.
-            "win32_kill_signal",
-            # T-4146/T-4163: BARETOOL001 -- thread-pool, sub-second, same
-            # registered-but-unreachable shape as win32_kill_signal above.
-            "bare_toolchain",
-            "excludehazard",
-            "debt",
-            # frob:ticket T-0797
-            "deprecated",
-            "render_lint",
-            # T-2344: LEXCHECK001.
-            "lexcheck",
-            # T-2397: FLAGCOV001 -- thread-pool, sub-second, same shape as
-            # lexcheck above; belongs here per the same T-1044/T-1340
-            # lesson (a gate registered in frob.gates._ALL_GATES but not
-            # added to a _STAGE_GROUPS member is unreachable via
-            # `--only <group>`).
-            "flag_coverage",
-            # T-2390 epic child T-2428: REFSCHEMA001 -- thread-
-            # pool, sub-second, same shape as flag_coverage above.
-            "refs_schema",
-            # T-2390 epic child T-2429: NATIVESCHEMA001, same shape.
-            "native_schema",
-            # T-2390 epic child T-2430: PROFILESCHEMA001, same shape.
-            "profile_schema",
-            # T-2390 epic child T-2431: TOPSCALARSCHEMA001, same shape.
-            "toplevel_scalar_schema",
-            # T-2390 epic child T-2432: TESTINGSCHEMA001, same shape.
-            "testing_schema",
-            # T-2390 epic child T-2433: ARCHSCHEMA001, same shape.
-            "arch_schema",
-            # T-2390 epic child T-2434: DOCBLOCKSSCHEMA001, same shape.
-            "docblocks_schema",
-            # T-2390 epic child T-2435: GATESSCHEMA001, same shape.
-            "gates_schema",
-            # T-2390 epic child T-2436: TESTRUNNERSCHEMA001, same shape.
-            "test_runner_schema",
-            # T-2390 epic child T-2437: DUPSCHEMA001/GRAPHSCHEMA001, same shape.
-            "dup_schema",
-            "graph_schema",
-            "parse_failures",
-            "lang_conformance",
-            "lang_project_conformance",
-            # frob:ticket T-2411
-            # LANG004, wired into gates/__init__.py's job table alongside
-            # lang_conformance/lang_project_conformance -- added here too
-            # so it is reachable via `--only gates-fast` (same T-1044/
-            # T-1340 registered-but-unreachable lesson this file's own
-            # comment names above).
-            "capability_conformance",
-            "scope",
-            "prework",
-            # T-3042: VMOD001 (frob.gates._vmodel.vmodel_gate) -- thread-
-            # pool, opt-in, sub-second when no V-model graph exists yet
-            # (the common case today); reachable via `--only gates-fast`
-            # or `--only vmodel` directly, same T-1044/T-1340 registered-
-            # but-unreachable lesson this file's own comment above names.
-            "vmodel",
-            # T-0851: FMT001, diff-scoped like coverage/todo above.
-            "fmt",
-            # T-0628: AFFECT001/AFFECT002, diff-scoped like coverage/fmt above.
-            "affect_drift",
-            # frob:ticket T-1044
-            # T-1012: FFI001/FFI002 (ffi_boundary_gate, T-0690)
-            # was registered in frob.gates._ALL_GATES but never added to a
-            # _STAGE_GROUPS member -- it is thread-pool (not in
-            # frob.gates._PROCESS_POOL_GATES), the same shape as the rest of
-            # this group, so it belongs here, not gates-native/-security.
-            "ffi_boundary",
-            # T-1340: suppress (SUPPRESS001) was registered in
-            # frob.gates._ALL_GATES but never added to a _STAGE_GROUPS
-            # member -- same omission shape as ffi_boundary above. It is a
-            # thread-pool, sub-second gate, so it belongs in gates-fast;
-            # without this it is unreachable via `--only <group>`.
-            "suppress",
-            # T-3030: milestone (MILE003/MILE004), env_var_docs (ENVDOC001),
-            # root_asset_dirs (ROOTASSET001), and profile_boundary
-            # (PROFBOUND001) were registered in frob.gates._ALL_GATES but
-            # never added to a _STAGE_GROUPS member -- same omission shape
-            # as ffi_boundary/suppress above. All four are thread-pool,
-            # sub-second gates (not in frob.gates._PROCESS_POOL_GATES), so
-            # they belong in gates-fast; without this an agent looping
-            # every `--only <group>` (the documented FROB_AGENT foreground-
-            # budget pattern) silently never runs them at all.
-            "milestone",
-            "env_var_docs",
-            "root_asset_dirs",
-            "profile_boundary",
-            # T-3030: narrative_blocks (NARR001) has the identical omission
-            # shape, found while root-causing the same
-            # test_available_stages_cover_every_gate_and_tool failure --
-            # out of the ticket's four NAMED gates but the same fix, same
-            # symbol, same commit; not a separate scope.
-            "narrative_blocks",
-            # T-3249: comment_placement (CPLACE001/CPLACE002, T-3218) has
-            # the identical registered-but-unreachable omission shape as
-            # narrative_blocks/T-3030 above -- added to frob.gates._ALL_
-            # GATES by T-3218 but never added to any _STAGE_GROUPS member.
-            # Thread-pool, sub-second (not in frob.gates._PROCESS_POOL_
-            # GATES), so it belongs in gates-fast like every other entry
-            # in this same omission class.
-            "comment_placement",
-            # frob:ticket T-3486
-            # T-3486: land_parity (LANDPARITY001/LANDPARITY002, T-3456)
-            # and cross_ticket_leakage (CROSSTICKET001, T-3466) were
-            # registered in frob.gates._ALL_GATES (and given a fixed slot
-            # in frob.gates._CANONICAL_GATE_ORDER) but never added to any
-            # _STAGE_GROUPS member -- the identical registered-but-
-            # unreachable omission shape as narrative_blocks/comment_
-            # placement above. Neither is in frob.gates._PROCESS_POOL_
-            # GATES, so both belong on the thread pool here, not gates-
-            # native/-security.
-            "land_parity",
-            "cross_ticket_leakage",
-            # frob:ticket T-4307
-            # T-4298: land_format (LANDFMT001, frob.gates._land_format.
-            # land_format_gate) was registered in frob.gates._ALL_GATES
-            # (and given a fixed slot in frob.gates._CANONICAL_GATE_ORDER
-            # right after land_parity) but never added to any
-            # _STAGE_GROUPS member -- the identical registered-but-
-            # unreachable omission shape as land_parity/cross_ticket_
-            # leakage above. It is diff-scoped (checks `ruff format` drift
-            # on the current touched set at land time), the same shape as
-            # fmt/affect_drift/land_parity in this same group, and is not
-            # in frob.gates._PROCESS_POOL_GATES, so it belongs on the
-            # thread pool here.
-            "land_format",
-        }
-    ),
-    # frob:ticket T-0688
-    # T-0688: exhaustive_handling (EXHAUST001/EXHAUST002) added alongside
-    # archgate -- same process-pool CPU-bound shape (a repo-wide python
-    # parse + per-function may-raise fixpoint), required so the new gate
-    # this ticket registers in frob.gates._ALL_GATES stays reachable via
-    # `--only <group>` and so TestCheckStageGroups' drift-lock stays green.
-    "gates-native": frozenset({"archgate", "clones", "perf", "exhaustive_handling"}),
-    # frob:ticket T-0824
-    "gates-security": frozenset(
-        {
-            "sys",
-            "pii_structural",
-            "secrets",
-            "dead_symbols",
-            "wire",
-            "cache",
-            "protocol_summary",
-            # T-0665: OPAQUE001's tracked-file scan is the same shape/cost
-            # class as secrets' own, belongs in the same security group.
-            "opaque",
-        }
-    ),
 }
+
+
+# frob:ticket T-4336
+@functools.lru_cache(maxsize=1)
+def _stage_groups() -> dict[str, frozenset[str]]:
+    """The real `_STAGE_GROUPS` mapping, built lazily on first real use.
+
+    `_TOOL_ONLY_STAGE_GROUPS` above merges with `"gates-fast"`/
+    `"gates-native"`/`"gates-security"` DERIVED from `frob.gates.
+    _GATE_STAGE_GROUPS` (inverted) -- the single place a gate's stage-
+    group membership is declared, right next to its `frob.gates._ALL_
+    GATES` registration. A gate that reaches `_ALL_GATES` without a
+    `_GATE_STAGE_GROUPS` entry fails an import-time assert in `frob.gates`
+    (the same T-0839 shape `_CANONICAL_GATE_ORDER` already uses) before it
+    can ever reach here, so the eight-incident "registered in _ALL_GATES
+    but never added to a _STAGE_GROUPS member" omission this dict used to
+    carry one comment per incident about is now impossible to express --
+    not merely detected after the fact by
+    `TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool`
+    below, which stays (see its own docstring) as a second, independent
+    proof of the same property; it is now unfalsifiable rather than
+    redundant, and must not be deleted as such.
+
+    Deferred behind `frob.gates`'s own module-level import (not a
+    top-level `from frob.gates import ...` in this file) on purpose:
+    `frob.gates` transitively imports `frob.graph`, and `frob.graph`
+    imports `frob.check._memo` -- a chain frob's own package bootstrap
+    (`frob/__init__.py` -> `ci_validity` -> `graph`) can re-enter this
+    module through *during* that bootstrap, before `frob.graph` finishes
+    initializing. Importing `frob.gates` eagerly at this module's top
+    level deadlocks on that reentrant partial-init; calling this function
+    only after bootstrap has completed (its only callers, `available_
+    stages`/`_expand_stage_groups`, run at `frob check` invocation time)
+    avoids it, matching this file's existing lazy-import discipline for
+    `frob.gates` (e.g. `_resolve_only` below)."""
+    from frob.gates import _GATE_STAGE_GROUPS, _KNOWN_GATE_STAGE_GROUP_NAMES
+
+    derived = {
+        group: frozenset(
+            gate
+            for gate, gate_groups in _GATE_STAGE_GROUPS.items()
+            if group in gate_groups
+        )
+        for group in _KNOWN_GATE_STAGE_GROUP_NAMES
+    }
+    return {**_TOOL_ONLY_STAGE_GROUPS, **derived}
+
+
+# frob:ticket T-4336
+# frob:waive OPAQUE001 reason="T-4336: name is always one of the fixed literal strings \
+# this module's own callers pass -- 'from frob.check import _STAGE_GROUPS' and \
+# getattr(frob.check, name) with a hardcoded name are the only two shapes that reach a \
+# module __getattr__ at all; there is no untrusted/dynamic name ever routed through \
+# here, same fixed-name-only shape as src/frob/doctor.py's OPAQUE001 waiver"
+def __getattr__(name: str) -> Any:
+    """PEP 562 module hook: `frob.check._STAGE_GROUPS` (read by tests and
+    any external caller) resolves to `_stage_groups()`'s cached result,
+    computed lazily so importing `frob.check` itself never eagerly
+    imports `frob.gates` (see `_stage_groups`'s docstring for why that
+    deadlocks frob's own package bootstrap)."""
+    if name == "_STAGE_GROUPS":
+        return _stage_groups()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # frob:ticket T-0627
@@ -1517,7 +1404,7 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
 # y_gate_and_tool
 def available_stages() -> list[str]:
     """Sorted `_STAGE_GROUPS` alias names `frob check --only list` prints (T-0627)."""
-    return sorted(_STAGE_GROUPS)
+    return sorted(_stage_groups())
 
 
 # frob:ticket T-0627
@@ -1533,7 +1420,7 @@ def _expand_stage_groups(only: frozenset[str]) -> frozenset[str]:
     """
     expanded: set[str] = set()
     for name in only:
-        expanded |= _STAGE_GROUPS.get(name, {name})
+        expanded |= _stage_groups().get(name, {name})
     return frozenset(expanded)
 
 

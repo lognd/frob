@@ -315,7 +315,7 @@ A full `frob check` (or `--only gates`) on a repo of this size can exceed
 the ~120s foreground cap a dispatched agent runs under, auto-backgrounding
 the command and stalling the agent on a notification that never arrives.
 `--only` accepts five stage-group aliases (`frob.check.available_stages()`,
-`frob.check._STAGE_GROUPS`) as budget-sized presets over the same
+`frob.check._stage_groups()`) as budget-sized presets over the same
 tool/gate vocabulary, each measured comfortably under a ~90s per-stage
 target on this repo:
 
