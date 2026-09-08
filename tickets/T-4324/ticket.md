@@ -17,8 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/verify_runner.py
 - tests/unit/verify/test_verify_runner.py
-- docs/modules/tickets-verify-sweep.md
-- src/frob/verify/_quarantine.py
 - tests/unit/verify/test_watermark.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -57,6 +55,18 @@ scope_changes:
   glob: tests/unit/verify/test_watermark.py
   reason: close SCOPE002 doc/test/private-helper closure gaps this file's pre-existing
     directives and this ticket's new test imports require
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'revert: these pre-existing doc/test-target closure gaps predate this ticket
+    and are unrelated to its fix; keep scope minimal per ticket instructions'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/verify/_quarantine.py
+  reason: 'revert: these pre-existing doc/test-target closure gaps predate this ticket
+    and are unrelated to its fix; keep scope minimal per ticket instructions'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
