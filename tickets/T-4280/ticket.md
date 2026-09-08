@@ -2,7 +2,7 @@
 id: T-4280
 title: policy._compiled_glob's pathspec match_file has the same unpinned-separators
   platform defect T-4155 fixed in excludes.is_excluded
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'

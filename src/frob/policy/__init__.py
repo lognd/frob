@@ -57,12 +57,34 @@ def _compiled_glob(pattern: str) -> pathspec.PathSpec:
     return pathspec.PathSpec.from_lines("gitignore", [pattern])
 
 
+# frob:ticket T-4280
+# frob:tests \
+# tests/test_policy.py::TestRules.test_backslash_joined_path_matches_a_posix_glob_on_ev\
+# ery_platform
 def _files_under(root: Path, snapshot: GraphSnapshot, pattern: str) -> tuple[str, ...]:
     """Repo-relative paths in `snapshot.file_hashes` matching glob `pattern`
     under gitwildmatch semantics (T-4013: not `fnmatch`, which lacks a
-    zero-or-more-directories `**` and is platform-dependent via `normcase`)."""
+    zero-or-more-directories `**` and is platform-dependent via `normcase`).
+
+    T-4280: `PathSpec.match_file` derives ITS separator-normalization set
+    from the host OS (`os.sep`/`os.altsep`) when none is given -- measured
+    on real Windows (before this fix) vs. Linux for the SAME
+    `("vendor/**", "vendor\\\\sub\\\\mod.py")` pair: Windows' derived set
+    includes `\\` (via `os.sep`) so the backslash-joined path MATCHED,
+    while Linux's derived set does not so the identical pair did NOT
+    match -- the exact sibling of the bug T-4155 fixed for
+    `frob.excludes.is_excluded`'s own `match_file` call. We pin
+    `separators=("\\\\",)` explicitly here too so a backslash is ALWAYS
+    folded to `/` before matching, regardless of host: `snapshot.file_
+    hashes` keys are POSIX-relative already (every in-repo producer emits
+    them that way, T-3941/T-3947/T-3948/T-4107), so this only matters for
+    the boundary case, matching `is_excluded`'s own posture."""
     spec = _compiled_glob(pattern)
-    return tuple(sorted(p for p in snapshot.file_hashes if spec.match_file(p)))
+    return tuple(
+        sorted(
+            p for p in snapshot.file_hashes if spec.match_file(p, separators=("\\",))
+        )
+    )
 
 
 def _load_forbidden_imports(

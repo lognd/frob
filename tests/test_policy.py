@@ -6,7 +6,7 @@ from pathlib import Path
 
 from frob.gitio import Diff, Hunk
 from frob.graph import build_graph
-from frob.policy import PolicyError, load_policy, policy_gate
+from frob.policy import PolicyError, _files_under, load_policy, policy_gate
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -192,3 +192,32 @@ class TestRules:
         diff = Diff(base="x", hunks=())
         violations = policy_gate(rules, snap, diff)
         assert violations == ()
+
+    # frob:ticket T-4280
+    def test_backslash_joined_path_matches_a_posix_glob_on_every_platform(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4280: `_compiled_glob(...).match_file` derives its separator-
+        normalization set from `os.sep`/`os.altsep` when none is given --
+        measured on real Windows vs. Linux, that made the SAME
+        `("vendor/**", "vendor\\sub\\mod.py")` pair match on Windows but
+        NOT on Linux (the identical class of bug T-4155 fixed for
+        `frob.excludes.is_excluded`'s own `match_file` call). Pinning
+        `separators=("\\",)` explicitly (this ticket's fix) makes a
+        backslash-joined path fold to `/` before matching regardless of
+        host, so the answer is identical everywhere -- a real `GraphSnapshot`
+        never actually produces a backslash-joined key (every in-repo
+        producer emits POSIX-relative paths already), so a real snapshot's
+        `file_hashes` is overridden via `model_copy` to exercise the
+        boundary case directly rather than reasoning about it."""
+        snap = _snapshot(tmp_path)
+        snap = snap.model_copy(
+            update={
+                "file_hashes": {
+                    "vendor\\sub\\mod.py": "deadbeef",
+                    "other/mod.py": "beef",
+                }
+            }
+        )
+        matched = _files_under(tmp_path, snap, "vendor/**")
+        assert matched == ("vendor\\sub\\mod.py",)
