@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_live_tracker.py
 - tests/test_tickets_live_tracker.py
 - docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,13 @@ scope_changes:
   glob: docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
   reason: narrow to the single anchor this diff actually touches, not the whole landing
     doc
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: SCOPE001 requires the whole file in scope even though only one anchor is
+    edited; the file-level closure warnings this pulls in (TestAnchorMarker's pre-existing
+    frob:tests bindings into _land.py) predate this ticket and are addressed below
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
