@@ -2,7 +2,7 @@
 id: T-4257
 title: 'fix the Windows infrastructure test failures: stale gate-cache hit, land attribution,
   out-of-tree release bump, and the strata GIL timeout'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -56,6 +56,7 @@ evidence:
 - tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
 - tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
 - tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
+- tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_old_stat_match_is_trusted_and_skips_reparse
 designated_repro_test: null
 acceptance:
 - text: given a changed gate input on Windows, when the gate cache is consulted, then
@@ -66,6 +67,7 @@ acceptance:
   - tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
   - tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
   - tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_old_stat_match_is_trusted_and_skips_reparse
 - text: given the Windows runner, when the land attribution and out-of-tree release-bump
     tests run, then both pass and the report says whether they shared one cause
   evidence:

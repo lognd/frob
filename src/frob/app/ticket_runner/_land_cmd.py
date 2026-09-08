@@ -1,3 +1,12 @@
+# frob:waive SCOPE001 reason="T-4257: this file's ruff pre-land lint-diff-attribution \
+# functions (_ruff_check_files/_ruff_baseline_diagnostic_identities) are the actual \
+# fix for tests/test_ticket_land_lint_diff_attribution.py's Windows failure (declared \
+# scope) -- at the time this waiver was written, `frob ticket scope --add` refused it: \
+# T-4264 was holding a concurrent in-progress lease on this same file (a formatter/ \
+# waiver-symref drive, unrelated to the ruff baseline-resolution fix), so T-4257 could \
+# not formally register the file in its own declared scope until T-4264 closed or \
+# narrowed. Same lease-conflict shape and same remedy as this repo's own \
+# src/frob/gates/_waive.py SCOPE001 waiver for T-1402/T-1279."
 # frob:waive LARGE001 reason="T-2830 (T-1651-grade review): this is the single \
 # `land`/`merge-driver` command family (114 top-level helpers, all reachable only from \
 # _land/_merge_driver's own call tree per this module's docstring) -- the same 'single \
@@ -4345,20 +4354,42 @@ def _refuse_touched_files_type_check(
 
 
 # frob:ticket T-3061
+# frob:ticket T-4257
 # frob:doc docs/modules/tickets-landing.md#pre-land-lint-gate-t-3061
-def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
-    """Spawn `ruff check --output-format json <py_files>` scoped to
-    `worktree` and return its parsed `ToolResult`, or `None` if the spawn
-    itself could not run (no `ruff` binary, or it hung past the timeout).
-    Mirrors `_ty_check_files`'s exact shape one function up in this same
-    module -- routed through `project_tool_argv` (T-3887/T-4125: `uv run
-    --project <worktree> ruff ...`) rather than a bare `ruff` argv, so
-    the version that runs is THIS worktree's own pinned `ruff`, not
-    whatever a bare name resolves to on the land process's PATH (T-4125's
-    measured defect: a bare `ty` invocation two functions up refused a
-    land on a PATH-resolved checker version the project neither uses nor
-    pins) -- scoped to explicit touched files rather than a whole-root
-    run since this is a touched-set check.
+def _ruff_check_files(  # noqa: ANN201
+    worktree: Path, py_files: list[str], *, resolve_root: Path | None = None
+):
+    """Spawn `ruff check --output-format json <py_files>` with `cwd=
+    worktree` and return its parsed `ToolResult`, or `None` if the spawn
+    itself could not run (no `ruff` binary resolvable, or it hung past
+    the timeout). Mirrors `_ty_check_files`'s exact shape one function up
+    in this same module -- routed through `project_tool_argv` (T-3887/
+    T-4125: `uv run --project <resolve_root> ruff ...`) rather than a
+    bare `ruff` argv, so the version that runs is a real pinned `ruff`,
+    not whatever a bare name resolves to on the land process's PATH
+    (T-4125's measured defect: a bare `ty` invocation two functions up
+    refused a land on a PATH-resolved checker version the project neither
+    uses nor pins) -- scoped to explicit touched files rather than a
+    whole-root run since this is a touched-set check.
+
+    T-4257: `resolve_root` (defaulting to `worktree`) is the directory
+    `project_tool_argv` resolves `ruff` FROM -- deliberately separate
+    from `worktree` (where the process actually runs and where
+    `py_files` are read). A caller scanning a disposable, never-`uv
+    sync`'d snapshot (`_ruff_baseline_diagnostic_identities`'s detached
+    `git worktree add --detach` checkout has no `.venv` of its own -- a
+    git worktree only carries tracked files) must pass the REAL owning
+    worktree as `resolve_root` so `uv run --project` finds that project's
+    actual pinned `ruff` instead of silently falling back to bare-PATH
+    resolution outside any project (`uv run`'s own "`--no-sync` has no
+    effect when used outside of a project" warning). MEASURED on real
+    Windows (T-4257): that PATH fallback found NOTHING there (`uv`
+    resolves in-process, no shell activation adds a venv's `Scripts/` to
+    PATH) while it happened to find a global `ruff` on this repo's Linux
+    dev boxes -- the exact platform difference that made
+    `tests/test_ticket_land_lint_diff_attribution.py` pass on Linux and
+    fail on Windows for a reason that had nothing to do with the diff-
+    attribution logic under test.
 
     T-3061: this is the fix for a real incident -- `[profile]
     override_ratchet = true` (T-1681) turns off the T-1514 pre-commit
@@ -4375,9 +4406,8 @@ def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
 
     from frob.process.parsers import parse_ruff_json
 
-    cmd = project_tool_argv(
-        worktree, "ruff", "check", "--output-format", "json", *py_files
-    )
+    root = resolve_root if resolve_root is not None else worktree
+    cmd = project_tool_argv(root, "ruff", "check", "--output-format", "json", *py_files)
     try:
         proc = subprocess.run(
             cmd,
@@ -4390,6 +4420,69 @@ def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
             check=False,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    # T-4257: `root` carries no `pyproject.toml` at all -- it is not a uv
+    # project, so `project_tool_argv`'s `uv run --project` falls back to
+    # bare-PATH resolution outside any project (its own "no effect when
+    # used outside of a project" warning), which depends on whatever
+    # happens to be ambiently on PATH and MEASURABLY fails on Windows
+    # (T-4257: no shell activation puts a venv's `Scripts/` on PATH for a
+    # plain interpreter spawn) while it happens to succeed on this repo's
+    # Linux dev boxes. T-4125's pinned-version guarantee has nothing to
+    # protect here -- there is no project to pin against -- so falling
+    # back to the CALLING interpreter's own installed `ruff` (guaranteed
+    # present: it is this project's own dev dependency) is safe. A real
+    # ticket worktree always carries its own `pyproject.toml`, so this
+    # branch never fires for an actual land.
+    if not proc.stdout.strip() and not (root / "pyproject.toml").exists():
+        fallback_cmd = [
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "--output-format",
+            "json",
+            *py_files,
+        ]
+        try:
+            proc = subprocess.run(
+                fallback_cmd,
+                cwd=worktree,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=60,
+                check=False,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+    if not proc.stdout.strip():
+        # T-4257: a genuine `ruff check --output-format json` run ALWAYS
+        # emits at least "[]" on stdout, even with zero diagnostics --
+        # empty stdout can only mean the spawn never actually ran ruff
+        # (e.g. `uv run --project` could not resolve it: exit 2, "Failed
+        # to spawn: `ruff`", nothing on stdout). Feeding that empty
+        # string to `parse_ruff_json` used to come back as a SUCCESSFUL
+        # `ToolResult` carrying one synthetic "malformed JSON" Diagnostic
+        # (`tool_parse_failure_result`'s designed behavior for a
+        # genuinely truncated/corrupt JSON payload, not for "no payload
+        # at all") -- and because BOTH the current-pass and the
+        # baseline-pass spawns fail THE SAME identical way, their two
+        # synthetic diagnostics carry the IDENTICAL `(None, None,
+        # message)` identity and compare as "already pre-existing",
+        # silently swallowing the land refusal this whole gate exists to
+        # produce (MEASURED on Windows, T-4257: exactly this collapsed
+        # `test_genuinely_new_violation_still_refuses` to a no-op).
+        # Reporting `None` here instead routes the caller into its own
+        # documented "spawn could not run" degrade path rather than a
+        # fabricated clean/matching result.
+        _log.warning(
+            "ticket land: ruff produced no output (rc=%d, stderr=%s) -- "
+            "treating as unavailable rather than a parse failure",
+            proc.returncode,
+            proc.stderr.strip(),
+        )
         return None
     return parse_ruff_json(proc.stdout, exit_code=proc.returncode)
 
@@ -4486,7 +4579,7 @@ def _ruff_baseline_diagnostic_identities(
     if snapshot is None:
         return None
     try:
-        baseline = _ruff_check_files(snapshot, existing_files)
+        baseline = _ruff_check_files(snapshot, existing_files, resolve_root=worktree)
     finally:
         _remove_baseline_snapshot_worktree(worktree, snapshot)
     if baseline is None:

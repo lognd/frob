@@ -38,6 +38,7 @@ from __future__ import annotations
 import hashlib
 import os
 import sqlite3
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -132,6 +133,44 @@ def _stat_key(path: Path) -> tuple[int, int] | None:
     except OSError as exc:
         _log.warning("could not stat %s: %s", path, exc)
         return None
+
+
+# frob:ticket T-4257
+#: T-4257: `(mtime_ns, size)` collisions across GENUINELY different content
+#: are not just a theoretical race -- MEASURED directly (both on this
+#: repo's Linux dev boxes and on real Windows via the `winrun` mirror): a
+#: tight loop of write-then-stat with no other work between the two calls
+#: produces IDENTICAL `(mtime_ns, size)` pairs for a meaningful fraction of
+#: edits (Windows: 8/20 in one measured run; this repo's own WSL/ext4 dev
+#: mount: 5/20) even though every edit's content differs. `_process_source_
+#: file`/`_process_doc_file` below never re-verify a stat match against
+#: content -- a collision there is a silent STALE cache HIT, exactly the
+#: shape T-0602/gate-cache's own module docstring calls out as the failure
+#: this whole cache design must never produce. In practice, `build_graph`'s
+#: real pipeline (parse + digest + sqlite write, not a bare write()) puts
+#: enough wall-clock distance between two builds of the SAME file that a
+#: genuine collision was never reproduced end-to-end (measured: 0/200
+#: across a build_graph-based edit loop, both platforms) -- but "usually
+#: enough real work happens in between" is exactly the kind of incidental,
+#: unmeasured assumption this project exists to replace with an enforced
+#: one. A stat entry younger than this margin is treated as untrustworthy
+#: on its own and always falls through to the existing content-hash
+#: comparison (still far cheaper than a full reparse) instead of being
+#: trusted blindly -- closing the gap categorically rather than leaving it
+#: to how much other work happens to separate two edits.
+_STAT_TRUST_MARGIN_NS = 250_000_000  # 250ms
+
+
+def _stat_trustworthy(mtime_ns: int) -> bool:
+    """`True` iff `mtime_ns` is old enough (`_STAT_TRUST_MARGIN_NS`) for a
+    matching cached `(mtime_ns, size)` to be trusted WITHOUT a content-hash
+    fallback (T-4257) -- a file whose on-disk mtime is still within the
+    margin of "now" gets the safe, slightly more expensive verification
+    path instead, since that is exactly the window a coarse or contended
+    filesystem clock can alias two different writes onto the same stat
+    pair (see `_STAT_TRUST_MARGIN_NS`'s own docstring for the measurements
+    behind this)."""
+    return time.time_ns() - mtime_ns > _STAT_TRUST_MARGIN_NS
 
 
 def _display_path(path: Path, root: Path) -> str:
@@ -363,7 +402,9 @@ def _process_source_file(
     meta = _cache.get_file_meta(conn, rel_path)
     if meta is not None:
         cached_hash, cached_mtime_ns, cached_size = meta
-        if (cached_mtime_ns, cached_size) == stat_key:
+        if (cached_mtime_ns, cached_size) == stat_key and _stat_trustworthy(
+            stat_key[0]
+        ):
             _log.debug("stat cache hit: %s", rel_path)
             symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
             return False, symbols, edges, malformed, None
@@ -399,7 +440,9 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
     meta = _cache.get_file_meta(conn, rel_path)
     if meta is not None:
         cached_hash, cached_mtime_ns, cached_size = meta
-        if (cached_mtime_ns, cached_size) == stat_key:
+        if (cached_mtime_ns, cached_size) == stat_key and _stat_trustworthy(
+            stat_key[0]
+        ):
             _log.debug("stat cache hit: %s", rel_path)
             return False
     else:

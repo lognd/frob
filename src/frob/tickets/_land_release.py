@@ -1019,15 +1019,57 @@ def _apply_release_bump_out_of_tree(
 
 
 # frob:ticket T-3095
+# frob:ticket T-4257
 def _add_scratch_worktree(
     repo: Path, scratch: str, pre_land_tip: str, final_id: str
 ) -> Result[None, LandError]:
     """`git worktree add --detach scratch pre_land_tip` -- split out of
     `_apply_release_bump_out_of_tree` purely to keep that function under
     ARCH001's line threshold, no behavior change from inlining.
-    `Err(LandError.GitFailed)`, logged, on any plumbing failure."""
+    `Err(LandError.GitFailed)`, logged, on any plumbing failure.
+
+    T-4257: immediately pins `core.autocrlf=false` LOCAL to this one
+    disposable worktree (never the caller's own global/repo config).
+    MEASURED directly on Windows: a machine whose global `core.autocrlf
+    =true` (a common Git-for-Windows installer default) made
+    `_apply_composed_diff_onto_scratch`'s `git apply --index` normalize
+    LF line endings to CRLF while writing `composed_commit`'s diff onto
+    `scratch`'s working tree/index -- producing a `write-tree` result
+    that differs from `composed_commit`'s own (LF-committed) tree even
+    when NOTHING about the content actually changed, which
+    `_fold_scratch_worktree_into_commit` then read as "the bump changed
+    something" and folded into a spurious extra commit
+    (`tests/unit/test_land_release_out_of_tree.py::
+    test_no_bump_returns_composed_commit_unchanged`'s exact failure).
+    `core.autocrlf` is a working-tree/checkout-time concern that has
+    nothing to do with this function's actual job -- reproducing
+    `composed_commit`'s tree byte-for-byte plus whatever `bump_version`
+    adds -- so this disposable worktree opts out of it entirely rather
+    than inheriting whatever the invoking machine's ambient git config
+    happens to be."""
+    # T-4257: `-c core.autocrlf=false` on the `worktree add` invocation
+    # ITSELF, not a config write afterward -- `git worktree add` performs
+    # its own checkout of `pre_land_tip`'s tree as part of creating the
+    # worktree, so a config override applied only AFTER creation is
+    # already too late: the files on disk have been normalized by
+    # whatever `core.autocrlf` the invoking machine's ambient (global)
+    # config held at checkout time (MEASURED on Windows, T-4257: setting
+    # the local override immediately after `worktree add` still left
+    # this test failing, because the damage was already done during the
+    # checkout this command itself performs).
     added = run_argv(
-        ("git", "-C", str(repo), "worktree", "add", "--detach", scratch, pre_land_tip)
+        (
+            "git",
+            "-c",
+            "core.autocrlf=false",
+            "-C",
+            str(repo),
+            "worktree",
+            "add",
+            "--detach",
+            scratch,
+            pre_land_tip,
+        )
     )
     if added.is_err or added.danger_ok.returncode != 0:
         _log.error(
@@ -1037,6 +1079,21 @@ def _add_scratch_worktree(
             pre_land_tip,
         )
         return Err(LandError.GitFailed)
+    # T-4257: deliberately NOT `git -C scratch config core.autocrlf
+    # false` here -- `core.autocrlf` is a REPOSITORY-level setting, not a
+    # per-worktree one (worktrees do not get their own `core.*` config
+    # unless `extensions.worktreeConfig` is enabled), so writing it
+    # "for scratch" actually rewrites `repo`'s OWN SHARED `.git/config`,
+    # flipping `core.autocrlf` out from under the caller's own checkout
+    # for the rest of the process (MEASURED on Windows, T-4257: this
+    # exact write made `repo`'s pre-existing CRLF-normalized files
+    # re-evaluate as "modified" against the index the moment the shared
+    # config changed, newly failing `test_bump_failure_leaves_repo_
+    # working_tree_untouched`, which this function must leave untouched).
+    # `_apply_composed_diff_onto_scratch`'s own `git apply --index` call
+    # passes the same `-c core.autocrlf=false` override PER-INVOCATION
+    # instead, exactly like `worktree add` above -- scoped to that one
+    # process, never written to disk.
     return Ok(None)
 
 
@@ -1066,7 +1123,21 @@ def _apply_composed_diff_onto_scratch(
     if not diff_text.strip():
         return Ok(None)
     patch_file = Path(scratch).parent / "composed.diff"
-    patch_file.write_text(diff_text)
+    # T-4257: `newline=""` is load-bearing on Windows, not decoration --
+    # `Path.write_text` in Python's default (universal-newline) text
+    # mode translates every bare `\n` to `os.linesep` on write, which on
+    # Windows means `\r\n`. `git diff`'s stdout here is a unified diff
+    # whose LINES (both context lines and the `+`/`-` payload) are
+    # LF-terminated; writing it through the default text mode silently
+    # injects a `\r` into every line `git apply` then reproduces
+    # verbatim in the target file's content -- MEASURED directly on
+    # Windows (T-4257): `feature.txt` came out of `git apply --index` as
+    # `b"landed content\r\n"` even with `core.autocrlf=false` pinned on
+    # every git invocation involved, because the corruption had already
+    # happened in this `write_text` call, upstream of git entirely.
+    # `newline=""` disables the translation and writes `diff_text`'s
+    # bytes exactly as `git diff` produced them.
+    patch_file.write_text(diff_text, newline="")
     applied = run_argv(("git", "-C", scratch, "apply", "--index", str(patch_file)))
     if applied.is_err or applied.danger_ok.returncode != 0:
         _log.error(

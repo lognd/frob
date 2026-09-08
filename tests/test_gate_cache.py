@@ -1107,3 +1107,97 @@ class TestGateBuildFingerprint:
         fp2 = gc._gate_build_fingerprint()
         assert fp1 == fp2
         assert isinstance(fp1, str) and fp1
+
+
+# frob:ticket T-4257
+class TestStatKeyCoarseClockSafety:
+    """T-4257: `frob.graph`'s stat-first fast path
+    (`_process_source_file`/`_process_doc_file`) must not trust a matching
+    `(mtime_ns, size)` pair blindly when that pair could plausibly be a
+    coarse-clock COLLISION between two genuinely different writes --
+    MEASURED directly (Windows via the `winrun` mirror, and this repo's
+    own WSL/ext4 dev mount) as a real, reproducible occurrence for
+    back-to-back writes with no other work between them, not a
+    hypothetical. `_stat_trustworthy`'s margin closes this without
+    depending on how much real work happens to separate two builds of the
+    same file."""
+
+    def test_recent_stat_match_falls_through_to_content_hash(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """frob:tests src/frob/graph/__init__.py::_stat_trustworthy"""
+        # Both builds' stat is pinned to the SAME fixed `(mtime_ns, size)`
+        # pair -- exactly the coarse-clock collision measured on real
+        # Windows (and this repo's own WSL/ext4 dev mount), reproduced
+        # deterministically here via monkeypatch rather than racing the
+        # clock.
+        import time
+
+        import frob.graph as graph_mod
+
+        # Deliberately re-samples `time.time_ns()` on EVERY call rather
+        # than freezing one value up front: this stat-first hit must look
+        # "just written" (within `_STAT_TRUST_MARGIN_NS`) at the ACTUAL
+        # moment `_process_source_file` checks it, on both builds, no
+        # matter how much real wall-clock time `_git_init`'s subprocesses
+        # and the first `build_graph` call take.
+        monkeypatch.setattr(graph_mod, "_stat_key", lambda path: (time.time_ns(), 24))
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        cache_db = tmp_path / ".frob" / "cache.db"
+        snap1 = build_graph(tmp_path, cache_db).danger_ok
+        h1 = snap1.file_hashes["a.py"]
+
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")  # same length, new body
+        snap2 = build_graph(tmp_path, cache_db).danger_ok
+        h2 = snap2.file_hashes["a.py"]
+
+        assert h1 != h2, (
+            "a stat-pair collision must still fall through to a content-hash "
+            "comparison and detect the real edit, never serve the stale digest"
+        )
+
+    # frob:ticket T-4257
+    def test_old_stat_match_is_trusted_and_skips_reparse(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """frob:tests src/frob/graph/__init__.py::_stat_trustworthy
+
+        Companion to `test_recent_stat_match_falls_through_to_content_
+        hash`: an OLD stat match (older than `_STAT_TRUST_MARGIN_NS`) must
+        still take the fast path and report a cache HIT -- proving
+        `_stat_trustworthy` is a genuine AND-gated margin check, not a
+        tautology that always forces the safe (slower) path regardless of
+        age. Without this, a mutant that always returns `False` (forcing
+        every stat match through content-hash verification) would look
+        identical to the real margin logic from `test_recent_stat_match_
+        falls_through_to_content_hash` alone."""
+        import frob.graph as graph_mod
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        cache_db = tmp_path / ".frob" / "cache.db"
+
+        # First build: real, current stat (establishes the cached row).
+        snap1 = build_graph(tmp_path, cache_db).danger_ok
+        h1 = snap1.file_hashes["a.py"]
+        real_stat_key = graph_mod._stat_key(tmp_path / "a.py")
+        assert real_stat_key is not None
+
+        # Second build: same stat pair as cached, but "observed" long
+        # enough ago (well past the trust margin) that it must be trusted
+        # WITHOUT a content-hash fallback -- even though the file's real
+        # on-disk content has since changed underneath it.
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        monkeypatch.setattr(graph_mod, "_stat_key", lambda path: real_stat_key)
+        monkeypatch.setattr(
+            graph_mod.time, "time_ns", lambda: real_stat_key[0] + 10 * 10**9
+        )
+        snap2 = build_graph(tmp_path, cache_db).danger_ok
+        h2 = snap2.file_hashes["a.py"]
+
+        assert h1 == h2, (
+            "an old, trustworthy stat match must take the fast path and "
+            "serve the cached digest, not force a content-hash re-check "
+            "on every single call regardless of age"
+        )

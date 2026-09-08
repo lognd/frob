@@ -1,0 +1,30 @@
+---
+id: T-4275
+title: ty pre-land baseline resolution fails the same way ruff's did on Windows (T-4257
+  sibling)
+state: queued
+kind: bug
+origin: human
+created: '2026-09-07'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Discovered while fixing T-4257's ruff land-diff-attribution failure on Windows: _ty_check_files/_ty_baseline_diagnostic_identities has the IDENTICAL shape -- it resolves ty via project_tool_argv(snapshot, ...) where snapshot is a detached git-worktree baseline checkout with no .venv of its own (uv run --project falls back to bare-PATH resolution outside any project). T-4257 fixed the ruff call site by adding a resolve_root parameter so the baseline pass resolves the tool from the real owning worktree instead of the venv-less snapshot, plus a fallback to sys.executable -m <tool> when resolve_root carries no pyproject.toml at all. The ty call site was left untouched (out of T-4257 declared scope) but almost certainly has the same latent silent-pass gap on any host (Windows CI, or any machine lacking an ambient global ty) where uv run --project a venv-less worktree cannot resolve ty: a spawn failure would currently come back as a ToolResult carrying a synthetic parse-failure Diagnostic rather than None, and since both current-pass and baseline-pass spawns fail identically, their synthetic diagnostics compare as pre-existing and the land refusal this gate exists to produce is silently swallowed. Port T-4257's two fixes (resolve_root split, and empty-stdout-is-not-a-parse-failure guard) to the ty call site.

@@ -20,8 +20,51 @@
 
 use pyo3::prelude::*;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::thread;
 
 mod parse;
+
+// frob:ticket T-4257
+/// Stack size (T-4257) for `run_on_big_stack`'s worker thread: generous
+/// enough for the deepest recursion any of this crate's O(graph) kernels
+/// plausibly reaches (measured: a 6000-hop chain into `worst_age_impl`
+/// overflowed Windows' 1 MiB default thread stack), while cheap -- a
+/// stack this size is reserved address space, not committed memory, so
+/// paying for it on every call costs nothing unless the recursion
+/// actually gets deep enough to touch it.
+const BIG_STACK_BYTES: usize = 64 * 1024 * 1024;
+
+// frob:ticket T-4257
+// frob:tests \
+// tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall.test_timeout_fir\
+// es_during_worst_age
+/// Runs `f` on a dedicated thread with a `BIG_STACK_BYTES` stack (T-4257):
+/// several of this crate's O(graph) kernels recurse to a depth
+/// proportional to the input graph's size (`worst_age_impl`'s SCC/
+/// topological-order DP, chiefly), and the OS-default thread stack a
+/// `#[pyfunction]` call runs on is not always enough -- MEASURED directly
+/// on Windows (T-4257, via a `faulthandler`-style native stack dump
+/// under `pytest-timeout`'s thread-method watchdog): a 6000-hop
+/// `worst_age` chain crashed the whole interpreter with
+/// `STATUS_STACK_OVERFLOW` partway through the call, not a hang and not
+/// a slow-but-eventually-completing run -- Windows' default thread stack
+/// (1 MiB) is far smaller than Linux's (8 MiB), where the identical
+/// input never came close to overflowing. Spawning onto an explicitly
+/// large stack sidesteps whichever platform default is in effect
+/// entirely, rather than either depending on it or widening a timeout
+/// that was never the actual problem (T-4257's own ticket: "do not widen
+/// a timeout to make a test pass unless the stack shows the work
+/// genuinely completes and only needs longer" -- this stack showed a
+/// crash, not slowness, so the fix is stack headroom, not a wider
+/// deadline).
+fn run_on_big_stack<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
+    thread::Builder::new()
+        .stack_size(BIG_STACK_BYTES)
+        .spawn(f)
+        .expect("frob strata-core: failed to spawn big-stack worker thread")
+        .join()
+        .expect("frob strata-core: big-stack worker thread panicked")
+}
 
 /// Generic typed-graph kernel (docs/strata/graph.md, T-3004 section 4).
 /// See `graph::mod` for the module-level design note.
@@ -67,7 +110,7 @@ fn reachable(
     // extracts them from the Python arguments before the function body
     // starts), and the returned `HashMap` is converted to a Python object
     // only after this closure returns and the GIL is reacquired.
-    py.allow_threads(|| reachable_impl(edges, src, through_barriers))
+    py.allow_threads(|| run_on_big_stack(move || reachable_impl(edges, src, through_barriers)))
 }
 
 fn reachable_impl(
@@ -360,7 +403,7 @@ fn worst_age(py: Python<'_>, edges: Vec<AgedEdge>, target: String) -> (f64, Vec<
     // frob:doc docs/strata/kernel.md#strata-core
     // T-3457: releases the GIL for the O(graph) SCC/DAG computation below,
     // same reasoning as `reachable` above -- see that function's comment.
-    py.allow_threads(|| worst_age_impl(edges, target))
+    py.allow_threads(|| run_on_big_stack(move || worst_age_impl(edges, target)))
 }
 
 fn worst_age_impl(edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
@@ -632,15 +675,11 @@ fn compute_demand(
 /// with the cycle as witness, never a silent clamp (deny-by-default,
 /// charter law 2).
 #[pyfunction]
-fn propagated_demand(
-    py: Python<'_>,
-    edges: Vec<DemandEdge>,
-    target: String,
-) -> (f64, Vec<String>) {
+fn propagated_demand(py: Python<'_>, edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String>) {
     // frob:doc docs/strata/kernel.md#capacity-semantics
     // T-3457: releases the GIL for the O(graph) closure/memoized-recursion
     // computation below, same reasoning as `reachable` above.
-    py.allow_threads(|| propagated_demand_impl(edges, target))
+    py.allow_threads(|| run_on_big_stack(move || propagated_demand_impl(edges, target)))
 }
 
 fn propagated_demand_impl(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String>) {
@@ -746,7 +785,7 @@ fn vmodel_check(
     // frob:doc docs/strata/vmodel.md#pyo3-surface-vmodel_check
     // T-3457: releases the GIL for the O(graph) closure computation below,
     // same reasoning as `reachable` above.
-    py.allow_threads(|| vmodel_check_impl(nodes, edges))
+    py.allow_threads(|| run_on_big_stack(move || vmodel_check_impl(nodes, edges)))
 }
 
 fn vmodel_check_impl(
