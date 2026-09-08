@@ -2,7 +2,7 @@
 id: T-4328
 title: Audit the 308 rules a blanket ratchet promoted to error on a zero-findings
   criterion
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
