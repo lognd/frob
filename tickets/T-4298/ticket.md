@@ -15,11 +15,34 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_land.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_land_format.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: avoid scope collision with in-progress T-4281's lease on _land.py; land-path
+    gates are wired via gates/__init__.py, so the new whole-diff formatting gate belongs
+    in a new module registered there instead
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: avoid scope collision with in-progress T-4281's lease on _land.py; land-path
+    gates are wired via gates/__init__.py, so the new whole-diff formatting gate belongs
+    in a new module registered there instead
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/gates/_land_format.py
+  reason: avoid scope collision with in-progress T-4281's lease on _land.py; land-path
+    gates are wired via gates/__init__.py, so the new whole-diff formatting gate belongs
+    in a new module registered there instead
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a land whose changed files include one the formatter would rewrite,
