@@ -23,7 +23,7 @@ scope:
 - tests/unit/test_main_entry.py
 - README.md
 - docs/modules/cli.md
-- docs/modules/app.md#frob-whereis-t-4299
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -120,6 +120,22 @@ scope_changes:
   reason: 'a bare docs/modules/app.md add fanned SCOPE002 out across ~40 unrelated
     runner-module describes edges in the same #runners section; scope only the new
     dedicated #frob-whereis-t-4299 anchor this ticket actually adds'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/app.md#frob-whereis-t-4299
+  reason: anchor-only scoping satisfies SCOPE002 but not SCOPE001 (file-level check)
+    -- reverting to the whole file; the resulting SCOPE002 fan-out across ~40 unrelated
+    runner-module describes edges is the same pre-existing tooling gap already filed
+    as T-4300 (docs/modules/tickets-landing.md case)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: anchor-only scoping satisfies SCOPE002 but not SCOPE001 (file-level check)
+    -- reverting to the whole file; the resulting SCOPE002 fan-out across ~40 unrelated
+    runner-module describes edges is the same pre-existing tooling gap already filed
+    as T-4300 (docs/modules/tickets-landing.md case)
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
