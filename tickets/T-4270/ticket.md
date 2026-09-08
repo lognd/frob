@@ -35,19 +35,30 @@ scope_changes:
     tests to test_release.py
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_release.py::test_required_version_and_satisfies
+- tests/test_release.py::test_dev_prerelease_and_final_sort_in_pep440_order
+- tests/test_release.py::test_prerelease_does_not_satisfy_its_final_release_minimum
+- tests/test_release.py::test_trailing_hyphen_number_parses_as_post_release_not_prerelease
+- tests/test_release.py::test_unparseable_version_is_inspectable_failure_not_truncated_value
+- tests/test_release.py::test_required_version_bad_previous_is_err
+- tests/test_release.py::test_satisfies_unparseable_inputs_are_false
 designated_repro_test: null
 acceptance:
 - text: given a development build, a pre-release, and a final release of the same
     version, when they are sorted, then the order matches what the python packaging
     standard requires
-  evidence: []
+  evidence:
+  - tests/test_release.py::test_dev_prerelease_and_final_sort_in_pep440_order
 - text: given a pre-release version, when a minimum-version check is applied, then
     it is not treated as satisfying the corresponding final release
-  evidence: []
+  evidence:
+  - tests/test_release.py::test_prerelease_does_not_satisfy_its_final_release_minimum
 - text: given a version string the parser cannot interpret, when it is parsed, then
     it produces an inspectable failure rather than a confident value computed from
     a truncation
-  evidence: []
+  evidence:
+  - tests/test_release.py::test_unparseable_version_is_inspectable_failure_not_truncated_value
 threat: null
 component: null
 anchor: false
