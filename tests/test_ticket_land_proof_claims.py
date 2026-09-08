@@ -34,7 +34,7 @@ from frob.tickets._land import (
     _LAST_ORPHAN_EVIDENCE_OUTCOME,
     _OrphanEvidenceCheckOutcome,
 )
-from frob.tickets._land_verify import _ClaimsReverifyOutcome
+from frob.tickets._land_verify import _LAST_CLAIMS_INFRA_REASON, _ClaimsReverifyOutcome
 
 
 # frob:ticket T-2091
@@ -306,3 +306,94 @@ class TestLandProofOrphanEvidenceOutcome:
         # `_fake_report` implies via its `getattr` fallback ("main",
         # since the fake report carries no `target_branch` attribute).
         assert seen_target_branch == ["main"]
+
+
+# frob:ticket T-4281
+# frob:tests \
+# tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured.test_infra_unmea\
+# sured_prints_distinct_token_and_names_the_cause
+# frob:tests \
+# tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured.test_skipped_unm\
+# easured_prints_no_reason
+class TestLandProofInfraUnmeasured:
+    """T-4281: `_print_land_proof` must print `INFRA_UNMEASURED` as a
+    token DISTINCT from `SKIPPED_UNMEASURED`'s `SKIPPED-UNMEASURED`, and
+    name the cause (`claims_reverify_reason=`) whenever `_LAST_CLAIMS_
+    INFRA_REASON` carries one -- the exact ambiguity this ticket exists
+    to close: an infra failure (a graph-cache lock, a crash) used to
+    print the identical line a deliberate rapid-profile/budget skip
+    does."""
+
+    def test_infra_unmeasured_prints_distinct_token_and_names_the_cause(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+        tmp_path,
+    ) -> None:
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            return (True, "done", True)
+
+        monkeypatch.setattr(
+            _land_cmd, "_land_proof_checks", _fake_land_proof_checks
+        )
+        report = _fake_report("T-9201")
+        _LAST_CLAIMS_OUTCOME["T-9201"] = _ClaimsReverifyOutcome.INFRA_UNMEASURED
+        _LAST_CLAIMS_INFRA_REASON["T-9201"] = (
+            "graph cache lock contention (held by pid 12345)"
+        )
+        try:
+            with caplog.at_level(logging.INFO):
+                verified = _land_cmd._print_land_proof(tmp_path, report)
+        finally:
+            _LAST_CLAIMS_OUTCOME.pop("T-9201", None)
+            _LAST_CLAIMS_INFRA_REASON.pop("T-9201", None)
+
+        proof_lines = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert proof_lines
+        line = proof_lines[-1]
+        # The core ask: distinguishable from a deliberate skip, both in
+        # the machine-readable field and the printed verified= token.
+        assert "claims_reverify=infra-unmeasured" in line
+        assert "claims_reverify=skipped-unmeasured" not in line
+        assert "INFRA-UNMEASURED" in line
+        assert "SKIPPED-UNMEASURED" not in line
+        # And the cause is named, not just the fact that it failed.
+        assert "claims_reverify_reason=graph cache lock contention" in line
+        assert "held by pid 12345" in line
+        # Same DO-NOT posture as a deliberate skip: not a hard refusal.
+        assert verified is True
+
+    def test_skipped_unmeasured_prints_no_reason(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+        tmp_path,
+    ) -> None:
+        """A plain deliberate skip (no infra reason ever recorded) must
+        keep printing `claims_reverify_reason=n/a` -- this new field must
+        not itself introduce a spurious cause on the healthy/deliberate
+        path."""
+
+        def _fake_land_proof_checks(
+            root, fid, sha, *, target_branch="main"
+        ) -> tuple[bool, str, bool]:
+            return (True, "done", True)
+
+        monkeypatch.setattr(
+            _land_cmd, "_land_proof_checks", _fake_land_proof_checks
+        )
+        report = _fake_report("T-9202")
+        _LAST_CLAIMS_OUTCOME["T-9202"] = _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
+        _LAST_CLAIMS_INFRA_REASON.pop("T-9202", None)
+        try:
+            with caplog.at_level(logging.INFO):
+                _land_cmd._print_land_proof(tmp_path, report)
+        finally:
+            _LAST_CLAIMS_OUTCOME.pop("T-9202", None)
+
+        proof_lines = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert proof_lines
+        line = proof_lines[-1]
+        assert "claims_reverify_reason=n/a" in line

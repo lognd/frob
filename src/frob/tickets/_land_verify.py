@@ -37,6 +37,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-2083
+# frob:ticket T-4281
 class _ClaimsReverifyOutcome(StrEnum):
     """T-2083: `_reverify_done_report_claims_post_merge`'s return value
     distinguishes a re-verification that actually RAN (`PASSED`) from one
@@ -48,10 +49,39 @@ class _ClaimsReverifyOutcome(StrEnum):
     unmeasured check reading as a clean one, the confirmed mechanism
     behind T-1584 landing 8 error-severity findings under a Done report
     claiming "land-parity: clean"); this closes the two sites T-2076 left
-    open, one level up, at this function's own early-outs."""
+    open, one level up, at this function's own early-outs.
+
+    T-4281: `SKIPPED_UNMEASURED` itself used to collapse TWO different
+    causes onto one string -- a DELIBERATE skip (rapid profile, an
+    insufficient declared land deadline, or a Done report that never
+    captured a claim to compare against, all decided BEFORE `check_gates`
+    is even called) and an INFRASTRUCTURE failure (`check_gates()` WAS
+    called and actually attempted a fresh `frob check`, but a graph-cache
+    lock held by another process, a crash, or an unparsable run made the
+    result unmeasurable). Both printed identically on the `LAND-PROOF:`
+    line with zero way to tell them apart -- exactly the silent-zero shape
+    this project's own doctrine names. `INFRA_UNMEASURED` is the new,
+    narrower outcome for the second case only; `SKIPPED_UNMEASURED` keeps
+    its prior meaning (a deliberate, never-attempted skip) unchanged."""
 
     PASSED = "passed"
     SKIPPED_UNMEASURED = "skipped-unmeasured"
+    INFRA_UNMEASURED = "infra-unmeasured"
+
+
+# frob:ticket T-4281
+_LAST_CLAIMS_INFRA_REASON: dict[str, str] = {}
+"""T-4281: the most recent infra-failure reason string (`frob.app.
+ticket_runner._verify._unmeasured_reason_from_result`'s output, e.g.
+'graph cache lock contention (held by pid N ...)') `_reverify_gate_state_
+claim` observed for a given `ticket_id`, in THIS process -- the exact
+`_LAST_CLAIMS_OUTCOME` (T-2091) process-local side-channel pattern,
+applied to carry a STRING alongside the `INFRA_UNMEASURED` outcome
+without widening `_reverify_done_report_claims_post_merge`'s own return
+type (many existing tests already assert on that return type directly).
+`frob.app.ticket_runner._land_cmd._print_land_proof` reads and pops this
+by `ticket_id` to print it on the `LAND-PROOF:` line, the same way it
+already reads `_LAST_CLAIMS_OUTCOME`."""
 
 
 def _reverify_evidence_post_merge(
@@ -227,6 +257,12 @@ def _reverify_done_report_claims_post_merge(
     is None` used to be a fully silent early-out (no log line at all);
     it now logs too, matching the no-Captured-claims-section early-out a
     few lines below (already loud since T-1907)."""
+    # frob:ticket T-4281
+    # T-4281: clear any stale entry from an earlier ticket/call in THIS
+    # process before this run has a chance to set its own -- otherwise a
+    # leftover reason from a prior, unrelated land in the same process
+    # would wrongly mark THIS run's clean `PASSED` outcome as infra-failed.
+    _LAST_CLAIMS_INFRA_REASON.pop(ticket_id, None)
     if passing_ids is None or check_gates is None:
         return _skipped_unmeasured_top_level(ticket_id, passing_ids, check_gates)
     from frob.tickets import _load_one
@@ -277,6 +313,18 @@ def _reverify_done_report_claims_post_merge(
     )
     if gate_state_check.is_err:
         return Err(gate_state_check.danger_err)
+    # frob:ticket T-4281
+    # T-4281: `_reverify_gate_state_claim` records an infra-failure reason
+    # (a graph-cache lock, a crash, an unparsable run) in the process-
+    # local `_LAST_CLAIMS_INFRA_REASON` side channel rather than widening
+    # its own `Result[None, LandError]` return type -- see that dict's
+    # own docstring for why. Its presence here means the gate-state half
+    # of this claim was NOT actually re-verified this land (only the
+    # test-count half was), so the overall outcome must say so instead of
+    # claiming the full `PASSED` this function's own docstring reserves
+    # for "the only path that actually compared the recorded claim".
+    if ticket_id in _LAST_CLAIMS_INFRA_REASON:
+        return Ok(_ClaimsReverifyOutcome.INFRA_UNMEASURED)
     # T-2083: the only path that actually compared the recorded claim.
     return Ok(_ClaimsReverifyOutcome.PASSED)
 
@@ -421,6 +469,26 @@ def _rewrite_claims_section(
         )
 
 
+# frob:ticket T-4281
+def _record_infra_reason_if_unmeasured(
+    ticket_id: str,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None],
+) -> str | None:
+    """T-4281: when `check_gates()` returned `None`, recover WHY from its
+    optional `.unmeasured_reason()` attribute (`frob.app.ticket_runner.
+    _verify._check_gates_summary_fn`'s own closure, set only when a real
+    spawn was attempted and failed) and record it in `_LAST_CLAIMS_INFRA_
+    REASON` so the overall outcome escalates to `INFRA_UNMEASURED` rather
+    than the plain `PASSED` this skip used to fall through to. A plain
+    callable with no such attribute (every pre-T-4281 caller/test) returns
+    `None` here, unchanged behavior. Split out of `_reverify_gate_state_
+    claim` to keep that function under ARCH001's line budget."""
+    reason = getattr(check_gates, "unmeasured_reason", lambda: None)()
+    if reason is not None:
+        _LAST_CLAIMS_INFRA_REASON[ticket_id] = reason
+    return reason
+
+
 # frob:ticket T-0976
 def _reverify_gate_state_claim(
     ticket: Ticket,
@@ -478,52 +546,65 @@ def _reverify_gate_state_claim(
 
     fresh = check_gates()
     if fresh is None:
+        reason = _record_infra_reason_if_unmeasured(ticket_id, check_gates)
         _log.warning(
             "land: %s fresh `frob check --ticket %s` produced no parsable "
-            "gate-summary post-merge (no lease, a crash, or unparsable "
-            "output) -- cannot re-verify the recorded gate-state claim "
-            "(%d error(s)); skipping gate-state re-verification, not "
-            "comparing against a sentinel; only the test-count claim was "
-            "checked",
+            "gate-summary post-merge (%s) -- cannot re-verify the "
+            "recorded gate-state claim (%d error(s)); skipping gate-state "
+            "re-verification, not comparing against a sentinel; only the "
+            "test-count claim was checked",
             ticket_id,
             ticket_id,
+            reason if reason is not None else "no lease, a crash, or unparsable output",
             claims.gate_errors,
         )
         return Ok(None)
-
-    real_errors, real_warnings, real_waived = fresh
 
     # T-2668: the identity-based comparison is now tried once, up front
     # (this function's own opening block, before the `claims.gate_errors
     # is None` skip) -- reaching this point already means either that
     # attempt had nothing to compare with (one side never captured
     # identities) or it fell back to `None` itself, so it is NOT retried
-    # here. This count-only path is the fallback for that same case.
+    # here. `_reverify_gate_state_count_only` is the fallback for that
+    # same case (split out to keep this function under ARCH001's line
+    # budget, T-4281)."""
+    return _reverify_gate_state_count_only(ticket_id, claims, fresh)
 
-    # T-0846: count-only fallback, refusing only on an INCREASE over the
-    # captured claim, never on exact-count equality. The prior strict `!=`
-    # compared a count captured at done-report time against a fresh
-    # post-merge count taken in a DIFFERENT tree state (main keeps moving
-    # between the two captures) -- any main-side drift diverged the count
-    # even when the drift was a genuine IMPROVEMENT (a sibling land fixing
-    # an unrelated error this ticket never touched), refusing a land that
-    # introduced no new problem at all and forcing a manual refresh-done-
-    # report-and-retry loop (5 land attempts burned in one session,
-    # T-0755/T-0640). A fresh count strictly GREATER than the claim is
-    # still the meaningful, actionable signal (something this land or the
-    # merge introduced got worse) and still refuses. A count that only
-    # went down, or stayed the same, no longer refuses.
-    #
-    # T-0846 review (reject #1): this count-only path has a KNOWN masking
-    # gap the identity-based path above closes whenever both sides capture
-    # identities -- a land whose own diff introduces N new errors can
-    # still sail through HERE (count-only) whenever an unrelated fix on
-    # the same branch removed more than N. This path is now only reached
-    # when at least one side of the claim never captured identities (an
-    # old Done report, or a caller that only ever wired `check_gates`);
-    # accepted as a deliberate, documented fallback for that case, not a
-    # silent gap -- `check_gate_findings` closes it going forward for every
-    # ticket whose Done report is written (or refreshed) after this fix.
+
+# frob:ticket T-4281
+def _reverify_gate_state_count_only(
+    ticket_id: str,
+    claims,  # noqa: ANN001
+    fresh: tuple[int, int | None, int | None],
+) -> Result[None, LandError]:
+    """`_reverify_gate_state_claim`'s count-only fallback (T-0846), split
+    out to keep that function under ARCH001's line budget (T-4281):
+    refuses only on an INCREASE over the captured claim, never on exact-
+    count equality. The prior strict `!=` compared a count captured at
+    done-report time against a fresh post-merge count taken in a
+    DIFFERENT tree state (main keeps moving between the two captures) --
+    any main-side drift diverged the count even when the drift was a
+    genuine IMPROVEMENT (a sibling land fixing an unrelated error this
+    ticket never touched), refusing a land that introduced no new problem
+    at all and forcing a manual refresh-done-report-and-retry loop (5
+    land attempts burned in one session, T-0755/T-0640). A fresh count
+    strictly GREATER than the claim is still the meaningful, actionable
+    signal (something this land or the merge introduced got worse) and
+    still refuses. A count that only went down, or stayed the same, no
+    longer refuses.
+
+    T-0846 review (reject #1): this count-only path has a KNOWN masking
+    gap the identity-based path (`_reverify_gate_state_claim`'s own
+    opening block) closes whenever both sides capture identities -- a
+    land whose own diff introduces N new errors can still sail through
+    HERE (count-only) whenever an unrelated fix on the same branch
+    removed more than N. This path is only reached when at least one
+    side of the claim never captured identities (an old Done report, or
+    a caller that only ever wired `check_gates`); accepted as a
+    deliberate, documented fallback for that case, not a silent gap --
+    `check_gate_findings` closes it going forward for every ticket whose
+    Done report is written (or refreshed) after this fix."""
+    real_errors, real_warnings, real_waived = fresh
     if real_errors > claims.gate_errors:
         # T-2668: %s, not %d, for the warnings/waived pairs -- either side
         # of either pair can legitimately be `None` (unmeasured) now that

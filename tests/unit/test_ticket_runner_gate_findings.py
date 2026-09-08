@@ -16,6 +16,7 @@ end-to-end integration test (that already exists in
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -1527,3 +1528,64 @@ class TestErrorFindingIdentityOffFileAnchors:
         }
         findings = _parse_error_findings_from_json("T-0004", data)
         assert findings == frozenset({("F401", "src/frob/y.py")})
+
+
+# frob:ticket T-4281
+class TestUnmeasuredReasonFromResult:
+    """T-4281: `_unmeasured_reason_from_result` classifies WHY
+    `check_gates`/`check_gate_findings` produced `None`, so a land's
+    LAND-PROOF line can distinguish an infrastructure failure from a
+    deliberate skip instead of collapsing both onto one string."""
+
+    # frob:ticket T-4281
+    def test_none_result_is_a_refusal(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
+        # t.test_none_result_is_a_refusal
+        from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
+
+        reason = _unmeasured_reason_from_result(None)
+        assert reason is not None
+        assert "refus" in reason.lower()
+
+    # frob:ticket T-4281
+    def test_cache_lock_contention_names_the_holder(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
+        # t.test_cache_lock_contention_names_the_holder
+        from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
+
+        proc = _FakeProc(
+            1,
+            stderr=(
+                "Traceback...\n"
+                "frob.graph.cache.CacheLocked: Cache lock held by another "
+                "process; retry the command -- held by pid 12345 "
+                "(frob serve)"
+            ),
+        )
+        reason = _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc))
+        assert reason is not None
+        assert "graph cache lock contention" in reason
+        assert "held by pid 12345" in reason
+
+    # frob:ticket T-4281
+    def test_nonzero_exit_without_lock_marker_is_a_generic_crash(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
+        # t.test_nonzero_exit_without_lock_marker_is_a_generic_crash
+        from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
+
+        proc = _FakeProc(2, stderr="Traceback...\nValueError: boom")
+        reason = _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc))
+        assert reason == "frob check exited 2 (see stderr for detail)"
+
+    # frob:ticket T-4281
+    def test_clean_exit_is_never_a_reason(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
+        # t.test_clean_exit_is_never_a_reason
+        from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
+
+        proc = _FakeProc(0, stdout="not json")
+        assert _unmeasured_reason_from_result(cast("subprocess.CompletedProcess", proc)) is None

@@ -888,6 +888,66 @@ def _python_for_tree(root: Path) -> str:
     return sys.executable
 
 
+# frob:ticket T-4281
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_none_result_is_a_refusal  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_cache_lock_contention_names_the_holder  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_nonzero_exit_without_lock_marker_is_a_generic_crash  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_clean_exit_is_never_a_reason  # noqa: E501
+def _unmeasured_reason_from_result(
+    result: subprocess.CompletedProcess | None,
+) -> str | None:
+    """T-4281: classify WHY a `check_gates`/`check_gate_findings` spawn
+    produced `None` instead of a measured result, so `land()`'s LAND-PROOF
+    line can name an infrastructure failure instead of collapsing it onto
+    the same string a DELIBERATE (rapid-profile/budget) skip prints.
+
+    `result is None` -- the spawn itself never ran (`guarded_subprocess_
+    run` refused it, e.g. `FROB_DISABLE_EXEC=1`) -- a clean, known
+    refusal, named as such. A nonzero exit whose stdout+stderr carries
+    `GraphError.CacheLocked`'s own message text (`frob.graph.cache.
+    _with_lock_retry`'s raised `CacheLocked(f"{exc} -- {holder}")`, where
+    `holder` is `_describe_lock_holders`'s "held by pid N (cmdline)" or
+    "unresolvable" text) names the graph-cache lock contention AND its
+    holder when the holder was itself resolvable -- exactly the "graph
+    build failed to take the cache lock during re-verification" case this
+    ticket exists to distinguish from a deliberate skip. Any other
+    nonzero exit is reported as a generic crash (still a real, named
+    infra failure, just not one this function has a specific label for).
+    A clean exit (`returncode == 0`) is never classified here -- that
+    path's own JSON-unparsable/budget-truncated causes already log their
+    own specific warning at each call site; returns `None` (no
+    infra reason to report) so those sites keep their existing behavior
+    unchanged."""
+    if result is None:
+        return "process-guard refused the spawn (e.g. FROB_DISABLE_EXEC=1)"
+    if result.returncode == 0:
+        return None
+    combined = f"{result.stdout or ''}\n{result.stderr or ''}"
+    if "Cache lock held by another process" in combined or "CacheLocked" in combined:
+        holder = _extract_lock_holder(combined)
+        return (
+            f"graph cache lock contention ({holder})"
+            if holder
+            else "graph cache lock contention (holder unresolvable)"
+        )
+    return f"frob check exited {result.returncode} (see stderr for detail)"
+
+
+def _extract_lock_holder(combined: str) -> str | None:
+    """The `held by ...`/`unresolvable` tail of a raised `CacheLocked`'s
+    own message (`f"{exc} -- {holder}"`, `_describe_lock_holders`'s
+    return value) recovered from a spawned `frob check`'s combined
+    stdout+stderr, or `None` if that exact `-- ` separator never
+    appears -- `_unmeasured_reason_from_result`'s own helper, split out
+    to keep that function's line count small."""
+    marker = " -- "
+    idx = combined.rfind(marker)
+    if idx == -1:
+        return None
+    tail = combined[idx + len(marker) :].strip().splitlines()[0].strip()
+    return tail or None
+
+
 # frob:ticket T-0919
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
 # kind="unit"
@@ -1158,9 +1218,11 @@ def _check_gates_summary_fn(  # noqa: ANN201
     explicitly instead."""
 
     _spawn = spawn if spawn is not None else _shared_check_spawn_fn(root, ticket_id)
+    _last_result: dict[str, subprocess.CompletedProcess | None] = {}
 
     def fn() -> tuple[int, int | None, int | None] | None:
         result = _spawn()
+        _last_result["value"] = result
         if result is None:
             return None
         data = _parse_check_json(result.stdout)
@@ -1217,6 +1279,12 @@ def _check_gates_summary_fn(  # noqa: ANN201
         _raw_errors, warnings, _unresolved, waived = (int(g) for g in match.groups())
         return (errors, warnings, waived)
 
+    # frob:ticket T-4281
+    fn.unmeasured_reason = lambda: (  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]  # noqa: E501
+        _unmeasured_reason_from_result(_last_result["value"])
+        if "value" in _last_result
+        else None
+    )
     return fn
 
 
@@ -1919,9 +1987,11 @@ def _check_gate_findings_fn(  # noqa: ANN201
     callers/tests are unaffected."""
 
     _spawn = spawn if spawn is not None else _shared_check_spawn_fn(root, ticket_id)
+    _last_result: dict[str, subprocess.CompletedProcess | None] = {}
 
     def fn() -> frozenset[tuple[str, str]] | None:
         result = _spawn()
+        _last_result["value"] = result
         if result is None:
             return None
         findings = _parse_error_findings_from_stdout(
@@ -1931,6 +2001,12 @@ def _check_gate_findings_fn(  # noqa: ANN201
             return None
         return _exclude_scoped_run_flaky(findings)
 
+    # frob:ticket T-4281
+    fn.unmeasured_reason = lambda: (  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]  # noqa: E501
+        _unmeasured_reason_from_result(_last_result["value"])
+        if "value" in _last_result
+        else None
+    )
     return fn
 
 

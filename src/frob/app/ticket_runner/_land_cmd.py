@@ -1675,12 +1675,30 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     also must not turn every such land into a hard refusal (that would
     convert "the fleet is busy" into "the fleet cannot land," exactly
     when throughput matters most) -- the debt is named and attributable
-    instead."""
+    instead.
+
+    T-4281: `claims_reverify=` itself used to print the identical
+    `skipped-unmeasured` string whether re-verification was DELIBERATELY
+    never attempted (rapid profile, an insufficient declared deadline, or
+    a Done report with no captured claim) or was attempted and PREVENTED
+    by an infrastructure failure (a graph-cache lock held by another
+    process, a crash, an unparsable run) -- both read as the same
+    `SKIPPED-UNMEASURED` token on this line, with the cause, when known
+    (the lock holder, a generic crash, a process-guard refusal), visible
+    nowhere. `_ClaimsReverifyOutcome.INFRA_UNMEASURED` is the new,
+    narrower outcome for the second case; this line now also prints a
+    `claims_reverify_reason=` field (`n/a` when no infra reason was
+    recorded, the common healthy/deliberate-skip case) naming the cause
+    whenever `frob.tickets._land_verify._LAST_CLAIMS_INFRA_REASON`
+    carries one -- the same process-local side-channel pattern T-2091/
+    T-2275/T-2456 already established on this exact line for a sibling
+    check, applied here to a STRING instead of an enum member."""
     from frob.tickets._land import (
         _LAST_CLAIMS_OUTCOME,
         _LAST_ORPHAN_EVIDENCE_OUTCOME,
         _ClaimsReverifyOutcome,
     )
+    from frob.tickets._land_verify import _LAST_CLAIMS_INFRA_REASON
 
     # T-3787: verify ancestry against the branch this land actually
     # published onto, not a hardcoded `main`. `getattr` fallback keeps a
@@ -1693,8 +1711,22 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     verified = ancestor_ok and state_ok
 
     claims_outcome = _LAST_CLAIMS_OUTCOME.pop(report.ticket_id, None)
+    claims_infra_reason = _LAST_CLAIMS_INFRA_REASON.pop(report.ticket_id, None)
     claims_skipped = claims_outcome is _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
-    printed_verified = "SKIPPED-UNMEASURED" if claims_skipped else verified
+    # frob:ticket T-4281
+    # T-4281: an INFRA_UNMEASURED outcome (a graph-cache lock, a crash, or
+    # an unparsable run actually PREVENTED re-verification -- see
+    # `_ClaimsReverifyOutcome`'s own docstring) prints its own distinct
+    # token, never the plain `SKIPPED-UNMEASURED` a DELIBERATE (rapid-
+    # profile/budget/no-captured-claims) skip prints -- the two used to
+    # be the identical string with no way to tell which one happened.
+    claims_infra = claims_outcome is _ClaimsReverifyOutcome.INFRA_UNMEASURED
+    if claims_infra:
+        printed_verified = "INFRA-UNMEASURED"
+    elif claims_skipped:
+        printed_verified = "SKIPPED-UNMEASURED"
+    else:
+        printed_verified = verified
 
     orphan_evidence_outcome = _LAST_ORPHAN_EVIDENCE_OUTCOME.pop(report.ticket_id, None)
 
@@ -1702,13 +1734,14 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
 
     _log.info(
         "LAND-PROOF: ticket=%s commit=%s is_ancestor_of_main=%s "
-        "state_on_main=%s claims_reverify=%s orphan_evidence_check=%s "
-        "budget_deferred=%s verified=%s",
+        "state_on_main=%s claims_reverify=%s claims_reverify_reason=%s "
+        "orphan_evidence_check=%s budget_deferred=%s verified=%s",
         report.final_id,
         report.commit_sha,
         ancestor_ok,
         state_desc,
         claims_outcome.value if claims_outcome is not None else "unknown",
+        claims_infra_reason if claims_infra_reason is not None else "n/a",
         orphan_evidence_outcome.value
         if orphan_evidence_outcome is not None
         else "unknown",

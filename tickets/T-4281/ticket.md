@@ -2,7 +2,7 @@
 id: T-4281
 title: land proof does not distinguish an infra-failure unmeasured verification from
   a genuine skip
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -59,13 +59,23 @@ scope_changes:
     and its LAND-PROOF printing live in these existing test files'
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_none_result_is_a_refusal
+- tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_cache_lock_contention_names_the_holder
+- tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_nonzero_exit_without_lock_marker_is_a_generic_crash
+- tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_clean_exit_is_never_a_reason
+- tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSkip::test_check_gates_infra_failure_is_infra_unmeasured_not_skipped
+- tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSkip::test_check_gates_without_a_reason_attribute_is_unaffected
+- tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured::test_infra_unmeasured_prints_distinct_token_and_names_the_cause
+- tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured::test_skipped_unmeasured_prints_no_reason
+designated_repro_test: tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured::test_infra_unmeasured_prints_distinct_token_and_names_the_cause
 acceptance:
 - text: given a land whose graph build failed to take the cache lock (or otherwise
     hit an infrastructure error) during re-verification, when the land emits its LAND-PROOF
     line, then the reported state is distinguishable from a land that was DELIBERATELY
     not re-verified (e.g. a deferred/rapid-profile skip)
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured::test_infra_unmeasured_prints_distinct_token_and_names_the_cause
 threat: null
 component: null
 anchor: false
