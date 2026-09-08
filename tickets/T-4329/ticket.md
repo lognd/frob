@@ -16,10 +16,61 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
+- tests/integration/test_gitlog.py
+- tests/test_mutate_journal.py
+- tests/unit/test_conftest_parse_reset.py
+- tests/unit/test_conftest_stackdump.py
+- tests/unit/test_conftest_suite_result_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/integration/test_gitlog.py
+  reason: 'SCOPE002: these test files carry frob:tests coverage for pre-existing conftest.py
+    symbols (run_bounded_subprocess, pytest_configure, _reset_parse_cache_before_test,
+    pytest_collection_modifyitems, pytest_sessionfinish); the scope gate requires
+    them added whenever tests/conftest.py is in a ticket''s scope, regardless of which
+    symbol the ticket''s own edit touches'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_mutate_journal.py
+  reason: 'SCOPE002: these test files carry frob:tests coverage for pre-existing conftest.py
+    symbols (run_bounded_subprocess, pytest_configure, _reset_parse_cache_before_test,
+    pytest_collection_modifyitems, pytest_sessionfinish); the scope gate requires
+    them added whenever tests/conftest.py is in a ticket''s scope, regardless of which
+    symbol the ticket''s own edit touches'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_conftest_parse_reset.py
+  reason: 'SCOPE002: these test files carry frob:tests coverage for pre-existing conftest.py
+    symbols (run_bounded_subprocess, pytest_configure, _reset_parse_cache_before_test,
+    pytest_collection_modifyitems, pytest_sessionfinish); the scope gate requires
+    them added whenever tests/conftest.py is in a ticket''s scope, regardless of which
+    symbol the ticket''s own edit touches'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: 'SCOPE002: these test files carry frob:tests coverage for pre-existing conftest.py
+    symbols (run_bounded_subprocess, pytest_configure, _reset_parse_cache_before_test,
+    pytest_collection_modifyitems, pytest_sessionfinish); the scope gate requires
+    them added whenever tests/conftest.py is in a ticket''s scope, regardless of which
+    symbol the ticket''s own edit touches'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: 'SCOPE002: these test files carry frob:tests coverage for pre-existing conftest.py
+    symbols (run_bounded_subprocess, pytest_configure, _reset_parse_cache_before_test,
+    pytest_collection_modifyitems, pytest_sessionfinish); the scope gate requires
+    them added whenever tests/conftest.py is in a ticket''s scope, regardless of which
+    symbol the ticket''s own edit touches'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
