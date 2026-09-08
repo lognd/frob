@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_timeout.py
+- tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ci_workflow_timeout.py
+  reason: added the T-4274 regression-lock tests to this file and fixed a stale literal-match
+    assertion in the sibling matrix test that the invocation-shape change broke
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: added the T-4274 regression-lock tests to this file and fixed a stale literal-match
+    assertion in the sibling matrix test that the invocation-shape change broke
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a process deliberately hung under the macos step's own harness, when
