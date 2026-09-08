@@ -2,7 +2,7 @@
 id: T-4280
 title: policy._compiled_glob's pathspec match_file has the same unpinned-separators
   platform defect T-4155 fixed in excludes.is_excluded
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/policy/__init__.py
+- tests/test_policy.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_policy.py
+  reason: 'T-4280: bound evidence for the fix lives in tests/test_policy.py'
+  actor: logan
+  at: '2026-09-08'
+evidence:
+- tests/test_policy.py::TestRules::test_backslash_joined_path_matches_a_posix_glob_on_every_platform
 designated_repro_test: null
 threat: null
 component: null
