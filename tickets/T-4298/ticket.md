@@ -18,6 +18,12 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_land_format.py
 - docs/modules/gates.md
+- src/frob/graph/cache.py
+- tests/test_ci_workflow_timeout.py
+- tests/test_graph.py
+- tests/unit/test_graph_lock_holder_naming.py
+- tests/unit/test_graph_stat_trust_margin.py
+- tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +53,42 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: new gate function's frob:doc target lives here
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/graph/cache.py
+  reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
+    format --code)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_ci_workflow_timeout.py
+  reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
+    format --code)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_graph.py
+  reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
+    format --code)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_graph_lock_holder_naming.py
+  reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
+    format --code)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_graph_stat_trust_margin.py
+  reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
+    format --code)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
+    format --code)
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
