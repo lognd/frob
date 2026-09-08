@@ -257,3 +257,109 @@ def test_iter_files_git_fast_path_matches_ls_files(tmp_path: Path):
     names = {p.name for p in iter_files(tmp_path)}
     assert "tracked.py" in names
     assert "untracked.py" not in names
+
+
+# frob:ticket T-4178
+class TestRepoIgnoreGlobs:
+    """`_load_repo_ignore_globs` (T-4178): the root-level ignore-file
+    SECOND source `walk_pruned` consults alongside `BUILTIN_SKIP_DIRS`."""
+
+    def test_missing_ignore_file_returns_empty(self, tmp_path: Path):
+        # frob:tests src/frob/excludes.py::_load_repo_ignore_globs kind="unit"
+        from frob.excludes import _load_repo_ignore_globs
+
+        assert _load_repo_ignore_globs(tmp_path) == ()
+
+    def test_reads_root_ignore_file_lines(self, tmp_path: Path):
+        # frob:tests src/frob/excludes.py::_load_repo_ignore_globs kind="unit"
+        from frob.excludes import _load_repo_ignore_globs
+
+        (tmp_path / ".gitignore").write_text("build/\n*.secret\n")
+        assert _load_repo_ignore_globs(tmp_path) == ("build/", "*.secret")
+
+    def test_skips_blank_and_comment_lines(self, tmp_path: Path):
+        # frob:tests src/frob/excludes.py::_load_repo_ignore_globs kind="unit"
+        from frob.excludes import _load_repo_ignore_globs
+
+        (tmp_path / ".gitignore").write_text(
+            "# a comment\n\nbuild/\n   \n# another\nout/\n"
+        )
+        assert _load_repo_ignore_globs(tmp_path) == ("build/", "out/")
+
+
+# frob:ticket T-4178
+class TestWalkPrunedHonorsIgnoreFile:
+    """`walk_pruned` (T-4178, MUST-FIRE/THIRD fixtures): the repository's
+    own ignore file is now a second exclusion source, alongside the
+    hardcoded floor, that applies even when a root has NO `frob.toml`."""
+
+    def test_ignored_directory_absent_from_hardcoded_set_is_not_yielded(
+        self, tmp_path: Path
+    ):
+        """MUST-FIRE: a directory the hardcoded skip set does not know
+        about (a coverage HTML output dir, here standing in for the class
+        of directory the ticket names) is pruned once the root's own
+        ignore file lists it -- before this fix, nothing but the
+        hardcoded set was ever consulted."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "main.py").write_text("x = 1\n")
+        htmlcov = tmp_path / "htmlcov"
+        htmlcov.mkdir()
+        (htmlcov / "index.html").write_text("<html></html>\n")
+        (tmp_path / ".gitignore").write_text("htmlcov/\n")
+
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+
+        assert "src/main.py" in found
+        assert not any(part.startswith("htmlcov") for part in found)
+
+    def test_tracked_file_matching_no_ignore_rule_still_yielded(self, tmp_path: Path):
+        """MUST-STAY-QUIET half one: an ordinary file matching nothing in
+        the ignore file is unaffected."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "main.py").write_text("x = 1\n")
+        (tmp_path / ".gitignore").write_text("build/\n")
+
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+
+        assert "src/main.py" in found
+
+    def test_no_ignore_file_behaves_exactly_as_before(self, tmp_path: Path):
+        """MUST-STAY-QUIET half two: a root with no ignore file at all
+        behaves exactly as it did before this fix -- the hardcoded floor
+        alone still applies, nothing new is pruned or yielded."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "main.py").write_text("x = 1\n")
+        venv_dir = tmp_path / ".venv"
+        venv_dir.mkdir()
+        (venv_dir / "pkg.py").write_text("y = 2\n")
+
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+
+        assert found == {"src/main.py"}
+
+    def test_ignore_file_naming_the_secrets_file_hides_it_from_every_walk(
+        self, tmp_path: Path
+    ):
+        """THIRD FIXTURE: a repository whose ignore file lists the secrets
+        file (the actual reported incident: `.env`, per this repo's own
+        `.gitignore`) yields it from NEITHER `walk_pruned` NOR `iter_files`
+        (the git fast path already excludes it structurally by only
+        listing tracked files; this proves the fallback path now agrees)."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        # frob:tests src/frob/excludes.py::iter_files kind="unit"
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "main.py").write_text("x = 1\n")
+        (tmp_path / ".env").write_text("SECRET=do-not-read\n")
+        (tmp_path / ".gitignore").write_text(".env\n")
+
+        walked = {p.name for p in walk_pruned(tmp_path)}
+        assert ".env" not in walked
+        assert "main.py" in walked
+
+        via_iter_files = {p.name for p in iter_files(tmp_path)}
+        assert ".env" not in via_iter_files
+        assert "main.py" in via_iter_files

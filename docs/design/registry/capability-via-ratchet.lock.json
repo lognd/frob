@@ -76,9 +76,9 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 35,
-      "reason": "T-3447: SYS111 measured this (node, capability) pair above its committed ceiling of 34 (test_sys_gate_zero_violations, GitHub Actions run 33282540898) after T-3416/T-3409/T-3429/T-3430 each added a genuine, already-declared-node fs.read site to core -- every contributing file is already a via-source for this pair (verified against design/frob.strata's core node fs.read via-list), so this is accumulated legitimate growth across several already-authorized lands, not a fresh, unreviewed grant. Bumping the ceiling to the current measured count (35) rather than re-justifying each site individually, mirroring T-2743/T-2407's own precedent for this same class of finding.",
-      "ticket": "T-3447"
+      "accepted_count": 36,
+      "reason": "T-4178: excludes.py::_load_repo_ignore_globs is a genuine, new fs.read site on the core node (reading the repository root ignore file as a second exclude source alongside BUILTIN_SKIP_DIRS) -- already declared as a via-source in design/frob.strata's core node fs.read via-list, growing the ratchet from 35 to 36 sites, not a fresh unreviewed grant.",
+      "ticket": "T-4178"
     },
     "core::fs.write": {
       "accepted_count": 25,

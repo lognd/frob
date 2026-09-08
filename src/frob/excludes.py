@@ -56,6 +56,68 @@ BUILTIN_SKIP_DIRS = frozenset(
 )
 
 
+# frob:ticket T-4178
+# The repository ignore filename consulted by `_load_repo_ignore_globs`.
+# ROOT ONLY (see that function's docstring for why nested ignore files are
+# a deliberate non-goal here, not a silently-dropped feature).
+_IGNORE_FILENAME = ".gitignore"
+
+
+# frob:ticket T-4178
+# frob:tests \
+# tests/test_excludes.py::TestRepoIgnoreGlobs.test_missing_ignore_file_returns_empty
+# frob:tests \
+# tests/test_excludes.py::TestRepoIgnoreGlobs.test_reads_root_ignore_file_lines
+# frob:tests \
+# tests/test_excludes.py::TestRepoIgnoreGlobs.test_skips_blank_and_comment_lines
+def _load_repo_ignore_globs(root: Path) -> tuple[str, ...]:
+    """Read `root`'s own ignore file (`.gitignore`) as gitwildmatch-dialect
+    patterns -- the SECOND source `walk_pruned` needs alongside
+    `BUILTIN_SKIP_DIRS` (T-4178): the hardcoded set is a floor covering
+    what must be skipped everywhere (version control internals,
+    virtualenvs, caches, build outputs), including a root with no ignore
+    file at all; it deliberately does NOT try to also cover what one
+    repository's ignore file happens to list (a coverage HTML directory, a
+    CMake build tree, an editor state directory, a secrets file -- ordinary
+    ignore-file contents that vary per consumer, which is the whole reason
+    the mechanism exists). This reads that second source instead of trying
+    to complete the first.
+
+    ROOT ONLY, decided explicitly rather than left implicit (item 2):
+    resolving NESTED per-directory ignore files correctly needs real git
+    semantics this module does not otherwise reimplement -- directory-
+    relative pattern anchoring, and negation precedence between a parent
+    and child ignore file. `iter_files` already delegates true, fully
+    nested-aware gitignore resolution to `git ls-files` itself wherever a
+    git checkout is available (T-0471); `walk_pruned` is specifically the
+    fallback for when that path is UNAVAILABLE (a non-git root, or a git
+    call failure), where there is no git index to resolve nested ignore
+    files against in the first place. A root-level ignore file is the
+    common, easy-to-get-right case, and it covers the reported incident (a
+    secrets file listed at the repo root); a caller with a genuine need for
+    nested-ignore-file resolution should route through `iter_files`'s git
+    fast path, not this fallback.
+
+    Absent file, or an unreadable one, returns `()` -- the identical
+    fail-open-to-floor-only posture `load_exclude_globs` already uses for a
+    missing/malformed `frob.toml`, so `walk_pruned`'s behavior on a root
+    with no ignore file is unchanged from before this fix (MUST-STAY-
+    QUIET)."""
+    path = root / _IGNORE_FILENAME
+    if not path.exists():
+        return ()
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("excludes: could not read %s: %s", path, exc)
+        return ()
+    return tuple(
+        line.strip()
+        for line in text.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    )
+
+
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
 def load_exclude_globs(root: Path) -> tuple[str, ...]:
     """Read `[graph] exclude = [...]` from frob.toml; absent config is `()`.
@@ -216,10 +278,24 @@ def is_test_file(path: str) -> bool:
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
 # frob:ticket T-0471
+# frob:ticket T-4178
 # frob:tests tests/test_excludes.py::test_walk_pruned_does_not_descend_venv_or_git
+# frob:tests \
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignored_directory_absent_\
+# from_hardcoded_set_is_not_yielded
+# frob:tests \
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_tracked_file_matching_no_\
+# ignore_rule_still_yielded
+# frob:tests \
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_no_ignore_file_behaves_ex\
+# actly_as_before
+# frob:tests \
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignore_file_naming_the_se\
+# crets_file_hides_it_from_every_walk
 def walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[Path]:
     """Yield every file under `root`, pruning `_should_prune_dir` directories
-    IN PLACE before `os.walk` descends into them.
+    IN PLACE before `os.walk` descends into them, and skipping any
+    individual file the repository's own ignore file excludes.
 
     The os.walk-prune fallback half of T-0471's shared walk primitive
     (`iter_files` prefers the `git ls-files` fast path and only falls back to
@@ -229,18 +305,40 @@ def walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[
     T-0239 bug class, and the mistake `frob.gates._walk_lint`'s WALK001 now
     makes a static check) -- `dirnames[:]` mutation here means a pruned
     subtree is never entered at all.
-    """
+
+    T-4178: `_load_repo_ignore_globs(root)` (the repository's own
+    `.gitignore`, root only) is merged into `exclude_globs` UNCONDITIONALLY
+    -- unlike the `frob.toml`-sourced default just below, which only fills
+    in when the caller passed none at all, the ignore file is a genuinely
+    SEPARATE source (T-4178's own instruction: add it as a second source,
+    never fold it into completing the hardcoded floor) that applies
+    regardless of whether the caller supplied its own explicit
+    `exclude_globs`. `BUILTIN_SKIP_DIRS`/`is_skipped_dir` (checked inside
+    `_should_prune_dir`, unconditionally, first) remains the floor that
+    still applies with no ignore file present at all (MUST-STAY-QUIET) --
+    this only ever ADDS a second source, never replaces or narrows the
+    first. The merged globs prune matching DIRECTORIES exactly as
+    `exclude_globs` already did, and additionally skip a matching
+    individual FILE that survives directory pruning (an ignore-file entry
+    naming a single file, not a directory, previously had no effect on
+    this walk at all)."""
     if not exclude_globs:
         exclude_globs = load_exclude_globs(root)
+    combined_globs = exclude_globs + _load_repo_ignore_globs(root)
     for dirpath, dirnames, filenames in os.walk(root):
         current = Path(dirpath)
         dirnames[:] = [
             name
             for name in dirnames
-            if not _should_prune_dir(current / name, root, exclude_globs)
+            if not _should_prune_dir(current / name, root, combined_globs)
         ]
         for name in filenames:
-            yield current / name
+            file_path = current / name
+            if combined_globs:
+                rel = file_path.relative_to(root).as_posix()
+                if is_excluded(rel, combined_globs):
+                    continue
+            yield file_path
 
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic

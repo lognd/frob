@@ -2,7 +2,7 @@
 id: T-4178
 title: the tree walk honours a hardcoded skip list but never consults the repository
   ignore file, so content-reading gates can reach the secrets file
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-07'
@@ -51,15 +51,32 @@ acceptance:
     is walked, then it is not yielded
   evidence:
   - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_ignored_directory_absent_from_hardcoded_set_is_not_yielded
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_missing_ignore_file_returns_empty
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_reads_root_ignore_file_lines
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_skips_blank_and_comment_lines
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_tracked_file_matching_no_ignore_rule_still_yielded
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_no_ignore_file_behaves_exactly_as_before
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_ignore_file_naming_the_secrets_file_hides_it_from_every_walk
 - text: given a root with no ignore file, when the tree is walked, then behaviour
     is exactly as today
   evidence:
   - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_tracked_file_matching_no_ignore_rule_still_yielded
   - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_no_ignore_file_behaves_exactly_as_before
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_missing_ignore_file_returns_empty
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_reads_root_ignore_file_lines
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_skips_blank_and_comment_lines
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_ignored_directory_absent_from_hardcoded_set_is_not_yielded
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_ignore_file_naming_the_secrets_file_hides_it_from_every_walk
 - text: given a repository whose ignore file lists the secrets file, when any walk
     runs, then that file is not yielded
   evidence:
   - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_ignore_file_naming_the_secrets_file_hides_it_from_every_walk
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_missing_ignore_file_returns_empty
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_reads_root_ignore_file_lines
+  - tests/test_excludes.py::TestRepoIgnoreGlobs::test_skips_blank_and_comment_lines
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_ignored_directory_absent_from_hardcoded_set_is_not_yielded
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_tracked_file_matching_no_ignore_rule_still_yielded
+  - tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_no_ignore_file_behaves_exactly_as_before
 threat: info-disclosure
 component: null
 anchor: false
