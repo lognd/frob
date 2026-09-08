@@ -1,7 +1,7 @@
 ---
 id: T-4326
 title: win32-only executable-resolution test fails on linux, the sole suite failure
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
