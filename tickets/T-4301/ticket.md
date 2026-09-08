@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_cli.py
+- tests/test_release.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: SCOPE002's doc/test closure over docs/modules/release.md
   and tests/test_release.py both fan out into the WHOLE release subsystem (release/__init__.py,
@@ -112,6 +113,13 @@ scope_changes:
   glob: tests/test_release.py
   reason: 'T-4301: testing scope-closure blast radius before deciding where new tests
     live'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_release.py
+  reason: 'T-4301: restore -- required since src/frob/release/_cli.py::run_release_publish_command''s
+    PRE-EXISTING frob:tests binding to this file is unavoidable once _cli.py is in
+    scope at all'
   actor: logan
   at: '2026-09-08'
 body_changes:
