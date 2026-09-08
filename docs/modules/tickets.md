@@ -357,6 +357,22 @@ def reopen_ticket(root: Path, ticket_id: str, reason: str) -> Result[Ticket, Tic
     # Err(ReopenReasonMissing) if `reason` is blank; Err(
     # ReopenRequiresDone) for any non-DONE state -- use `frob ticket
     # requeue` for an in-progress ticket instead.
+    #
+    # T-4287: before performing the transition, logs a WARNING naming
+    # every live cross-worktree lease (`_worktrees_carrying_terminal_
+    # copy`) whose own on-disk copy of this ticket is still done/dropped
+    # -- a worktree that forked while this ticket was terminal. Measured
+    # incident: reopening a falsely-closed ticket with no such warning
+    # stranded two unrelated, already-finished worktrees' lands with no
+    # forward move available to them. The land-time sibling-state-
+    # regression guard (`frob.tickets._land._assert_no_sibling_state_
+    # regression`) separately recognizes a land whose only "regression"
+    # is a NEW `_reopen_log_entries` entry gained since the worktree
+    # forked as this audited transition, not the accidental hand-
+    # resolved-merge resurrection it exists to refuse -- so those
+    # worktrees' lands are no longer actually stranded, but the warning
+    # still fires so the person reopening can rebase them first if they
+    # choose to.
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.

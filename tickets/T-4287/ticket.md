@@ -2,7 +2,7 @@
 id: T-4287
 title: 'reopening a terminal ticket strands every worktree that forked before it:
   the land guard cannot tell an audited reopen from an accidental merge resurrection'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -70,20 +70,27 @@ scope_changes:
     to satisfy AFFECT001.'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape::test_audited_reopen_is_not_flagged_as_regression
+- tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape::test_hand_resurrection_without_reopen_log_is_still_refused
+- tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReopen::test_worktrees_carrying_terminal_copy_are_named
 designated_repro_test: null
 acceptance:
 - text: given a ticket reopened through the audited verb, when a worktree that forked
     while it was terminal lands, then the land proceeds rather than being refused
     as a regression
-  evidence: []
+  evidence:
+  - tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape::test_audited_reopen_is_not_flagged_as_regression
 - text: given a terminal ticket resurrected by a hand-resolved merge conflict rather
     than by the reopen verb, when a land splices it, then the refusal still fires
     exactly as it does today
-  evidence: []
+  evidence:
+  - tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape::test_hand_resurrection_without_reopen_log_is_still_refused
 - text: given live worktrees that would be affected, when a reopen is about to be
     performed, then they are named before the transition rather than discovered afterwards
     by a blocked land
-  evidence: []
+  evidence:
+  - tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReopen::test_worktrees_carrying_terminal_copy_are_named
 threat: null
 component: null
 anchor: false

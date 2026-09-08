@@ -25,11 +25,14 @@ from frob.tickets import (
 )
 from frob.tickets._land import (
     _assert_no_sibling_state_regression,
+    _reopen_log_entries,
+    _sibling_reopen_log_signatures,
     _sibling_ticket_states,
     land,
 )
 from frob.tickets._models import LandError
 from frob.tickets._new_renumber import _ticket_from_spec
+from frob.tickets._reporting import reopen_ticket
 from frob.tickets._store import (
     _serialize_ticket,
     atomic_write,
@@ -114,7 +117,9 @@ class TestSiblingStateRegressionGuard:
     call, plus the real, end-to-end incident reproduction against
     `land()` itself."""
 
-    # frob:tests tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_no_regression_when_sibling_state_only_improves_or_holds  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_\
+    # no_regression_when_sibling_state_only_improves_or_holds
     def test_no_regression_when_sibling_state_only_improves_or_holds(
         self, tmp_path: Path
     ) -> None:
@@ -142,7 +147,9 @@ class TestSiblingStateRegressionGuard:
         ).is_ok
         assert _assert_no_sibling_state_regression(tmp_path, "T-9999", pre) == ()
 
-    # frob:tests tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_regressed_sibling_is_detected_by_rank_comparison  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_\
+    # regressed_sibling_is_detected_by_rank_comparison
     def test_regressed_sibling_is_detected_by_rank_comparison(
         self, tmp_path: Path
     ) -> None:
@@ -166,7 +173,9 @@ class TestSiblingStateRegressionGuard:
         regressed = _assert_no_sibling_state_regression(tmp_path, "T-9999", pre)
         assert regressed == ("T-1000",)
 
-    # frob:tests tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_fix_shape_would_have_silently_reverted_sibling  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_\
+    # pre_fix_shape_would_have_silently_reverted_sibling
     def test_pre_fix_shape_would_have_silently_reverted_sibling(
         self, v2_repo: Path
     ) -> None:
@@ -252,7 +261,9 @@ class TestSelfConflictAutoResolve:
     mechanical "worktree progressed further than main's stale copy" shape
     this ticket exists to auto-resolve."""
 
-    # frob:tests tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self_conflict_lands_by_keeping_newer_state  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self\
+    # _conflict_lands_by_keeping_newer_state
     def test_self_conflict_lands_by_keeping_newer_state(self, v2_repo: Path) -> None:
         created = new_ticket(v2_repo, _spec("Land L", scope=("src/widget.py",)))
         assert created.is_ok
@@ -294,7 +305,9 @@ class TestSelfConflictAutoResolve:
             "itself)"
         )
 
-    # frob:tests tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_genuine_sibling_conflict_still_refuses  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_genu\
+    # ine_sibling_conflict_still_refuses
     def test_genuine_sibling_conflict_still_refuses(self, v2_repo: Path) -> None:
         """The exact `test_pre_fix_shape_would_have_silently_reverted_
         sibling` shape, restated here to pin down that T-2289's self-
@@ -351,3 +364,179 @@ class TestSelfConflictAutoResolve:
         assert landed.is_ok
         assert landing_id not in landed.danger_ok
         assert landed.danger_ok["T-3020"].state == TicketState.QUEUED
+
+
+# frob:ticket T-4287
+class TestAuditedReopenEscape:
+    """T-4287: `_assert_no_sibling_state_regression` must not refuse a
+    land whose only "regression" is a sibling ticket a `frob ticket
+    reopen --reason TEXT` deliberately moved back to QUEUED on `main`
+    after this worktree forked -- while still refusing an accidental
+    hand-resolved-merge resurrection with no reopen record at all."""
+
+    # frob:ticket T-4287
+    def test_no_reopen_log_returns_empty(self) -> None:
+        assert _reopen_log_entries("## Done report\n\nsomething\n") == ()
+
+    # frob:ticket T-4287
+    def test_new_reopen_log_entry_is_the_signature(self) -> None:
+        body = (
+            "## Reopen log\n"
+            "- 2026-09-08: falsely closed, no code reached main\n"
+            "## Done report\n"
+            "evidence attached\n"
+        )
+        assert _reopen_log_entries(body) == (
+            "- 2026-09-08: falsely closed, no code reached main",
+        )
+
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_audited_\
+    # reopen_is_not_flagged_as_regression
+    # frob:ticket T-4287
+    def test_audited_reopen_is_not_flagged_as_regression(self, v2_repo: Path) -> None:
+        sibling = _seed_v2_ticket(v2_repo, "T-3030", scope=("src/sibling2.py",))
+        assert sibling.id == "T-3030"
+        _make_closeable(v2_repo, "T-3030")
+        assert transition(v2_repo, "T-3030", TicketState.DONE).is_ok
+        _commit_all(v2_repo, "close sibling T-3030")
+
+        wt = v2_repo.parent / "wt-audited-reopen"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-audited-reopen", str(wt)], v2_repo
+        )
+
+        # Worktree lands unrelated ticket L, forked while T-3030 was DONE
+        # and carries no reopen-log entry of its own.
+        created = new_ticket(wt, _spec("Land N", scope=("src/dial.py",)))
+        assert created.is_ok
+        landing_id = created.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src").mkdir(exist_ok=True)
+        (wt / "src" / "dial.py").write_text("# dial\n")
+        _commit_all(wt, "worktree lands N")
+
+        # Main reopens the sibling through the AUDITED verb after the
+        # worktree forked.
+        reopened = reopen_ticket(v2_repo, "T-3030", "T-4287: false close, redo")
+        assert reopened.is_ok
+        _commit_all(v2_repo, "reopen sibling T-3030 (T-4287)")
+
+        result = land(v2_repo, landing_id, wt, dry_run=False)
+        assert result.is_ok, (
+            "an audited `frob ticket reopen` on a sibling ticket must not "
+            f"strand this land (T-4287); got {result}"
+        )
+        landed = load_all(v2_repo)
+        assert landed.is_ok
+        assert landed.danger_ok["T-3030"].state == TicketState.QUEUED
+
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_hand_res\
+    # urrection_without_reopen_log_is_still_refused
+    # frob:ticket T-4287
+    def test_hand_resurrection_without_reopen_log_is_still_refused(
+        self, v2_repo: Path
+    ) -> None:
+        sibling = _seed_v2_ticket(v2_repo, "T-3031", scope=("src/sibling3.py",))
+        assert sibling.id == "T-3031"
+        _make_closeable(v2_repo, "T-3031")
+        assert transition(v2_repo, "T-3031", TicketState.DONE).is_ok
+        _commit_all(v2_repo, "close sibling T-3031")
+
+        wt = v2_repo.parent / "wt-hand-resurrection"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-hand-resurrection", str(wt)],
+            v2_repo,
+        )
+        created = new_ticket(wt, _spec("Land O", scope=("src/knob.py",)))
+        assert created.is_ok
+        landing_id = created.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src").mkdir(exist_ok=True)
+        (wt / "src" / "knob.py").write_text("# knob\n")
+        _commit_all(wt, "worktree lands O")
+
+        # Main resurrects the sibling by a raw state edit -- NOT through
+        # `reopen_ticket` -- reproducing the T-1914 incident shape
+        # exactly: no reopen-log entry is ever written.
+        main_sibling = load_all(v2_repo).danger_ok["T-3031"]
+        assert write_ticket(
+            v2_repo, main_sibling.model_copy(update={"state": TicketState.QUEUED})
+        ).is_ok
+        _commit_all(v2_repo, "hand-resurrect sibling T-3031")
+
+        result = land(v2_repo, landing_id, wt, dry_run=False)
+        assert result.is_err, (
+            "a state resurrection with NO reopen-log entry must still be "
+            "refused (T-4287 is an escape hatch for the audited verb "
+            "only, not a general loosening of the T-1914 guard)"
+        )
+        assert result.danger_err == LandError.TerminalStateRegression
+
+    # frob:ticket T-4287
+    def test_pre_reopen_signatures_none_preserves_old_behavior(
+        self, tmp_path: Path
+    ) -> None:
+        _git_init(tmp_path)
+        _seed_v2_ticket(tmp_path, "T-1000")
+        _make_closeable(tmp_path, "T-1000")
+        assert transition(tmp_path, "T-1000", TicketState.DONE).is_ok
+        _commit_all(tmp_path, "close T-1000")
+        pre = _sibling_ticket_states(tmp_path, landing_id="T-9999")
+
+        loaded = load_all(tmp_path)
+        ticket = loaded.danger_ok["T-1000"]
+        assert write_ticket(
+            tmp_path, ticket.model_copy(update={"state": TicketState.QUEUED})
+        ).is_ok
+
+        # No `pre_reopen_signatures` given -- identical to the pre-T-4287
+        # call shape, must still refuse.
+        assert _assert_no_sibling_state_regression(tmp_path, "T-9999", pre) == (
+            "T-1000",
+        )
+        assert _sibling_reopen_log_signatures(tmp_path, "T-9999") == {"T-1000": ()}
+
+
+# frob:ticket T-4287
+class TestNamesStrandedWorktreesBeforeReopen:
+    """T-4287 AC3: `reopen_ticket` must name every live worktree whose own
+    copy of the ticket is still terminal, BEFORE performing the
+    DONE -> QUEUED transition."""
+
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReope\
+    # n.test_worktrees_carrying_terminal_copy_are_named
+    # frob:ticket T-4287
+    def test_worktrees_carrying_terminal_copy_are_named(self, v2_repo: Path) -> None:
+        from frob.tickets._reporting import _worktrees_carrying_terminal_copy
+
+        sibling = _seed_v2_ticket(v2_repo, "T-3040", scope=("src/sibling4.py",))
+        assert sibling.id == "T-3040"
+        _make_closeable(v2_repo, "T-3040")
+        assert transition(v2_repo, "T-3040", TicketState.DONE).is_ok
+        _commit_all(v2_repo, "close sibling T-3040")
+
+        # A worktree forked AFTER T-3040 closed, doing UNRELATED work --
+        # its own in-progress ticket is what holds the live lease
+        # (`_make_closeable`'s own `transition(..., IN_PROGRESS)` records
+        # it), not the terminal sibling itself. This is the real T-4287
+        # shape: the worktree's OWN copy of T-3040 is what has gone stale,
+        # discovered by checking its ticket store, not by a lease naming
+        # T-3040 directly.
+        wt = v2_repo.parent / "wt-stranded"
+        _run(["git", "worktree", "add", "-b", "feature-stranded", str(wt)], v2_repo)
+        created = new_ticket(wt, _spec("Unrelated work", scope=("src/lever.py",)))
+        assert created.is_ok
+        _make_closeable(wt, created.danger_ok.id)
+
+        named = _worktrees_carrying_terminal_copy(v2_repo, "T-3040")
+        assert named == (str(wt),)
+
+        result = reopen_ticket(v2_repo, "T-3040", "T-4287: named before reopening")
+        assert result.is_ok
+
+        # No live-worktree lease at all -- no names, no error.
+        no_stranding = _worktrees_carrying_terminal_copy(v2_repo, "T-3000")
+        assert no_stranding == ()
