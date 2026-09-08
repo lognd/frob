@@ -21,6 +21,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: mechanical formatting fix, no behavior change to prove via failing-then-passing
+    test
+  actor: logan
+  at: '2026-09-08'
+  old_length: 1602
+  new_length: 1732
+evidence:
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+- tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult::test_clean_exit_is_never_a_reason
 designated_repro_test: null
 acceptance:
 - text: given the integration run's formatter check, when it runs after this lands,
@@ -44,3 +55,5 @@ WHAT TO DO. Run the project's format verb over these two files and land the resu
 CONFIRM THE PREMISE FIRST, BECAUSE IT MAY HAVE MOVED. Measure which files the formatter actually wants to rewrite before formatting anything, and report the set YOU find rather than the two named here. Several tickets today rested on counts that had changed by the time someone acted on them, including two I filed myself. If the set is empty, say so and drop this ticket with that measurement.
 
 WORTH ANSWERING WHILE YOU ARE HERE. Since the new gate only sees files a land touches, pre-existing drift can sit indefinitely in files nobody happens to modify. Say in your report whether that is acceptable or whether something should periodically sweep the whole tree -- do not build that here, just record the judgement so the next person is not guessing.
+
+frob:no-behavior-change reason="pure ruff-format whitespace/line-wrap changes to two test files, no logic or assertions changed"
