@@ -27,7 +27,6 @@ scope:
 - tests/ticket_land_suite/test_release.py
 - tests/ticket_land_suite/test_land_core.py
 - tests/unit/test_land_release_coherence.py
-- docs/modules/tickets-landing.md#frob-ticket-land
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -127,6 +126,13 @@ scope_changes:
   reason: AFFECT001 only needs the specific frob-ticket-land anchor touched (9.65
     step added); the whole-file scope fanned out across ~500 unrelated SCOPE002 warnings
     since this doc describes the entire land subsystem
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-landing.md#frob-ticket-land
+  reason: reverted the tickets-landing.md doc edit; a full-file/anchor add fanned
+    scope out across ~500 unrelated symbols this giant shared doc describes -- waiving
+    AFFECT001 instead, design lives fully in docs/modules/release.md#per-land-dev-version-bump-t-4184
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
