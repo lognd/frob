@@ -1,7 +1,7 @@
 ---
 id: T-4316
 title: Closing T-4298 stranded its own frob:todo directive, failing the gate step
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -15,8 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_land_format.py
-- tickets/T-draft-99f20919/**
-- docs/modules/gates.md
+- tickets/T-4323/**
 - tests/unit/test_land_format_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -24,7 +23,7 @@ no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-99f20919/**
+  glob: tickets/T-4323/**
   reason: filing the auto-apply follow-up ticket this fix rebinds the frob:todo to
   actor: logan
   at: '2026-09-08'
@@ -38,6 +37,27 @@ scope_changes:
   reason: close SCOPE002 doc/test closure surfaced by the frob:todo rebind edit
   actor: logan
   at: '2026-09-08'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: gates.md is a monofile hub whose anchors cascade scope closure across the
+    repo; reverting, will use --demote-to-evidence-only or a waiver instead for the
+    single land_format_gate doc-target requirement
+  actor: logan
+  at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'unblock BUG002 at land time: this bug ticket''s fix is a directive-citation
+    rebind, not executable logic a mutation-killing test could target
+
+    '
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2176
+  new_length: 2610
+evidence:
+- tests/test_todo_fmt_gate.py::TestTodo002Edges::test_open_ticket_no_violation
+- tests/test_todo_fmt_gate.py::TestTodo002Edges::test_closed_ticket_fires_todo002
+- tests/test_todo_fmt_gate.py::TestTodo002Edges::test_missing_ticket_fires_todo002
 designated_repro_test: null
 threat: null
 component: null
@@ -80,3 +100,5 @@ VERIFY by running the unscoped gate check and confirming the TODO002 error is go
 Expect other errors to remain from a separate ticket covering the architecture
 gate; those are not yours. Quote the error count you actually see rather than
 asserting a clean run.
+
+frob:waive BUG002 reason="comment/directive-rebind-only fix: the diff changes a citation in a code comment (frob:todo T-4298 -> T-4323), not executable logic. tests/test_todo_fmt_gate.py::TestTodo002Edges already exercises the TODO002 open/closed-ticket mechanism this rebind relies on; no mutation of gate logic can distinguish a citation change, so a genuinely-failing-then-passing repro test cannot exist for this defect class."
