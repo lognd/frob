@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
+- tickets/T-draft-b288b573/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-b288b573/**
+  reason: filing the remaining-rules follow-up ticket found during this audit is itself
+    an in-scope side effect of T-4340's work
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
