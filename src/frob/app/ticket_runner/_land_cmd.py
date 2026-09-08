@@ -4066,38 +4066,20 @@ def _touched_py_files(
     )
 
 
-# frob:ticket T-1907
-# frob:waive ARCH103 reason="build-the-command-then-run-it IS this function's one job \
-# -- the two decision points (src/.venv presence) are command-construction branches, \
-# not independent sub-concerns, and splitting the subprocess spawn away from the \
-# command that feeds it would add indirection with no cohesion gain; mirrors \
-# frob.check._python._run_ty's own identical shape, already precedented in this \
-# codebase"
-def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
-    """Spawn `ty check <py_files>` scoped to `worktree` and return its
-    parsed `ToolResult`, or `None` if the spawn itself could not run (no
-    `ty` binary, or it hung past the timeout) -- the pure subprocess-and-
-    parse half of `_assert_touched_files_type_check_pre_land`, split out
-    so that function's own body carries no I/O beyond calling this once.
-    Mirrors `frob.check._python._run_ty`'s own `--extra-search-path`/
-    `--python` resolution (T-0996) but scoped to explicit files rather
-    than a whole root, since this is a touched-set check, not a full-tree
-    one."""
+# frob:ticket T-4275
+def _spawn_ty(cmd: list[str], cwd: Path):  # noqa: ANN201
+    """Run one `ty` subprocess `cmd` with `cwd=cwd` and this module's
+    standard capture/timeout settings, returning the completed process or
+    `None` if the spawn itself could not run (no binary, or it hung past
+    the timeout) -- the single subprocess-and-except shape `_ty_check_
+    files` needs twice (the primary spawn and its T-4275 bare-PATH
+    fallback), pulled out so neither call site repeats it."""
     import subprocess
 
-    from frob.process.parsers import parse_ty
-
-    cmd = project_tool_argv(worktree, "ty", "check", *py_files)
-    src_dir = worktree / "src"
-    if src_dir.is_dir():
-        cmd += ["--extra-search-path", str(src_dir.resolve())]
-    venv_dir = worktree / ".venv"
-    if venv_dir.is_dir():
-        cmd += ["--python", str(venv_dir.resolve())]
     try:
-        proc = subprocess.run(
+        return subprocess.run(
             cmd,
-            cwd=worktree,
+            cwd=cwd,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -4106,6 +4088,98 @@ def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
             check=False,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+
+
+# frob:ticket T-1907
+# frob:ticket T-4275
+# frob:waive ARCH001 reason="T-4275: mirrors _ruff_check_files's identical, larger \
+# shape one function up (T-4257, pre-existing so not itself re-flagged); the \
+# fallback+empty-output guard clauses this ports are the fix itself, not incidental \
+# bulk to trim, and _spawn_ty is already split out to hold the actual subprocess I/O."
+# frob:waive ARCH103 reason="build-the-command-then-run-it IS this function's one job \
+# -- the two decision points (src/.venv presence) are command-construction branches, \
+# not independent sub-concerns, and splitting the subprocess spawn away from the \
+# command that feeds it would add indirection with no cohesion gain; mirrors \
+# frob.check._python._run_ty's own identical shape, already precedented in this \
+# codebase"
+def _ty_check_files(  # noqa: ANN201
+    worktree: Path, py_files: list[str], *, resolve_root: Path | None = None
+):
+    """Spawn `ty check <py_files>` with `cwd=worktree` and return its
+    parsed `ToolResult`, or `None` if the spawn itself could not run (no
+    `ty` binary resolvable, or it hung past the timeout) -- the pure
+    subprocess-and-parse half of `_assert_touched_files_type_check_pre_
+    land`, split out so that function's own body carries no I/O beyond
+    calling this once. Mirrors `frob.check._python._run_ty`'s own
+    `--extra-search-path`/`--python` resolution (T-0996) but scoped to
+    explicit files rather than a whole root, since this is a touched-set
+    check, not a full-tree one.
+
+    T-4275: `resolve_root` (defaulting to `worktree`) is the directory
+    `project_tool_argv` resolves `ty` FROM -- deliberately separate from
+    `worktree` (where the process actually runs and `py_files` are
+    read), porting `_ruff_check_files`'s identical T-4257 split to this
+    sibling call site. A caller scanning a disposable, never-`uv sync`'d
+    snapshot (`_ty_baseline_diagnostic_identities`'s detached `git
+    worktree add --detach` checkout has no `.venv` of its own) must pass
+    the REAL owning worktree as `resolve_root` so `uv run --project`
+    finds that project's actual pinned `ty` instead of silently falling
+    back to bare-PATH resolution outside any project -- the same
+    Windows-measured gap T-4257 fixed for `ruff`, left untouched here at
+    the time because it was outside that ticket's declared scope. And a
+    genuine spawn failure (empty stdout AND empty stderr -- see the final
+    check below) reports `None` rather than a fabricated clean result,
+    the same silent-swallow shape T-4257 fixed for `ruff`'s JSON parser."""
+    from frob.process.parsers import parse_ty
+
+    root = resolve_root if resolve_root is not None else worktree
+    cmd = project_tool_argv(root, "ty", "check", *py_files)
+    src_dir = worktree / "src"
+    if src_dir.is_dir():
+        cmd += ["--extra-search-path", str(src_dir.resolve())]
+    venv_dir = worktree / ".venv"
+    if venv_dir.is_dir():
+        cmd += ["--python", str(venv_dir.resolve())]
+    proc = _spawn_ty(cmd, worktree)
+    if proc is None:
+        return None
+    # T-4275: `root` carries no `pyproject.toml` at all -- it is not a uv
+    # project, so `project_tool_argv`'s `uv run --project` falls back to
+    # bare-PATH resolution outside any project, which depends on
+    # whatever happens to be ambiently on PATH and MEASURABLY fails on
+    # Windows (T-4257's sibling finding for `ruff`) while it happens to
+    # succeed on this repo's Linux dev boxes. Falling back to the
+    # CALLING interpreter's own installed `ty` (guaranteed present: it
+    # is this project's own dev dependency) is safe here for the same
+    # reason it is safe in `_ruff_check_files`. A real ticket worktree
+    # always carries its own `pyproject.toml`, so this branch never
+    # fires for an actual land.
+    if not proc.stdout.strip() and not (root / "pyproject.toml").exists():
+        proc = _spawn_ty([sys.executable, "-m", "ty", "check", *py_files], worktree)
+        if proc is None:
+            return None
+    if not proc.stdout.strip() and not proc.stderr.strip():
+        # T-4275: a genuine `ty check` run always emits at least an
+        # "All checks passed!"/"Found N diagnostic(s)" line on stdout,
+        # even with zero diagnostics -- empty stdout AND empty stderr
+        # can only mean the spawn never actually ran ty (e.g. `uv run
+        # --project` could not resolve it). Feeding that empty string to
+        # `parse_ty` silently comes back as a CLEAN `ToolResult` (its
+        # line-scanner finds zero diagnostic lines in zero lines of
+        # input) rather than a signal that nothing was measured -- the
+        # same silent-swallow shape T-4257 fixed for `ruff`'s JSON
+        # parser (there the failure mode was a fabricated diagnostic
+        # that matched between passes; here it is a fabricated CLEAN
+        # result that undercounts a broken baseline OR broken current
+        # pass identically). Reporting `None` here instead routes the
+        # caller into its own documented "spawn could not run" degrade
+        # path rather than a fabricated clean result.
+        _log.warning(
+            "ticket land: ty produced no output (rc=%d) -- treating as "
+            "unavailable rather than a clean result",
+            proc.returncode,
+        )
         return None
     return parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
 
@@ -4182,7 +4256,7 @@ def _ty_baseline_diagnostic_identities(
     if snapshot is None:
         return None
     try:
-        baseline = _ty_check_files(snapshot, existing_files)
+        baseline = _ty_check_files(snapshot, existing_files, resolve_root=worktree)
     finally:
         _remove_baseline_snapshot_worktree(worktree, snapshot)
     if baseline is None:

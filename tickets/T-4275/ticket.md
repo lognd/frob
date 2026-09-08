@@ -2,7 +2,7 @@
 id: T-4275
 title: ty pre-land baseline resolution fails the same way ruff's did on Windows (T-4257
   sibling)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -16,7 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
-- tests/test_ticket_work_and_land_finish.py
+- tests/test_ticket_land_ty_diff_attribution.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +29,24 @@ scope_changes:
     tests), matching where T-4257''s own tests would have gone'
   actor: logan
   at: '2026-09-08'
+- op: remove
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-4275: relocating the new regression tests to the dedicated tests/test_ticket_land_ty_diff_attribution.py
+    module instead avoids an unrelated SCOPE002 cascade from this large file''s own
+    pre-existing cross-references'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_ticket_land_ty_diff_attribution.py
+  reason: 'T-4275: regression tests for the ty resolve_root/empty-stdout fix belong
+    in this repo''s existing dedicated ty-diff-attribution test module (already separated
+    from the giant test_ticket_work_and_land_finish.py specifically to avoid unrelated
+    cross-file coupling, per that module''s own docstring)'
+  actor: logan
+  at: '2026-09-08'
+evidence:
+- tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot::test_resolve_root_finds_ty_when_cwd_has_no_pyproject
+- tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot::test_spawn_failure_reports_none_not_a_fabricated_clean_result
 designated_repro_test: null
 threat: null
 component: null

@@ -170,3 +170,75 @@ class TestAssertTouchedFilesTypeCheckPreLand:
                 repo, "T-3116", frozenset({"src/bad_types.py"})
             )
         assert exc_info.value.code == 1
+
+
+# frob:ticket T-4275
+class TestTyCheckFilesResolveRoot:
+    """T-4275: `_ty_check_files`'s `resolve_root` split (porting T-4257's
+    identical fix for `_ruff_check_files`) -- a caller scanning a
+    disposable, `.venv`-less snapshot must be able to resolve `ty` from
+    the REAL owning worktree instead of falling back to bare-PATH
+    resolution outside any project, and a genuine spawn failure must
+    come back as `None` (unmeasurable), never a fabricated clean
+    `ToolResult`."""
+
+    def test_resolve_root_finds_ty_when_cwd_has_no_pyproject(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot.te\
+        # st_resolve_root_finds_ty_when_cwd_has_no_pyproject
+        # A bare-PATH `uv run --project <no-pyproject-dir>` cannot resolve
+        # `ty` (T-4257's measured Windows gap, its `ruff` sibling); before
+        # T-4275 this call had no `resolve_root` parameter at all, so a
+        # baseline scan of a venv-less snapshot always ran through this
+        # broken path. `snapshot` here stands in for that snapshot: no
+        # pyproject.toml, no .venv, only the one file to check.
+        from frob.app.ticket_runner._land_cmd import _ty_check_files
+
+        snapshot = tmp_path / "snapshot"
+        snapshot.mkdir()
+        bad = snapshot / "bad_types.py"
+        bad.write_text('def f(x: int) -> int:\n    return "not an int"\n')
+
+        result = _ty_check_files(snapshot, ["bad_types.py"], resolve_root=repo)
+
+        assert result is not None
+        assert any(d.severity == "error" for d in result.diagnostics)
+
+    def test_spawn_failure_reports_none_not_a_fabricated_clean_result(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot.te\
+        # st_spawn_failure_reports_none_not_a_fabricated_clean_result
+        # T-4275: before this fix, feeding empty stdout/stderr to
+        # `parse_ty` silently came back as a CLEAN `ToolResult` (its
+        # line-scanner finds zero diagnostic lines in zero lines of
+        # input) -- indistinguishable from a real "no errors" run. A
+        # completed process with genuinely empty output on both streams
+        # can only mean the spawn never actually invoked `ty` at all;
+        # `_ty_check_files` must report that as `None` (unmeasurable),
+        # not as 0 diagnostics.
+        import subprocess as subprocess_module
+
+        from frob.app.ticket_runner._land_cmd import _ty_check_files
+
+        def _fake_run(
+            cmd: list[str], **kwargs: object
+        ) -> subprocess_module.CompletedProcess[str]:
+            return subprocess_module.CompletedProcess(
+                args=cmd,
+                returncode=2,
+                stdout="",
+                stderr="",
+            )
+
+        monkeypatch.setattr(subprocess_module, "run", _fake_run)
+
+        good = repo / "src" / "good_types.py"
+        good.write_text("def f(x: int) -> int:\n    return x + 1\n")
+
+        result = _ty_check_files(repo, ["src/good_types.py"])
+
+        assert result is None
