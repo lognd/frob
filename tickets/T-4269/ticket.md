@@ -80,3 +80,6 @@ conclusion, not an opening move.
 NOTE THAT THIS IS NOT A CORRECTNESS TICKET. The Windows failures themselves are
 tracked under the platform epic and its leaves. This ticket is only about how
 long the step takes and how little headroom is left.
+
+## Failure log
+- 2026-09-08 attempt 1: Owning agent died before any work: the worktree holds only the start-transition commit, no source edits, no activity in over three hours. Requeued rather than left in-progress because the stale lease on .github/workflows/ci.yml refused a legitimate scope change on T-4305 (see T-4311). Windows is advisory-only (continue-on-error, T-3425) so this is not release-blocking; re-dispatch after the alpha. No work is lost.
