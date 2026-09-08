@@ -1,7 +1,7 @@
 ---
 id: T-4334
 title: New verify-rapid-debt doc carries the tree's only three gate errors
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -150,6 +150,16 @@ scope_changes:
     for exactly this narrower-than-graph-closure case
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Doc/invariant-anchoring fix only (INV002/003/004/REF002
+    gate findings) -- no production code behavior changed; the anchor added to test_rapid_debt.py
+    is a comment-only frob:invariant directive, and record_rapid_debt''s append-only
+    behavior is unchanged'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2645
+  new_length: 2931
 evidence:
 - tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_appends_one_json_line_per_call
 - tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_clean_status_has_no_live_rapid_debt
@@ -206,3 +216,5 @@ VERIFY with an unscoped run and quote the exact error count. Measure it with
 grepping text output: reading that JSON at the wrong nesting level has produced
 false "0 errors" reports in this repo before, and an absent section looks
 identical to a clean one. The count must reach zero.
+
+frob:no-behavior-change reason="Doc/invariant-anchoring fix only (INV002/003/004/REF002 gate findings) -- no production code behavior changed; the anchor added to test_rapid_debt.py is a comment-only frob:invariant directive, and record_rapid_debt's append-only behavior is unchanged"

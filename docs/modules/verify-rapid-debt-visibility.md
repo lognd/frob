@@ -16,15 +16,18 @@ for a one-symbol addition.
 
 MEASURED (2026-09-08): five commits (T-4197, T-4301, T-4305, T-4306,
 T-4307) sat in `.frob/rapid-debt.jsonl` as
-`skipped: post-land-unscoped-sweep-deferred`, never cleared or promoted,
-while `frob verify status` reported `unverified depth: 0` and
-`quarantine: clear` -- every status surface read clean despite five
-factually-unverified commits. `RapidDebtEntryView` is the view model
-`VerifyStatus.rapid_debt_live` (a new field on the existing `VerifyStatus`
-payload, see `docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697`
-for that payload's own pre-existing doc) is built from.
+`skipped: post-land-unscoped-sweep-deferred`, sitting uncleared and
+unpromoted at filing time, while `frob verify status` reported
+`unverified depth: 0` and `quarantine: clear` -- every status surface
+read clean despite five factually-unverified commits. `RapidDebtEntryView`
+is the view model `VerifyStatus.rapid_debt_live` (a new field on the
+existing `VerifyStatus` payload, see
+`docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697` for that
+payload's own pre-existing doc) is built from.
 
 ## Liveness
+
+<!-- frob:invariant INV-052 -->
 
 `.frob/rapid-debt.jsonl` is a permanent append-only audit log (T-2997) --
 an entry is never rewritten or deleted, so "live" is computed rather than

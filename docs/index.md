@@ -104,6 +104,11 @@ The four components that make up the enforcement layer:
   merge driver), and [`tickets-data-storage.md`](modules/tickets-data-storage.md)
   (data models and storage internals) -- so a ticket touching one subject's
   lease no longer blocks every ticket touching another.
+- [`docs/modules/verify-rapid-debt-visibility.md`](modules/verify-rapid-debt-visibility.md)
+  (T-4324) -- a further one-symbol split-out doc for
+  `VerifyStatus.rapid_debt_live`/`RapidDebtEntryView`, kept out of
+  `tickets-verify-sweep.md` for the same scope-closure reason as the
+  subject splits above.
 - `docs/modules/gates.md` -- `frob.gates`: the drift, coverage, scope, pre-work,
   invariant, test, and policy gates; the rule catalog; invariants; and
   `frob check` integration.
