@@ -2,7 +2,7 @@
 id: T-4289
 title: the daemon idle-termination change introduced a cyclic lock-acquisition order
   and pushed the file past the size threshold
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
