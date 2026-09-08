@@ -2,7 +2,7 @@
 id: T-4288
 title: 'TestTicketArchive/TestTicketEvidence Windows failures: bare ''echo'' spawn
   fails, not a shell builtin there'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'

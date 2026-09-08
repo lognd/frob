@@ -10,6 +10,8 @@ covered this batch: `app/ticket_runner.py`, `app/sys_runner.py`.
 from __future__ import annotations
 
 import importlib
+import shlex
+import sys
 from pathlib import Path
 
 import pytest
@@ -20,6 +22,20 @@ from frob.app.sys_runner import run as sys_run
 from frob.app.ticket_runner import run as ticket_run
 from frob.testing._models import CollectedTests
 from frob.tickets import TicketState, load_queue
+
+# frob:ticket T-4288
+# T-4288: `--evidence-cmd` is spawned as argv only (never through a shell,
+# T-0805 -- see src/frob/tickets/_evidence.py::_run_evidence_command's own
+# docstring), so a shell builtin like `echo` is not a real evidence-cmd
+# argument: it happens to work on posix (where a standalone /bin/echo also
+# exists) and fails on Windows with WinError 2, since Windows has no
+# standalone `echo.exe` outside cmd.exe. `sys.executable` is the actual
+# cross-platform spawnable here (never a bare `python3` -- that can resolve
+# to the Windows Store's app-execution-alias stub and exit 9009 instead of
+# running anything), quoted so `shlex.split` (the evidence-cmd parser)
+# re-splits it back into a single token even when the interpreter path
+# itself contains spaces.
+_ECHO_VERIFIED_CMD = f"{shlex.quote(sys.executable)} -c \"print('verified')\""
 
 
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
@@ -1762,7 +1778,7 @@ class TestTicketEvidence:
             ticket_command="evidence",
             ticket_path=tmp_path,
             ticket_id="T-0001",
-            ticket_evidence_cmd="echo verified",
+            ticket_evidence_cmd=_ECHO_VERIFIED_CMD,  # frob:ticket T-4288
         )
         with caplog.at_level("INFO"):
             ticket_run(cfg)
@@ -1842,7 +1858,7 @@ class TestTicketArchive:
             ticket_command="close",
             ticket_path=tmp_path,
             ticket_id="T-0001",
-            ticket_evidence_cmd="echo verified",
+            ticket_evidence_cmd=_ECHO_VERIFIED_CMD,  # frob:ticket T-4288
         )
         ticket_run(cfg)
         cfg = AppConfig(ticket_command="archive", ticket_path=tmp_path)
