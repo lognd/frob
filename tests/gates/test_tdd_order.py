@@ -10,6 +10,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
 import frob.gates._tdd_order as _tdd_order_mod
 from frob.findings import Severity
 from frob.gates._tdd_order import (
@@ -307,6 +309,77 @@ class TestTddOrderViolations:
             origin="m.py",
         )
         assert tdd_order_violations(tmp_path, [edge]) == []
+
+    # frob:ticket T-4260
+    def test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4260: a `frob:tests` edge whose src and target are the
+        IDENTICAL symref resolves both sides to the same introducing
+        commit by construction -- before the fix this fired an
+        unconditional, unfixable-by-reordering `IMPLEMENTATION_FIRST`
+        every single run. It must instead report a malformed-directive
+        finding naming the file to fix, and it must fire even when the
+        symbol has never been committed at all (no git history needed to
+        see that both sides are the same string)."""
+        _init_repo(tmp_path)
+        _commit_file(tmp_path, "m.py", "def widget():\n    pass\n", "impl")
+        edges = [_tests_edge("m.py::widget", "m.py::widget")]
+        violations = tdd_order_violations(tmp_path, edges)
+        assert len(violations) == 1
+        assert violations[0].rule == "TDD001"
+        assert violations[0].severity is Severity.ERROR
+        assert "self-referential" in violations[0].message
+        assert "m.py::widget" in violations[0].message
+        # The remedy names fixing the directive; if reordering is
+        # mentioned at all it is only to say it CANNOT help.
+        assert "fix the frob:tests directive" in violations[0].message.lower()
+
+    # frob:ticket T-4260
+    def test_backwards_edge_is_reported_as_a_backwards_directive(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4260: an edge whose `src` (conventionally the implementation
+        side) is itself a test file, and whose `target` (conventionally
+        the test) is production code, is written backwards. The message
+        must say so and must not tell the reader to reorder commits --
+        following that advice literally cannot clear a backwards
+        binding."""
+        _init_repo(tmp_path)
+        _commit_file(
+            tmp_path, "tests/test_m.py", "def test_widget():\n    pass\n", "test"
+        )
+        _commit_file(tmp_path, "m.py", "def widget():\n    pass\n", "impl")
+        edges = [_tests_edge("tests/test_m.py::test_widget", "m.py::widget")]
+        violations = tdd_order_violations(tmp_path, edges)
+        assert len(violations) == 1
+        assert violations[0].rule == "TDD001"
+        assert violations[0].severity is Severity.ERROR
+        assert "backwards" in violations[0].message.lower()
+        assert "fix the direction of this directive" in violations[0].message.lower()
+
+    # frob:ticket T-4260
+    def test_role_validation_never_spawns_git_for_a_malformed_edge(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4260: role validation happens BEFORE any commit resolution --
+        a self-referential or backwards edge must never even try to
+        resolve a commit (no history walk, no ancestry check) for a
+        directory that was never even made a git repo."""
+        called: list[str] = []
+
+        def _boom(*_args: object, **_kwargs: object) -> str | None:
+            called.append("called")
+            return None
+
+        monkeypatch.setattr(_tdd_order_mod, "resolve_symbol_introduction", _boom)
+        edges = [
+            _tests_edge("m.py::widget", "m.py::widget"),
+            _tests_edge("tests/test_m.py::test_widget", "m.py::widget"),
+        ]
+        violations = tdd_order_violations(tmp_path, edges)
+        assert len(violations) == 2
+        assert called == []
 
 
 # frob:ticket T-3618

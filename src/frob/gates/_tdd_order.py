@@ -372,6 +372,73 @@ def _tdd001_unresolved_message(artifact_symref: str, test_symref: str) -> str:
     )
 
 
+# frob:waive DUP001 reason="near-duplicate of \
+# frob.testing._select._looks_like_test_symbol's path-shape heuristic, kept local \
+# rather than imported: that module solves a DIFFERENT problem (which touched file \
+# selects a test to RUN) with a Rust-mod-tests carve-out this gate has no use for, and \
+# importing across the gates/testing boundary for one predicate would add an \
+# undeclared cross-component dependency this file's own _show_file_at_revision waiver \
+# already declined for the identical reason one function up"
+def _looks_like_test_path(path: str) -> bool:
+    """Whether `path` (the file half of a `frob:tests` symref) is a
+    conventional test file -- `tests/` anywhere in its parts, or a
+    `test_*.py`/`*_test.py` leaf name. The plausibility check T-4260's
+    role-validation needs: a `frob:tests` edge's `target` should satisfy
+    this and its `src` should not; when that is backwards, or when both
+    sides are the SAME symref (self-referential), the directive is
+    malformed and no commit-order fact can mean anything for it."""
+    from pathlib import PurePosixPath
+
+    parts = PurePosixPath(path).parts
+    name = parts[-1] if parts else path
+    return (
+        "tests" in parts[:-1] or name.startswith("test_") or name.endswith("_test.py")
+    )
+
+
+# frob:doc docs/modules/gates.md#tdd001-t-3009
+def _tdd001_self_referential_message(symref: str) -> str:
+    """T-4260: the message for a `frob:tests` edge whose `src` and
+    `target` are the IDENTICAL symref -- both sides resolve to the same
+    introducing commit BY CONSTRUCTION (same symbol, same file, same
+    commit), so `classify_order` would report a determinate
+    `IMPLEMENTATION_FIRST` violation unconditionally, forever, with no
+    reordering a person could perform to clear it (the ticket's own
+    finding: the only "exit" was a waiver, demanding something the
+    subject structurally cannot provide). This is a MALFORMED DIRECTIVE,
+    not an ordering fact -- the message says so and names the file to
+    fix, never advising a reorder that cannot happen."""
+    return (
+        f"TDD001: {symref} names itself as its own frob:tests target -- a "
+        f"malformed, self-referential directive, not an orderable pair "
+        f"(both sides are the identical symbol, so they share one "
+        f"introducing commit by construction; no reordering can ever "
+        f"clear this). Fix the frob:tests directive on {symref_path(symref)} "
+        f"to name the actual covering test, or remove it if none exists."
+    )
+
+
+# frob:doc docs/modules/gates.md#tdd001-t-3009
+def _tdd001_backwards_message(artifact_symref: str, test_symref: str) -> str:
+    """T-4260: the message for a `frob:tests` edge written backwards --
+    `src` (conventionally the tested/implementation side) looks like the
+    TEST (a `tests/`-rooted or `test_*`-named file) and `target`
+    (conventionally the test) looks like PRODUCTION code. Any ordering
+    verdict computed from these roles is computed from swapped roles and
+    is meaningless; the real defect is the directive's direction, not
+    commit order, so this says exactly that rather than telling the
+    reader to reorder commits (which cannot clear a backwards binding)."""
+    return (
+        f"TDD001: the frob:tests directive linking {artifact_symref} -> "
+        f"{test_symref} looks WRITTEN BACKWARDS -- {artifact_symref} "
+        f"looks like the test and {test_symref} looks like the production "
+        f"symbol it should verify. A frob:tests directive belongs on the "
+        f"production symbol, naming the test that covers it -- fix the "
+        f"direction of this directive in {symref_path(artifact_symref)}; "
+        f"reordering commits cannot clear a backwards binding."
+    )
+
+
 # frob:doc docs/modules/gates.md#tdd001-t-3009
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_fires_on_a_planted_implementation_first_pair  # noqa: E501
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_fires_when_test_and_implementation_share_a_commit  # noqa: E501
@@ -379,6 +446,15 @@ def _tdd001_unresolved_message(artifact_symref: str, test_symref: str) -> str:
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_reports_unresolved_rather_than_passing_on_an_unresolvable_pair  # noqa: E501
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_ignores_non_tests_edges  # noqa: E501
 # frob:tests tests/gates/test_tdd_order.py::TestPerfShape.test_shared_file_is_walked_and_read_exactly_once_across_edges  # noqa: E501
+# frob:tests \
+# tests/gates/test_tdd_order.py::TestTddOrderViolations.test_self_referential_edge_is_a\
+# _malformed_directive_not_an_ordering_violation
+# frob:tests \
+# tests/gates/test_tdd_order.py::TestTddOrderViolations.test_backwards_edge_is_reported\
+# _as_a_backwards_directive
+# frob:tests \
+# tests/gates/test_tdd_order.py::TestTddOrderViolations.test_role_validation_never_spaw\
+# ns_git_for_a_malformed_edge
 # frob:waive WIRE001 reason="T-3009's own scope is the ordering check and its rule, \
 # not the land-time call site -- mirrors bug_repro_violations, which is likewise \
 # called from frob.tickets._land rather than from within this module; T-3057 wired the \
@@ -402,6 +478,18 @@ def tdd_order_violations(
     module's own docstring for why a post-land call against `main` cannot
     observe the fact this rule checks.
 
+    T-4260: each edge's ROLES are validated BEFORE any commit is resolved
+    or classified -- `src == target` (self-referential: both sides
+    resolve to the same introducing commit by construction, an
+    unconditional, unfixable-by-reordering `IMPLEMENTATION_FIRST` before
+    this fix) and `src` looking like a test path while `target` does not
+    (backwards: the ordering verdict would be computed from swapped
+    roles) each get their OWN message naming the real defect -- a
+    malformed directive -- rather than an ordering result. Both skip
+    `resolve_symbol_introduction`/`classify_order` entirely for that
+    edge: no git spawn, no verdict that could misleadingly suggest
+    reordering commits would help.
+
     T-3618 (perf): `since`, when given, is threaded to every `resolve_
     symbol_introduction` call to bound its git-log walk (see that
     function's own docstring); this call also builds ONE pair of
@@ -418,6 +506,37 @@ def tdd_order_violations(
             continue
         artifact_symref = edge.src
         test_symref = edge.target
+        # T-4260: validate the edge's ROLES before ever resolving a commit
+        # or classifying an order -- a self-referential or backwards
+        # `frob:tests` edge is a malformed directive, not an ordering
+        # fact, and reporting it as one produces an unfixable-by-
+        # reordering finding (self-reference) or a misleading one
+        # (backwards). Checked first, cheaply (no git spawn), before
+        # either symbol's commit history is ever walked.
+        if artifact_symref == test_symref:
+            out.append(
+                Violation(
+                    rule=RULE_TDD001,
+                    severity=Severity.ERROR,
+                    file=symref_path(artifact_symref),
+                    line=0,
+                    message=_tdd001_self_referential_message(artifact_symref),
+                )
+            )
+            continue
+        if _looks_like_test_path(
+            symref_path(artifact_symref)
+        ) and not _looks_like_test_path(symref_path(test_symref)):
+            out.append(
+                Violation(
+                    rule=RULE_TDD001,
+                    severity=Severity.ERROR,
+                    file=symref_path(artifact_symref),
+                    line=0,
+                    message=_tdd001_backwards_message(artifact_symref, test_symref),
+                )
+            )
+            continue
         artifact_commit = resolve_symbol_introduction(
             root,
             artifact_symref,

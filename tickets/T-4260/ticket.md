@@ -2,7 +2,7 @@
 id: T-4260
 title: TDD001 reports a self-referential tests edge as an unfixable ordering violation
   and a backwards edge as a reorder instruction
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -35,19 +35,28 @@ scope_changes:
     the standard per-ticket changelog fragment'
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_backwards_edge_is_reported_as_a_backwards_directive
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_role_validation_never_spawns_git_for_a_malformed_edge
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_fires_when_test_and_implementation_share_a_commit
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_stays_quiet_on_a_genuine_test_first_pair
 designated_repro_test: null
 acceptance:
 - text: given a tests edge whose source and target are the same symbol, when TDD001
     runs, then it reports a malformed directive naming the file to correct rather
     than an ordering violation no reordering can clear
-  evidence: []
+  evidence:
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation
 - text: given a tests edge whose source is a test and whose target is production code,
     when TDD001 runs, then it reports the directive as written backwards rather than
     an ordering result computed from swapped roles
-  evidence: []
+  evidence:
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_backwards_edge_is_reported_as_a_backwards_directive
 - text: given the two malformed-edge cases, when the fix lands, then neither is resolved
     by waiving the observed instances
-  evidence: []
+  evidence:
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_role_validation_never_spawns_git_for_a_malformed_edge
 threat: null
 component: null
 anchor: false
