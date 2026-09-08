@@ -25,6 +25,8 @@ scope:
 - docs/modules/release.md
 - tests/test_release.py
 - tests/ticket_land_suite/test_release.py
+- tests/ticket_land_suite/test_land_core.py
+- tests/unit/test_land_release_coherence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -77,6 +79,34 @@ scope_changes:
   reason: 'per-land dev-version bump (T-4184): PEP440 dev-counter helpers in frob.release,
     land-time hook in _land_release.py, config toggle read from pyproject [tool.frob],
     frob own pyproject set off for imminent release, scaffold default, docs, tests'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/ticket_land_suite/test_land_core.py
+  reason: T-4184 default-on dev-version-bump changes two pre-existing tests bump_version=>Ok(None)
+    fixtures expected an untouched pyproject version; both need an explicit dev_version_bump=false
+    in their fixtures to keep testing what they always tested
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_release_coherence.py
+  reason: T-4184 default-on dev-version-bump changes two pre-existing tests bump_version=>Ok(None)
+    fixtures expected an untouched pyproject version; both need an explicit dev_version_bump=false
+    in their fixtures to keep testing what they always tested
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/ticket_land_suite/test_land_core.py
+  reason: T-4184 default-on dev-version-bump changes two pre-existing tests bump_version=>Ok(None)
+    fixtures expected an untouched pyproject version; both need an explicit dev_version_bump=false
+    in their fixtures to keep testing what they always tested
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_release_coherence.py
+  reason: T-4184 default-on dev-version-bump changes two pre-existing tests bump_version=>Ok(None)
+    fixtures expected an untouched pyproject version; both need an explicit dev_version_bump=false
+    in their fixtures to keep testing what they always tested
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
