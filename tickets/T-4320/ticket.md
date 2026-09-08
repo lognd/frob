@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_live_tracker.py
 - tests/test_tickets_live_tracker.py
 - docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +56,13 @@ scope_changes:
   glob: docs/modules/tickets-landing.md
   reason: 'revert: whole-file scope pulls in 100+ unrelated closure obligations; keep
     only the anchor this diff touches'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: SCOPE001 requires the bare file path in scope (the anchor-suffixed entry
+    alone does not fnmatch it); SCOPE002 closure noise this pulls in is documented
+    as WARN/non-blocking (T-0998), pre-existing content this diff does not touch
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
