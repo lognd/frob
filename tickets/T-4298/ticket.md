@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_land_format.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,11 @@ scope_changes:
   reason: avoid scope collision with in-progress T-4281's lease on _land.py; land-path
     gates are wired via gates/__init__.py, so the new whole-diff formatting gate belongs
     in a new module registered there instead
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/gates.md
+  reason: new gate function's frob:doc target lives here
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
