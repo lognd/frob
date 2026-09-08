@@ -45,6 +45,11 @@ scope_changes:
     subprocess call)'
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: src/frob/excludes.py
+  reason: test reason short
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
