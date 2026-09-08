@@ -17,10 +17,32 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_evidence.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- changelog.d/T-4267.md
+- docs/modules/tickets-lifecycle.md
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: changelog.d/T-4267.md
+  reason: 'T-4267: fix touches the mirror doc section and adds a regression test file;
+    changelog entry is standard per-ticket practice'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'T-4267: fix touches the mirror doc section and adds a regression test file;
+    changelog entry is standard per-ticket practice'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: 'T-4267: fix touches the mirror doc section and adds a regression test file;
+    changelog entry is standard per-ticket practice'
+  actor: logan
+  at: '2026-09-07'
 body_changes:
 - mode: append
   reason: measured while landing T-4143 in this session
