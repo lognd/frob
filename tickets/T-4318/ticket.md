@@ -16,10 +16,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/rapid_sweep_suite/test_sweep_run.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: the detached call site that must pass full=True to _unscoped_error_findings
+    (_measure_fresh_and_write_baseline) lives here; _land_cmd.py's full=True mechanism
+    already exists but this caller never opts in
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/rapid_sweep_suite/test_sweep_run.py
+  reason: T-4318's regression test (test_calls_unscoped_error_findings_with_full_true)
+    lives here; adding it to scope so gate:SCOPE/COV can bind this diff to the ticket
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
