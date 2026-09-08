@@ -17,8 +17,15 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
 - tests/unit/test_conftest_stackdump.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: tests/conftest.py is a large shared fixture file with pre-existing
+  frob:tests/frob:doc directives (run_bounded_subprocess, pytest_configure, pytest_sessionfinish,
+  _reset_parse_cache_before_test) unrelated to this ticket's actual change (pytest_collection_modifyitems's
+  self-scan xdist grouping); SCOPE002 full closure over those pre-existing directives
+  cascades into unrelated files and, transitively, an entire unrelated subsystem (src/frob/mutate/*,
+  docs/modules/mutate.md) -- narrower scope for the fix itself (tests/conftest.py,
+  tests/unit/test_conftest_stackdump.py, both actually touched) plus this ack is the
+  correct-sized boundary
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
