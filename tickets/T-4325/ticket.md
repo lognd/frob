@@ -1,7 +1,7 @@
 ---
 id: T-4325
 title: Citation scan still deadlocks on a changelog entry that quotes a whole directive
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
