@@ -150,6 +150,10 @@ scope_changes:
     for exactly this narrower-than-graph-closure case
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_appends_one_json_line_per_call
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_clean_status_has_no_live_rapid_debt
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_other_skip_reasons_are_not_counted
 designated_repro_test: null
 threat: null
 component: null
