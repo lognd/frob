@@ -1,7 +1,7 @@
 ---
 id: T-4308
 title: macOS fixture subprocess finds no pytest or ruff, cascading to 68 failures
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
