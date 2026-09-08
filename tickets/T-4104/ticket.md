@@ -2,7 +2,7 @@
 id: T-4104
 title: 'post-land sweep regression from T-3985: 1 new (rule, file) identit(ies), 9
   finding(s) (missing-argument)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - missing-argument  tests/unit/test_check_gates_summary.py  -> attributed to T-3985 (commit 79200c119c8d, already closed/dropped -- filed below) via tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved.test_errors_still_fail_the_family_regardless_of_unresolved -> src/frob/check/_python.py::_gates_family_result -> src/frob/check/_python.py::_family_subject_count -> src/frob/check/_python.py::_subject_count_probes -> src/frob/check/_python.py::_SUBJECT_COUNT_PROBES
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-09-08: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (missing-argument tests/unit/test_check_gates_summary.py) is absent from a direct re-check of exactly the 781 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
