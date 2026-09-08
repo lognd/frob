@@ -2,7 +2,7 @@
 id: T-4279
 title: the gate cache's stat-trust margin is a fixed constant tuned to one mount,
   so a coarse-granularity filesystem still returns stale verdicts silently
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/__init__.py
+- tests/unit/test_graph_stat_trust_margin.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_graph_stat_trust_margin.py
+  reason: T-4279's new tests exercise the measured stat-trust margin fix; a dedicated
+    new file avoids the shared test_gate_cache.py's own unrelated private-helper scope-closure
+    fan-out
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a filesystem whose modification-time granularity is coarser than the
