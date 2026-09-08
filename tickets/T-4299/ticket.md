@@ -22,8 +22,8 @@ scope:
 - src/frob/_cli_parsers/__init__.py
 - tests/unit/test_main_entry.py
 - README.md
-- docs/modules/app.md
 - docs/modules/cli.md
+- docs/modules/app.md#frob-whereis-t-4299
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -106,6 +106,20 @@ scope_changes:
   glob: docs/modules/cli.md
   reason: 'gate:DOC DOC005/DOC012 findings: README command table + generated cli.md
     table + a dedicated Runners-section doc bullet for the new frob whereis verb'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/app.md
+  reason: 'a bare docs/modules/app.md add fanned SCOPE002 out across ~40 unrelated
+    runner-module describes edges in the same #runners section; scope only the new
+    dedicated #frob-whereis-t-4299 anchor this ticket actually adds'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/app.md#frob-whereis-t-4299
+  reason: 'a bare docs/modules/app.md add fanned SCOPE002 out across ~40 unrelated
+    runner-module describes edges in the same #runners section; scope only the new
+    dedicated #frob-whereis-t-4299 anchor this ticket actually adds'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
