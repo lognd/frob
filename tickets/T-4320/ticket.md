@@ -15,10 +15,23 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_live_tracker.py
+- tests/test_tickets_live_tracker.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: tests and doc target for the live_tracker_citations fix
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: tests and doc target for the live_tracker_citations fix
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
