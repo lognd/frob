@@ -2,7 +2,7 @@
 id: T-4281
 title: land proof does not distinguish an infra-failure unmeasured verification from
   a genuine skip
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -17,10 +17,27 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_verify.py
 - src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'T-4281: the actual check-spawn (_verify.py) and LAND-PROOF printer (_land_cmd.py)
+    live outside the ticket''s original two-file scope; the fix requires naming the
+    infra-failure cause at its source and printing it'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-4281: the actual check-spawn (_verify.py) and LAND-PROOF printer (_land_cmd.py)
+    live outside the ticket''s original two-file scope; the fix requires naming the
+    infra-failure cause at its source and printing it'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a land whose graph build failed to take the cache lock (or otherwise
