@@ -2,7 +2,7 @@
 id: T-4297
 title: frob.app.profile_runner_run is advertised in __all__ but AssertionErrors on
   first access
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
