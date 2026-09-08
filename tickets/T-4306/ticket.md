@@ -33,6 +33,18 @@ scope_changes:
     contains a confirmed subprocess call)'
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: src/frob/excludes.py
+  reason: 'T-4306 root cause confirmed via positive control: T-4178 _load_repo_ignore_globs
+    merges .gitignore negation lines into walk_pruned exclude set, but _should_prune_dir
+    synthetic /. probe for directory-level exclusion cannot see negations for children
+    below the probed dir -- .claude/* plus !.claude/hooks/** wrongly prunes .claude
+    wholesale before descent, so claude_hooks four capabilities are never observed
+    (scanner never visits the files: walk_pruned(root) yields 0 files under .claude/hooks
+    though files are tracked, non-ignored, and dispatch-telemetry.py contains a confirmed
+    subprocess call)'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
