@@ -3,7 +3,7 @@ id: T-4184
 title: 'automatic per-land dev-version bumping as core functionality: a version that
   never moves cannot identify a build, and four consumer reports in one day were version
   skew'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-07'
