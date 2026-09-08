@@ -47,7 +47,8 @@ def _all_pytest_steps() -> list[dict]:
 # ealInterpreter._macos_test_step, both themselves called by every test method in \
 # their class; a pure workflow-YAML-inspection test helper has no production caller to \
 # reach it through by construction, the same shape this file's own pre-existing \
-# _load_ci_workflow/_ubuntu_test_step helpers are in" follow_up="T-4274"
+# _load_ci_workflow/_ubuntu_test_step helpers are in, per T-1592's \
+# permanent-test-helper precedent" permanent="true"
 def _pytest_test_step(name_prefix: str) -> dict:
     """The single pytest-invoking `build` job step whose `name` starts
     with `name_prefix` -- shared by `TestUbuntuTestStepIsTimedWithStack
