@@ -15,10 +15,71 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_check.py
+- src/frob/__main__.py
+- src/frob/process/parsers/ruff.py
+- src/frob/process/parsers/common.py
+- tests/unit/test_main_entry.py
+- tests/unit/test_ruff_parser.py
+- tests/unit/test_parser_failure_diagnostics.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'T-4308 root cause: macOS launches frob via .venv/bin/python -m frob (T-4274)
+    so VIRTUAL_ENV is never set, breaking every nested uv-run tool spawn''s active-venv
+    fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
+    empty tool output from malformed output in the ruff JSON parser (ticket''s own
+    explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/process/parsers/ruff.py
+  reason: 'T-4308 root cause: macOS launches frob via .venv/bin/python -m frob (T-4274)
+    so VIRTUAL_ENV is never set, breaking every nested uv-run tool spawn''s active-venv
+    fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
+    empty tool output from malformed output in the ruff JSON parser (ticket''s own
+    explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/process/parsers/common.py
+  reason: 'T-4308 root cause: macOS launches frob via .venv/bin/python -m frob (T-4274)
+    so VIRTUAL_ENV is never set, breaking every nested uv-run tool spawn''s active-venv
+    fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
+    empty tool output from malformed output in the ruff JSON parser (ticket''s own
+    explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: 'T-4308 root cause: macOS launches frob via .venv/bin/python -m frob (T-4274)
+    so VIRTUAL_ENV is never set, breaking every nested uv-run tool spawn''s active-venv
+    fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
+    empty tool output from malformed output in the ruff JSON parser (ticket''s own
+    explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_ruff_parser.py
+  reason: 'T-4308 root cause: macOS launches frob via .venv/bin/python -m frob (T-4274)
+    so VIRTUAL_ENV is never set, breaking every nested uv-run tool spawn''s active-venv
+    fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
+    empty tool output from malformed output in the ruff JSON parser (ticket''s own
+    explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_parser_failure_diagnostics.py
+  reason: 'T-4308 root cause: macOS launches frob via .venv/bin/python -m frob (T-4274)
+    so VIRTUAL_ENV is never set, breaking every nested uv-run tool spawn''s active-venv
+    fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
+    empty tool output from malformed output in the ruff JSON parser (ticket''s own
+    explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
