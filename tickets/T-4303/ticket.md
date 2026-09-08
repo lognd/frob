@@ -17,8 +17,6 @@ scope:
 - src/frob/gates/_wire.py
 - src/frob/_cli_parsers/_core.py
 - tests/gates_suite/test_wire.py
-- changelog.d/T-4299.md
-- CHANGELOG.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +45,22 @@ scope_changes:
   reason: 'T-4303: discharge live-tracker citation -- changelog.d/T-4299.md''s own
     historical narrative literally spells follow_up=T-4303, which live_tracker_citations
     reads as an unclosed waiver binding; must reword to close'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: changelog.d/T-4299.md
+  reason: 'T-4303: both are land-owned (git commit refuses: ''CHANGELOG.md is land-owned
+    (T-0731)'' / ''changelog.d/T-4299.md is land-owned'' -- neither can actually be
+    edited from a worktree, so the LiveTrackerCited citation there is unfixable in-scope;
+    filed as a new ticket instead'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: CHANGELOG.md
+  reason: 'T-4303: both are land-owned (git commit refuses: ''CHANGELOG.md is land-owned
+    (T-0731)'' / ''changelog.d/T-4299.md is land-owned'' -- neither can actually be
+    edited from a worktree, so the LiveTrackerCited citation there is unfixable in-scope;
+    filed as a new ticket instead'
   actor: logan
   at: '2026-09-08'
 evidence:
