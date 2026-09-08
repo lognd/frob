@@ -2,7 +2,7 @@
 id: T-4290
 title: 'the last unowned self-gate errors: two doc anchors on private commit-order
   helpers, and four files needing reformatting'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
