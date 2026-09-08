@@ -15,10 +15,27 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/verify-rapid-debt-visibility.md
+- docs/modules/tickets-verify-sweep.md
+- invariants/INV-052.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: REF002 needs a real inbound link from a comparable verification doc, and
+    INV003/INV004 need a new declared invariant file to anchor the doc's append-only/never-null
+    claims
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: invariants/INV-052.md
+  reason: REF002 needs a real inbound link from a comparable verification doc, and
+    INV003/INV004 need a new declared invariant file to anchor the doc's append-only/never-null
+    claims
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
