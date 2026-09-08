@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo
 designated_repro_test: null
 threat: null
 component: null
