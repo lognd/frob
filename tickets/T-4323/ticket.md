@@ -15,10 +15,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/gates/_land_format.py
+- tests/test_ticket_work_and_land_finish.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_land_format.py
+  reason: T-4323's apply half touches _land_format.py's own module docstring/frob:todo,
+    its dedicated absorption test suite, and the LANDFMT001 doc section it changes
+    the design decision of
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: T-4323's apply half touches _land_format.py's own module docstring/frob:todo,
+    its dedicated absorption test suite, and the LANDFMT001 doc section it changes
+    the design decision of
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-4323's apply half touches _land_format.py's own module docstring/frob:todo,
+    its dedicated absorption test suite, and the LANDFMT001 doc section it changes
+    the design decision of
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
