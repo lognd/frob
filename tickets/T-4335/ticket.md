@@ -16,10 +16,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: run_deferred_post_land_sweep's baseline-write contract changed (T-4335);
+    the frob:doc-linked section documenting the old 'every sweep rewrites the baseline
+    regardless' behavior is now false and must be corrected in the same change, not
+    left drifted
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: run_deferred_post_land_sweep's baseline-write contract changed (T-4335);
+    the frob:doc-linked section documenting the old 'every sweep rewrites the baseline
+    regardless' behavior is now false and must be corrected in the same change, not
+    left drifted
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
