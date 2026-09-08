@@ -16,8 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/test_gitio.py
 - src/frob/gitio.py
-- docs/modules/testing.md
-- tests/test_testing.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +51,22 @@ scope_changes:
     -- gitio.py''s existing symbols'' frob:doc targets live in docs/modules/testing.md
     and one existing frob:tests edge lives in tests/test_testing.py; no content changes
     planned in either, added only to satisfy SCOPE002 closure'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/testing.md
+  reason: 'T-4326: revert -- docs/modules/testing.md''s closure cascades to ~190 unrelated
+    symbols repo-wide (doc anchors describing files far outside this bug fix); SCOPE002
+    on those two globs is a warning, not a gate failure, and worth carrying rather
+    than pulling in that much unrelated surface'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/test_testing.py
+  reason: 'T-4326: revert -- docs/modules/testing.md''s closure cascades to ~190 unrelated
+    symbols repo-wide (doc anchors describing files far outside this bug fix); SCOPE002
+    on those two globs is a warning, not a gate failure, and worth carrying rather
+    than pulling in that much unrelated surface'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
