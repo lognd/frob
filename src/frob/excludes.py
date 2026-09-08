@@ -220,8 +220,45 @@ def _is_nested_worktree(dir_path: Path, root: Path) -> bool:
     return dir_path != root and (dir_path / ".git").exists()
 
 
+# frob:ticket T-4306
+def _has_negated_descendant(rel: str, exclude_globs: tuple[str, ...]) -> bool:
+    """True if some glob in `exclude_globs` is a `!`-negation whose pattern
+    falls under `rel/` (or is `rel` itself) -- i.e. a real gitignore-style
+    re-inclusion could apply to something below this directory.
+
+    T-4306: `_should_prune_dir`'s synthetic `f"{rel}/."` probe (added for
+    `prefix/**`-style globs, see that function's docstring) matches a
+    coarse exclude like `.claude/*` regardless of any negation pattern
+    further down the SAME combined glob list (T-4178 started merging the
+    repo's own `.gitignore` lines in, and `.gitignore` idiomatically pairs
+    a coarse `dir/*` exclude with `!dir/subdir/**` re-inclusions -- exactly
+    `.claude/*` plus `!.claude/hooks/**` here). The probe has no way to
+    see that negation: it tests one made-up child ("."), never the real
+    children the negation targets. Left unguarded, this pruned `.claude`
+    wholesale before `os.walk` ever descended into it, silently dropping
+    `.claude/hooks/**` from every `walk_pruned` caller (bind_code, the
+    SYS101/SYS113 capability scanners) even though the files are tracked,
+    not gitignored, and plainly in scope -- the four `claude_hooks`
+    capabilities read as "declared but never observed" because the
+    scanner never visited them, not because it looked and found nothing.
+    When a negation like this exists under `rel`, this directory is NOT
+    pruned early; `walk_pruned`'s own per-file `is_excluded` check (which
+    runs the real gitwildmatch/negation-aware `PathSpec.match_file` over
+    the actual path) still filters files correctly on the way through."""
+    for glob in exclude_globs:
+        if not glob.startswith("!"):
+            continue
+        pattern = glob[1:].lstrip("/")
+        if pattern == rel or pattern.startswith(f"{rel}/"):
+            return True
+    return False
+
+
 # frob:ticket T-0239
 # frob:tests tests/test_excludes.py::test_should_prune_dir_covers_all_three_signals
+# frob:tests \
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_negated_reinclusion_not_p\
+# runed_wholesale
 def _should_prune_dir(
     dir_path: Path, root: Path, exclude_globs: tuple[str, ...] = ()
 ) -> bool:
@@ -236,6 +273,11 @@ def _should_prune_dir(
     `"prefix/**"` and gitwildmatch's `**` requires a path component after
     the `/` to match -- it does not match `prefix` itself), and nested git
     checkouts (`_is_nested_worktree`).
+
+    T-4306: a directory that the probe above would prune is still NOT
+    pruned if `_has_negated_descendant` finds a `!`-re-inclusion glob
+    targeting something under it -- see that function's docstring for the
+    `.claude/*` + `!.claude/hooks/**` regression this guards against.
     """
     if is_skipped_dir(dir_path.name):
         return True
@@ -243,7 +285,9 @@ def _should_prune_dir(
         return True
     if exclude_globs:
         rel = dir_path.relative_to(root).as_posix()
-        if is_excluded(rel, exclude_globs) or is_excluded(f"{rel}/.", exclude_globs):
+        if (
+            is_excluded(rel, exclude_globs) or is_excluded(f"{rel}/.", exclude_globs)
+        ) and not _has_negated_descendant(rel, exclude_globs):
             return True
     return False
 

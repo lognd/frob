@@ -1,7 +1,7 @@
 ---
 id: T-4306
 title: Hook-script design node observes none of its four declared capabilities
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -92,6 +92,12 @@ scope_changes:
     before any code change'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile::test_negated_reinclusion_not_pruned_wholesale
 designated_repro_test: null
 threat: null
 component: null

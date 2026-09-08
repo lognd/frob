@@ -288,6 +288,7 @@ class TestRepoIgnoreGlobs:
 
 
 # frob:ticket T-4178
+# frob:ticket T-4306
 class TestWalkPrunedHonorsIgnoreFile:
     """`walk_pruned` (T-4178, MUST-FIRE/THIRD fixtures): the repository's
     own ignore file is now a second exclusion source, alongside the
@@ -363,3 +364,31 @@ class TestWalkPrunedHonorsIgnoreFile:
         via_iter_files = {p.name for p in iter_files(tmp_path)}
         assert ".env" not in via_iter_files
         assert "main.py" in via_iter_files
+
+    # frob:ticket T-4306
+    def test_negated_reinclusion_not_pruned_wholesale(self, tmp_path: Path):
+        """T-4306: reproduces the real regression directly -- a coarse
+        ignore prefix (`.claude/*`) paired with a `!`-negation re-including
+        one subdirectory (`.claude/hooks/**`) is the idiomatic gitignore
+        shape this repo's own `.gitignore` uses, and before this fix
+        `_should_prune_dir`'s synthetic `f"{rel}/."` probe pruned the
+        whole `.claude` directory before `os.walk` ever descended into
+        it, silently dropping every file under the re-included
+        subdirectory (here standing in for `.claude/hooks/**`, whose real
+        loss took `claude_hooks`'s four declared capabilities down as
+        "declared but never observed")."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        (tmp_path / ".claude" / "hooks").mkdir(parents=True)
+        (tmp_path / ".claude" / "hooks" / "a_hook.py").write_text(
+            "import subprocess\nsubprocess.run(['git', 'status'])\n"
+        )
+        (tmp_path / ".claude" / "scratch").mkdir()
+        (tmp_path / ".claude" / "scratch" / "notes.txt").write_text("x\n")
+        (tmp_path / ".gitignore").write_text(
+            ".claude/*\n!.claude/hooks/\n!.claude/hooks/**\n"
+        )
+
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+
+        assert ".claude/hooks/a_hook.py" in found
+        assert ".claude/scratch/notes.txt" not in found
