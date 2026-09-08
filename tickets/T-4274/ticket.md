@@ -2,7 +2,7 @@
 id: T-4274
 title: the macos test step exceeds its budget and is killed with no result, and the
   abort-signal stack dump built to diagnose exactly this produced no stack
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-07'
