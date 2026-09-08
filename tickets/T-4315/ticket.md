@@ -1,7 +1,7 @@
 ---
 id: T-4315
 title: Post-land sweep is budget-truncated under load so every land stays unverified
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
