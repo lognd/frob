@@ -1,7 +1,7 @@
 ---
 id: T-4331
 title: Audit remaining rules from the T-3844 zero-findings severity ratchet
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -15,21 +15,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
-- tickets/T-draft-d709dae2/**
-- tickets/T-draft-2ca0fdf4/**
+- tickets/T-4341/**
+- tickets/T-4340/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-d709dae2/**
+  glob: tickets/T-4341/**
   reason: filing the out-of-scope TICK005 structural-fix ticket found during this
     audit is itself an in-scope side effect of T-4331's work
   actor: logan
   at: '2026-09-08'
 - op: add
-  glob: tickets/T-draft-2ca0fdf4/**
+  glob: tickets/T-4340/**
   reason: filing the remaining-rules follow-up ticket found during this audit is itself
     an in-scope side effect of T-4331's work
   actor: logan

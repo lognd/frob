@@ -695,7 +695,8 @@ REL397 = "error"
 RELWAIVE002 = "error"
 ROOT001 = "error"
 SCOPE001 = "error"
-SCOPE002 = "error"
+# T-4331: demoted from the blanket zero-findings ratchet (T-3844) -- missed by T-4328's grep pass. Code hardcodes Severity.WARN and its own docstring calls it "a nudge, not a hard block" that "must never block a ticket"; the Violation is synthetic (file="tickets.md", line=0, no symref) against a path deleted at the T-2356 ledger-v2 cutover, so a fired-but-not-acked finding is unwaivable by frob:waive -- exactly the shape TICK009 was demoted for (T-4328), and the gate's own docstring says so explicitly: "exactly the unwaivable-by-mechanism shape TICK009 already solved for the identical reason, not a new problem needing a new mechanism" (frob.gates.__init__._scope002_violations). The scope_breadth_ack ticket-level exemption (T-4310) is a blanket, permanent per-ticket opt-out, not a surgical per-finding waiver, so it does not close this gap.
+SCOPE002 = "warn"
 SEC-CVE-FINGERPRINT-001 = "error"
 SEC001 = "error"
 SEC002 = "error"
@@ -755,9 +756,11 @@ THREAT005 = "error"
 THREAT006 = "error"
 TICK001 = "error"
 TICK002 = "error"
-TICK005 = "error"
+# T-4331: demoted from the blanket zero-findings ratchet (T-3844) -- structurally silent (property 3), not merely quiet. `_tick005_ledger_at_ref` (frob.gates._tickets_gate) reads the merge's first parent via `git show <ref>:tickets.md` only -- the v1-monofile path, with no v2 (tickets/T-####/ticket.md) dispatch. tickets.md was deleted repo-wide at the T-2356 ledger-v2 cutover (single commit, e2ed60480), so `HEAD^1:tickets.md` cannot resolve for any merge commit from here forward and `_tick005_merge_state_regression` returns () unconditionally -- the rule cannot fire again until this is fixed, and a "0 findings" reading of it is not "nothing violates it," it is "the check no longer runs." The identical bug was already found and fixed once for COV002 (`_ledger_states_at_base`, T-1582): "before this, a v2 repo always hit the v1 branch, found no tickets.md blob at any base, and silently returned {} for every diff." TICK005 never received the same v1/v2 dispatch fix. Filed T-4341 for the code fix (out of this ticket's frob.toml-only scope); demoted here so promoting a currently-unmeasurable rule to error does not stand in as if it were a verified-clean one.
+TICK005 = "warn"
 TICK006 = "error"
-TICK008 = "error"
+# T-4331: demoted from the blanket zero-findings ratchet (T-3844) -- missed by T-4328's grep pass. docs/modules/gates.md has a dedicated "Why WARN, not ERROR" section for TICK008: an initial ERROR pass "was the original design and was REJECTED in adversarial review of T-0842 itself." The reason is structural, not just advisory taste: `frob ticket land`'s claim re-verification spawns `frob check --ticket <id>` from the ROOT checkout's stale binary, which does not yet know a schema-extending ticket's own new field WHILE that very ticket is landing -- an ERROR here fires over the full merged ledger at exactly that moment and `frob ticket land` refuses via ClaimDivergence; a `frob:waive TICK008` cannot route around it either, since the same stale root binary evaluates both the gate and the waiver. Promoting this to error reintroduces the exact land-blocking bug T-0842's adversarial review demoted it to fix.
+TICK008 = "warn"
 # T-4328: demoted from the blanket zero-findings ratchet (T-3844) -- code hardcodes Severity.WARN and reports file="tickets.md" line=0 -- that path no longer exists under the per-ticket ledger layout, so a fired-but-not-acked finding is unwaivable the same way SCOPE002's were (T-4310); demoted pending the same kind of fix
 TICK009 = "warn"
 TICK010 = "error"
