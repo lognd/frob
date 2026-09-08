@@ -1,7 +1,7 @@
 ---
 id: T-4314
 title: Land lock file names a dead holder after completion, read as a live land
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
