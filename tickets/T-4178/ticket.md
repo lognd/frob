@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/excludes.py
 - design/frob.strata
+- tests/test_excludes.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
     core-node fs.read grant list, not a new node or trust boundary
   actor: logan
   at: '2026-09-07'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'recovery T-4178: bind the ticket''s own evidence file (7 cited tests) into
+    scope; it was omitted from the original scope declaration'
+  actor: logan
+  at: '2026-09-08'
 evidence:
 - tests/test_excludes.py::TestRepoIgnoreGlobs::test_missing_ignore_file_returns_empty
 - tests/test_excludes.py::TestRepoIgnoreGlobs::test_reads_root_ignore_file_lines
