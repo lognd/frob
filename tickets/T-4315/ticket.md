@@ -1,7 +1,7 @@
 ---
 id: T-4315
 title: Post-land sweep is budget-truncated under load so every land stays unverified
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -76,3 +76,6 @@ with the budget set low enough to truncate, and assert the resulting state is
 reported as unverified everywhere it is consulted. Then run it unconstrained and
 assert it genuinely measures. A fix confirmed only on an idle machine has not been
 confirmed.
+
+## Failure log
+- 2026-09-08 attempt 1: scoped to src/frob/tickets/_land.py only, but both defects (detached sweep's --budget instrument in _land_cmd.py/_check_chunking.py; unverified-status silently absent from frob verify status/_watermark.py) live entirely outside that file -- filed T-draft-627c0a0d with the correct scope and full investigation notes
