@@ -2,7 +2,7 @@
 id: T-4273
 title: 'the ledger auto-commit fails under parallel load with an empty stderr and
   its self-heal repeats the same failing command: the single linux CI failure'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -30,19 +30,26 @@ scope_changes:
     resolves the pre-existing SCOPE002 breadth debt against it
   actor: logan
   at: '2026-09-07'
+evidence:
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_resolved_race_is_not_reported_as_commit_failed
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_resolved_race_clears_the_marker_without_a_false_alarm
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_commit_failure_detail_names_both_streams
 designated_repro_test: null
 acceptance:
 - text: given a ledger commit that exits non-zero, when the failure is logged, then
     both output streams are captured and the message names the actual cause rather
     than an empty string
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_commit_failure_detail_names_both_streams
 - text: given the self-heal path, when its premise that content was written but the
     commit was lost does not hold, then it says so instead of re-running an identical
     command and declaring a human is needed
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_resolved_race_clears_the_marker_without_a_false_alarm
 - text: given the failing test and its already-marked sibling, when this is fixed,
     then neither is resolved by adding a rerun marker
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_resolved_race_is_not_reported_as_commit_failed
 threat: null
 component: null
 anchor: false

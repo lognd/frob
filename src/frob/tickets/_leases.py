@@ -2700,19 +2700,8 @@ def _finish_ledger_commit_marker(
         or committed.is_err
         or committed.danger_ok.returncode != 0
     ):
-        _log.error(
-            "tickets: %s's T-2714 self-heal FAILED -- %s is still "
-            "dirty for %s. This needs a human: `git -C %s add %s && "
-            'git -C %s commit -m "%s" -- %s`, or discard by hand if '
-            "the content is no longer wanted",
-            marker_ticket_id,
-            root,
-            pathspecs,
-            root,
-            " ".join(pathspecs),
-            root,
-            message,
-            " ".join(pathspecs),
+        _handle_finish_marker_retry_failure(
+            root, marker_path, marker_ticket_id, message, pathspecs, added, committed
         )
         return
     _log.warning(
@@ -2723,6 +2712,73 @@ def _finish_ledger_commit_marker(
         root,
     )
     marker_path.unlink(missing_ok=True)
+
+
+# frob:ticket T-4273
+# frob:tests \
+# tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_clears_t\
+# he_marker_without_a_false_alarm
+# frob:tests \
+# tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_\
+# the_marker_and_the_dirt_for_a_human
+def _handle_finish_marker_retry_failure(
+    root: Path,
+    marker_path: Path,
+    marker_ticket_id: str,
+    message: str,
+    pathspecs: tuple[str, ...],
+    added: Result[ProcResult, GitError],
+    committed: Result[ProcResult, GitError],
+) -> None:
+    """`_finish_ledger_commit_marker`'s failed-retry half (ARCH001 split,
+    pure extraction, no behavior change): the marker's own premise --
+    "content was written but the commit was lost, so re-running the
+    identical add+commit finishes it" -- does not always hold. Under
+    parallel load, some OTHER process can commit these exact pathspecs
+    between this function's caller checking `git status` (dirty) and this
+    retry actually running, so THIS retry's `git commit` correctly finds
+    nothing left to stage and fails with "nothing to commit" on stdout, an
+    empty stderr, and a still-clean working tree. Re-checking dirtiness
+    here (rather than trusting the stale pre-check) is what tells that
+    resolved race apart from a genuine failure -- blindly declaring "needs
+    a human" for BOTH collapses them into the same false alarm, which is
+    exactly what made the retry's own failure message misleading (T-4273's
+    reported incident: "still dirty" logged against a repo that had
+    already been made clean by a concurrent committer)."""
+    still_dirty = _pathspecs_still_dirty(root, pathspecs)
+    if still_dirty is False:
+        _log.info(
+            "tickets: %s's T-2714 marker retry found %s already clean "
+            "for %s -- a concurrent call committed this exact change "
+            "first (retry commit reported %r), not a lost write; "
+            "clearing the marker, nothing left to do",
+            marker_ticket_id,
+            root,
+            pathspecs,
+            committed.danger_ok.stdout.strip()
+            if committed.is_ok
+            else str(committed.danger_err),
+        )
+        marker_path.unlink(missing_ok=True)
+        return
+    step, detail = _ledger_commit_failure_step_and_detail(added, committed)
+    _log.error(
+        "tickets: %s's T-2714 self-heal FAILED -- %s is still "
+        "dirty for %s (the %s step failed: %s). This needs a "
+        "human: `git -C %s add %s && git -C %s commit -m \"%s\" "
+        "-- %s`, or discard by hand if the content is no longer "
+        "wanted",
+        marker_ticket_id,
+        root,
+        pathspecs,
+        step,
+        detail,
+        root,
+        " ".join(pathspecs),
+        root,
+        message,
+        " ".join(pathspecs),
+    )
 
 
 # frob:ticket T-1054
@@ -2863,6 +2919,50 @@ def _proc_result_failed(result: Result[ProcResult, GitError]) -> bool:
     return result.is_err or result.danger_ok.returncode != 0
 
 
+# frob:ticket T-4273
+# frob:tests \
+# tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_r\
+# eported_as_commit_failed
+_GIT_NOTHING_TO_COMMIT_MARKERS = (
+    "nothing to commit",
+    "nothing added to commit",
+)
+
+
+def _git_says_nothing_to_commit(proc: ProcResult) -> bool:
+    """T-4273: `True` iff a failed `git commit` explains itself as "nothing
+    was actually staged for this pathspec" -- git puts this explanation on
+    STDOUT, not stderr, so a caller reading only `stderr` (the pre-T-4273
+    posture) sees an empty string and no way to tell this apart from a
+    genuine failure (a lock, a hook refusal, a killed process). Checked
+    against `proc.stdout` case-insensitively; git's own wording has been
+    stable across versions for this message but this is a best-effort
+    classifier, not a parser -- a miss here still falls through to the
+    generic failure path, it just loses the more specific diagnosis."""
+    lowered = proc.stdout.lower()
+    return any(marker in lowered for marker in _GIT_NOTHING_TO_COMMIT_MARKERS)
+
+
+def _pathspecs_still_dirty(root: Path, pathspecs: tuple[str, ...]) -> bool | None:
+    """T-4273: re-check (via a fresh `git status --porcelain`) whether
+    `pathspecs` are STILL dirty in `root` -- used by both the self-heal
+    path and the main commit-failure path to tell a genuine failure (still
+    dirty) apart from a race already resolved out from under this call (no
+    longer dirty: some OTHER concurrent commit already captured the exact
+    change this call was about to make, so a `git commit` failing with
+    "nothing to commit" here reflects a premise that stopped being true
+    between this call's dirty-check and its own commit attempt, not a lost
+    write). Returns `None` (never asserted either way) if the status probe
+    itself fails -- callers must treat that as "unknown, assume the worse
+    case" rather than silently reading it as clean."""
+    status = gitio.run_argv(
+        ["git", "-C", str(root), "status", "--porcelain", "--", *pathspecs]
+    )
+    if status.is_err:
+        return None
+    return bool(status.danger_ok.stdout.strip())
+
+
 def _add_and_commit_tickets_md(
     root: Path,
     ticket_id: str,
@@ -2917,6 +3017,8 @@ def _add_and_commit_tickets_md(
     finally:
         _clear_ledger_commit_repair_marker(root, ticket_id)
     if _proc_result_failed(added) or _proc_result_failed(committed):
+        if _is_resolved_concurrent_commit_race(ticket_id, pathspecs, root, committed):
+            return Ok(None)
         _log_ledger_commit_failure(
             ticket_id, root, message, pathspecs, added=added, committed=committed
         )
@@ -2929,6 +3031,46 @@ def _add_and_commit_tickets_md(
         message,
     )
     return Ok(None)
+
+
+# frob:ticket T-4273
+# frob:tests \
+# tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_r\
+# eported_as_commit_failed
+def _is_resolved_concurrent_commit_race(
+    ticket_id: str,
+    pathspecs: tuple[str, ...],
+    root: Path,
+    committed: Result[ProcResult, GitError],
+) -> bool:
+    """`_add_and_commit_tickets_md`'s failure-triage half (ARCH001 split,
+    pure extraction, no behavior change): `True` iff a failed `git commit`
+    is explained by a resolved race rather than a real failure -- a
+    concurrent ledger-committing call staged and committed the identical
+    pathspec's content between THIS call's own dirty-check and its `git
+    commit` attempt, so by the time this commit runs there is genuinely
+    nothing left to stage for it, and git says so (on stdout) as "nothing
+    to commit" with an empty stderr -- the exact `returncode=1 stderr=''`
+    signature T-4273's incident showed. Re-checking `pathspecs` here (not
+    trusting the earlier dirty-check, which is exactly the state that
+    raced) tells that apart from a genuine failure: still dirty means the
+    commit really did fail and the caller's own loud path is correct; no
+    longer dirty means a sibling call already landed this exact change and
+    there is nothing lost to redo."""
+    if not (committed.is_ok and _git_says_nothing_to_commit(committed.danger_ok)):
+        return False
+    if _pathspecs_still_dirty(root, pathspecs) is not False:
+        return False
+    _log.info(
+        "tickets: %s ledger change for %s was already committed by "
+        "a concurrent call before this one's own `git commit` ran "
+        "(pathspecs no longer dirty, commit reported %r on "
+        "stdout) -- nothing lost, treating as already done",
+        ticket_id,
+        pathspecs,
+        committed.danger_ok.stdout.strip(),
+    )
+    return True
 
 
 # frob:ticket T-3578
@@ -2976,22 +3118,34 @@ def _ledger_commit_failure_step_and_detail(
     added: Result[ProcResult, GitError], committed: Result[ProcResult, GitError]
 ) -> tuple[str, str]:
     """T-3578: which of `git add`/`git commit` failed, plus a one-line
-    detail (the process's `stderr` and `returncode`, or the `GitError`
-    itself when the spawn never produced a `ProcResult`) -- split out of
-    `_log_ledger_commit_failure` purely to keep that function's own
-    logging call readable. `git add` is checked first: `_add_and_commit_
-    tickets_md` never even attempts the commit when `add` itself failed
-    (see its own `if added.is_ok and ... else: committed = added` shape),
-    so a failing `add` is always the true cause when both are failing."""
+    detail (the process's `stdout`+`stderr`+`returncode`, or the
+    `GitError` itself when the spawn never produced a `ProcResult`) --
+    split out of `_log_ledger_commit_failure` purely to keep that
+    function's own logging call readable. `git add` is checked first:
+    `_add_and_commit_tickets_md` never even attempts the commit when `add`
+    itself failed (see its own `if added.is_ok and ... else: committed =
+    added` shape), so a failing `add` is always the true cause when both
+    are failing.
+
+    T-4273: BOTH streams are now named, not just `stderr` -- a `git
+    commit` refused for having nothing staged for its pathspec puts that
+    explanation on STDOUT (`returncode=1`, empty `stderr`), which the
+    pre-T-4273 stderr-only detail could not distinguish from a genuinely
+    silent failure (a killed process, a lock git itself never explains).
+    See `_git_says_nothing_to_commit`, which classifies this same
+    `stdout` for the caller that decides whether to treat it as a real
+    failure or a resolved race."""
     if added.is_err:
         return "add", f"GitError: {added.danger_err}"
     if added.danger_ok.returncode != 0:
-        rc, err = added.danger_ok.returncode, added.danger_ok.stderr
-        return "add", f"returncode={rc} stderr={err!r}"
+        rc = added.danger_ok.returncode
+        out, err = added.danger_ok.stdout, added.danger_ok.stderr
+        return "add", f"returncode={rc} stderr={err!r} stdout={out!r}"
     if committed.is_err:
         return "commit", f"GitError: {committed.danger_err}"
-    rc, err = committed.danger_ok.returncode, committed.danger_ok.stderr
-    return "commit", f"returncode={rc} stderr={err!r}"
+    rc = committed.danger_ok.returncode
+    out, err = committed.danger_ok.stdout, committed.danger_ok.stderr
+    return "commit", f"returncode={rc} stderr={err!r} stdout={out!r}"
 
 
 # frob:ticket T-1130

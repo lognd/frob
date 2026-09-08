@@ -1045,6 +1045,67 @@ class TestCommitTicketLedgerChange:
         assert "the add step failed" in caplog.text
         assert "returncode=" in caplog.text
 
+    # frob:ticket T-4273
+    def test_commit_failure_detail_names_both_streams(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commit_failure\
+        # _detail_names_both_streams  # noqa: E501
+        """T-4273: the real incident's failure line named only `stderr`,
+        which was empty (git's actual explanation went to `stdout`) --
+        the log must now name both streams so a future occurrence is
+        self-diagnosing instead of presenting an empty string."""
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        (repo / ".git" / "index.lock").write_text("")
+
+        with caplog.at_level("ERROR"):
+            result = commit_ticket_ledger_change(
+                repo, "T-0001", "chore(tickets): drop T-0001"
+            )
+        assert result.is_err
+        assert "stdout=" in caplog.text
+
+    # frob:ticket T-4273
+    def test_resolved_race_is_not_reported_as_commit_failed(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_\
+        # is_not_reported_as_commit_failed  # noqa: E501
+        """T-4273's actual reported shape, at the main (non-marker) commit
+        path: a concurrent call commits the exact pathspecs first, so THIS
+        call's own `git add` is a no-op and `git commit -- <pathspecs>`
+        fails with `returncode=1` and an EMPTY stderr (git's explanation
+        went to stdout: "nothing to commit, working tree clean"). Before
+        T-4273 this collapsed into `Err(LeaseError.CommitFailed)` and a
+        "left DIRTY ... needs a human" style alarm even though the repo
+        was already clean -- exactly backwards. Calls the lower-level
+        `_add_and_commit_tickets_md` directly (bypassing `commit_ticket_
+        ledger_change`'s own pre-dirty-check short-circuit) to force the
+        race deterministically instead of depending on real thread
+        timing."""
+        import logging
+
+        from frob.tickets._leases import _add_and_commit_tickets_md, _ledger_pathspecs
+
+        pathspecs = _ledger_pathspecs(repo, "T-0001")
+        with caplog.at_level(logging.INFO, logger="frob.tickets._leases"):
+            result = _add_and_commit_tickets_md(
+                repo,
+                "T-0001",
+                "chore(tickets): nothing left to stage",
+                pathspecs=pathspecs,
+            )
+        assert result.is_ok, result.err
+        assert any(
+            "already committed by a concurrent call" in r.message
+            for r in caplog.records
+        ), [r.message for r in caplog.records]
+
     def test_no_op_when_ledger_already_clean(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean  # noqa: E501
         from frob.tickets._leases import commit_ticket_ledger_change
@@ -1452,6 +1513,54 @@ class TestLedgerCommitRepairMarker:
         assert not marker.exists()
         status = _run(["git", "status", "--porcelain"], repo)
         assert status.stdout.strip() == ""
+
+    # frob:ticket T-4273
+    def test_resolved_race_clears_the_marker_without_a_false_alarm(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_\
+        # clears_the_marker_without_a_false_alarm  # noqa: E501
+        """T-4273: the marker's premise -- "content was written but the
+        commit was lost" -- is FALSE when a concurrent call already
+        committed the exact same pathspecs first. Reproduced by calling
+        `_finish_ledger_commit_marker` directly against pathspecs that are
+        ALREADY clean (as they would be right after a sibling call's
+        commit landed): its own `git add` is then a no-op and `git commit
+        -- <pathspecs>` fails with git's "nothing to commit" on stdout and
+        an empty stderr -- the exact signature the real incident's
+        `returncode=1 stderr=''` log line showed. This must clear the
+        marker and log the resolved-race explanation, never the "needs a
+        human" alarm the old blind-retry code always raised here."""
+        import logging
+
+        from frob.tickets import transition
+        from frob.tickets._leases import (
+            _finish_ledger_commit_marker,
+            _ledger_pathspecs,
+        )
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        pathspecs = _ledger_pathspecs(repo, "T-0001")
+        message = "chore(tickets): T-0001 planned"
+        # Simulate a concurrent call finishing this exact change first.
+        _run(["git", "add", *pathspecs], repo)
+        _run(["git", "commit", "-m", message, "--", *pathspecs], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() == ""
+
+        marker_path = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
+        with caplog.at_level(logging.INFO, logger="frob.tickets._leases"):
+            _finish_ledger_commit_marker(repo, marker_path, "T-0001", message, pathspecs)
+
+        assert not any("self-heal FAILED" in r.message for r in caplog.records), [
+            r.message for r in caplog.records
+        ]
+        assert any(
+            "already clean" in r.message and "not a lost write" in r.message
+            for r in caplog.records
+        ), [r.message for r in caplog.records]
+        assert not marker_path.exists()
 
     def test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human(
         self, repo: Path, caplog: pytest.LogCaptureFixture
