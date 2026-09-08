@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/verify_runner.py
 - tests/unit/verify/test_verify_runner.py
+- docs/modules/tickets-verify-sweep.md
+- src/frob/verify/_quarantine.py
+- tests/unit/verify/test_watermark.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +39,24 @@ scope_changes:
   glob: docs/modules/tickets-verify-sweep.md
   reason: avoid unrelated scope-closure expansion; use frob:tests directive instead
     of frob:doc for the new symbol
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: close SCOPE002 doc/test/private-helper closure gaps this file's pre-existing
+    directives and this ticket's new test imports require
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/verify/_quarantine.py
+  reason: close SCOPE002 doc/test/private-helper closure gaps this file's pre-existing
+    directives and this ticket's new test imports require
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/verify/test_watermark.py
+  reason: close SCOPE002 doc/test/private-helper closure gaps this file's pre-existing
+    directives and this ticket's new test imports require
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
