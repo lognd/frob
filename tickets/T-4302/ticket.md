@@ -2,7 +2,7 @@
 id: T-4302
 title: clear the two residual unformatted files that predate the land-time formatting
   gate
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
