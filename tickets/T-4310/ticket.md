@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
 - src/frob/gates/__init__.py
+- tests/gates_suite/test_prework.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'T-4310: SCOPE002''s synthetic tickets.md:0 finding is unwaivable
   under the per-ticket ledger layout; this ticket''s own fix restores scope_breadth_ack
@@ -24,6 +25,13 @@ scope_breadth_ack_reason: 'T-4310: SCOPE002''s synthetic tickets.md:0 finding is
   no widening'
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_prework.py
+  reason: coverage test for the SCOPE002 scope_breadth_ack exemption fix, in the same
+    suite the existing SCOPE002 tests already live
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
