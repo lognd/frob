@@ -2,7 +2,7 @@
 id: T-4273
 title: 'the ledger auto-commit fails under parallel load with an empty stderr and
   its self-heal repeats the same failing command: the single linux CI failure'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
