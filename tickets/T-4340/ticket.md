@@ -2,7 +2,7 @@
 id: T-4340
 title: Audit the remaining ~280 T-3844-promoted rules for waivability and structural
   silence
-state: planned
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
