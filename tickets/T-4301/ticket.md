@@ -15,7 +15,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_cli.py
-- tests/test_release.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: SCOPE002's doc/test closure over docs/modules/release.md
   and tests/test_release.py both fan out into the WHOLE release subsystem (release/__init__.py,
@@ -107,6 +106,12 @@ scope_changes:
     describes the whole release subsystem including gates/__init__.py''s RELxxx gates,
     pulling in unrelated docs/modules/gates.md and perf.md closures; dropping the
     new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/test_release.py
+  reason: 'T-4301: testing scope-closure blast radius before deciding where new tests
+    live'
   actor: logan
   at: '2026-09-08'
 body_changes:
