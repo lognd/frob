@@ -67,10 +67,27 @@ def _fake_ticket() -> Ticket:
     return cast("Ticket", _FakeTicket())
 
 
-def _write_pyproject(root: Path, version: str) -> None:
-    """Write a minimal `pyproject.toml` at `version` for a test root."""
+# frob:waive DUP001 reason="a five-line file-write helper (an f-string then \
+# Path.write_text) reads as 95% similar to any other short write-a-few-lines-to-a-file \
+# function by the similarity detector's own admission -- there is no shared behavior \
+# to extract with src/frob/app/clean_runner.py::_print_report or the other named \
+# siblings, which write entirely different content for entirely different purposes; \
+# this predates T-4184 and only gained a new default parameter here"
+def _write_pyproject(
+    root: Path, version: str, *, dev_version_bump: bool = False
+) -> None:
+    """Write a minimal `pyproject.toml` at `version` for a test root.
+    `dev_version_bump` defaults to `False` (T-4184: explicit `[tool.frob]
+    dev_version_bump = false`) so this module's pre-existing coherence
+    fixtures keep exercising exactly the `bump_version`-reported value
+    they always did, unaffected by the newer (default-on) per-land dev
+    counter -- a caller that specifically wants to exercise that counter
+    passes `dev_version_bump=True`."""
+    toggle = "true" if dev_version_bump else "false"
     (root / "pyproject.toml").write_text(
-        f'[project]\nname = "x"\nversion = "{version}"\n', encoding="utf-8"
+        f'[project]\nname = "x"\nversion = "{version}"\n\n'
+        f"[tool.frob]\ndev_version_bump = {toggle}\n",
+        encoding="utf-8",
     )
 
 

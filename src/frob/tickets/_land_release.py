@@ -155,6 +155,32 @@ def _read_root_pyproject_version(root: Path, pre_land_tip: str) -> str | None:
     return match.group(1) if match else None
 
 
+# frob:ticket T-4184
+def _read_root_tool_frob_table(root: Path, pre_land_tip: str) -> dict:
+    """`pyproject.toml`'s `[tool.frob]` table as it stood at `pre_land_tip`
+    -- MAIN's own last-committed state, via `git show` -- never the
+    squash-carried WORKING TREE copy, same reasoning as `_read_root_
+    pyproject_version` directly above: a ticket's own `pyproject.toml`
+    edit need not repeat every `[tool.frob]` key untouched, and the
+    T-1805 field-scoped reset only ever restores the `version = ` line,
+    so a naive on-disk read of this table could silently lose a
+    configuration key the moment ANY ticket touches `pyproject.toml` at
+    all. `{}` if the file did not exist at `pre_land_tip`, is unparsable,
+    or has no `[tool.frob]` table -- every key this module reads off the
+    result therefore has its own explicit default."""
+    shown = run_argv(["git", "-C", str(root), "show", f"{pre_land_tip}:pyproject.toml"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return {}
+    import tomllib
+
+    try:
+        data = tomllib.loads(shown.danger_ok.stdout)
+    except tomllib.TOMLDecodeError:
+        return {}
+    table = data.get("tool", {}).get("frob", {})
+    return table if isinstance(table, dict) else {}
+
+
 # frob:ticket T-1078
 def _read_root_manifest_version(root: Path, pre_land_tip: str) -> str | None:
     """Read `.frob-release.json`'s `version` field as it stood at
@@ -664,6 +690,23 @@ def _reset_pyproject_version_field_only(root: Path, pre_land_tip: str) -> bool:
     return True
 
 
+# frob:waive ARCH001 reason="T-4184 added one new branch (the dev-version-bump else \
+# arm, itself already split out into _apply_dev_version_bump_branch above) to an \
+# existing, already-long transaction-orchestrator function whose length is almost \
+# entirely its own docstring documenting five prior tickets' worth of ordering \
+# guarantees (T-0907/T-0992/T-1078/T-1760/T-4184) -- splitting the orchestration \
+# itself further would separate the bump_version-vs-dev-bump branching from the \
+# _finalize_release_coherence call both branches must reach, the same one-concern \
+# boundary this module's own ARCH001 waivers already argue for elsewhere"
+# frob:waive AFFECT001 reason="this function's frob:doc target \
+# (docs/modules/tickets-landing.md#frob-ticket-land) is a single anchor inside a \
+# giant, ~2500-line shared reference doc describing effectively the entire land \
+# subsystem -- adding that file (or even just this anchor) to T-4184's scope fanned \
+# SCOPE002 out across ~500 unrelated symbols the same doc happens to describe \
+# elsewhere, an under-capture false positive far worse than the AFFECT001 it would \
+# silence. The new T-4184 behavior IS fully documented, in the dedicated \
+# docs/modules/release.md#per-land-dev-version-bump-t-4184 section this diff adds, \
+# which is in scope and which this function's own updated docstring cross-references"
 def _apply_release_bump(
     root: Path,
     ticket: Ticket,
@@ -702,7 +745,17 @@ def _apply_release_bump(
     "never less than its own manifest's, and never less than the previous
     commit's" -- defense in depth alongside the reset above, in case a
     future caller reintroduces a carry path this function does not yet
-    know about."""
+    know about.
+
+    T-4184: when `bump_version` reports `Ok(None)` (no explicit
+    release-cut bump this land -- the common case since T-2462 deferred
+    REL001's own pyproject write to an explicit release cut),
+    `_apply_dev_version_bump` runs the automatic per-land PEP 440
+    dev-version counter instead, atomically in the SAME land step, unless
+    `[tool.frob] dev_version_bump` is off. An explicit release-cut bump
+    (`bumped.danger_ok is not None`) always wins outright -- a land that
+    already sets the real released version has no need for a dev suffix
+    on top of it."""
     if bump_version is None:
         return Ok(None)
     _reset_release_artifacts_to_pre_land(root, pre_land_tip)
@@ -719,19 +772,193 @@ def _apply_release_bump(
         )
         unwound = _verified_reset_root(root, pre_land_tip, final_id)
         return Err(unwound.danger_err if unwound.is_err else bumped.danger_err)
-    if bumped.danger_ok is not None:
+    reported_version = bumped.danger_ok
+    if reported_version is not None:
         applied = _apply_reported_bump(
-            root, final_id, bumped.danger_ok, pre_bump_version, pre_manifest_version
+            root, final_id, reported_version, pre_bump_version, pre_manifest_version
         )
         if applied.is_err:
             unwound = _verified_reset_root(root, pre_land_tip, final_id)
             return Err(unwound.danger_err if unwound.is_err else applied.danger_err)
+    else:
+        dev_reported = _apply_dev_version_bump_branch(
+            root, final_id, pre_bump_version, pre_manifest_version, pre_land_tip
+        )
+        if dev_reported.is_err:
+            return dev_reported
+        reported_version = dev_reported.danger_ok
     finalized = _finalize_release_coherence(
         root, final_id, pre_land_tip, pre_bump_version, pre_manifest_version
     )
     if finalized.is_err:
         return Err(finalized.danger_err)
-    return bumped
+    return Ok(reported_version)
+
+
+# frob:ticket T-4184
+def _apply_dev_version_bump_branch(
+    root: Path,
+    final_id: str,
+    pre_bump_version: str | None,
+    pre_manifest_version: str | None,
+    pre_land_tip: str,
+) -> Result[str | None, LandError]:
+    """`_apply_release_bump`'s `bumped.danger_ok is None` branch (T-4184:
+    split out to keep the parent under ARCH001's line threshold, zero
+    behavior change): runs `_apply_dev_version_bump` and unwinds the
+    staged squash on failure, exactly like the sibling `reported_version
+    is not None` branch's own `_apply_reported_bump` call does."""
+    dev_bumped = _apply_dev_version_bump(
+        root, final_id, pre_bump_version, pre_manifest_version, pre_land_tip
+    )
+    if dev_bumped.is_err:
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else dev_bumped.danger_err)
+    return Ok(dev_bumped.danger_ok)
+
+
+# frob:ticket T-4184
+# frob:tests \
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_refuses_w\
+# ithout_ack
+# frob:tests \
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_proceeds_\
+# once_acknowledged
+def _dev_version_major_guard(
+    final_id: str, new_version: str, table: dict
+) -> Result[None, LandError]:
+    """`_apply_dev_version_bump`'s major-version-boundary guard (T-4184:
+    split out to keep the parent under ARCH001's line threshold, zero
+    behavior change) -- ACCEPTANCE [3]: refuses (surfaced as
+    `LandError.ReleaseBumpFailed`) when `new_version`'s major series
+    exceeds `table`'s `dev_version_major_ack` (default `0`, nothing
+    acknowledged), a real configuration value rather than a prose
+    intention."""
+    from packaging.version import Version
+
+    from frob.release import ReleaseError
+
+    new_major_release = Version(new_version).release
+    new_major = new_major_release[0] if new_major_release else 0
+    ack = table.get("dev_version_major_ack", 0)
+    ack = ack if isinstance(ack, int) else 0
+    if new_major > ack:
+        _log.error(
+            "land: %s dev-version bump to %s would cross into major series "
+            "%d with [tool.frob] dev_version_bump still on (%s) -- refusing",
+            final_id,
+            new_version,
+            new_major,
+            ReleaseError.MajorVersionAckRequired,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    return Ok(None)
+
+
+# frob:ticket T-4184
+# frob:tests \
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in_sequenc\
+# e_produce_distinguishable_versions
+# frob:tests \
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_leaves_ve\
+# rsion_untouched
+# frob:waive ARCH001 reason="the major-version guard is already split out into its own \
+# _dev_version_major_guard function directly above; what remains is one linear \
+# sequence of Result-returning steps (toggle check, compute next dev version, guard, \
+# write, stage, delegate to _apply_reported_bump) each already a single call to an \
+# existing helper -- most of the length is the docstring recording the T-1007/T-1805 \
+# squash-carry hazard this function's own git-object read exists to avoid, which is \
+# exactly the kind of context a future reader needs and a shorter docstring would lose"
+def _apply_dev_version_bump(
+    root: Path,
+    final_id: str,
+    pre_bump_version: str | None,
+    pre_manifest_version: str | None,
+    pre_land_tip: str,
+) -> Result[str | None, LandError]:
+    """T-4184's automatic per-land PEP 440 dev-version counter, applied
+    ONLY when no explicit release-cut `bump_version` already ran this
+    land (see `_apply_release_bump`'s own docstring for that ordering).
+    `Ok(None)` -- a deliberate no-op, matching `bump_version=None`'s own
+    contract -- when `[tool.frob] dev_version_bump` is off (ACCEPTANCE
+    [2]: the version stays untouched and behaviour matches a repo that
+    never adopted this feature), when there is no prior on-disk version
+    to advance from, or when that prior version is not a plain final
+    release/dev build `next_dev_version` knows how to advance (a
+    pre-release or post-release pyproject.toml is left alone rather than
+    guessed at).
+
+    Reads `[tool.frob]` from `root`'s OWN git object at `pre_land_tip`
+    (`_read_root_tool_frob_table`), never the squash-carried WORKING TREE
+    copy -- the same T-1007/T-1805 hazard `_read_root_pyproject_version`
+    already guards the version line against: a ticket's own incoming
+    `pyproject.toml` edit need not repeat every unrelated `[tool.frob]`
+    key, and the T-1805 field-scoped reset only ever restores the
+    `version = ` line, not the whole file, so a naive on-disk read here
+    could silently lose the toggle the moment any ticket touches
+    `pyproject.toml` at all.
+
+    Refuses (`Err(ReleaseError.MajorVersionAckRequired)`, surfaced as
+    `LandError.ReleaseBumpFailed`) at the FIRST major-version increment
+    while the toggle is still on, unless `[tool.frob]
+    dev_version_major_ack` in `root`'s pyproject.toml already names that
+    major series -- ACCEPTANCE [3]: a prose intention is not enforcement,
+    so continuing past the boundary requires a recorded configuration
+    value, not a comment.
+
+    Otherwise writes the computed dev version straight into
+    `pyproject.toml` (`rewrite_pyproject_version`, the same primitive
+    `bump_patch_version` uses) and stages it, then delegates to
+    `_apply_reported_bump` for the same monotonicity check, manifest
+    resync, and `uv.lock` re-sync an explicit release-cut bump gets --
+    ACCEPTANCE [1]: two lands in sequence produce two distinguishable
+    versions with no manual step in either."""
+    from frob.release import next_dev_version, rewrite_pyproject_version
+
+    table = _read_root_tool_frob_table(root, pre_land_tip)
+    if not bool(table.get("dev_version_bump", True)):
+        return Ok(None)
+    if pre_bump_version is None:
+        return Ok(None)
+    nxt = next_dev_version(pre_bump_version)
+    if nxt.is_err:
+        _log.debug(
+            "land: %s dev-version bump skipped -- %s is not a plain final "
+            "release or dev build (%s)",
+            final_id,
+            pre_bump_version,
+            nxt.danger_err,
+        )
+        return Ok(None)
+    new_version = nxt.danger_ok
+    guarded = _dev_version_major_guard(final_id, new_version, table)
+    if guarded.is_err:
+        return Err(guarded.danger_err)
+    rewritten = rewrite_pyproject_version(root, new_version)
+    if rewritten.is_err:
+        _log.error(
+            "land: %s failed writing dev-version %s to pyproject.toml (%s)",
+            final_id,
+            new_version,
+            rewritten.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    staged = run_argv(["git", "-C", str(root), "add", "pyproject.toml"])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.error("land: %s failed to stage dev-bumped pyproject.toml", final_id)
+        return Err(LandError.ReleaseBumpFailed)
+    applied = _apply_reported_bump(
+        root, final_id, new_version, pre_bump_version, pre_manifest_version
+    )
+    if applied.is_err:
+        return Err(applied.danger_err)
+    _log.info(
+        "land: %s auto dev-version bump applied and staged: %s -> %s",
+        final_id,
+        pre_bump_version,
+        new_version,
+    )
+    return Ok(new_version)
 
 
 # frob:ticket T-1760

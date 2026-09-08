@@ -94,6 +94,14 @@ class ReleaseError(ErrorSet):
     GitPushFailed = "git push failed"
     BuildFailed = "uv build failed"
     PublishFailed = "uv publish failed"
+    # frob:ticket T-4184
+    MajorVersionAckRequired = (
+        "the automatic per-land dev-version bump would cross into a new major "
+        "series with [tool.frob] dev_version_bump still on -- either set "
+        "[tool.frob] dev_version_bump = false for this release, or record "
+        "[tool.frob] dev_version_major_ack = <major> in pyproject.toml to "
+        "explicitly keep auto-bumping across the boundary"
+    )
 
 
 # frob:ticket T-1359
@@ -580,6 +588,115 @@ def satisfies(current: str, minimum: str) -> bool:
     return c >= m
 
 
+# frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
+# frob:ticket T-4184
+# frob:tests tests/test_release.py::test_dev_prerelease_and_final_sort_in_pep440_order
+# frob:tests tests/test_release.py::test_next_dev_version_starts_and_advances_a_cycle
+def next_dev_version(version: str) -> Result[str, ReleaseError]:
+    """The next automatic per-land PEP 440 development version after
+    `version` (T-4184: the counter this feature exists to advance,
+    closing the "a version that never moves cannot identify a build"
+    problem measured four times in one day). `version` with an existing
+    `.devN` suffix advances the counter in place (`X.Y.Z.devN ->
+    X.Y.Z.dev(N+1)`); a plain final release starts a new dev cycle ON TOP
+    OF the next patch (`X.Y.Z -> X.Y.(Z+1).dev1`), matching the ordering
+    `0.530.0 < 0.531.0.dev1 < 0.531.0.dev2 < ... < 0.531.0` the ticket's
+    own must-fire fixture requires. Uses the dev-release spelling PEP 440
+    actually defines (`.devN`), never a semver-style hyphen suffix -- that
+    parses as a POST-release under PEP 440 (see `_parse`'s own docstring)
+    and would sort AFTER the final release, the exact inverse of the
+    intent. `Err(BadVersion)` if `version` cannot be parsed, or is itself
+    a pre-release/post-release -- the per-land counter only ever advances
+    on top of a plain final release or an already-running dev cycle, it
+    is not defined for any other PEP 440 release kind this project does
+    not otherwise use."""
+    parsed = _parse(version)
+    if parsed is None:
+        return Err(ReleaseError.BadVersion)
+    if parsed.pre is not None or parsed.post is not None:
+        return Err(ReleaseError.BadVersion)
+    major, minor, patch = (tuple(parsed.release) + (0, 0, 0))[:3]
+    if parsed.dev is not None:
+        return Ok(f"{major}.{minor}.{patch}.dev{parsed.dev + 1}")
+    return Ok(f"{major}.{minor}.{patch + 1}.dev1")
+
+
+# frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
+# frob:ticket T-4184
+# frob:tests tests/test_release.py::test_dev_version_bump_enabled_defaults_true_and_reads_pyproject kind="unit"  # noqa: E501
+# frob:waive WIRE001 follow_up="T-4301" reason="deliberate public read-only \
+# introspection API for any consumer that wants to ask whether the toggle is on \
+# outside a land (the 'inherited by using frob' contract this ticket asks for) -- frob \
+# ticket land's own internal decision correctly calls the git-object-safe sibling \
+# reader in frob.tickets._land_release instead (see this function's own docstring); \
+# T-4301 wires this into a real 'frob release status' CLI consumer"
+def dev_version_bump_enabled(root: Path) -> bool:
+    """Whether `root`'s `pyproject.toml` `[tool.frob]` table has the
+    automatic per-land dev-version bump (T-4184) turned on -- read
+    directly off the file on disk, default `True` (the feature is core
+    functionality for every consumer, on by default; a release toggles it
+    off explicitly -- see this module's docs anchor for the scaffolded-
+    project default and the major-version interaction). Missing/
+    unparsable `pyproject.toml`, or a `[tool.frob]` table without the key
+    at all, both read as the default (`True`); only an explicit `false`
+    turns it off. Public read-only introspection API for any consumer
+    that wants to ask "is this on?" outside a land -- `frob ticket land`'s
+    OWN internal decision instead reads `[tool.frob]` from root's git
+    object at `pre_land_tip` (`frob.tickets._land_release._read_root_
+    tool_frob_table`), never this on-disk read, because the T-1805
+    field-scoped `pyproject.toml` reset can leave the on-disk copy
+    missing this table entirely mid-land (see that function's own
+    docstring)."""
+    table = _read_tool_frob_table(root)
+    return bool(table.get("dev_version_bump", True))
+
+
+# frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
+# frob:ticket T-4184
+# frob:tests tests/test_release.py::test_dev_version_major_ack_defaults_zero_and_reads_pyproject kind="unit"  # noqa: E501
+# frob:waive WIRE001 follow_up="T-4301" reason="same posture as \
+# dev_version_bump_enabled directly above -- deliberate public read-only introspection \
+# API, land's own internal refusal check uses the git-object-safe sibling reader \
+# instead; same follow-up wires both into 'frob release status'"
+def dev_version_major_ack(root: Path) -> int:
+    """The major version series `root`'s `pyproject.toml` `[tool.frob]`
+    table has explicitly acknowledged continuing to auto-bump dev builds
+    into (T-4184's major-version guard) -- `0` (nothing acknowledged) if
+    the key is absent, unparsable, or not an integer. A land whose
+    computed dev-version bump would cross into a major series greater
+    than this value refuses (`ReleaseError.MajorVersionAckRequired`)
+    instead of silently bumping across the boundary, per the owner's own
+    framing: an intention stated in prose is not enforcement, so keeping
+    the toggle on across a major bump requires this configuration value,
+    not a comment. Public read-only introspection API, same posture as
+    `dev_version_bump_enabled` -- `frob ticket land`'s own internal
+    refusal check reads this key from root's git object instead, for the
+    same field-scoped-reset reason documented on that function."""
+    table = _read_tool_frob_table(root)
+    ack = table.get("dev_version_major_ack", 0)
+    return ack if isinstance(ack, int) else 0
+
+
+def _read_tool_frob_table(root: Path) -> dict:
+    """Shared `pyproject.toml` `[tool.frob]` table reader for `dev_
+    version_bump_enabled`/`dev_version_major_ack` (T-4184) -- `{}` on any
+    missing file or parse failure, so both callers default open rather
+    than raising on a malformed `pyproject.toml` a land's own REL001
+    machinery would separately catch."""
+    import tomllib
+
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return {}
+    try:
+        with path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return {}
+    table = data.get("tool", {}).get("frob", {})
+    return table if isinstance(table, dict) else {}
+
+
 __all__ = [
     "BumpClass",
     "ReleaseError",
@@ -588,9 +705,12 @@ __all__ = [
     "bump_patch_version",
     "changelog_skeleton_entry",
     "current_version",
+    "dev_version_bump_enabled",
+    "dev_version_major_ack",
     "diff_class",
     "load_manifest",
     "manifest_path",
+    "next_dev_version",
     "next_patch_version",
     "required_version",
     "rewrite_pyproject_version",

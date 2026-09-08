@@ -15,9 +15,12 @@ from frob.release import (
     bump_patch_version,
     changelog_skeleton_entry,
     current_version,
+    dev_version_bump_enabled,
+    dev_version_major_ack,
     diff_class,
     load_manifest,
     manifest_path,
+    next_dev_version,
     next_patch_version,
     required_version,
     rewrite_pyproject_version,
@@ -1047,3 +1050,96 @@ class TestNoStrayFragmentForNonDoneTicket:
         assert not offenders, (
             f"stray changelog.d fragment(s) for non-DONE ticket(s): {offenders}"
         )
+
+
+# frob:ticket T-4184
+def test_next_dev_version_starts_and_advances_a_cycle():
+    """T-4184 must-fire fixture: a plain final release starts a new dev
+    cycle on top of the next patch (`.dev1`), and an existing dev build
+    advances its own counter in place -- the exact progression the
+    ticket's own worked example names."""
+    assert next_dev_version("0.530.0").danger_ok == "0.530.1.dev1"
+    assert next_dev_version("0.531.0.dev4").danger_ok == "0.531.0.dev5"
+
+
+# frob:ticket T-4184
+def test_next_dev_version_rejects_pre_and_post_release_input():
+    """The per-land counter only advances on top of a plain final release
+    or an already-running dev cycle -- a pre-release/post-release input is
+    `Err(BadVersion)`, never a guessed value."""
+    assert next_dev_version("1.2.3rc1").is_err
+    assert next_dev_version("1.2.3-1").is_err
+
+
+# frob:ticket T-4184
+def test_dev_version_bump_ordering_matches_worked_example():
+    """T-4184's own worked example, verified by ORDERING (T-4270's
+    lesson, not by round-tripping a string): the dev build sorts strictly
+    between the final release it followed and the one it precedes."""
+    from packaging.version import Version
+
+    ordered = sorted(
+        ["0.530.0", "0.531.0.dev1", "0.531.0.dev4", "0.531.0.dev5", "0.531.0"],
+        key=Version,
+    )
+    assert ordered == [
+        "0.530.0",
+        "0.531.0.dev1",
+        "0.531.0.dev4",
+        "0.531.0.dev5",
+        "0.531.0",
+    ]
+
+
+# frob:ticket T-4184
+def test_dev_version_bump_enabled_defaults_true_and_reads_pyproject(tmp_path):
+    """`dev_version_bump_enabled` defaults on (core functionality, not an
+    opt-in convenience) for a repo with no `[tool.frob]` table at all, and
+    reads an explicit `false` when the toggle is set (ACCEPTANCE [2])."""
+    assert dev_version_bump_enabled(tmp_path) is True
+
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nversion = "0.1.0"\n\n[tool.frob]\ndev_version_bump = false\n',
+        encoding="utf-8",
+    )
+    assert dev_version_bump_enabled(tmp_path) is False
+
+
+# frob:ticket T-4184
+def test_dev_version_major_ack_defaults_zero_and_reads_pyproject(tmp_path):
+    """`dev_version_major_ack` defaults to `0` (nothing acknowledged) and
+    reads the configured value once set -- the acknowledgement this
+    ticket requires to be a real configuration value, never a prose
+    intention."""
+    assert dev_version_major_ack(tmp_path) == 0
+
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nversion = "0.1.0"\n\n[tool.frob]\ndev_version_major_ack = 2\n',
+        encoding="utf-8",
+    )
+    assert dev_version_major_ack(tmp_path) == 2
+
+
+# frob:ticket T-4184
+def test_rel001_neither_satisfied_nor_spuriously_violated_by_dev_suffix():
+    """T-4184 design point 3: a dev-suffixed build is orthogonal to
+    REL001 -- when no real API-driven bump is required, a dev build ahead
+    of the manifest version still satisfies it (no spurious violation);
+    when a real bump IS required, a dev build that has not incorporated
+    that bump correctly does NOT satisfy it (REL001 still fires, exactly
+    as it should for an unbumped API change -- the dev counter never
+    silences a genuine requirement)."""
+    # No bump required (BumpClass.NONE): required_version returns the
+    # manifest's own version unchanged, and a dev build already ahead of
+    # it (the per-land counter having advanced past the last stamp)
+    # satisfies that minimum -- no spurious REL001 violation.
+    no_bump_required = required_version("0.530.0", BumpClass.NONE)
+    assert no_bump_required.danger_ok == "0.530.0"
+    assert satisfies("0.530.1.dev1", no_bump_required.danger_ok)
+
+    # A real MINOR bump required (an additive public-API change): a dev
+    # build that has NOT incorporated that bump does not satisfy the
+    # requirement -- REL001 correctly still fires.
+    minor_required = required_version("0.530.0", BumpClass.MINOR)
+    assert minor_required.danger_ok == "0.531.0"
+    assert not satisfies("0.530.1.dev1", minor_required.danger_ok)

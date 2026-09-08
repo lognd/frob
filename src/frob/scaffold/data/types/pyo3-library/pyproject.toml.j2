@@ -34,3 +34,16 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
+
+[tool.frob]
+# T-4184: automatic per-land PEP 440 dev-version bump, on by default --
+# every land writes a X.Y.(Z+1).devN version with no manual step, so two
+# builds never silently report the same version for different code. Set
+# to false before cutting a real release (a dev suffix has no place in a
+# published final version), then back to true afterward. The FIRST time
+# a land's computed bump would cross into a new major version series
+# with this still on, it refuses until you add
+# dev_version_major_ack = <major> below to explicitly keep it on across
+# that boundary -- a major version bump is a real compatibility event,
+# not something to sail through silently.
+dev_version_bump = true

@@ -115,7 +115,13 @@ class TestLand:
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\nversion = "0.1.0"\n\n'
             "[project.optional-dependencies]\n"
-            'smt = ["z3-solver>=4.13"]\n',
+            'smt = ["z3-solver>=4.13"]\n\n'
+            # T-4184: this test's own assertion below is about the
+            # T-1805 field-scoped-reset guarantee, not the newer
+            # (default-on) per-land dev-version counter -- turn that
+            # unrelated toggle off so the version field really stays at
+            # its seeded value.
+            "[tool.frob]\ndev_version_bump = false\n",
             encoding="utf-8",
         )
         _commit_all(repo, "seed pyproject.toml")

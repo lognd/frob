@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.530.0"
+version = "0.530.1.dev1"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -366,3 +366,14 @@ sigterm = false
 
 [tool.coverage.paths]
 source = ["src/frob", "*/src/frob"]
+
+[tool.frob]
+# T-4184: automatic per-land PEP 440 dev-version bump ([tool.frob]
+# dev_version_bump) -- OFF here because the imminent publish is a plain
+# final release at a bumped version (owner decision), and the toggle
+# exists precisely so a release can turn this off cleanly. Re-enable
+# after that cut lands. See docs/modules/release.md#per-land-dev-version-
+# bump-t-4184 for the major-version-boundary interaction
+# (dev_version_major_ack) this repo will need the first time it crosses
+# a major version with the toggle back on.
+dev_version_bump = false

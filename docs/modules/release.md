@@ -321,6 +321,83 @@ crash-safe `_atomic_write_release` primitive as every other write in this
 module (T-1359, see Public API above) -- `Err(ReleaseError.WriteFailed)`
 on the should-never-happen I/O failure path, original manifest untouched.
 
+## Per-land dev-version bump (T-4184)
+
+A version that never moves cannot identify a build. Before this feature,
+`pyproject.toml`'s version stayed unchanged across hundreds of commits, so
+two builds reporting the same version could accept and reject completely
+different code -- four consumer reports in one day turned out to be
+version skew rather than live defects. This closes that gap: **core
+functionality inherited by any project that uses frob**, not a
+frob-repo-local convenience.
+
+**What it does.** Every `frob ticket land` writes the next PEP 440
+development version straight into `pyproject.toml`, atomically, in the
+same commit as the land -- no agent thinks about it, ever:
+
+```
+0.530.0       <  0.531.0.dev1     a dev build of the next release
+0.531.0.dev4  <  0.531.0.dev5     the counter advances
+0.531.0.dev4  <  0.531.0          and it vanishes at the stable release
+```
+
+A plain final release starts a new dev cycle on top of the next patch
+(`X.Y.Z -> X.Y.(Z+1).dev1`, `frob.release.next_dev_version`); an existing
+dev build advances its own counter in place (`.devN -> .dev(N+1)`). This
+uses PEP 440's own dev-release spelling, never a semver-style hyphen
+suffix -- a trailing hyphen-number parses as a POST-release under PEP 440
+(see `_parse`'s docstring) and would sort AFTER the final version, the
+exact inverse of the intent.
+
+**The toggle.** `[tool.frob] dev_version_bump` in `pyproject.toml`, `true`
+by default for a scaffolded project. Turn it off before cutting a real
+release -- a dev suffix has no place in a published final version --
+and back on afterward:
+
+```toml
+[tool.frob]
+dev_version_bump = false
+```
+
+**The major-version guard.** The FIRST time a land's computed dev bump
+would cross into a new major version series with the toggle still on, it
+refuses (`ReleaseError.MajorVersionAckRequired`) rather than silently
+bumping across the boundary -- a major version is a real compatibility
+event, not something to sail through unnoticed. Continuing requires a
+recorded configuration value, never a prose comment:
+
+```toml
+[tool.frob]
+dev_version_major_ack = 2   # acknowledges auto-bumping across the 1.x -> 2.x boundary
+```
+
+**Where it runs, and where it does not.** `frob.tickets._land_release.
+_apply_dev_version_bump` applies the bump ONLY when the land's own
+`bump_version` callback reports `Ok(None)` (no explicit release-cut bump
+this land, the common case since T-2462 deferred REL001's own pyproject
+write to an explicit release cut) -- an explicit release-cut bump always
+wins outright, since a land that already sets the real released version
+has no need for a dev suffix on top of it. It reads `[tool.frob]` from
+root's OWN git object at the land's `pre_land_tip`
+(`_read_root_tool_frob_table`), never the squash-carried working-tree
+copy: a ticket's own `pyproject.toml` edit need not repeat every
+unrelated `[tool.frob]` key, and the T-1805 field-scoped reset (see
+docs/modules/tickets-landing.md) only ever restores the `version = `
+line, so a naive on-disk read could silently lose the toggle the moment
+any ticket touches `pyproject.toml` at all. `frob.release.
+dev_version_bump_enabled`/`dev_version_major_ack` are the equivalent
+public, on-disk-reading functions for any OTHER consumer that wants to
+ask "is this on?" outside a land.
+
+**REL001 is orthogonal.** REL001 demands a bump when the public API
+changes; the dev counter is about build identity. A dev build already
+ahead of the manifest's version still satisfies a bump class of `NONE`
+(no spurious violation); a dev build that has not incorporated a real
+required bump correctly does NOT satisfy it (REL001 still fires exactly
+as it should for an unbumped API change -- the dev counter never
+silences a genuine requirement). See
+`tests/test_release.py::test_rel001_neither_satisfied_nor_spuriously_violated_by_dev_suffix`.
+
 ## Design notes
 
 - **Manifest is tracked text; the graph is derived.** The baseline lives in

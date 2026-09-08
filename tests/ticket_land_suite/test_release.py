@@ -551,8 +551,14 @@ class TestRealCallbackStaleWorktreeManifest:
         # frob:tests tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest.test_stale_worktree_manifest_still_lands_main_plus_one  # noqa: E501
         from frob.app import ticket_runner
 
+        # T-4184: dev_version_bump defaults ON, and this test's own
+        # assertion (`release_bumped_to is None`) is specifically about
+        # the T-2462 deferred-REL001-bump contract, not the newer
+        # per-land dev counter -- turn the unrelated toggle off so this
+        # test keeps proving what it always proved.
         (repo / "pyproject.toml").write_text(
-            '[project]\nname = "frob"\nversion = "0.183.0"\n'
+            '[project]\nname = "frob"\nversion = "0.183.0"\n\n'
+            "[tool.frob]\ndev_version_bump = false\n"
         )
         (repo / "CHANGELOG.md").write_text("# Changelog\n\n## [0.183.0] - unreleased\n")
         (repo / ".frob-release.json").write_text('{"version": "0.183.0", "api": {}}\n')
@@ -1032,3 +1038,136 @@ class TestRebuildNatives:
         result = land(repo, tid, wt, dry_run=False, rebuild_natives=lambda root: False)
         assert result.is_ok, result.err
         assert result.danger_ok.natives_rebuilt is False
+
+
+# frob:ticket T-4184
+class TestDevVersionBump:
+    """T-4184: the automatic per-land PEP 440 dev-version counter,
+    applied by `_apply_dev_version_bump` when the `bump_version` callback
+    reports `Ok(None)` (the common case since T-2462 deferred REL001's own
+    pyproject write) and `[tool.frob] dev_version_bump` is on."""
+
+    @staticmethod
+    def _no_explicit_bump(root: Path, ticket: Any, final_id: str) -> Any:
+        return Ok(None)
+
+    def _land_ticket(self, repo: Path, wt: Path, name: str) -> str:
+        created = new_ticket(wt, _spec(name, scope=(f"src/{name}.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / f"{name}.py").write_text(f"# {name}\n")
+        _commit_all(wt, f"add {name}.py")
+        return tid
+
+    def test_two_lands_in_sequence_produce_distinguishable_versions(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in\
+        # _sequence_produce_distinguishable_versions
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.530.0"\n', encoding="utf-8"
+        )
+        _commit_all(repo, "seed pyproject")
+
+        wt1 = repo.parent / "wt1"
+        _run(["git", "worktree", "add", "-b", "feature-dev-1", str(wt1)], repo)
+        tid1 = self._land_ticket(repo, wt1, "one")
+        result1 = land(
+            repo, tid1, wt1, dry_run=False, bump_version=self._no_explicit_bump
+        )
+        assert result1.is_ok, result1.err
+        assert result1.danger_ok.release_bumped_to == "0.530.1.dev1"
+
+        # `land()`'s in-process evidence re-verify leaves FROB_WORKTREE
+        # pinned to wt1 for the rest of this process (T-3094) -- clear it
+        # before working the second worktree, mirroring
+        # `_t2114_concurrent_new_ticket`'s own precedent above.
+        import os
+
+        os.environ.pop("FROB_WORKTREE", None)
+        os.environ.pop("FROB_AGENT", None)
+
+        wt2 = repo.parent / "wt2"
+        _run(["git", "worktree", "add", "-b", "feature-dev-2", str(wt2)], repo)
+        tid2 = self._land_ticket(repo, wt2, "two")
+        result2 = land(
+            repo, tid2, wt2, dry_run=False, bump_version=self._no_explicit_bump
+        )
+        assert result2.is_ok, result2.err
+        assert result2.danger_ok.release_bumped_to == "0.530.1.dev2"
+        assert (
+            result2.danger_ok.release_bumped_to != result1.danger_ok.release_bumped_to
+        )
+
+    def test_toggle_off_leaves_version_untouched(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_l\
+        # eaves_version_untouched
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.530.0"\n\n'
+            "[tool.frob]\ndev_version_bump = false\n",
+            encoding="utf-8",
+        )
+        _commit_all(repo, "seed pyproject with toggle off")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-dev-off", str(wt)], repo)
+        tid = self._land_ticket(repo, wt, "off")
+        result = land(repo, tid, wt, dry_run=False, bump_version=self._no_explicit_bump)
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to is None
+        assert 'version = "0.530.0"' in (repo / "pyproject.toml").read_text(
+            encoding="utf-8"
+        )
+
+    def test_major_bump_refuses_without_ack(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_r\
+        # efuses_without_ack
+        """T-4184 acceptance [3]: root's pre-land pyproject.toml is already
+        at a NEW major series (e.g. a manual release cut just bumped
+        1.x.y -> 2.0.0) with the dev-bump toggle still on and no ack
+        recorded -- the very first land after that crossing must refuse,
+        not silently start auto-bumping dev builds across the boundary."""
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "2.0.0"\n', encoding="utf-8"
+        )
+        _commit_all(repo, "root just crossed into major series 2")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-dev-major", str(wt)], repo)
+        tid = self._land_ticket(repo, wt, "major")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land(repo, tid, wt, dry_run=False, bump_version=self._no_explicit_bump)
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert (repo / "pyproject.toml").read_text().count('version = "2.0.0"') == 1
+
+    def test_major_bump_proceeds_once_acknowledged(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_p\
+        # roceeds_once_acknowledged
+        """The same crossing succeeds once `[tool.frob]
+        dev_version_major_ack` names the new major explicitly -- a
+        configuration VALUE, not a prose intention, per the ticket's own
+        framing of what "acknowledgement" must mean."""
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "2.0.0"\n\n'
+            "[tool.frob]\ndev_version_major_ack = 2\n",
+            encoding="utf-8",
+        )
+        _commit_all(repo, "root at major series 2, acknowledged")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-dev-major-ack", str(wt)], repo)
+        tid = self._land_ticket(repo, wt, "majorack")
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=self._no_explicit_bump)
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to == "2.0.1.dev1"
