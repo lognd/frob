@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sysconfig
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,22 @@ pytestmark = pytest.mark.slow
 
 def _uv_available() -> bool:
     return shutil.which("uv") is not None
+
+
+def _venv_console_script(venv_dir: Path, name: str) -> Path:
+    """T-4234: the console-script `name` inside `venv_dir`, derived from
+    the CURRENT interpreter's own install scheme rather than a
+    hand-assembled posix `bin/` (a virtualenv places its scripts in
+    `Scripts/` on Windows, with an `.exe` suffix) -- `sysconfig.get_path`
+    with an explicit `base` override reports the scripts directory for
+    the scheme this OS actually uses without a hand-written platform
+    branch, and `sysconfig.get_config_var("EXE")` gives the matching
+    executable suffix (`.exe` on Windows, `""` elsewhere). This works
+    because the scaffolded venv is always created on this SAME OS, so
+    the running interpreter's own scheme is the venv's scheme too."""
+    scripts_dir = Path(sysconfig.get_path("scripts", vars={"base": str(venv_dir)}))
+    suffix = sysconfig.get_config_var("EXE") or ""
+    return scripts_dir / f"{name}{suffix}"
 
 
 def _subprocess_env() -> dict[str, str]:
@@ -300,7 +317,7 @@ def test_hyphenated_name_scaffold_installs_and_console_script_runs(
 
     # The console-script NAME stays hyphenated (PyPI/console-script
     # convention); only the import path underneath it is underscored.
-    script = project_dir / ".venv" / "bin" / "my-test-tool"
+    script = _venv_console_script(project_dir / ".venv", "my-test-tool")
     assert script.is_file(), "console-script entry point was not installed"
     run = subprocess.run([str(script), "--help"], capture_output=True, text=True)
     assert run.returncode == 0, run.stdout + run.stderr

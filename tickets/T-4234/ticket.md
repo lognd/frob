@@ -2,7 +2,7 @@
 id: T-4234
 title: the scaffold end-to-end test hardcodes the posix virtualenv script directory,
   so it cannot pass on Windows
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -20,17 +20,64 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold
+  reason: 'SCOPE002 closure: test_scaffold_dx.py''s end-to-end tests already cover
+    render_project/list_project_types pre-dating T-4234; declaring the covered files
+    closes the scope graph per disposition 1'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: 'SCOPE002 closure: test_scaffold_dx.py''s end-to-end tests already cover
+    render_project/list_project_types pre-dating T-4234; declaring the covered files
+    closes the scope graph per disposition 1'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/scaffold
+  reason: 'revert: cascades into 73 more scope gaps (docs/commands/scaffold.md, sibling
+    scaffold modules) -- same over-broad-glob trap as T-4155''s app.md; the underlying
+    SCOPE002 finding predates T-4234''s diff (the test file already covered render_project
+    before this change) and is WARN-severity per docs/modules/gates.md; not chasing
+    to zero'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/scaffold/project.py
+  reason: 'revert: cascades into 73 more scope gaps (docs/commands/scaffold.md, sibling
+    scaffold modules) -- same over-broad-glob trap as T-4155''s app.md; the underlying
+    SCOPE002 finding predates T-4234''s diff (the test file already covered render_project
+    before this change) and is WARN-severity per docs/modules/gates.md; not chasing
+    to zero'
+  actor: logan
+  at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'waive BUG002: defect is Windows-only and unreproducible via the automatic
+    pre/post-commit check on this Linux host; real repro measured manually on the
+    Windows mirror'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 3488
+  new_length: 4443
+evidence:
+- tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs
 designated_repro_test: null
 acceptance:
 - text: given the scaffold end-to-end test running on any supported platform, when
     it looks for the generated console script, then it finds and runs it
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs
 - text: given the posix platform, when the test runs, then its behaviour is unchanged
     from today
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs
 - text: given the console-script path, when it is computed, then it is derived from
     the environment's install scheme rather than a hardcoded directory name
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs
 threat: null
 component: null
 anchor: false
@@ -98,3 +145,5 @@ ACCEPTANCE
 - No weakening of the end-to-end verification itself; it stays a real install and
   a real invocation.
 - All three fixtures committed.
+
+frob:waive BUG002 reason="the defect only reproduces on Windows (a hardcoded posix .venv/bin path can never exist there) so BUG002's own pre/post-commit repro, run on this Linux host, cannot show the designated test failing at the parent commit: on Linux, the parent commit's hardcoded bin/ path was already correct (posix venvs do use bin/), so old test + old code passed there too. The real repro was measured manually on the Windows mirror per this ticket's own MEASURE ON REAL WINDOWS mandate: at parent commit 6f624e79f, test_hyphenated_name_scaffold_installs_and_console_script_runs FAILED on Windows with AssertionError: console-script entry point was not installed (looked for .venv/bin/my-test-tool; actual layout .venv/Scripts/my-test-tool.exe); at the fix commit, the same test PASSES on both linux and Windows, confirmed by running the full pytest node on the Windows mirror via winrun both before and after the test_scaffold_dx.py change."
