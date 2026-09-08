@@ -16,7 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/__init__.py
 - src/frob/testing/_collect.py
-- docs/guides/install.md
 - docs/modules/testing.md
 - tests/test_testing.py
 - tests/test_testing_collect.py
@@ -80,6 +79,15 @@ scope_changes:
     fix location): these are the file''s pre-existing frob:doc/frob:tests targets
     and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
     the write-lease footprint of the one file the fix lives in'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/guides/install.md
+  reason: 'revert: pulled in a huge transitive doc-anchor closure across unrelated
+    modules (doctor.py, derived_state.py, daemon_proxy.py, ...) -- install.md is a
+    shared install guide, not scoped to this fix; python_collection_failure_detail''s
+    install.md anchor is a pre-existing binding this ticket does not touch, handled
+    separately'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
