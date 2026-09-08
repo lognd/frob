@@ -533,6 +533,7 @@ class TestMergeDriverViaRealGit:
 
 
 # frob:ticket T-3297
+# frob:ticket T-4201
 class TestMergeDriverContentShapeDispatch:
     """T-3297: `_merge_driver` is now ALSO registered (via `.gitattributes`,
     see that file's own T-3297 note) for `tickets/<id>/ticket.md` (v2
@@ -622,6 +623,54 @@ class TestMergeDriverContentShapeDispatch:
         resolved = _parse_ticket_text(result_text, "merged")
         assert resolved.is_ok
         assert resolved.danger_ok.state == TicketState.DROPPED
+
+    # frob:ticket T-4201
+    # frob:tests \
+    # tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_singl\
+    # e_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence
+    def test_single_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4201's confirmed incident: `main`'s copy of `ticket.md` is a
+        stale mirror snapshot (a `GENERIC_COMMIT_MIRRORED` verb like
+        `scope`/`accept` copied the whole ticket directory onto `main` at
+        some earlier point, `base`) carrying a since-invalidated evidence
+        id, while the worktree went on to drop that id and record a real
+        one. `theirs` (main) made NO edit since `base` at all -- so the
+        base-aware `_resolve_divergence` must let `ours` (the side that
+        actually changed) win OUTRIGHT, never fall through to `_newer`'s
+        unconditional evidence UNION, which would resurrect the dropped,
+        now-unresolvable id alongside the real one."""
+        from frob.tickets._store import _parse_ticket_text, _serialize_ticket
+
+        root = tmp_path / "root"
+        root.mkdir()
+        created = new_ticket(root, _spec("Evidence cleanup"))
+        assert created.is_ok
+        base_ticket = created.danger_ok.model_copy(
+            update={"evidence": ("tests/test_stale.py::test_old_now_deleted",)}
+        )
+        # `ours` (worktree): dropped the stale id, recorded a real one --
+        # a genuine edit since base.
+        ours_ticket = base_ticket.model_copy(
+            update={"evidence": ("tests/test_real.py::test_new",)}
+        )
+
+        base = tmp_path / "base.md"
+        ours = tmp_path / "ours.md"
+        theirs = tmp_path / "theirs.md"
+        base.write_text(_serialize_ticket(base_ticket))
+        ours.write_text(_serialize_ticket(ours_ticket))
+        theirs.write_text(_serialize_ticket(base_ticket))  # main: untouched mirror
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        resolved = _parse_ticket_text(ours.read_text(), "merged")
+        assert resolved.is_ok
+        assert resolved.danger_ok.evidence == ("tests/test_real.py::test_new",), (
+            "the untouched mirror side's stale evidence id must not be "
+            f"resurrected by union -- got {resolved.danger_ok.evidence!r}"
+        )
 
     # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_coverage_lock_shaped_conflict_merges_elementwise_max  # noqa: E501
     def test_coverage_lock_shaped_conflict_merges_elementwise_max(

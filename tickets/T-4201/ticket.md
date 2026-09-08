@@ -2,7 +2,7 @@
 id: T-4201
 title: 'land: make ticket.md mirror commits merge-safe so accept/scope transitions
   don''t conflict with the worktree''s own file'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -28,7 +28,9 @@ scope_changes:
     in the already-declared src/frob/app/ticket_runner scope
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch::test_single_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence
+designated_repro_test: tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch::test_single_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence
 threat: null
 component: null
 anchor: false

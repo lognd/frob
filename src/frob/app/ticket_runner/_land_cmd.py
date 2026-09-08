@@ -6299,7 +6299,52 @@ def _require_merge_driver_args(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-4201
+# frob:tests \
+# tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_single_ti\
+# cket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence
+def _merge_single_ticket_file(
+    ours_text: str, theirs_text: str, base_text: str | None, ours_path: Path
+) -> bool:
+    """T-3297's single-`ticket.md`-shape dispatch step, split out of
+    `_merge_driver` for ARCH001 (T-4201): resolves via `_resolve_
+    divergence` (base-aware), not `_newer` directly -- a side unchanged
+    since `base` (a mirror snapshot sitting untouched on main while the
+    worktree moves on through evidence/close) must win outright rather
+    than have its stale content UNIONED back in by `_newer` (D-09's
+    evidence union is for a genuine two-sided divergence, not a no-op
+    side), which used to resurrect a deliberately-dropped, now-
+    unresolvable evidence id (the confirmed incident this ticket closes).
+    Same guarantee the whole-ledger splice path already gives via this
+    same helper. Returns whether both sides parsed as a single ticket
+    file (`ours_path` is overwritten with the resolved winner iff so)."""
+    from frob.tickets._land_ledger_merge import _resolve_divergence
+    from frob.tickets._store import _parse_ticket_text, _serialize_ticket
+
+    ours_ticket = _parse_ticket_text(ours_text, "ours")
+    theirs_ticket = _parse_ticket_text(theirs_text, "theirs")
+    if not (ours_ticket.is_ok and theirs_ticket.is_ok):
+        return False
+    base_ticket = None
+    if base_text is not None:
+        parsed_base = _parse_ticket_text(base_text, "base")
+        if parsed_base.is_ok:
+            base_ticket = parsed_base.danger_ok
+    winner = _resolve_divergence(
+        ours_ticket.danger_ok, theirs_ticket.danger_ok, base_ticket
+    )
+    ours_path.write_text(_serialize_ticket(winner), encoding="utf-8")
+    _log.info(
+        "ticket merge-driver: resolved a single-ticket-file conflict by "
+        "state precedence (winner=%s, T-3297/T-4201) -- never a textual "
+        "merge",
+        winner.state.value,
+    )
+    return True
+
+
 # frob:ticket T-0323
+# frob:ticket T-4201
 def _merge_driver(root: Path, cfg: AppConfig) -> None:
     """`frob ticket merge-driver %O %A %B`: git's merge-driver entry point
     for `tickets.md` (docs/modules/tickets-merge-driver.md#git-merge-driver). Reads the
@@ -6365,8 +6410,6 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
          `tickets.md` shape this driver originally targeted."""
     from frob.tickets import splice_ledger
     from frob.tickets._land_git_ops import _merged_lock_doc
-    from frob.tickets._land_ledger_merge import _newer
-    from frob.tickets._store import _parse_ticket_text, _serialize_ticket
 
     _require_merge_driver_args(cfg)
     assert cfg.ticket_merge_ours is not None  # narrows for the type checker
@@ -6405,16 +6448,7 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
         return
 
     # T-3297 dispatch step 2: a single tickets/<id>/ticket.md's shape.
-    ours_ticket = _parse_ticket_text(ours_text, "ours")
-    theirs_ticket = _parse_ticket_text(theirs_text, "theirs")
-    if ours_ticket.is_ok and theirs_ticket.is_ok:
-        winner = _newer(ours_ticket.danger_ok, theirs_ticket.danger_ok)
-        ours_path.write_text(_serialize_ticket(winner), encoding="utf-8")
-        _log.info(
-            "ticket merge-driver: resolved a single-ticket-file conflict "
-            "by state precedence (winner=%s, T-3297) -- never a textual merge",
-            winner.state.value,
-        )
+    if _merge_single_ticket_file(ours_text, theirs_text, base_text, ours_path):
         return
 
     # T-3297 dispatch step 3 (fallback): the legacy whole-ledger shape.
