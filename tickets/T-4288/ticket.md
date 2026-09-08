@@ -20,6 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_applied_for_docs_ticket
+- tests/unit/test_app_runners_batch7.py::TestTicketArchive::test_archives_done_ticket
+- tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_silent_is_refused
+- tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_failure_logs_error
 designated_repro_test: null
 threat: null
 component: null
