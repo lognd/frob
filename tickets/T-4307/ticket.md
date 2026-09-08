@@ -1,7 +1,7 @@
 ---
 id: T-4307
 title: Land-format gate belongs to no stage group so --only cannot reach it
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
