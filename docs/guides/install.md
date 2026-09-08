@@ -25,6 +25,12 @@ environment where the compiled extensions are stripped after install) still
 installs and runs frob in pure-Python mode; see "Degrading without the
 natives" below.
 
+Using frob as a LIBRARY (importing `frob.*` from another project's own
+code, rather than only running its CLI) is a separate concern from
+installing the tool -- see `docs/guides/python-api.md` for the advertised
+public API surface and the current caveat on reaching it from a `uv tool
+install` (T-4150).
+
 ## Standard install (natives included)
 
 ```bash

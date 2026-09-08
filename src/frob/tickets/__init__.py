@@ -203,7 +203,7 @@ from frob.tickets._worktree_guard import agent_env_exports, enforce_worktree_lea
 # T-3350: sweep_worktrees's real home (frob.tickets._leases no longer
 # re-exports it -- see frob.tickets._worktree_sweep's module docstring).
 from frob.tickets._worktree_sweep import sweep_worktrees
-from frob.tickets.clipboard import clipboard_has_image
+from frob.tickets.clipboard import ClipboardError, clipboard_has_image
 
 _log = get_logger(__name__)
 

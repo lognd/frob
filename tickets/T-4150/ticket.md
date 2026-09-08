@@ -2,7 +2,7 @@
 id: T-4150
 title: 'frob exports a public Python API no consumer can import: installed as an isolated
   tool, with no published release carrying the current API'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -97,14 +97,21 @@ body_changes:
   at: '2026-09-08'
   old_length: 4715
   new_length: 6483
-designated_repro_test: null
+evidence:
+- tests/system/test_public_api_from_wheel.py::test_advertised_public_api_imports_from_a_built_wheel
+- tests/system/test_public_api_from_wheel.py::test_discover_public_api_finds_the_top_level_frob_package
+- tests/system/test_public_api_from_wheel.py::test_advertised_private_module_paths_are_not_in_any_all
+designated_repro_test: tests/system/test_public_api_from_wheel.py::test_advertised_public_api_imports_from_a_built_wheel
 acceptance:
 - text: given a wheel built from this repository installed alone in an environment,
     when the advertised public names are imported, then the import succeeds
-  evidence: []
+  evidence:
+  - tests/system/test_public_api_from_wheel.py::test_advertised_public_api_imports_from_a_built_wheel
+  - tests/system/test_public_api_from_wheel.py::test_discover_public_api_finds_the_top_level_frob_package
 - text: given a private module path, when a consumer attempts to import it as public
     API, then the advertised-surface fixture does not cover it
-  evidence: []
+  evidence:
+  - tests/system/test_public_api_from_wheel.py::test_advertised_private_module_paths_are_not_in_any_all
 acceptance_amendments:
 - op: remove
   index: 3

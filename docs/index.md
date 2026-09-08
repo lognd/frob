@@ -16,6 +16,9 @@ real.
 
 - `docs/guides/install.md` -- the bare, full (native-extension), and dev
   install paths, and why the standalone tool needs --with for the crates.
+- `docs/guides/python-api.md` -- the advertised public Python API, one
+  section per package, generated from each package's own `__all__` and
+  verified importable from a built wheel (T-4150).
 - `docs/guides/quickstart.md` -- a real end-to-end walkthrough: build the graph,
   file a ticket, annotate code, hit a violation, fix it, ack, test, close.
 - `docs/guides/command-reference.md` -- the seven verb groups (explore,

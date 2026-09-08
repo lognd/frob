@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 299,
-      "reason": "T-4171: adds real (not mocked) `uv run`/`uv sync` subprocess spawns to tests/unit/test_check.py (TestProjectImportArgv/TestProjectToolSpawnNonMutation, proving project_tool_argv/project_import_argv's non-mutation guarantee empirically) and tests/unit/test_flag_coverage_gate.py (_sync_fixture_project, syncing each throwaway fixture project so the flag-coverage gate's importing resolver spawn has an already-present environment to import pydantic/cattrs from) -- bumping the ceiling to the current measured count, 297 -> 299, two files gaining new via-list entries.",
-      "ticket": "T-4171"
+      "accepted_count": 300,
+      "reason": "T-4150: adds tests/system/test_public_api_from_wheel.py to the exec via-list -- real `uv build`/`uvx maturin build`/`uv venv`/`uv pip install` subprocess spawns building frob-core/strata-core/frob wheels and installing them into a clean venv, proving the advertised public API imports from a built artifact rather than the source tree. Bumping the ceiling 299 -> 300, one new site.",
+      "ticket": "T-4150"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 223,
-      "reason": "T-3922: adds tests/test_ci_workflow_actions_pinned.py to the fs.read via-list (Path.read_text() on ci.yml/release.yml for the SHA-pin repro test) -- bumping the ceiling to the current measured count, 222 -> 223, one real new site.",
-      "ticket": "T-3922"
+      "accepted_count": 224,
+      "reason": "T-4150: adds tests/system/test_public_api_from_wheel.py to the fs.read via-list (parsing every src/frob/**/__init__.py to collect each package's real __all__, and reading each built wheel's install/probe-script output) -- bumping the ceiling 223 -> 224, one new site.",
+      "ticket": "T-4150"
     },
     "testsuite::fs.write": {
-      "accepted_count": 515,
-      "reason": "T-4279: adds tests/unit/test_graph_stat_trust_margin.py to the fs.write via-list -- its probe-loop tests write real files under tmp_path to exercise the real mtime-granularity measurement, bumping the ceiling 514 -> 515, one real new site.",
-      "ticket": "T-4279"
+      "accepted_count": 516,
+      "reason": "T-4150: adds tests/system/test_public_api_from_wheel.py to the fs.write via-list (writing the generated import-probe script and building wheels into tmp_path) -- bumping the ceiling 515 -> 516, one new site.",
+      "ticket": "T-4150"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
