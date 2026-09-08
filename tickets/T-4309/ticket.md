@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/__init__.py
 - tests/unit/test_check_measurement.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: tests/unit/test_check_measurement.py
   reason: 'T-4309: covering test for the UNRES-not-FAIL fix in check/__init__.py''s
     as_text'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/commands/check.md
+  reason: 'T-4309: document the new UNRES-for-silent-nonzero-exit rendering path'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
