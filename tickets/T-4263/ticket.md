@@ -2,7 +2,7 @@
 id: T-4263
 title: split the release upload job per distribution so each new pypi project can
   register its own pending trusted publisher
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -16,22 +16,43 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/release.yml
+- tests/unit/test_release_workflow_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_release_workflow_gate.py
+  reason: splitting upload into per-distribution jobs changes the job graph the existing
+    gate test asserts on; must update in the same change or it goes red
+  actor: logan
+  at: '2026-09-07'
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_upload_job_no_longer_exists_as_a_single_job
+- tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_kernel_upload_jobs_have_their_own_distinct_environments
+- tests/unit/test_release_workflow_gate.py::TestUploadSplitPerDistribution::test_application_upload_needs_both_kernel_uploads
+- tests/unit/test_release_workflow_gate.py::TestUploadSplitPerDistribution::test_kernel_upload_jobs_do_not_depend_on_the_application
+- tests/unit/test_release_workflow_gate.py::TestApprovalGateDecisionIsRecorded::test_workflow_records_which_distributions_require_a_reviewer
+- tests/unit/test_release_workflow_gate.py::TestApprovalGateDecisionIsRecorded::test_only_application_environment_is_the_pre_existing_protected_one
 designated_repro_test: null
 acceptance:
 - text: given three distributions that do not yet exist on the index, when their pending
     trusted publishers are registered, then each claims a distinct configuration and
     none is refused as a duplicate
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_upload_job_no_longer_exists_as_a_single_job
+  - tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_kernel_upload_jobs_have_their_own_distinct_environments
 - text: given the split upload jobs, when either kernel distribution fails to publish,
     then the application distribution does not publish at all
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestUploadSplitPerDistribution::test_application_upload_needs_both_kernel_uploads
+  - tests/unit/test_release_workflow_gate.py::TestUploadSplitPerDistribution::test_kernel_upload_jobs_do_not_depend_on_the_application
 - text: given the approval gates, when the split lands, then the decision about which
     distributions require a reviewer is recorded in the workflow itself
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestApprovalGateDecisionIsRecorded::test_workflow_records_which_distributions_require_a_reviewer
+  - tests/unit/test_release_workflow_gate.py::TestApprovalGateDecisionIsRecorded::test_only_application_environment_is_the_pre_existing_protected_one
 threat: null
 component: null
 anchor: false

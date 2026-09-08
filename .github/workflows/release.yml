@@ -230,58 +230,102 @@ jobs:
             --wheel "$WHEEL" \
             --core-wheels-dir smoke-dist/cores
 
-  # T-3011: the ONLY job that can reach PyPI. Gated five separate ways
-  # (T-3251 added #4, T-3884 added #5; none of #1-3 were weakened to add
-  # either):
-  #   1. needs: [build, build-sdists, verify-ci-status, artifact-smoke] --
-  #      cannot start before real wheels exist, the released commit's CI
-  #      resolved GREEN (or was explicitly, auditably overridden -- see
-  #      verify-ci-status above), AND the built wheel itself installs,
-  #      starts, and reports healthy on every target platform (T-3884 --
-  #      see artifact-smoke above).
-  #   2. environment: pypi -- a GitHub Environment with a required reviewer
-  #      configured in this repo's Settings > Environments; GitHub blocks
-  #      this job until a human approves THIS SPECIFIC RUN, and records
-  #      that approval on the run itself.
-  #   3. `on: workflow_dispatch` above -- there is no automatic event that
-  #      can even start the workflow this job lives in.
+  # T-4263: PyPI identifies a PENDING trusted publisher by the tuple
+  # (owner, repo, workflow filename, environment name) -- NOT by project
+  # name. A single job publishing all three distributions under one
+  # environment makes all three claim the identical tuple, so the first
+  # registration succeeds and PyPI refuses the second as a duplicate
+  # ("A pending trusted publisher matching this configuration has
+  # already been registered for a different project name"). Since an
+  # environment is declared per JOB, the fix is one job per distribution,
+  # each with its own environment -- see the three upload-* jobs below.
+  # This is why `upload` no longer exists as a single job; do not
+  # recombine these three into one without re-reading this comment.
+  #
+  # APPROVAL-GATE DECISION (T-4263, acceptance #3): only the application
+  # (`upload-frob`) carries a required-reviewer environment (`pypi`, the
+  # pre-existing protected environment -- unchanged from before this
+  # split). The two kernel environments (`pypi-frob-core`,
+  # `pypi-strata-core`) are deliberately left WITHOUT a required
+  # reviewer in this repo's Settings > Environments. Reasoning: a kernel
+  # publish is gated by the exact same four upstream jobs the application
+  # is (green CI, real built wheels, a passing artifact smoke test, and
+  # manual workflow_dispatch itself) and, per the ordering contract
+  # below, is a strict PREREQUISITE the application cannot proceed
+  # without -- it never reaches the index on its own initiative. A
+  # reviewer gate on top of that would be a second approval prompt for a
+  # decision already made once when the human dispatched this release,
+  # not an independent checkpoint. `upload-frob` keeps the human gate
+  # because it is the last, irreversible step of the whole release.
+  #
+  # ORDERING CONTRACT (T-3254's docs/guides/release.md comment, preserved
+  # here as an explicit job dependency instead of in-job step order): the
+  # application pins both kernels by exact version (Decision 1 in
+  # docs/guides/release.md), so an application published without them is
+  # uninstallable for everyone. `upload-frob`'s `needs:` below names both
+  # kernel jobs, so a failure (or skip) of either one skips `upload-frob`
+  # entirely -- GitHub Actions' default `needs:` semantics, not a manual
+  # check. Proven by tests/unit/test_release_workflow_gate.py's
+  # TestUploadSplitPerDistribution.
+  #
   # Trusted publishing (OIDC, `id-token: write`) is used instead of a
-  # stored PyPI API token -- see docs/guides/release.md's "Decision 3".
-  upload:
+  # stored PyPI API token in all three jobs -- see docs/guides/release.md's
+  # "Decision 3".
+  upload-frob-core:
     needs: [build, build-sdists, verify-ci-status, artifact-smoke]
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: pypi-frob-core
     permissions:
       id-token: write
     steps:
-      # Merge every frob-core-* artifact (5 platform wheels + sdist) into
-      # one flat dir, and likewise for strata-core-*; frob-dist already
-      # holds frob's own wheel + sdist as a single artifact.
+      # Merges every frob-core-* artifact (5 platform wheels + sdist)
+      # into one flat dir.
       - name: Download frob-core artifacts (wheels + sdist)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: frob-core-*
           path: dist-staging/frob-core
           merge-multiple: true
+      - name: Publish frob-core to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist-staging/frob-core
+
+  upload-strata-core:
+    needs: [build, build-sdists, verify-ci-status, artifact-smoke]
+    runs-on: ubuntu-latest
+    environment: pypi-strata-core
+    permissions:
+      id-token: write
+    steps:
       - name: Download strata-core artifacts (wheels + sdist)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: strata-core-*
           path: dist-staging/strata-core
           merge-multiple: true
+      - name: Publish strata-core to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist-staging/strata-core
+
+  # T-3011's original consent gate, unchanged: needs real wheels, green
+  # CI, a passing smoke test, and workflow_dispatch, all gated behind the
+  # `pypi` protected environment's required reviewer. T-4263 ADDS the two
+  # kernel jobs to `needs:` (the ordering contract above) without
+  # weakening any of the four pre-existing entries.
+  upload-frob:
+    needs: [build, build-sdists, verify-ci-status, artifact-smoke, upload-frob-core, upload-strata-core]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
       - name: Download frob artifact (wheel + sdist)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: frob-dist
           path: dist-staging/frob
-      - name: Publish frob-core to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          packages-dir: dist-staging/frob-core
-      - name: Publish strata-core to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          packages-dir: dist-staging/strata-core
       - name: Publish frob to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:

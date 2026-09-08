@@ -82,56 +82,171 @@ class TestReleaseWorkflowNoAutomaticTrigger:
             )
 
 
+# frob:ticket T-4263
 class TestUploadJobConsentGate:
-    """`release.yml`'s `upload` job must stay behind the protected
-    `pypi` environment and depend on `build` having actually run."""
+    """T-4263: the single `upload` job was split into one job per
+    distribution (`upload-frob-core`, `upload-strata-core`,
+    `upload-frob`) so each can register its own pending trusted
+    publisher -- see the split's own comment block in release.yml. Every
+    upload-* job must still depend on `build` having actually run."""
+
+    _UPLOAD_JOBS = ("upload-frob-core", "upload-strata-core", "upload-frob")
+
+    def test_upload_job_no_longer_exists_as_a_single_job(self) -> None:
+        """MUST-STAY-QUIET: guards against a regression back to the
+        single-job shape T-4263 fixed."""
+        doc = _load(_RELEASE_WORKFLOW)
+        assert "upload" not in doc["jobs"], (
+            "a single 'upload' job reappeared -- this is exactly the "
+            "shape T-4263 split apart because it made all three "
+            "distributions claim an identical pending-trusted-publisher "
+            "configuration"
+        )
 
     def test_upload_job_requires_pypi_environment(self) -> None:
         """`environment: pypi` is what makes GitHub enforce the required-
-        reviewer approval -- losing this line silently turns the gate
-        into a no-op."""
+        reviewer approval on the application publish -- losing this line
+        silently turns the gate into a no-op. T-4263 renamed the single
+        `upload` job to `upload-frob` (the application distribution);
+        this test's NAME stays as originally bound (T-3011's evidence
+        citation), its BODY now points at the renamed job."""
         doc = _load(_RELEASE_WORKFLOW)
-        upload = doc["jobs"]["upload"]
+        upload = doc["jobs"]["upload-frob"]
         assert upload.get("environment") == "pypi", (
-            "release.yml's upload job lost its 'environment: pypi' gate -- "
-            "this is the ONLY thing that makes GitHub require reviewer "
-            "approval before this job can run"
+            "release.yml's upload-frob job lost its 'environment: pypi' "
+            "gate -- this is the ONLY thing that makes GitHub require "
+            "reviewer approval before this job can run"
+        )
+
+    def test_kernel_upload_jobs_have_their_own_distinct_environments(self) -> None:
+        """T-4263 acceptance #1: each distribution's environment name
+        must be distinct from the other two, or the pending-trusted-
+        publisher tuple collides again."""
+        doc = _load(_RELEASE_WORKFLOW)
+        envs = {name: doc["jobs"][name]["environment"] for name in self._UPLOAD_JOBS}
+        assert len(set(envs.values())) == 3, (
+            f"upload-* jobs must each use a distinct environment name, "
+            f"got {envs!r} -- a repeated environment name reproduces the "
+            f"pending-trusted-publisher collision T-4263 fixed"
         )
 
     def test_upload_job_needs_build(self) -> None:
-        """`upload` must not be reachable except after `build` (and the
-        sdist build) actually produced artifacts -- prevents an upload
-        of stale or non-existent artifacts from a differently-ordered
-        workflow edit."""
+        """Every upload-* job must not be reachable except after `build`
+        (and the sdist build) actually produced artifacts -- prevents an
+        upload of stale or non-existent artifacts from a differently-
+        ordered workflow edit. T-4263 widened this from the single
+        `upload` job to all three split jobs; name kept as originally
+        bound (T-3011's evidence citation)."""
         doc = _load(_RELEASE_WORKFLOW)
-        upload = doc["jobs"]["upload"]
-        needs = upload.get("needs")
-        needs_set = {needs} if isinstance(needs, str) else set(needs or ())
-        assert "build" in needs_set
+        for name in self._UPLOAD_JOBS:
+            needs = doc["jobs"][name].get("needs")
+            needs_set = {needs} if isinstance(needs, str) else set(needs or ())
+            assert "build" in needs_set, f"{name} must depend on build"
 
     def test_upload_job_uses_oidc_not_a_stored_token(self) -> None:
         """Trusted publishing: `id-token: write`, and no `password`/token
-        input anywhere in the job -- a stored PyPI API token in
+        input anywhere in any upload-* job -- a stored PyPI API token in
         repository secrets is exactly the long-lived-credential risk
-        trusted publishing exists to remove."""
+        trusted publishing exists to remove. T-4263 widened this from
+        the single `upload` job to all three split jobs; name kept as
+        originally bound (T-3011's evidence citation)."""
         doc = _load(_RELEASE_WORKFLOW)
-        upload = doc["jobs"]["upload"]
-        assert upload.get("permissions", {}).get("id-token") == "write"
-        text = yaml.safe_dump(upload)
-        assert "password" not in text and "PYPI_API_TOKEN" not in text
+        for name in self._UPLOAD_JOBS:
+            job = doc["jobs"][name]
+            assert job.get("permissions", {}).get("id-token") == "write"
+            text = yaml.safe_dump(job)
+            assert "password" not in text and "PYPI_API_TOKEN" not in text
 
     def test_build_job_has_no_environment_gate(self) -> None:
-        """`build` (and `build-sdists`) must NOT carry the `pypi`
+        """`build` (and `build-sdists`) must NOT carry a `pypi*`
         environment gate -- building and retaining wheels as CI artifacts
-        is never consent-gated, only the upload is. A gate accidentally
-        copied onto `build` would block the "prove it built" half this
-        ticket's acceptance requires to run on every dispatch."""
+        is never consent-gated, only the upload jobs are. A gate
+        accidentally copied onto `build` would block the "prove it
+        built" half this ticket's acceptance requires to run on every
+        dispatch."""
         doc = _load(_RELEASE_WORKFLOW)
         for job_name in ("build", "build-sdists"):
             job = doc["jobs"][job_name]
             assert "environment" not in job, (
                 f"release.yml's {job_name} job must not require approval -- "
-                f"only upload is consent-gated"
+                f"only the upload-* jobs are consent-gated"
+            )
+
+
+# frob:ticket T-4263
+class TestUploadSplitPerDistribution:
+    """T-4263 acceptance #2: preserves the ordering contract (the
+    application pins both kernels by exact version, so an application
+    published without them is uninstallable) as an explicit job
+    dependency rather than in-job step order."""
+
+    def test_application_upload_needs_both_kernel_uploads(self) -> None:
+        """MUST-FIRE: `upload-frob`'s needs: must name both kernel
+        upload jobs -- GitHub Actions skips a job whose `needs:` entry
+        failed or was skipped, so this is what makes a kernel publish
+        failure prevent the application from publishing at all."""
+        doc = _load(_RELEASE_WORKFLOW)
+        needs = doc["jobs"]["upload-frob"]["needs"]
+        needs_set = {needs} if isinstance(needs, str) else set(needs)
+        assert {"upload-frob-core", "upload-strata-core"} <= needs_set, (
+            f"upload-frob must depend on both kernel upload jobs to "
+            f"preserve the ordering contract, got needs={needs_set!r}"
+        )
+
+    def test_kernel_upload_jobs_do_not_depend_on_the_application(self) -> None:
+        """MUST-STAY-QUIET: the dependency is one-directional -- a kernel
+        job must never need the application job, or the ordering
+        contract (kernels before application) would be reversed/cyclic."""
+        doc = _load(_RELEASE_WORKFLOW)
+        for name in ("upload-frob-core", "upload-strata-core"):
+            needs = doc["jobs"][name].get("needs")
+            needs_set = {needs} if isinstance(needs, str) else set(needs or ())
+            assert "upload-frob" not in needs_set
+
+
+# frob:ticket T-4263
+class TestApprovalGateDecisionIsRecorded:
+    """T-4263 acceptance #3: the split's approval-gate decision (only the
+    application requires a reviewer; the two kernel environments
+    deliberately do not) must be recorded in the workflow file itself,
+    not only in the ticket -- so the next person editing release.yml
+    reads it in place."""
+
+    def test_workflow_records_which_distributions_require_a_reviewer(self) -> None:
+        """MUST-FIRE: a comment naming the decision must exist directly
+        above the split jobs -- not merely true by construction, but
+        actually written down where the next editor will see it."""
+        text = _RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        assert "APPROVAL-GATE DECISION" in text, (
+            "release.yml must record, in a comment, the decision about "
+            "which upload-* jobs require a reviewer -- three environments "
+            "can otherwise mean three approval prompts for one release "
+            "with no record of why"
+        )
+        assert "required-reviewer environment" in text, (
+            "release.yml's recorded decision must name which job(s) carry "
+            "the required-reviewer environment"
+        )
+
+    def test_only_application_environment_is_the_pre_existing_protected_one(
+        self,
+    ) -> None:
+        """MUST-STAY-QUIET: the decision text above is backed by the
+        actual config -- `upload-frob` keeps the original `pypi`
+        environment name (the one already configured with a required
+        reviewer in this repo's Settings > Environments before this
+        split), while the two new kernel environments use NEW names that
+        cannot already carry that protection."""
+        doc = _load(_RELEASE_WORKFLOW)
+        assert doc["jobs"]["upload-frob"]["environment"] == "pypi"
+        for name in ("upload-frob-core", "upload-strata-core"):
+            env = doc["jobs"][name]["environment"]
+            assert env != "pypi", (
+                f"{name} must not reuse the 'pypi' environment name -- "
+                f"doing so would either collide with the application's "
+                f"protected environment or silently inherit its reviewer "
+                f"gate depending on GitHub's settings, neither of which "
+                f"is the deliberate decision recorded above"
             )
 
 
@@ -159,20 +274,25 @@ class TestCiStatusGate:
         job = doc["jobs"]["verify-ci-status"]
         assert "environment" not in job
 
-    def test_upload_needs_verify_ci_status_in_addition_to_existing_needs(self) -> None:
+    def test_upload_needs_verify_ci_status_in_addition_to_existing_needs(
+        self,
+    ) -> None:
         """T-3251/T-3884 ADD to `needs:`, neither replaces `build`/
         `build-sdists` -- losing either of those would reintroduce the
         stale/non-existent-artifact risk `test_upload_job_needs_build`
-        above already guards."""
+        above already guards. T-4263 split `upload` into three jobs;
+        the two kernel jobs must carry exactly the original four-entry
+        needs set, while `upload-frob` ADDS the two kernel jobs on top
+        (checked separately by
+        TestUploadSplitPerDistribution.test_application_upload_needs_both_kernel_uploads)."""
         doc = _load(_RELEASE_WORKFLOW)
-        needs = doc["jobs"]["upload"]["needs"]
-        needs_set = {needs} if isinstance(needs, str) else set(needs)
-        assert needs_set == {
-            "build",
-            "build-sdists",
-            "verify-ci-status",
-            "artifact-smoke",
-        }
+        base_needs = {"build", "build-sdists", "verify-ci-status", "artifact-smoke"}
+        for name in ("upload-frob-core", "upload-strata-core"):
+            needs = doc["jobs"][name]["needs"]
+            needs_set = {needs} if isinstance(needs, str) else set(needs)
+            assert needs_set == base_needs, f"{name}: needs={needs_set!r}"
+        upload_frob_needs = set(doc["jobs"]["upload-frob"]["needs"])
+        assert base_needs <= upload_frob_needs
 
     def test_artifact_smoke_job_needs_build_and_build_sdists(self) -> None:
         """T-3884: `artifact-smoke` must depend on `build` (this
