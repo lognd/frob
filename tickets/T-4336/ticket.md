@@ -17,10 +17,32 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/check/__init__.py
 - tests/system/test_cli_check.py
+- docs/commands/check.md
+- docs/guides/agent-playbook-appendix.md
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/commands/check.md
+  reason: 'T-4336: keep the gate-declaration checklist and --only stage-group docs
+    in sync with the new frob.gates._GATE_STAGE_GROUPS source of truth'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/guides/agent-playbook-appendix.md
+  reason: 'T-4336: keep the gate-declaration checklist and --only stage-group docs
+    in sync with the new frob.gates._GATE_STAGE_GROUPS source of truth'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-4336: keep the gate-declaration checklist and --only stage-group docs
+    in sync with the new frob.gates._GATE_STAGE_GROUPS source of truth'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a gate registered in frob.gates._ALL_GATES without a stage-group assignment,
