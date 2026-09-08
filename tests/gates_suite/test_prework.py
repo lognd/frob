@@ -752,6 +752,36 @@ class TestScope002ClosureGate:
         )
         assert "5" in matching[0].message
 
+    # frob:ticket T-4310
+    def test_scope_breadth_ack_exempts_ticket_entirely(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_scope002_violations
+        """T-4310: SCOPE002's `Violation` is synthetic (`file="tickets.md",
+        line=0`, no `symref`) with no real source line to anchor a
+        `frob:waive` directive to under the per-ticket-directory ledger
+        layout -- `ticket.scope_breadth_ack` (set via `frob ticket
+        scope-ack`, the same reasoned per-ticket field TICK009 already
+        established at T-1484) must exempt a ticket from SCOPE002 the same
+        way `_tickets_gate`'s TICK009 loop already exempts an acked
+        ticket, giving this otherwise-unwaivable rule a real acceptance
+        path."""
+        from frob.gates import _scope002_violations  # noqa: PLC0415
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "# frob:doc docs/x.md#foo\ndef foo() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a.py",))
+        acked = ticket.model_copy(
+            update={
+                "scope_breadth_ack": True,
+                "scope_breadth_ack_reason": "T-4310: reasoned narrower scope",
+            }
+        )
+        assert _scope002_violations(ticket, snap, tmp_path) != ()
+        assert _scope002_violations(acked, snap, tmp_path) == ()
+
 
 # frob:ticket T-0584
 class TestPreworkSweepBounds:

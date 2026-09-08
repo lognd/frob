@@ -1,7 +1,7 @@
 ---
 id: T-4310
 title: SCOPE002 is unwaivable since the ledger migrated off single-file tickets.md
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'

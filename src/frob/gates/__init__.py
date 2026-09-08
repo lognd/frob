@@ -3693,8 +3693,22 @@ def _scope002_violations(
     BEFORE scope is even saved, this gate covers every ticket already
     carrying one). `scope_private_helper_gaps` needs `root` to parse
     source files; skipped (not fail-closed -- SCOPE002 is a nudge) when
-    `root` is `None`."""
+    `root` is `None`.
+
+    T-4310: `ticket.scope_breadth_ack` (the same reasoned, per-ticket
+    acceptance field TICK009 established at T-1484/WAVE14-B, set only via
+    `frob ticket scope-ack`/`--scope-breadth-ack-reason`) exempts a ticket
+    from SCOPE002 entirely, mirroring `_tickets_gate`'s own `if
+    t.scope_breadth_ack: continue`. SCOPE002's `Violation` is synthetic
+    (`file="tickets.md", line=0`, no `symref`) with no real source line to
+    anchor a `frob:waive` directive to under the per-ticket-directory
+    ledger layout (`tickets/T-####/ticket.md`, not a repo-root
+    `tickets.md` `frob.graph` parses for directives) -- exactly the
+    unwaivable-by-mechanism shape TICK009 already solved for the identical
+    reason, not a new problem needing a new mechanism."""
     if not ticket.scope:
+        return ()
+    if ticket.scope_breadth_ack:
         return ()
     violations = list(_scope002_edge_gap_violations(ticket, snapshot))
     violations.extend(_scope002_helper_gap_violations(ticket, snapshot, root))
