@@ -1,7 +1,7 @@
 ---
 id: T-4341
 title: 'TICK005 cannot fire post ledger-v2 cutover: add v1/v2 dispatch to _tick005_ledger_at_ref'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -27,7 +27,14 @@ scope_changes:
     fix'
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean_on_v2_ledger
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged
+designated_repro_test: tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger
 threat: null
 component: null
 anchor: false

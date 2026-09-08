@@ -39,7 +39,6 @@ from frob.tickets import Ticket, TicketQueue, TicketState, TicketTier, closed_ti
 from frob.tickets._models import Priority, TicketError
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _dir_glob as _tickets_dir_glob
-from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import _store_mode as _tickets_store_mode
 from frob.tickets._store import archive_path as _tickets_archive_path
 from frob.tickets._store import ledger_path as _tickets_ledger_path
@@ -571,23 +570,45 @@ def _tick005_head_second_parent(root: Path) -> str | None:
     return spawned.danger_ok.stdout.strip()
 
 
-def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, Ticket] | None:
-    """`tickets.md`'s parsed ticket-id -> `Ticket` map as of git ref `ref`,
-    or `None` if the ref/path does not resolve or the content fails to
-    parse -- either degrades TICK005 to a no-op rather than a false
-    positive or a crash."""
-    from frob.gitio import run_argv
+def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, TicketState] | None:
+    """The ticket-id -> `TicketState` map as of git ref `ref`, or `None` if
+    the ledger cannot be resolved there at all -- either degrades TICK005
+    to a no-op rather than a false positive or a crash.
 
-    spawned = run_argv(["git", "-C", str(root), "show", f"{ref}:tickets.md"])
-    if spawned.is_err or spawned.danger_ok.returncode != 0:
+    T-4341: dispatches on `frob.gates._store_mode_at_base(root, ref)` --
+    the ledger-v2 cutover (T-2356, commit e2ed60480) deleted `tickets.md`
+    repo-wide in favor of one `tickets/T-####/ticket.md` file per ticket,
+    so the original single `git show ref:tickets.md` read has returned
+    `None` for every post-cutover ref ever since: TICK005 has been unable
+    to fire at all, not zero-findings-because-clean (the identical defect
+    COV002 had, fixed at T-1582). `_tick005_merge_state_regression` below
+    only ever reads `.state` off the values this returns (never another
+    `Ticket` field), so -- exactly as T-1582's plan for this ticket asked
+    to check -- the existing frontmatter-only v2 reader (`frob.gates.
+    _ledger_states_at_base`, which itself already dispatches v1
+    monofile/v2 per-ticket-file/unknown) is sufficient; no fuller per-
+    ticket parse is needed. A v1 `ref` (a pre-cutover merge base a history
+    walk can legitimately still encounter) keeps working unchanged since
+    `_ledger_states_at_base`'s v1 branch is the original `git show
+    ref:tickets.md` + ledger-parse read verbatim. Imported
+    lazily to avoid a load-time cycle with `frob.gates.__init__`, which
+    itself imports this module."""
+    from frob.gates import _ledger_states_at_base, _store_mode_at_base
+
+    if _store_mode_at_base(str(root), ref) == "unknown":
         return None
-    parsed = _tickets_parse_ledger(spawned.danger_ok.stdout)
-    if parsed.is_err:
-        return None
-    return parsed.danger_ok
+    states = _ledger_states_at_base(str(root), ref)
+    return dict(states)
 
 
 # frob:ticket T-0537
+# frob:ticket T-4341
+# frob:tests \
+# tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_hand_resolved_confl\
+# ict_resurrecting_done_ticket_is_flagged_on_v2_ledger
+# frob:tests \
+# tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_forward_progress_ac\
+# ross_a_merge_is_clean_on_v2_ledger
 # frob:enforces CHK-GATE-TICK005
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
@@ -601,19 +622,19 @@ def _tick005_merge_state_regression(
 ) -> tuple[Violation, ...]:
     """TICK005 (T-0537): after a genuine two-parent merge commit, ERROR on
     any ticket that was DONE/DROPPED (terminal) in the merge's FIRST
-    parent's `tickets.md` but is neither DONE nor DROPPED in the current
+    parent's ledger but is neither DONE nor DROPPED in the current
     (post-merge) ledger, nor archived. `_land`'s own ticket-scoped splice
-    (`_splice_only_ticket`, T-0479) and `splice_ledger`'s state-rank
-    tiebreak (`_newer`, terminal ranks highest) already make this
+    and `splice_ledger`'s state-rank tiebreak already make this
     structurally impossible for anything that goes THROUGH those code
     paths -- this gate exists for the incident class that bypasses both: a
-    `tickets.md` merge conflict resolved BY HAND (the merge driver not
-    registered, or a conflict shape it declined), which can silently keep
-    stale non-terminal states for tickets main had already closed (the
-    real incident: 7 tickets -- T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/
-    T-0527 -- resurrected this way). Runs regardless of mechanism, since it
-    inspects only the git history/ledger content, never how the merge
-    commit was produced."""
+    ledger merge conflict resolved BY HAND, which can silently keep stale
+    non-terminal states for tickets main had already closed (the real
+    incident: 7 tickets -- T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/
+    T-0527). Runs regardless of mechanism, since it inspects only the git
+    history/ledger content. T-4341: the parent-ledger read
+    (`_tick005_ledger_at_ref`) dispatches v1/v2 storage -- see that
+    function's docstring for why this rule was structurally silent post-
+    T-2356 until this fix."""
     second_parent = _tick005_head_second_parent(root)
     if second_parent is None:
         return ()
@@ -630,8 +651,8 @@ def _tick005_merge_state_regression(
         _log.warning("tick005: could not import _archived_ids, treating as empty")
 
     violations: list[Violation] = []
-    for ticket_id, parent_ticket in sorted(parent_ledger.items()):
-        if parent_ticket.state not in _TERMINAL_STATES:
+    for ticket_id, parent_state in sorted(parent_ledger.items()):
+        if parent_state not in _TERMINAL_STATES:
             continue
         if ticket_id in archived_ids:
             continue
@@ -647,14 +668,14 @@ def _tick005_merge_state_regression(
                 file="tickets.md",
                 line=0,
                 message=(
-                    f"TICK005: {ticket_id} was {parent_ticket.state.value} "
+                    f"TICK005: {ticket_id} was {parent_state.value} "
                     f"in this merge's first parent but is "
                     f"{current.state.value} now -- a terminal ticket "
                     f"regressed to a non-terminal state, the T-0537 hand-"
                     f"resolved-conflict resurrection incident; restore it "
-                    f"to {parent_ticket.state.value} (`git show "
-                    f"HEAD^1:tickets.md`) unless this state change is a "
-                    f"deliberate, reasoned reopen"
+                    f"to {parent_state.value} (`git show "
+                    f"HEAD^1:tickets/{ticket_id}/ticket.md`) unless this "
+                    f"state change is a deliberate, reasoned reopen"
                 ),
             )
         )

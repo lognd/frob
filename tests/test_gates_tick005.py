@@ -172,6 +172,78 @@ class TestTick005MergeStateRegression:
         violations = tickets_gate(repo, queue)
         assert not any(v.rule == "TICK005" for v in violations)
 
+    # frob:ticket T-4341
+    # frob:tests \
+    # tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_hand_resolved_c\
+    # onflict_resurrecting_done_ticket_is_flagged_on_v2_ledger
+    def test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4341: the identical incident as
+        `test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged`,
+        but on the ledger-v2 per-ticket-file backend (`tickets/T-####/
+        ticket.md`, no `tickets.md` at all) every repo has used since the
+        T-2356 cutover -- `_tick005_ledger_at_ref` read only `git show
+        ref:tickets.md`, which no v2 commit has ever had a blob for, so
+        this exact scenario silently produced ZERO violations for the
+        whole post-cutover history. Never seeds `tickets.md`, so
+        `write_ticket`'s auto-detected backend is v2 (`_store_mode`'s
+        fresh-repo default)."""
+        repo = tmp_path / "repo"
+        _git_init(repo)
+        assert write_ticket(repo, _ticket("T-0001", TicketState.DONE)).is_ok
+        _commit_all(repo, "T-0001 closed on main")
+        main_sha = _head(repo)
+
+        _run(["git", "checkout", "-q", "-b", "feature"], repo)
+        assert write_ticket(repo, _ticket("T-0001", TicketState.QUEUED)).is_ok
+        _commit_all(repo, "stale branch still thinks T-0001 is queued")
+        feature_sha = _head(repo)
+
+        _run(["git", "checkout", "-q", "main"], repo)
+        _make_merge_commit_with_content(
+            repo, parent1=main_sha, parent2=feature_sha, message="merge (hand-resolved)"
+        )
+        assert write_ticket(repo, _ticket("T-0001", TicketState.QUEUED)).is_ok
+        _run(["git", "add", "-A"], repo)
+        _run(["git", "commit", "--amend", "--no-edit"], repo)
+
+        queue = load_queue(repo).danger_ok
+        assert queue.tickets["T-0001"].state == TicketState.QUEUED
+
+        violations = tickets_gate(repo, queue)
+        tick005 = [v for v in violations if v.rule == "TICK005"]
+        assert len(tick005) == 1
+        assert "T-0001" in tick005[0].message
+        assert "done" in tick005[0].message
+
+    # frob:ticket T-4341
+    # frob:tests \
+    # tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_forward_progres\
+    # s_across_a_merge_is_clean_on_v2_ledger
+    def test_forward_progress_across_a_merge_is_clean_on_v2_ledger(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4341: v2-ledger analog of
+        `test_forward_progress_across_a_merge_is_clean` -- ordinary forward
+        progress across a merge must stay silent on the v2 backend too,
+        not merely on v1."""
+        repo = tmp_path / "repo"
+        _git_init(repo)
+        assert write_ticket(repo, _ticket("T-0001", TicketState.QUEUED)).is_ok
+        _commit_all(repo, "T-0001 queued")
+
+        _run(["git", "checkout", "-q", "-b", "feature"], repo)
+        assert write_ticket(repo, _ticket("T-0001", TicketState.PLANNED)).is_ok
+        _commit_all(repo, "T-0001 planned on feature")
+
+        _run(["git", "checkout", "-q", "main"], repo)
+        _run(["git", "merge", "--no-ff", "-m", "merge", "feature"], repo)
+
+        queue = load_queue(repo).danger_ok
+        violations = tickets_gate(repo, queue)
+        assert not any(v.rule == "TICK005" for v in violations)
+
     # frob:tests tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_archived_ticket_is_not_flagged  # noqa: E501
     def test_archived_ticket_is_not_flagged(self, tmp_path: Path) -> None:
         """A ticket that legitimately moved from the active ledger into

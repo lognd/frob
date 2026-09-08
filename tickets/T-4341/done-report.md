@@ -1,0 +1,35 @@
+## Done report
+
+TICK005's parent-ledger read (_tick005_ledger_at_ref) hardcoded 'git show ref:tickets.md' (v1 monofile only). tickets.md was deleted repo-wide at the T-2356 ledger-v2 cutover, so this has returned None for every post-cutover ref -- TICK005 has been structurally unable to fire since then, not zero-findings-because-clean. Fixed the same way T-1582 fixed the identical bug in COV002: _tick005_ledger_at_ref now dispatches on frob.gates._store_mode_at_base(root, ref) and reads through frob.gates._ledger_states_at_base (v1 monofile / v2 per-ticket-file / unknown). Its return type narrowed from dict[str, Ticket] | None to dict[str, TicketState] | None -- _tick005_merge_state_regression only ever read .state off the values, so the existing frontmatter-only v2 reader is sufficient; no fuller per-ticket parse was needed. A v1 ref (a pre-cutover merge base a history walk can legitimately still encounter) keeps working unchanged, since _ledger_states_at_base's v1 branch is the original git-show+parse read verbatim. _tick005_merge_state_regression's violation-message restore-command hint was updated from the v1-only 'git show HEAD^1:tickets.md' to the per-ticket v2 path.
+
+Verification that the rule was actually structurally silent, and is now capable of firing (per the ticket's explicit ask -- not merely 'no findings on the current tree'): before the fix, _tick005_ledger_at_ref against this repo (v2-ledger since well before T-2356) returned None for every ref. After the fix it returns the full ~700+ ticket-id -> TicketState map. Two new tests in tests/test_gates_tick005.py construct a real two-parent hand-resolved-conflict merge commit on a fresh v2-only repo (write_ticket with no tickets.md seeded, so _store_mode defaults to v2): test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger asserts TICK005 fires exactly once and correctly identifies the resurrected DONE->QUEUED ticket; test_forward_progress_across_a_merge_is_clean_on_v2_ledger asserts ordinary forward progress across a merge stays silent. Existing v1-mode tests (which explicitly seed tickets.md) were left unchanged and still pass, confirming v1 behavior is preserved. Ticket scope was extended to include tests/test_gates_tick005.py (frob ticket scope --add, reason recorded in the ticket) since the fix needed real regression coverage.
+
+Does the current tree actually violate TICK005 now that it can fire? tickets_gate(root, load_queue(root)) against this worktree's HEAD reports 0 TICK005 findings (HEAD here is not itself a merge commit, so that alone proves nothing). I additionally scanned all 279 merge commits in main's history by applying the fixed _tick005_ledger_at_ref/_TERMINAL_STATES logic directly against each merge's HEAD^1 vs HEAD (the gate itself only ever checks the CURRENT HEAD's own merge, so this is a diagnostic scan, not a claim the gate would have caught these live): found exactly 2 historical hits -- merge d20ac3b2f (T-1235: done -> queued) and merge 3aee194b6 (T-0508: done -> queued). Both tickets are DONE again at the current tree tip (re-checked via load_queue), so these were transient regressions since corrected on main, not a live violation TICK005 would flag today. Conclusion: the fix restores detection capability; it does not surface a pre-existing undetected incident that still needs filing.
+
+Severity: left at warn (T-4331's demotion), as instructed -- T-4340 owns the broader severity question; this ticket only restores firing capability, and promoting back to error is a separate, deliberate decision left to that ticket.
+
+Filed: none -- no out-of-scope work was found; the fix stayed within _tick005_ledger_at_ref/_tick005_merge_state_regression as scoped.
+
+Gates: frob check --ticket T-4341 clean except the pre-existing DRIFT002 baseline finding (docs/guides/agent-playbook-appendix.md, owned by T-4345, outside this ticket's scope). Fixed along the way (both required to get a clean ticket-scoped gate, not separately ticketed): a ruff F401 (unused _parse_ledger import, orphaned by the v2 dispatch) and a LANDPARITY002/ARCH001 function-length breach on _tick005_merge_state_regression (the v1/v2 explanation grew its docstring past threshold; trimmed the docstring, no logic change).
+
+### Changed
+```
+ src/frob/gates/_tickets_gate.py | 81 ++++++++++++++++++++++++++---------------
+ tests/test_gates_tick005.py     | 72 ++++++++++++++++++++++++++++++++++++
+ tickets/T-4341/done-report.md   | 27 ++++++++++++++
+ tickets/T-4341/ticket.md        | 17 ++++++++-
+ 4 files changed, 166 insertions(+), 31 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean_on_v2_ledger` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 1 error(s), 4720 warning(s), 957 waived
+- error-findings: DRIFT002@docs/guides/agent-playbook-appendix.md
