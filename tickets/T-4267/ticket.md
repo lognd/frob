@@ -2,7 +2,7 @@
 id: T-4267
 title: evidence --replace/--remove is not mirrored to the primary checkout, so frob
   ticket land refuses on stale evidence it already rebound away from
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -56,6 +56,12 @@ body_changes:
   at: '2026-09-07'
   old_length: 2480
   new_length: 8775
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror::test_replace_from_worktree_is_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror::test_remove_from_worktree_is_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror::test_prior_scope_mirror_then_replace_does_not_leave_the_old_id_resurrectable
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror::test_running_in_the_primary_checkout_is_a_no_op
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror::test_evidence_stays_generic_commit_unmirrored_at_the_verb_table_level
 designated_repro_test: null
 threat: null
 component: null

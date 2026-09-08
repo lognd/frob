@@ -135,11 +135,14 @@ class LedgerWriteStrategy(enum.Enum):
 # frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_all_classified
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_sets_track_the_live_strategy_table  # noqa: E501
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_sets_tr\
+# ack_the_live_strategy_table
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_requeue_edit_from_worktree_is_visible_on_primary  # noqa: E501
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_requ\
+# eue_edit_from_worktree_is_visible_on_primary
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_requeue_running_in_the_primary_checkout_is_a_no_op  # noqa: E501
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_requeue_ru\
+# nning_in_the_primary_checkout_is_a_no_op
 #: The single source of truth for every `frob ticket` verb's ledger-write
 #: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
 #: below are DERIVED from this table, never redeclared, so there is
@@ -292,7 +295,9 @@ _MIRRORED_LEDGER_VERBS = frozenset(
 )
 
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_state_machine_verbs_are_not_mirrored  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_state_mach\
+# ine_verbs_are_not_mirrored
 #: Back-compat alias (T-2563's original name) for `_MIRRORED_LEDGER_VERBS`
 #: -- both names refer to the SAME frozenset, derived from
 #: `LEDGER_VERB_STRATEGY` above rather than declared twice.
@@ -532,18 +537,43 @@ def _commit_mirrored_paths(
 
 # frob:ticket T-2563
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_scope_edit_from_worktree_is_visible_on_primary  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse.test_worktree_source_changes_do_not_leak_to_primary  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_scop\
+# e_edit_from_worktree_is_visible_on_primary
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse.te\
+# st_worktree_source_changes_do_not_leak_to_primary
 def mirror_ledger_change_to_primary(root: Path, ticket_id: str, command: str) -> None:
     """Copy `ticket_id`'s ledger files from the worktree `root` onto the
     primary checkout and commit them there, so a ledger-only edit made
-    from a worktree is visible to the whole fleet immediately."""
-    from frob.tickets._leases import _ledger_pathspecs
-    from frob.tickets._store import ledger_lock
+    from a worktree is visible to the whole fleet immediately.
 
+    Gated on `command` being a `MIRRORED_LEDGER_VERBS` member (via
+    `_mirror_target`) -- this is the generic, per-verb-table-driven entry
+    point `_auto_commit_ledger_after_dispatch` calls. `evidence`'s two
+    rebind sub-channels (`--replace`/`--remove`) cannot be classified at
+    that granularity (the whole `evidence` CLI verb dispatches through
+    one handler covering five sub-channels, only two of which need
+    mirroring -- see `mirror_evidence_rebind_to_primary`, T-4267) and
+    call the ungated core (`_mirror_ledger_paths`) directly instead."""
     primary = _mirror_target(root, ticket_id, command)
     if primary is None:
         return
+    _mirror_ledger_paths(root, primary, ticket_id, command)
+
+
+# frob:ticket T-4267
+def _mirror_ledger_paths(
+    root: Path, primary: Path, ticket_id: str, command: str
+) -> None:
+    """Copy `ticket_id`'s ledger pathspecs from `root` onto `primary` and
+    commit them there -- the ungated core both `mirror_ledger_change_to_
+    primary` (gated on `MIRRORED_LEDGER_VERBS`) and `mirror_evidence_
+    rebind_to_primary` (unconditional, T-4267) share, so there is exactly
+    one copy+commit implementation regardless of which caller decided
+    mirroring is needed."""
+    from frob.tickets._leases import _ledger_pathspecs
+    from frob.tickets._store import ledger_lock
 
     pathspecs = _ledger_pathspecs(root, ticket_id)
     if not pathspecs:
@@ -557,6 +587,69 @@ def mirror_ledger_change_to_primary(root: Path, ticket_id: str, command: str) ->
         _commit_mirrored_paths(
             primary, _mirror_commit_pathspecs(pathspecs), ticket_id, command
         )
+
+
+# frob:ticket T-4267
+# frob:doc \
+# docs/modules/tickets-lifecycle.md#evidence---replace--remove-mirror-directly-bypassin\
+# g-the-verb-table-t-4267
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_replace\
+# _from_worktree_is_visible_on_primary
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_remove_\
+# from_worktree_is_visible_on_primary
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_prior_s\
+# cope_mirror_then_replace_does_not_leave_the_old_id_resurrectable
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_running\
+# _in_the_primary_checkout_is_a_no_op
+def mirror_evidence_rebind_to_primary(root: Path, ticket_id: str, command: str) -> None:
+    """Unconditionally mirror `ticket_id`'s ledger onto the primary
+    checkout, bypassing `MIRRORED_LEDGER_VERBS`/`_mirror_target` entirely
+    -- the `mirror_promote_to_primary` precedent (T-2587) applied to
+    `evidence`'s two rebind sub-channels.
+
+    ROOT CAUSE THIS CLOSES (T-4267): `evidence` as a whole CLI verb is
+    `LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED` in `LEDGER_VERB_
+    STRATEGY` -- correct for its append-only sub-channels (`add_evidence`/
+    `add_cmd_evidence`/designate-repro), whose write is ordinary
+    worktree-local progress a future `land` carries across atomically,
+    same reasoning as `close`/`drop`/`fail`. But `replace_evidence`/
+    `remove_evidence` are not that: once ANY `GENERIC_COMMIT_MIRRORED`
+    verb (most commonly `scope`, since scope IS the write lease here) has
+    ever mirrored this exact ticket's `tickets/<id>/ticket.md` onto the
+    primary checkout, that file exists as an independent, already-
+    diverged copy in `main`'s history. A subsequent unmirrored evidence
+    rebind in the worktree, followed by the worktree merging `main` back
+    in (e.g. to pick up sibling tickets for a start-time scope-collision
+    check), 3-way-merges the worktree's rebound `ticket.md` against the
+    primary's stale mirrored one. Because the evidence list is plain
+    lines to git, not a structured field, an old-evidence-vs-new-evidence
+    divergence looks exactly like two independent list insertions to a
+    line-based 3-way diff and is UNIONED rather than conflicted -- the
+    stale OLD ids end up sitting right next to the correct NEW ones, and
+    `frob ticket land`'s post-merge evidence-resolution check then
+    correctly refuses on the stale duplicates, citing ids the ticket
+    itself already rebound away from. Confirmed by direct inspection of a
+    live merged `ticket.md` carrying both old and new node ids side by
+    side (T-4143).
+
+    `LEDGER_VERB_STRATEGY["evidence"]` stays `GENERIC_COMMIT_UNMIRRORED`
+    deliberately (the whole-verb table has no sub-command granularity,
+    and the append-only channels genuinely should not mirror ahead of
+    `land`) -- this function is `replace_evidence`/`remove_evidence`'s
+    OWN, unconditional mirror call, made directly from those two call
+    sites in `frob.tickets._evidence` rather than through the generic
+    per-dispatch wrapper. `command` is a fixed literal
+    (`"evidence --replace"`/`"evidence --remove"`) used only for the log
+    line and the mirror commit message -- it is never looked up in
+    `LEDGER_VERB_STRATEGY`."""
+    primary = _resolve_mirror_primary(root, ticket_id, command)
+    if primary is None:
+        return
+    _mirror_ledger_paths(root, primary, ticket_id, command)
 
 
 # frob:ticket T-2587
@@ -618,8 +711,12 @@ def _remove_stale_draft_ledger_dir(primary: Path, draft_id: str) -> str | None:
 
 # frob:ticket T-2587
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_from_worktree_is_visible_on_primary_without_a_land  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_mirror_does_not_leak_source_changes_or_duplicate_the_draft  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_from_w\
+# orktree_is_visible_on_primary_without_a_land
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_mirror\
+# _does_not_leak_source_changes_or_duplicate_the_draft
 def mirror_promote_to_primary(root: Path, draft_id: str) -> bool:
     """T-2587: mirror a `frob ticket promote` rename's LEDGER pathspecs
     onto the primary checkout, so the promoted final id is visible to the

@@ -886,3 +886,206 @@ class TestDoneReportNotVisibleOnPrimaryWarning:
         assert not any("NOT yet visible" in r.message for r in caplog.records), [
             r.message for r in caplog.records
         ]
+
+
+# frob:ticket T-4267
+class TestEvidenceRebindMirror:
+    """T-4267: `replace_evidence`/`remove_evidence` must mirror their
+    write onto the primary checkout immediately, the same way `scope`
+    does -- `evidence` as a whole CLI verb stays `GENERIC_COMMIT_
+    UNMIRRORED` in `LEDGER_VERB_STRATEGY` (correct for its append-only
+    sub-channels), but these two rebind sub-channels call `mirror_
+    evidence_rebind_to_primary` directly. Without this, a prior `scope`
+    mirror's stale copy of the ticket's evidence list sits on the primary
+    checkout, and a worktree merging `main` back in (e.g. a later `frob
+    ticket work` warm-up) can silently UNION the stale, already-rebound-
+    away id back in alongside the correct one instead of conflicting --
+    the exact T-4143 incident this closes."""
+
+    def _seed_ticket_with_evidence(
+        self, root: Path, ticket_id: str, node_id: str
+    ) -> None:
+        import datetime
+
+        from frob.tickets import write_ticket
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+
+        ticket = Ticket(
+            id=ticket_id,
+            title="evidence rebind mirror fixture",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=datetime.date.today(),
+            evidence=(node_id,),
+        )
+        write_result = write_ticket(root, ticket)
+        assert write_result.is_ok, write_result.err
+
+    # frob:ticket T-4267
+    def test_replace_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
+        """The headline positive control: `replace_evidence` run in a
+        worktree must reach the primary checkout without a land."""
+        from frob.tickets import replace_evidence
+
+        primary, worktree = _setup(tmp_path)
+        self._seed_ticket_with_evidence(worktree, "T-0001", "tests/a.py::test_old")
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-m", "seed evidence", cwd=worktree)
+
+        result = replace_evidence(
+            worktree,
+            "T-0001",
+            "tests/a.py::test_old",
+            "tests/a.py::test_new",
+            reason="renamed in T-4267 test",
+        )
+        assert result.is_ok, result.err
+
+        assert _visible_on_primary(primary, "tests/a.py::test_new")
+        # `evidence_changes` legitimately retains the old id as an audit
+        # trail entry (`old_node: tests/a.py::test_old`) -- only the FLAT
+        # evidence list item (`- tests/a.py::test_old`) must be gone.
+        assert (
+            "- tests/a.py::test_old"
+            not in (primary / "tickets" / "T-0001" / "ticket.md").read_text()
+        )
+
+    # frob:ticket T-4267
+    def test_remove_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
+        """Same headline control for `remove_evidence`."""
+        from frob.tickets._evidence import remove_evidence
+
+        primary, worktree = _setup(tmp_path)
+        self._seed_ticket_with_evidence(worktree, "T-0001", "cmd:false-positive")
+        # `remove_evidence` refuses a write that would drop the ticket's
+        # LAST evidence id to zero with no done report (T-1637 content-
+        # loss guard, unrelated to this ticket) -- a second, kept id
+        # avoids tripping that guard so this test stays about mirroring.
+        path = worktree / "tickets" / "T-0001" / "ticket.md"
+        path.write_text(
+            path.read_text().replace(
+                "- cmd:false-positive\n",
+                "- cmd:false-positive\n- tests/kept.py::test_kept\n",
+            )
+        )
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-m", "seed evidence", cwd=worktree)
+
+        result = remove_evidence(
+            worktree,
+            "T-0001",
+            "cmd:false-positive",
+            reason="never measured anything, T-4267 test",
+        )
+        assert result.is_ok, result.err
+
+        assert (
+            "- cmd:false-positive"
+            not in (primary / "tickets" / "T-0001" / "ticket.md").read_text()
+        )
+        assert _visible_on_primary(primary, "- tests/kept.py::test_kept")
+
+    # frob:ticket T-4267
+    def test_prior_scope_mirror_then_replace_does_not_leave_the_old_id_resurrectable(
+        self, tmp_path: Path
+    ) -> None:
+        """The exact T-4143 sequence: a `scope` mirror runs first (as it
+        would for any dispatched ticket that also narrows/widens scope
+        before rebinding evidence), then `replace_evidence` runs. The
+        worktree's later `git merge main` -- picking up sibling tickets'
+        own mirrored commits, as happens at `frob ticket work` warm-up --
+        must not resurrect the OLD id nor conflict on the ticket file."""
+        from frob.tickets import replace_evidence
+
+        primary, worktree = _setup(tmp_path)
+        self._seed_ticket_with_evidence(worktree, "T-0001", "tests/a.py::test_old")
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-m", "seed evidence", cwd=worktree)
+
+        # An earlier, unrelated scope mirror leaves a copy of this
+        # ticket's ledger (including the OLD evidence id) on primary.
+        mirror_ledger_change_to_primary(worktree, "T-0001", "scope")
+        assert _visible_on_primary(primary, "tests/a.py::test_old")
+
+        result = replace_evidence(
+            worktree,
+            "T-0001",
+            "tests/a.py::test_old",
+            "tests/a.py::test_new",
+            reason="renamed in T-4267 test",
+        )
+        assert result.is_ok, result.err
+
+        # The fix: the replace mirrored too, so primary's copy is now
+        # current -- no stale duplicate for a later merge to resurrect.
+        assert _visible_on_primary(primary, "tests/a.py::test_new")
+        # `evidence_changes` legitimately retains the old id as an audit
+        # trail entry (`old_node: tests/a.py::test_old`) -- only the FLAT
+        # evidence list item (`- tests/a.py::test_old`) must be gone.
+        assert (
+            "- tests/a.py::test_old"
+            not in (primary / "tickets" / "T-0001" / "ticket.md").read_text()
+        )
+
+        # `replace_evidence` only wrote the file (never committed it, same
+        # as any other `_evidence.py` mutation left for the CLI layer's
+        # own `commit_ticket_ledger_change` call) -- commit it in the
+        # worktree now, exactly as the real CLI dispatch would, so the
+        # merge below exercises the real post-replace tree.
+        _git("commit", "-q", "-am", "replace evidence", cwd=worktree)
+
+        merged = _git("merge", "--no-edit", "main", cwd=worktree)
+        assert merged.returncode == 0, merged.stdout + merged.stderr
+        conflicted = _git("diff", "--name-only", "--diff-filter=U", cwd=worktree)
+        assert conflicted.stdout.strip() == ""
+        merged_text = (worktree / "tickets" / "T-0001" / "ticket.md").read_text()
+        assert "- tests/a.py::test_old" not in merged_text
+        assert "- tests/a.py::test_new" in merged_text
+
+    # frob:ticket T-4267
+    def test_running_in_the_primary_checkout_is_a_no_op(self, tmp_path: Path) -> None:
+        """Same coordinator-cost-nothing contract as the generic mirror:
+        `replace_evidence` run directly in the primary checkout must not
+        try to mirror onto itself (there is nowhere else to copy to, and
+        `_resolve_mirror_primary` refuses a self-mirror)."""
+        from frob.tickets import replace_evidence
+
+        primary, _worktree = _setup(tmp_path)
+        self._seed_ticket_with_evidence(primary, "T-0001", "tests/a.py::test_old")
+        _git("add", "-A", cwd=primary)
+        _git("commit", "-q", "-m", "seed evidence", cwd=primary)
+        before = _git("rev-parse", "HEAD", cwd=primary).stdout.strip()
+
+        result = replace_evidence(
+            primary,
+            "T-0001",
+            "tests/a.py::test_old",
+            "tests/a.py::test_new",
+            reason="renamed in T-4267 test",
+        )
+        assert result.is_ok, result.err
+        # `write_ticket` only ever writes the file, never commits -- no
+        # mirror commit (which WOULD show up as a HEAD move, since the
+        # mirror's own `_commit_mirrored_paths` commits) was attempted.
+        after = _git("rev-parse", "HEAD", cwd=primary).stdout.strip()
+        assert after == before
+        assert (
+            "- tests/a.py::test_new"
+            in (primary / "tickets" / "T-0001" / "ticket.md").read_text()
+        )
+
+    # frob:ticket T-4267
+    def test_evidence_stays_generic_commit_unmirrored_at_the_verb_table_level(
+        self,
+    ) -> None:
+        """`LEDGER_VERB_STRATEGY["evidence"]` itself stays `GENERIC_
+        COMMIT_UNMIRRORED` -- the fix is the two call sites mirroring
+        directly (T-4267), not a verb-table reclassification, since the
+        table has no sub-command granularity and the append-only evidence
+        channels (add/cmd/designate-repro) genuinely should not mirror
+        ahead of `land`."""
+        assert (
+            LEDGER_VERB_STRATEGY["evidence"]
+            is LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED
+        )

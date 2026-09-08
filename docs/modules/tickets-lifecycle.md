@@ -1005,6 +1005,61 @@ test_requeue_edit_from_worktree_is_visible_on_primary` and
 `TestLedgerMirrorScope::test_requeue_running_in_the_primary_checkout_is_a_no_op`
 are the positive controls both directions).
 
+### `evidence --replace`/`--remove` mirror directly, bypassing the verb table (T-4267)
+
+`LEDGER_VERB_STRATEGY["evidence"]` stays `GENERIC_COMMIT_UNMIRRORED`
+(the whole-verb classification is correct for `add_evidence`/
+`add_cmd_evidence`/`--designate-repro`: ordinary append-only worktree
+progress a future `land` carries across atomically, same reasoning as
+`close`/`drop`/`fail`). But two of `evidence`'s five sub-channels are not
+that shape: `replace_evidence`/`remove_evidence` REBIND or DELETE
+previously-recorded ledger content, and the verb-table classification
+has no sub-command granularity to single them out (the whole `evidence`
+CLI verb dispatches through one handler, `frob.app.ticket_runner._verify.
+_evidence`, covering all five channels behind one `command` string).
+
+Measured incident (T-4143, this session): a ticket ran a `scope`-mirrored
+edit first (any `GENERIC_COMMIT_MIRRORED` verb touching the same ticket
+does), which left an independent, already-committed copy of that
+ticket's `tickets/<id>/ticket.md` sitting on the primary checkout. A
+later, UNMIRRORED `replace_evidence` in the worktree rebound two evidence
+ids, then the worktree merged `main` back in (picking up sibling
+tickets' own mirrors, as `frob ticket work`'s warm-up does). Because the
+evidence list is plain lines to git, not a structured field, the old-vs-
+new divergence looked like two independent list insertions to the 3-way
+diff and was UNIONED rather than conflicted: the stale OLD ids ended up
+sitting right next to the correct NEW ones, and `frob ticket land`'s
+post-merge evidence-resolution check then correctly refused on the stale
+duplicates -- citing ids the ticket had already, genuinely, rebound away
+from. Confirmed by direct inspection of the merged `ticket.md` carrying
+both old and new node ids side by side.
+
+The fix is `frob.app.ticket_runner._ledger_mirror.
+mirror_evidence_rebind_to_primary`: the `mirror_promote_to_primary`
+precedent (above) applied to this pair of call sites -- an unconditional
+mirror, bypassing `MIRRORED_LEDGER_VERBS`/`_mirror_target`'s membership
+check entirely, called directly from `replace_evidence`'s and
+`remove_evidence`'s own write tails in `frob.tickets._evidence` right
+after each succeeds. It shares its copy+commit core
+(`_mirror_ledger_paths`) with the generic, verb-table-gated `mirror_
+ledger_change_to_primary` rather than duplicating that logic, so there is
+exactly one copy+commit implementation regardless of which caller
+decided mirroring was needed.
+
+This closes the gap for `evidence`'s two REBIND channels specifically.
+The append-only channels (`add_evidence`/`add_cmd_evidence`/`--designate-
+repro`) are not affected by this hazard and are deliberately left
+unmirrored: they only ever ADD lines, and two independent additions
+unioning cleanly is the CORRECT outcome for an append, not a defect --
+the hazard this closes is specific to a REBIND or DELETION whose stale
+predecessor can resurrect via union. No other `GENERIC_COMMIT_UNMIRRORED`
+verb (`new`/`plan`/`start`/`work`/`sweep`/`reconcile`/`close`/`reverify`/
+`fail`/`drop`/`done-report`/`archive`) mutates or deletes previously-
+recorded ledger content independently of the state transition `land`
+itself carries -- each of those either only appends, or only advances
+state monotonically toward a transition a future `land` is guaranteed to
+carry, so none of them share this hazard.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched
