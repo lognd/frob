@@ -27,42 +27,41 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/tickets/_leases.py
-  reason: ticket body explicitly directs running the project's format verb; ruff format's
-    rewrite set for this run covers these 4 files (none of them the module named in
-    the original scope glob) -- widening scope to cover the formatter's actual output
-    rather than hand-picking a subset
+  reason: ruff format sweep rewrites these 4 files; widening scope to cover the formatter's
+    actual output as the ticket body directs
   actor: logan
   at: '2026-09-08'
 - op: add
   glob: tests/test_ticket_leases.py
-  reason: ticket body explicitly directs running the project's format verb; ruff format's
-    rewrite set for this run covers these 4 files (none of them the module named in
-    the original scope glob) -- widening scope to cover the formatter's actual output
-    rather than hand-picking a subset
+  reason: ruff format sweep rewrites these 4 files; widening scope to cover the formatter's
+    actual output as the ticket body directs
   actor: logan
   at: '2026-09-08'
 - op: add
   glob: tests/unit/coordinator_suite/test_fleet_land.py
-  reason: ticket body explicitly directs running the project's format verb; ruff format's
-    rewrite set for this run covers these 4 files (none of them the module named in
-    the original scope glob) -- widening scope to cover the formatter's actual output
-    rather than hand-picking a subset
+  reason: ruff format sweep rewrites these 4 files; widening scope to cover the formatter's
+    actual output as the ticket body directs
   actor: logan
   at: '2026-09-08'
 - op: add
   glob: tests/unit/test_process_tty.py
-  reason: ticket body explicitly directs running the project's format verb; ruff format's
-    rewrite set for this run covers these 4 files (none of them the module named in
-    the original scope glob) -- widening scope to cover the formatter's actual output
-    rather than hand-picking a subset
+  reason: ruff format sweep rewrites these 4 files; widening scope to cover the formatter's
+    actual output as the ticket body directs
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_backwards_edge_is_reported_as_a_backwards_directive
+- tests/gates/test_tdd_order.py::TestTddOrderViolations::test_role_validation_never_spawns_git_for_a_malformed_edge
 designated_repro_test: null
 acceptance:
 - text: given the two doc anchors on private helpers, when they are resolved, then
     the resolution states whether the documentation describes those helpers individually
     or the gate's behaviour, rather than moving the anchors to silence the rule
-  evidence: []
+  evidence:
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_backwards_edge_is_reported_as_a_backwards_directive
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_role_validation_never_spawns_git_for_a_malformed_edge
 - text: given the formatter, when it has run, then no file would be reformatted and
     that change is committed separately from the anchor decision
   evidence: []
