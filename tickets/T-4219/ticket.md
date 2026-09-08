@@ -112,20 +112,41 @@ body_changes:
   at: '2026-09-07'
   old_length: 6137
   new_length: 6137
+evidence:
+- tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_markdown_image_in_declared_readme_fires_error
+- tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_html_img_src_in_declared_readme_fires_error
+- tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_absolute_image_source_does_not_fire
+- tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_link_target_in_declared_readme_does_not_fire
+- tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_image_inside_code_span_does_not_fire
+- tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown::test_relative_image_in_other_markdown_warns_not_errors
+- tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown::test_declared_readme_is_not_double_reported_as_pkg002
+- tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription::test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass
+- tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription::test_missing_pyproject_reports_unresolved
+- tests/unit/gates/test_pkg_resources.py::TestPkg001RemedyMessage::test_remedy_derives_raw_url_from_declared_repository
+- tests/unit/gates/test_pkg_resources.py::TestPkg001RemedyMessage::test_remedy_states_shape_only_with_no_declared_repository
 designated_repro_test: null
 acceptance:
 - text: given a project whose declared long-description file contains a relative image
     source, when the gate runs, then it reports an error
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_markdown_image_in_declared_readme_fires_error
 - text: given the same relative reference in a markdown file that is not the declared
     long description, when the gate runs, then it reports a warning rather than an
     error
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown::test_relative_image_in_other_markdown_warns_not_errors
 - text: given a project that declares no long-description file, when the gate runs,
     then that case is handled explicitly without crashing or silently passing
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription::test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass
 - text: given a relative link target in any markdown file including the declared long
     description, when the gate runs, then it reports nothing
+  evidence:
+  - tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_link_target_in_declared_readme_does_not_fire
+- text: given the new PKG001/PKG002/PKG003 gate rules, when run through the production
+    pkg_resources_gate invocation, then the fixture that FAILED before this change
+    (relative image reported nothing) now PASSES (PKG001 fires error, PKG002 warns,
+    PKG003 reports unresolved)
   evidence: []
 threat: null
 component: null
