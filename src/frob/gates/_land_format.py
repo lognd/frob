@@ -47,12 +47,15 @@ for the tracked follow-up."""
 
 # frob:ticket T-4298
 # Deferred: auto-apply LANDFMT001's drift the same way `_fmt_pre_land_step`
-# already absorbs `frob:` directive drift, once `_land_cmd.py`'s scope
-# lease is free -- extend `_absorb_pre_land_fixes` with a `ruff format`-
-# on-touched-set step next to its existing `frob fmt` one, so a land
-# REWRITES this drift instead of refusing on it, matching this project's
-# existing Tier-A auto-fix posture.
-# frob:todo T-4298
+# already absorbs `frob:` directive drift, now that `_land_cmd.py`'s T-4281
+# scope lease is free (T-4281 closed done) -- extend `_absorb_pre_land_
+# fixes` with a `ruff format`-on-touched-set step next to its existing
+# `frob fmt` one, so a land REWRITES this drift instead of refusing on it,
+# matching this project's existing Tier-A auto-fix posture. Rebound from
+# T-4298 to T-4323 by T-4316: the deferred work is still
+# genuinely outstanding (T-4298 only shipped the REFUSE half by design),
+# not residue -- T-4298 itself is closed and cannot hold an open marker.
+# frob:todo T-4323
 
 from __future__ import annotations
 
