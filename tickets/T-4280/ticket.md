@@ -17,8 +17,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/policy/__init__.py
 - tests/test_policy.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: policy/__init__.py's load_policy/policy_gate carry a pre-existing
+  frob:doc target on docs/modules/gates.md unrelated to this ticket's fix (the _files_under
+  separator-pinning bug and its own frob:tests-bound evidence, both already in scope);
+  not chasing that unrelated doc-anchor closure edge to keep this fix's scope minimal.
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
