@@ -434,7 +434,10 @@ def main(argv: list[str] | None = None) -> int:
     dest_to_source = {dest_rel: source_rel for source_rel, dest_rel in MANAGED}
     any_stale_skipped = False
     for entry, dest, want in actions:
-        dest_rel = str(dest.relative_to(_HOME_CLAUDE))
+        # T-4278: `.as_posix()`, not `str()` -- `dest_to_source` is keyed
+        # by forward-slash strings, and `str()` used the native (backslash
+        # on Windows) separator, silently missing this lookup there.
+        dest_rel = dest.relative_to(_HOME_CLAUDE).as_posix()
         source_rel = dest_to_source.get(dest_rel)
         if source_rel is not None and source_rel in stale:
             any_stale_skipped = True

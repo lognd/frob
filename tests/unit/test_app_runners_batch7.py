@@ -9,6 +9,7 @@ covered this batch: `app/ticket_runner.py`, `app/sys_runner.py`.
 
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 
 import pytest
@@ -1284,12 +1285,31 @@ class TestClipboardAttachOnNew:
     monkeypatched TTY + clipboard. T-3322: the interactive offer now also
     requires the `FROB_TICKET_NEW_CLIPBOARD` opt-in env var (isatty alone
     is no longer sufficient, T-3322's second gate) -- every test below
-    that wants the prompt reachable sets it explicitly."""
+    that wants the prompt reachable sets it explicitly.
+
+    T-4278: a test that wants the prompt REACHABLE (an interactive TTY)
+    must patch `_new.is_interactive_stdin` itself, not the bare
+    `sys.stdin.isatty` this class used pre-T-4255 -- `_maybe_attach_
+    clipboard_image` calls the shared `frob.process._tty.
+    is_interactive_stdin()` (T-4255), which on win32 ALSO requires
+    `GetConsoleMode` to succeed (module docstring), something a pytest
+    worker's stdin never has regardless of what `isatty()` is patched to
+    return. Patching `sys.stdin.isatty` alone therefore silently failed
+    to reach the offer on real Windows (measured via `winrun`) while
+    passing everywhere else -- patch the already-shared decision point
+    directly instead of adding a second, narrower TTY-faking helper. A
+    test that wants the prompt UNREACHABLE still patches `sys.stdin.
+    isatty` to `False`, since `is_interactive_stdin` short-circuits on
+    that before ever consulting win32."""
 
     def test_no_clipboard_image_skips(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr(
+            importlib.import_module("frob.app.ticket_runner._new"),
+            "is_interactive_stdin",
+            lambda: True,
+        )
         monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
         import frob.tickets.clipboard as clipboard_mod
 
@@ -1305,7 +1325,11 @@ class TestClipboardAttachOnNew:
     def test_declined_answer_skips_attach(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr(
+            importlib.import_module("frob.app.ticket_runner._new"),
+            "is_interactive_stdin",
+            lambda: True,
+        )
         monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
         import frob.tickets.clipboard as clipboard_mod
 
@@ -1322,7 +1346,11 @@ class TestClipboardAttachOnNew:
     def test_accepted_answer_attaches(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr(
+            importlib.import_module("frob.app.ticket_runner._new"),
+            "is_interactive_stdin",
+            lambda: True,
+        )
         monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
         import frob.tickets.clipboard as clipboard_mod
 

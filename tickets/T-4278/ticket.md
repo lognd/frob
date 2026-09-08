@@ -3,7 +3,7 @@ id: T-4278
 title: 'five remaining windows failures with no owner: worktree-guard stdout purity,
   clipboard attach, two shared-identifier-counter cases, and the claude-config stale
   guard'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
