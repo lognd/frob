@@ -19,6 +19,7 @@ scope:
 - src/frob/graph/callgraph.py
 - tests/test_graph.py
 - tests/gates_suite/test_prework.py
+- docs/audits/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,12 @@ scope_changes:
   reason: 'T-4286: _scope002_violations'' TestScope002ClosureGate fixture asserted
     a bare-name-no-import false-positive that this fix correctly no longer flags;
     fixture needed a real import, no gates/__init__.py code changed'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/audits/graph.md
+  reason: 'T-4286: AFFECT001 requires build_call_graph''s own affects()-closure doc
+    in scope'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
