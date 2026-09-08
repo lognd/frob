@@ -19,6 +19,7 @@ scope:
 - src/frob/graph/__init__.py
 - tests/unit/test_graph_lock_holder_naming.py
 - tests/unit/test_graph_ingest_batching.py
+- docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,13 @@ scope_changes:
   reason: new dedicated test files for T-4282's lock-holder-naming and incremental-commit
     fixes; kept out of the large shared test_graph.py/test_graph_cache.py files to
     avoid their unrelated private-helper scope-closure fan-out
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'AFFECT001: build_graph''s own docstring change (T-4282 periodic-commit
+    ingest) makes this anchor''s ''one open, uncommitted transaction'' claim stale;
+    updating in place'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
