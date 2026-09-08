@@ -3,7 +3,7 @@ id: T-4155
 title: 'the pathspec migration left is_excluded platform-dependent for backslash paths:
   linux says False, Windows says True, and T-4102''s replacement fixture asserts the
   linux answer'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
