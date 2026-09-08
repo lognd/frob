@@ -19,6 +19,7 @@ scope:
 - tests/unit/verify/test_verify_runner.py
 - docs/modules/verify-rapid-debt-visibility.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -100,6 +101,12 @@ scope_changes:
   reason: declare the two new fs.read call sites (.read_text) this ticket's fix added
     in verify_runner.py, per SELFAUDIT001 -- land blocks on this as attributable to
     this ticket's own touched file
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump the cli::fs.read ratchet ceiling for this ticket's two new .read_text()
+    sites, per SELFAUDIT001/SYS111
   actor: logan
   at: '2026-09-08'
 evidence:
