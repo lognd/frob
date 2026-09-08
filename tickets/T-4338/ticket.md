@@ -1,7 +1,7 @@
 ---
 id: T-4338
 title: CI does not pin the uv version, so platform legs silently run different toolchains
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
