@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_land_format.py
+- tickets/T-draft-99f20919/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-99f20919/**
+  reason: filing the auto-apply follow-up ticket this fix rebinds the frob:todo to
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
