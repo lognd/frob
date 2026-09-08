@@ -38,6 +38,13 @@ scope_changes:
     fix -- waiving AFFECT001 on the touched symbols instead, citing this ticket'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_check_measurement.py::TestSilentNonzeroExit::test_listed_in_unmeasured_results
+- tests/unit/test_check_measurement.py::TestSilentNonzeroExit::test_as_text_renders_unres_not_fail
+- tests/unit/test_check_measurement.py::TestSilentNonzeroExit::test_as_text_lists_reason_with_exit_code_and_summary
+- tests/unit/test_check_measurement.py::TestSilentNonzeroExit::test_a_real_failure_with_diagnostics_still_renders_fail
+- tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_empty_when_every_result_measured
+- tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_lists_every_not_measured_result
 designated_repro_test: null
 threat: null
 component: null
