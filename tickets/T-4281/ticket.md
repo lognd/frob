@@ -19,6 +19,9 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_land_verify_claims_outcome.py
+- tests/test_ticket_land_proof_claims.py
+- tests/unit/test_ticket_runner_gate_findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +39,24 @@ scope_changes:
   reason: 'T-4281: the actual check-spawn (_verify.py) and LAND-PROOF printer (_land_cmd.py)
     live outside the ticket''s original two-file scope; the fix requires naming the
     infra-failure cause at its source and printing it'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_land_verify_claims_outcome.py
+  reason: 'T-4281: new tests reproducing/pinning the INFRA_UNMEASURED classification
+    and its LAND-PROOF printing live in these existing test files'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_ticket_land_proof_claims.py
+  reason: 'T-4281: new tests reproducing/pinning the INFRA_UNMEASURED classification
+    and its LAND-PROOF printing live in these existing test files'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: 'T-4281: new tests reproducing/pinning the INFRA_UNMEASURED classification
+    and its LAND-PROOF printing live in these existing test files'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
