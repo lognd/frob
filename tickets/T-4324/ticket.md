@@ -2,7 +2,7 @@
 id: T-4324
 title: frob verify status and ticket show hide live rapid-debt.jsonl sweep-deferred
   debt
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
