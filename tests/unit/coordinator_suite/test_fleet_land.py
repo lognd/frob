@@ -291,12 +291,14 @@ class TestLandLockHolderPids:
 
 # frob:ticket T-2691
 # frob:ticket T-4266
+# frob:ticket T-4290
 class TestReadLandStatusMarker:
     """`fleet_status.read_land_status_marker` (T-2691, multi-entry shape
     T-4266): reads the `frob.tickets._land`-written land-status marker
     best-effort."""
 
     # frob:ticket T-4266
+    # frob:ticket T-4290
     def test_reads_a_written_marker(self, tmp_path: Path) -> None:
         (tmp_path / ".frob").mkdir(parents=True)
         (tmp_path / ".frob" / "land-status.json").write_text(
@@ -305,9 +307,7 @@ class TestReadLandStatusMarker:
             encoding="utf-8",
         )
         marker = fleet_status.read_land_status_marker(tmp_path)
-        assert marker == {
-            "42": {"ticket_id": "T-2691", "phase": "running", "pid": 42}
-        }
+        assert marker == {"42": {"ticket_id": "T-2691", "phase": "running", "pid": 42}}
 
     # frob:ticket T-2691
     def test_missing_marker_returns_none(self, tmp_path: Path) -> None:
@@ -336,6 +336,7 @@ class TestReadLandStatusMarker:
 
 # frob:ticket T-2691
 # frob:ticket T-4266
+# frob:ticket T-4290
 class TestLandStatusMarkerLines:
     """`fleet_status._land_status_marker_lines` (T-2691, multi-entry
     T-4266): the LANDS-section rendering of a land-status marker."""
@@ -346,10 +347,11 @@ class TestLandStatusMarkerLines:
         assert fleet_status._land_status_marker_lines({}) == []
 
     # frob:ticket T-4266
-    def test_marker_renders_phase_ticket_pid_and_liveness(
-        self, tmp_path: Path
-    ) -> None:
-        entries = {"42": {"ticket_id": "T-2691", "phase": "waiting-for-lock", "pid": 42}}
+    # frob:ticket T-4290
+    def test_marker_renders_phase_ticket_pid_and_liveness(self, tmp_path: Path) -> None:
+        entries = {
+            "42": {"ticket_id": "T-2691", "phase": "waiting-for-lock", "pid": 42}
+        }
         lines = fleet_status._land_status_marker_lines(entries, proc=tmp_path)
         assert len(lines) == 1
         assert "T-2691" in lines[0]
@@ -368,9 +370,8 @@ class TestLandStatusMarkerLines:
         assert "(live)" in lines[0]
 
     # frob:ticket T-4266
-    def test_concurrent_lands_each_render_their_own_line(
-        self, tmp_path: Path
-    ) -> None:
+    # frob:ticket T-4290
+    def test_concurrent_lands_each_render_their_own_line(self, tmp_path: Path) -> None:
         """T-4266's own must-fire fixture: several entries in the marker
         produce SEVERAL lines, one per land -- the single-line
         predecessor of this function could only ever show one."""

@@ -1400,6 +1400,7 @@ class TestCommitTicketLedgerChange:
 
 
 # frob:ticket T-2714
+# frob:ticket T-4290
 class TestLedgerCommitRepairMarker:
     """T-2714: a process killed strictly between `git add` and `git
     commit` inside `_add_and_commit_tickets_md` used to strand the shared
@@ -1515,6 +1516,7 @@ class TestLedgerCommitRepairMarker:
         assert status.stdout.strip() == ""
 
     # frob:ticket T-4273
+    # frob:ticket T-4290
     def test_resolved_race_clears_the_marker_without_a_false_alarm(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1551,7 +1553,9 @@ class TestLedgerCommitRepairMarker:
 
         marker_path = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
         with caplog.at_level(logging.INFO, logger="frob.tickets._leases"):
-            _finish_ledger_commit_marker(repo, marker_path, "T-0001", message, pathspecs)
+            _finish_ledger_commit_marker(
+                repo, marker_path, "T-0001", message, pathspecs
+            )
 
         assert not any("self-heal FAILED" in r.message for r in caplog.records), [
             r.message for r in caplog.records

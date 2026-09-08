@@ -396,7 +396,6 @@ def _looks_like_test_path(path: str) -> bool:
     )
 
 
-# frob:doc docs/modules/gates.md#tdd001-t-3009
 def _tdd001_self_referential_message(symref: str) -> str:
     """T-4260: the message for a `frob:tests` edge whose `src` and
     `target` are the IDENTICAL symref -- both sides resolve to the same
@@ -418,7 +417,6 @@ def _tdd001_self_referential_message(symref: str) -> str:
     )
 
 
-# frob:doc docs/modules/gates.md#tdd001-t-3009
 def _tdd001_backwards_message(artifact_symref: str, test_symref: str) -> str:
     """T-4260: the message for a `frob:tests` edge written backwards --
     `src` (conventionally the tested/implementation side) looks like the

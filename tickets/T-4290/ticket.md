@@ -2,7 +2,7 @@
 id: T-4290
 title: 'the last unowned self-gate errors: two doc anchors on private commit-order
   helpers, and four files needing reformatting'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -53,6 +53,9 @@ evidence:
 - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation
 - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_backwards_edge_is_reported_as_a_backwards_directive
 - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_role_validation_never_spawns_git_for_a_malformed_edge
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_resolved_race_clears_the_marker_without_a_false_alarm
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_reads_a_written_marker
+- tests/unit/test_process_tty.py::TestIsInteractiveStdin::test_win32_tty_isatty_and_real_console_is_interactive
 designated_repro_test: null
 acceptance:
 - text: given the two doc anchors on private helpers, when they are resolved, then
@@ -64,11 +67,16 @@ acceptance:
   - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_role_validation_never_spawns_git_for_a_malformed_edge
 - text: given the formatter, when it has run, then no file would be reformatted and
     that change is committed separately from the anchor decision
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_resolved_race_clears_the_marker_without_a_false_alarm
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_reads_a_written_marker
+  - tests/unit/test_process_tty.py::TestIsInteractiveStdin::test_win32_tty_isatty_and_real_console_is_interactive
 - text: given the unscoped gate run the job performs, when it is quoted, then the
     errors owned by the other two tickets are named as still-present rather than counted
     as this ticket's failure
-  evidence: []
+  evidence:
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation
+  - tests/gates/test_tdd_order.py::TestTddOrderViolations::test_backwards_edge_is_reported_as_a_backwards_directive
 threat: null
 component: null
 anchor: false

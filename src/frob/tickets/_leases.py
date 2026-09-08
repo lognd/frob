@@ -2715,6 +2715,7 @@ def _finish_ledger_commit_marker(
 
 
 # frob:ticket T-4273
+# frob:ticket T-4290
 # frob:tests \
 # tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_clears_t\
 # he_marker_without_a_false_alarm
@@ -2765,7 +2766,7 @@ def _handle_finish_marker_retry_failure(
     _log.error(
         "tickets: %s's T-2714 self-heal FAILED -- %s is still "
         "dirty for %s (the %s step failed: %s). This needs a "
-        "human: `git -C %s add %s && git -C %s commit -m \"%s\" "
+        'human: `git -C %s add %s && git -C %s commit -m "%s" '
         "-- %s`, or discard by hand if the content is no longer "
         "wanted",
         marker_ticket_id,
