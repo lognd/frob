@@ -2,7 +2,7 @@
 id: T-4318
 title: Deferred post-land sweep is wall-clock-budgeted with nobody waiting, and verify
   status hides the resulting debt
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -44,6 +44,8 @@ body_changes:
   at: '2026-09-08'
   old_length: 2780
   new_length: 4372
+evidence:
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_calls_unscoped_error_findings_with_full_true
 designated_repro_test: null
 threat: null
 component: null

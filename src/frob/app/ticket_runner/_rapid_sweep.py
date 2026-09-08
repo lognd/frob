@@ -3747,6 +3747,9 @@ def _check_claim_divergence_post_land(
 # frob:ticket T-2009
 # frob:ticket T-2571
 # frob:ticket T-2595
+# frob:ticket T-4318
+# frob:tests \
+# tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_calls_unscoped_error_findings_with_full_true  # noqa: E501
 def _measure_fresh_and_write_baseline(
     root: Path, final_id: str, commit_sha: str
 ) -> Result[
@@ -3762,7 +3765,30 @@ def _measure_fresh_and_write_baseline(
     actual_head)`, where `prior_baseline` is `None` on a first sweep (no
     baseline existed yet -- the caller's own signal to record-and-file-
     nothing) and `Err(Unmeasurable)` when the check itself produced no
-    parsable error set."""
+    parsable error set.
+
+    T-4318: calls `_unscoped_error_findings` with `full=True`. This
+    function runs ONLY inside the detached `frob ticket sweep-async`
+    child (`spawn_deferred_post_land_sweep`'s `start_new_session=True`
+    subprocess) -- nobody is waiting on its wall clock the way a land
+    someone typed and is watching is. The prior default (`full=False`,
+    a `--budget` derived by `_derive_post_land_sweep_budget_s` for an
+    INLINE foreground land) bought this detached child zero latency
+    benefit while costing it the entire measurement under fleet load:
+    a truncated `--budget` run defers stage groups, and `_unscoped_
+    error_findings`'s own (correct, unchanged) T-1703 refusal turns any
+    deferral into `None` -- so a busy fleet made every deferred sweep
+    UNMEASURABLE, which was in fact all five lands on 2026-09-08
+    (T-4197, T-4301, T-4305, T-4306, T-4307). `full=True` was already
+    built for exactly this shape of caller (see `_unscoped_error_
+    findings`'s own T-3001 docstring, which names "the detached,
+    `ionice`-idle watermark drain child" as one of its two intended
+    users) and is already used by `frob verify now`
+    (`frob.verify._worker._default_verify_fn`) -- this call site simply
+    never opted in. `full=True` drops `--budget` entirely and uses
+    `_FULL_CHECK_TIMEOUT_S` (1800s) as its hard ceiling instead, so this
+    sweep now measures the real tree rather than a wall-clock-truncated
+    guess of it."""
     from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
 
     _log.info(
@@ -3770,7 +3796,7 @@ def _measure_fresh_and_write_baseline(
         final_id,
         commit_sha[:12],
     )
-    fresh = _unscoped_error_findings(root, final_id)
+    fresh = _unscoped_error_findings(root, final_id, full=True)
     if fresh is None:
         _log.error(
             "rapid sweep: %s deferred unscoped sweep was UNMEASURABLE "

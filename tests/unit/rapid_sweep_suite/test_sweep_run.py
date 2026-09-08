@@ -20,6 +20,7 @@ from frob.app.ticket_runner._rapid_sweep import (
 )
 
 
+# frob:ticket T-4318
 class TestDeferredSweepRun:
     """`run_deferred_post_land_sweep` files, never reverts."""
 
@@ -62,6 +63,35 @@ class TestDeferredSweepRun:
         assert result.danger_ok is None
         assert filed == []
         assert _read_baseline(tmp_path) == fresh
+
+    # frob:ticket T-4318
+    def test_calls_unscoped_error_findings_with_full_true(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4318: the deferred sweep runs in a detached `frob ticket
+        sweep-async` child nobody is waiting on, so it must pass
+        `full=True` to `_unscoped_error_findings` (dropping the
+        `--budget` ceiling `_derive_post_land_sweep_budget_s` derives
+        for an INLINE foreground land) rather than defaulting to
+        `full=False` and truncating under fleet load exactly like an
+        interactive caller would, for zero latency benefit."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_calls_unscoped_error_findings_with_full_true  # noqa: E501
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "old")
+        calls: list[dict[str, object]] = []
+
+        def _fake_findings(
+            *args: object, **kwargs: object
+        ) -> frozenset[tuple[str, str]]:
+            calls.append(kwargs)
+            return frozenset({("COV003", "a.py")})
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            _fake_findings,
+        )
+        result = run_deferred_post_land_sweep(tmp_path, "T-0001", "abc123")
+        assert result.is_ok
+        assert calls == [{"full": True}]
 
     def test_no_new_findings_is_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
