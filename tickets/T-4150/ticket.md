@@ -105,9 +105,19 @@ acceptance:
 - text: given a private module path, when a consumer attempts to import it as public
     API, then the advertised-surface fixture does not cover it
   evidence: []
-- text: given two different frob installs, when the path-reporting verb runs under
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: given two different frob installs, when the path-reporting verb runs under
     each, then each reports the environment of the frob actually executing
-  evidence: []
+  new_text: null
+  reason: 'T-4150''s own coordinator note deliberately excluded the path-reporting
+    verb from this ticket''s scope (registration-list surface not measured yet, would
+    over/under-claim leases); filed T-4299 as the dedicated ticket for it. T-4150
+    closes on the two criteria it actually owns: wheel-import proof and the must-stay-quiet
+    fixture.'
+  actor: logan
+  at: '2026-09-08'
 threat: null
 component: null
 anchor: false
