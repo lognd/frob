@@ -2,7 +2,7 @@
 id: T-4286
 title: SCOPE002 private-helper check resolves bare-name test helpers across the whole
   repo, flooding unrelated findings
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -16,10 +16,49 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_scope*.py
+- src/frob/graph/callgraph.py
+- tests/test_graph.py
+- tests/gates_suite/test_prework.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/callgraph.py
+  reason: 'T-4286: real private-helper resolution logic + its verify_imports flip
+    live in callgraph.py; scope glob ''src/frob/gates/_scope*.py'' never matched the
+    actual implementation file'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'T-4286: real private-helper resolution logic + its verify_imports flip
+    live in callgraph.py; scope glob ''src/frob/gates/_scope*.py'' never matched the
+    actual implementation file'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/graph/callgraph.py
+  reason: 'T-4286: real private-helper resolution logic + its verify_imports flip
+    live in callgraph.py; scope glob ''src/frob/gates/_scope*.py'' never matched the
+    actual implementation file'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'T-4286: real private-helper resolution logic + its verify_imports flip
+    live in callgraph.py; scope glob ''src/frob/gates/_scope*.py'' never matched the
+    actual implementation file'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/gates_suite/test_prework.py
+  reason: 'T-4286: _scope002_violations'' TestScope002ClosureGate fixture asserted
+    a bare-name-no-import false-positive that this fix correctly no longer flags;
+    fixture needed a real import, no gates/__init__.py code changed'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
