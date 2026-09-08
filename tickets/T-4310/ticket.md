@@ -32,6 +32,8 @@ scope_changes:
     suite the existing SCOPE002 tests already live
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_scope_breadth_ack_exempts_ticket_entirely
 designated_repro_test: null
 threat: null
 component: null
