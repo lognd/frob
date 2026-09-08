@@ -17,6 +17,7 @@ scope:
 - docs/modules/verify-rapid-debt-visibility.md
 - invariants/INV-052.md
 - docs/index.md
+- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,14 @@ scope_changes:
   reason: swap the heavy tickets-verify-sweep.md link target (137 scope-closure warnings)
     for docs/index.md's module list, the same lightweight anti-orphan link surface
     T-4324 already relies on for its own module docs
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: INV002 requires a real frob:invariant code anchor at the enforcing site
+    (record_rapid_debt) for the new INV-052 this doc's genuine append-only claim needs;
+    the T-4324 doc's existing describes-anchor to verify_runner.py stays out of scope
+    since that file needs no edit
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
