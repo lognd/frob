@@ -1,7 +1,7 @@
 ---
 id: T-4322
 title: Windows suite aborts on a worker controller error, so its failing set is unmeasured
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
