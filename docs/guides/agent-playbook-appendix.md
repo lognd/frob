@@ -489,7 +489,8 @@ for s in $(timeout 30 uv run frob check --only list); do
 done
 ```
 
-<!-- frob:enumerates src/frob/check/__init__.py::_STAGE_GROUPS members="lint,static,gates-fast,gates-native,gates-security" -->
+<!-- frob:enumerates src/frob/check/__init__.py::_TOOL_ONLY_STAGE_GROUPS members="lint,static" -->
+<!-- frob:enumerates src/frob/gates/__init__.py::_KNOWN_GATE_STAGE_GROUP_NAMES members="gates-fast,gates-native,gates-security" -->
 `uv run frob check --only list` prints the current stage-group names, one
 per line (`lint`, `static`, `gates-fast`, `gates-native`,
 `gates-security`) -- discover them this way rather than hardcoding the
@@ -497,8 +498,14 @@ list, since new groups may be added later. Add `--ticket T-XXXX` /
 `--json` / `--delta` to each iteration exactly as you would to a single
 `frob check` call; every existing flag composes with `--only` unchanged.
 A stage-group name is just a preset `--only` value (see
-`frob.check._stage_groups()`) -- naming an individual tool (`ruff`) or gate
-(`doclink`) directly still works exactly as before, unaffected.
+`frob.check._stage_groups()`, which merges the two lists above --
+`lint`/`static` are hand-listed tool groups declared in `frob.check`
+itself, while `gates-fast`/`gates-native`/`gates-security` are DERIVED at
+call time from `frob.gates._GATE_STAGE_GROUPS`, the single place each
+gate's stage-group membership is now declared, enforced by an
+import-time assert so a gate cannot register without one) -- naming an
+individual tool (`ruff`) or gate (`doclink`) directly still works exactly
+as before, unaffected.
 
 `frob check --stamp-baseline` used to share this exact hazard (it ran one
 undelta'd all-gates `run_gates` call, same as a bare `frob check` -- T-0751

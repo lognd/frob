@@ -1,7 +1,7 @@
 ---
 id: T-4345
 title: Playbook doc edge names the moved stage-group mapping and no longer resolves
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:uv run frob check --only docblocks --json exit=0 sha256=8404bae9255b
+- cmd:uv run frob check --only drift --json exit=0 sha256=fc1acb10ba0c
 designated_repro_test: null
 threat: null
 component: null
