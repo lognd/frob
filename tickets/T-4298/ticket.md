@@ -28,6 +28,7 @@ scope:
 - tests/unit/test_land_format_gate.py
 - docs/design/registry/check-coverage.yaml
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -117,6 +118,12 @@ scope_changes:
   reason: declare tests/unit/test_land_format_gate.py's exec/fs.write capability use
     (SELFAUDIT001/SYS100), same testsuite node declaration test_land_parity_gate.py
     already carries
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS111 requires bumping the exec/fs.write ratchet ceiling in
+    the same diff that adds a new via-list site
   actor: logan
   at: '2026-09-08'
 body_changes:
