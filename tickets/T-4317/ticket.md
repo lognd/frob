@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
+- tests/unit/test_graph_lock_holder_naming.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_graph_lock_holder_naming.py
+  reason: added regression tests for the deciding/formatting helpers split out to
+    satisfy ARCH103
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
