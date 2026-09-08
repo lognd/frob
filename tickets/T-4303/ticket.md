@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
 - src/frob/_cli_parsers/_core.py
+- tests/gates_suite/test_wire.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: src/frob/_cli_parsers/_core.py
   reason: 'T-4303: discharge the whereis WIRE001 waiver (follow_up=T-4303) now that
     the real exemption lands -- the waiver''s own job is done'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/gates_suite/test_wire.py
+  reason: 'T-4303: new WIRE001 exemption tests for the bypass-verb fix live here'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
