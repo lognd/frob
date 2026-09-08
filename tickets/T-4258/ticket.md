@@ -40,14 +40,23 @@ acceptance:
     then the message names the holding process rather than saying only that the database
     is locked
   evidence: []
-- text: given a land whose graph build failed, when it emits its land proof, then
-    the proof distinguishes an unmeasured verification caused by an infrastructure
-    failure from a genuine skip
-  evidence: []
 - text: given a serve daemon that has performed no useful work for more than one hour,
     when the liveness check runs, then the daemon terminates itself, and idleness
     is measured by work performed rather than by poll iterations
   evidence: []
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: given a land whose graph build failed, when it emits its land proof, then
+    the proof distinguishes an unmeasured verification caused by an infrastructure
+    failure from a genuine skip
+  new_text: null
+  reason: 'split to T-draft-d015a2a1: the fix lives in src/frob/tickets/_land_verify.py
+    + _land.py, outside this ticket''s src/frob/serve/_daemon.py + src/frob/serve/_warm.py
+    scope, and is a large enough land-proof-semantics change to deserve its own ticket
+    rather than widen this one''s blast radius'
+  actor: logan
+  at: '2026-09-08'
 threat: null
 component: null
 anchor: false
