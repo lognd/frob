@@ -2,7 +2,7 @@
 id: T-4324
 title: frob verify status and ticket show hide live rapid-debt.jsonl sweep-deferred
   debt
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -18,6 +18,7 @@ scope:
 - src/frob/app/verify_runner.py
 - tests/unit/verify/test_verify_runner.py
 - docs/modules/verify-rapid-debt-visibility.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -92,6 +93,13 @@ scope_changes:
   glob: design/frob.strata
   reason: 'revert: fixing SELFAUDIT001 there cascades into ~240 unrelated design-doc
     closure obligations; filing as separate pre-existing-debt ticket instead'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: design/frob.strata
+  reason: declare the two new fs.read call sites (.read_text) this ticket's fix added
+    in verify_runner.py, per SELFAUDIT001 -- land blocks on this as attributable to
+    this ticket's own touched file
   actor: logan
   at: '2026-09-08'
 evidence:
