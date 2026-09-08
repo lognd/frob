@@ -16,11 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/__init__.py
 - src/frob/testing/_collect.py
-- docs/modules/testing.md
-- tests/test_testing.py
-- tests/test_testing_collect.py
-- tests/unit/test_pytest_spawn_env_wiring.py
-- src/frob/testing/_collect_shared.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -88,6 +83,46 @@ scope_changes:
     shared install guide, not scoped to this fix; python_collection_failure_detail''s
     install.md anchor is a pre-existing binding this ticket does not touch, handled
     separately'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/testing.md
+  reason: 'revert: chasing SCOPE002 doc-anchor closure through shared multi-symbol
+    anchors (testing.md#public-api, install.md) spirals across the whole codebase
+    -- acknowledging scope breadth instead via scope-ack rather than widening the
+    write lease indefinitely'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/test_testing.py
+  reason: 'revert: chasing SCOPE002 doc-anchor closure through shared multi-symbol
+    anchors (testing.md#public-api, install.md) spirals across the whole codebase
+    -- acknowledging scope breadth instead via scope-ack rather than widening the
+    write lease indefinitely'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/test_testing_collect.py
+  reason: 'revert: chasing SCOPE002 doc-anchor closure through shared multi-symbol
+    anchors (testing.md#public-api, install.md) spirals across the whole codebase
+    -- acknowledging scope breadth instead via scope-ack rather than widening the
+    write lease indefinitely'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/unit/test_pytest_spawn_env_wiring.py
+  reason: 'revert: chasing SCOPE002 doc-anchor closure through shared multi-symbol
+    anchors (testing.md#public-api, install.md) spirals across the whole codebase
+    -- acknowledging scope breadth instead via scope-ack rather than widening the
+    write lease indefinitely'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/testing/_collect_shared.py
+  reason: 'revert: chasing SCOPE002 doc-anchor closure through shared multi-symbol
+    anchors (testing.md#public-api, install.md) spirals across the whole codebase
+    -- acknowledging scope breadth instead via scope-ack rather than widening the
+    write lease indefinitely'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
