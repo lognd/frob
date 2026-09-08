@@ -1,7 +1,7 @@
 ---
 id: T-4323
 title: Land-path auto-apply for LANDFMT001 ruff format drift
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-08'
