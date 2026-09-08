@@ -995,16 +995,23 @@ check, not an inference. `proc` is injectable for tests.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#read_land_status_marker -->
 
-T-2691. Best-effort read of `frob.tickets._land`'s land-status marker
-(`.frob/land-status.json`, written at each `land()` saga phase --
+T-2691, multi-entry shape T-4266. Best-effort read of `frob.tickets.
+_land`'s land-status marker (`.frob/land-status.json`, an `{"entries":
+{<pid>: {...}}}` object written at each `land()` saga phase --
 `acquiring-lock`, `waiting-for-lock`, `lock-acquired`, `running`,
 `done`/`failed`, each with pid/started_at/updated_at and, while waiting,
-the lock holder it is blocked on). `None` on any read/parse failure.
-Fixes the incident that motivated this ticket: a land killed under lock
-contention left an operator nothing pollable beyond a truncated stdout
-log to tell "progressing" from "dead" apart. `_print_land_status` prints
-its rendering (`_land_status_marker_line`) as a `LAND STATUS MARKER:`
-line right after `LANDS IN FLIGHT`.
+the lock holder it is blocked on). `None` on any read/parse failure, or
+if the file predates T-4266's multi-entry shape. Fixes the incident that
+motivated T-2691: a land killed under lock contention left an operator
+nothing pollable beyond a truncated stdout log to tell "progressing"
+from "dead" apart. T-4266 fixed a second incident the single-record
+shape could not represent: a repository running several lands
+concurrently had every land overwrite the SAME one slot, so the marker
+could name a finished land while a different one was actually running
+(or the reverse). `_print_land_status` prints one `LAND STATUS MARKER:`
+line per currently-recorded entry (`_land_status_marker_lines`), each
+tagged `(live)`/`(dead)`/`(unknown)` by `_land_status_entry_liveness`
+right after `LANDS IN FLIGHT`.
 
 ### `host_load`
 

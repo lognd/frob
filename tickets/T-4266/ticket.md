@@ -2,7 +2,7 @@
 id: T-4266
 title: the land status marker holds one land in a repository that runs several, so
   the fleet tool can name a finished land while a different one is running
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -17,22 +17,70 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - scripts/fleet_status.py
+- tests/ticket_land_suite/test_land_lock.py
+- tests/unit/coordinator_suite/test_fleet_land.py
+- docs/guides/coordinator-scripts.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/ticket_land_suite/test_land_lock.py
+  reason: 'T-4266: the multi-entry marker fix changes _write_land_status''s on-disk
+    shape and fleet_status.py''s reader, so their existing unit tests must be updated
+    and new multi-land tests added in the same change'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: tests/unit/coordinator_suite/test_fleet_land.py
+  reason: 'T-4266: the multi-entry marker fix changes _write_land_status''s on-disk
+    shape and fleet_status.py''s reader, so their existing unit tests must be updated
+    and new multi-land tests added in the same change'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'T-4266: both docs document _write_land_status/read_land_status_marker/_land_status_marker_line,
+    which this ticket''s multi-entry fix changes'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-4266: both docs document _write_land_status/read_land_status_marker/_land_status_marker_line,
+    which this ticket''s multi-entry fix changes'
+  actor: logan
+  at: '2026-09-07'
+evidence:
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_concurrent_lands_each_get_their_own_entry
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_dead_lands_own_entry_survives_a_live_lands_write
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_phase_transitions_are_pollable
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_waiting_phase_records_lock_holder
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_reads_a_written_marker
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_missing_marker_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_legacy_flat_marker_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_no_marker_renders_nothing
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_marker_renders_phase_ticket_pid_and_liveness
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_live_pid_is_tagged_live_not_dead
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_concurrent_lands_each_render_their_own_line
 designated_repro_test: null
 acceptance:
 - text: given several concurrent lands, when the fleet tool reports what is landing,
     then every live land is named and no finished land is presented as running
-  evidence: []
+  evidence:
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_concurrent_lands_each_render_their_own_line
 - text: given a land that died mid-phase, when its record is read afterwards, then
     its final phase is still readable and is distinguishable from a live land rather
     than occupying the same slot
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_dead_lands_own_entry_survives_a_live_lands_write
 - text: given the fix, when it lands, then the marker is not simply cleared on exit,
     since that would discard the crash-forensics purpose the file exists for
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_phase_transitions_are_pollable
 threat: null
 component: null
 anchor: false

@@ -590,7 +590,7 @@ Landing onto a branch root is NOT checked out on (without switching root's
 checkout) is deliberately deferred to a follow-up ticket -- it needs the
 CAS base, the resync, and the drift guard all re-pointed off root's HEAD.
 
-### Pollable land-status marker (T-2691)
+### Pollable land-status marker (T-2691, multi-entry T-4266)
 
 `land()` writes a small JSON marker at `<root>/.frob/land-status.json`
 (`frob.tickets._land._write_land_status`) at each saga phase --
@@ -604,15 +604,34 @@ the disclosure gap behind a 2026-08-20 incident: a land killed by its own
 foreground timeout under lock contention left an orphaned `land.lock`
 entry and a truncated log, with no way for an operator to poll whether it
 was progressing, waiting, or already dead. Unlike the intent journal
-(`frob.tickets._journal`, cleared on every exit), this marker is
-deliberately left in place after `land()` returns -- its last phase and a
-stale `updated_at` are themselves the "this died mid-flight" signal.
-`scripts/fleet_status.py`'s `read_land_status_marker`/
-`_land_status_marker_line` (see
-`docs/guides/coordinator-scripts.md#read_land_status_marker`) render it
-as a `LAND STATUS MARKER:` line in the standing `LANDS IN FLIGHT` report;
-best-effort throughout (a write
-failure is logged and swallowed, never fails the land itself).
+(`frob.tickets._journal`, cleared on every exit), no entry is deliberately
+ever removed after `land()` returns -- an entry's last phase and a stale
+`updated_at` are themselves the "this died mid-flight" signal.
+
+**T-4266: the marker holds one `entries` object keyed by pid, not one
+flat record.** A repository that runs several lands concurrently (the
+deferred/out-of-tree land paths make this the normal case, not the
+exception) used to have every land overwrite the SAME single slot --
+measured twice in one session: the marker named a ticket whose land had
+already finished while a different, freshly-started land was the one
+actually executing, and separately the marker named a ticket while
+`land.lock` was held on behalf of a different one. Each `_write_land_
+status` call now only ever touches its own pid's entry (`_read_land_
+status_entries` reads every other entry back and carries it forward
+unchanged), so a dead land's final phase survives exactly as before,
+without risking an overwrite by an unrelated land's own phase
+transition. `_prune_dead_land_status_entries` bounds the file to
+`_LAND_STATUS_MAX_ENTRIES` (64) by dropping CONFIRMED-dead entries
+(oldest `updated_at` first) once that cap is exceeded -- a live or
+merely-ambiguous entry is never a pruning candidate, so a currently-
+running land's entry can never be the one dropped. `scripts/
+fleet_status.py`'s `read_land_status_marker`/`_land_status_marker_lines`
+(see `docs/guides/coordinator-scripts.md#read_land_status_marker`)
+render one `LAND STATUS MARKER:` line per currently-recorded entry,
+each tagged `(live)`/`(dead)`/`(unknown)` by `_land_status_entry_
+liveness` (a bare `/proc/<pid>` existence check), in the standing
+`LANDS IN FLIGHT` report; best-effort throughout (a write failure is
+logged and swallowed, never fails the land itself).
 
 ## Frob ticket land --plan (T-1269)
 

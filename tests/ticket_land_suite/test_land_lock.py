@@ -248,6 +248,7 @@ class TestLandStatus:
     to inspect."""
 
     # frob:ticket T-2691
+    # frob:ticket T-4266
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_phase_transitions_\
     # are_pollable
@@ -256,40 +257,47 @@ class TestLandStatus:
         preserve `started_at` across phase transitions (T-2691's own
         docstring requirement -- an operator timing a land against a
         single clock, not a new one per phase) while always advancing
-        `updated_at` and the recorded `phase`."""
+        `updated_at` and the recorded `phase`. T-4266: read back through
+        this pid's own entry in the marker's `entries` object, not a
+        flat top-level record."""
 
         from frob.tickets._land import _LAND_STATUS_REL, _write_land_status
 
+        pid_key = str(os.getpid())
         _write_land_status(tmp_path, "T-2691", "acquiring-lock")
-        first = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        marker = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        first = marker["entries"][pid_key]
         assert first["ticket_id"] == "T-2691"
         assert first["phase"] == "acquiring-lock"
         assert first["pid"] == os.getpid()
 
         time.sleep(0.01)
         _write_land_status(tmp_path, "T-2691", "running")
-        second = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        marker = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        second = marker["entries"][pid_key]
         assert second["phase"] == "running"
         assert second["started_at"] == first["started_at"]
         assert second["updated_at"] != first["updated_at"]
 
     # frob:ticket T-2691
+    # frob:ticket T-4266
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_waiting_phase_reco\
     # rds_lock_holder
     def test_waiting_phase_records_lock_holder(self, tmp_path: Path) -> None:
-        """`lock_wait`, when given, is recorded verbatim under the
-        marker's own `lock_wait` key -- the holder metadata a blocked
-        land is currently waiting on."""
+        """`lock_wait`, when given, is recorded verbatim under this pid's
+        own entry's `lock_wait` key -- the holder metadata a blocked land
+        is currently waiting on."""
 
         from frob.tickets._land import _LAND_STATUS_REL, _write_land_status
 
         holder = {"pid": 123, "session_id": "other-session"}
         _write_land_status(tmp_path, "T-2691", "waiting-for-lock", lock_wait=holder)
         marker = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
-        assert marker["lock_wait"] == holder
+        assert marker["entries"][str(os.getpid())]["lock_wait"] == holder
 
     # frob:ticket T-2691
+    # frob:ticket T-4266
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_write_failure_is_b\
     # est_effort_and_never_raises
@@ -305,6 +313,65 @@ class TestLandStatus:
         blocker = tmp_path / ".frob"
         blocker.write_text("not a directory")
         _write_land_status(tmp_path, "T-2691", "running")  # must not raise
+
+    # frob:ticket T-4266
+    # frob:tests \
+    # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_concurrent_lands_e\
+    # ach_get_their_own_entry
+    def test_concurrent_lands_each_get_their_own_entry(self, tmp_path: Path) -> None:
+        """T-4266's own incident, reproduced directly: two DIFFERENT pids
+        writing to the SAME marker each keep their own entry -- a second
+        land's write must never clobber a first land's entry (the bug
+        this ticket was filed from: a fresh land's write overwrote the
+        one slot a currently-running OR already-finished different land
+        occupied, so a reader saw one ticket/phase while a different one
+        was the truth)."""
+        from unittest.mock import patch
+
+        from frob.tickets._land import _LAND_STATUS_REL, _write_land_status
+
+        real_pid = os.getpid()
+        other_pid = real_pid + 1
+
+        _write_land_status(tmp_path, "T-1000", "running")
+        with patch("frob.tickets._land.os.getpid", return_value=other_pid):
+            _write_land_status(tmp_path, "T-2000", "done")
+
+        marker = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        entries = marker["entries"]
+        assert entries[str(real_pid)]["ticket_id"] == "T-1000"
+        assert entries[str(real_pid)]["phase"] == "running"
+        assert entries[str(other_pid)]["ticket_id"] == "T-2000"
+        assert entries[str(other_pid)]["phase"] == "done"
+
+    # frob:ticket T-4266
+    # frob:tests \
+    # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_dead_lands_own_ent\
+    # ry_survives_a_live_lands_write
+    def test_dead_lands_own_entry_survives_a_live_lands_write(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4266's crash-forensics requirement: a dead land's final
+        phase must still be readable after a DIFFERENT, live land writes
+        its own entry to the same marker -- the fix must not trade one
+        bug (clobbering) for another (silently dropping every entry but
+        the writer's own)."""
+        from unittest.mock import patch
+
+        from frob.tickets._land import _LAND_STATUS_REL, _write_land_status
+
+        real_pid = os.getpid()
+        dead_pid = real_pid + 1  # never patched into getpid -- stays "gone"
+
+        with patch("frob.tickets._land.os.getpid", return_value=dead_pid):
+            _write_land_status(tmp_path, "T-1000", "failed")
+        _write_land_status(tmp_path, "T-2000", "running")
+
+        marker = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        entries = marker["entries"]
+        assert entries[str(dead_pid)]["ticket_id"] == "T-1000"
+        assert entries[str(dead_pid)]["phase"] == "failed"
+        assert entries[str(real_pid)]["ticket_id"] == "T-2000"
 
 
 # frob:ticket T-2934

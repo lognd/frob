@@ -3971,16 +3971,20 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 # tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_guidance_li\
 # ne_uses_live_count_not_raw_count
 # frob:ticket T-2691
+# frob:ticket T-4266
 # frob:doc docs/guides/coordinator-scripts.md#read_land_status_marker
-def read_land_status_marker(root: Path) -> dict | None:
-    """Best-effort read of `root`'s T-2691 land-status marker
+def read_land_status_marker(root: Path) -> dict[str, dict] | None:
+    """Best-effort read of `root`'s T-2691/T-4266 land-status marker
     (`frob.tickets._land.LAND_STATUS_REL`, `.frob/land-status.json`) --
-    `None` on any read/parse failure (never written yet, or a write is
-    mid-flight), the identical shape `land_lock_holder_pids`'s own
-    sibling readers use elsewhere in this module. Mirrors `frob.tickets.
-    _land._read_land_lock_holder`'s contract exactly, duplicated rather
-    than imported: this script is a standalone diagnostic deliberately
-    free of a `frob` package import (see this module's own top-of-file
+    every entry, keyed by pid (as a string), or `None` on any read/parse
+    failure (never written yet, or a write is mid-flight) or if the file
+    predates T-4266's multi-entry `{"entries": {...}}` shape (a legacy
+    flat single-land object has no `"entries"` key, and is worth
+    discarding rather than migrating -- see `frob.tickets._land._read_
+    land_status_entries`'s own docstring for the identical call there).
+    Mirrors that function's contract exactly, duplicated rather than
+    imported: this script is a standalone diagnostic deliberately free
+    of a `frob` package import (see this module's own top-of-file
     rationale), the same posture every other `/proc`/lock-file reader
     here already takes."""
     path = root / ".frob" / "land-status.json"
@@ -3994,40 +3998,86 @@ def read_land_status_marker(root: Path) -> dict | None:
         parsed = json.loads(raw)
     except (json.JSONDecodeError, ValueError):
         return None
-    return parsed if isinstance(parsed, dict) else None
+    if not isinstance(parsed, dict):
+        return None
+    entries = parsed.get("entries")
+    if not isinstance(entries, dict):
+        return None
+    return {
+        str(pid_key): entry
+        for pid_key, entry in entries.items()
+        if isinstance(entry, dict)
+    }
+
+
+# frob:ticket T-4266
+def _land_status_entry_liveness(pid: object, proc: Path = Path("/proc")) -> str:
+    """`"live"`, `"dead"`, or `"unknown"` for one land-status entry's
+    recorded `pid` (T-4266): a bare `(proc / str(pid)).is_dir()` check --
+    good enough to tell a currently-running land's entry apart from a
+    finished/crashed one's (the whole point of this ticket), without
+    pulling in `frob.process._pid_liveness`'s heavier three-state POSIX/
+    Windows-safe probe this standalone script deliberately avoids
+    importing. `"unknown"` covers a non-int/missing `pid` field and an
+    unreadable `/proc` (matches this module's own best-effort posture:
+    never claim `"dead"` on a check this script could not actually run)."""
+    if not proc.is_dir():
+        return "unknown"
+    if not isinstance(pid, int):
+        return "unknown"
+    return "live" if (proc / str(pid)).is_dir() else "dead"
 
 
 # frob:ticket T-2691
-def _land_status_marker_line(
-    marker: dict | None, *, now: datetime | None = None
-) -> str | None:
-    """`None` when no marker was ever written (`marker is None`), else a
-    single `LAND STATUS MARKER:` line naming the last-recorded phase,
-    ticket id, pid, and how long ago it was last updated (T-2691) --
-    the direct fix for the incident this ticket was filed from: a land
-    killed under lock contention left nothing pollable beyond a truncated
-    stdout log. A stale `updated_at` next to a `running`/`waiting-for-
-    lock` phase (`age_s` large) is itself the "looks dead, was likely
-    killed mid-flight" signal -- deliberately not classified as an error
-    here (this script's own advisory posture, matching `LAND LOCK:`
-    above): the reader decides what counts as stale for their situation."""
-    if marker is None:
-        return None
-    phase = marker.get("phase", "<unknown>")
-    ticket_id = marker.get("ticket_id", "<unknown>")
-    pid = marker.get("pid", "<unknown>")
-    updated_at = marker.get("updated_at")
-    age_part = ""
-    if isinstance(updated_at, str):
-        try:
-            updated = datetime.fromisoformat(updated_at)
-        except ValueError:
-            updated = None
-        if updated is not None:
-            reference = now if now is not None else datetime.now(UTC)
-            age_s = (reference - updated).total_seconds()
-            age_part = f", updated {age_s:.0f}s ago"
-    return f"LAND STATUS MARKER: {ticket_id} phase={phase} pid={pid}{age_part}"
+# frob:ticket T-4266
+def _land_status_marker_lines(
+    entries: dict[str, dict] | None,
+    *,
+    now: datetime | None = None,
+    proc: Path = Path("/proc"),
+) -> list[str]:
+    """`[]` when no marker was ever written (`entries` is `None` or
+    empty), else one `LAND STATUS MARKER:` line per recorded land
+    (T-4266), each naming its phase, ticket id, pid, how long ago it was
+    last updated, and a `live=`/`dead=`/`unknown=` liveness tag
+    (`_land_status_entry_liveness`) -- the direct T-4266 fix: the single-
+    entry predecessor of this function could show one land's phase while
+    a DIFFERENT, currently-running land's own phase was silently
+    discarded (or the reverse, a live write clobbering a dead land's
+    crash-forensic last phase). Every entry the marker currently holds is
+    rendered, oldest-`updated_at`-last is not enforced (insertion order
+    from `read_land_status_marker`, itself dict-insertion order from the
+    JSON file) -- an operator scanning for the live one reads the
+    `live=`/`dead=` tag, never has to infer it from staleness alone. A
+    stale `updated_at` next to a `running`/`waiting-for-lock` phase
+    tagged `dead=` is the "died mid-flight" signal this ticket asks for;
+    the SAME phase tagged `live=` is a genuinely still-running land, not
+    a stall -- exactly the ambiguity a single flat record could not
+    resolve."""
+    if not entries:
+        return []
+    lines = []
+    for entry in entries.values():
+        phase = entry.get("phase", "<unknown>")
+        ticket_id = entry.get("ticket_id", "<unknown>")
+        pid = entry.get("pid", "<unknown>")
+        liveness = _land_status_entry_liveness(pid, proc)
+        updated_at = entry.get("updated_at")
+        age_part = ""
+        if isinstance(updated_at, str):
+            try:
+                updated = datetime.fromisoformat(updated_at)
+            except ValueError:
+                updated = None
+            if updated is not None:
+                reference = now if now is not None else datetime.now(UTC)
+                age_s = (reference - updated).total_seconds()
+                age_part = f", updated {age_s:.0f}s ago"
+        lines.append(
+            f"LAND STATUS MARKER: {ticket_id} phase={phase} pid={pid} "
+            f"({liveness}){age_part}"
+        )
+    return lines
 
 
 def _land_status_lines(
@@ -4046,7 +4096,7 @@ def _land_status_lines(
     true_holder_pid: int | None = None,
     forkserver_count_: int | None = None,
     forkserver_rss_kb: int | None = None,
-    status_marker_line: str | None = None,
+    status_marker_lines: list[str] | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -4107,13 +4157,17 @@ def _land_status_lines(
     default) preserves this function's PRE-T-3093 rendering exactly, for
     a caller that has not opted into the new fields.
 
-    T-2691: `status_marker_line` (`_land_status_marker_line`'s own
-    rendering, or `None` when there is nothing to show) is appended as
-    its own line right after `LANDS IN FLIGHT` -- `None` (the default)
-    preserves every pre-T-2691 caller's exact output."""
+    T-2691/T-4266: `status_marker_lines` (`_land_status_marker_lines`'s
+    own rendering, one line per currently-recorded land, or `None`/`[]`
+    when there is nothing to show) are appended right after `LANDS IN
+    FLIGHT` -- `None` (the default) preserves every pre-T-2691 caller's
+    exact output. T-4266 changed this from a single `status_marker_line`
+    string to a list: the marker itself moved from one flat record to
+    one entry per concurrently-running land, so the rendering must be
+    able to show more than one at once."""
     lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
-    if status_marker_line is not None:
-        lines.append(status_marker_line)
+    if status_marker_lines:
+        lines.extend(status_marker_lines)
     for inv in invocations:
         # T-2193: land_invocations() drops any row it cannot parse a
         # ticket id from, so ticket_id is always real here -- never None.
@@ -4426,11 +4480,11 @@ def _print_land_status() -> None:
     ARCH103 (T-2172 precedent): all formatting/branching lives in
     `_land_status_lines`; this function only gathers inputs and prints.
 
-    T-2691: also reads `root`'s land-status marker (`read_land_status_
-    marker`) and renders it via `_land_status_marker_line` -- the
+    T-2691/T-4266: also reads `root`'s land-status marker (`read_land_
+    status_marker`) and renders it via `_land_status_marker_lines` -- the
     externally-pollable phase/lock-wait disclosure this ticket adds,
     surfaced right alongside the pre-existing pid/elapsed/CPU LANDS
-    line."""
+    line, one line per currently-recorded land (T-4266)."""
     invocations = land_invocations()
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
@@ -4439,7 +4493,7 @@ def _print_land_status() -> None:
     swap = swap_pressure()
     held = leases()
     concurrent_checks = concurrent_check_count()
-    status_marker_line = _land_status_marker_line(read_land_status_marker(REPO))
+    status_marker_lines = _land_status_marker_lines(read_land_status_marker(REPO))
     for line in _land_status_lines(
         invocations,
         holder_pids,
@@ -4456,7 +4510,7 @@ def _print_land_status() -> None:
         true_holder_pid,
         forkserver_count(),
         forkserver_rss_held_kb(),
-        status_marker_line,
+        status_marker_lines,
     ):
         print(line)
 

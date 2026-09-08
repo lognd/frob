@@ -290,19 +290,24 @@ class TestLandLockHolderPids:
 
 
 # frob:ticket T-2691
+# frob:ticket T-4266
 class TestReadLandStatusMarker:
-    """`fleet_status.read_land_status_marker` (T-2691): reads the
-    `frob.tickets._land`-written land-status marker best-effort."""
+    """`fleet_status.read_land_status_marker` (T-2691, multi-entry shape
+    T-4266): reads the `frob.tickets._land`-written land-status marker
+    best-effort."""
 
-    # frob:ticket T-2691
+    # frob:ticket T-4266
     def test_reads_a_written_marker(self, tmp_path: Path) -> None:
         (tmp_path / ".frob").mkdir(parents=True)
         (tmp_path / ".frob" / "land-status.json").write_text(
-            '{"ticket_id": "T-2691", "phase": "running", "pid": 42}',
+            '{"entries": {"42": {"ticket_id": "T-2691", "phase": "running", '
+            '"pid": 42}}}',
             encoding="utf-8",
         )
         marker = fleet_status.read_land_status_marker(tmp_path)
-        assert marker == {"ticket_id": "T-2691", "phase": "running", "pid": 42}
+        assert marker == {
+            "42": {"ticket_id": "T-2691", "phase": "running", "pid": 42}
+        }
 
     # frob:ticket T-2691
     def test_missing_marker_returns_none(self, tmp_path: Path) -> None:
@@ -316,24 +321,69 @@ class TestReadLandStatusMarker:
         )
         assert fleet_status.read_land_status_marker(tmp_path) is None
 
+    # frob:ticket T-4266
+    def test_legacy_flat_marker_returns_none(self, tmp_path: Path) -> None:
+        """A pre-T-4266 flat single-record marker (no `"entries"` key)
+        is discarded, not migrated -- see `read_land_status_marker`'s own
+        docstring for why."""
+        (tmp_path / ".frob").mkdir(parents=True)
+        (tmp_path / ".frob" / "land-status.json").write_text(
+            '{"ticket_id": "T-2691", "phase": "running", "pid": 42}',
+            encoding="utf-8",
+        )
+        assert fleet_status.read_land_status_marker(tmp_path) is None
+
 
 # frob:ticket T-2691
-class TestLandStatusMarkerLine:
-    """`fleet_status._land_status_marker_line` (T-2691): the LANDS-section
-    rendering of a land-status marker."""
+# frob:ticket T-4266
+class TestLandStatusMarkerLines:
+    """`fleet_status._land_status_marker_lines` (T-2691, multi-entry
+    T-4266): the LANDS-section rendering of a land-status marker."""
 
     # frob:ticket T-2691
     def test_no_marker_renders_nothing(self) -> None:
-        assert fleet_status._land_status_marker_line(None) is None
+        assert fleet_status._land_status_marker_lines(None) == []
+        assert fleet_status._land_status_marker_lines({}) == []
 
-    # frob:ticket T-2691
-    def test_marker_renders_phase_ticket_and_pid(self) -> None:
-        marker = {"ticket_id": "T-2691", "phase": "waiting-for-lock", "pid": 42}
-        line = fleet_status._land_status_marker_line(marker)
-        assert line is not None
-        assert "T-2691" in line
-        assert "waiting-for-lock" in line
-        assert "42" in line
+    # frob:ticket T-4266
+    def test_marker_renders_phase_ticket_pid_and_liveness(
+        self, tmp_path: Path
+    ) -> None:
+        entries = {"42": {"ticket_id": "T-2691", "phase": "waiting-for-lock", "pid": 42}}
+        lines = fleet_status._land_status_marker_lines(entries, proc=tmp_path)
+        assert len(lines) == 1
+        assert "T-2691" in lines[0]
+        assert "waiting-for-lock" in lines[0]
+        assert "42" in lines[0]
+        assert "(dead)" in lines[0]  # tmp_path has no pid 42 subdir
+
+    # frob:ticket T-4266
+    def test_live_pid_is_tagged_live_not_dead(self, tmp_path: Path) -> None:
+        """T-4266's own must-fire fixture: a currently-running land's
+        pid subdir exists under `/proc` -- its line must say `(live)`,
+        never `(dead)`, so a reader cannot mistake it for finished."""
+        (tmp_path / "42").mkdir()
+        entries = {"42": {"ticket_id": "T-2691", "phase": "running", "pid": 42}}
+        lines = fleet_status._land_status_marker_lines(entries, proc=tmp_path)
+        assert "(live)" in lines[0]
+
+    # frob:ticket T-4266
+    def test_concurrent_lands_each_render_their_own_line(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4266's own must-fire fixture: several entries in the marker
+        produce SEVERAL lines, one per land -- the single-line
+        predecessor of this function could only ever show one."""
+        (tmp_path / "42").mkdir()
+        entries = {
+            "42": {"ticket_id": "T-1000", "phase": "running", "pid": 42},
+            "99": {"ticket_id": "T-2000", "phase": "done", "pid": 99},
+        }
+        lines = fleet_status._land_status_marker_lines(entries, proc=tmp_path)
+        assert len(lines) == 2
+        joined = "\n".join(lines)
+        assert "T-1000" in joined and "(live)" in lines[0]
+        assert "T-2000" in joined and "(dead)" in lines[1]
 
 
 class TestPrintLandStatus:

@@ -203,13 +203,127 @@ def _land_status_path(root: Path) -> Path:
     return root / _LAND_STATUS_REL
 
 
+# frob:ticket T-4266
+#: Cap on how many entries `_write_land_status` keeps in the marker
+#: (T-4266): the file is deliberately never cleared on exit (crash
+#: forensics), so without SOME bound a repository that runs thousands of
+#: lands over its lifetime would grow this file forever. Only entries
+#: whose pid is CONFIRMED dead (`pid_alive_tristate` returns `False`,
+#: never the ambiguous `None`) are ever pruned, oldest `updated_at`
+#: first, and only once the live+ambiguous entries alone are already at
+#: or under the cap -- a live land's own entry is never a pruning
+#: candidate, so the "every live land is named" acceptance property
+#: (T-4266) cannot be defeated by this bound.
+_LAND_STATUS_MAX_ENTRIES = 64
+
+
+# frob:ticket T-4266
+def _read_land_status_entries(root: Path) -> dict[str, dict]:
+    """Every entry currently in `root`'s land-status marker, keyed by
+    pid (as a string, since JSON object keys are always strings) --
+    `{}` on any read/parse failure, or if the file predates T-4266's
+    multi-entry shape (a flat single-land object, no `"entries"` key):
+    that legacy shape is worth discarding rather than migrating, since
+    it names at most one already-superseded land and the marker's own
+    contract has never promised durability across a format change.
+    Shared by `_write_land_status` (to preserve every OTHER pid's entry
+    across a write) and by any reader that wants every currently
+    recorded land (`frob.doctor`, `scripts/fleet_status.py`)."""
+    path = _land_status_path(root)
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    if not raw.strip():
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    entries = parsed.get("entries")
+    if not isinstance(entries, dict):
+        return {}
+    return {
+        str(pid_key): entry
+        for pid_key, entry in entries.items()
+        if isinstance(entry, dict)
+    }
+
+
+# frob:ticket T-4266
+def _resolved_land_status_started_at(
+    entries: dict[str, dict], pid_key: str, pid: int, ticket_id: str, *, fallback: str
+) -> str:
+    """`fallback` (this call's own timestamp), unless `entries[pid_key]`
+    already exists, matches this exact pid+ticket, and carries its own
+    `started_at` -- in which case THAT value is preserved, so a phase
+    transition never resets the clock an operator is timing the land
+    against (T-2691's own requirement, T-4266's per-pid entry lookup on
+    top of it). Split out of `_write_land_status`'s own body purely to
+    keep that function's decision-point count under ARCH103's mixed-
+    concern threshold (I/O + string-formatting + branching, all three in
+    one body, is exactly the smell that gate watches for)."""
+    existing_own = entries.get(pid_key)
+    if (
+        isinstance(existing_own, dict)
+        and existing_own.get("pid") == pid
+        and existing_own.get("ticket_id") == ticket_id
+        and isinstance(existing_own.get("started_at"), str)
+    ):
+        return existing_own["started_at"]
+    return fallback
+
+
+# frob:ticket T-4266
+def _prune_dead_land_status_entries(
+    entries: dict[str, dict], *, keep_pid: str
+) -> dict[str, dict]:
+    """Drop CONFIRMED-dead entries (oldest `updated_at` first) from
+    `entries` until at most `_LAND_STATUS_MAX_ENTRIES` remain -- `keep_pid`
+    (this write's own pid) and every entry whose liveness is `True` or
+    `None` (alive, or merely ambiguous -- T-4266 never treats "cannot
+    confirm" as license to prune, the same posture `_probe_land_lock_pid_
+    liveness`'s own callers already take for land.lock) are never pruning
+    candidates. A confirmed-dead entry beyond the cap is exactly the
+    'crash forensics no one has read yet' case the marker exists for --
+    pruning it trades that one entry's forensic value for keeping the
+    file bounded, which only bites once a single host has accumulated
+    `_LAND_STATUS_MAX_ENTRIES` dead, unread lands since the last live
+    one."""
+    if len(entries) <= _LAND_STATUS_MAX_ENTRIES:
+        return entries
+    candidates = []
+    for pid_key, entry in entries.items():
+        if pid_key == keep_pid:
+            continue
+        try:
+            pid = int(pid_key)
+        except (TypeError, ValueError):
+            continue
+        if pid_alive_tristate(pid) is not False:
+            continue  # alive or ambiguous -- never a pruning candidate
+        candidates.append((entry.get("updated_at") or "", pid_key))
+    candidates.sort()
+    kept = dict(entries)
+    overflow = len(entries) - _LAND_STATUS_MAX_ENTRIES
+    for _, pid_key in candidates[:overflow]:
+        kept.pop(pid_key, None)
+    return kept
+
+
 # frob:ticket T-2691
+# frob:ticket T-4266
 # frob:tests \
 # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_phase_transitions_are_\
 # pollable
 # frob:tests \
 # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_write_failure_is_best_\
 # effort_and_never_raises
+# frob:tests \
+# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_concurrent_lands_each_\
+# get_their_own_entry
 def _write_land_status(
     root: Path,
     ticket_id: str,
@@ -230,29 +344,44 @@ def _write_land_status(
     `_land_lock` is currently waiting on (mirrors `_read_land_lock_
     holder`'s own shape) -- omitted once the lock is acquired.
 
+    T-4266: the marker holds an `"entries"` object keyed by pid (as a
+    string), not one flat record -- a repository that runs several lands
+    concurrently (the deferred/out-of-tree land paths make this the
+    normal case, not the exception) used to have every land overwrite
+    the SAME single slot, so a reader could see a finished land's phase
+    while a different, currently-running land's own phase was silently
+    discarded (or vice versa: a live land's fresh write clobbering a
+    dead land's crash-forensic last phase before anyone read it). Each
+    call here only ever touches ITS OWN pid's entry -- every other pid's
+    entry is read back and carried forward unchanged (`_prune_dead_land_
+    status_entries` aside), so a dead land's final phase survives
+    exactly as before T-4266, just no longer at risk of being
+    overwritten by an unrelated land's own phase transition.
+
     Same posture as `_write_intent`/`_land_lock_holder_metadata`: a write
     failure (unwritable `.frob/`, disk full) is logged at DEBUG and
     swallowed, never raised -- this marker is a disclosure aid, not a
     correctness dependency, and must never itself cause a `land()` call
-    to fail. Unlike the T-0456 intent journal, this file is deliberately
-    NOT cleared when `land()` returns -- its last-written phase and
+    to fail. Unlike the T-0456 intent journal, no entry is ever cleared
+    when `land()` returns -- each entry's last-written phase and
     `updated_at` are exactly what lets a human or `fleet_status.py` tell
     "finished cleanly a while ago" apart from "died mid-flight, `updated_
-    at` frozen at a stale `running`"."""
+    at` frozen at a stale `running`", per-land rather than for whichever
+    land happened to write last."""
     from datetime import datetime, timezone
 
     path = _land_status_path(root)
     pid = os.getpid()
-    started_at = datetime.now(timezone.utc).isoformat()
-    existing = _read_land_lock_holder(path)  # same best-effort JSON read shape
-    if (
-        isinstance(existing, dict)
-        and existing.get("pid") == pid
-        and existing.get("ticket_id") == ticket_id
-        and isinstance(existing.get("started_at"), str)
-    ):
-        started_at = existing["started_at"]
-    status = {
+    pid_key = str(pid)
+    entries = _read_land_status_entries(root)
+    started_at = _resolved_land_status_started_at(
+        entries,
+        pid_key,
+        pid,
+        ticket_id,
+        fallback=datetime.now(timezone.utc).isoformat(),
+    )
+    status: dict[str, str | int | dict] = {
         "ticket_id": ticket_id,
         "pid": pid,
         "phase": phase,
@@ -261,9 +390,11 @@ def _write_land_status(
     }
     if lock_wait is not None:
         status["lock_wait"] = lock_wait
+    entries[pid_key] = status
+    entries = _prune_dead_land_status_entries(entries, keep_pid=pid_key)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(status) + "\n", encoding="utf-8")
+        path.write_text(json.dumps({"entries": entries}) + "\n", encoding="utf-8")
     except OSError as exc:
         _log.debug(
             "land: %s could not write land-status marker (%s) -- T-2691 "
