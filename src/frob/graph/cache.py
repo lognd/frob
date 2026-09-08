@@ -383,27 +383,45 @@ def _is_readonly_handle_error(exc: sqlite3.Error) -> bool:
     return "readonly database" in str(exc).lower()
 
 
-# frob:ticket T-4282
-# frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
-# ds_linux_finds_a_real_open_fd
-# frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
-# ds_excludes_self
-def _lock_holder_pids_linux(path: Path) -> tuple[int, ...]:
-    """PIDs with an open file descriptor on `path`, found by walking
-    `/proc/*/fd` symlinks (T-4282: obligation [2], naming a `CacheLocked`
-    holder). Best-effort: empty on a missing `/proc` or any read failure
-    (permission, a pid that exits mid-walk) -- this exists only to enrich
-    a diagnostic message, never to gate behavior."""
+# frob:ticket T-4317
+def _exclude_pid(pids: tuple[int, ...], exclude: int) -> tuple[int, ...]:
+    """DECIDING half shared by both platform readers (T-4317, split out
+    of `_lock_holder_pids_linux`/`_lock_holder_pids_darwin`): drop
+    `exclude` (always this process's own pid) from a raw candidate list.
+    Pure and I/O-free -- exercised against fabricated pid tuples with no
+    real lock or process involved."""
+    return tuple(pid for pid in pids if pid != exclude)
+
+
+# frob:ticket T-4317
+def _resolve_lock_target(path: Path) -> str | None:
+    """READING half of the Linux probe (T-4282/T-4317): the canonical
+    string form of `path` that a `/proc/*/fd` symlink must match,
+    resolved once so the walk in `_scan_proc_fd_pids` compares strings
+    rather than re-resolving per entry. `None` on any resolution failure
+    (a vanished path, a permission error) -- best-effort, per this
+    module's diagnostic-only posture for the whole lock-holder family."""
+    try:
+        return str(path.resolve())
+    except OSError:
+        return None
+
+
+# frob:ticket T-4317
+def _scan_proc_fd_pids(target: str) -> tuple[int, ...]:
+    """READING half of the Linux probe (T-4282/T-4317): every pid under
+    `/proc` (INCLUDING this process itself -- callers exclude it via
+    `_exclude_pid`) with an open file descriptor symlinking to `target`.
+    Pure I/O plus the branching `/proc` walking requires; carries no
+    string-formatting call of its own, so it stays a single concern on
+    its own (T-4317: ARCH103 wants I/O+format+compute together, and this
+    function is I/O+compute only). Best-effort: a missing `/proc` or any
+    read failure (permission, a pid that exits mid-walk) yields an empty
+    result for that pid/entry rather than raising -- this exists only to
+    enrich a diagnostic message, never to gate behavior."""
     proc_dir = Path("/proc")
     if not proc_dir.is_dir():
         return ()
-    try:
-        target = str(path.resolve())
-    except OSError:
-        return ()
-    self_pid = os.getpid()
     try:
         entries = tuple(proc_dir.iterdir())
     except OSError:
@@ -413,8 +431,6 @@ def _lock_holder_pids_linux(path: Path) -> tuple[int, ...]:
         if not entry.name.isdigit():
             continue
         pid = int(entry.name)
-        if pid == self_pid:
-            continue
         try:
             fd_entries = tuple((entry / "fd").iterdir())
         except OSError:
@@ -431,14 +447,35 @@ def _lock_holder_pids_linux(path: Path) -> tuple[int, ...]:
 
 
 # frob:ticket T-4282
-def _lock_holder_pids_darwin(path: Path) -> tuple[int, ...]:
-    """macOS equivalent of `_lock_holder_pids_linux` (T-4282): darwin has
-    no `/proc`, so this shells to `lsof -Fp <path>` (machine-parsable `p
-    <pid>` lines, one per process with `path` open), mirroring the same
-    `lsof` fallback shape `frob.tickets._leases` already uses for a
-    different pid-lookup (cwd, not fd) on this platform. Best-effort:
-    empty on any spawn failure or a reply naming no holder (exit code 1,
-    the ordinary "nothing has this file open" case, not a fault)."""
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
+# ds_linux_finds_a_real_open_fd
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
+# ds_excludes_self
+def _lock_holder_pids_linux(path: Path) -> tuple[int, ...]:
+    """PIDs with an open file descriptor on `path`, found by walking
+    `/proc/*/fd` symlinks (T-4282: obligation [2], naming a `CacheLocked`
+    holder). T-4317: pure orchestration over `_resolve_lock_target`
+    (reading), `_scan_proc_fd_pids` (reading), and `_exclude_pid`
+    (deciding, shared with the darwin reader) -- this function itself
+    does no I/O, string-formatting, or compute of its own, so it is a
+    single concern (composition) rather than the mixed-concern shape
+    ARCH103 flags. Best-effort throughout, same as its three parts."""
+    target = _resolve_lock_target(path)
+    if target is None:
+        return ()
+    return _exclude_pid(_scan_proc_fd_pids(target), os.getpid())
+
+
+# frob:ticket T-4317
+def _run_lsof(path: Path) -> str | None:
+    """READING half of the darwin probe (T-4282/T-4317): `lsof -Fp
+    <path>`'s stdout, or `None` on any spawn failure (T-4317: isolates
+    the one I/O call -- and the one `str(path)` formatting call an
+    argv entry needs -- from the parsing/deciding logic in
+    `_parse_lsof_pids`, so that logic is exercised against fabricated
+    lsof output with no real subprocess involved)."""
     guarded = guarded_subprocess_run(
         ["lsof", "-Fp", str(path)],
         capture_output=True,
@@ -446,20 +483,45 @@ def _lock_holder_pids_darwin(path: Path) -> tuple[int, ...]:
         timeout=5,
     )
     if guarded.is_err:
-        return ()
-    proc = guarded.danger_ok
-    self_pid = os.getpid()
+        return None
+    return guarded.danger_ok.stdout
+
+
+# frob:ticket T-4317
+def _parse_lsof_pids(output: str) -> tuple[int, ...]:
+    """DECIDING half of the darwin probe (T-4282/T-4317): every pid
+    (INCLUDING this process itself -- callers exclude it via
+    `_exclude_pid`) named by a machine-parsable `p <pid>` line in `lsof
+    -Fp`'s stdout. Pure and I/O-free -- exercised against fabricated
+    `output` strings with no real subprocess involved."""
     pids: list[int] = []
-    for line in proc.stdout.splitlines():
+    for line in output.splitlines():
         if not line.startswith("p"):
             continue
         try:
-            pid = int(line[1:])
+            pids.append(int(line[1:]))
         except ValueError:
             continue
-        if pid != self_pid:
-            pids.append(pid)
     return tuple(pids)
+
+
+# frob:ticket T-4282
+def _lock_holder_pids_darwin(path: Path) -> tuple[int, ...]:
+    """macOS equivalent of `_lock_holder_pids_linux` (T-4282): darwin has
+    no `/proc`, so this shells to `lsof -Fp <path>` (machine-parsable `p
+    <pid>` lines, one per process with `path` open), mirroring the same
+    `lsof` fallback shape `frob.tickets._leases` already uses for a
+    different pid-lookup (cwd, not fd) on this platform. T-4317: pure
+    orchestration over `_run_lsof` (reading), `_parse_lsof_pids`
+    (deciding), and `_exclude_pid` (deciding, shared with the Linux
+    reader) -- see `_lock_holder_pids_linux`'s docstring for why the
+    composing function itself stays a single concern. Best-effort:
+    empty on any spawn failure or a reply naming no holder (exit code 1,
+    the ordinary "nothing has this file open" case, not a fault)."""
+    output = _run_lsof(path)
+    if output is None:
+        return ()
+    return _exclude_pid(_parse_lsof_pids(output), os.getpid())
 
 
 # frob:ticket T-4282
@@ -475,13 +537,44 @@ def _lock_holder_pids(path: Path) -> tuple[int, ...]:
     return ()
 
 
+# frob:ticket T-4317
+def _read_proc_cmdline_bytes(pid: int) -> bytes | None:
+    """READING half of `_holder_cmdline` (T-4282/T-4317): the raw,
+    NUL-separated contents of Linux's `/proc/<pid>/cmdline`, or `None` on
+    any read failure (permission, a pid that has already exited).
+    I/O-only -- no string-formatting, no decision logic beyond the one
+    failure branch -- so the parsing in `_parse_cmdline_bytes` can be
+    exercised against fabricated bytes with no real process involved."""
+    try:
+        return Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return None
+
+
+# frob:ticket T-4317
+def _parse_cmdline_bytes(raw: bytes) -> str | None:
+    """DECIDING + FORMATTING half of `_holder_cmdline` (T-4282/T-4317):
+    turns `/proc/<pid>/cmdline`'s raw NUL-separated bytes into a single
+    space-joined, best-effort-decoded command string, or `None` if the
+    file was empty. Pure and I/O-free -- exercised against fabricated
+    byte strings with no real process involved."""
+    parts = [p for p in raw.split(b"\0") if p]
+    if not parts:
+        return None
+    return " ".join(p.decode("utf-8", errors="replace") for p in parts)
+
+
 # frob:ticket T-4282
 def _holder_cmdline(pid: int) -> str | None:
     """`pid`'s command line, space-joined, best-effort (T-4282): reads
     Linux `/proc/<pid>/cmdline`; `None` on any other platform (darwin
     holder pids are still reported, just without a command string -- a
     `ps`-shelling fallback was judged not worth the extra process spawn
-    just to decorate a diagnostic string) or read failure.
+    just to decorate a diagnostic string) or read failure. T-4317: pure
+    orchestration over `_read_proc_cmdline_bytes` (reading) and
+    `_parse_cmdline_bytes` (deciding/formatting) -- see
+    `_lock_holder_pids_linux`'s docstring for why the composing function
+    itself stays a single concern.
 
     A small local twin of `frob.tickets._leases._proc_cmdline_linux`
     (T-1619) -- that module is outside this ticket's scope
@@ -490,14 +583,10 @@ def _holder_cmdline(pid: int) -> str | None:
     `frob.process` pid-introspection helper) rather than fixed silently."""
     if not sys.platform.startswith("linux"):
         return None
-    try:
-        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
-    except OSError:
+    raw = _read_proc_cmdline_bytes(pid)
+    if raw is None:
         return None
-    parts = [p for p in raw.split(b"\0") if p]
-    if not parts:
-        return None
-    return " ".join(p.decode("utf-8", errors="replace") for p in parts)
+    return _parse_cmdline_bytes(raw)
 
 
 # frob:ticket T-4282

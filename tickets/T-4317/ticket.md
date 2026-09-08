@@ -1,7 +1,7 @@
 ---
 id: T-4317
 title: Lock-holder diagnostic helpers mix IO, formatting and branching (3 ARCH103)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -27,6 +27,12 @@ scope_changes:
     satisfy ARCH103
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderDecisionAndFormattingHalves::test_exclude_pid_drops_only_the_named_pid
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderDecisionAndFormattingHalves::test_parse_lsof_pids_reads_p_lines
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderDecisionAndFormattingHalves::test_parse_cmdline_bytes_joins_nul_separated_parts
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderDecisionAndFormattingHalves::test_lock_holder_pids_darwin_composes_reading_deciding_excluding
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderDecisionAndFormattingHalves::test_holder_cmdline_composes_reading_and_parsing
 designated_repro_test: null
 threat: null
 component: null

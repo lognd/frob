@@ -158,3 +158,92 @@ class TestLockHolderNaming:
             assert "9999" in str(exc)
         else:
             raise AssertionError("expected CacheLocked to be raised")
+
+
+# frob:ticket T-4317
+class TestLockHolderDecisionAndFormattingHalves:
+    """T-4317: ARCH103 split each platform-specific reader (and
+    `_holder_cmdline`) into a reading half, a deciding half, and (for
+    `_holder_cmdline`) a formatting half, so the deciding/formatting
+    logic can be exercised against fabricated process state without a
+    real stuck lock or a real subprocess -- exactly what these tests do.
+    """
+
+    # frob:tests src/frob/graph/cache.py::_exclude_pid
+    def test_exclude_pid_drops_only_the_named_pid(self) -> None:
+        assert graph_cache._exclude_pid((1, 2, 3, 2), 2) == (1, 3)
+
+    # frob:tests src/frob/graph/cache.py::_exclude_pid
+    def test_exclude_pid_no_match_is_a_no_op(self) -> None:
+        assert graph_cache._exclude_pid((1, 2, 3), 999) == (1, 2, 3)
+
+    # frob:tests src/frob/graph/cache.py::_parse_lsof_pids
+    def test_parse_lsof_pids_reads_p_lines(self) -> None:
+        output = "p111\nf5\np222\n"
+        assert graph_cache._parse_lsof_pids(output) == (111, 222)
+
+    # frob:tests src/frob/graph/cache.py::_parse_lsof_pids
+    def test_parse_lsof_pids_skips_unparsable_p_line(self) -> None:
+        output = "p111\npnotanumber\np222\n"
+        assert graph_cache._parse_lsof_pids(output) == (111, 222)
+
+    # frob:tests src/frob/graph/cache.py::_parse_lsof_pids
+    def test_parse_lsof_pids_empty_output_yields_empty(self) -> None:
+        assert graph_cache._parse_lsof_pids("") == ()
+
+    # frob:tests src/frob/graph/cache.py::_parse_cmdline_bytes
+    def test_parse_cmdline_bytes_joins_nul_separated_parts(self) -> None:
+        raw = b"frob\x00serve\x00--root\x00/repo\x00"
+        assert graph_cache._parse_cmdline_bytes(raw) == "frob serve --root /repo"
+
+    # frob:tests src/frob/graph/cache.py::_parse_cmdline_bytes
+    def test_parse_cmdline_bytes_empty_yields_none(self) -> None:
+        assert graph_cache._parse_cmdline_bytes(b"") is None
+
+    # frob:tests src/frob/graph/cache.py::_parse_cmdline_bytes
+    def test_parse_cmdline_bytes_replaces_undecodable_bytes(self) -> None:
+        raw = b"frob\x00\xff\xfe\x00"
+        result = graph_cache._parse_cmdline_bytes(raw)
+        assert result is not None
+        assert result.startswith("frob ")
+
+    # frob:tests src/frob/graph/cache.py::_lock_holder_pids_darwin
+    def test_lock_holder_pids_darwin_composes_reading_deciding_excluding(
+        self, monkeypatch
+    ) -> None:
+        monkeypatch.setattr(
+            graph_cache,
+            "_run_lsof",
+            lambda path: "p111\np222\n",  # noqa: ARG005
+        )
+        monkeypatch.setattr(graph_cache.os, "getpid", lambda: 222)
+        assert graph_cache._lock_holder_pids_darwin(Path("/fake/cache.db")) == (111,)
+
+    # frob:tests src/frob/graph/cache.py::_lock_holder_pids_darwin
+    def test_lock_holder_pids_darwin_no_lsof_output_yields_empty(
+        self, monkeypatch
+    ) -> None:
+        monkeypatch.setattr(graph_cache, "_run_lsof", lambda path: None)  # noqa: ARG005
+        assert graph_cache._lock_holder_pids_darwin(Path("/fake/cache.db")) == ()
+
+    # frob:tests src/frob/graph/cache.py::_holder_cmdline
+    def test_holder_cmdline_composes_reading_and_parsing(self, monkeypatch) -> None:
+        if not sys.platform.startswith("linux"):
+            pytest.skip("Linux-only /proc read path")
+        monkeypatch.setattr(
+            graph_cache,
+            "_read_proc_cmdline_bytes",
+            lambda pid: b"frob\x00serve\x00",  # noqa: ARG005
+        )
+        assert graph_cache._holder_cmdline(4242) == "frob serve"
+
+    # frob:tests src/frob/graph/cache.py::_holder_cmdline
+    def test_holder_cmdline_no_bytes_read_yields_none(self, monkeypatch) -> None:
+        if not sys.platform.startswith("linux"):
+            pytest.skip("Linux-only /proc read path")
+        monkeypatch.setattr(
+            graph_cache,
+            "_read_proc_cmdline_bytes",
+            lambda pid: None,  # noqa: ARG005
+        )
+        assert graph_cache._holder_cmdline(4242) is None
