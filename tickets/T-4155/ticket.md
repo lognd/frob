@@ -18,7 +18,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/excludes.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
-- docs/modules/app.md
 - src/frob/gates/_ffi_boundary.py
 - tests/test_excludes.py
 scope_breadth_ack: false
@@ -45,6 +44,14 @@ scope_changes:
   reason: 'SCOPE002 closure: is_excluded and its siblings already carry frob:doc/frob:tests
     edges into these files predating T-4155; declaring them closes the scope graph
     per disposition 1 of docs/design/tickets-package-scope-precedent.md'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/app.md
+  reason: 'revert: app.md is a broad shared doc anchoring 200+ unrelated symbols repo-wide
+    -- adding it cascades into unrelated scope per docs/design/tickets-package-scope-precedent.md''s
+    over-broad-glob trap; is_excluded''s doc-edge into it is accepted WARN-level SCOPE002
+    noise (disposition 1), not a closure to chase'
   actor: logan
   at: '2026-09-08'
 body_changes:
