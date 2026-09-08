@@ -1,7 +1,7 @@
 ---
 id: T-4309
 title: Tool summary reports FAIL for a tool whose detail says no issues
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'

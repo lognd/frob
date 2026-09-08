@@ -156,8 +156,10 @@ _TIMING_PROCESS_START = time.monotonic()
 
 
 # frob:ticket T-3689
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_disabled_by_default  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_enabled_when_set_non_empty  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_disabled_by_default
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_enabled_when_set_non_empty
 def _timing_debug_enabled() -> bool:
     """True exactly when `FROB_CHECK_TIMING_DEBUG` (`FROB_CHECK_TIMING_
     DEBUG_ENV`) is set to a non-empty value -- checked fresh on every
@@ -166,9 +168,14 @@ def _timing_debug_enabled() -> bool:
 
 
 # frob:ticket T-3689
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_mark_is_silent_when_disabled  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_mark_prints_breadcrumb_when_enabled  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_mark_elapsed_grows_with_process_start_offset  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_is_silent_when_disabled
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_prints_breadcrumb_when_\
+# enabled
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_elapsed_grows_with_proc\
+# ess_start_offset
 def _timing_mark(label: str) -> None:
     """Print a `FROB-CHECK-TIMING:` breadcrumb naming `label` and the
     elapsed seconds since `_TIMING_PROCESS_START`, when `_timing_debug_
@@ -222,9 +229,15 @@ def _timing_atexit() -> None:
 
 
 # frob:ticket T-3713
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_silent_when_disabled  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_lists_every_live_thread  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_dumps_stack_for_non_daemon_alive_thread  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_silent_when\
+# _disabled
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_lists_every\
+# _live_thread
+# frob:tests \
+# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_dumps_stack\
+# _for_non_daemon_alive_thread
 def _timing_dump_thread_inventory() -> None:
     """Round 24 of the win32 ~120s atexit-hang investigation (T-3686/
     T-3707/T-3708): a no-op unless `_timing_debug_enabled()`, called from
@@ -521,7 +534,9 @@ def _available_memory_mb() -> int | None:
 
 
 # frob:ticket T-3686
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistry.test_pid_alive_delegates_to_shared_process_liveness_probe kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistry.test_pid_alive_delegates_to\
+# _shared_process_liveness_probe kind="unit"
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` is a live process, best-effort (T-3256), delegating
     to `frob.process._pid_liveness.pid_alive` (T-3018/T-3003/T-3191)
@@ -554,10 +569,18 @@ def _pid_alive(pid: int) -> bool:
 
 
 # frob:ticket T-3287
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_non_git_root_falls_back_to_itself kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_primary_checkout_anchors_to_itself kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_of_one_repo_share_one_anchor kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_unrelated_repos_do_not_throttle_each_other kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_non_git_root_fal\
+# ls_back_to_itself kind="unit"
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_primary_checkout\
+# _anchors_to_itself kind="unit"
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_of\
+# _one_repo_share_one_anchor kind="unit"
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_unrelated_re\
+# pos_do_not_throttle_each_other kind="unit"
 def _admission_registry_anchor(root: Path) -> Path:
     """T-3287: the REPOSITORY-wide anchor for the admission registry --
     `git rev-parse --git-common-dir`'s PARENT directory (`frob.gitio.
@@ -606,8 +629,12 @@ def _admission_registry_anchor(root: Path) -> Path:
 
 
 # frob:ticket T-3287
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_see_each_others_markers kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_se\
+# e_each_others_markers kind="unit"
+# frob:tests \
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_stale_marker_fro\
+# m_dead_pid_does_not_permanently_deflate_shared_budget kind="unit"
 def _admission_dir(root: Path) -> Path:
     """`<repo-root>/.frob/check-admission/` (T-3287: `<repo-root>` is
     `_admission_registry_anchor(root)` -- the git common dir's parent,
@@ -807,8 +834,12 @@ def _admission_budget(root: Path) -> Iterator[int]:
 
 
 # frob:ticket T-2764
-# frob:tests tests/unit/test_check.py::TestNativeStalenessResult.test_stale_native_fails_closed_when_rebuild_cannot_fix_it  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestNativeStalenessResult.test_fresh_native_is_not_a_violation  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestNativeStalenessResult.test_stale_native_fails_closed_wh\
+# en_rebuild_cannot_fix_it
+# frob:tests \
+# tests/unit/test_check.py::TestNativeStalenessResult.test_fresh_native_is_not_a_violat\
+# ion
 def _native_staleness_result(root: Path) -> ToolResult | None:
     """T-2764: `uv run frob check` used to have NO equivalent of `make
     check`'s separate `check_native_staleness_or_exit` pre-step (T-0248) --
@@ -862,8 +893,12 @@ def _native_staleness_result(root: Path) -> ToolResult | None:
 
 
 # frob:ticket T-3526
-# frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_journal_fails_check_loudly kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is_not_a_violation kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_jou\
+# rnal_fails_check_loudly kind="unit"
+# frob:tests \
+# tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is\
+# _not_a_violation kind="unit"
 # frob:enforces CHK-GATE-AUTOFIX001
 def _abandoned_autofix_result(root: Path) -> ToolResult | None:
     """`None` if `frob.gates._fix_engine_shared.
@@ -923,8 +958,12 @@ def _abandoned_autofix_result(root: Path) -> ToolResult | None:
 
 
 # frob:ticket T-0603
-# frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_c\
+# losed_before_any_stage_runs
+# frob:tests \
+# tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a\
+# _violation
 # frob:ticket T-0603
 # frob:enforces CHK-GATE-DERIVED001
 def _derived_state_integrity_result(root: Path) -> ToolResult | None:
@@ -1053,7 +1092,44 @@ def _is_unresolved_only_gate(r: ToolResult) -> bool:
     return r.measurement == "not_measured"
 
 
+# frob:ticket T-4309
+def _is_silent_nonzero_exit(r: ToolResult) -> bool:
+    """`True` iff `r`'s underlying process exited nonzero (`not r.passed`)
+    while carrying NO diagnostics at all -- zero errors, zero warnings,
+    zero notes.
+
+    T-4309: MEASURED on the macOS leg of a real CI run, `ty` and
+    `ruff-format` each rendered a `FAIL` tool-summary row whose own detail
+    text said nothing was wrong ("linux: no issues; win32: no issues;
+    darwin: no issues" and "0 files would be reformatted" respectively).
+    Root cause traced to `as_text`'s `ok = r.passed and r.error_count ==
+    0`: `passed` is keyed off the raw subprocess `exit_code`
+    (`ToolResult.passed`), which for these two callers can go nonzero for
+    reasons `_scan_ty_lines`/`_ruff_format_result`'s output-matching never
+    turns into a diagnostic (an unmatched stderr shape, a platform-
+    specific quirk) -- `summarize_severity`'s `empty="no issues"` fallback
+    and `_ruff_format_result`'s `f"{n} files..."` (`n == 0`) both fire
+    whenever `diagnostics` is empty, independent of `exit_code`. The
+    result: a genuinely-clean-looking detail string sitting on a
+    manufactured FAIL. This is exactly the ambiguity T-1664's UNRESOLVED
+    vocabulary exists to name ("a zero count is not a clean measurement")
+    -- reached here via a bare nonzero exit code instead of an explicit
+    info-severity diagnostic, but the same "could not determine a real
+    answer" shape. `as_text` routes it into the existing UNRES rendering
+    (see this function's call site, alongside `_is_unresolved_only_gate`)
+    rather than inventing a third state or silently downgrading it to a
+    pass -- a run with real diagnostics (`tool_unavailable_result`/
+    `tool_disabled_result`/ruff-check's own malformed-JSON error) always
+    attaches an error diagnostic and is UNAFFECTED by this predicate, so
+    a genuine failure with visible content still renders FAIL."""
+    return not r.passed and not r.diagnostics
+
+
+# frob:ticket T-4309
 # frob:doc docs/commands/check.md#public-api
+# frob:waive AFFECT001 reason="T-4309: docs/commands/check.md's own closure pulls in \
+# 130+ unrelated symbols across the repo -- out of scope for this small, \
+# self-contained fix; doc content unchanged by this rendering-only UNRES routing"
 class CheckResult(BaseModel):
     """Aggregate outcome of one `frob check` run: every tool's `ToolResult`."""
 
@@ -1075,19 +1151,40 @@ class CheckResult(BaseModel):
         return sum(r.warning_count for r in self.results)
 
     # frob:ticket T-2391
+    # frob:ticket T-4309
     # frob:doc docs/commands/check.md#public-api
-    # frob:tests tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every_result_measured  # noqa: E501
-    # frob:tests tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_measured_result  # noqa: E501
+    # frob:waive AFFECT001 reason="T-4309: see the identical waiver on CheckResult \
+    # above"
+    # frob:tests \
+    # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every\
+    # _result_measured
+    # frob:tests \
+    # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_\
+    # measured_result
+    # frob:tests \
+    # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_unmeas\
+    # ured_results
     @property
     def unmeasured_results(self) -> list[ToolResult]:
         """Every `results` entry whose `measurement` is not `"measured"`
-        (T-2391) -- the roster `as_text` prints automatically (standing
+        (T-2391), plus every entry T-4309's `_is_silent_nonzero_exit`
+        flags (a nonzero exit with zero diagnostics -- the same "could not
+        determine an answer" shape `measurement` catches for `gate:`
+        families, reached here via exit code instead of an info-severity
+        diagnostic) -- the roster `as_text` prints automatically (standing
         directive: automatic over commands, a finding that requires
         remembering a second command is not a control) and `as_json`
         callers can derive the identical list from without re-deriving
-        the `_is_unresolved_only_gate` predicate by hand."""
-        return [r for r in self.results if r.measurement != "measured"]
+        either predicate by hand."""
+        return [
+            r
+            for r in self.results
+            if r.measurement != "measured" or _is_silent_nonzero_exit(r)
+        ]
 
+    # frob:ticket T-4309
+    # frob:waive AFFECT001 reason="T-4309: see the identical waiver on CheckResult \
+    # above"
     def as_text(self, color: bool = False) -> str:
         # frob:doc docs/commands/check.md#public-api
         """Human-readable report: errors, then warnings, then notes, then a
@@ -1122,7 +1219,16 @@ class CheckResult(BaseModel):
                 "count above is NOT a clean measurement, do not read it as one:"
             )
             for r in unmeasured:
-                lines.append(f"  {paint(r.tool, CYAN, color)}: {r.measurement_reason}")
+                # T-4309: `measurement_reason` is empty for the
+                # exit-code-only shape `_is_silent_nonzero_exit` catches
+                # (it has no diagnostics to join) -- fall back to naming
+                # the exit code and the tool's own (clean-looking)
+                # summary so the roster never prints a blank reason.
+                reason = r.measurement_reason or (
+                    f"process exited {r.exit_code} with no diagnostics "
+                    f"reported (tool summary: {r.summary!r})"
+                )
+                lines.append(f"  {paint(r.tool, CYAN, color)}: {reason}")
             lines.append("")
 
         lines.append(paint("## Tool summary", BOLD, color))
@@ -1133,7 +1239,12 @@ class CheckResult(BaseModel):
             # third state so it is never visually indistinguishable from
             # a clean pass. exit_code/total_errors are untouched: this is
             # a rendering-only distinction, not an exit-code change.
-            if _is_unresolved_only_gate(r):
+            # T-4309: same treatment for a nonzero exit with zero
+            # diagnostics (_is_silent_nonzero_exit) -- a manufactured FAIL
+            # observed live for `ty`/`ruff-format`, whose detail text says
+            # nothing is wrong; route it into the same UNRES state rather
+            # than inventing a failure the tool's own content contradicts.
+            if _is_unresolved_only_gate(r) or _is_silent_nonzero_exit(r):
                 icon = paint("UNRES", YELLOW, color)
             elif ok:
                 icon = paint("pass", GREEN, color)
@@ -1160,7 +1271,9 @@ class CheckResult(BaseModel):
         )
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json_and_errors_exit_1  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json\
+    # _and_errors_exit_1
     def as_json(self) -> str:
         # frob:doc docs/commands/check.md#public-api
         """The full structured result as JSON (`--json` CLI output)."""
@@ -1399,7 +1512,9 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
 
 # frob:ticket T-0627
 # frob:doc docs/commands/check.md#public-api
-# frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool  # noqa: E501
+# frob:tests \
+# tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_ever\
+# y_gate_and_tool
 def available_stages() -> list[str]:
     """Sorted `_STAGE_GROUPS` alias names `frob check --only list` prints (T-0627)."""
     return sorted(_STAGE_GROUPS)
