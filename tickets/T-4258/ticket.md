@@ -36,10 +36,6 @@ acceptance:
     opens the graph cache, then it acquires the lock and completes its build rather
     than timing out
   evidence: []
-- text: given a graph build that cannot take the cache lock, when it reports the failure,
-    then the message names the holding process rather than saying only that the database
-    is locked
-  evidence: []
 - text: given a serve daemon that has performed no useful work for more than one hour,
     when the liveness check runs, then the daemon terminates itself, and idleness
     is measured by work performed rather than by poll iterations
@@ -55,6 +51,16 @@ acceptance_amendments:
     + _land.py, outside this ticket''s src/frob/serve/_daemon.py + src/frob/serve/_warm.py
     scope, and is a large enough land-proof-semantics change to deserve its own ticket
     rather than widen this one''s blast radius'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  index: 2
+  old_text: given a graph build that cannot take the cache lock, when it reports the
+    failure, then the message names the holding process rather than saying only that
+    the database is locked
+  new_text: null
+  reason: 'split to T-draft-f40f5848: naming the holding process on CacheLocked requires
+    editing src/frob/graph/cache.py, outside this ticket''s declared scope'
   actor: logan
   at: '2026-09-08'
 threat: null
