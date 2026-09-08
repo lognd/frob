@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/verify_runner.py
 - tests/unit/verify/test_verify_runner.py
-- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +30,12 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-verify-sweep.md
   reason: evidence tests and existing frob:doc target this ticket's new symbols reference
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: avoid unrelated scope-closure expansion; use frob:tests directive instead
+    of frob:doc for the new symbol
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
