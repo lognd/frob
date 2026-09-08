@@ -20,6 +20,7 @@ scope:
 - tests/test_graph.py
 - tests/gates_suite/test_prework.py
 - docs/audits/graph.md
+- docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,13 @@ scope_changes:
   glob: docs/audits/graph.md
   reason: 'T-4286: AFFECT001 requires build_call_graph''s own affects()-closure doc
     in scope'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-4286: AFFECT001 requires build_call_graph and scope_private_helper_gaps''s
+    own affects()-closure docs in scope; T-4282''s lease that blocked this earlier
+    has since landed'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
