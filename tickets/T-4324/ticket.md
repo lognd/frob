@@ -18,6 +18,7 @@ scope:
 - src/frob/app/verify_runner.py
 - tests/unit/verify/test_verify_runner.py
 - tests/unit/verify/test_watermark.py
+- docs/modules/verify-rapid-debt-visibility.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -67,6 +68,12 @@ scope_changes:
   glob: src/frob/verify/_quarantine.py
   reason: 'revert: these pre-existing doc/test-target closure gaps predate this ticket
     and are unrelated to its fix; keep scope minimal per ticket instructions'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/verify-rapid-debt-visibility.md
+  reason: new self-contained doc anchor for the new public symbol RapidDebtEntryView
+    (COV001/LANDPARITY001)
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
