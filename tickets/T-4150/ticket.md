@@ -20,6 +20,7 @@ scope:
 - src/frob/tickets/__init__.py
 - docs/guides/python-api.md
 - docs/index.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,13 @@ scope_changes:
   reason: acceptance criterion requires the advertised public API surface to be written
     down somewhere a consumer can find it; adding a dedicated guide and one index
     link
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: design/frob.strata
+  reason: new system test's fs.read/fs.write/exec capabilities (building wheels, installing
+    into a venv, running the probe script) need declaring against the testsuite node
+    per SELFAUDIT001
   actor: logan
   at: '2026-09-08'
 body_changes:
