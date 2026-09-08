@@ -2,7 +2,7 @@
 id: T-4279
 title: the gate cache's stat-trust margin is a fixed constant tuned to one mount,
   so a coarse-granularity filesystem still returns stale verdicts silently
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -29,19 +29,68 @@ scope_changes:
     fan-out
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_coarse_granularity_widens_the_untrusted_window
+- tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_none_margin_never_trusts_regardless_of_age
+- tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_within_margin_is_not_trusted
+- tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_past_margin_is_trusted
+- tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_granularity_times_safety_multiplier
+- tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_none_when_granularity_unmeasurable
+- tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_real_probe_returns_a_plausible_small_value
+- tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_all_samples_colliding_falls_back_to_loop_span
+- tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_second_call_does_not_reprobe
+- tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_on_disk_cache_survives_a_fresh_in_process_cache
+- tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+- tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_old_stat_match_is_trusted_and_skips_reparse
 designated_repro_test: null
 acceptance:
 - text: given a filesystem whose modification-time granularity is coarser than the
     trust margin, when two different contents are written outside that margin but
     within one granularity tick, then the cache does not return a stale verdict
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_coarse_granularity_widens_the_untrusted_window
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_none_margin_never_trusts_regardless_of_age
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_within_margin_is_not_trusted
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_past_margin_is_trusted
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_granularity_times_safety_multiplier
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_none_when_granularity_unmeasurable
+  - tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_real_probe_returns_a_plausible_small_value
+  - tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_all_samples_colliding_falls_back_to_loop_span
+  - tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_second_call_does_not_reprobe
+  - tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_on_disk_cache_survives_a_fresh_in_process_cache
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_old_stat_match_is_trusted_and_skips_reparse
 - text: given a filesystem whose granularity cannot be established, when the fast
     path is consulted, then it falls back to the content hash rather than trusting
     the stat pair
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_coarse_granularity_widens_the_untrusted_window
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_none_margin_never_trusts_regardless_of_age
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_within_margin_is_not_trusted
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_past_margin_is_trusted
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_granularity_times_safety_multiplier
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_none_when_granularity_unmeasurable
+  - tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_real_probe_returns_a_plausible_small_value
+  - tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_all_samples_colliding_falls_back_to_loop_span
+  - tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_second_call_does_not_reprobe
+  - tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_on_disk_cache_survives_a_fresh_in_process_cache
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_old_stat_match_is_trusted_and_skips_reparse
 - text: given the chosen margin, when it remains a constant anywhere, then the granularity
     range it is safe for is stated alongside it rather than implied
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_coarse_granularity_widens_the_untrusted_window
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_none_margin_never_trusts_regardless_of_age
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_within_margin_is_not_trusted
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_stat_past_margin_is_trusted
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_granularity_times_safety_multiplier
+  - tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy::test_margin_is_none_when_granularity_unmeasurable
+  - tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_real_probe_returns_a_plausible_small_value
+  - tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs::test_all_samples_colliding_falls_back_to_loop_span
+  - tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_second_call_does_not_reprobe
+  - tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching::test_on_disk_cache_survives_a_fresh_in_process_cache
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
+  - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_old_stat_match_is_trusted_and_skips_reparse
 threat: null
 component: null
 anchor: false

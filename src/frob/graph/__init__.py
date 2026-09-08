@@ -158,19 +158,298 @@ def _stat_key(path: Path) -> tuple[int, int] | None:
 #: comparison (still far cheaper than a full reparse) instead of being
 #: trusted blindly -- closing the gap categorically rather than leaving it
 #: to how much other work happens to separate two edits.
-_STAT_TRUST_MARGIN_NS = 250_000_000  # 250ms
+#:
+#: T-4279: the margin used to be this one FIXED constant (250ms),
+#: correct only while the filesystem's mtime granularity is much finer
+#: than it -- verified true for this repo's own WSL/ext4 mount (measured
+#: granularity under 5ms, so 250ms is a ~50x safety margin over it) but
+#: NOT a property every mount has. A filesystem with 1-2 SECOND mtime
+#: granularity (older removable formats, some network mounts where the
+#: time is server-supplied or truncated on write) can alias two writes
+#: comfortably OUTSIDE a 250ms margin onto the same stat pair; the fast
+#: path would then trust the match and return a stale verdict silently
+#: -- the exact failure shape this whole mechanism exists to close, just
+#: moved to a mount nobody measured it against. `_stat_trust_margin_ns`
+#: below replaces the fixed constant with one derived from `_mtime_
+#: granularity_ns`'s own measurement of the ACTUAL mount, so the ~50x
+#: safety factor this constant encoded empirically is now applied to
+#: whatever granularity is really observed, not assumed.
+_STAT_TRUST_SAFETY_MULTIPLIER = 50
 
 
-def _stat_trustworthy(mtime_ns: int) -> bool:
-    """`True` iff `mtime_ns` is old enough (`_STAT_TRUST_MARGIN_NS`) for a
-    matching cached `(mtime_ns, size)` to be trusted WITHOUT a content-hash
-    fallback (T-4257) -- a file whose on-disk mtime is still within the
-    margin of "now" gets the safe, slightly more expensive verification
-    path instead, since that is exactly the window a coarse or contended
-    filesystem clock can alias two different writes onto the same stat
-    pair (see `_STAT_TRUST_MARGIN_NS`'s own docstring for the measurements
-    behind this)."""
-    return time.time_ns() - mtime_ns > _STAT_TRUST_MARGIN_NS
+#: T-4279: candidate filesystem mtime-observation granularities,
+#: coarsest bucket a measured value gets rounded UP to, finest first,
+#: covering every real one this module's docstring above discusses: exact
+#: nanosecond timestamps, NTFS's 100ns ticks, common coarser steps a
+#: network filesystem or a kernel's own coarse-clock timestamp update
+#: policy might exhibit, and the two historical worst cases (1s FAT/
+#: HFS+, 2s old FAT). Rounding UP to the nearest candidate (rather than
+#: using the raw measured gap directly) keeps the derived margin a
+#: stable, round value instead of one that wobbles with per-run
+#: scheduling noise.
+_MTIME_GRANULARITY_CANDIDATES_NS: tuple[int, ...] = (
+    1,  # exact ns
+    100,  # NTFS
+    1_000,  # 1us
+    1_000_000,  # 1ms
+    10_000_000,  # 10ms
+    1_000_000_000,  # 1s (FAT/HFS+)
+    2_000_000_000,  # 2s (old FAT)
+)
+
+#: T-4279: number of real back-to-back writes `_probe_mtime_granularity_
+#: ns` performs to observe the mount's actual mtime-update behavior --
+#: matches T-4257's own original measurement methodology's sample size
+#: (that ticket's docstring: "a tight loop of write-then-stat ... 5/20"
+#: on this repo's own mount), so the probe reproduces the same shape of
+#: measurement this margin has always been justified by, just performed
+#: live against whatever mount is actually running rather than assumed
+#: from one prior measurement.
+_GRANULARITY_PROBE_WRITES = 20
+
+#: T-4279: per-root in-process cache for `_mtime_granularity_ns`'s
+#: measurement -- a mount's observed timestamp-update granularity does
+#: not change for the life of a process, so re-probing per file (or per
+#: build) would pay a real write-loop cost for a value that can only
+#: ever come out the same. Keyed by `root.resolve()` since a bare `root`
+#: can be given in more than one spelling across calls within one run.
+_mtime_granularity_cache: dict[Path, int | None] = {}
+
+#: T-4279: on-disk sidecar filename for `_mtime_granularity_ns`'s
+#: measurement, written under `<root>/.frob/` -- makes the "measure once"
+#: half of the ticket's own remedy survive PAST one process's lifetime
+#: too, since `frob check`'s real usage pattern is many short-lived CLI
+#: invocations against the same root, each of which would otherwise
+#: re-probe from a cold in-process cache. Deliberately a plain text file
+#: read/written directly here rather than a new `frob.graph.cache`
+#: sqlite meta row: this ticket's own declared scope is `src/frob/graph/
+#: __init__.py` only.
+_MTIME_GRANULARITY_CACHE_FILENAME = "mtime-granularity-ns"
+
+
+# frob:ticket T-4279
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_pro\
+# be_returns_a_plausible_small_value
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samp\
+# les_colliding_falls_back_to_loop_span
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_unwritab\
+# le_root_returns_none
+def _probe_mtime_granularity_ns(root: Path) -> int | None:
+    """Measure `root`'s filesystem's OBSERVED mtime-update granularity in
+    nanoseconds (T-4279), via `_GRANULARITY_PROBE_WRITES` real back-to-
+    back writes to a throwaway probe file under `root/.frob/`, recording
+    `stat().st_mtime_ns` after each.
+
+    Deliberately does NOT measure storage precision via `os.utime` (an
+    earlier draft of this function did, and was wrong): a filesystem can
+    happily STORE an arbitrary nanosecond value written directly via
+    `os.utime` while the kernel's own timestamp-update path for a real
+    write still advances mtime in much coarser ticks -- exactly the gap
+    T-4257's own docstring measured empirically on this repo's ext4 mount
+    (nominally full ns storage precision, yet 5/20 real back-to-back
+    writes still collided onto an identical stat pair). Only a real
+    write loop observes that actual behavior; a synthetic timestamp
+    round-trip does not.
+
+    Returns the smallest OBSERVED positive gap between consecutive
+    distinct timestamps, rounded up to the nearest
+    `_MTIME_GRANULARITY_CANDIDATES_NS` bucket. If every sample in the
+    loop collides onto the identical timestamp, the mount is at least as
+    coarse as the whole loop's wall-clock span; that span is used as the
+    measured gap instead so the result is still a real, conservative
+    lower bound rather than a guess. `None` if the probe file cannot be
+    created or stat'd (`.frob/` unwritable, an unreadable/vanished root)
+    or if even the whole-loop span is coarser than every candidate here
+    -- callers must treat that as "cannot establish safety", never as
+    license to guess a value.
+    """
+    probe_dir = root / ".frob"
+    try:
+        probe_dir.mkdir(parents=True, exist_ok=True)
+        probe_path = probe_dir / f".mtime-granularity-probe-{os.getpid()}"
+    except OSError as exc:
+        _log.warning(
+            "could not create mtime-granularity probe dir %s: %s", probe_dir, exc
+        )
+        return None
+    try:
+        samples = _collect_mtime_probe_samples(probe_path)
+        if samples is None:
+            return None
+        timestamps, loop_elapsed_ns = samples
+        return _granularity_bucket_for_samples(root, timestamps, loop_elapsed_ns)
+    finally:
+        try:
+            probe_path.unlink()
+        except OSError:
+            pass
+
+
+# frob:ticket T-4279
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_pro\
+# be_returns_a_plausible_small_value
+def _collect_mtime_probe_samples(
+    probe_path: Path,
+) -> tuple[list[int], int] | None:
+    """Write to `probe_path` `_GRANULARITY_PROBE_WRITES` times back to
+    back, recording `stat().st_mtime_ns` after each (T-4279, split out of
+    `_probe_mtime_granularity_ns` to keep it under ARCH001's length
+    threshold). Returns `(timestamps, loop_elapsed_ns)`, or `None` if a
+    write/stat call fails partway through."""
+    loop_start_ns = time.monotonic_ns()
+    timestamps: list[int] = []
+    try:
+        for i in range(_GRANULARITY_PROBE_WRITES):
+            probe_path.write_bytes(bytes([i % 256]))
+            timestamps.append(probe_path.stat().st_mtime_ns)
+    except OSError as exc:
+        _log.warning("could not probe mtime granularity at %s: %s", probe_path, exc)
+        return None
+    return timestamps, time.monotonic_ns() - loop_start_ns
+
+
+# frob:ticket T-4279
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samp\
+# les_colliding_falls_back_to_loop_span
+def _granularity_bucket_for_samples(
+    root: Path, timestamps: list[int], loop_elapsed_ns: int
+) -> int | None:
+    """Derive a `_MTIME_GRANULARITY_CANDIDATES_NS` bucket from
+    `_collect_mtime_probe_samples`'s output (T-4279, split out of
+    `_probe_mtime_granularity_ns` to keep it under ARCH001's length
+    threshold) -- see that function's own docstring for the measurement
+    rationale. `None` if even the whole loop's span is coarser than
+    every candidate."""
+    positive_gaps = [
+        later - earlier
+        for earlier, later in zip(timestamps, timestamps[1:])
+        if later > earlier
+    ]
+    measured_gap_ns = min(positive_gaps) if positive_gaps else loop_elapsed_ns
+
+    for candidate_ns in _MTIME_GRANULARITY_CANDIDATES_NS:
+        if candidate_ns >= measured_gap_ns:
+            return candidate_ns
+    _log.warning(
+        "mtime granularity at %s is coarser than every candidate up to "
+        "%.0fs (observed gap %.0fns) -- cannot establish a safe "
+        "stat-trust margin",
+        root,
+        _MTIME_GRANULARITY_CANDIDATES_NS[-1] / 1_000_000_000,
+        measured_gap_ns,
+    )
+    return None
+
+
+# frob:ticket T-4279
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_second_c\
+# all_does_not_reprobe
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_on_disk_\
+# cache_survives_a_fresh_in_process_cache
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_unmeasur\
+# able_result_is_not_persisted_to_disk
+def _mtime_granularity_ns(root: Path) -> int | None:
+    """`root`'s filesystem mtime granularity in nanoseconds, measured once
+    and cached both in-process (`_mtime_granularity_cache`) and on disk
+    (`_MTIME_GRANULARITY_CACHE_FILENAME`, T-4279) -- see
+    `_probe_mtime_granularity_ns`'s own docstring for the measurement
+    itself. `None` (unmeasurable) is cached in-process too, so a genuinely
+    coarse or unwritable mount is not re-probed every call within one run,
+    but is deliberately NOT written to the on-disk sidecar: a transient
+    probe failure (root momentarily unwritable) should not permanently
+    pin every future invocation to "never trust the fast path" once the
+    underlying cause clears.
+    """
+    resolved = root.resolve()
+    if resolved in _mtime_granularity_cache:
+        return _mtime_granularity_cache[resolved]
+    cache_file = resolved / ".frob" / _MTIME_GRANULARITY_CACHE_FILENAME
+    try:
+        cached_value = int(cache_file.read_text().strip())
+        if cached_value > 0:
+            _mtime_granularity_cache[resolved] = cached_value
+            return cached_value
+    except (OSError, ValueError):
+        pass
+    measured = _probe_mtime_granularity_ns(resolved)
+    _mtime_granularity_cache[resolved] = measured
+    if measured is not None:
+        try:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(str(measured))
+        except OSError as exc:
+            _log.warning(
+                "could not persist mtime-granularity cache at %s: %s",
+                cache_file,
+                exc,
+            )
+    return measured
+
+
+# frob:ticket T-4279
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_ma\
+# rgin_is_granularity_times_safety_multiplier
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_ma\
+# rgin_is_none_when_granularity_unmeasurable
+def _stat_trust_margin_ns(root: Path) -> int | None:
+    """The stat-trust margin (ns) for `root`'s filesystem (T-4279):
+    `_STAT_TRUST_SAFETY_MULTIPLIER` times the measured mtime granularity
+    (`_mtime_granularity_ns`), or `None` if granularity could not be
+    established -- `_stat_trustworthy` treats `None` as "never trust a
+    stat match", the safe default when the property the margin depends
+    on has no measurement to rest on."""
+    granularity_ns = _mtime_granularity_ns(root)
+    if granularity_ns is None:
+        return None
+    return granularity_ns * _STAT_TRUST_SAFETY_MULTIPLIER
+
+
+# frob:ticket T-4257
+# frob:ticket T-4279
+# frob:tests \
+# tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_recent_stat_match_falls_t\
+# hrough_to_content_hash
+# frob:tests \
+# tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_old_stat_match_is_trusted\
+# _and_skips_reparse
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_no\
+# ne_margin_never_trusts_regardless_of_age
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_st\
+# at_within_margin_is_not_trusted
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_st\
+# at_past_margin_is_trusted
+# frob:tests \
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_co\
+# arse_granularity_widens_the_untrusted_window
+def _stat_trustworthy(mtime_ns: int, margin_ns: int | None) -> bool:
+    """`True` iff `mtime_ns` is old enough (past `margin_ns`) for a
+    matching cached `(mtime_ns, size)` to be trusted WITHOUT a
+    content-hash fallback (T-4257/T-4279) -- a file whose on-disk mtime
+    is still within the margin of "now" gets the safe, slightly more
+    expensive verification path instead, since that is exactly the
+    window a coarse or contended filesystem clock can alias two
+    different writes onto the same stat pair. `margin_ns` is the
+    caller's own `_stat_trust_margin_ns(root)` result for the file's
+    filesystem (T-4279: derived from measured granularity, not a fixed
+    constant) -- `None` (granularity unmeasurable) always returns
+    `False`, forcing the content-hash path rather than guessing a value
+    with no measurement behind it."""
+    if margin_ns is None:
+        return False
+    return time.time_ns() - mtime_ns > margin_ns
 
 
 def _display_path(path: Path, root: Path) -> str:
@@ -403,7 +682,7 @@ def _process_source_file(
     if meta is not None:
         cached_hash, cached_mtime_ns, cached_size = meta
         if (cached_mtime_ns, cached_size) == stat_key and _stat_trustworthy(
-            stat_key[0]
+            stat_key[0], _stat_trust_margin_ns(root)
         ):
             _log.debug("stat cache hit: %s", rel_path)
             symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
@@ -441,7 +720,7 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
     if meta is not None:
         cached_hash, cached_mtime_ns, cached_size = meta
         if (cached_mtime_ns, cached_size) == stat_key and _stat_trustworthy(
-            stat_key[0]
+            stat_key[0], _stat_trust_margin_ns(root)
         ):
             _log.debug("stat cache hit: %s", rel_path)
             return False

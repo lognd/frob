@@ -136,9 +136,9 @@
       "ticket": "T-4282"
     },
     "graphlang::fs.write": {
-      "accepted_count": 6,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on graphlang from 5 to 6 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 7,
+      "reason": "T-4279: adds src/frob/graph/__init__.py to the fs.write via-list -- _probe_mtime_granularity_ns/_mtime_granularity_ns write a throwaway probe file and an on-disk granularity-cache sidecar under <root>/.frob/, bumping the ceiling 6 -> 7, one real new site.",
+      "ticket": "T-4279"
     },
     "graphlang::sql": {
       "accepted_count": 1,
@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 514,
-      "reason": "T-4282: adds tests/unit/test_graph_ingest_batching.py and tests/unit/test_graph_lock_holder_naming.py to the fs.write via-list -- one writes a source fixture file under tmp_path, the other writes a real file to hold open for the lock-holder-detection test -- bumping the ceiling 512 -> 514, two real new sites.",
-      "ticket": "T-4282"
+      "accepted_count": 515,
+      "reason": "T-4279: adds tests/unit/test_graph_stat_trust_margin.py to the fs.write via-list -- its probe-loop tests write real files under tmp_path to exercise the real mtime-granularity measurement, bumping the ceiling 514 -> 515, one real new site.",
+      "ticket": "T-4279"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
