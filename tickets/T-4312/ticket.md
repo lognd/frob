@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/gates/_wire.py
 - src/frob/tickets/_evidence.py
+- tests/unit/test_land_stranding_t4312.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
     the single correct wiring point covering close+drop+any terminal transition uniformly
     is frob.tickets._evidence.transition, not per-CLI-command call sites (close_cmd.py,
     _reporting.py) which would duplicate the hook
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_stranding_t4312.py
+  reason: new test file covering the T-4312 stranding-check generalization (unit dispatch-table
+    coverage + end-to-end close/drop force-the-condition tests)
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
