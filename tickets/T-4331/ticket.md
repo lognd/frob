@@ -34,6 +34,16 @@ scope_changes:
     an in-scope side effect of T-4331's work
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: same BUG002 escape hatch T-4328 used for its identical config-only frob.toml
+    severity change
+  actor: logan
+  at: '2026-09-08'
+  old_length: 1985
+  new_length: 2375
+evidence:
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml
 designated_repro_test: null
 threat: null
 component: null
@@ -74,3 +84,5 @@ containing function for a config/feature flag that would make it silently
 unreachable in this repo's default configuration. Do NOT mass-demote
 without per-rule justification -- most of the remaining 297 are
 plausibly fine and a wrong demotion silently removes enforcement.
+
+frob:waive BUG002 reason="config-table severity demotion, not a code defect: there is no failing/passing test pair that reproduces a wrongly-error-severity rule in frob.toml, the correction is verified by test_gates_table_schema.py::test_must_still_pass_this_repos_own_frob_toml (schema validity) plus the frob check --ticket T-4331 before/after error-count comparison in the Done report"
