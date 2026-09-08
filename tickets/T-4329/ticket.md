@@ -21,6 +21,8 @@ scope:
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_stackdump.py
 - tests/unit/test_conftest_suite_result_status.py
+- src/frob/mutate/__init__.py
+- src/frob/mutate/_journal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -69,6 +71,22 @@ scope_changes:
     pytest_collection_modifyitems, pytest_sessionfinish); the scope gate requires
     them added whenever tests/conftest.py is in a ticket''s scope, regardless of which
     symbol the ticket''s own edit touches'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/mutate/__init__.py
+  reason: 'SCOPE002 closure: tests/test_mutate_journal.py (already required in scope
+    for its conftest.py::pytest_configure coverage) also tests these mutate-journal
+    symbols; pre-existing frob:tests coverage unrelated to this ticket''s actual fix,
+    added only to satisfy scope closure'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/mutate/_journal.py
+  reason: 'SCOPE002 closure: tests/test_mutate_journal.py (already required in scope
+    for its conftest.py::pytest_configure coverage) also tests these mutate-journal
+    symbols; pre-existing frob:tests coverage unrelated to this ticket''s actual fix,
+    added only to satisfy scope closure'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
