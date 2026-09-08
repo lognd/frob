@@ -92,6 +92,40 @@ _CLI_DEST_LITERAL_RE = re.compile(r'\bdest\s*=\s*"([a-z][a-z0-9_]*)"')
 _CLI_PARSER_DIR_PREFIX = "src/frob/_cli_parsers/"
 _CONFIG_EXTERNAL_PATH = "src/frob/app/_config_external.py"
 
+#: Function NAMES that register a subcommand's parser purely for --help
+#: discoverability on a direct-dispatch verb whose real invocation
+#: (`frob.__main__._dispatch`'s raw argv[0] scan) never routes through
+#: `AppConfig.from_external` at all (T-4303) -- every `dest=` an ADDED
+#: line spells inside one of these functions' own body is therefore, BY
+#: CONSTRUCTION, never going to appear in `_config_external.py`'s
+#: forwarded set, and flagging it every time trains the exact "waive it,
+#: it's always this" reflex a per-verb `frob:waive WIRE001
+#: follow_up="T-####"` was standing in for (see `_add_whereis_parser`'s
+#: own T-4299 waiver, now dischargeable once this lands). Source of
+#: truth: `frob.__main__._dispatch`'s if/elif chain -- the SAME chain
+#: `_WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS` below tracks for the verb-
+#: token axis, and the same reason that tuple gives for leaving `bind`/
+#: `agent`/`worktree`/`sync-skills` off of it: those verbs (`whereis`
+#: included, T-4299) still register their OWN `_add_*_parser` on the
+#: real `_build_parser()` tree, so they are visible to `frob --help` and
+#: to this WIRE001 check's `_CLI_PARSER_DIR_PREFIX` file filter -- only
+#: `refactor`/`narrative` build a throwaway local parser instead
+#: (`_dispatch_refactor`/`_dispatch_narrative`'s own shape), which never
+#: lives under `src/frob/_cli_parsers/**` in the first place and so is
+#: already outside this check's file filter, needing no entry here.
+#: Update this set if that chain adds or removes an AppConfig-bypass
+#: branch whose parser still registers on the live tree.
+# frob:ticket T-4303
+_WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS: frozenset[str] = frozenset(
+    {
+        "_add_bind_parser",
+        "_add_agent_parser",
+        "_add_worktree_parser",
+        "_add_sync_skills_parser",
+        "_add_whereis_parser",
+    }
+)
+
 
 def _short_name(qualname: str) -> str:
     """The final dotted component of a qualname (`Foo.bar` -> `bar`) --
@@ -1020,6 +1054,32 @@ def _cli_dest_literals_in_added_lines(
     return hits
 
 
+def _appconfig_bypass_parser_line_ranges(text: str) -> list[tuple[int, int]]:
+    """`(start_line, end_line)` inclusive spans (1-indexed, `ast`'s own
+    convention) for every function in `text` whose name is in
+    `_WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS` (T-4303) -- a `dest=`
+    literal an ADDED line spells inside one of these spans registers a
+    subcommand for --help discoverability on a verb whose real dispatch
+    bypasses `AppConfig.from_external` entirely, so it is never going to
+    appear in `_config_external.py`'s forwarded set BY DESIGN, not by
+    omission. Returns `[]` on a parse failure (fail toward flagging,
+    same posture `_config_external_forwarded_dest_names` takes on its
+    own unreadable-file path)."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return []
+    spans: list[tuple[int, int]] = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name in _WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS
+        ):
+            end = node.end_lineno if node.end_lineno is not None else node.lineno
+            spans.append((node.lineno, end))
+    return spans
+
+
 def _wire001_cli_dest_violations(
     root: Path, added_lines: dict[str, list[tuple[int, str]]]
 ) -> list[Violation]:
@@ -1033,7 +1093,10 @@ def _wire001_cli_dest_violations(
     names`'s AST-parsed set of the six copy-loop tuples plus the ad-hoc
     forwarded set, not a raw text-membership scan -- a `dest` string that
     merely APPEARS somewhere in the file (a comment, an unrelated field, a
-    docstring) no longer silently reads as wired."""
+    docstring) no longer silently reads as wired. T-4303: a hit whose
+    line falls inside one of `_appconfig_bypass_parser_line_ranges`'s
+    spans is skipped first -- an AppConfig-bypass verb's own --help-only
+    dest, structurally never forwarded, not a real wiring gap."""
     try:
         config_external_text = (root / _CONFIG_EXTERNAL_PATH).read_text(
             encoding="utf-8"
@@ -1045,9 +1108,18 @@ def _wire001_cli_dest_violations(
         if config_external_text is not None
         else None
     )
+    bypass_spans_by_file: dict[str, list[tuple[int, int]]] = {}
     violations: list[Violation] = []
     for file, lineno, dest in _cli_dest_literals_in_added_lines(added_lines):
         if forwarded is not None and dest in forwarded:
+            continue
+        if file not in bypass_spans_by_file:
+            try:
+                file_text = (root / file).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                file_text = ""
+            bypass_spans_by_file[file] = _appconfig_bypass_parser_line_ranges(file_text)
+        if any(start <= lineno <= end for start, end in bypass_spans_by_file[file]):
             continue
         violations.append(
             Violation(

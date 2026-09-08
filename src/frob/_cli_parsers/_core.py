@@ -558,14 +558,10 @@ def _add_whereis_parser(sub) -> None:
         help="print the interpreter/site-packages path of the frob "
         "ACTUALLY RUNNING this invocation (T-4299)",
     )
-    # frob:waive WIRE001 follow_up="T-4303" reason="whereis_json exists purely so \
-    # --json shows up in --help/arg-shape validation on the real parser tree -- this \
-    # dest is NEVER read through AppConfig, because _dispatch_whereis (like \
-    # _dispatch_bind/_dispatch_agent/_dispatch_worktree above) bypasses AppConfig \
-    # entirely and parses --json straight off the raw argv _dispatch hands it. Every \
-    # direct-dispatch verb's own dests share this exact structurally-unwired shape; \
-    # T-4303 tracks giving WIRE001 a real exemption for it instead of a per-verb \
-    # waiver each time"
+    # T-4303: no frob:waive WIRE001 needed here any more -- _add_whereis_
+    # parser is in WIRE001's own _WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS
+    # exemption set (src/frob/gates/_wire.py), so this --help-only dest
+    # is never flagged in the first place.
     whereis_p.add_argument(
         "--json", dest="whereis_json", action="store_true", help="emit JSON"
     )

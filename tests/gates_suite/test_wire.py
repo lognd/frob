@@ -1220,6 +1220,73 @@ class TestWireGate:
             for v in violations
         )
 
+    # frob:ticket T-4303
+    def test_new_cli_dest_inside_appconfig_bypass_parser_func_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # T-4303: a --help-only dest added inside one of the AppConfig-
+        # bypass verbs' own _add_*_parser function (whereis's own shape,
+        # T-4299) is never going to appear in _config_external.py's
+        # forwarded set BY DESIGN -- this must not fire WIRE001 any more.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/frob/_cli_parsers/_core.py",
+            "def _add_whereis_parser(sub) -> None:\n"
+            '    whereis_p = sub.add_parser("whereis")\n'
+            '    whereis_p.add_argument("--json", dest="whereis_json")\n',
+        )
+        _write(tmp_path, "src/frob/app/_config_external.py", "# no fields wired\n")
+        snap = _snapshot(tmp_path)
+        diff = Diff(
+            base="x",
+            hunks=(Hunk(file="src/frob/_cli_parsers/_core.py", span=(1, 3)),),
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "whereis_json" in v.message for v in violations
+        )
+
+    # frob:ticket T-4303
+    def test_new_cli_dest_outside_appconfig_bypass_parser_func_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # T-4303: the exemption is scoped to the bypass verbs' own
+        # functions -- an unrelated new dest in the SAME file, outside
+        # any of those functions, must still fire.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/frob/_cli_parsers/_core.py",
+            "def _add_whereis_parser(sub) -> None:\n"
+            '    whereis_p = sub.add_parser("whereis")\n'
+            '    whereis_p.add_argument("--json", dest="whereis_json")\n'
+            "\n\n"
+            "def _add_something_else_parser(sub) -> None:\n"
+            '    p = sub.add_parser("something-else")\n'
+            '    p.add_argument("--amend", dest="ticket_accept_amend_index")\n',
+        )
+        _write(tmp_path, "src/frob/app/_config_external.py", "# no fields wired\n")
+        snap = _snapshot(tmp_path)
+        diff = Diff(
+            base="x",
+            hunks=(Hunk(file="src/frob/_cli_parsers/_core.py", span=(1, 8)),),
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "whereis_json" in v.message for v in violations
+        )
+        assert any(
+            v.rule == "WIRE001" and "ticket_accept_amend_index" in v.message
+            for v in violations
+        )
+
     # frob:ticket T-1428
     def test_wire002_fires_when_follow_up_ticket_missing(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"

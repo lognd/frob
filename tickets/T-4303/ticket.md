@@ -1,7 +1,7 @@
 ---
 id: T-4303
 title: WIRE001 fires on every new direct-dispatch verb's --help-only argparse dest
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
