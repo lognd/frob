@@ -17,10 +17,71 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/__main__.py
 - src/frob/app/__init__.py
+- src/frob/_cli_parsers/_core.py
+- src/frob/_cli_parsers/_root.py
+- src/frob/_cli_parsers/__init__.py
+- tests/unit/test_main_entry.py
+- tests/system/test_cli_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_core.py
+  reason: 'measured exhaustively: frob agent/worktree/bind precedent shows a direct-dispatch
+    verb registers its parser in _cli_parsers/_core.py, is wired into _add_analysis_subparsers
+    in _cli_parsers/_root.py (for --help discoverability, T-3125 precedent), and is
+    re-exported through _cli_parsers/__init__.py; __main__.py needs the dispatch branch.
+    tests/unit/test_main_entry.py already has an exhaustive TestHelpListsDirectDispatchVerbs
+    class this ticket extends; tests/system/test_cli_check.py is the every-verb-reachable
+    coverage the ticket body names as a candidate to check'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/_cli_parsers/_root.py
+  reason: 'measured exhaustively: frob agent/worktree/bind precedent shows a direct-dispatch
+    verb registers its parser in _cli_parsers/_core.py, is wired into _add_analysis_subparsers
+    in _cli_parsers/_root.py (for --help discoverability, T-3125 precedent), and is
+    re-exported through _cli_parsers/__init__.py; __main__.py needs the dispatch branch.
+    tests/unit/test_main_entry.py already has an exhaustive TestHelpListsDirectDispatchVerbs
+    class this ticket extends; tests/system/test_cli_check.py is the every-verb-reachable
+    coverage the ticket body names as a candidate to check'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/_cli_parsers/__init__.py
+  reason: 'measured exhaustively: frob agent/worktree/bind precedent shows a direct-dispatch
+    verb registers its parser in _cli_parsers/_core.py, is wired into _add_analysis_subparsers
+    in _cli_parsers/_root.py (for --help discoverability, T-3125 precedent), and is
+    re-exported through _cli_parsers/__init__.py; __main__.py needs the dispatch branch.
+    tests/unit/test_main_entry.py already has an exhaustive TestHelpListsDirectDispatchVerbs
+    class this ticket extends; tests/system/test_cli_check.py is the every-verb-reachable
+    coverage the ticket body names as a candidate to check'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: 'measured exhaustively: frob agent/worktree/bind precedent shows a direct-dispatch
+    verb registers its parser in _cli_parsers/_core.py, is wired into _add_analysis_subparsers
+    in _cli_parsers/_root.py (for --help discoverability, T-3125 precedent), and is
+    re-exported through _cli_parsers/__init__.py; __main__.py needs the dispatch branch.
+    tests/unit/test_main_entry.py already has an exhaustive TestHelpListsDirectDispatchVerbs
+    class this ticket extends; tests/system/test_cli_check.py is the every-verb-reachable
+    coverage the ticket body names as a candidate to check'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: 'measured exhaustively: frob agent/worktree/bind precedent shows a direct-dispatch
+    verb registers its parser in _cli_parsers/_core.py, is wired into _add_analysis_subparsers
+    in _cli_parsers/_root.py (for --help discoverability, T-3125 precedent), and is
+    re-exported through _cli_parsers/__init__.py; __main__.py needs the dispatch branch.
+    tests/unit/test_main_entry.py already has an exhaustive TestHelpListsDirectDispatchVerbs
+    class this ticket extends; tests/system/test_cli_check.py is the every-verb-reachable
+    coverage the ticket body names as a candidate to check'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
