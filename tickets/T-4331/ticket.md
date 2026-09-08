@@ -1,7 +1,7 @@
 ---
 id: T-4331
 title: Audit remaining rules from the T-3844 zero-findings severity ratchet
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
