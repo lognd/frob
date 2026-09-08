@@ -2,7 +2,7 @@
 id: T-4299
 title: add a path-reporting verb naming the running frob's own interpreter/site-packages
   location
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-08'
