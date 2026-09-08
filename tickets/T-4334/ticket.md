@@ -15,8 +15,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/verify-rapid-debt-visibility.md
-- docs/modules/tickets-verify-sweep.md
 - invariants/INV-052.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +34,20 @@ scope_changes:
   reason: REF002 needs a real inbound link from a comparable verification doc, and
     INV003/INV004 need a new declared invariant file to anchor the doc's append-only/never-null
     claims
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: swap the heavy tickets-verify-sweep.md link target (137 scope-closure warnings)
+    for docs/index.md's module list, the same lightweight anti-orphan link surface
+    T-4324 already relies on for its own module docs
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/index.md
+  reason: swap the heavy tickets-verify-sweep.md link target (137 scope-closure warnings)
+    for docs/index.md's module list, the same lightweight anti-orphan link surface
+    T-4324 already relies on for its own module docs
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
