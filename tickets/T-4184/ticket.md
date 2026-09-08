@@ -135,17 +135,42 @@ scope_changes:
     AFFECT001 instead, design lives fully in docs/modules/release.md#per-land-dev-version-bump-t-4184
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_two_lands_in_sequence_produce_distinguishable_versions
+- tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_toggle_off_leaves_version_untouched
+- tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_refuses_without_ack
+- tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_proceeds_once_acknowledged
+- tests/test_release.py::test_next_dev_version_starts_and_advances_a_cycle
+- tests/test_release.py::test_rel001_neither_satisfied_nor_spuriously_violated_by_dev_suffix
 designated_repro_test: null
 acceptance:
 - text: given two lands in sequence, when each completes, then the project version
     differs between them with no manual step in either
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_two_lands_in_sequence_produce_distinguishable_versions
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_toggle_off_leaves_version_untouched
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_refuses_without_ack
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_proceeds_once_acknowledged
+  - tests/test_release.py::test_next_dev_version_starts_and_advances_a_cycle
+  - tests/test_release.py::test_rel001_neither_satisfied_nor_spuriously_violated_by_dev_suffix
 - text: given the toggle set off, when a land completes, then the version is untouched
     and behaviour matches today
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_two_lands_in_sequence_produce_distinguishable_versions
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_toggle_off_leaves_version_untouched
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_refuses_without_ack
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_proceeds_once_acknowledged
+  - tests/test_release.py::test_next_dev_version_starts_and_advances_a_cycle
+  - tests/test_release.py::test_rel001_neither_satisfied_nor_spuriously_violated_by_dev_suffix
 - text: given a major-version increment with the toggle still on, when the release
     runs, then it either refuses or requires the configured acknowledgement
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_two_lands_in_sequence_produce_distinguishable_versions
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_toggle_off_leaves_version_untouched
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_refuses_without_ack
+  - tests/ticket_land_suite/test_release.py::TestDevVersionBump::test_major_bump_proceeds_once_acknowledged
+  - tests/test_release.py::test_next_dev_version_starts_and_advances_a_cycle
+  - tests/test_release.py::test_rel001_neither_satisfied_nor_spuriously_violated_by_dev_suffix
 threat: null
 component: null
 anchor: false
