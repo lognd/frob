@@ -1,7 +1,7 @@
 ---
 id: T-4301
 title: expose dev-version-bump toggle/ack via a CLI surface (frob release status)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-08'
