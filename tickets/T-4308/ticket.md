@@ -105,6 +105,18 @@ scope_changes:
     empty tool output from malformed output in the ruff JSON parser'
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: docs/modules/process.md
+  reason: AFFECT001 closure for parse_ruff_json/tool_no_output_result touched by this
+    diff
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/process.md
+  reason: 'reverted: switched to a frob:waive AFFECT001 instead of editing this shared
+    doc, to avoid its large cross-ticket scope-closure fan-out'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
