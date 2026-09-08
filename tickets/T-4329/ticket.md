@@ -2,7 +2,7 @@
 id: T-4329
 title: test_frob_self_model.py self-scan tests missing from conftest heavy grouping
   cause concurrent full-repo scans that OOM-crash win32 xdist
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -132,7 +132,10 @@ scope_changes:
     ticket scope-ack instead per SCOPE002''s own documented escape hatch (T-4310)'
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_fixture_use_joins_the_heavy_group_without_a_name_listing
+designated_repro_test: tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_fixture_use_joins_the_heavy_group_without_a_name_listing
 threat: null
 component: null
 anchor: false

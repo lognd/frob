@@ -137,6 +137,57 @@ class TestSelfScanHeavyGrouping:
         assert group_names == {"frob_self_scan_heavy"}
         assert items[3].own_markers == []
 
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_fixture_use\
+    # _joins_the_heavy_group_without_a_name_listing
+    def test_fixture_use_joins_the_heavy_group_without_a_name_listing(self) -> None:
+        """T-4329: an item whose `fixturenames` closure includes
+        `frob_self_scan_artifacts` or `frob_self_scan_snapshot` joins the
+        SAME `frob_self_scan_heavy` xdist group as a name-matched item --
+        with NO entry in `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS` for its own
+        name. This is the exact defect class T-4329 found: three
+        `test_frob_self_model.py` tests read `frob_self_scan_artifacts`
+        but were absent from the substring list, so they ran their own
+        concurrent full-repo scan and OOM-killed a Windows CI worker.
+        Fixture-use detection makes that omission unrepresentable rather
+        than merely tested-for."""
+        module = _load_conftest()
+
+        class _FakeItem:
+            def __init__(self, name: str, fixturenames: tuple = ()) -> None:
+                self.name = name
+                self.fixturenames = fixturenames
+                self.own_markers: list = []
+
+            def get_closest_marker(self, name: str):  # noqa: ANN001
+                """Stub matches the real `pytest.Item` API surface this
+                hook calls; this fixture carries no markers."""
+                return None
+
+            def add_marker(self, marker) -> None:  # noqa: ANN001
+                self.own_markers.append(marker)
+
+        items = [
+            _FakeItem(
+                "test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001",
+                fixturenames=("frob_self_scan_artifacts",),
+            ),
+            _FakeItem(
+                "test_uses_the_raw_snapshot",
+                fixturenames=("tmp_path", "frob_self_scan_snapshot"),
+            ),
+            _FakeItem("test_something_unrelated", fixturenames=("tmp_path",)),
+        ]
+        module.pytest_collection_modifyitems(config=None, items=items)
+
+        for item in items[:2]:
+            assert len(item.own_markers) == 2, item.name
+            marker_names = {m.name for m in item.own_markers}
+            assert marker_names == {"xdist_group", "timeout"}
+            group_marker = next(m for m in item.own_markers if m.name == "xdist_group")
+            assert group_marker.kwargs["name"] == "frob_self_scan_heavy"
+        assert items[2].own_markers == []
+
 
 class TestHeavySubprocessGrouping:
     """T-2099: `pytest_collection_modifyitems`'s `heavy_subprocess` marker

@@ -218,6 +218,31 @@ _SELF_SCAN_HEAVY_NAME_SUBSTRINGS = (
     "test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses",
 )
 
+# frob:ticket T-4329
+_SELF_SCAN_HEAVY_FIXTURE_NAMES = (
+    "frob_self_scan_artifacts",
+    "frob_self_scan_snapshot",
+)
+"""T-4329: fixture names whose USE, not a hand-maintained test-name
+substring, is grouping evidence -- both are the session-scoped
+`build_graph(_REPO_ROOT, ...)` fixtures defined further down in this
+file. T-4329's own root cause: three `tests/system/test_frob_self_
+model.py` tests read `frob_self_scan_artifacts` (the SAME full-repo scan
+`test_sys_gate_zero_violations` already forces into the shared
+`frob_self_scan_heavy` xdist group) but were never added to
+`_SELF_SCAN_HEAVY_NAME_SUBSTRINGS`, so two of the four ran their OWN
+independent full-repo scan concurrently on separate workers and OOM-
+killed a Windows CI runner -- the identical incident shape T-1433 first
+fixed, now proven to recur because that list has to be remembered by
+hand per new consumer. Checking `item.fixturenames` here makes a new
+test that merely requests either fixture join the group automatically,
+with no conftest edit required and no way to silently omit it -- the
+name-substring list stays only for the OLDER heavy tests
+(`tests/unit/strata/test_selfconform.py`,
+`tests/test_registry_exhaustiveness.py`, `tests/test_waive_gate.py`,
+`tests/gates_suite/*`) that call `build_graph`/`sys_gate` directly
+rather than through either shared fixture."""
+
 
 # frob:ticket T-2099
 #: Marker a HEAVY test module self-declares (`pytestmark = pytest.mark.
@@ -242,24 +267,37 @@ _HEAVY_SUBPROCESS_MARKER = "heavy_subprocess"
 
 # frob:ticket T-1433
 # frob:ticket T-2099
+# frob:ticket T-4329
 # frob:tests \
 # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy\
 # _tests_share_one_xdist_group
 # frob:tests \
 # tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subproc\
 # ess_marker_groups_per_file
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_fixture_use_joi\
+# ns_the_heavy_group_without_a_name_listing
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    """Force every full-repo self-scan test (`_SELF_SCAN_HEAVY_NAME_SUBSTRINGS`)
-    into the SAME `pytest-xdist` group (T-1433) so `loadgroup` scheduling
-    (this repo's `addopts`, `pyproject.toml`) runs them one after another
-    on a single worker instead of scattering them across several workers
-    that then all pay their full-repo-scan peak-memory cost at the same
-    moment -- the scheduling shape the live incident capture points at as
-    the OOM-kill trigger behind "node down: Not properly terminated". A
-    no-op under plain `pytest` (no `-n`/`--dist`): `xdist_group` is inert
-    without `pytest-xdist` actually distributing the run.
+    """Force every full-repo self-scan test into the SAME `pytest-xdist`
+    group (T-1433) so `loadgroup` scheduling (this repo's `addopts`,
+    `pyproject.toml`) runs them one after another on a single worker
+    instead of scattering them across several workers that then all pay
+    their full-repo-scan peak-memory cost at the same moment -- the
+    scheduling shape the live incident capture points at as the OOM-kill
+    trigger behind "node down: Not properly terminated". A no-op under
+    plain `pytest` (no `-n`/`--dist`): `xdist_group` is inert without
+    `pytest-xdist` actually distributing the run.
+
+    T-4329: an item joins the group if EITHER it requests one of
+    `_SELF_SCAN_HEAVY_FIXTURE_NAMES` (`item.fixturenames`, pytest's own
+    closure of every fixture a test transitively depends on -- derived
+    from the test's real dependency graph, so a new consumer of either
+    shared fixture is caught with no conftest edit) OR its name matches
+    `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS` (the older heavy tests that call
+    `build_graph`/`sys_gate` directly rather than through a shared
+    fixture, which fixture-use detection cannot see).
 
     Also (T-2099): any item in a module carrying the `heavy_subprocess`
     marker is grouped by its OWN MODULE NAME, one `xdist_group` per file
@@ -269,7 +307,14 @@ def pytest_collection_modifyitems(
     onto the same worker at once (the OOM constraint T-1433's docstring
     above warns about)."""
     for item in items:
-        if any(needle in item.name for needle in _SELF_SCAN_HEAVY_NAME_SUBSTRINGS):
+        uses_self_scan_fixture = any(
+            name in getattr(item, "fixturenames", ())
+            for name in _SELF_SCAN_HEAVY_FIXTURE_NAMES
+        )
+        matches_heavy_name = any(
+            needle in item.name for needle in _SELF_SCAN_HEAVY_NAME_SUBSTRINGS
+        )
+        if uses_self_scan_fixture or matches_heavy_name:
             item.add_marker(pytest.mark.xdist_group(name="frob_self_scan_heavy"))
             # T-3525: raised per-test budget for the group's shared
             # frob_self_scan_artifacts fixture -- see that fixture's own
