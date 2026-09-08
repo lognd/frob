@@ -16,6 +16,12 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/__init__.py
 - src/frob/testing/_collect.py
+- docs/guides/install.md
+- docs/modules/testing.md
+- tests/test_testing.py
+- tests/test_testing_collect.py
+- tests/unit/test_pytest_spawn_env_wiring.py
+- src/frob/testing/_collect_shared.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +32,54 @@ scope_changes:
   reason: the hardcoded uv run pytest --collect-only argv this ticket must fix lives
     in _collect.py, not __init__.py; __init__.py only re-exports the package's public
     API and has no spawn logic of its own
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/guides/install.md
+  reason: 'scope closure for owning src/frob/testing/_collect.py (T-4327''s actual
+    fix location): these are the file''s pre-existing frob:doc/frob:tests targets
+    and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
+    the write-lease footprint of the one file the fix lives in'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'scope closure for owning src/frob/testing/_collect.py (T-4327''s actual
+    fix location): these are the file''s pre-existing frob:doc/frob:tests targets
+    and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
+    the write-lease footprint of the one file the fix lives in'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_testing.py
+  reason: 'scope closure for owning src/frob/testing/_collect.py (T-4327''s actual
+    fix location): these are the file''s pre-existing frob:doc/frob:tests targets
+    and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
+    the write-lease footprint of the one file the fix lives in'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_testing_collect.py
+  reason: 'scope closure for owning src/frob/testing/_collect.py (T-4327''s actual
+    fix location): these are the file''s pre-existing frob:doc/frob:tests targets
+    and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
+    the write-lease footprint of the one file the fix lives in'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_pytest_spawn_env_wiring.py
+  reason: 'scope closure for owning src/frob/testing/_collect.py (T-4327''s actual
+    fix location): these are the file''s pre-existing frob:doc/frob:tests targets
+    and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
+    the write-lease footprint of the one file the fix lives in'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/testing/_collect_shared.py
+  reason: 'scope closure for owning src/frob/testing/_collect.py (T-4327''s actual
+    fix location): these are the file''s pre-existing frob:doc/frob:tests targets
+    and one private-helper dependency, pulled in by SCOPE002 -- not new work, just
+    the write-lease footprint of the one file the fix lives in'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
