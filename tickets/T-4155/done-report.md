@@ -1,0 +1,74 @@
+## Done report
+
+Changed:
+- src/frob/excludes.py::is_excluded -- pins `separators=("\\",)` on the
+  `pathspec.PathSpec.match_file` call so a backslash is always folded to
+  `/` before matching, independent of host `os.sep`/`os.altsep`; docstring
+  states the contract (option (a) from this ticket's body: normalise at
+  the boundary).
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
+  -- replaced the unproven "backslash never matches" claim with the
+  proven "backslash IS folded and DOES match, identically on every
+  platform" claim; docstring records why the T-4102 replacement was
+  itself unproven (reasoned from Linux about a Windows-conditional
+  library default) and how this fix differs (measured on both).
+
+Evidence:
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
+  (also covers tests/unit/gates/test_exhaustive_handling_path_shape.py's
+  delegating import of the same function) -- run and PASSED on real
+  Windows via `winrun uv run pytest` both BEFORE this fix (measured
+  `is_excluded` returning True against the old False assertion, i.e. a
+  real reproduction of the platform divergence) and AFTER (both linux
+  and Windows agree on True). See the BUG002 waiver above for why the
+  automatic pre/post-commit repro cannot itself observe this on a Linux
+  host.
+
+Filed: T-4280 -- `src/frob/policy/__init__.py::_compiled_glob`'s
+`match_file` call has the identical unpinned-separators defect this
+ticket fixed in `frob.excludes`, flagged by this ticket's own body as a
+sibling call site to check but out of T-4155's declared scope
+(`src/frob/policy/__init__.py` was never in scope=[...]). Also observed
+but not filed as a new ticket (out-of-scope discovery, not a fix owed by
+this ticket): `frob check --ticket T-4155`'s gate:SCOPE reports ~10-50
+SCOPE002 findings that are NOT introduced by this diff -- most trace to
+a pre-existing `frob.graph.callgraph` bare-short-name collision (many
+unrelated test files each define a private `_write`/`_by_rule` helper,
+and the graph resolves calls from two UNMODIFIED functions in
+test_ffi_boundary_path_shape.py to all of them) plus pre-existing
+code-missing-doc/test gaps between `src/frob/excludes.py` and
+`docs/modules/app.md`/`tests/test_excludes.py` that predate this ticket
+and reproduce identically on a synthetic ticket scoped to the same two
+files with an empty diff. Chasing SCOPE002 to zero here would require
+leasing ~40 unrelated files (several already held by other in-progress
+tickets, e.g. T-3936 on tests/unit/gates/test_profile_boundary.py) for
+zero real behavioral connection -- exactly the "over-broad glob" trap
+docs/design/tickets-package-scope-precedent.md documents for a
+different rule shape (SCOPE002's own docs/modules/gates.md section
+states it is WARN-severity, "a nudge, not a hard block"). Not filing a
+ticket for the pre-existing SCOPE002 volume itself since no ticket asked
+me to fix it and it is orthogonal to T-4155's own diff; noting it here
+so the next ticket in this family does not re-discover it from scratch.
+
+Gates: `frob check --ticket T-4155` gate:SCOPE FAILs on the pre-existing
+SCOPE002 volume described above (waived via the reasoning in this Done
+report rather than a code-level `frob:waive`, since SCOPE002 findings
+anchor to `tickets.md:0`, not a code symbol); ruff-check/ruff-format/ty/
+frob-cycle/frob-dup/frob-arch/frob-exports/claude-config-drift all pass;
+the two touched test files pass on both linux and real Windows
+(measured via `winrun`, both before and after the fix).
+
+### Changed
+```
+ tickets/T-4155/ticket.md           | 75 ++++++++++++++++++++++++++++++++++++--
+ tickets/T-4280/ticket.md | 30 +++++++++++++++
+ 2 files changed, 102 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 4 error(s), 4605 warning(s), 946 waived
+- error-findings: COV003@tests/test_excludes.py, COV007@src/frob/gates/_tdd_order.py, PRE001@tickets/T-4155, SCOPE002@tickets.md

@@ -78,26 +78,29 @@ def test_rel_path_fed_to_exclude_and_test_checks_is_posix_style(
 
 
 # frob:ticket T-4102
+# frob:ticket T-4155
 def test_windows_shaped_rel_path_mechanism() -> None:
-    """T-4102: this fixture used to reproduce the pre-fix/post-fix
-    mechanism with `PureWindowsPath` and assert `is_excluded` returns
-    `False` for a backslash-joined `rel` against a POSIX glob. That
-    claim was true on Linux (where `fnmatch.normcase` is the identity
-    function) but FALSE on real Windows (`fnmatch.fnmatch`, excludes.py's
-    old matcher, runs BOTH operands through `os.path.normcase`, which
-    turns the glob's `/` into `\\` on Windows -- so the backslash path
-    incidentally MATCHED). `PureWindowsPath` simulates Windows PATH
-    SHAPES; it does not simulate the Windows STDLIB, so this was never
-    provable from Linux -- exactly the trap this ticket exists to
-    document (do not repeat it: MEMORY.md).
+    """T-4102 fixed the CASE half of `is_excluded`'s platform-dependence
+    (fnmatch's `os.path.normcase`); T-4155 fixed the SEPARATOR half. This
+    fixture originally reproduced the pre-fix/post-fix mechanism with
+    `PureWindowsPath` and asserted `is_excluded` returns `False` for a
+    backslash-joined `rel` against a POSIX glob -- true on Linux, FALSE on
+    real Windows, because `PureWindowsPath` simulates Windows PATH SHAPES,
+    not the Windows STDLIB (do not repeat it: MEMORY.md).
 
-    T-4102 migrated `is_excluded` to pathspec's gitwildmatch dialect,
-    which never normcases either operand, so the matching question is no
-    longer platform-conditional at all: the same (rel, glob) pair
-    answers identically everywhere. What is actually true and actually
-    worth asserting is that directly, plus the specific failure mode
-    (case-folding) `os.path.normcase` used to introduce -- not a
-    prediction of what a Windows library would do, run from Linux.
+    Its replacement asserted the opposite premise the same unproven way:
+    that pathspec's gitwildmatch treats `\\` as a literal character on
+    every platform. Measured on real Windows, it does not -- `pathspec`
+    derives ITS separator set from `os.sep`/`os.altsep` when none is
+    given, so it silently rewrites `\\` to `/` there and the backslash
+    path MATCHED, the identical bug shape one library over. See
+    `frob.excludes.is_excluded`'s docstring for the full mechanism.
+
+    T-4155's fix pins `separators=("\\\\",)` explicitly in `is_excluded`,
+    so a backslash is ALWAYS folded to `/` before matching, regardless of
+    host -- making the answer for a backslash-joined `rel` both defined
+    and identical on every platform, proven by running on both rather
+    than reasoned from one.
 
     `is_test_file`'s own `tests/` directory-component check is unrelated
     to this bug: it parses via `PurePosixPath`, which never consults
@@ -113,12 +116,14 @@ def test_windows_shaped_rel_path_mechanism() -> None:
     assert is_excluded("vendor/sub/mod.py", ("vendor/**",)) is True
 
     # A backslash-joined rel (what a naive `str(a_relative_path)` would
-    # have produced pre-`.as_posix()`) never matches a POSIX-shaped glob,
-    # on ANY platform: gitwildmatch treats `\\` as a literal character,
-    # never a path separator, and performs no normcase step. This is the
-    # replacement for the false pre-fix/post-fix claim above -- true
-    # unconditionally, not true-on-Linux-only.
-    assert is_excluded("vendor\\sub\\mod.py", ("vendor/**",)) is False
+    # have produced pre-`.as_posix()`) IS folded to POSIX and DOES match
+    # a POSIX-shaped glob, on every platform: `is_excluded` pins its
+    # separator normalization explicitly (T-4155) rather than trusting
+    # pathspec's host-derived default, so a backslash path is treated the
+    # same as its forward-slash equivalent everywhere. This is what
+    # actually holds -- proven on both linux and Windows -- not a
+    # prediction of one library's default reasoned out on one platform.
+    assert is_excluded("vendor\\sub\\mod.py", ("vendor/**",)) is True
 
     # THIRD FIXTURE (ticket T-4102): a glob and a path differing only in
     # case never match, proving there is no `os.path.normcase` dependence

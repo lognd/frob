@@ -3,7 +3,7 @@ id: T-4155
 title: 'the pathspec migration left is_excluded platform-dependent for backslash paths:
   linux says False, Windows says True, and T-4102''s replacement fixture asserts the
   linux answer'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -242,4 +242,3 @@ has measured it on Windows either.
 
 
 frob:waive BUG002 reason="the defect is platform-conditional (Linux answers False, Windows answers True, for identical code pre-fix) so BUG002's own pre/post-commit repro -- run on this host, Linux -- cannot show the designated evidence failing at the parent commit: on Linux, the parent commit's code+test pair was already self-consistent (old code returned False, old test asserted False). The real repro was measured manually on the Windows mirror per this ticket's own MEASURE ON REAL WINDOWS mandate: at parent commit 9fcabb9d6c, `is_excluded('vendor\\\\sub\\\\mod.py', ('vendor/**',))` returned True on Windows against the old test's False assertion (a real, reproduced failure); at the fix commit, the same call returns True on BOTH linux and Windows and the updated test (asserting True) passes on both, confirmed by running the full pytest node on the Windows mirror via winrun both before and after the excludes.py change."
-

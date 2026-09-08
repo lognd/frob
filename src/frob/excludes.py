@@ -106,11 +106,29 @@ def _compiled_globs(exclude_globs: tuple[str, ...]) -> pathspec.PathSpec:
 # Linux-visible behavior change for the POSIX- shaped rel paths every producer emits); \
 # docs/modules/app.md's own description ('True if rel_path matches one of the globs') \
 # already describes the contract, not the matcher, and stays accurate unchanged"
+# frob:ticket T-4155
+# frob:tests \
+# tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechan\
+# ism
 def is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool:
-    """True if `rel_path` (root-relative, POSIX) matches any glob."""
+    """True if `rel_path` matches any glob, identically on every platform.
+
+    T-4155: `pathspec.PathSpec.match_file` derives ITS separator-normalization
+    set from the host OS (`os.sep`/`os.altsep`) when none is given, so a
+    backslash in `rel_path` was an ordinary filename character on posix but
+    got rewritten to `/` on Windows -- the same (rel, glob) pair answered
+    differently per platform, the identical class of bug T-4102 fixed for
+    case-folding one layer down in fnmatch. We pin `separators=("\\\\",)`
+    explicitly so a backslash is ALWAYS folded to `/` before matching,
+    regardless of host: every in-repo producer already emits POSIX-relative
+    paths (T-3941/T-3947/T-3948/T-4107), so this only matters for the
+    boundary case, and normalizing there makes `is_excluded` robust against
+    a future producer regressing on this exact axis instead of merely
+    matching today's inputs.
+    """
     if not exclude_globs:
         return False
-    return _compiled_globs(exclude_globs).match_file(rel_path)
+    return _compiled_globs(exclude_globs).match_file(rel_path, separators=("\\",))
 
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
