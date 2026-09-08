@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_create.py
+- src/frob/app/ticket_runner/_new.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: declared scope src/frob/tickets/_create.py does not exist; the frob ticket
+    new success line and the read-back guard actually live in frob.app.ticket_runner._new
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
