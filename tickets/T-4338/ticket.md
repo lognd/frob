@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_toolchain_pins.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ci_workflow_toolchain_pins.py
+  reason: new regression test locking the toolchain-version pins added by this ticket
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
