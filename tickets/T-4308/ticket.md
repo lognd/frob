@@ -21,6 +21,9 @@ scope:
 - tests/unit/test_main_entry.py
 - tests/unit/test_ruff_parser.py
 - tests/unit/test_parser_failure_diagnostics.py
+- docs/modules/app.md
+- docs/modules/process.md
+- docs/modules/logging.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +81,21 @@ scope_changes:
     fallback; fix is a single early os.environ set in __main__.py, plus distinguishing
     empty tool output from malformed output in the ruff JSON parser (ticket''s own
     explicit second requirement)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: close doc-edge scope warnings for touched public symbols in __main__.py/common.py
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/process.md
+  reason: close doc-edge scope warnings for touched public symbols in __main__.py/common.py
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/logging.md
+  reason: close doc-edge scope warnings for touched public symbols in __main__.py/common.py
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
