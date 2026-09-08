@@ -102,8 +102,13 @@ _RUNNER_RUN_MODULES: dict[str, str] = {
 
 
 # frob:ticket T-1337
+# frob:ticket T-4297
 # frob:invariant INV-049
 # invariant spec: [INV-049](invariants/INV-049.md)
+# frob:waive DUP001 reason="T-4297: repetition is required by T-1337's literal-import \
+# design (see docstring); extracting a shared helper across the matched \
+# dispatch-shaped code fights that requirement and is out of this ticket's \
+# added-one-branch scope."
 def _import_runner_run_module(module_name: str) -> Any:
     """Import exactly the one `frob.app.<module_name>` runner module named
     by `module_name` (T-1337), dispatching through a closed if/elif chain
@@ -159,6 +164,8 @@ def _import_runner_run_module(module_name: str) -> Any:
         import frob.app.perf_runner as module
     elif module_name == "pool_runner":
         import frob.app.pool_runner as module
+    elif module_name == "profile_runner":
+        import frob.app.profile_runner as module
     elif module_name == "registry_runner":
         import frob.app.registry_runner as module
     elif module_name == "release_runner":

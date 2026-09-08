@@ -2,7 +2,7 @@
 id: T-4297
 title: frob.app.profile_runner_run is advertised in __all__ but AssertionErrors on
   first access
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -28,6 +28,8 @@ scope_changes:
     test suite
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_every_registered_runner_run_alias_resolves
 designated_repro_test: null
 threat: null
 component: null

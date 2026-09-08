@@ -56,3 +56,20 @@ class TestLazyRunnerRunAttrs:
             assert "definitely_not_a_real_attribute" in str(exc)
         else:
             raise AssertionError("expected AttributeError")
+
+    # frob:ticket T-4297
+    def test_every_registered_runner_run_alias_resolves(self) -> None:
+        """T-4297: walk every `_RUNNER_RUN_MODULES` entry (not just one spot
+        check) so a name added to that dict without a matching branch in
+        `_import_runner_run_module`'s closed if/elif chain fails immediately,
+        instead of only surfacing on whichever alias a caller happens to
+        touch first."""
+        # frob:tests src/frob/app/__init__.py::_import_runner_run_module kind="unit"
+        import frob.app as app
+
+        for alias in app._RUNNER_RUN_MODULES:
+            # frob:waive OPAQUE001 reason="T-4297: alias is drawn from the closed \
+            # _RUNNER_RUN_MODULES dict this very test walks exhaustively; that is the \
+            # point of the test, not an arbitrary runtime name."
+            run = getattr(app, alias)
+            assert callable(run), f"{alias} did not resolve to a callable"
