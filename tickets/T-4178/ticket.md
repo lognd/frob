@@ -2,7 +2,7 @@
 id: T-4178
 title: the tree walk honours a hardcoded skip list but never consults the repository
   ignore file, so content-reading gates can reach the secrets file
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-07'
