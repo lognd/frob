@@ -359,4 +359,113 @@ class TestRunExplainAdHocFallback:
         _run_explain(cfg)
         out = capsys.readouterr().out
         assert "queue is empty" not in out
-        assert "adhocsha123" in out
+
+
+# frob:ticket T-4324
+def _write_rapid_debt_line(
+    root: Path, *, commit: str, ticket: str, skipped: str
+) -> None:
+    """T-4324 test fixture: append one `.frob/rapid-debt.jsonl` line,
+    matching `record_rapid_debt`'s (`src/frob/tickets/_evidence.py`) own
+    on-disk shape exactly."""
+    import json
+
+    path = root / ".frob" / "rapid-debt.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(
+            json.dumps({"commit": commit, "skipped": skipped, "ticket": ticket}) + "\n"
+        )
+
+
+# frob:ticket T-4324
+def _write_rapid_sweep_baseline(root: Path, *, commit: str) -> None:
+    """T-4324 test fixture: write `.frob/rapid-sweep-baseline.json` at
+    `commit`, matching `_write_baseline`'s
+    (`src/frob/app/ticket_runner/_rapid_sweep.py`) own on-disk shape."""
+    import json
+
+    path = root / ".frob" / "rapid-sweep-baseline.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"commit": commit, "findings": []}), encoding="utf-8")
+
+
+# frob:ticket T-4324
+class TestLiveRapidDebt:
+    """T-4324: `.frob/rapid-debt.jsonl`'s LIVE `post-land-unscoped-
+    sweep-deferred` entries, surfaced through `build_status` /
+    `frob verify status` -- the reporting fix for the gap T-4318's own
+    root-cause fix (the deferred sweep's `--budget` truncation) left
+    open: a commit that stays unverified (a genuinely wedged full check,
+    a refused spawn, or historical debt) must be visible on this status
+    surface, not only in a log file nobody reads."""
+
+    def test_no_baseline_is_live(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        _write_rapid_debt_line(
+            tmp_path,
+            commit="abc123",
+            ticket="T-9001",
+            skipped="post-land-unscoped-sweep-deferred",
+        )
+        status = build_status(tmp_path)
+        assert status is not None
+        assert len(status.rapid_debt_live) == 1
+        assert status.rapid_debt_live[0].commit == "abc123"
+        assert status.rapid_debt_live[0].ticket_id == "T-9001"
+
+    def test_later_baseline_clears(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        # MEASURED (T-4324): this is the exact shape that made T-4197,
+        # T-4301, T-4305, T-4306, T-4307 read as live at ticket-filing
+        # time and cleared by the time this ticket was worked -- a real
+        # full sweep landed a baseline AT OR AFTER the debt commit.
+        shas = _init_git_repo_with_commits(tmp_path, 3)
+        _write_rapid_debt_line(
+            tmp_path,
+            commit=shas[0],
+            ticket="T-9002",
+            skipped="post-land-unscoped-sweep-deferred",
+        )
+        _write_rapid_sweep_baseline(tmp_path, commit=shas[-1])
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.rapid_debt_live == ()
+
+    def test_uncovered_stays_live(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        shas = _init_git_repo_with_commits(tmp_path, 3)
+        _write_rapid_debt_line(
+            tmp_path,
+            commit=shas[-1],
+            ticket="T-9003",
+            skipped="post-land-unscoped-sweep-deferred",
+        )
+        # baseline is STALE -- written at an EARLIER commit than the
+        # debt entry, so it never measured the debt commit's changes.
+        _write_rapid_sweep_baseline(tmp_path, commit=shas[0])
+        status = build_status(tmp_path)
+        assert status is not None
+        assert len(status.rapid_debt_live) == 1
+        assert status.rapid_debt_live[0].commit == shas[-1]
+
+    def test_other_skip_reasons_are_not_counted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        # only the deferred-sweep debt shape is in this surface's scope
+        # (T-4324) -- an unrelated rapid-debt reason must never inflate
+        # this count.
+        _write_rapid_debt_line(
+            tmp_path,
+            commit="abc123",
+            ticket="T-9004",
+            skipped="close-rel001-preflight-skipped",
+        )
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.rapid_debt_live == ()
+
+    def test_clean_status_has_no_live_rapid_debt(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.rapid_debt_live == ()

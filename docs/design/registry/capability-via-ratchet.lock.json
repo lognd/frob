@@ -31,9 +31,9 @@
       "ticket": "T-3029"
     },
     "cli::fs.read": {
-      "accepted_count": 20,
-      "reason": "T-3748: frob coverage --full --fail-on-degraded reads the coverage-run provenance (.frob/coverage-run.json) in src/frob/app/coverage_runner.py::_fail_if_suite_degraded to classify a red suite -- one real, new fs.read via-list site, the same shape sibling app runners already declare.",
-      "ticket": "T-3748"
+      "accepted_count": 21,
+      "reason": "T-4324: frob verify status's new rapid-debt visibility fix reads .frob/rapid-debt.jsonl and .frob/rapid-sweep-baseline.json (src/frob/app/verify_runner.py::_live_deferred_sweep_debt/_read_rapid_sweep_baseline_commit) to surface live deferred-sweep debt -- one real, new fs.read via-list site.",
+      "ticket": "T-4324"
     },
     "cli::fs.write": {
       "accepted_count": 19,

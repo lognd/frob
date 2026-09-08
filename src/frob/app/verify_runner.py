@@ -23,6 +23,7 @@ Renderer` -- `--json` stays a separate channel (the pydantic model's own
 from __future__ import annotations
 
 import getpass
+import json
 import sys
 from pathlib import Path
 
@@ -57,10 +58,9 @@ class VerifyQuarantineFindingView(BaseModel):
 # frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 class VerifyStatus(BaseModel):
     """`frob verify status`'s whole payload -- the unverified window in
-    one snapshot: watermark age, queue depth/age, and quarantine state
-    including every undisposed finding. `--json` serializes this model
-    directly (`model_dump_json`), so the schema IS the contract, not a
-    hand-maintained parallel dict."""
+    one snapshot: watermark age, queue depth/age, quarantine state, and
+    live rapid-debt (T-4324). `--json` serializes this model directly
+    (`model_dump_json`), so the schema IS the contract."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -98,6 +98,98 @@ class VerifyStatus(BaseModel):
     #: ISO-8601 UTC timestamp of the most recent refusal, or `None` if
     #: `drains_refused_since_watermark` is `0`.
     last_drain_refused_at: str | None
+    #: T-4324: LIVE deferred-sweep rapid-debt; `()` (never `None`) clear.
+    rapid_debt_live: tuple[RapidDebtEntryView, ...]
+
+
+# frob:doc docs/modules/verify-rapid-debt-visibility.md#liveness
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_no_baseline_is_live
+# frob:ticket T-4324
+class RapidDebtEntryView(BaseModel):
+    """One LIVE deferred-sweep rapid-debt entry (T-1681/T-4324)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    commit: str
+    ticket_id: str
+
+
+#: T-4324: `_rapid_sweep.py`'s deferred/UNMEASURABLE-sweep `skipped` value
+#: (duplicated per T-3464's precedent, to avoid importing that module).
+_DEFERRED_SWEEP_SKIPPED = "post-land-unscoped-sweep-deferred"
+#: `.frob/rapid-debt.jsonl` and its rolling post-land-sweep baseline.
+_RAPID_DEBT_REL = Path(".frob") / "rapid-debt.jsonl"
+_RAPID_SWEEP_BASELINE_REL = Path(".frob") / "rapid-sweep-baseline.json"
+
+
+# frob:ticket T-4324
+def _read_rapid_sweep_baseline_commit(root: Path) -> str | None:
+    """Last recorded rolling baseline commit, or `None` (unmeasured)."""
+    path = root / _RAPID_SWEEP_BASELINE_REL
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        commit = raw.get("commit") if isinstance(raw, dict) else None
+    except Exception:  # noqa: BLE001 -- corrupt/unreadable baseline
+        return None
+    return str(commit) if commit else None
+
+
+# frob:ticket T-4324
+def _commit_covered_by(root: Path, commit: str, cover: str) -> bool:
+    """`commit` is `cover` or an ancestor of it; `False` on any spawn
+    failure (never silently clears debt)."""
+    from frob.gitio import run_argv
+
+    cmd = ["git", "-C", str(root), "merge-base", "--is-ancestor", commit, cover]
+    spawned = run_argv(cmd)
+    return spawned.is_ok and spawned.danger_ok.returncode == 0
+
+
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_no_baseline_is_live
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_later_baseline_clears
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_uncovered_stays_live
+# frob:ticket T-4324
+def _live_deferred_sweep_debt(root: Path) -> tuple[RapidDebtEntryView, ...]:
+    """LIVE deferred-sweep `rapid-debt.jsonl` entries (T-1681/T-4324) --
+    see `docs/modules/verify-rapid-debt-visibility.md` for liveness."""
+    path = root / _RAPID_DEBT_REL
+    try:
+        raw_text = path.read_text(encoding="utf-8")
+    except OSError:
+        return ()
+    baseline_commit = _read_rapid_sweep_baseline_commit(root)
+    live: dict[tuple[str, str], RapidDebtEntryView] = {}
+    for raw_line in raw_text.splitlines():
+        raw_line = raw_line.strip()
+        if not raw_line:
+            continue
+        try:
+            entry = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        if (
+            not isinstance(entry, dict)
+            or entry.get("skipped") != _DEFERRED_SWEEP_SKIPPED
+        ):
+            continue
+        commit = entry.get("commit")
+        ticket_id = entry.get("ticket")
+        if not isinstance(commit, str) or not commit or not isinstance(ticket_id, str):
+            continue
+        cleared = baseline_commit is not None and _commit_covered_by(
+            root, commit, baseline_commit
+        )
+        if not cleared:
+            live[(commit, ticket_id)] = RapidDebtEntryView(
+                commit=commit, ticket_id=ticket_id
+            )
+    return tuple(live.values())
 
 
 def _resolve_root(cfg: AppConfig) -> Path:
@@ -182,6 +274,8 @@ def build_status(root: Path) -> VerifyStatus | None:
 
     refused_count, refused_at = _drain_refusal_fields(root)
 
+    rapid_debt_live = _live_deferred_sweep_debt(root)
+
     return VerifyStatus(
         watermark_commit=wm.commit_sha if wm else None,
         watermark_age_s=watermark_age_s,
@@ -196,6 +290,7 @@ def build_status(root: Path) -> VerifyStatus | None:
         quarantine_findings=findings,
         drains_refused_since_watermark=refused_count,
         last_drain_refused_at=refused_at,
+        rapid_debt_live=rapid_debt_live,
     )
 
 
@@ -299,12 +394,20 @@ def _print_status_human(r: Renderer, status: VerifyStatus) -> None:
             )
     else:
         r.line("quarantine:       clear")
+    if status.rapid_debt_live:
+        n_debt = len(status.rapid_debt_live)
+        r.line(f"rapid-debt (deferred sweep, unverified): {n_debt}")
+        for entry in status.rapid_debt_live:
+            r.line(f"  - {entry.commit[:12]} (ticket {entry.ticket_id})")
+    else:
+        r.line("rapid-debt (deferred sweep, unverified): clear")
 
 
 def _run_status(cfg: AppConfig) -> None:
     """`frob verify status`: print the unverified window and exit
-    non-zero while quarantine is raised (the porcelain rule this
-    subcommand exists to provide)."""
+    non-zero while quarantine is raised OR live rapid-debt is outstanding
+    (T-4324) -- both mean an unverified commit, so the porcelain rule
+    covers both, not just quarantine."""
     root = _resolve_root(cfg)
     status = build_status(root)
     if status is None:
@@ -314,7 +417,7 @@ def _run_status(cfg: AppConfig) -> None:
         r.line(status.model_dump_json(indent=2))
     else:
         _print_status_human(r, status)
-    if status.quarantine_raised:
+    if status.quarantine_raised or status.rapid_debt_live:
         sys.exit(1)
 
 
