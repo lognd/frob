@@ -2,7 +2,7 @@
 id: T-4298
 title: nothing on the land path checks repo-wide formatting, so drift accumulates
   faster than release tickets clear it
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
