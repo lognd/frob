@@ -32,10 +32,6 @@ body_changes:
   new_length: 4187
 designated_repro_test: null
 acceptance:
-- text: given a running serve daemon that is idle between polls, when another process
-    opens the graph cache, then it acquires the lock and completes its build rather
-    than timing out
-  evidence: []
 - text: given a serve daemon that has performed no useful work for more than one hour,
     when the liveness check runs, then the daemon terminates itself, and idleness
     is measured by work performed rather than by poll iterations
@@ -61,6 +57,22 @@ acceptance_amendments:
   new_text: null
   reason: 'split to T-draft-f40f5848: naming the holding process on CacheLocked requires
     editing src/frob/graph/cache.py, outside this ticket''s declared scope'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  index: 1
+  old_text: given a running serve daemon that is idle between polls, when another
+    process opens the graph cache, then it acquires the lock and completes its build
+    rather than timing out
+  new_text: null
+  reason: 'split to T-draft-f40f5848: releasing/avoiding the write lock and allowing
+    concurrent readers requires editing src/frob/graph/cache.py (journal-mode/transaction-length
+    decisions there), outside this ticket''s declared scope -- see that ticket''s
+    body for the WAL/T-3644 dead-end investigation and the plausible real mechanism
+    (unthrottled re-verify on every main-HEAD move in a busy fleet root) this ticket''s
+    own files cannot safely fix without either violating tests/test_serve_daemon.py''s
+    bound synchronous-refresh contract or defeating the shared-cache warm-up this
+    daemon exists to provide'
   actor: logan
   at: '2026-09-08'
 threat: null
