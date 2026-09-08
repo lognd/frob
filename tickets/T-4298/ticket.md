@@ -24,6 +24,7 @@ scope:
 - tests/unit/test_graph_lock_holder_naming.py
 - tests/unit/test_graph_stat_trust_margin.py
 - tests/unit/test_land_cross_ticket_leakage.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -89,6 +90,12 @@ scope_changes:
   glob: tests/unit/test_land_cross_ticket_leakage.py
   reason: mechanical whole-tree formatter drift cleared by this ticket's part 1 (frob
     format --code)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: LANDFMT001 must be added to _KNOWN_GATE_RULES, the same 'add to the frozenset'
+    step every prior newly-wired gate rule needed
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
