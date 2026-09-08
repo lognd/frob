@@ -24,6 +24,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - src/frob/gates/_doclink_docanchor.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -94,6 +95,12 @@ scope_changes:
   reason: 'T-4219: SELFAUDIT001/SYS100 matches its waiver against design/frob.strata''s
     own via-list, not code-level frob:waive comments -- declaring the new module/test
     file''s fs.read/fs.write here is the real fix, same as T-2492''s precedent'
+  actor: logan
+  at: '2026-09-07'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-4219: SELFAUDIT001/SYS111 ratchet ceiling for testsuite::fs.write must
+    bump for the new test module''s fs.write site'
   actor: logan
   at: '2026-09-07'
 body_changes:
