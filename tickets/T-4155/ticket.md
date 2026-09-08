@@ -93,17 +93,22 @@ body_changes:
   at: '2026-09-07'
   old_length: 6884
   new_length: 6891
+evidence:
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 designated_repro_test: null
 acceptance:
 - text: given a backslash-separated relative path and a forward-slash glob, when is_excluded
     is called on linux and on Windows, then both return the same answer
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 - text: given an upper-case path and a lower-case glob, when is_excluded is called,
     then it does not match on either platform
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 - text: given the chosen contract for backslash input, when a developer reads is_excluded,
     then the contract is stated on the function itself
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 threat: null
 component: null
 anchor: false
