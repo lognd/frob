@@ -78,6 +78,20 @@ scope_changes:
     than pulling in that much unrelated surface'
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'record BUG002 waiver rationale before close: repro requires Python 3.12+,
+    this worktree runs 3.11.15'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2106
+  new_length: 2950
+evidence:
+- tests/test_gitio.py::TestResolveWin32Executable::test_noop_for_a_path_like_name_on_win32
+- tests/test_gitio.py::TestResolveWin32Executable::test_noop_on_posix
+- tests/test_gitio.py::TestResolveWin32Executable::test_resolves_a_bare_name_via_which_on_win32
+- tests/test_gitio.py::TestResolveWin32Executable::test_falls_through_unchanged_when_which_finds_nothing
+- tests/test_gitio.py::TestResolveWin32Executable::test_run_argv_wires_the_resolved_argv0_into_the_actual_spawn
 designated_repro_test: null
 threat: null
 component: null
@@ -120,3 +134,5 @@ confirm the test still RUNS and passes on Windows rather than being silently
 skipped everywhere -- a test that never executes anywhere is worse than no test.
 There is a `winrun` script available for measuring real Windows behaviour rather
 than reasoning about it.
+
+frob:waive BUG002 reason="the designated repro test cannot fail at the parent commit under THIS worktree's interpreter: the bug is Python-version-dependent (shutil.which gained an internal sys.platform==\"win32\" branch reaching for _winapi only in Python 3.12+; this venv runs 3.11.15, where shutil.which has no such branch and the test genuinely passes at parent too). Verified instead by: (1) a standalone Python 3.13 repro showing the OLD _resolve_win32_executable body raises the exact CI AttributeError and the NEW body does not, and (2) running the real test suite on real Windows Python 3.12.13 via winrun, where TestResolveWin32Executable 5/5 pass post-fix. The local BUG002 mutation-testing venv cannot reproduce a 3.12+-only stdlib behavior change no matter which test is designated -- an environment gap, not a weak-evidence gap."
