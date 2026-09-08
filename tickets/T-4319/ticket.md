@@ -23,8 +23,14 @@ scope:
 - tests/test_tick013_gate.py
 - tests/test_tickets_collision.py
 - tests/test_tickets_migration.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'src/frob/gates/_tickets_gate.py is a bundled multi-rule
+  ledger-hygiene module (TICK001-014) whose own module-level LARGE001 waiver already
+  documents this: each _tickN_* helper carries its own frob:doc/frob:tests targets.
+  Scoping this ticket to the whole file (required, since the fix lives in the shared
+  tickets_gate() entrypoint and _tick010_stale_lease_report) pulls in every OTHER
+  pre-existing rule''s doc/test targets via SCOPE002''s closure check; this is the
+  file''s own chronic breadth, not new breadth from this change.'
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
