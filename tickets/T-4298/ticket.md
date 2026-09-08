@@ -2,7 +2,7 @@
 id: T-4298
 title: nothing on the land path checks repo-wide formatting, so drift accumulates
   faster than release tickets clear it
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -27,6 +27,7 @@ scope:
 - src/frob/gates/_waive.py
 - tests/unit/test_land_format_gate.py
 - docs/design/registry/check-coverage.yaml
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -111,6 +112,13 @@ scope_changes:
     --sync-gate-rules writes it
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: design/frob.strata
+  reason: declare tests/unit/test_land_format_gate.py's exec/fs.write capability use
+    (SELFAUDIT001/SYS100), same testsuite node declaration test_land_parity_gate.py
+    already carries
+  actor: logan
+  at: '2026-09-08'
 body_changes:
 - mode: append
   reason: waive SCOPE002's whole-file closure noise on the two large shared gate-registry
@@ -119,19 +127,28 @@ body_changes:
   at: '2026-09-08'
   old_length: 2794
   new_length: 4057
+evidence:
+- tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires
+- tests/unit/test_land_format_gate.py::test_already_formatted_touched_file_is_quiet
+- tests/unit/test_land_format_gate.py::test_no_diff_is_quiet
 designated_repro_test: null
 acceptance:
 - text: given a land whose changed files include one the formatter would rewrite,
     when the land runs, then the drift is either refused with attribution or applied
     automatically, rather than reaching the integration branch unnoticed
-  evidence: []
+  evidence:
+  - tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires
+  - tests/unit/test_land_format_gate.py::test_already_formatted_touched_file_is_quiet
+  - tests/unit/test_land_format_gate.py::test_no_diff_is_quiet
 - text: given the current drift, when it is cleared, then that mechanical rewrite
     is a separate commit from the mechanism change and the report names the count
     actually found rather than a count quoted from this ticket
-  evidence: []
+  evidence:
+  - tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires
 - text: given the choice between refusing and rewriting, when the fix lands, then
     which was chosen and why is recorded where the next reader will find it
-  evidence: []
+  evidence:
+  - tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires
 threat: null
 component: null
 anchor: false
