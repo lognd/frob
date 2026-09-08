@@ -185,6 +185,7 @@ from frob.gates._negexist import negexist001_gate
 from frob.gates._opaque import opaque_gate
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
+from frob.gates._pkg_resources import pkg_resources_gate
 from frob.gates._policy_weakening_gate import policy_weakening_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._profile_boundary import profile_boundary_gate
@@ -7285,6 +7286,11 @@ def _build_thread_jobs(
         # T-2080: markdown severity-table rows vs. `frob.toml`
         # `[gates.severity]` overrides, repo_root-scoped like docmake above.
         "docseverity": lambda: docseverity_gate(st.repo_root, st.snapshot),
+        # T-4219: relative embedded-image references in markdown,
+        # repo_root-scoped like docstatus/docmake/docseverity above -- the
+        # declared long-description file is a repo-wide manifest concern,
+        # not a subtree one.
+        "pkg_resources": lambda: pkg_resources_gate(st.repo_root),
         # T-0436: fenced-code-block doc-drift heuristic, repo_root-scoped for
         # the same reason docanchor/refs are -- doc paths are repo-relative
         # text either way, and `git ls-files *.md` must see the whole repo.
@@ -9041,6 +9047,7 @@ __all__ = [
     "docstatus_gate",
     "docmake_gate",
     "docseverity_gate",
+    "pkg_resources_gate",
     "dup_gate",
     "list_debt",
     "list_deprecated",

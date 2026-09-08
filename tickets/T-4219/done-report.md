@@ -1,0 +1,44 @@
+## Done report
+
+Changed:
+README.md (banner image now an absolute raw.githubusercontent.com URL; license link left relative -- links are out of the owner's narrowed scope)
+src/frob/gates/_pkg_resources.py (new: pkg_resources_gate, PKG001/PKG002/PKG003)
+src/frob/gates/__init__.py::pkg_resources_gate wiring (import + "pkg_resources" dispatch entry)
+src/frob/gates/_waive.py::_KNOWN_GATE_RULES (+PKG001, PKG002, PKG003)
+tests/unit/gates/test_pkg_resources.py (new, 11 cases)
+docs/modules/gates.md (rule-catalog rows + frob:enumerates member-list sync)
+docs/design/registry/check-coverage.yaml (CHK-GATE-PKG00x, via `frob registry audit --sync-gate-rules`)
+docs/design/registry/capability-via-ratchet.lock.json (testsuite::fs.write ceiling 511 -> 512)
+design/frob.strata (gates node fs.read via-list, testsuite node fs.write via-list: new module + test file)
+
+Behavior: PKG001 (error) fires on a relative embedded image (markdown `![]()` or HTML `<img src>`) in the manifest's declared `[project].readme` file; PKG002 (warn) fires on the same shape in any other tracked markdown file; PKG003 (unresolved) fires when no long-description file is declared, or pyproject.toml is unreadable. Relative LINK targets are never flagged, per the owner's explicit mid-ticket narrowing. The remedy message derives a concrete raw-content URL when `[project.urls]` names a recognized forge (github.com/gitlab.com), and otherwise states only the remedy's shape, never guessing a host/owner/repo/branch. This repo's own README banner now uses `https://raw.githubusercontent.com/lognd/frob/main/docs/assets/frob-banner.svg`.
+
+Evidence: 11 tests bound via `frob ticket evidence`, all green (tests/unit/gates/test_pkg_resources.py, 11/11 passed). `frob test --base main` (touched-set) exit=0 for the python suite (13 stability-recorded outcomes, including tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations which exercises the live SYS100/SYS111 self-audit against design/frob.strata).
+
+Filed: none -- no new out-of-scope discovery. The SCOPE002 fan-out from touching src/frob/gates/__init__.py and src/frob/gates/_waive.py (both mandatory registration points for wiring any new gate family) is the SAME pre-existing structural defect T-3902 already tracks (SCOPE002=error in frob.toml:690 fires per-symbol for an entire scoped file, not just touched symbols) -- not filed again.
+
+Gates: `frob check --ticket T-4219 --no-cache` shows zero PKG001/PKG002/PKG003/DOC006/DUP002/REF002/EXHAUST003/SELFAUDIT001/FMT001/PERF002 findings (all resolved via fix or `frob:waive` with reasons, or by declaring the new files in design/frob.strata's via-lists). The remaining 168 total errors are confirmed pre-existing/unrelated to this ticket: gate:COV (8, tied to T-4178/test_lang.py, unrelated tickets), gate:DRIFT (3, present in the very first `frob check --ticket T-4219` run before any edit), gate:SCOPE (155, the T-3902-class structural SCOPE002 fan-out from touching gates/__init__.py, _waive.py, design/frob.strata -- confirmed by reproducing the same magnitude jump T-3902 itself measured for a comparable file).
+
+### Changed
+```
+ tickets/T-4219/ticket.md | 97 +++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 96 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_markdown_image_in_declared_readme_fires_error` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_html_img_src_in_declared_readme_fires_error` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_absolute_image_source_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_link_target_in_declared_readme_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_image_inside_code_span_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown::test_relative_image_in_other_markdown_warns_not_errors` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown::test_declared_readme_is_not_double_reported_as_pkg002` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription::test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription::test_missing_pyproject_reports_unresolved` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001RemedyMessage::test_remedy_derives_raw_url_from_declared_repository` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_pkg_resources.py::TestPkg001RemedyMessage::test_remedy_states_shape_only_with_no_declared_repository` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 8 error(s), 4528 warning(s), 958 waived
+- error-findings: ARCH103@src/frob/app/ticket_runner/_land_cmd.py, COV001@src/frob/vet/_bare_toolchain.py, COV003@tests/test_excludes.py, DRIFT001@src/frob/gates/__init__.py, DRIFT001@src/frob/gates/_rule_id_scan.py, DRIFT002@src/frob/check/_python.py, PRE001@tickets/T-4219, SCOPE002@tickets.md

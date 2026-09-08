@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 366
+gate_rule_total: 369
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     fixability: "manual"
@@ -1850,6 +1850,21 @@ gate_rule_entries:
   - id: "CHK-GATE-BARETOOL001"
     name: "BARETOOL001 is a live, enforced gate rule"
     disposition: "handled_by:BARETOOL001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PKG001"
+    name: "PKG001 is a live, enforced gate rule"
+    disposition: "handled_by:PKG001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PKG002"
+    name: "PKG002 is a live, enforced gate rule"
+    disposition: "handled_by:PKG002"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PKG003"
+    name: "PKG003 is a live, enforced gate rule"
+    disposition: "handled_by:PKG003"
     fixability: "manual"
     cross_refs: []
 concern_family_total: 13

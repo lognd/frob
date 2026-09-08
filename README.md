@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/frob-banner.svg" alt="frob: a small green goblin in an aviator cap hunched over a crystal ball of glowing rune-code. The enforcement layer for agentic development." width="100%"/>
+  <img src="https://raw.githubusercontent.com/lognd/frob/main/docs/assets/frob-banner.svg" alt="frob: a small green goblin in an aviator cap hunched over a crystal ball of glowing rune-code. The enforcement layer for agentic development." width="100%"/>
 </p>
 
 <p align="center">

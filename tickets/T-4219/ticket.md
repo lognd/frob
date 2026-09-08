@@ -2,7 +2,7 @@
 id: T-4219
 title: 'relative image and link targets in the declared long-description file break
   on the package index: fix this README and add a cross-project gate'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -147,7 +147,8 @@ acceptance:
     pkg_resources_gate invocation, then the fixture that FAILED before this change
     (relative image reported nothing) now PASSES (PKG001 fires error, PKG002 warns,
     PKG003 reports unresolved)
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_markdown_image_in_declared_readme_fires_error
 threat: null
 component: null
 anchor: false

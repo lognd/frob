@@ -440,6 +440,12 @@ _KNOWN_GATE_RULES = frozenset(
         # T-1486: a T-####/T-draft-<hex> doc-prose mention doesn't resolve to
         # any active or archived ticket.
         "DOC011",
+        # T-4219: a relative embedded-image reference in the declared
+        # long-description file (error), any other tracked markdown file
+        # (warn), or no declared long-description file at all (unresolved).
+        "PKG001",
+        "PKG002",
+        "PKG003",
         "DUP001",
         "DUP002",
         "DUP003",

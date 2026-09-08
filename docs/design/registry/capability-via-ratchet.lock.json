@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 511,
-      "reason": "T-4125: adds tests/unit/vet/test_bare_toolchain.py, whose fixtures write real .py source files under tmp_path for bare_toolchain_findings to AST-parse -- bumping the ceiling to the current measured count, 510 -> 511, one real new site.",
-      "ticket": "T-4125"
+      "accepted_count": 512,
+      "reason": "T-4219: adds tests/unit/gates/test_pkg_resources.py, whose fixtures write pyproject.toml/README.md/docs markdown files under tmp_path for pkg_resources_gate to scan -- bumping the ceiling 511 -> 512, one real new site.",
+      "ticket": "T-4219"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
