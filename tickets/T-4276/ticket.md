@@ -1,7 +1,7 @@
 ---
 id: T-4276
 title: update docs/guides/release.md for the T-4263 upload job split
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-07'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:python -m pytest tests/unit/test_release_workflow_gate.py -q exit=0 sha256=bbaeb9b341c1
 designated_repro_test: null
 threat: null
 component: null

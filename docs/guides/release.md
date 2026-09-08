@@ -15,8 +15,6 @@ x86_64 -- five platform wheels per crate, plus one sdist per crate.
 
 ## Workflow structure (`.github/workflows/release.yml`)
 
-Three jobs:
-
 1. **`build`** (+ `build-sdists`) -- runs on every manual dispatch
    (`workflow_dispatch`), no approval needed. A `maturin-action`-based
    matrix builds `frob-core` and `strata-core` wheels for all five targets
@@ -28,51 +26,73 @@ Three jobs:
    approval needed either; see [below](#verify-ci-status) for what it
    checks and why it exists as a fourth gate alongside the three T-3011
    gates, not a replacement for any of them.
-3. **`upload`** -- `needs: [build, build-sdists, verify-ci-status]`,
-   targets the `pypi` GitHub Environment, which has a required reviewer
-   configured in the repo's environment protection rules. GitHub will not
-   start this job until a human with reviewer access clicks Approve on
-   that specific run -- the approval is recorded on the run itself, not
-   merely a runbook convention. This job downloads the `build` job's
-   artifacts and runs `pypa/gh-action-pypi-publish` using PyPI **trusted
-   publishing** (OIDC: `id-token: write` permission, no stored PyPI
-   token) against each of the three package indices.
+3. **`upload-frob-core`**, **`upload-strata-core`**, **`upload-frob`**
+   (T-4263) -- one job per published distribution, each `needs: [build,
+   build-sdists, verify-ci-status, artifact-smoke]`, `upload-frob`
+   additionally `needs:` both kernel jobs (the ordering contract below).
+   This used to be a single `upload` job; PyPI identifies a PENDING
+   trusted publisher by the tuple (owner, repo, workflow filename,
+   environment name), not by project name, so one job publishing all
+   three distributions under one environment made all three claim the
+   identical tuple -- the first registration succeeded and PyPI refused
+   the second as a duplicate. Splitting into one job per distribution,
+   each with its own GitHub Environment (`pypi-frob-core`,
+   `pypi-strata-core`, `pypi`), gives each distribution a distinct tuple
+   to register. Only `upload-frob`'s environment (`pypi`, the
+   pre-existing protected environment) has a required reviewer
+   configured in the repo's environment protection rules -- GitHub will
+   not start that job until a human with reviewer access clicks Approve
+   on that specific run, the approval recorded on the run itself, not
+   merely a runbook convention. The two kernel jobs' environments
+   (`pypi-frob-core`, `pypi-strata-core`) deliberately have no required
+   reviewer: a kernel publish already passes the same four upstream gates
+   (green CI, real built wheels, a passing artifact-smoke, and manual
+   dispatch) and is a strict prerequisite `upload-frob` cannot proceed
+   without, so a second approval prompt on top of that would be gating
+   the same human decision twice, not an independent checkpoint.
+   `upload-frob` keeps the human gate because it is the last, irreversible
+   step of the whole release. Each job downloads its own distribution's
+   `build`-job artifacts and runs `pypa/gh-action-pypi-publish` using PyPI
+   **trusted publishing** (OIDC: `id-token: write` permission, no stored
+   PyPI token).
 
 The `on:` block declares `workflow_dispatch` ONLY -- no `push`, no `tags`,
 no `pull_request`, no `release` trigger. There is structurally no event
 that starts this workflow other than a human choosing "Run workflow" in
 the Actions UI. `ci.yml` (push/PR triggered) is a completely separate
-workflow file that never touches `upload` or the `pypi` environment.
+workflow file that never touches any `upload-*` job or PyPI environment.
 
 ### Why this is a structural gate, not a convention
 
 - No automatic trigger reaches `release.yml` at all -- a tag push, a merge
   to `main`, or a scheduled cron cannot invoke it, because none of those
   events is listed under `on:`.
-- Even a manual dispatch of `release.yml` only ever runs `build`. `upload`
-  additionally requires the `pypi` environment's required-reviewer gate,
-  enforced by GitHub itself (not by anything in the workflow YAML that an
-  agent or a careless edit could route around) -- the workflow file
-  declares the requirement (`environment: pypi`), and the actual
-  enforcement lives in the repository's Settings > Environments
-  configuration, which only a repo admin can change.
-- `build` and `upload` are separate jobs with separate log output, so
-  "wheels got built and retained" and "wheels got uploaded to PyPI" are
-  two independently observable facts on every run -- the acceptance-test
-  proof (see below) is reading exactly this distinction off a real run.
+- Even a manual dispatch of `release.yml` only ever runs `build`.
+  `upload-frob` additionally requires the `pypi` environment's
+  required-reviewer gate, enforced by GitHub itself (not by anything in
+  the workflow YAML that an agent or a careless edit could route around)
+  -- the workflow file declares the requirement (`environment: pypi`),
+  and the actual enforcement lives in the repository's Settings >
+  Environments configuration, which only a repo admin can change.
+- `build` and the `upload-*` jobs are separate jobs with separate log
+  output, so "wheels got built and retained" and "wheels got uploaded to
+  PyPI" are two independently observable facts on every run -- the
+  acceptance-test proof (see below) is reading exactly this distinction
+  off a real run.
 
 ### Proof: a normal push does not upload
 
 `release.yml` declares only `workflow_dispatch` under `on:`, and `ci.yml`
 (the workflow that DOES run on every push/PR) contains no reference to
-`release.yml`, the `pypi` environment, or `gh-action-pypi-publish`
-anywhere in it. A push to `main` or a PR therefore cannot reach the
-`upload` job by any path -- there is no trigger connecting them. This is
-checked mechanically, not just asserted in prose: `tests/unit/
+`release.yml`, any `pypi*` environment, or `gh-action-pypi-publish`
+anywhere in it. A push to `main` or a PR therefore cannot reach any
+`upload-*` job by any path -- there is no trigger connecting them. This
+is checked mechanically, not just asserted in prose: `tests/unit/
 test_release_workflow_gate.py` parses both workflow files and fails the
 build if `release.yml` ever gains a `push`/`pull_request`/`schedule`/
-`release` trigger, or if `upload` ever loses its `environment: pypi`
-gate or its `needs: build` dependency.
+`release` trigger, if a single `upload` job reappears, if `upload-frob`
+ever loses its `environment: pypi` gate, or if any `upload-*` job loses
+its `needs: build` dependency.
 
 <a id="version-coupling-t-3011"></a>
 ## Decision 1: version coupling (`==`, all three, cut together)
@@ -158,18 +178,32 @@ would also fail loudly.
 
 ## Decision 3: PyPI trusted publishing (OIDC), not a stored token
 
-`upload` uses `pypa/gh-action-pypi-publish` with `permissions: id-token:
-write` and no `password`/token input -- PyPI's trusted-publisher OIDC
-exchange authenticates the specific GitHub Actions workflow run (repo +
-workflow file + environment) directly with PyPI, so there is no
+Each `upload-*` job uses `pypa/gh-action-pypi-publish` with `permissions:
+id-token: write` and no `password`/token input -- PyPI's trusted-publisher
+OIDC exchange authenticates the specific GitHub Actions workflow run
+(repo + workflow file + environment) directly with PyPI, so there is no
 long-lived API token sitting in repository secrets that could leak,
-outlive its need, or be reused outside this one workflow's `upload` job.
-Each of the three PyPI/TestPyPI project pages needs its trusted publisher
-configured to name this repo, `release.yml`, and the `pypi` environment
-before the first real publish -- a one-time, owner-performed setup step
-tracked separately from this ticket (it requires an existing PyPI project
-to attach the publisher to, which itself requires the first publish's
-approval this ticket is explicitly NOT authorized to give).
+outlive its need, or be reused outside its own job.
+
+**Each PyPI project's trusted publisher must name its own distinct
+environment, not a shared one** (T-4263): PyPI identifies a pending
+trusted publisher by the tuple (owner, repo, workflow filename,
+environment name), never by project name, so registering all three
+projects against the same environment name makes the second and third
+registrations collide as duplicates of the first. Register:
+
+| PyPI project | Environment name to register |
+| --- | --- |
+| `frob-core` | `pypi-frob-core` |
+| `strata-core` | `pypi-strata-core` |
+| `frob` | `pypi` |
+
+All three name this same repo and `release.yml` as the workflow file --
+only the environment name differs per project. This is a one-time,
+owner-performed setup step tracked separately from this ticket (it
+requires an existing PyPI project to attach the publisher to, which
+itself requires the first publish's approval this ticket is explicitly
+NOT authorized to give).
 
 <a id="verify-ci-status"></a>
 ## Decision 4: `verify-ci-status` -- CI must be green for THE RELEASED COMMIT (T-3251)
@@ -199,11 +233,12 @@ read as this commit passing.
 **Three distinct outcomes, never collapsed into two:**
 
 - **GREEN** -- the matching run is `status=completed`,
-  `conclusion=success`. The step exits 0; `upload` proceeds to its own
-  separate `pypi` environment approval gate, unchanged.
+  `conclusion=success`. The step exits 0; the `upload-*` jobs proceed --
+  `upload-frob` to its own separate `pypi` environment approval gate,
+  unchanged.
 - **RED** -- the matching run completed with any other conclusion
-  (`failure`, `cancelled`, `timed_out`, ...). The step exits 1;
-  `upload` is skipped via `needs:`.
+  (`failure`, `cancelled`, `timed_out`, ...). The step exits 1; every
+  `upload-*` job is skipped via `needs:`.
 - **UNDETERMINED** -- the `gh api` call itself failed, returned
   unparseable JSON, found no run for this exact SHA, or found one still
   `in_progress`/`queued`. Fails CLOSED exactly like RED: an unreadable
@@ -219,7 +254,7 @@ request with no reason is refused exactly like no override at all. The
 override is never the default, and the run's own log (via
 `github.actor`, already recorded on every workflow run, plus the printed
 `override_reason`) is the audit trail for who set it and why -- no
-separate approval mechanism was added for this, since `upload`'s own
+separate approval mechanism was added for this, since `upload-frob`'s own
 `pypi` environment reviewer gate still runs afterward regardless.
 
 **What "green" means as of T-3425.** `ci.yml`'s `build` job runs `windows-latest` as an ADVISORY leg (`continue-on-error: true`) until T-3076's 278 Windows-only failures (five missing POSIX primitives) are drained -- see `docs/design/windows-portability.md`. The windows-latest job still runs and reports on every push (its signal is not discarded), but a windows-latest failure no longer flips `ci.yml`'s overall conclusion, and so no longer flips what `verify_release_ci_status.py` reads as GREEN for this workflow. GREEN as measured here is `ubuntu-latest` and `macos-latest` passing; a red windows-latest leg is a known, tracked gap, not silently ignored. Re-tighten this note (and `override_red_ci`'s framing above) once T-3076 reaches zero and the advisory flag is removed. `macos-latest` itself stays a real, blocking, REQUIRED leg -- unlike Windows, its own failure set is small enough and mechanical enough not to need an advisory carve-out; see `docs/design/macos-portability.md`.
@@ -351,28 +386,32 @@ later tag both refer back to it):
    `build` job runs unconditionally and retains wheels/sdists as CI
    artifacts -- no approval needed for this half. `artifact-smoke`
    (T-3884) then runs against those same artifacts, per platform; if it
-   fails on any target, `upload` cannot start (see [Decision
-   6](#artifact-smoke-stage-t-3884)) -- check that job's logs before
-   assuming a stalled release is only waiting on approval.
-10. **Owner approval.** The owner reviews the retained build artifacts
-    and approves the `pypi` environment's required-reviewer gate for
-    that specific run. `upload` then runs (only once `artifact-smoke` has
-    also passed on every target), publishing all three packages via OIDC
-    trusted publishing (no stored token).
+   fails on any target, none of the `upload-*` jobs can start (see
+   [Decision 6](#artifact-smoke-stage-t-3884)) -- check that job's logs
+   before assuming a stalled release is only waiting on approval.
+10. **Owner approval.** `upload-frob-core` and `upload-strata-core` need
+    no approval and run automatically once `build`, `build-sdists`,
+    `verify-ci-status`, and `artifact-smoke` have all passed, publishing
+    those two kernels via OIDC trusted publishing (no stored token). The
+    owner then reviews the retained build artifacts and approves the
+    `pypi` environment's required-reviewer gate for `upload-frob`, which
+    additionally `needs:` both kernel jobs to have already succeeded
+    (Decision 1's version-pin ordering contract) -- once approved, it
+    publishes `frob` the same way.
 11. **Tag, after upload succeeds -- never before.** This repository has
     never had a git tag (`git tag` returns nothing as of T-3254). The cut
-    DOES create one: after `upload` completes successfully, the owner
-    tags the released commit (`git tag v<X.Y.Z> <sha> && git push origin
-    v<X.Y.Z>`) as a historical marker of what shipped. This is a manual,
-    post-hoc, owner-run step -- it is never automated into `release.yml`
-    or any other workflow. `release.yml`'s `on:` block stays
-    `workflow_dispatch` only (T-3011's structural gate; see "Why this is
-    a structural gate, not a convention" above and
+    DOES create one: after all three `upload-*` jobs complete
+    successfully, the owner tags the released commit (`git tag v<X.Y.Z>
+    <sha> && git push origin v<X.Y.Z>`) as a historical marker of what
+    shipped. This is a manual, post-hoc, owner-run step -- it is never
+    automated into `release.yml` or any other workflow. `release.yml`'s
+    `on:` block stays `workflow_dispatch` only (T-3011's structural gate;
+    see "Why this is a structural gate, not a convention" above and
     `tests/unit/test_release_workflow_gate.py`); tagging AFTER a
     confirmed-successful publish, by a human, off of CI entirely, cannot
     reach that trigger surface. Do not reorder this step earlier: a tag
-    pushed before `upload` succeeds would mark a commit as released that
-    might not be.
+    pushed before every `upload-*` job succeeds would mark a commit as
+    released that might not be.
 
 ### Follow-up filed alongside this ticket
 
@@ -474,11 +513,12 @@ installing the artifact can.
    natives import both directly (`import frob_core, strata_core`) AND
    through frob's own code path (`frob doctor`, whose output must mention
    "native").
-5. Fails (non-zero exit) the moment any check fails. `upload`'s `needs:`
-   now includes `artifact-smoke` -- GitHub Actions' default step/job
-   abort-on-failure means `upload` cannot start unless every platform's
-   smoke stage passed. This is a hard block, not a warning: an advisory
-   smoke test that could not stop a release is a green light nobody
+5. Fails (non-zero exit) the moment any check fails. Every `upload-*`
+   job's `needs:` includes `artifact-smoke` -- GitHub Actions' default
+   step/job abort-on-failure means none of them can start unless every
+   platform's smoke stage passed. This is a hard block, not a warning:
+   an advisory smoke test that could not stop a release is a green light
+   nobody
    reads.
 
 **Local dist vs index resolution -- local wheel, REAL index for
