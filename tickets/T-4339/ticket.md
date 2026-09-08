@@ -1,7 +1,7 @@
 ---
 id: T-4339
 title: frob ticket new reported creating a ticket that was never written
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
