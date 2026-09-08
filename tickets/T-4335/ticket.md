@@ -16,7 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
-- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +35,14 @@ scope_changes:
     the frob:doc-linked section documenting the old 'every sweep rewrites the baseline
     regardless' behavior is now false and must be corrected in the same change, not
     left drifted
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: doc closure explosion (all symbols the doc describes anywhere, not just
+    this section) is disproportionate; filing a follow-up ticket instead, waiving
+    DRIFT001 on the touched function with a reason pointing to it, matching this same
+    file's T-2521/AFFECT001 precedent
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
