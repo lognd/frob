@@ -20,7 +20,6 @@ scope:
 - src/frob/process/parsers/common.py
 - tests/unit/test_main_entry.py
 - tests/unit/test_parser_failure_diagnostics.py
-- docs/modules/app.md
 - docs/modules/logging.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -129,6 +128,16 @@ scope_changes:
   glob: docs/modules/logging.md
   reason: SCOPE002 closure for pre-existing main()/_apply_verbose_env_override() frob:doc
     targets in files this ticket must touch
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/app.md
+  reason: 'reverted: docs/modules/app.md is a large monolithic shared doc whose own
+    SCOPE002 closure pulls in ~20 unrelated src/frob/app/* modules (measured: 391
+    SCOPE002 lines after adding it) -- out of proportion to this ticket''s two-function
+    root-cause fix, the same tension src/frob/gates/_rule_id_scan.py''s own T-2608
+    comment documents for identically-shaped monolithic doc files; main()''s pre-existing
+    frob:doc target stays a documented, unresolved SCOPE002 finding instead'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
