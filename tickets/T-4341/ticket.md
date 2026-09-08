@@ -1,7 +1,7 @@
 ---
 id: T-4341
 title: 'TICK005 cannot fire post ledger-v2 cutover: add v1/v2 dispatch to _tick005_ledger_at_ref'
-state: planned
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
