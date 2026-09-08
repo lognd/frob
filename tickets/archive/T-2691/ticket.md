@@ -59,13 +59,19 @@ evidence:
 - tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_missing_marker_returns_none
 - tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none
 - tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_no_marker_renders_nothing
-- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_marker_renders_phase_ticket_and_pid
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_marker_renders_phase_ticket_pid_and_liveness
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_no_marker_renders_nothing
   new_node: tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_no_marker_renders_nothing
   reason: 'T-4266: renamed TestLandStatusMarkerLine -> TestLandStatusMarkerLines (multi-entry
     marker fix)'
+  actor: logan
+  at: '2026-09-07'
+- old_node: tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_marker_renders_phase_ticket_and_pid
+  new_node: tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLines::test_marker_renders_phase_ticket_pid_and_liveness
+  reason: 'T-4266: renamed TestLandStatusMarkerLine -> TestLandStatusMarkerLines and
+    its test to cover the new liveness tag'
   actor: logan
   at: '2026-09-07'
 threat: null
