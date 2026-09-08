@@ -1,7 +1,7 @@
 ---
 id: T-4305
 title: Rebind stranded WIRE001 waiver whose follow-up ticket closed
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
