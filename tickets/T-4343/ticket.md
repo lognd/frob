@@ -19,6 +19,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: Record the graph-cache lead plus the docstring contradiction the fixer must
+    resolve first
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2913
+  new_length: 6179
 designated_repro_test: null
 threat: null
 component: null
@@ -74,3 +82,58 @@ fixed commit under deliberate concurrent load until the answer varies, and recor
 how often. A fix cannot be trusted until the failure has been produced on demand;
 this project has repeatedly found that a defect confirmed only by its absence was
 never confirmed at all. Then show the same loop returning a stable answer.
+
+
+
+## Investigation lead and the evidence that complicates it (coordinator, 2026-09-08)
+
+The implementer whose ticket surfaced this divergence supplied a concrete lead.
+Recorded here with the parts that were MEASURED separated from the parts that were
+INFERRED, plus a contradiction found afterwards that the fixer must resolve first.
+
+RULED OUT BY DIRECT READING, not inference: the gate-level result cache is not
+involved. The invariant gate is explicitly excluded from the cacheable allowlist by
+its own comment (it bundles a root-scanning sub-check), and the references gate
+appears in neither cacheable allowlist. So neither flaky rule passes through that
+layer.
+
+ALSO RULED OUT: the invariant registry itself. Loading the invariants reads the
+invariant files straight off disk on every call with no caching, and a direct call
+loaded the new invariant cleanly on both a clean and a dirty run. The invariant
+side was never in question.
+
+THE LEAD: the shared parsed-graph cache database in the primary checkout. The read
+path is deliberately non-blocking -- its own comments say a read has no business
+taking the single writer slot, because doing so previously serialised concurrent
+invocations behind each other's cache writes. Correct for availability, but it
+means a reader can interleave with another process's in-flight rebuild. Directly
+observed during the divergent window: repeated "drifted from cache" warnings naming
+files OTHER agents were actively touching, while several gate runs and lands were
+live against the one shared database. The database is in rollback-journal mode, not
+WAL (WAL was retired earlier for unrelated crash reasons), with a zero-byte journal
+alongside it.
+
+THE PROPOSED MECHANISM WAS: the rebuild commits per file or per batch, so a reader
+opening mid-rebuild sees a snapshot mixing pre- and post-rebuild state -- some
+files re-parsed, others not -- which would explain two rules reading a
+documentation file's brand-new anchor and inbound link inconsistently.
+
+THE CONTRADICTION, MEASURED AFTERWARDS AND UNRESOLVED. The per-file ingest
+function's own docstring states the opposite: that it never commits itself, and
+that finalisation commits ONCE for the whole build. A search for a batch-size
+constant governing ingest commits finds nothing in that module. So the writer
+CLAIMS single-transaction semantics. That is a docstring, not a proof -- this
+project has repeatedly found intent recorded in prose that the code does not
+enforce -- but it means the proposed mechanism cannot be assumed.
+
+WHAT TO DO WITH THIS. Settle the contradiction by INSTRUMENTING the actual
+transaction boundaries during a rebuild rather than by reading comments: confirm
+whether the build genuinely commits once, and if it does, the torn-snapshot theory
+is wrong and the divergence lives elsewhere -- the staleness detection and the
+rebuild-triggering path on the reader side are then the next place to look, since a
+reader that gives up and proceeds without a usable graph could plausibly produce a
+different finding set. Note there is at least one commit call inside the
+lock-retry helper that runs when the connection is owned; establish whether that
+path can be reached during a rebuild.
+
+Do not fix a mechanism that has not been demonstrated.
