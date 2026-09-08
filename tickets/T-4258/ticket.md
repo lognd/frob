@@ -18,8 +18,6 @@ scope:
 - src/frob/serve/_daemon.py
 - src/frob/serve/_warm.py
 - tests/test_serve_daemon.py
-- docs/modules/serve.md
-- docs/modules/tickets-verify-sweep.md
 - tests/test_serve.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -51,6 +49,28 @@ scope_changes:
   reason: 'scope closure: pre-existing frob:doc/frob:tests targets for symbols touched
     in this file (docstring/doc anchors and _warm.py''s own bound tests), flagged
     by SCOPE002 after adding tests/test_serve_daemon.py'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/serve.md
+  reason: 'reverting: docs/modules/serve.md and docs/modules/tickets-verify-sweep.md
+    are monolithic shared docs whose own SCOPE002 closure drags in nearly the entire
+    serve/verify/tickets subsystem transitively (37 more files) -- the same ''out
+    of proportion'' tension this file''s own pre-existing COV007 waivers already document
+    for T-1010/T-1937/T-3903/T-1895/T-3847. Waiving AFFECT001 on the touched symbols
+    instead, matching that precedent, rather than expanding scope to the whole shared-doc
+    closure'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'reverting: docs/modules/serve.md and docs/modules/tickets-verify-sweep.md
+    are monolithic shared docs whose own SCOPE002 closure drags in nearly the entire
+    serve/verify/tickets subsystem transitively (37 more files) -- the same ''out
+    of proportion'' tension this file''s own pre-existing COV007 waivers already document
+    for T-1010/T-1937/T-3903/T-1895/T-3847. Waiving AFFECT001 on the touched symbols
+    instead, matching that precedent, rather than expanding scope to the whole shared-doc
+    closure'
   actor: logan
   at: '2026-09-08'
 body_changes:
