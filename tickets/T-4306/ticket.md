@@ -1,7 +1,7 @@
 ---
 id: T-4306
 title: Hook-script design node observes none of its four declared capabilities
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
