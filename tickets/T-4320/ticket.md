@@ -16,7 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_live_tracker.py
 - tests/test_tickets_live_tracker.py
-- docs/modules/tickets-landing.md
+- docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +30,18 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: tests and doc target for the live_tracker_citations fix
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/tickets-landing.md
+  reason: narrow to the single anchor this diff actually touches, not the whole landing
+    doc
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
+  reason: narrow to the single anchor this diff actually touches, not the whole landing
+    doc
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
