@@ -18,8 +18,15 @@ scope:
 - invariants/INV-052.md
 - docs/index.md
 - tests/unit/test_rapid_debt.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'Deliberately narrower than the doc/test-edge closure graph
+  suggests: this ticket only touches the T-4324 split-out visibility doc, its own
+  invariant file, one docs/index.md link, and its evidence test''s own frob:invariant
+  anchor. verify_runner.py and _evidence.py are large, heavily cross-referenced files
+  (T-4324''s own doc explicitly split this file out to avoid pulling tickets-verify-sweep.md''s
+  dozens of unrelated symbols into scope); pulling either whole file in for one pre-existing
+  edge would import 100+ unrelated scope-closure obligations, the exact anti-pattern
+  T-4324 already avoided once.'
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
