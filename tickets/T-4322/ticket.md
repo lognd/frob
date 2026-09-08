@@ -1,7 +1,7 @@
 ---
 id: T-4322
 title: Windows suite aborts on a worker controller error, so its failing set is unmeasured
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -15,19 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_public_api_from_wheel.py
-- tickets/T-draft-12d75a0a/**
+- tickets/T-4329/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-12d75a0a/**
-  reason: 'SCOPE001: bookkeeping shard for the T-draft-12d75a0a follow-up ticket filed
-    while working T-4322 (out-of-scope OOM-crash root cause discovered here); the
-    ticket''s own draft id does not yet match _TICKET_REF_RE''s 4-digit pattern so
-    the standard cross-ticket commit-attribution exemption cannot fire until it is
-    renumbered at land'
+  glob: tickets/T-4329/**
+  reason: 'SCOPE001: bookkeeping shard for the T-4329 follow-up ticket filed while
+    working T-4322 (out-of-scope OOM-crash root cause discovered here); the ticket''s
+    own draft id does not yet match _TICKET_REF_RE''s 4-digit pattern so the standard
+    cross-ticket commit-attribution exemption cannot fire until it is renumbered at
+    land'
   actor: logan
   at: '2026-09-08'
 body_changes:

@@ -42,11 +42,34 @@ from __future__ import annotations
 import ast
 import shutil
 import subprocess
+import sysconfig
 from pathlib import Path
 
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+# frob:ticket T-4322
+def _venv_python(venv_dir: Path) -> Path:
+    """The `python` executable inside `venv_dir`, derived from the
+    CURRENT interpreter's own install scheme rather than a hand-assembled
+    posix `bin/python` -- a virtualenv places its interpreter in
+    `Scripts/python.exe` on Windows, not `bin/python` (T-4322: a
+    hand-assembled posix path here made the clean-venv install step fail
+    on win32 with `uv pip install`'s own "No virtual environment or
+    system Python installation found" error, since the path never
+    existed). `sysconfig.get_path` with an explicit `base` override
+    reports the scripts directory for the scheme this OS actually uses,
+    and `sysconfig.get_config_var("EXE")` gives the matching executable
+    suffix (`.exe` on Windows, `""` elsewhere) -- same pattern as
+    `test_scaffold_dx.py`'s `_venv_console_script` (T-4234). This works
+    because the venv under test is always created on this SAME OS, so
+    the running interpreter's own scheme is the venv's scheme too."""
+    scripts_dir = Path(sysconfig.get_path("scripts", vars={"base": str(venv_dir)}))
+    suffix = sysconfig.get_config_var("EXE") or ""
+    return scripts_dir / f"python{suffix}"
+
 
 # frob:ticket T-4150
 _PRIVATE_PROBE_MODULES = (
@@ -157,7 +180,7 @@ def test_advertised_public_api_imports_from_a_built_wheel(tmp_path: Path) -> Non
 
     venv_dir = tmp_path / "venv"
     subprocess.run(["uv", "venv", str(venv_dir)], check=True, capture_output=True)
-    venv_python = venv_dir / "bin" / "python"
+    venv_python = _venv_python(venv_dir)
     frob_wheels = list(dist.glob("*.whl"))
     assert len(frob_wheels) == 1, f"expected exactly one frob wheel, got {frob_wheels}"
     install = subprocess.run(
