@@ -2,7 +2,7 @@
 id: T-4287
 title: 'reopening a terminal ticket strands every worktree that forked before it:
   the land guard cannot tell an audited reopen from an accidental merge resurrection'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -16,10 +16,60 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+- src/frob/tickets/_reporting.py
+- tests/unit/test_land_sibling_regression.py
+- tests/unit/test_reopen_ticket.py
+- docs/modules/tickets.md
+scope_breadth_ack: true
+scope_breadth_ack_reason: src/frob/tickets/_land.py is already a documented god-module
+  (T-1651/LARGE001/ARCH102 waivers on this same file) with dozens of private-helper
+  call edges into sibling _land_*.py/_store.py/_journal.py modules and frob:doc anchors
+  scattered across 6+ docs/modules/*.md files -- this predates T-4287 and is unrelated
+  to its fix (the T-1914 sibling-state-regression guard plus the reopen-verb warning).
+  Widening scope to close every one of those pre-existing closure edges would balloon
+  this critical bugfix's scope far beyond its actual diff; the fix itself only touches
+  _land.py/_reporting.py plus its own two test files and one doc anchor, all of which
+  are in scope.
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: T-4287 AC3 requires reopen_ticket() to name live worktrees it will strand
+    before performing the DONE->QUEUED transition; that verb lives in _reporting.py,
+    not _land.py -- widening scope per the ticket's own instruction to widen rather
+    than drop AC3.
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: T-4287 AC3 requires reopen_ticket() to name live worktrees it will strand
+    before performing the DONE->QUEUED transition; that verb lives in _reporting.py,
+    not _land.py -- widening scope per the ticket's own instruction to widen rather
+    than drop AC3.
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_land_sibling_regression.py
+  reason: 'T-4287: bound test evidence lives in these two test files (SCOPE001), and
+    reopen_ticket''s AC3 behavior needed a docs/modules/tickets.md#public-api touch
+    to satisfy AFFECT001.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_reopen_ticket.py
+  reason: 'T-4287: bound test evidence lives in these two test files (SCOPE001), and
+    reopen_ticket''s AC3 behavior needed a docs/modules/tickets.md#public-api touch
+    to satisfy AFFECT001.'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-4287: bound test evidence lives in these two test files (SCOPE001), and
+    reopen_ticket''s AC3 behavior needed a docs/modules/tickets.md#public-api touch
+    to satisfy AFFECT001.'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a ticket reopened through the audited verb, when a worktree that forked
