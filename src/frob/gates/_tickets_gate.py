@@ -1313,20 +1313,89 @@ def _tick009_scope_breadth_nudges(
 # frob:waive EXHAUST002 reason="T-1056: json.JSONDecodeError is a ValueError subclass \
 # already covered by this function's own except (OSError, ValueError); the resolver \
 # does not perform subclass reasoning against the caught tuple"
+# frob:ticket T-4319
+# frob:tests \
+# tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_dead_lea\
+# se_reports_as_error_with_remedy
+def _tick010_holder_dead_pass(
+    root: Path, leases_root: Path, lease_paths: list[Path]
+) -> list[Violation]:
+    """TICK010(b) (T-4319): one ERROR per lease `frob.tickets._leases.
+    lease_staleness_reason` judges `"holder-dead"` (worktree present,
+    ticket present and non-terminal, TTL elapsed, no live process in the
+    worktree, no `land` in progress for it). Widens TICK010's original
+    path-gone-only question (T-0714) to close a measured gap: three
+    tickets sat leased by dead agents in one day with INTACT worktrees,
+    which the plain `Path.exists()` check cannot see at all, and the
+    judgement that CAN see it (`lease_staleness_reason`) had no consumer
+    that runs on every `frob check` -- only `doable`'s in-flight
+    display, which does not complete on this repository. Deliberately
+    reuses that judgement rather than re-deriving a second one (T-1876's
+    read-only posture stays untouched); this pass never releases a
+    lease, it only asks a question that was going unasked.
+
+    ERROR, not WARN: a stuck lease actively BLOCKS other work (one of
+    the three incidents had already refused an unrelated ticket's scope
+    change by the time it was found by hand), and `Severity.ERROR` is
+    what actually makes `frob check` exit non-zero -- the one way a
+    single finding among thousands of check-output lines is guaranteed
+    to be seen. The opposing misjudge-a-slow-agent risk is `lease_
+    staleness_reason`'s own job to guard (TTL elapsed AND no live
+    process AND no land in flight, the same bar `orphaned_leases`/
+    `release_orphaned_lease` already require before release), not
+    re-judged here. Over the SAME raw parse (`_parse_lease_files_
+    cached`, not `read_all_leases`, whose liveness filter silently drops
+    ambiguous leases -- `orphaned_leases`'s own precedent). A record
+    already reported as path-gone is naturally skipped, since `lease_
+    staleness_reason` checks path-gone first."""
+    from frob.tickets._leases import _parse_lease_files_cached, lease_staleness_reason
+
+    violations: list[Violation] = []
+    for record in _parse_lease_files_cached(leases_root, lease_paths):
+        if lease_staleness_reason(root, record) != "holder-dead":
+            continue
+        path = leases_root / f"{record.ticket_id}.json"
+        violations.append(
+            Violation(
+                rule="TICK010",
+                severity=Severity.ERROR,
+                file=str(path),
+                line=0,
+                message=(
+                    f"TICK010: {record.ticket_id} lease {path} references "
+                    f"worktree {record.worktree}, which is present but "
+                    f"whose holder is judged dead (lease TTL elapsed, no "
+                    f"live process in the worktree, no land in progress "
+                    f"for it) -- run `frob worktree release-lease "
+                    f"{record.ticket_id}` to release it"
+                ),
+            )
+        )
+    return violations
+
+
+# frob:tests \
+# tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_holder_lea\
+# se_is_silent
 # frob:enforces CHK-GATE-TICK010
 def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
-    """TICK010 (T-0714): one WARN per cross-worktree lease file
-    (`.git/frob-leases/*.json`, T-0473) whose recorded `worktree` path no
-    longer exists on disk -- named by its lease-file path and ticket id,
-    with the remedy spelled out (`frob.tickets._leases`'s own
-    opportunistic prune already unlinks these the next time a `doable`/
-    `start` call reads the leases directory; this gate exists to surface
-    them ONCE with a location and remedy for a human/auditor, not to
-    re-implement the prune). Silent when the leases directory does not
-    exist or every lease's worktree is present -- this is a read-only scan
-    (`Path.exists()`, not the internal TOCTOU-hardened liveness probe
-    `frob.tickets._leases._probe_worktree_liveness` uses for its own
-    unlink decision) so it never mutates the leases directory itself."""
+    """TICK010 (T-0714, widened by T-4319 -- see `_tick010_holder_dead_
+    pass`'s own docstring for the full reasoning): one violation per
+    cross-worktree lease file (`.git/frob-leases/*.json`, T-0473) that
+    either (a) records a `worktree` path no longer present on disk
+    (WARN -- `frob.tickets._leases`'s own opportunistic prune already
+    unlinks these the next time a `doable`/`start` call reads the
+    leases directory; this gate surfaces them ONCE with a location and
+    remedy, not to re-implement the prune) or (b) is judged
+    `"holder-dead"` by `lease_staleness_reason` (ERROR, delegated to
+    `_tick010_holder_dead_pass`). Silent when the leases directory does
+    not exist, or a lease's worktree is present AND its holder is live.
+
+    (a) stays WARN, unchanged: a gone worktree self-heals via the
+    opportunistic prune the moment anyone next reads the leases
+    directory, where a `"holder-dead"` lease does not self-heal at all
+    -- the severity split mirrors that difference, not an arbitrary
+    escalation."""
     import json
 
     from frob.tickets._leases import leases_dir
@@ -1339,30 +1408,35 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
         return ()
 
     violations: list[Violation] = []
-    for path in sorted(leases_root.glob("*.json")):
+    lease_paths = sorted(leases_root.glob("*.json"))
+    for path in lease_paths:
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
         worktree = raw.get("worktree")
         ticket_id = raw.get("ticket_id", "?")
-        if not worktree or Path(worktree).exists():
+        if not worktree:
             continue
-        violations.append(
-            Violation(
-                rule="TICK010",
-                severity=Severity.WARN,
-                file=str(path),
-                line=0,
-                message=(
-                    f"TICK010: {ticket_id} lease {path} references worktree "
-                    f"{worktree}, which no longer exists -- remove the "
-                    f"lease file (it will also be opportunistically "
-                    f"pruned the next time `frob ticket doable`/`start` "
-                    f"reads the leases directory)"
-                ),
+        if not Path(worktree).exists():
+            violations.append(
+                Violation(
+                    rule="TICK010",
+                    severity=Severity.WARN,
+                    file=str(path),
+                    line=0,
+                    message=(
+                        f"TICK010: {ticket_id} lease {path} references "
+                        f"worktree {worktree}, which no longer exists -- "
+                        f"remove the lease file (it will also be "
+                        f"opportunistically pruned the next time `frob "
+                        f"ticket doable`/`start` reads the leases "
+                        f"directory)"
+                    ),
+                )
             )
-        )
+
+    violations.extend(_tick010_holder_dead_pass(root, leases_root, lease_paths))
     return tuple(violations)
 
 
@@ -1639,21 +1713,26 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     )
 
 
+# frob:ticket T-4319
 # frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
-    TICK009/TICK010/TICK011/TICK012/TICK013/TICK014: the T-0162 ticket-id
-    collision invariant gate, plus the T-0409 ledger-hygiene check, the
-    T-0411 priority-rot check, the T-0537 post-merge terminal-state-
-    regression lint, the T-0726 phantom-filing-claim check, the T-0820/
-    T-0752 undispatched-stale-CRITICAL/HIGH alarm, the T-0842 unknown-
-    ledger-field check, the T-0714 scope-breadth-nudge/stale-lease
+    TICK009/TICK010/TICK011/TICK012/TICK013/TICK014: the T-0162
+    ticket-id collision invariant gate, plus the T-0409 ledger-hygiene
+    check, the T-0411 priority-rot check, the T-0537 post-merge terminal-
+    state-regression lint, the T-0726 phantom-filing-claim check, the
+    T-0820/T-0752 undispatched-stale-CRITICAL/HIGH alarm, the T-0842
+    unknown-ledger-field check, the T-0714 scope-breadth-nudge/stale-lease
     reports (relocated out of `frob ticket doable`'s own per-invocation
-    diagnostics), the T-1129 disclosed-cut-without-ticket check, the
-    T-2561 in-progress-lease-vs-declared-scope drift check, and the
-    T-2557 in-progress/planned-empty-scope-without-declaration check, and
-    the T-3092 empty-code-diff-on-close warn (`frob.gates._empty_diff_
-    close.empty_code_diff_violations`).
+    diagnostics, and T-4319-widened -- see `_tick010_stale_lease_report`
+    -- to also ERROR on a lease whose recorded worktree is present but
+    whose holder `frob.tickets._leases.lease_staleness_reason` judges
+    dead, reusing that existing judgement rather than re-deriving a
+    second, narrower liveness test here), the T-1129 disclosed-cut-
+    without-ticket check, the T-2561 in-progress-lease-vs-declared-scope
+    drift check, the T-2557 in-progress/planned-empty-scope-without-
+    declaration check, and the T-3092 empty-code-diff-on-close warn
+    (`frob.gates._empty_diff_close.empty_code_diff_violations`).
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE

@@ -1,20 +1,22 @@
 """T-0714: TICK009 (over-broad-scope nudge, relocated from `frob ticket
 doable`'s own per-invocation WARNING wall) and TICK010 (stale
-cross-worktree lease report) -- both live on `tickets_gate` so `frob
-check` reports them once instead of `doable` repeating them on every
-queue query."""
+cross-worktree lease report, widened by T-4319 to also ERROR on a
+holder-dead lease) -- both live on `tickets_gate` so `frob check` reports
+them once instead of `doable` repeating them on every queue query."""
 
 # frob:ticket T-0714
+# frob:ticket T-4319
 
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from frob.gates import Severity, tickets_gate
 from frob.tickets import Origin, TicketKind, TicketQueue, TicketState
 from frob.tickets._models import Ticket
+from frob.tickets._store import write_all
 
 
 def _ticket(ticket_id: str, scope: tuple[str, ...], state: TicketState) -> Ticket:
@@ -114,6 +116,7 @@ class TestTick009ScopeBreadthNudges:
         assert not violations
 
 
+# frob:ticket T-4319
 class TestTick010StaleLeaseReport:
     def _write_lease(self, root: Path, ticket_id: str, worktree: str) -> Path:
         leases_dir = root / ".git" / "frob-leases"
@@ -179,6 +182,107 @@ class TestTick010StaleLeaseReport:
     def test_no_leases_directory_is_silent(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_no_leases_directory_is_silent  # noqa: E501
         self._init_repo(tmp_path)
+        violations = [
+            v for v in tickets_gate(tmp_path, _queue()) if v.rule == "TICK010"
+        ]
+        assert not violations
+
+    # frob:ticket T-4319
+    def _write_ticket(
+        self, root: Path, ticket_id: str, state: TicketState = TicketState.IN_PROGRESS
+    ) -> None:
+        """Persists a real, on-disk, non-terminal ticket `lease_
+        staleness_reason`'s ticket-gone/ticket-terminal checks can find
+        -- required so a forced holder-dead condition is not instead
+        misread as ticket-gone (T-4319's own verify-by-forcing
+        requirement: the condition must be genuinely constructed, not a
+        healthy-tree coincidence)."""
+        ticket = Ticket(
+            id=ticket_id,
+            title=f"{ticket_id} ticket",
+            state=state,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            scope=("src/frob/gates/_tickets_gate.py",),
+            body="## Description\nsomething\n",
+        )
+        result = write_all(root, {ticket_id: ticket})
+        assert result.is_ok
+
+    # frob:ticket T-4319
+    def test_holder_dead_lease_reports_as_error_with_remedy(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_\
+        # dead_lease_reports_as_error_with_remedy
+        # T-4319: FORCE the holder-dead condition directly -- a present
+        # worktree, a real non-terminal ticket, and a `recorded_at` well
+        # past `LEASE_TTL_SECONDS` (so `is_lease_ttl_expired` reads
+        # True) with nothing else cwd'd into the worktree (nothing ever
+        # ran there) and no `land.lock` held for this ticket -- the exact
+        # three-signal bar `lease_staleness_reason` requires before it
+        # will call a holder dead. This is the dominant real shape T-4319
+        # was filed over: worktree present and intact, holder gone.
+        self._init_repo(tmp_path)
+        self._write_ticket(tmp_path, "T-2200")
+        present = tmp_path / "present-but-abandoned-worktree"
+        present.mkdir()
+        stale_recorded_at = (datetime.now(UTC) - timedelta(hours=48)).isoformat()
+        leases_dir = tmp_path / ".git" / "frob-leases"
+        leases_dir.mkdir(parents=True, exist_ok=True)
+        (leases_dir / "T-2200.json").write_text(
+            json.dumps(
+                {
+                    "ticket_id": "T-2200",
+                    "scope": ["src/frob/gates/_tickets_gate.py"],
+                    "worktree": str(present),
+                    "branch": "agent/t-2200",
+                    "recorded_at": stale_recorded_at,
+                }
+            ),
+            encoding="utf-8",
+        )
+        violations = [
+            v for v in tickets_gate(tmp_path, _queue()) if v.rule == "TICK010"
+        ]
+        assert len(violations) == 1
+        assert violations[0].severity == Severity.ERROR
+        assert "T-2200" in violations[0].message
+        assert "frob worktree release-lease T-2200" in violations[0].message
+
+    # frob:ticket T-4319
+    def test_live_holder_lease_is_silent(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_ho\
+        # lder_lease_is_silent
+        # T-4319's negative control: the SAME present worktree and real
+        # ticket as above, but `recorded_at` is fresh (well within
+        # `LEASE_TTL_SECONDS`) -- a slow-but-live agent must never be
+        # misjudged as holder-dead. Verifying only this healthy case
+        # (as the pre-T-4319 suite did) would have let a silently-wrong
+        # "always dead" implementation pass; this test only means
+        # something paired with the forced-dead assertion above.
+        self._init_repo(tmp_path)
+        self._write_ticket(tmp_path, "T-2201")
+        present = tmp_path / "present-and-live-worktree"
+        present.mkdir()
+        fresh_recorded_at = datetime.now(UTC).isoformat()
+        leases_dir = tmp_path / ".git" / "frob-leases"
+        leases_dir.mkdir(parents=True, exist_ok=True)
+        (leases_dir / "T-2201.json").write_text(
+            json.dumps(
+                {
+                    "ticket_id": "T-2201",
+                    "scope": ["src/frob/gates/_tickets_gate.py"],
+                    "worktree": str(present),
+                    "branch": "agent/t-2201",
+                    "recorded_at": fresh_recorded_at,
+                }
+            ),
+            encoding="utf-8",
+        )
         violations = [
             v for v in tickets_gate(tmp_path, _queue()) if v.rule == "TICK010"
         ]

@@ -1,7 +1,7 @@
 ---
 id: T-4319
 title: Lease held by a dead holder is invisible to every routine check
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -178,6 +178,9 @@ scope_changes:
     territory (TICK009), not a real dependency of this change. Using scope-ack instead.'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport::test_holder_dead_lease_reports_as_error_with_remedy
+- tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport::test_live_holder_lease_is_silent
 designated_repro_test: null
 threat: null
 component: null
