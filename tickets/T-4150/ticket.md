@@ -14,10 +14,32 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/__init__.py
+- tests/system/test_public_api_from_wheel.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__init__.py
+  reason: 'makes the ticket startable: the advertised surface lives in the package
+    init, and the must-fire fixture needs a home that does not yet exist; CLI wiring
+    for the path-reporting verb and any workflow change are expected to be added with
+    their own recorded reason once the implementer has measured what the verb actually
+    needs'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/system/test_public_api_from_wheel.py
+  reason: 'makes the ticket startable: the advertised surface lives in the package
+    init, and the must-fire fixture needs a home that does not yet exist; CLI wiring
+    for the path-reporting verb and any workflow change are expected to be added with
+    their own recorded reason once the implementer has measured what the verb actually
+    needs'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given a wheel built from this repository installed alone in an environment,
