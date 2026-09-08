@@ -20,6 +20,8 @@ scope:
 - src/frob/process/parsers/common.py
 - tests/unit/test_main_entry.py
 - tests/unit/test_parser_failure_diagnostics.py
+- docs/modules/app.md
+- docs/modules/logging.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -115,6 +117,18 @@ scope_changes:
   glob: docs/modules/process.md
   reason: 'reverted: switched to a frob:waive AFFECT001 instead of editing this shared
     doc, to avoid its large cross-ticket scope-closure fan-out'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: SCOPE002 closure for pre-existing main()/_apply_verbose_env_override() frob:doc
+    targets in files this ticket must touch
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/logging.md
+  reason: SCOPE002 closure for pre-existing main()/_apply_verbose_env_override() frob:doc
+    targets in files this ticket must touch
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
