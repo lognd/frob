@@ -19,6 +19,8 @@ scope:
 - src/frob/serve/_warm.py
 - tests/test_serve_daemon.py
 - tests/test_serve.py
+- tickets/T-draft-d015a2a1/ticket.md
+- tickets/T-draft-f40f5848/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,6 +73,18 @@ scope_changes:
     for T-1010/T-1937/T-3903/T-1895/T-3847. Waiving AFFECT001 on the touched symbols
     instead, matching that precedent, rather than expanding scope to the whole shared-doc
     closure'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-draft-d015a2a1/ticket.md
+  reason: the two follow-up tickets filed by this ticket to split out its out-of-scope
+    acceptance criteria; their ticket.md files are new/touched in this same worktree
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-draft-f40f5848/ticket.md
+  reason: the two follow-up tickets filed by this ticket to split out its out-of-scope
+    acceptance criteria; their ticket.md files are new/touched in this same worktree
   actor: logan
   at: '2026-09-08'
 body_changes:
