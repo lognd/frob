@@ -27,3 +27,6 @@ anchor_reason: null
 land_commit: null
 ---
 tests/test_fuzz.py::TestRunFuzz::test_ungeneratable_target_reports_no_generator fails on win32: hypothesis's datetime/timezone strategies need the tzdata package on Windows (stdlib zoneinfo has no bundled tz database there, unlike Linux/macOS which use the system tz db). Add 'tzdata; sys_platform == "win32"' to pyproject.toml dependencies and run uv lock. Part of win32 CI drain.
+
+## Failure log
+- 2026-09-08 attempt 1: Owning agent died; worktree untouched for hours and 249 files stale vs main. Work preserved: the entire change is one dependency line plus its comment, adding tzdata for sys_platform == win32 to pyproject.toml dependencies (patch at scratchpad/t3811.patch; it does NOT apply cleanly to current main, git apply --3way reports conflicts, so re-apply by hand). Requeued to release the lease on pyproject.toml, which the alpha version bump needs. Windows is advisory so this is not release-blocking.
