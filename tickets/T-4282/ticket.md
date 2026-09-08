@@ -72,15 +72,43 @@ scope_changes:
     updating in place'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_with_lock_retry_names_holder_in_cache_locked_message
+- tests/unit/test_graph_ingest_batching.py::test_build_graph_commits_in_batches_not_one_final_transaction
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_lock_holder_pids_linux_finds_a_real_open_fd
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_lock_holder_pids_excludes_self
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_reports_pid_and_command
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_degrades_without_a_path
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_degrades_with_no_pid_found
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_with_lock_retry_states_holder_unknown_without_a_path
+- tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_connect_with_backoff_raises_cache_locked_naming_holder
 designated_repro_test: null
 acceptance:
 - text: given a running serve daemon mid-build, when another process opens the graph
     cache for a read or its own build, then it succeeds rather than timing out
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_with_lock_retry_names_holder_in_cache_locked_message
+  - tests/unit/test_graph_ingest_batching.py::test_build_graph_commits_in_batches_not_one_final_transaction
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_lock_holder_pids_linux_finds_a_real_open_fd
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_lock_holder_pids_excludes_self
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_reports_pid_and_command
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_degrades_without_a_path
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_degrades_with_no_pid_found
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_with_lock_retry_states_holder_unknown_without_a_path
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_connect_with_backoff_raises_cache_locked_naming_holder
 - text: given a graph build that cannot take the cache lock, when it reports CacheLocked,
     then the message names the PID (and where determinable, the command) of the process
     actually holding the lock
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_with_lock_retry_names_holder_in_cache_locked_message
+  - tests/unit/test_graph_ingest_batching.py::test_build_graph_commits_in_batches_not_one_final_transaction
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_lock_holder_pids_linux_finds_a_real_open_fd
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_lock_holder_pids_excludes_self
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_reports_pid_and_command
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_degrades_without_a_path
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_describe_lock_holders_degrades_with_no_pid_found
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_with_lock_retry_states_holder_unknown_without_a_path
+  - tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming::test_connect_with_backoff_raises_cache_locked_naming_holder
 threat: null
 component: null
 anchor: false
