@@ -1,7 +1,7 @@
 ---
 id: T-4327
 title: macOS nested uv run ignores VIRTUAL_ENV and builds an empty fixture venv
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
