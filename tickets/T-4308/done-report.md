@@ -1,0 +1,103 @@
+## Done report
+
+ROOT CAUSE (MEASURED from CI run 34228984463's macOS-vs-ubuntu diff in
+.github/workflows/ci.yml, T-3250/T-4274): the macOS Test step invokes the
+suite via `.venv/bin/python -m pytest -q` (a direct binary exec, needed so
+`$!` captures pytest's own pid for the stack-dump-on-hang mechanism), while
+ubuntu invokes `uv run pytest -q`. `uv run` sets `VIRTUAL_ENV` while
+activating a project before exec'ing into the child; the direct-binary
+launch never does. Every downstream nested `uv run ...` spawn this repo's
+own code makes against a target project with no synced venv of its own
+(collect_python_tests' `uv run pytest --collect-only`, and
+`project_tool_argv`'s `uv run --no-sync --project <root> ruff ...`) depends
+on `uv run`'s "prefer an already-active compatible VIRTUAL_ENV" fallback to
+resolve pytest/ruff at all. With VIRTUAL_ENV unset, that fallback never
+engages, and the target project (a throwaway fixture in a temp dir) has no
+pytest/ruff of its own -- so `uv run pytest ...` / `uv run ruff ...` both
+fail to spawn ("Failed to spawn: `pytest` / Caused by: No such file or
+directory"), reproducing exactly the log's spawn failure and the ruff
+"output could not be parsed" (actually EMPTY output, not malformed).
+
+INFERRED (not verified on macOS -- this session has no macOS access): that
+uv's "prefer active VIRTUAL_ENV" fallback is the specific mechanism uv uses
+here. This is well-documented uv behavior and the only account consistent
+with every measurable fact (the identical "no requires-python...
+defaulting" warning on both CI legs, the T-4274 launch-shape diff, and the
+exact spawn-failure text) -- but it is inference about uv's internals, not
+a reproduced macOS run.
+
+FIX: `frob.__main__._ensure_ambient_virtual_env()`, called first in
+`main()`, sets `VIRTUAL_ENV=sys.prefix` (guarded on a real `pyvenv.cfg`)
+whenever it is unset -- restoring the same fallback ubuntu's `uv run`
+launch already provides, regardless of how this CLI process itself was
+started. One change point fixes both the pytest-collection cascade (COV003,
+~60 of the 68 excess failures) and the ruff-check failure, matching the
+ticket's "settle the ONE root cause, not the 68 symptoms" directive.
+
+SECOND FIX (ticket's explicit second requirement): `parse_ruff_json`
+(src/frob/process/parsers/ruff.py) now distinguishes truly empty stdout
+("the tool did not run") from genuinely malformed non-empty stdout ("the
+tool ran and produced something this parser cannot read") via a new
+`tool_no_output_result` helper (src/frob/process/parsers/common.py),
+mirroring the existing `tool_unavailable_result`/`tool_parse_failure_result`
+loud-not-silent doctrine. Covered by a forced-empty-stdout regression test
+per the ticket's own instruction.
+
+VERIFICATION: `frob.__main__._ensure_ambient_virtual_env`/`_is_real_venv`
+and the ruff empty-output branch are covered by new unit tests (no real
+macOS reproduction -- see INFERRED note above). `frob test --base main` and
+the full `tests/unit/test_main_entry.py` / `tests/unit/test_parser_failure_
+diagnostics.py` suites pass. The linux leg of the existing system test
+(`tests/system/test_cli_check.py::TestCheckCleanProject`) is unaffected
+(VIRTUAL_ENV was already set there, so `_ensure_ambient_virtual_env` is a
+no-op on linux) -- this is NOT evidence about the macOS failure, only proof
+the fix does not regress the platform that already passed.
+
+GATE STATUS: `frob check --ticket T-4308` is clean on gate:AFFECT/COV/FMT/
+LANDFMT/PRE (the ticket-scoped families). gate:SCOPE reports 15 SCOPE002
+findings: `main`/`_apply_verbose_env_override` (src/frob/__main__.py) and
+every class in src/frob/process/parsers/common.py carry PRE-EXISTING
+frob:doc/frob:tests edges into docs/modules/app.md, docs/modules/logging.md,
+and docs/modules/process.md plus several test files -- all monolithic,
+heavily-cross-referenced files. MEASURED: adding docs/modules/app.md alone
+pulled ~20 unrelated src/frob/app/* modules into scope (391 SCOPE002 lines);
+docs/modules/logging.md pulled ~20 unrelated src/frob/logging/* symbols.
+This is the exact tension src/frob/gates/_rule_id_scan.py's own T-2608
+comment documents by name for identically-shaped files ("a large, heavily
+cross-referenced file... can have HUNDREDS of pre-existing public symbols
+whose doc/test target all happen to be the SAME missing file"), and
+SCOPE002's own docstring says it is "WARN-only... a nudge" (T-0756) --
+this repo's frob.toml promotes it to error. It has no code-attachable
+`frob:waive` point (its findings are ticket-level, "tickets.md:0"), so it
+cannot be waived the way AFFECT001/COV001/ARCH103 were on this same diff.
+Absorbing it fully would mean scoping most of src/frob/app/ and
+src/frob/logging/ into a 2-function CI bugfix -- judged disproportionate
+and left as a documented, known gate limitation rather than an unbounded
+scope expansion. gate:ARCH (3, src/frob/graph/cache.py), gate:TODO (1,
+src/frob/gates/_land_format.py/T-4298), and gate:WIRE (1,
+tests/test_ci_workflow_timeout.py, another live ticket's file) are
+unrelated pre-existing repo-wide findings, unaffected by this diff.
+
+### Changed
+```
+ tickets/T-4308/done-report.md | 100 ++++++++++++++++++++++++++++++
+ tickets/T-4308/ticket.md      | 141 +++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 240 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/test_main_entry.py::TestEnsureVenv::test_sets_when_unset` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestEnsureVenv::test_leaves_existing` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestEnsureVenv::test_skips_non_venv` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parser_failure_diagnostics.py::TestNoOutputResult::test_attaches_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parser_failure_diagnostics.py::TestNoOutputResult::test_never_reports_a_zero_exit_code` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parser_failure_diagnostics.py::TestRuffEmptyOutputIsNotMalformed::test_empty_stdout_is_no_output_not_malformed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parser_failure_diagnostics.py::TestRuffEmptyOutputIsNotMalformed::test_whitespace_only_stdout_is_no_output_not_malformed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parser_failure_diagnostics.py::TestRuffEmptyOutputIsNotMalformed::test_truncated_json_is_still_reported_as_malformed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestIsRealVenv::test_true_for_this_process_own_venv` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestIsRealVenv::test_false_for_a_path_with_no_pyvenv_cfg` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 8 error(s), 4653 warning(s), 953 waived
+- error-findings: ARCH103@src/frob/graph/cache.py, FMT001@src/frob/__main__.py, FMT001@tests/unit/test_main_entry.py, PRE001@tickets/T-4308, SCOPE002@tickets.md, SELFAUDIT001@design, TODO002@src/frob/gates/_land_format.py, WIRE002@tests/test_ci_workflow_timeout.py

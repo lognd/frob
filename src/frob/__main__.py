@@ -87,6 +87,14 @@ _log = get_logger(__name__)
 # frob:ticket T-0355
 # frob:ticket T-0358
 # frob:ticket T-2443
+# frob:ticket T-4308
+# frob:waive AFFECT001 reason="T-4308 adds one call (_ensure_ambient_virtual_env()) at \
+# the top of main's existing dispatch sequence -- docs/modules/app.md#entry-point's \
+# own text already describes main only at the SIGINT/sigterm-reaper level of detail \
+# this new call sits alongside, and docs/modules/app.md#entry-point is currently under \
+# another ticket's live scope lease (T-4306), so this diff cannot edit it without a \
+# cross-ticket scope conflict; the new call's own docstring \
+# (_ensure_ambient_virtual_env) carries the full rationale"
 # frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_keyboard_interrupt_prints_clean_message_and_exits_130  # noqa: E501
 # frob:tests \
 # tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected
@@ -111,6 +119,7 @@ def main() -> None:
 
     from frob.process import install_sigterm_reaper
 
+    _ensure_ambient_virtual_env()
     _apply_verbose_env_override(_sys.argv[1:])
     install_sigterm_reaper()
     try:
@@ -385,6 +394,79 @@ def _dispatch_default(argv: list[str]) -> None:
         )
     cfg = AppConfig.from_external(args, pyproject)
     App(cfg)()
+
+
+# frob:ticket T-4308
+# frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_sets_when_unset
+# frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_leaves_existing
+# frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_skips_non_venv
+# frob:waive ARCH103 reason="single atomic unit: read one env var, check one candidate \
+# path, write the env var -- a startup-time environment-normalization step no smaller \
+# than the fact it names (is VIRTUAL_ENV already set; is sys.prefix a real venv). The \
+# predicate half is already split out (_is_real_venv); further splitting the \
+# read-decide-write sequence itself would separate an operation from the one branch \
+# that interprets it, not reduce real complexity"
+def _ensure_ambient_virtual_env() -> None:
+    """T-4308 root cause fix: set `VIRTUAL_ENV=sys.prefix` when unset and
+    `sys.prefix` is a real venv (a `pyvenv.cfg` file present) -- so every
+    nested `uv run ...` spawn this CLI process makes later (project-scoped
+    tool resolution in `frob.process._project_tool`, and the raw `uv run
+    pytest --collect-only` in `frob.testing._collect`) can fall back to
+    THIS interpreter's own environment when the target it is checking has
+    no synced venv of its own.
+
+    WHY THIS MATTERS: `uv run` prefers an already-active, compatible
+    `VIRTUAL_ENV` over creating/syncing a project-local one. `uv run frob
+    ...` (this repo's ubuntu CI leg) sets `VIRTUAL_ENV` itself while
+    activating the project before exec'ing into frob, so that fallback
+    always engages downstream. Launching the SAME interpreter directly
+    instead -- `.venv/bin/python -m frob ...`, this repo's macOS CI leg
+    since T-4274's revert (there to get a correct PID for a stack-dump
+    signal, an unrelated and legitimate reason) -- never sets
+    `VIRTUAL_ENV` at all: a nested `uv run --no-sync --project <target>
+    pytest/ruff/ty ...` then has neither a synced environment at
+    `<target>` (`--no-sync` deliberately never creates one, T-4163) NOR an
+    active-venv fallback to use, and fails outright ("error: Failed to
+    spawn: `pytest` / Caused by: No such file or directory"). MEASURED:
+    CI run 34228984463's macOS leg failed 68 more tests than its ubuntu
+    leg of the same commit, every excess failure tracing to this one
+    spawn failure (COV003: pytest collection itself failed) or its ruff
+    sibling (`ruff-check` reporting "output could not be parsed" because
+    ruff never ran and produced no stdout at all); the ubuntu leg, which
+    launches via `uv run pytest -q` and therefore always has `VIRTUAL_ENV`
+    set, passes. INFERRED (not verified on macOS -- this session has no
+    macOS access): that `uv run`'s "prefer an already-active compatible
+    VIRTUAL_ENV" fallback is the actual mechanism uv uses here; that
+    inference is well-documented uv behavior and is the only account
+    consistent with every fact this session COULD measure (the identical
+    "no requires-python... defaulting" warning appearing on both legs,
+    the T-4274 launch-shape diff between the two CI steps, and the exact
+    spawn-failure text), but it is not a substitute for reproducing on a
+    real macOS runner.
+
+    Guarded on `pyvenv.cfg` so this never claims a bare system
+    interpreter (no venv at all) as an "active" one -- setting
+    `VIRTUAL_ENV` to a non-venv prefix could feed `uv run` a value it
+    treats as incompatible or, worse, silently wrong."""
+    if os.environ.get("VIRTUAL_ENV"):
+        return
+    import sys as _sys
+
+    prefix = Path(_sys.prefix)
+    if _is_real_venv(prefix):
+        os.environ["VIRTUAL_ENV"] = str(prefix)
+        _log.debug("_ensure_ambient_virtual_env: set VIRTUAL_ENV=%s", prefix)
+
+
+# frob:ticket T-4308
+# frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_true_for_this_process_own_venv  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_false_for_a_path_with_no_pyvenv_cfg  # noqa: E501
+def _is_real_venv(prefix: Path) -> bool:
+    """`True` when `prefix` (a candidate `sys.prefix`) is a real venv --
+    split out of `_ensure_ambient_virtual_env` (ARCH103: keep the I/O-plus-
+    decision-point body that function already had from also owning this
+    check) so the pure predicate stays independently readable/testable."""
+    return (prefix / "pyvenv.cfg").exists()
 
 
 # frob:ticket T-2979

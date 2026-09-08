@@ -1,7 +1,7 @@
 ---
 id: T-4308
 title: macOS fixture subprocess finds no pytest or ruff, cascading to 68 failures
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -147,6 +147,17 @@ scope_changes:
     of an unbounded scope expansion'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_main_entry.py::TestEnsureVenv::test_sets_when_unset
+- tests/unit/test_main_entry.py::TestEnsureVenv::test_leaves_existing
+- tests/unit/test_main_entry.py::TestEnsureVenv::test_skips_non_venv
+- tests/unit/test_parser_failure_diagnostics.py::TestNoOutputResult::test_attaches_error
+- tests/unit/test_parser_failure_diagnostics.py::TestNoOutputResult::test_never_reports_a_zero_exit_code
+- tests/unit/test_parser_failure_diagnostics.py::TestRuffEmptyOutputIsNotMalformed::test_empty_stdout_is_no_output_not_malformed
+- tests/unit/test_parser_failure_diagnostics.py::TestRuffEmptyOutputIsNotMalformed::test_whitespace_only_stdout_is_no_output_not_malformed
+- tests/unit/test_parser_failure_diagnostics.py::TestRuffEmptyOutputIsNotMalformed::test_truncated_json_is_still_reported_as_malformed
+- tests/unit/test_main_entry.py::TestIsRealVenv::test_true_for_this_process_own_venv
+- tests/unit/test_main_entry.py::TestIsRealVenv::test_false_for_a_path_with_no_pyvenv_cfg
 designated_repro_test: null
 threat: null
 component: null

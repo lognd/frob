@@ -497,3 +497,50 @@ def tool_parse_failure_result(
         ],
         summary=summary if summary is not None else detail,
     )
+
+
+# frob:ticket T-4308
+# frob:tests \
+# tests/unit/test_parser_failure_diagnostics.py::TestNoOutputResult.test_attaches_error
+# frob:waive COV001 reason="a frob:doc anchor here would live in \
+# docs/modules/process.md, whose own SCOPE002 closure (every OTHER symbol that shared \
+# doc file describes across process/parsers/*) is out of proportion to pull into \
+# T-4308's narrow scope for one new sibling of tool_parse_failure_result -- this \
+# function's own docstring carries the full contract, matching the same tension \
+# _rule_id_scan.py's SCANNED_BASES waivers document for gates.md"
+def tool_no_output_result(tool: str, exit_code: int = 1) -> ToolResult:
+    """`tool` produced NO stdout at all (empty/whitespace-only) -- a FAILING
+    `ToolResult` naming that condition explicitly, distinct from
+    `tool_parse_failure_result`'s "the tool ran and produced something this
+    parser cannot read" case.
+
+    T-4308: a parser that fed empty stdout into `json.loads` and reported
+    the resulting `JSONDecodeError` as "malformed JSON" was reporting a
+    tool that NEVER RAN (a spawn failure one level down -- `uv run` itself
+    launched, but could not find the binary it was asked to run inside the
+    target project's environment) in the exact words that belong to a tool
+    that ran and produced a bad report. Both readings point a debugging
+    reader in opposite directions: "malformed JSON" sends them auditing
+    the PARSER; "produced no output" sends them auditing the SPAWN. This
+    project has been bitten repeatedly by an absent measurement wearing
+    the costume of a bad one (T-0142's `tool_unavailable_result`,
+    T-2537's `tool_parse_failure_result` itself) -- this is the same
+    doctrine applied to the "ran but wrote nothing" shape, which neither
+    existing helper names: `tool_unavailable_result` is for a `binary` not
+    on PATH at all (a `FileNotFoundError` this process itself catches),
+    while this is for a spawn that returned control (no Python-level
+    `OSError`) but the underlying tool still never executed."""
+    return ToolResult(
+        tool=tool,
+        exit_code=exit_code or 1,
+        diagnostics=[
+            Diagnostic(
+                severity="error",
+                message=(
+                    f"{tool} produced no output -- the tool did not run "
+                    "(check its exit code/stderr), not a malformed report"
+                ),
+            )
+        ],
+        summary=f"{tool} produced no output (did not run)",
+    )

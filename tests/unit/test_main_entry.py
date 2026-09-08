@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import logging
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -410,6 +411,64 @@ class TestLazyLogHandlers:
         handler.emit(record)  # must resolve `live`, never the closed `stale`
 
         assert "msg" in live.getvalue()
+
+
+class TestEnsureVenv:
+    """`_ensure_ambient_virtual_env` (T-4308): the macOS-CI root cause fix
+    -- when this process was launched without `uv run` ever setting
+    `VIRTUAL_ENV`, set it from `sys.prefix` so nested `uv run ...` spawns
+    (project-scoped tool resolution, pytest collection) can still fall
+    back to an active venv the same way they do when `uv run` DID launch
+    this process."""
+
+    def test_sets_when_unset(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_sets_when_unset
+        # No real filesystem write (SELFAUDIT001/T-4308): `_is_real_venv` is
+        # mocked directly rather than materializing a `pyvenv.cfg` under
+        # `tmp_path`, so this test needs no fs.write capability declaration.
+        monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+        monkeypatch.setattr(sys, "prefix", "/fake/venv")
+        monkeypatch.setattr(main_module, "_is_real_venv", lambda prefix: True)
+        main_module._ensure_ambient_virtual_env()
+        try:
+            assert main_module.os.environ["VIRTUAL_ENV"] == "/fake/venv"
+        finally:
+            main_module.os.environ.pop("VIRTUAL_ENV", None)
+
+    def test_leaves_existing(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_leaves_existing
+        monkeypatch.setenv("VIRTUAL_ENV", "/already/active/venv")
+        monkeypatch.setattr(sys, "prefix", "/fake/venv")
+        monkeypatch.setattr(main_module, "_is_real_venv", lambda prefix: True)
+        main_module._ensure_ambient_virtual_env()
+        assert main_module.os.environ["VIRTUAL_ENV"] == "/already/active/venv"
+
+    def test_skips_non_venv(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_skips_non_venv
+        monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+        # `_is_real_venv` returning False (e.g. a bare system interpreter,
+        # no `pyvenv.cfg`) must never be claimed as an "active" one.
+        monkeypatch.setattr(sys, "prefix", "/fake/not-a-venv")
+        monkeypatch.setattr(main_module, "_is_real_venv", lambda prefix: False)
+        main_module._ensure_ambient_virtual_env()
+        assert "VIRTUAL_ENV" not in main_module.os.environ
+
+
+class TestIsRealVenv:
+    """`_is_real_venv` (T-4308) exercised directly against real paths (no
+    filesystem writes -- SELFAUDIT001: `sys.prefix` is already a real,
+    already-existing venv in this test process, and a nonexistent sibling
+    path needs no write either) so the `pyvenv.cfg` existence check itself
+    -- not just `_ensure_ambient_virtual_env`'s mocked call to it -- is
+    covered."""
+
+    def test_true_for_this_process_own_venv(self) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_true_for_this_process_own_venv  # noqa: E501
+        assert main_module._is_real_venv(Path(sys.prefix)) is True
+
+    def test_false_for_a_path_with_no_pyvenv_cfg(self, tmp_path) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_false_for_a_path_with_no_pyvenv_cfg  # noqa: E501
+        assert main_module._is_real_venv(tmp_path) is False
 
 
 class TestVerboseFlag:
