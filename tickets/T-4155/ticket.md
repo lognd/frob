@@ -18,10 +18,35 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/excludes.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
+- docs/modules/app.md
+- src/frob/gates/_ffi_boundary.py
+- tests/test_excludes.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/app.md
+  reason: 'SCOPE002 closure: is_excluded and its siblings already carry frob:doc/frob:tests
+    edges into these files predating T-4155; declaring them closes the scope graph
+    per disposition 1 of docs/design/tickets-package-scope-precedent.md'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: src/frob/gates/_ffi_boundary.py
+  reason: 'SCOPE002 closure: is_excluded and its siblings already carry frob:doc/frob:tests
+    edges into these files predating T-4155; declaring them closes the scope graph
+    per disposition 1 of docs/design/tickets-package-scope-precedent.md'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'SCOPE002 closure: is_excluded and its siblings already carry frob:doc/frob:tests
+    edges into these files predating T-4155; declaring them closes the scope graph
+    per disposition 1 of docs/design/tickets-package-scope-precedent.md'
+  actor: logan
+  at: '2026-09-08'
 body_changes:
 - mode: set
   reason: 'adds the traced mechanism and the one-argument fix: pathspec derives its
