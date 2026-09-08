@@ -17,6 +17,7 @@ scope:
 - .github/workflows/ci.yml
 - tests/test_ci_workflow_toolchain_pins.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,11 @@ scope_changes:
   glob: design/frob.strata
   reason: declare the fs.read capability the new toolchain-pin test needs (SELFAUDIT001),
     same pattern already used for sibling tests/test_ci_workflow_*.py entries
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump the fs.read ratchet ceiling for the new toolchain-pin test (SYS111)
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
