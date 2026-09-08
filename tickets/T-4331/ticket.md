@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
 - tickets/T-draft-d709dae2/**
+- tickets/T-draft-2ca0fdf4/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
   glob: tickets/T-draft-d709dae2/**
   reason: filing the out-of-scope TICK005 structural-fix ticket found during this
     audit is itself an in-scope side effect of T-4331's work
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-draft-2ca0fdf4/**
+  reason: filing the remaining-rules follow-up ticket found during this audit is itself
+    an in-scope side effect of T-4331's work
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
