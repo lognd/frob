@@ -2,7 +2,7 @@
 id: T-4318
 title: Deferred post-land sweep is wall-clock-budgeted with nobody waiting, and verify
   status hides the resulting debt
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
