@@ -16,6 +16,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/test_gitio.py
 - src/frob/gitio.py
+- docs/modules/testing.md
+- tests/test_testing.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +37,22 @@ scope_changes:
     itself (hardcoded os.sep/os.altsep instead of Windows'' two literal separators),
     not merely a missing test guard -- fixing it requires touching the production
     helper'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'T-4326: scope closure requires these once src/frob/gitio.py entered scope
+    -- gitio.py''s existing symbols'' frob:doc targets live in docs/modules/testing.md
+    and one existing frob:tests edge lives in tests/test_testing.py; no content changes
+    planned in either, added only to satisfy SCOPE002 closure'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_testing.py
+  reason: 'T-4326: scope closure requires these once src/frob/gitio.py entered scope
+    -- gitio.py''s existing symbols'' frob:doc targets live in docs/modules/testing.md
+    and one existing frob:tests edge lives in tests/test_testing.py; no content changes
+    planned in either, added only to satisfy SCOPE002 closure'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
