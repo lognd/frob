@@ -36,19 +36,45 @@ scope_changes:
     directly, the same class of separator bug T-4155 just fixed in frob.excludes
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'waive BUG002: mixed platform-conditional/premise-false evidence set unreproducible
+    via the automatic pre/post-commit check on this Linux host; real repros measured
+    manually on the Windows mirror'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 3051
+  new_length: 4750
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+- tests/unit/test_process_lock.py::TestSharedIdCounter::test_two_checkouts_with_divergent_views_never_collide
 designated_repro_test: null
 acceptance:
 - text: given the windows runner, when these five cases run, then all five pass and
     each failure was measured on real windows before and after its fix
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches
+  - tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+  - tests/unit/test_process_lock.py::TestSharedIdCounter::test_two_checkouts_with_divergent_views_never_collide
 - text: given the two cases adjacent to the terminal-detection helper landed today,
     when they are fixed, then the existing shared helper is reused or extended rather
     than a second similar helper being introduced
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches
+  - tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+  - tests/unit/test_process_lock.py::TestSharedIdCounter::test_two_checkouts_with_divergent_views_never_collide
 - text: given the shared-identifier-counter pair, when they are resolved, then the
     report states explicitly whether the allocation guarantee genuinely fails on this
     platform or the tests premise does not hold there
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches
+  - tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+  - tests/unit/test_process_lock.py::TestSharedIdCounter::test_two_checkouts_with_divergent_views_never_collide
 threat: null
 component: null
 anchor: false
@@ -102,3 +128,5 @@ posix.
 
 DO NOT ASSUME THESE ARE FIVE SEPARATE DEFECTS, AND DO NOT ASSUME THEY ARE ONE.
 Report which they turned out to be.
+
+frob:waive BUG002 reason="the four bound evidence ids cover TWO real Windows-only defects (the clipboard test's stale isatty-only mock, and sync-claude-config's backslash-vs-forward-slash dest_rel lookup) plus TWO tests whose failure premise did not hold on the current tree (worktree-guard stdout purity, the shared-id-counter divergent-views case) -- all four were measured PASSING at the parent commit b61a321ab9 on this Linux host, so BUG002's own pre/post-commit repro cannot show a failure-to-pass transition here. The real repros were measured manually on the Windows mirror per this ticket's own MEASURE ON REAL WINDOWS mandate: at parent commit b61a321ab9, tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches FAILED on Windows (offer never reached because is_interactive_stdin's win32 GetConsoleMode check is not satisfiable by patching sys.stdin.isatty alone) and tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced FAILED on Windows (exit_code 0 instead of 1, because main()'s str(dest.relative_to(...)) used a backslash separator against a forward-slash-keyed dict); at the fix commit both PASS on both linux and Windows. tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering and tests/unit/test_process_lock.py::TestSharedIdCounter::test_two_checkouts_with_divergent_views_never_collide were independently measured PASSING on real Windows both before and after (no code change made for either), confirming their premise does not hold on this platform/tree -- see the Done report for the full investigation."
