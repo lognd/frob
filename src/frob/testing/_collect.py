@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import importlib.machinery
 import importlib.util
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from typani.result import Result
 from frob.excludes import load_exclude_globs, walk_pruned
 from frob.gitio import excerpt, run_argv
 from frob.logging import get_logger
+from frob.process._pytest_spawn import resolve_pytest_argv
 
 # T-1074: the rust/ts/cpp collector bodies now live in the sibling
 # `_collect_rust`/`_collect_ts`/`_collect_cpp` modules; every name is
@@ -416,13 +418,60 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
     detail (argv/exit code/stderr tail) via `_set_collection_failure_detail`
     for `python_collection_failure_detail`'s later read -- the `Result`
     contract itself is unchanged, every existing caller keeps working
-    exactly as before."""
+    exactly as before.
+
+    T-4327 root cause fix: `cwd` is frequently a THROWAWAY fixture project
+    with no environment of its own (a `tests/` fixture, a `[[test.runner]]
+    cwd` nested project), never a real sibling checkout of THIS repo -- so
+    spawning `uv run pytest` here was always relying on `uv`'s "fall back to
+    an already-active, compatible VIRTUAL_ENV" behavior to find `pytest` at
+    all, rather than ever syncing/installing it into `cwd` itself. T-4308
+    made that ambient `VIRTUAL_ENV` reliably set; the CI run that followed
+    (macOS leg) then MEASURED that a newer `uv` (0.12.10, installed fresh
+    because that leg's `setup-uv` cache key -- keyed by system-python-version,
+    `aarch64-apple-darwin-3.14.7` -- had never been populated before, versus
+    ubuntu's leg restoring a `uv` binary a stale cache had kept around;
+    neither leg pins a `uv` version) validates that fallback by PATH: it
+    compares
+    `VIRTUAL_ENV` against `cwd`'s own discovered project's configured `.venv`
+    path, and when they disagree (they always do -- `VIRTUAL_ENV` points at
+    THIS repo's own venv, never a fixture's) it warns and ignores the
+    variable, builds a brand-new empty venv at `cwd`, defaults its Python
+    version (the fixture declares no `requires-python`, so whatever
+    interpreter `uv` happens to discover next), and fails to find `pytest`
+    inside it -- unrelated to `sys.platform`, and just as reachable on any
+    leg whose `uv` cache happens to miss.
+
+    The fix is not `--active` (still a `uv`-version-and-cache-dependent
+    fallback path, still capable of drifting again on the next `uv`
+    release) and not skipping venv creation alone (still resolves `pytest`
+    through `uv`/PATH, still exposed to the identical path-mismatch check).
+    Routing through `resolve_pytest_argv` (T-3311, already the ONE
+    pytest-spawn convention this codebase adopted for exactly this
+    situation) instead runs `pytest` as a module of THIS interpreter
+    (`sys.executable`, the interpreter `frob` itself is already running
+    under) -- `uv` is never invoked for this spawn at all, so there is no
+    project/venv to discover, no version to default, and no cache-driven
+    `uv` version skew to be exposed to."""
     # -o addopts= neutralizes the project's own addopts: a configured -q
     # would stack with ours into -qq, which switches --collect-only from
     # node ids to per-file counts (and -n auto adds xdist noise) -- the
     # evidence oracle would silently see an empty set (observed: INV001
     # false positives on every invariant).
-    argv = ("uv", "run", "pytest", "--collect-only", "-q", "-o", "addopts=")
+    resolved_argv = resolve_pytest_argv("--collect-only", "-q", "-o", "addopts=")
+    if resolved_argv.is_err:
+        _log.error(
+            "collect_python_tests: pytest is not importable through %s -- "
+            "cannot collect in %s",
+            sys.executable,
+            cwd,
+        )
+        _set_collection_failure_detail(
+            f"pytest not importable through {sys.executable} "
+            f"(cwd={cwd}): {resolved_argv.danger_err}"
+        )
+        return Err(TestingError.CollectFailed)
+    argv = tuple(resolved_argv.danger_ok)
     spawned = run_argv(argv, cwd=cwd, timeout_s=_COLLECT_TIMEOUT_S)
     if spawned.is_err:
         _log.error(

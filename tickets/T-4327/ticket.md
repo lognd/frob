@@ -1,7 +1,7 @@
 ---
 id: T-4327
 title: macOS nested uv run ignores VIRTUAL_ENV and builds an empty fixture venv
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -140,6 +140,10 @@ scope_changes:
     uv and handles resolve_pytest_argv's Err path
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_testing_collect.py::TestRunCollectOnlySpawnShape::test_argv_never_names_uv
+- tests/test_testing_collect.py::TestRunCollectOnlySpawnShape::test_pytest_not_importable_is_a_collect_failure_without_spawning
+- tests/unit/test_pytest_spawn.py::TestResolvePytestArgv::test_ok_uses_sys_executable
 designated_repro_test: null
 threat: null
 component: null

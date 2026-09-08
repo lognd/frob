@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from typani import Ok
+from typani import Err, Ok
 
 from frob.gitio import ProcResult
+from frob.process._pytest_spawn import PytestSpawnError
 
 
 class TestPythonCollectionFailureDetail:
@@ -95,3 +96,74 @@ class TestPythonCollectionFailureDetail:
         second = collect_mod.collect_python_tests(tmp_path)
         assert second.is_ok
         assert collect_mod.python_collection_failure_detail() is None
+
+
+class TestRunCollectOnlySpawnShape:
+    """T-4327: `_run_collect_only` must never shell out through `uv` --
+    the macOS CI cascade (68 -> 61 failing tests across two spawn-mechanism
+    attempts) traced to exactly that: `uv run pytest` in a throwaway
+    fixture `cwd` relies on `uv`'s VIRTUAL_ENV-fallback, which a newer `uv`
+    (pulled fresh by a setup-uv cache miss, unrelated to `sys.platform`)
+    validates by path and ignores, building an empty venv with no `pytest`
+    installed. Routing through `frob.process._pytest_spawn.
+    resolve_pytest_argv` instead spawns `pytest` as a module of THIS
+    interpreter (`sys.executable`) -- `uv` is never invoked for this spawn,
+    so there is nothing for a `uv` version/cache change to break."""
+
+    # frob:tests src/frob/testing/_collect.py::collect_python_tests
+    def test_argv_never_names_uv(self, tmp_path: Path, monkeypatch) -> None:
+        """The regression itself: the argv `run_argv` is actually called
+        with must start with `sys.executable`, never the literal `"uv"`."""
+        import sys
+
+        import frob.testing._collect as collect_mod
+
+        captured: dict[str, tuple[str, ...]] = {}
+
+        def capture_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            captured["argv"] = tuple(argv)
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=0,
+                    stdout="tests/test_x.py::test_a\n",
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", capture_run_argv)
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        assert captured["argv"][0] == sys.executable
+        assert "uv" not in captured["argv"]
+        assert captured["argv"][1:4] == ("-m", "pytest", "--collect-only")
+
+    # frob:tests src/frob/testing/_collect.py::collect_python_tests
+    def test_pytest_not_importable_is_a_collect_failure_without_spawning(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """When `resolve_pytest_argv` itself reports `pytest` is not
+        importable through this interpreter, collection must fail loudly
+        (`Err(CollectFailed)` with a detail naming the interpreter) --
+        and must never fall through to a `run_argv` spawn at all, since
+        there is no argv to spawn."""
+        import frob.testing._collect as collect_mod
+        from frob.testing import TestingError
+
+        def unreachable_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            raise AssertionError(
+                "run_argv must not be called when pytest is unimportable"
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", unreachable_run_argv)
+        monkeypatch.setattr(
+            collect_mod,
+            "resolve_pytest_argv",
+            lambda *args, python=None: Err(PytestSpawnError.NotImportable),
+        )
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+        detail = collect_mod.python_collection_failure_detail()
+        assert detail is not None
+        assert "not importable" in detail
