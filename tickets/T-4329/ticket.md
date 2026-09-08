@@ -2,7 +2,7 @@
 id: T-4329
 title: test_frob_self_model.py self-scan tests missing from conftest heavy grouping
   cause concurrent full-repo scans that OOM-crash win32 xdist
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
