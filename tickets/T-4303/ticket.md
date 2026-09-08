@@ -17,6 +17,8 @@ scope:
 - src/frob/gates/_wire.py
 - src/frob/_cli_parsers/_core.py
 - tests/gates_suite/test_wire.py
+- changelog.d/T-4299.md
+- CHANGELOG.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +35,23 @@ scope_changes:
   reason: 'T-4303: new WIRE001 exemption tests for the bypass-verb fix live here'
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: changelog.d/T-4299.md
+  reason: 'T-4303: discharge live-tracker citation -- changelog.d/T-4299.md''s own
+    historical narrative literally spells follow_up=T-4303, which live_tracker_citations
+    reads as an unclosed waiver binding; must reword to close'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'T-4303: discharge live-tracker citation -- changelog.d/T-4299.md''s own
+    historical narrative literally spells follow_up=T-4303, which live_tracker_citations
+    reads as an unclosed waiver binding; must reword to close'
+  actor: logan
+  at: '2026-09-08'
+evidence:
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_inside_appconfig_bypass_parser_func_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_outside_appconfig_bypass_parser_func_still_flagged
 designated_repro_test: null
 threat: null
 component: null
