@@ -15,12 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_cli.py
-- docs/modules/release.md
 - tests/test_release.py
-- src/frob/release/__init__.py
-- src/frob/release/_fragments.py
-- src/frob/release/_publish.py
-- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +59,46 @@ scope_changes:
   reason: 'T-4301: docs/modules/release.md''s scope closure requires every symbol
     that shared doc file already describes (pre-existing anchors, not touched by this
     ticket) to be in scope once the file itself is added for the new status-verb section'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: 'T-4301: back out of a doc-closure cascade -- docs/modules/release.md already
+    describes the whole release subsystem including gates/__init__.py''s RELxxx gates,
+    pulling in unrelated docs/modules/gates.md and perf.md closures; dropping the
+    new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/release/__init__.py
+  reason: 'T-4301: back out of a doc-closure cascade -- docs/modules/release.md already
+    describes the whole release subsystem including gates/__init__.py''s RELxxx gates,
+    pulling in unrelated docs/modules/gates.md and perf.md closures; dropping the
+    new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/release/_fragments.py
+  reason: 'T-4301: back out of a doc-closure cascade -- docs/modules/release.md already
+    describes the whole release subsystem including gates/__init__.py''s RELxxx gates,
+    pulling in unrelated docs/modules/gates.md and perf.md closures; dropping the
+    new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/release/_publish.py
+  reason: 'T-4301: back out of a doc-closure cascade -- docs/modules/release.md already
+    describes the whole release subsystem including gates/__init__.py''s RELxxx gates,
+    pulling in unrelated docs/modules/gates.md and perf.md closures; dropping the
+    new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: docs/modules/release.md
+  reason: 'T-4301: back out of a doc-closure cascade -- docs/modules/release.md already
+    describes the whole release subsystem including gates/__init__.py''s RELxxx gates,
+    pulling in unrelated docs/modules/gates.md and perf.md closures; dropping the
+    new doc section instead of widening scope repo-wide for a CLI-wiring ticket'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
