@@ -16,8 +16,16 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_cli.py
 - tests/test_release.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: SCOPE002's doc/test closure over docs/modules/release.md
+  and tests/test_release.py both fan out into the WHOLE release subsystem (release/__init__.py,
+  _fragments.py, _publish.py) plus gates/__init__.py's REL001/REL002 gates via that
+  same shared doc file -- pulling all of that into a single CLI-wiring ticket's scope
+  is out of proportion (same posture T-1010's own SCOPE002/COV001 ack took for docs/modules/gates.md's
+  identical fan-out, see tickets/archive/T-1881/evidence/stage1-frob-check.json).
+  T-4301 only adds a new frob release status verb in src/frob/release/_cli.py plus
+  its own tests/docs entries; it does not touch the pre-existing release/publish/fragments/gates
+  surface these closure edges point at.
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
