@@ -1447,14 +1447,33 @@ T-3478 narrows the exclusive hold to only `_prune_stale_cache` plus
   past sqlite-level lock contention on their own (T-1423,
   `_cache._with_lock_retry`, above) -- they do not need the flock for
   correctness against a concurrent writer to the SAME cache file.
-- Those writes land inside ONE open, uncommitted sqlite transaction that
-  no other process/reader can observe until this call's own
-  `conn.commit()` runs -- so nothing outside the process can read a
-  partially-rebuilt cache regardless of where the flock starts.
+- Each per-file write is independently keyed by path and already safe to
+  observe mid-build, so committing them in batches (T-4282, see below)
+  rather than in one final transaction changes only how SOON another
+  process/reader can observe them, not whether the result is correct.
 - The only window that genuinely needs cross-process exclusivity is the
-  point from which this build's changes become visible (the prune, which
-  deletes stale rows) through the commit landing -- exactly what stays
-  under `derived_state_write_lock` after this change.
+  point from which this build's cross-file DERIVED state changes become
+  visible (the prune, which deletes stale rows for files no longer on
+  disk) through the commit landing -- exactly what stays under
+  `derived_state_write_lock` after this change.
+
+T-4282: `_ingest_source_files`/`_ingest_doc_files` also `conn.commit()`
+every `_INGEST_COMMIT_BATCH_SIZE` files during ingestion, not only once at
+the very end. Before this, every per-file write for the WHOLE ingest sat
+in one open, uncommitted sqlite transaction -- and once that transaction's
+dirty page cache spills to disk even once (routine for a multi-file
+ingest), sqlite's rollback-journal writer escalates to an EXCLUSIVE lock
+it does not release again until the transaction actually commits. That
+meant a large `build_graph` call could hold readers (`_cache.
+connect_readonly`) and other writers off the SAME cache file for the
+build's entire remaining duration, not just a brief flush -- the residual
+half of the T-4258 lock-starvation incident (a 19-hour-old serve daemon's
+held write handles starved every reader) that this ticket's other half
+(the daemon's own idle self-termination) only bounded rather than fixed.
+Batching intermediate commits shrinks that window to roughly one
+`_INGEST_COMMIT_BATCH_SIZE`-file span at a time, letting a contending
+reader or writer through the gaps between batches instead of queuing for
+the whole build.
 
 Two concurrent `build_graph` calls against the SAME `cache` file still
 serialize (or one reports `Err(GraphError.CacheLocked)` under sustained

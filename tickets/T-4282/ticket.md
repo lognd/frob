@@ -2,7 +2,7 @@
 id: T-4282
 title: graph cache write lock blocks readers for a build's duration; name the holding
   process on CacheLocked
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'

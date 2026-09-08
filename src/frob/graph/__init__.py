@@ -483,8 +483,49 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
     return True
 
 
+# frob:ticket T-4282
+_INGEST_COMMIT_BATCH_SIZE = 200
+"""Files processed between intermediate `conn.commit()` calls during
+ingestion (T-4282, obligation [1]). Bounds how long `build_graph`'s single
+write connection can go without committing: sqlite's rollback-journal
+writer escalates to an EXCLUSIVE lock once its dirty-page cache spills to
+disk, and does not release it again until the transaction actually
+commits -- so one giant uncommitted transaction spanning an entire large
+repo's ingest (the pre-T-4282 shape: everything committed once, in
+`_finalize_build`, at the very end) holds that EXCLUSIVE lock for the
+build's whole remaining duration once the first spill happens, which is
+exactly what starves every concurrent reader/builder (`_cache.
+connect_readonly`/`_cache.connect`) for a build's duration -- the residual
+half of the T-4258 lock-starvation incident this ticket was split from.
+Committing every `_INGEST_COMMIT_BATCH_SIZE` files instead lets the writer
+drop back to no lock at all between batches, so readers interleave through
+the gaps rather than queuing for the whole build. Safe because each
+committed batch is internally consistent on its own: `_cache.
+store_file_data` already replaces one file's rows (content hash, symbols,
+edges, malformed) atomically per call, keyed by path, so a reader mid-
+build sees some paths already updated and others still at their prior
+value -- exactly the ordinary "cache lags disk until the next build"
+state a reader already has to tolerate before any build even starts, not
+a new inconsistency. A crash between batches similarly just leaves a
+valid partial cache that the next build's own cache-hit/miss bookkeeping
+picks up from, never a half-written row. `_prune_stale_cache` and the
+final `set_root` (`_finalize_build`) are UNCHANGED -- still committed once
+under `derived_state_write_lock`, after every batch above has landed --
+because those DO touch cross-file derived state (which cached files still
+exist) that must not be applied piecemeal against an in-flight walk. A
+smaller batch spends more wall-clock on `commit()` overhead per build; 200
+was chosen as a value that keeps individual transactions well under
+sqlite's default page-cache spill threshold (~2000 pages) for the
+symbol/edge/malformed row volumes this ingest typically writes per file,
+without measurably slowing a full-repo build -- not derived from a
+per-mount measurement, since (unlike T-4279's stat-trust margin) nothing
+here depends on filesystem granularity, only on sqlite's own page-cache
+size, which is not filesystem-dependent."""
+
+
 # frob:ticket T-0558
 # frob:ticket T-0561
+# frob:ticket T-4282
 def _ingest_source_files(
     conn, root: Path, source_files: Sequence[Path]
 ) -> tuple[set[str], int, int, tuple[ParseFailure, ...]]:
@@ -494,12 +535,18 @@ def _ingest_source_files(
     T-0558: `parse_failures` collects every file this build could not
     parse/read at all (never cached -- see `_parse_source_file_fresh` and
     `_process_source_file` -- so a fixed file drops out on its next
-    successful build)."""
+    successful build).
+
+    T-4282: commits every `_INGEST_COMMIT_BATCH_SIZE` files (see that
+    constant's own docstring) instead of leaving every write in this
+    build's single transaction until `_finalize_build`'s final commit --
+    bounds how long a concurrent reader can be starved by this build's
+    writer lock."""
     seen_paths: set[str] = set()
     parsed_count = 0
     cache_hits = 0
     parse_failures: list[ParseFailure] = []
-    for path in source_files:
+    for index, path in enumerate(source_files, start=1):
         stat_key = _stat_key(path)
         if stat_key is None:
             continue
@@ -513,17 +560,24 @@ def _ingest_source_files(
             cache_hits += 1
         if failure is not None:
             parse_failures.append(failure)
+        if index % _INGEST_COMMIT_BATCH_SIZE == 0:
+            conn.commit()
     return seen_paths, parsed_count, cache_hits, tuple(parse_failures)
 
 
+# frob:ticket T-4282
 def _ingest_doc_files(
     conn, root: Path, doc_files: Sequence[Path]
 ) -> tuple[set[str], int, int]:
-    """Process every markdown file; return `(seen_paths, parsed_count, cache_hits)`."""
+    """Process every markdown file; return `(seen_paths, parsed_count, cache_hits)`.
+
+    T-4282: same periodic-commit batching as `_ingest_source_files`, and
+    for the identical reason -- see `_INGEST_COMMIT_BATCH_SIZE`'s
+    docstring."""
     seen_paths: set[str] = set()
     parsed_count = 0
     cache_hits = 0
-    for path in doc_files:
+    for index, path in enumerate(doc_files, start=1):
         stat_key = _stat_key(path)
         if stat_key is None:
             continue
@@ -532,6 +586,8 @@ def _ingest_doc_files(
             parsed_count += 1
         else:
             cache_hits += 1
+        if index % _INGEST_COMMIT_BATCH_SIZE == 0:
+            conn.commit()
     return seen_paths, parsed_count, cache_hits
 
 
@@ -555,9 +611,18 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 # frob:tests tests/test_graph.py::TestBuildIncremental.test_stats_sum_source_and_doc_counts_not_difference  # noqa: E501
 # frob:tests tests/unit/test_graph_build_lock.py
 # frob:waive AFFECT002 reason="T-3478 only narrows build_graph's internal derived_state_write_lock scope (perf, no signature/behavior change observable to callers); src/frob/gates/_waive.py::_severity_overrides is out of this ticket's scope and has nothing to update"  # noqa: E501
+# frob:waive AFFECT001 reason="T-4282 updated \
+# docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478 in \
+# place with the periodic-commit ingest behavior. The other two cited anchors are \
+# unaffected in content: docs/modules/graph.md#public-api is a plain API listing \
+# (signature/return type unchanged), and \
+# docs/commands/check.md#run-scoped-memoization's own prose already states memoization \
+# is orthogonal to the lock and short-circuits before reaching it -- true whether the \
+# ingest commits once or in batches, so nothing there is now inaccurate"  # noqa: E501
 # frob:ticket T-0423
 # frob:ticket T-0918
 # frob:ticket T-3478
+# frob:ticket T-4282
 @memoize_per_run
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """Incrementally (re)build the obligation graph for `root` into `cache`.
@@ -582,13 +647,21 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     `_cache.connect` and every per-file write inside `_ingest_source_
     files`/`_ingest_doc_files` (`_cache.store_file_data`) already retry
     past sqlite-level lock contention on their own (T-1423,
-    `_cache._with_lock_retry`), and those writes land in ONE open,
-    uncommitted transaction that no other process observes until this
-    function's own `conn.commit()` -- so nothing outside the lock can
-    read a partial rebuild. The exclusive hold only needs to cover the
-    point from which this process's changes become visible (prune +
-    commit) through to the commit actually landing, which is exactly what
-    stays locked below.
+    `_cache._with_lock_retry`); the lock this docstring is about is
+    `frob.process._lock.derived_state_write_lock` (an in-repo cross-
+    process mutex frob owns), not sqlite's own lock -- what it guards is
+    cross-file DERIVED state (which cached files still exist, per
+    `_prune_stale_cache`), which must not be applied against an
+    in-flight walk from a sibling. Per-file writes need no such guard:
+    each is independently keyed by path and already safe to observe
+    mid-build (T-4282: `_ingest_source_files`/`_ingest_doc_files` now
+    commit them in batches rather than leaving all of them in one
+    transaction open until this function's own final `conn.commit()`,
+    specifically so a concurrent reader is not starved for this build's
+    entire duration -- see `_INGEST_COMMIT_BATCH_SIZE`'s docstring). The
+    exclusive hold only needs to cover the point from which the PRUNE
+    decision (and the final commit landing it) is made, which is exactly
+    what stays locked below.
 
     T-1423: `_cache.CacheLocked` (raised once `_cache._with_lock_retry`'s
     own retry budget is exhausted under sustained contention) is caught

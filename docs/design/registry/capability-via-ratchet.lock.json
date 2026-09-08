@@ -131,9 +131,9 @@
       "ticket": "T-1628"
     },
     "graphlang::fs.read": {
-      "accepted_count": 9,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on graphlang from 8 to 9 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 10,
+      "reason": "T-4282: adds src/frob/graph/cache.py to the fs.read via-list -- _holder_cmdline reads /proc/<pid>/cmdline to name a CacheLocked lock holder's command line, bumping the ceiling 9 -> 10, one real new site.",
+      "ticket": "T-4282"
     },
     "graphlang::fs.write": {
       "accepted_count": 6,
@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 512,
-      "reason": "T-4219: adds tests/unit/gates/test_pkg_resources.py, whose fixtures write pyproject.toml/README.md/docs markdown files under tmp_path for pkg_resources_gate to scan -- bumping the ceiling 511 -> 512, one real new site.",
-      "ticket": "T-4219"
+      "accepted_count": 514,
+      "reason": "T-4282: adds tests/unit/test_graph_ingest_batching.py and tests/unit/test_graph_lock_holder_naming.py to the fs.write via-list -- one writes a source fixture file under tmp_path, the other writes a real file to hold open for the lock-holder-detection test -- bumping the ceiling 512 -> 514, two real new sites.",
+      "ticket": "T-4282"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

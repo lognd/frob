@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import sys
 import threading
 import time
 import uuid
@@ -39,6 +40,7 @@ from frob.graph._models import (
 )
 from frob.lang._models import GRAMMAR_FINGERPRINT_PACKAGES, SymbolKind
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 from frob.process._lock import (
     lock_backend_available,
     portable_flock_acquire,
@@ -381,6 +383,163 @@ def _is_readonly_handle_error(exc: sqlite3.Error) -> bool:
     return "readonly database" in str(exc).lower()
 
 
+# frob:ticket T-4282
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
+# ds_linux_finds_a_real_open_fd
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
+# ds_excludes_self
+def _lock_holder_pids_linux(path: Path) -> tuple[int, ...]:
+    """PIDs with an open file descriptor on `path`, found by walking
+    `/proc/*/fd` symlinks (T-4282: obligation [2], naming a `CacheLocked`
+    holder). Best-effort: empty on a missing `/proc` or any read failure
+    (permission, a pid that exits mid-walk) -- this exists only to enrich
+    a diagnostic message, never to gate behavior."""
+    proc_dir = Path("/proc")
+    if not proc_dir.is_dir():
+        return ()
+    try:
+        target = str(path.resolve())
+    except OSError:
+        return ()
+    self_pid = os.getpid()
+    try:
+        entries = tuple(proc_dir.iterdir())
+    except OSError:
+        return ()
+    pids: list[int] = []
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid == self_pid:
+            continue
+        try:
+            fd_entries = tuple((entry / "fd").iterdir())
+        except OSError:
+            continue
+        for fd in fd_entries:
+            try:
+                link = os.readlink(fd)
+            except OSError:
+                continue
+            if link == target:
+                pids.append(pid)
+                break
+    return tuple(pids)
+
+
+# frob:ticket T-4282
+def _lock_holder_pids_darwin(path: Path) -> tuple[int, ...]:
+    """macOS equivalent of `_lock_holder_pids_linux` (T-4282): darwin has
+    no `/proc`, so this shells to `lsof -Fp <path>` (machine-parsable `p
+    <pid>` lines, one per process with `path` open), mirroring the same
+    `lsof` fallback shape `frob.tickets._leases` already uses for a
+    different pid-lookup (cwd, not fd) on this platform. Best-effort:
+    empty on any spawn failure or a reply naming no holder (exit code 1,
+    the ordinary "nothing has this file open" case, not a fault)."""
+    guarded = guarded_subprocess_run(
+        ["lsof", "-Fp", str(path)],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if guarded.is_err:
+        return ()
+    proc = guarded.danger_ok
+    self_pid = os.getpid()
+    pids: list[int] = []
+    for line in proc.stdout.splitlines():
+        if not line.startswith("p"):
+            continue
+        try:
+            pid = int(line[1:])
+        except ValueError:
+            continue
+        if pid != self_pid:
+            pids.append(pid)
+    return tuple(pids)
+
+
+# frob:ticket T-4282
+def _lock_holder_pids(path: Path) -> tuple[int, ...]:
+    """Platform-dispatched PIDs currently holding `path` open (T-4282) --
+    Linux `/proc` walk, macOS `lsof` fallback, empty tuple everywhere
+    else (Windows has no equivalent cheap-enough probe; the message just
+    degrades to "holder unknown" there)."""
+    if sys.platform.startswith("linux"):
+        return _lock_holder_pids_linux(path)
+    if sys.platform == "darwin":
+        return _lock_holder_pids_darwin(path)
+    return ()
+
+
+# frob:ticket T-4282
+def _holder_cmdline(pid: int) -> str | None:
+    """`pid`'s command line, space-joined, best-effort (T-4282): reads
+    Linux `/proc/<pid>/cmdline`; `None` on any other platform (darwin
+    holder pids are still reported, just without a command string -- a
+    `ps`-shelling fallback was judged not worth the extra process spawn
+    just to decorate a diagnostic string) or read failure.
+
+    A small local twin of `frob.tickets._leases._proc_cmdline_linux`
+    (T-1619) -- that module is outside this ticket's scope
+    (src/frob/graph/cache.py, src/frob/graph/__init__.py only), so the
+    two are not unified here; filed as T-4283 (extract a shared
+    `frob.process` pid-introspection helper) rather than fixed silently."""
+    if not sys.platform.startswith("linux"):
+        return None
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return None
+    parts = [p for p in raw.split(b"\0") if p]
+    if not parts:
+        return None
+    return " ".join(p.decode("utf-8", errors="replace") for p in parts)
+
+
+# frob:ticket T-4282
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_\
+# holders_reports_pid_and_command
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_\
+# holders_degrades_without_a_path
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_\
+# holders_degrades_with_no_pid_found
+def _describe_lock_holders(path: Path | None) -> str:
+    """A human-readable clause naming the process(es) holding `path` open,
+    for `CacheLocked` messages (T-4282, obligation [2]).
+
+    Turns a bare `database is locked` into `held by pid 12345 (frob serve
+    --root /repo)` so a lock-starvation outage (the T-4258 incident this
+    ticket was split from: a 19-hour-old serve daemon's write handles
+    starved every reader, and the actual holder was found only by
+    inspecting open file descriptors BY HAND) is diagnosable from the
+    raised error alone. Best-effort throughout -- never raises, and
+    degrades to a stated-unknown clause rather than a blank one when
+    `path` is unavailable, no PID is found (already released between the
+    lock error and this probe), or holder detection is unsupported on
+    this platform (anything but Linux/darwin)."""
+    if path is None:
+        return "holder unknown -- no cache path available to inspect"
+    pids = _lock_holder_pids(path)
+    if not pids:
+        return (
+            f"no process found still holding {path} open (it may have "
+            "released the lock already, or holder detection is "
+            "unsupported on this platform)"
+        )
+    described = []
+    for pid in pids:
+        cmd = _holder_cmdline(pid)
+        described.append(f"pid {pid} ({cmd})" if cmd else f"pid {pid}")
+    return f"held by {', '.join(described)}"
+
+
 # frob:ticket T-1423
 # frob:doc docs/modules/graph.md#lock-contention-t-1423
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exhausted  # noqa: E501
@@ -398,9 +557,19 @@ class CacheLocked(sqlite3.OperationalError):
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transient_lock  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held_exclusive_lock  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_with_lock_retr\
+# y_names_holder_in_cache_locked_message
 # frob:raises CacheLocked
 # frob:ticket T-3669
-def _with_lock_retry(op, *, what: str, retry_readonly: bool = True):  # noqa: ANN001, ANN202
+# frob:ticket T-4282
+def _with_lock_retry(  # noqa: ANN201
+    op,  # noqa: ANN001
+    *,
+    what: str,
+    retry_readonly: bool = True,
+    path: Path | None = None,
+):
     """Run `op()`, retrying while sqlite reports the db as locked, up to
     `_LOCK_TOTAL_TIMEOUT_SECONDS`; raises `CacheLocked` once the budget is
     exhausted instead of letting the raw `sqlite3.OperationalError` escape.
@@ -413,6 +582,14 @@ def _with_lock_retry(op, *, what: str, retry_readonly: bool = True):  # noqa: AN
     instead of crashing `frob check` outright (T-1423). `op` must be safe
     to call more than once -- every current use is a delete-then-insert
     (or a read), both idempotent under retry.
+
+    `path` (T-4282, optional -- most callers pass `_conn_path(conn)` or a
+    `path` already in their own scope) names the on-disk cache file to
+    inspect for the holding process once the retry budget is exhausted, so
+    the raised `CacheLocked` states WHO holds the lock instead of just
+    that one exists -- see `_describe_lock_holders`'s own docstring for
+    the outage this closes. Left unresolved (`None`) the message says so
+    plainly rather than silently omitting the clause.
     """
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
     attempt = 0
@@ -432,12 +609,14 @@ def _with_lock_retry(op, *, what: str, retry_readonly: bool = True):  # noqa: AN
                 raise
             remaining = deadline - time.monotonic()
             if remaining <= 0:
+                holder = _describe_lock_holders(path)
                 _log.error(
-                    "cache: %s still locked after %.0fs, giving up",
+                    "cache: %s still locked after %.0fs, giving up (%s)",
                     what,
                     _LOCK_TOTAL_TIMEOUT_SECONDS,
+                    holder,
                 )
-                raise CacheLocked(str(exc)) from exc
+                raise CacheLocked(f"{exc} -- {holder}") from exc
             # T-3654: WARNING every retry (not just the first) -- keeping
             # the whole retry sequence loud, per this ticket's acceptance
             # criterion; a WARN-level line per attempt is cheap next to a
@@ -452,7 +631,12 @@ def _with_lock_retry(op, *, what: str, retry_readonly: bool = True):  # noqa: AN
 
 
 # frob:ticket T-3654
+# frob:ticket T-4282
 # frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_connect_with_b\
+# ackoff_raises_cache_locked_naming_holder
+# frob:raises CacheLocked
 def _connect_with_backoff(path: Path) -> sqlite3.Connection:
     """`sqlite3.connect(path)`, retrying a transient lock with exponential
     backoff against `_LOCK_TOTAL_TIMEOUT_SECONDS` (T-3654, split out of
@@ -464,7 +648,17 @@ def _connect_with_backoff(path: Path) -> sqlite3.Connection:
     rather than adding an extra explicit sleep between calls -- see
     `_lock_backoff_seconds`'s own docstring for why (darwin's slower fs
     contention, run 33513484322, exhausted the prior fixed-interval
-    budget)."""
+    budget).
+
+    T-4282: a non-transient error still escapes as a bare
+    `sqlite3.OperationalError` (unchanged), but a TRANSIENT lock that
+    outlives the full retry budget now raises `CacheLocked` naming the
+    holding process, instead of the raw `OperationalError` this used to
+    let through uncaught -- `build_graph`'s own `except _cache.CacheLocked`
+    around its initial `connect()` call could never catch that shape, so
+    a build contending on the very first open of an already-locked cache
+    crashed instead of reporting `Err(GraphError.CacheLocked)` like every
+    other lock-exhaustion path in this module."""
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
     attempt = 0
     while True:
@@ -476,12 +670,22 @@ def _connect_with_backoff(path: Path) -> sqlite3.Connection:
             return sqlite3.connect(str(path), timeout=per_attempt_timeout)
         except sqlite3.OperationalError as exc:
             remaining = deadline - time.monotonic()
-            if not _is_transient_lock_error(exc) or remaining <= 0:
+            if not _is_transient_lock_error(exc):
                 raise
+            holder = _describe_lock_holders(path)
+            if remaining <= 0:
+                _log.error(
+                    "cache: connect(%s) still locked after %.0fs, giving "
+                    "up (%s)",
+                    path,
+                    _LOCK_TOTAL_TIMEOUT_SECONDS,
+                    holder,
+                )
+                raise CacheLocked(f"{exc} -- {holder}") from exc
             _log.warning(
-                "cache: waiting on lock at %s (another frob process is "
-                "writing the cache; up to %.0fs remaining)",
+                "cache: waiting on lock at %s (%s; up to %.0fs remaining)",
                 path,
+                holder,
                 remaining,
             )
             attempt += 1
@@ -1634,7 +1838,7 @@ def connect(path: Path) -> sqlite3.Connection:
             nonlocal conn
             conn = _check_fingerprint_with_recovery(conn, path)
 
-        _with_lock_retry(_check_fingerprint_step, what="fingerprint check")
+        _with_lock_retry(_check_fingerprint_step, what="fingerprint check", path=path)
     return conn
 
 
@@ -1664,6 +1868,7 @@ def connect_readonly(path: Path) -> sqlite3.Connection:
     conn = _with_lock_retry(
         lambda: sqlite3.connect(uri, uri=True, timeout=30.0),
         what=f"connect_readonly({path})",
+        path=path,
     )
     conn.execute("PRAGMA query_only = ON")
     return conn
@@ -1685,6 +1890,7 @@ def set_root(conn: sqlite3.Connection, root: str) -> None:
             (root,),
         ),
         what="set_root",
+        path=_conn_path(conn),
     )
 
 
@@ -1796,6 +2002,7 @@ def touch_file_stat(
             (mtime_ns, size, file_path),
         ),
         what=f"touch_file_stat({file_path})",
+        path=_conn_path(conn),
     )
 
 
@@ -1909,7 +2116,10 @@ def store_file_data(
         # write fault must reach it rather than being retried here on the
         # replaced-away handle that caused it.
         _with_lock_retry(
-            _write, what=f"store_file_data({file_path})", retry_readonly=False
+            _write,
+            what=f"store_file_data({file_path})",
+            retry_readonly=False,
+            path=_conn_path(c),
         )
 
     _run_with_stale_reconnect(conn, _op, what=f"store_file_data({file_path})")
@@ -2006,7 +2216,11 @@ def store_parsed_artifact(
             )
             c.commit()
 
-        _with_lock_retry(_write, what=f"store_parsed_artifact({content_hash[:12]})")
+        _with_lock_retry(
+            _write,
+            what=f"store_parsed_artifact({content_hash[:12]})",
+            path=_conn_path(c),
+        )
 
     _run_with_stale_reconnect(
         conn, _op, what=f"store_parsed_artifact({content_hash[:12]})"
