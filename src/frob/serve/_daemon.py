@@ -122,13 +122,12 @@ IDLE_TERMINATION_S = 3600.0
 #: `IDLE_TERMINATION_S` grace period before its first self-check, rather
 #: than reading as already-idle-since-the-epoch on its very first cycle.
 _LAST_USEFUL_WORK_MONOTONIC: dict[str, float] = {}
-#: T-4258: guards `_LAST_USEFUL_WORK_MONOTONIC` -- the module's other
-#: `_LOCK` is defined later in this file, so this gets its own, matching
-#: `_VERIFY_WORKER_LAST_HEAD_LOCK`'s precedent of one lock per
-#: independently-updated dict.
-_LAST_USEFUL_WORK_LOCK = threading.Lock()
+# T-4289: guarded by this module's single `_LOCK` (defined below, name-
+# referenced here -- both functions run after module load), not a second
+# lock -- same order-cycle fix as the `_ttl_skip_logged` precedent (T-2379).
 
 
+# frob:ticket T-4289
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_t\
@@ -147,10 +146,11 @@ def _record_useful_work(
     merely "the poll loop executed", which is exactly the heartbeat-shaped
     signal the owner's directive says must NOT count as alive."""
     key = str(root.resolve())
-    with _LAST_USEFUL_WORK_LOCK:
+    with _LOCK:
         _LAST_USEFUL_WORK_MONOTONIC[key] = now_fn()
 
 
+# frob:ticket T-4289
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_t\
@@ -177,7 +177,7 @@ def _idle_seconds(
     quiet repo gets the full grace period from when IT started, not from
     an absent timestamp read as "idle since forever"."""
     key = str(root.resolve())
-    with _LAST_USEFUL_WORK_LOCK:
+    with _LOCK:
         last = _LAST_USEFUL_WORK_MONOTONIC.get(key, started_at_monotonic)
     return now_fn() - last
 
@@ -366,7 +366,6 @@ def _poll_post_land(root: Path, *, run_tests: bool = True) -> _PostLandVerdict |
 #: does; a fresh worker per call would reset the debounce window every
 #: 20s and never coalesce anything.
 _VERIFY_WORKERS: dict[str, CoalescingWorker] = {}
-_VERIFY_WORKERS_LOCK = threading.Lock()
 
 #: The last `main` HEAD `_poll_verify_worker` itself observed per root --
 #: separate from `_poll_post_land`'s own head tracking (that one lives
@@ -374,15 +373,13 @@ _VERIFY_WORKERS_LOCK = threading.Lock()
 #: job's own concerns) so this job's "did a land happen" detection never
 #: depends on `_poll_post_land` having run first or at all.
 _VERIFY_WORKER_LAST_HEAD: dict[str, str] = {}
-#: T-2379 (unguarded-shared-write): `_poll_verify_worker` runs as a
-#: thread/executor dispatch point (same pool as every other daemon poll
-#: job), so its read-then-write of `_VERIFY_WORKER_LAST_HEAD` needs its
-#: own lock -- a separate lock from `_VERIFY_WORKERS_LOCK` since the two
-#: dicts are updated at different points in the same call and holding one
-#: lock across both would only widen the critical section for no reason.
-_VERIFY_WORKER_LAST_HEAD_LOCK = threading.Lock()
+# T-4289: both dicts above are guarded by this module's single `_LOCK`
+# (defined below), not their own locks -- a dedicated lock per dict
+# produced the lexical lock-order-cycle finding this ticket fixes; one
+# lock everywhere removes the ordering question, per T-2379's precedent.
 
 
+# frob:ticket T-4289
 def _get_verify_worker(root: Path) -> CoalescingWorker:
     """The cached `CoalescingWorker` for `root`, creating one on first use.
     Deferred import (`frob.verify` -> `frob.app.ticket_runner._land_cmd`
@@ -394,7 +391,7 @@ def _get_verify_worker(root: Path) -> CoalescingWorker:
     from frob.verify._worker import CoalescingWorker
 
     key = str(root.resolve())
-    with _VERIFY_WORKERS_LOCK:
+    with _LOCK:
         worker = _VERIFY_WORKERS.get(key)
         if worker is None:
             worker = CoalescingWorker(root)
@@ -402,6 +399,7 @@ def _get_verify_worker(root: Path) -> CoalescingWorker:
         return worker
 
 
+# frob:ticket T-4289
 # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 # frob:tests \
 # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker \
@@ -440,7 +438,7 @@ def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None
     key = str(root.resolve())
     worker = _get_verify_worker(root)
     if head is not None:
-        with _VERIFY_WORKER_LAST_HEAD_LOCK:
+        with _LOCK:
             last_head = _VERIFY_WORKER_LAST_HEAD.get(key)
             moved = last_head != head
             if moved:

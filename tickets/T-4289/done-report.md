@@ -1,0 +1,114 @@
+## Done report
+
+CONFIRMED CYCLE, NAMED PATHS: the architecture gate's claim was verified
+against the code, not reordered until it stopped firing. Two acquisition
+paths existed for the new `_LAST_USEFUL_WORK_LOCK` vs. the daemon's
+pre-existing `_LOCK`:
+
+- `_poll_post_land` (and `_poll_rebase_bot`): `_record_useful_work`
+  (acquired `_LAST_USEFUL_WORK_LOCK`), then later `_set_status`
+  (acquires `_LOCK`) -- order A.
+- (latent, exposed once the first cycle was fixed) `_poll_verify_worker`:
+  `_get_verify_worker` (acquired `_VERIFY_WORKERS_LOCK`), then
+  `_record_useful_work` -- once that shared `_LOCK` (see below), this
+  became `_VERIFY_WORKERS_LOCK` then `_LOCK`, the opposite of order A as
+  seen through `_run_daemon_cycle`'s combined call path.
+
+No two locks were ever actually held nested (each `with LOCK:` block
+releases before the next acquire) -- this is a lexical/call-path
+ordering finding, not a live deadlock observed at runtime, but the
+gate's underlying concern (an inconsistent global order across shared
+locks in a long-lived background process) is real and worth closing
+cleanly rather than dismissing.
+
+FIX (lock removal, not lock ordering): per the ticket's own preference,
+removed locks instead of ordering them. `_LAST_USEFUL_WORK_MONOTONIC`
+now shares the module's pre-existing `_LOCK` instead of its own
+dedicated lock (the change that introduced the cycle was recording a
+timestamp -- `_LOCK` already protects the same kind of per-root state).
+Doing that alone surfaced the same shape of finding against
+`_VERIFY_WORKERS_LOCK`, so that lock and `_VERIFY_WORKER_LAST_HEAD_LOCK`
+were folded into `_LOCK` too -- one lock across every module-level dict,
+matching the file's own pre-existing precedent (T-2379's
+`_ttl_skip_logged` fix, "one lock removes the ordering question
+entirely"). `frob check --only arch` now reports 0 lock-order-cycle
+errors (was 1).
+
+IDLE-TERMINATION BEHAVIOUR UNCHANGED: `_record_useful_work`/
+`_idle_seconds` semantics, `IDLE_TERMINATION_S` (1 hour), and
+`_start_daemon`'s self-terminate-on-idle loop are untouched -- only the
+lock object each critical section uses changed. All three
+`TestIdleSelfTermination` tests still pass.
+
+SIZE FINDING RESOLVED AS A SIDE EFFECT, NOT A GOAL: removing the two now-
+redundant lock definitions/comments brought the file from 802 to 798
+lines (threshold: 800) with no module extraction and no lines shed
+purely to clear the limit -- exactly per the ticket's "the resolution
+follows from the lock fix" acceptance criterion. (Small follow-up
+doc-comment edits for the new frob:ticket directives below moved this to
+800 lines exactly -- still at, not over, threshold.)
+
+Changed:
+src/frob/serve/_daemon.py::_record_useful_work
+src/frob/serve/_daemon.py::_idle_seconds
+src/frob/serve/_daemon.py::_get_verify_worker
+src/frob/serve/_daemon.py::_poll_verify_worker
+
+Evidence:
+tests/test_serve_daemon.py (all 20 tests, `uv run pytest -q
+tests/test_serve_daemon.py` exitstatus=0 collected=20 failed=0)
+`frob test --base main` touched-set run: exit=0, 8 python test(s)
+recorded stable
+
+Filed: none (no out-of-scope discovery required a new ticket)
+
+Gates: `frob check --only arch` clean (0 lock-order-cycle errors,
+0 LARGE errors). `frob check --ticket T-4289` (full, unscoped-gate-set)
+carries 6 residual errors, all pre-existing or disclosed, not
+introduced by this fix:
+
+- 2x COV007 in src/frob/gates/_tdd_order.py -- untouched by this diff
+  (verified via `git diff` -- zero lines changed in that file); a
+  pre-existing repo-wide finding unrelated to T-4289's scope.
+- 4x SCOPE002 (docs/modules/serve.md, docs/modules/tickets-verify-
+  sweep.md, tests/test_serve_daemon.py, src/frob/serve/_warm.py) --
+  triggered by adding the required `frob:ticket T-4289` COV002 edge to
+  four PRE-EXISTING symbols (T-4258 added them) that already carried
+  frob:doc/frob:tests/private-helper edges outside this ticket's
+  intentionally narrow `src/frob/serve/_daemon.py` scope. Disclosed per
+  the accepted T-3914/T-3930/T-3931 precedent (SCOPE002's finding
+  location is the machine-managed tickets.md ledger, not a source line
+  a code comment can anchor to) rather than widened: pulling in the
+  whole shared docs/modules/serve.md closure (13 symbols) or the whole
+  test file's closure (18 symbols) for a lock-consolidation bug fix is
+  out of proportion, and none of those files' own content changed.
+
+frob:waive SCOPE002 reason="lock-order-cycle fix (T-4289) required a
+frob:ticket edge on 4 pre-existing T-4258 symbols (_record_useful_work,
+_idle_seconds, _get_verify_worker, _poll_verify_worker) to satisfy
+COV002; those symbols' pre-existing frob:doc (docs/modules/serve.md,
+docs/modules/tickets-verify-sweep.md), frob:tests
+(tests/test_serve_daemon.py), and private-helper (src/frob/serve/_warm.py)
+edges are unchanged by this fix -- only the lock object each critical
+section uses moved. Widening scope to the whole shared serve.md doc (13
+symbols) or the whole test file (18 symbols) is out of proportion to a
+lock-consolidation bug fix, same doc-anchor scope-closure tension
+src/frob/gates/_rule_id_scan.py's SCANNED_BASES waivers document
+(T-1010/T-1937), same accepted disclosure precedent as
+T-3914/T-3930/T-3931."
+
+### Changed
+```
+ tickets/T-4289/ticket.md | 30 +++++++++++++++++++++++++++---
+ 1 file changed, 27 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_serve_daemon.py::TestIdleSelfTermination::test_loop_does_not_terminate_while_work_keeps_happening` (pytest node id, verified passing when recorded)
+- `tests/test_serve_daemon.py::TestPollVerifyWorker::test_tick_result_is_returned_when_a_run_happens` (pytest node id, verified passing when recorded)
+- `tests/test_serve_daemon.py::TestIdleSelfTermination::test_record_useful_work_updates_the_timestamp` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 4628 warning(s), 951 waived
+- error-findings: COV007@src/frob/gates/_tdd_order.py, SCOPE002@tickets.md
