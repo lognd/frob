@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/__init__.py
 - src/frob/testing/_collect.py
+- tests/test_testing_collect.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: src/frob/testing/_collect.py's public symbols share module-wide
   frob:doc anchors (docs/modules/testing.md#public-api, docs/guides/install.md) and
@@ -131,6 +132,12 @@ scope_changes:
     anchors (testing.md#public-api, install.md) spirals across the whole codebase
     -- acknowledging scope breadth instead via scope-ack rather than widening the
     write lease indefinitely'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_testing_collect.py
+  reason: adding a regression test proving _run_collect_only no longer spawns via
+    uv and handles resolve_pytest_argv's Err path
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
