@@ -18,8 +18,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/excludes.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
-- src/frob/gates/_ffi_boundary.py
-- tests/test_excludes.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +50,28 @@ scope_changes:
     -- adding it cascades into unrelated scope per docs/design/tickets-package-scope-precedent.md''s
     over-broad-glob trap; is_excluded''s doc-edge into it is accepted WARN-level SCOPE002
     noise (disposition 1), not a closure to chase'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: src/frob/gates/_ffi_boundary.py
+  reason: 'revert: these closures cascade into further scope gaps (docs/modules/gates.md,
+    src/frob/dup/_legacy.py, tests/gates_suite/test_compliance.py) and the remaining
+    SCOPE002 volume is dominated by a pre-existing frob.graph.callgraph bare-short-name
+    collision (multiple unrelated test files define _write/_by_rule) misattributing
+    calls from two UNMODIFIED test functions in this file to ~40 unrelated test modules
+    -- not a real dependency of T-4155''s diff; reverting to keep scope declaring
+    only what this ticket actually touches per disposition 1 of docs/design/tickets-package-scope-precedent.md'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/test_excludes.py
+  reason: 'revert: these closures cascade into further scope gaps (docs/modules/gates.md,
+    src/frob/dup/_legacy.py, tests/gates_suite/test_compliance.py) and the remaining
+    SCOPE002 volume is dominated by a pre-existing frob.graph.callgraph bare-short-name
+    collision (multiple unrelated test files define _write/_by_rule) misattributing
+    calls from two UNMODIFIED test functions in this file to ~40 unrelated test modules
+    -- not a real dependency of T-4155''s diff; reverting to keep scope declaring
+    only what this ticket actually touches per disposition 1 of docs/design/tickets-package-scope-precedent.md'
   actor: logan
   at: '2026-09-08'
 body_changes:
