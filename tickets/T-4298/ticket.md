@@ -26,6 +26,7 @@ scope:
 - tests/unit/test_land_cross_ticket_leakage.py
 - src/frob/gates/_waive.py
 - tests/unit/test_land_format_gate.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -102,6 +103,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_format_gate.py
   reason: new test module for LANDFMT001, bound via this ticket's frob:tests directives
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: REG009/REG010 require a CHK-GATE-LANDFMT001 entry here; frob registry audit
+    --sync-gate-rules writes it
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
