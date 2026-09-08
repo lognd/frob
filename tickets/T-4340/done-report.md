@@ -1,0 +1,28 @@
+## Done report
+
+Changed: none in frob.toml -- audit found no additional demotions warranted in the subset reviewed.
+
+Reviewed (property 2 waivability / property 3 structural silence):
+- COV002 (`_ledger_states_at_base`, frob.gates.__init__): re-verified it already carries the T-1582 v1/v2 dispatch fix (`_store_mode_at_base` branches to `_ledger_states_at_base_v2` for the per-ticket layout, only falling back to the v1 `git show base:tickets.md` monofile read when the base tree is genuinely v1). Not TICK005-shaped; correctly left at error.
+- Every other `git show <ref>:<path>` / `git ls-tree ... <ref> -- <path>` site across src/frob/gates/*.py and src/frob/strata/*.py (the exact TICK005/COV002 anti-pattern -- a stale git-object read of a path a migration removed): `_wire.py`, `_land_parity.py`, `_tdd_order.py`, `_todo_fmt.py`, `__init__.py`'s ARCH103 base-file reader all read paths (arbitrary source files, pyproject.toml, arbitrary diff-touched files) that the ledger-v2 cutover did not remove and that still exist in the current tree -- none reproduce the TICK005 shape. `_tickets_gate.py`'s own `git show ref:tickets.md` (TICK005 itself) is out of this ticket's scope per the brief (T-4341 owns that fix).
+- BUG002/BUG003 (`_bug_repro.py`) and REL001/TICK014 all emit synthetic `file="tickets.md", line=0` Violations with no real source line -- the same surface shape as SCOPE002/TICK009 (property 2's known failure). Checked whether they are the SAME failure: they are not. SCOPE002/TICK009 are heuristic/advisory findings whose only clearing mechanism is `frob:waive`, and a waiver needs a real anchorable line -- that is what made them unwaivable. BUG002/BUG003/REL001 are mechanical checks of a real, currently-measurable requirement (a designated repro test's pass/fail state at HEAD vs. parent; an open ticket carrying the milestone being cut) that clear by satisfying the requirement itself, never by `frob:waive` -- so the missing anchorable line is not a live gap for them. REL001 and TICK014 were already in T-4331's reviewed cluster (T-4331's Done report names REL001 explicitly); TICK014 is WARN and not in the T-3844 promoted set at all. Left BUG002/BUG003 at error.
+
+Filed: T-4346 (title: "Audit remaining T-3844-promoted rule families for waivability/structural silence (PERF/SEC/PII/ARCH/DOC/REG/COMPLIANCE/KRB/DEPLOY/FFI/LANG/NATIVE/PROFILE/WAIVE/VET/REL/etc.)"), scope=frob.toml -- covers the ~270 rules outside the tickets/milestone/bug-repro cluster (T-4328/T-4331/T-4340) that were not walked with the same per-rule rigor in the time this ticket budgeted: PERF001-014, SEC*, PII*, ARCH*, DOC*, REG001-007/012, COMPLIANCE*, KRB*, DEPLOY*, FFI*, LANG*, NATIVE*, PROFILE001, WAIVE001-011 (non-cluster), VET*, REL200-397, SYS001-205 (non-SYS101/107), DEC000-003, DEBT001-003, CROSSTICKET001, CVEFP001, DUP001-003, WIRE001-003, FUZZ001-003, THREAT001-006, TODO001-003, and the remainder of the T-3844 block.
+
+Gates: `frob check --ticket T-4340` clean except SCOPE001 firing on `tickets/T-4346/ticket.md` (the ticket this ticket itself filed) -- `_TICKET_REF_RE = re.compile(r"T-\d{4}")` (frob.gates.__init__) does not match a not-yet-renumbered `T-draft-*` id, so `_commit_exempts_file`'s cross-ticket exemption (T-0108/T-3298) cannot recognize the filing commit's own subject yet; this resolves once the draft is renumbered to a numeric id (the standard land-time step visible in this repo's own recent history, e.g. "chore(tickets): mirror scope T-4124 from worktree"). Not a new bug in this ticket's scope (frob.toml) to fix. DRIFT002 (T-4345, pre-existing, unrelated) was not present in this run's measurement.
+
+### Changed
+```
+ tickets/T-4340/done-report.md      | 26 ++++++++++++++++++++++++++
+ tickets/T-4340/ticket.md           | 23 ++++++++++++++++++++++-
+ tickets/T-4346/ticket.md | 30 ++++++++++++++++++++++++++++++
+ 3 files changed, 78 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 1 error(s), 4707 warning(s), 954 waived
+- error-findings: DRIFT002@docs/guides/agent-playbook-appendix.md
