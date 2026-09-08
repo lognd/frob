@@ -24,7 +24,6 @@ under `frob.testing`.
 from __future__ import annotations
 
 import contextvars
-import os
 import shutil
 import subprocess
 import sys
@@ -168,6 +167,7 @@ def excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
 
 
 # frob:ticket T-3799
+# frob:ticket T-4326
 def _resolve_win32_executable(name: str) -> str:
     """Resolve a BARE command name (`"gh"`, `"cargo"`, ...) to its full path
     via `shutil.which()` on win32 ONLY -- a no-op everywhere else, and a
@@ -189,10 +189,27 @@ def _resolve_win32_executable(name: str) -> str:
     status quo: an absolute path, a path containing a separator, or a name
     `which` cannot find at all all pass through unchanged, so a genuinely
     missing binary still fails exactly as it does today (`FileNotFoundError`
-    surfacing the same way through `run_argv`'s existing except clause)."""
+    surfacing the same way through `run_argv`'s existing except clause).
+
+    T-4326: the separator check below is hardcoded to `\\` and `/` --
+    Windows' own two path separators -- rather than `os.sep`/`os.altsep`.
+    Those reflect the INTERPRETER's real, compiled-in OS, not the win32
+    target this win32-only function is checking for, so a test faking
+    `sys.platform == "win32"` off real Windows (this module's `sys` is the
+    one global `sys` object, so the fake is visible everywhere, including
+    inside `shutil.which`) saw `os.sep == "/"` / `os.altsep is None` from
+    the real posix host and let a bare `\\`-separated name fall through to
+    a genuine `shutil.which()` call -- which on Python 3.12+ has its own
+    internal `sys.platform == "win32"` branch that reaches for `_winapi`
+    (`None` off Windows), raising `AttributeError` instead of running the
+    no-op this function promises. Windows itself always accepts both `\\`
+    and `/` as separators regardless of which one `os.sep` names, so
+    hardcoding both here is correct for every real Windows host and also
+    makes the win32 branch exercisable -- and correctly no-op -- from a
+    test running on any platform."""
     if sys.platform != "win32":
         return name
-    if os.sep in name or (os.altsep and os.altsep in name):
+    if "\\" in name or "/" in name:
         return name  # already a path, not a bare command name
     resolved = shutil.which(name)
     return resolved if resolved is not None else name

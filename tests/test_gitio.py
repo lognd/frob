@@ -368,8 +368,33 @@ class TestResolveWin32Executable:
         """A name already containing a path separator is left alone even
         on win32 -- it is not a bare command name PATHEXT resolution
         applies to, and `which` was never meant to touch an already-
-        resolved path."""
+        resolved path.
+
+        T-4326: `os.sep`/`os.altsep` reflect the REAL host OS, not the
+        `sys.platform` this test fakes -- on a genuine posix host
+        `os.sep == "/"` and `os.altsep is None`, so a backslash-only path
+        like `"C:\\tools\\gh.exe"` does not match either one and would
+        fall through to a real `shutil.which()` call. That call is safe
+        on Python <3.12, but 3.12+ added a `sys.platform == "win32"`
+        branch inside `shutil.which` itself that reaches for `_winapi`
+        (`None` off Windows) -- and `sys.platform` here is the real,
+        process-global attribute (`monkeypatch.setattr("frob.gitio.sys
+        .platform", ...)` patches the one `sys` module every import
+        shares), so the stdlib call sees "win32" too and crashes with
+        `AttributeError: 'NoneType' object has no attribute
+        'NeedCurrentDirectoryForExePath'` -- the exact CI failure this
+        ticket fixed. Stubbing `shutil.which` here (as the sibling tests
+        below already do) proves the intended no-op path never reaches it,
+        the same guard those siblings rely on."""
         monkeypatch.setattr("frob.gitio.sys.platform", "win32")
+
+        def _which_must_not_be_called(name: str) -> str:
+            raise AssertionError(
+                f"shutil.which should never be reached for a path-like "
+                f"name, got {name!r}"
+            )
+
+        monkeypatch.setattr("frob.gitio.shutil.which", _which_must_not_be_called)
         assert _resolve_win32_executable("C:/tools/gh.exe") == "C:/tools/gh.exe"
         assert _resolve_win32_executable("C:\\tools\\gh.exe") == "C:\\tools\\gh.exe"
 
