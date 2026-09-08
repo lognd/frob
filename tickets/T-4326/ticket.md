@@ -16,8 +16,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/test_gitio.py
 - src/frob/gitio.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'T-4326''s fix touches only _resolve_win32_executable inside
+  src/frob/gitio.py, but that file''s OTHER pre-existing, unrelated public symbols
+  (Diff, GitError, Hunk, SpawnRecorder, ...) are documented in docs/modules/testing.md
+  and one (excerpt) is covered by tests/test_testing.py -- adding either to scope
+  for closure cascades transitively to ~190 unrelated symbols repo-wide (verified:
+  docs/modules/testing.md alone documents src/frob/strata/_native_staleness.py, src/frob/verify/_attribution.py,
+  src/frob/testing/_select.py, src/frob/testing/_runners.py, and more), per the T-1145
+  broad-scope precedent (docs/design/tickets-package-scope-precedent.md) this SCOPE002
+  volume is expected noise for a scope shape like this one, not under-capture from
+  this ticket''s own diff'
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
