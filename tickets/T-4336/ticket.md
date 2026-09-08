@@ -43,12 +43,19 @@ scope_changes:
     in sync with the new frob.gates._GATE_STAGE_GROUPS source of truth'
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_gate_stage_group_migration_is_byte_identical
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_stage_group_expands_like_hand_listed_only
 designated_repro_test: null
 acceptance:
 - text: given a gate registered in frob.gates._ALL_GATES without a stage-group assignment,
     when frob is imported/invoked (including a selective --only run), then it fails
     loudly at load time instead of silently passing every check
-  evidence: []
+  evidence:
+  - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+  - tests/system/test_cli_check.py::TestCheckStageGroups::test_gate_stage_group_migration_is_byte_identical
+  - tests/system/test_cli_check.py::TestCheckStageGroups::test_stage_group_expands_like_hand_listed_only
 threat: null
 component: null
 anchor: false
