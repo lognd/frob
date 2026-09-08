@@ -2,7 +2,7 @@
 id: T-4201
 title: 'land: make ticket.md mirror commits merge-safe so accept/scope transitions
   don''t conflict with the worktree''s own file'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
