@@ -16,10 +16,47 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tdd_order.py
+- src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
+- tests/unit/coordinator_suite/test_fleet_land.py
+- tests/unit/test_process_tty.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: ticket body explicitly directs running the project's format verb; ruff format's
+    rewrite set for this run covers these 4 files (none of them the module named in
+    the original scope glob) -- widening scope to cover the formatter's actual output
+    rather than hand-picking a subset
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: ticket body explicitly directs running the project's format verb; ruff format's
+    rewrite set for this run covers these 4 files (none of them the module named in
+    the original scope glob) -- widening scope to cover the formatter's actual output
+    rather than hand-picking a subset
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/coordinator_suite/test_fleet_land.py
+  reason: ticket body explicitly directs running the project's format verb; ruff format's
+    rewrite set for this run covers these 4 files (none of them the module named in
+    the original scope glob) -- widening scope to cover the formatter's actual output
+    rather than hand-picking a subset
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_process_tty.py
+  reason: ticket body explicitly directs running the project's format verb; ruff format's
+    rewrite set for this run covers these 4 files (none of them the module named in
+    the original scope glob) -- widening scope to cover the formatter's actual output
+    rather than hand-picking a subset
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 acceptance:
 - text: given the two doc anchors on private helpers, when they are resolved, then
