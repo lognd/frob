@@ -2,7 +2,7 @@
 id: T-4197
 title: 'DSL001: a malformed or free-text frob:tests/frob:waive directive must raise
   a parse-time finding, not silently no-op'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -30,7 +30,9 @@ scope_changes:
     resulting edge; the declared src/frob/gates scope covers only the gate-side symptom
   actor: logan
   at: '2026-09-08'
-designated_repro_test: null
+evidence:
+- tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath::test_pure_prose_quoted_target_is_malformed_not_a_free_pass
+designated_repro_test: tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath::test_pure_prose_quoted_target_is_malformed_not_a_free_pass
 threat: null
 component: null
 anchor: false

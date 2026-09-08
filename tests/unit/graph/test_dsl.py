@@ -1006,3 +1006,59 @@ class TestQuotedPositionalTarget:
             assert not malformed, f"limit={limit} produced malformed: {malformed}"
             assert len(edges) == 1
             assert edges[0].target == expected_target, f"limit={limit}"
+
+
+# frob:ticket T-4197
+class TestQuotedTestsTitleMustNamePath:
+    """T-4197 (F-318): a quoted `frob:tests` target must lead with the
+    test file path it names (the documented F-047 vitest title
+    convention) -- pure prose with no leading path parses to a silently
+    dangling edge instead of a named parse-time refusal."""
+
+    # frob:ticket T-4197
+    # frob:tests \
+    # tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_qu\
+    # oted_target_is_malformed_not_a_free_pass
+    def test_pure_prose_quoted_target_is_malformed_not_a_free_pass(
+        self, tmp_path: Path
+    ) -> None:
+        # MUST-FIRE (F-318's exact repro): quoted free-text prose with no
+        # leading test-file path must be rejected at parse time, not
+        # silently accepted as a real (but unresolvable) TESTS edge.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "verifies the thing works correctly"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges, f"prose target must not parse to a real edge: {edges}"
+        assert len(malformed) == 1
+        assert "F-318" in malformed[0].reason
+
+    # frob:ticket T-4197
+    def test_quoted_title_leading_with_a_real_path_still_parses(
+        self, tmp_path: Path
+    ) -> None:
+        # MUST-STAY-QUIET: the documented, already-tested F-047 convention
+        # (a leading test file path) is untouched by this check.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "src/x.test.ts describes a thing"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+
+    # frob:ticket T-4197
+    def test_bare_unquoted_dotted_symref_is_untouched(self, tmp_path: Path) -> None:
+        # MUST-STAY-QUIET: an ordinary single-token (unquoted) target --
+        # this repo's widespread self-referential TestFoo.test_bar
+        # convention (T-0265) -- has no space, so this check never fires.
+        src = "def foo() -> None:\n    # frob:tests TestFoo.test_bar\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1

@@ -1030,6 +1030,54 @@ def _attrs_verb_error_tests(
     )
 
 
+# frob:ticket T-4197
+#: A quoted `frob:tests` target's own leading token, as `_TESTS_QUOTED_
+#: TITLE_LEAD_RE` requires it to look: a path with a real extension (e.g.
+#: `src/x.test.ts`), never a bare word.
+_TESTS_QUOTED_TITLE_LEAD_RE = re.compile(r"^[^\s\"]+\.[^\s\".]+$")
+
+
+# frob:ticket T-4197
+# frob:tests \
+# tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_quoted\
+# _target_is_malformed_not_a_free_pass
+def _tests_quoted_title_error(
+    target: str, *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """T-4197 (F-318): a QUOTED `frob:tests` target containing spaces is
+    the documented F-047 vitest describe/it title convention (T-3893,
+    `TestQuotedPositionalTarget`) -- but every real instance of that
+    convention, this repo's own directive corpus included, leads with the
+    ACTUAL TEST FILE PATH it names (`"src/x.test.ts describes a thing"`),
+    never bare prose. F-318's incident was exactly a bare-prose target
+    (`frob:tests <test description>`, no leading path at all) that this
+    module's quoting rule happily accepts as one value, since nothing
+    previously checked the SHAPE of what the quotes wrapped -- the
+    directive parsed to a real `Edge`, but its target resolves to no test
+    collector, and TEST002's collected-case COUNT for the file silently
+    went to zero rather than the parse itself naming the problem. This
+    check requires the target's first whitespace-delimited token to look
+    like a real path (contains a `.` extension, not merely a leading dot)
+    -- the one structural feature every genuine vitest title in this
+    codebase's own convention already carries and pure prose never does.
+    A single-token (unquoted) target is untouched -- this only fires for
+    the quoted, multi-word shape the vitest convention itself defines."""
+    lead = target.split(" ", 1)[0]
+    if _TESTS_QUOTED_TITLE_LEAD_RE.match(lead):
+        return None
+    return MalformedDirective(
+        file=path,
+        line=lineno,
+        reason=(
+            f"frob:tests quoted target {target!r} does not lead with a "
+            'test file path (e.g. "src/x.test.ts describes a thing") -- '
+            "either it is a vitest describe/it title missing its leading "
+            "file path, or it is free-text prose where a real symref/"
+            "test-node target was intended (F-318)"
+        ),
+    )
+
+
 # frob:ticket T-0757
 def _attrs_verb_error_invariant(
     attrs: dict[str, str], *, path: str, lineno: int
@@ -1156,6 +1204,24 @@ def _parse_target(
     return target, attrs
 
 
+# frob:ticket T-4197
+def _resolve_target_and_attrs(
+    verb: str, rest: str, *, path: str, lineno: int
+) -> tuple[str, dict[str, str]] | MalformedDirective:
+    """`_parse_line`'s target/attrs resolution, split out for ARCH001
+    (T-4197): `frob:transition`/`frob:requires` (`_ATTR_ONLY_VERBS`) have
+    no bare target token -- T-0744, the whole `rest` is `key="value"`
+    attributes, and the edge's target is the `proto=` attribute itself
+    (guaranteed present once `_parse_attrs_verb_error`'s per-verb check
+    has passed) -- every other verb goes through `_parse_target`."""
+    if verb in _ATTR_ONLY_VERBS:
+        attrs = _parse_attrs(verb, rest, path=path, lineno=lineno)
+        if isinstance(attrs, MalformedDirective):
+            return attrs
+        return attrs["proto"], attrs
+    return _parse_target(verb, rest, path=path, lineno=lineno)
+
+
 def _parse_line(
     line: str, *, path: str, lineno: int, src: str
 ) -> Edge | MalformedDirective | None:
@@ -1186,20 +1252,15 @@ def _parse_line(
             file=path, line=lineno, reason=f"missing target for verb {verb!r}"
         )
 
-    if verb in _ATTR_ONLY_VERBS:
-        # T-0744: `frob:transition`/`frob:requires` have no bare target
-        # token -- the whole `rest` is `key="value"` attributes, and the
-        # edge's target is the `proto=` attribute itself (guaranteed present
-        # once `_parse_attrs_verb_error`'s per-verb check has passed).
-        attrs = _parse_attrs(verb, rest, path=path, lineno=lineno)
-        if isinstance(attrs, MalformedDirective):
-            return attrs
-        target = attrs["proto"]
-    else:
-        parsed = _parse_target(verb, rest, path=path, lineno=lineno)
-        if isinstance(parsed, MalformedDirective):
-            return parsed
-        target, attrs = parsed
+    resolved = _resolve_target_and_attrs(verb, rest, path=path, lineno=lineno)
+    if isinstance(resolved, MalformedDirective):
+        return resolved
+    target, attrs = resolved
+
+    if verb == "tests" and " " in target:
+        title_err = _tests_quoted_title_error(target, path=path, lineno=lineno)
+        if title_err is not None:
+            return title_err
 
     # T-0265: a literal self-referential `frob:tests` directive (target ==
     # src) is NOT rejected here -- it is this repo's own widespread,
