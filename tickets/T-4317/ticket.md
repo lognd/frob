@@ -1,7 +1,7 @@
 ---
 id: T-4317
 title: Lock-holder diagnostic helpers mix IO, formatting and branching (3 ARCH103)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
