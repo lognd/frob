@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/verify_runner.py
 - tests/unit/verify/test_verify_runner.py
-- tests/unit/verify/test_watermark.py
 - docs/modules/verify-rapid-debt-visibility.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -74,6 +73,13 @@ scope_changes:
   glob: docs/modules/verify-rapid-debt-visibility.md
   reason: new self-contained doc anchor for the new public symbol RapidDebtEntryView
     (COV001/LANDPARITY001)
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/unit/verify/test_watermark.py
+  reason: 'revert: this private-helper dependency (test_verify_runner.py -> test_watermark.py::_init_git_repo_with_commits)
+    predates this ticket -- the import already existed before any T-4324 edit; adding
+    it only cascades into unrelated _watermark.py test-target closure'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
