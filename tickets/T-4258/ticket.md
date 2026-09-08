@@ -2,7 +2,7 @@
 id: T-4258
 title: the serve daemon holds an exclusive write lock on the graph cache for its whole
   lifetime, starving every other process's graph build into a silent unmeasured pass
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
