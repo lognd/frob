@@ -93,6 +93,14 @@ body_changes:
   at: '2026-09-07'
   old_length: 6884
   new_length: 6891
+- mode: append
+  reason: 'waive BUG002: defect is platform-conditional and unreproducible via automatic
+    pre/post-commit check on this Linux host; real repro measured manually on the
+    Windows mirror'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 6891
+  new_length: 7828
 evidence:
 - tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 designated_repro_test: null
@@ -231,3 +239,7 @@ conventions explicitly. When this lands, check the OTHER pathspec call site
 (`src/frob/policy/__init__.py`, migrated earlier under a separate ticket) for the
 same unpinned default -- it will have inherited the identical defect, and nothing
 has measured it on Windows either.
+
+
+frob:waive BUG002 reason="the defect is platform-conditional (Linux answers False, Windows answers True, for identical code pre-fix) so BUG002's own pre/post-commit repro -- run on this host, Linux -- cannot show the designated evidence failing at the parent commit: on Linux, the parent commit's code+test pair was already self-consistent (old code returned False, old test asserted False). The real repro was measured manually on the Windows mirror per this ticket's own MEASURE ON REAL WINDOWS mandate: at parent commit 9fcabb9d6c, `is_excluded('vendor\\\\sub\\\\mod.py', ('vendor/**',))` returned True on Windows against the old test's False assertion (a real, reproduced failure); at the fix commit, the same call returns True on BOTH linux and Windows and the updated test (asserting True) passes on both, confirmed by running the full pytest node on the Windows mirror via winrun both before and after the excludes.py change."
+
