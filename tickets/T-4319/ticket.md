@@ -1,7 +1,7 @@
 ---
 id: T-4319
 title: Lease held by a dead holder is invisible to every routine check
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
