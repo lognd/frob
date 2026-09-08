@@ -15,10 +15,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_cli.py
+- docs/modules/release.md
+- tests/test_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/release.md
+  reason: 'T-4301: status verb''s own docs anchor and unit tests live in these shared
+    files, not just src/frob/release/_cli.py'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_release.py
+  reason: 'T-4301: status verb''s own docs anchor and unit tests live in these shared
+    files, not just src/frob/release/_cli.py'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
