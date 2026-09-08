@@ -18,6 +18,9 @@ scope:
 - src/frob/serve/_daemon.py
 - src/frob/serve/_warm.py
 - tests/test_serve_daemon.py
+- docs/modules/serve.md
+- docs/modules/tickets-verify-sweep.md
+- tests/test_serve.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +30,27 @@ scope_changes:
   glob: tests/test_serve_daemon.py
   reason: test file for _daemon.py's new idle-self-termination code, required by frob:tests
     directives added in the same change
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'scope closure: pre-existing frob:doc/frob:tests targets for symbols touched
+    in this file (docstring/doc anchors and _warm.py''s own bound tests), flagged
+    by SCOPE002 after adding tests/test_serve_daemon.py'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'scope closure: pre-existing frob:doc/frob:tests targets for symbols touched
+    in this file (docstring/doc anchors and _warm.py''s own bound tests), flagged
+    by SCOPE002 after adding tests/test_serve_daemon.py'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_serve.py
+  reason: 'scope closure: pre-existing frob:doc/frob:tests targets for symbols touched
+    in this file (docstring/doc anchors and _warm.py''s own bound tests), flagged
+    by SCOPE002 after adding tests/test_serve_daemon.py'
   actor: logan
   at: '2026-09-08'
 body_changes:
