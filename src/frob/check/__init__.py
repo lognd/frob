@@ -1357,6 +1357,19 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # native/-security.
             "land_parity",
             "cross_ticket_leakage",
+            # frob:ticket T-4307
+            # T-4298: land_format (LANDFMT001, frob.gates._land_format.
+            # land_format_gate) was registered in frob.gates._ALL_GATES
+            # (and given a fixed slot in frob.gates._CANONICAL_GATE_ORDER
+            # right after land_parity) but never added to any
+            # _STAGE_GROUPS member -- the identical registered-but-
+            # unreachable omission shape as land_parity/cross_ticket_
+            # leakage above. It is diff-scoped (checks `ruff format` drift
+            # on the current touched set at land time), the same shape as
+            # fmt/affect_drift/land_parity in this same group, and is not
+            # in frob.gates._PROCESS_POOL_GATES, so it belongs on the
+            # thread pool here.
+            "land_format",
         }
     ),
     # frob:ticket T-0688
