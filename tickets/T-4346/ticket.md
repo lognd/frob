@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
+- tickets/T-4364/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-4364/**
+  reason: T-4346 filed T-4364 for the audited-remainder follow-up; committing its
+    ticket file is in-scope bookkeeping for closing this ticket
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
