@@ -1,7 +1,7 @@
 ---
 id: T-4361
 title: Derive _CACHEABLE_PROCESS_GATES completeness check
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
