@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_wire.py
 - src/frob/tickets/_evidence.py
 - tests/unit/test_land_stranding_t4312.py
+- tickets/T-4347/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,22 @@ scope_changes:
   glob: tests/unit/test_land_stranding_t4312.py
   reason: new test file covering the T-4312 stranding-check generalization (unit dispatch-table
     coverage + end-to-end close/drop force-the-condition tests)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-4347/**
+  reason: T-4347 was filed and dropped as a routine side effect of T-4312's own investigation
+    (see Done report); its bookkeeping shard needs to be in T-4312's scope for SCOPE001
+    to resolve cleanly since the auto-exemption path did not fire for this specific
+    file+promote+drop lifecycle
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-4347/**
+  reason: T-4347 was filed and dropped as a routine side effect of T-4312's own investigation
+    (see Done report); its bookkeeping shard needs to be in T-4312's scope for SCOPE001
+    to resolve cleanly since the auto-exemption path did not fire for this specific
+    file+promote+drop lifecycle
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
