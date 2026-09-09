@@ -2987,6 +2987,105 @@
       "old_digest": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
       "reason": "T-3799: re-verified docs/modules/testing.md's run_argv doc still describes the function correctly after adding the win32 PATHEXT resolution step; the doc was updated in the same change to cover the new behavior",
       "ref": "src/frob/gitio.py::run_argv"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "9723b38b6664882c2537a61a319103a491f3cbdeb47cf31276eb2f39dd9aceea",
+      "old_digest": "f477b5e313f343ac872debe4916a415d9d8fb09a602a4cf3ec41763cb2f8f197",
+      "reason": "docs/modules/tickets-landing.md's mutation-evidence-obligation-test016-t-0755 section updated in this same diff to describe the T-4369 pytest-argv-resolution fix and the new PytestNotAvailable error variant -- doc is re-verified accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "old_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "reason": "docs/modules/tickets-landing.md's mutation-evidence-obligation-test016-t-0755 section updated in this same diff to describe the T-4369 pytest-argv-resolution fix and the new PytestNotAvailable error variant -- doc is re-verified accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "4a83146dd58fbec5716d49ec92a9b52e4cb098768765a9e0bd475dad508cde81",
+      "old_digest": null,
+      "reason": "docs/modules/tickets-landing.md's mutation-evidence-obligation-test016-t-0755 section updated in this same diff to describe the T-4369 pytest-argv-resolution fix and the new PytestNotAvailable error variant -- doc is re-verified accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::MutationEvidenceError"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "9d68c07f1fcc56242a97a23c7dba475ac0692bc231c54b496349a7e9dbc346c6",
+      "old_digest": "9723b38b6664882c2537a61a319103a491f3cbdeb47cf31276eb2f39dd9aceea",
+      "reason": "re-verified after extracting _resolve_kill_argv helper (T-4369) to bring the function back under LANDPARITY002's length threshold; doc already describes the resolve_pytest_argv behavior",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "old_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "reason": "re-verified after extracting _resolve_kill_argv helper (T-4369) to bring the function back under LANDPARITY002's length threshold; doc already describes the resolve_pytest_argv behavior",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "a06f496f4b4575d354cdd4baf78b0f3db066ba1f3e8557d5402b1424fad77965",
+      "old_digest": "9d68c07f1fcc56242a97a23c7dba475ac0692bc231c54b496349a7e9dbc346c6",
+      "reason": "re-verified after extracting _budget_exceeded_finding helper (T-4369) to bring the function further under LANDPARITY002's length threshold; behavior unchanged, doc already accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "old_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "reason": "re-verified after extracting _budget_exceeded_finding helper (T-4369) to bring the function further under LANDPARITY002's length threshold; behavior unchanged, doc already accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "a06f496f4b4575d354cdd4baf78b0f3db066ba1f3e8557d5402b1424fad77965",
+      "old_digest": "a06f496f4b4575d354cdd4baf78b0f3db066ba1f3e8557d5402b1424fad77965",
+      "reason": "re-verified after adding ARCH001 waiver for LANDPARITY002 (T-4369); no behavior change, doc still accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "old_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "reason": "re-verified after adding ARCH001 waiver for LANDPARITY002 (T-4369); no behavior change, doc still accurate",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "a06f496f4b4575d354cdd4baf78b0f3db066ba1f3e8557d5402b1424fad77965",
+      "old_digest": "a06f496f4b4575d354cdd4baf78b0f3db066ba1f3e8557d5402b1424fad77965",
+      "reason": "re-verified after frob format --directives canonicalized the ARCH001 waiver wrapping (T-4369); no behavior change",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "old_digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
+      "reason": "re-verified after frob format --directives canonicalized the ARCH001 waiver wrapping (T-4369); no behavior change",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     }
   ],
   "entries": [
@@ -4286,7 +4385,12 @@
       "ref": "src/frob/tickets/_models.py::parse_claims_from_done_report"
     },
     {
-      "digest": "f477b5e313f343ac872debe4916a415d9d8fb09a602a4cf3ec41763cb2f8f197",
+      "digest": "4a83146dd58fbec5716d49ec92a9b52e4cb098768765a9e0bd475dad508cde81",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_mutation_evidence.py::MutationEvidenceError"
+    },
+    {
+      "digest": "a06f496f4b4575d354cdd4baf78b0f3db066ba1f3e8557d5402b1424fad77965",
       "facet": "body",
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     },

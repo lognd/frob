@@ -871,6 +871,22 @@ under the exec kill switch (`FROB_DISABLE_EXEC=1`, T-0803's own posture)
 is `Err(MutationEvidenceError.ExecDisabled)`, never silently reported as a
 clean pass.
 
+The kill command itself is resolved via `frob.process._pytest_spawn.
+resolve_pytest_argv` (T-3311's one pytest-spawn convention, T-4369):
+`sys.executable -m pytest`, never a hardcoded `uv run pytest`. A
+hardcoded `uv` invocation assumes `uv` is on `PATH` and a `uv`-recognised
+`pyproject.toml` sits above the kill command's cwd -- both false for a
+throwaway/fixture repo with no environment of its own, and unreliable
+even for a real target project (T-4327/T-4350's own measured shape: a
+nested `uv run` against a project lacking a synced environment resolves
+or builds an unrelated one and cannot find the tool). `sys.executable`
+needs neither, so this sweep's `argv` no longer depends on the caller's
+ambient `PATH` content. If `pytest` is not importable through this
+process's own interpreter, `check_ticket_mutation_evidence` returns
+`Err(MutationEvidenceError.PytestNotAvailable)` before spawning anything
+-- an honest "could not run," never a silent zero-findings result that
+would read as a clean sweep.
+
 **The sweep has a real wall-clock budget (T-1727).** Before this,
 `_MAX_FILES * _MAX_MUTANTS_PER_FILE * _TIMEOUT_S` (up to 720s) was a
 worst-case ceiling nobody actually enforced as a deadline -- a bound

@@ -38,6 +38,7 @@ from typani.result import Err, Ok, Result
 from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.mutate import Mutant, MutateError, run_mutations
+from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.tickets._models import Ticket, scope_matches
 
 _log = get_logger(__name__)
@@ -107,6 +108,10 @@ class MutationEvidenceError(ErrorSet):
     """Fallible outcomes of the diff-scoped evidence-quality check."""
 
     ExecDisabled = "exec capability disabled -- mutation check aborted, no verdict"
+    PytestNotAvailable = (
+        "pytest is not importable through this process's own interpreter -- "
+        "mutation check aborted, no verdict"
+    )
 
 
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
@@ -287,11 +292,86 @@ def _is_test_file(path: str) -> bool:
 
 
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
+# frob:ticket T-4369
+def _resolve_kill_argv(
+    ticket: Ticket, test_ids: tuple[str, ...]
+) -> Result[tuple[str, ...], MutationEvidenceError]:
+    """The mutant kill command's argv (T-4369): `("uv", "run", "pytest",
+    ...)` assumed `uv` itself is on `PATH` and a `uv`-recognised
+    `pyproject.toml` sits above the kill command's cwd -- true for THIS
+    repo's own tree, false for the throwaway/fixture repos this sweep is
+    exercised against in tests, and (T-4327/T-4350's own measured shape)
+    unreliable even for a real target project once a nested `uv run`
+    cannot resolve/activate an environment of its own. `resolve_pytest_
+    argv` (T-3311) is this codebase's one standard resolution instead:
+    the calling process's own already-running interpreter (`sys.
+    executable -m pytest`), which needs neither `uv` on `PATH` nor the
+    target tree declaring pytest as its own dependency.
+    `Err(MutationEvidenceError.PytestNotAvailable)` if pytest is not
+    importable through this process's own interpreter -- an honest
+    "could not run," never a silent zero-findings result that would read
+    as a clean sweep."""
+    resolved = resolve_pytest_argv(*test_ids, "-q")
+    if resolved.is_err:
+        _log.error(
+            "mutation-evidence: %s cannot resolve a pytest argv (%s) -- "
+            "aborting with no verdict rather than silently reporting "
+            "zero findings",
+            ticket.id,
+            resolved.danger_err,
+        )
+        return Err(MutationEvidenceError.PytestNotAvailable)
+    return Ok(tuple(resolved.danger_ok))
+
+
+def _budget_exceeded_finding(
+    ticket: Ticket,
+    file: Path,
+    test_ids: tuple[str, ...],
+    budget: float,
+    position: int,
+    total: int,
+) -> ConfirmatoryFinding:
+    """A T-1727 UNMEASURED placeholder for `file`, whose turn in the
+    sweep came after the shared wall-clock `budget` was already spent --
+    logged loudly (WARNING, naming the file and its position) so the
+    sweep's own log makes clear which files were skipped and why,
+    never silently folded into a genuine confirmatory-only verdict."""
+    _log.warning(
+        "mutation-evidence: %s sweep budget (%.0fs) exceeded before file "
+        "%d/%d (%s) could be started -- UNMEASURED, not confirmatory-only",
+        ticket.id,
+        budget,
+        position,
+        total,
+        file,
+    )
+    return ConfirmatoryFinding(
+        ticket_id=ticket.id,
+        file=str(file),
+        tests=test_ids,
+        mutants_total=0,
+        unmeasured=True,
+    )
+
+
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:invariant INV-017
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
+# frob:tests \
+# tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_real_su\
+# bprocess_spawning_evidence_stays_bounded_not_hung
 # frob:ticket T-0601
+# frob:ticket T-4369
+# frob:waive ARCH001 reason="T-4369: this orchestrator was already at the \
+# LANDPARITY002 boundary pre-diff; the fix's own body cost is 2 lines (a Result-typed \
+# argv-resolution call plus its Err propagation, already factored into \
+# _resolve_kill_argv) -- further splitting the remaining guard-clause/sweep-loop \
+# sequence would separate one coherent per-ticket- sweep control flow (bail-empty, \
+# resolve-argv, bound-and-iterate-files) into disconnected pieces sharing \
+# test_ids/argv/deadline state across a new boundary, not reduce real complexity"
 def check_ticket_mutation_evidence(
     root: Path,
     ticket: Ticket,
@@ -354,7 +434,10 @@ def check_ticket_mutation_evidence(
         )
         return Ok(())
     ranges_by_file = _changed_line_ranges(root, base_ref)
-    argv = ("uv", "run", "pytest", *test_ids, "-q")
+    resolved_argv = _resolve_kill_argv(ticket, test_ids)
+    if resolved_argv.is_err:
+        return Err(resolved_argv.danger_err)
+    argv = resolved_argv.danger_ok
     budget = _sweep_budget_s() if sweep_budget_s is None else sweep_budget_s
     deadline = time.monotonic() + budget
     findings: list[ConfirmatoryFinding] = []
@@ -367,23 +450,9 @@ def check_ticket_mutation_evidence(
     )
     for position, file in enumerate(selected, start=1):
         if time.monotonic() >= deadline:
-            _log.warning(
-                "mutation-evidence: %s sweep budget (%.0fs) exceeded before "
-                "file %d/%d (%s) could be started -- UNMEASURED, not "
-                "confirmatory-only",
-                ticket.id,
-                budget,
-                position,
-                len(selected),
-                file,
-            )
             findings.append(
-                ConfirmatoryFinding(
-                    ticket_id=ticket.id,
-                    file=str(file),
-                    tests=test_ids,
-                    mutants_total=0,
-                    unmeasured=True,
+                _budget_exceeded_finding(
+                    ticket, file, test_ids, budget, position, len(selected)
                 )
             )
             continue
