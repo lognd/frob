@@ -1,7 +1,7 @@
 ---
 id: T-4359
 title: Wire proc.stderr into parse_ruff_json's new stderr param in _run_ruff
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
