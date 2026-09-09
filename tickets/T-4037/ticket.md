@@ -16,10 +16,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_models.py
 - src/frob/app/ticket_runner/_close_cmd.py
+- tests/test_tickets_rule_shaped.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_rule_shaped.py
+  reason: 'T-4037: new unit tests for rule_shaped_findings_unresolved'
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 acceptance:
 - text: given the design step, when it completes, then it names the finding-kind mechanism
