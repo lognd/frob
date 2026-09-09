@@ -1,7 +1,7 @@
 ---
 id: T-4343
 title: Unscoped gate returns different error sets for the same commit under concurrency
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
