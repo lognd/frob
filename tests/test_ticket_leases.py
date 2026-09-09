@@ -2576,6 +2576,67 @@ class TestOrphanedTicketLocks:
         ):
             assert orphaned_ticket_locks(repo) == ()
 
+    def test_draft_id_never_reported(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        # T-4348: a `T-draft-*` id's lock is left behind BY DESIGN when the
+        # draft is promoted to a numbered ticket -- not a defect, and it
+        # will keep recurring on every future promotion, so it must never
+        # be reported, unconditionally, regardless of how fresh the lock
+        # file is (unlike the baseline-cutover exclusion below).
+        from frob.tickets._leases import orphaned_ticket_locks
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        (lock_dir / "T-draft-deadbeef.lock").touch()
+
+        assert orphaned_ticket_locks(repo) == ()
+
+    def test_pre_cutover_lock_is_baseline_silent(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        # T-4348: a lock whose mtime predates the fixed historical cutover
+        # is the confirmed-benign allocate-then-never-write backlog
+        # (T-4339 fixed the defect at source) -- silent, one time, by
+        # design.
+        import os
+
+        from frob.tickets._leases import (
+            _ORPHAN_LOCK_BASELINE_CUTOVER,
+            orphaned_ticket_locks,
+        )
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        lock_path = lock_dir / "T-3333.lock"
+        lock_path.touch()
+        old = _ORPHAN_LOCK_BASELINE_CUTOVER - 3600
+        os.utime(lock_path, (old, old))
+
+        assert orphaned_ticket_locks(repo) == ()
+
+    def test_post_cutover_lock_still_reports(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        # T-4348: DO NOT WEAKEN DETECTION -- a lock created after the
+        # baseline cutover is a fresh finding, the same T-4313 shape the
+        # detector was built to catch, and must still report.
+        import os
+
+        from frob.tickets._leases import (
+            _ORPHAN_LOCK_BASELINE_CUTOVER,
+            orphaned_ticket_locks,
+        )
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        lock_path = lock_dir / "T-3334.lock"
+        lock_path.touch()
+        fresh = _ORPHAN_LOCK_BASELINE_CUTOVER + 3600
+        os.utime(lock_path, (fresh, fresh))
+
+        assert orphaned_ticket_locks(repo) == ("T-3334",)
+
     def test_warn_logs_once_per_id(self, repo: Path, caplog) -> None:
         # frob:tests src/frob/tickets/_leases.py::warn_orphaned_ticket_locks kind="unit"
         import logging

@@ -2,7 +2,7 @@
 id: T-4348
 title: Orphaned-lock detector reports 153 historical residue findings on a healthy
   tree
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -35,6 +35,12 @@ body_changes:
   at: '2026-09-08'
   old_length: 2785
   new_length: 6113
+evidence:
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_draft_id_never_reported
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_pre_cutover_lock_is_baseline_silent
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_post_cutover_lock_still_reports
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_lock_gone_ticket_is_orphaned
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_live_holder_not_orphaned
 designated_repro_test: null
 threat: null
 component: null

@@ -1064,7 +1064,80 @@ def _lock_file_held_by_live_process(path: Path) -> bool:
         os.close(fd)
 
 
+# frob:ticket T-4348
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_draft_id_never_reported
+_ORPHAN_DRAFT_ID_PREFIX = "T-draft-"
+
+# frob:ticket T-4348
+# frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baselin\
+# e_silent
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_rep\
+# orts
+_ORPHAN_LOCK_BASELINE_CUTOVER = datetime(2026, 9, 9, 3, 10, 0, tzinfo=UTC).timestamp()
+"""Unix-epoch mtime cutover for `orphaned_ticket_locks` (T-4348): fixed at
+the moment this ticket measured and confirmed the pre-existing 138-lock
+backlog left by the allocate-then-never-write defect T-4339 fixed at
+source (every sampled id: allocated, never committed anywhere in git,
+mtime clustered in the same historical window). A lock file whose mtime
+predates this constant is that backlog -- known, confirmed benign, and
+never growing again now that T-4339 closed the defect that produced it --
+so it is treated as an accepted baseline and never reported. A lock file
+whose mtime is AT or AFTER this constant is, by definition, one this
+detector had not yet seen when the baseline was measured, so it reports
+exactly like a fresh T-4313-shaped loss would: the baseline only ever
+subtracts what was already confirmed, it cannot grow to cover a new
+orphan. This is a one-time historical cutover, not a rolling window --
+picking "now" would let unrelated future defects hide behind a moving
+horizon, which is the opposite of what T-4348 asked for."""
+
+
+# frob:ticket T-4348
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_draft_id_never_reported
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baselin\
+# e_silent
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_rep\
+# orts
+def _is_ticket_lock_baseline_excluded(ticket_id: str, lock_path: Path) -> bool:
+    """`True` iff `ticket_id`/`lock_path` is one of the TWO known-benign
+    orphan shapes T-4348 measured (never a fresh loss) -- factored out of
+    `orphaned_ticket_locks` so that function's own body stays under
+    ARCH001's long-function threshold.
+
+    The two get DIFFERENT treatment because they have different shapes:
+    a `T-draft-*` id is excluded UNCONDITIONALLY, by prefix
+    (`_ORPHAN_DRAFT_ID_PREFIX`), regardless of age -- draft-to-numbered
+    promotion leaves its lock behind by design and will keep doing so on
+    every future promotion, so a one-time baseline would not fix it,
+    since a rule that re-accumulates findings during ordinary operation
+    has not been fixed. Every OTHER id is excluded only if its lock
+    file's mtime predates `_ORPHAN_LOCK_BASELINE_CUTOVER`, the fixed
+    historical point this ticket measured the T-4339 allocate-then-never-
+    write backlog at -- a one-time baseline, since that defect is fixed
+    at source, so the count only shrinks and a lock created from this
+    point forward is treated as a fresh finding exactly as before.
+
+    An unreadable lock file (vanished between the caller's glob and this
+    stat -- another sweep or a live release won the race) degrades to
+    `True` (excluded): nothing is left to report on a file that is
+    already gone."""
+    if ticket_id.startswith(_ORPHAN_DRAFT_ID_PREFIX):
+        return True
+    try:
+        lock_mtime = lock_path.stat().st_mtime
+    except OSError:
+        return True
+    return lock_mtime < _ORPHAN_LOCK_BASELINE_CUTOVER
+
+
 # frob:ticket T-4342
+# frob:ticket T-4348
 # frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
 # frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_lock_gone_ticket_is_orphaned
@@ -1073,8 +1146,11 @@ def _lock_file_held_by_live_process(path: Path) -> bool:
 def orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
     """Every ticket id whose per-ticket `ticket_lock` file (`.frob/tickets/
     <id>.lock`, `_store._ticket_lock_path`) has NO corresponding ticket
-    anywhere -- active ledger or archive -- AND is not currently held by a
-    live process (T-4342).
+    anywhere -- active ledger or archive -- is not currently held by a
+    live process, and is not one of the known-benign shapes `_is_ticket_
+    lock_baseline_excluded` screens out (T-4342, exclusions added by
+    T-4348 -- see that helper's own docstring for which two shapes and
+    why they get different treatment).
 
     WHY this is a trustworthy signal, not a heuristic: `.frob/` is
     gitignored, so the lock file survives a `git clean -fd` rollback that
@@ -1135,6 +1211,8 @@ def orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
         if ticket_id in known_ids:
             continue
         if _lock_file_held_by_live_process(lock_path):
+            continue
+        if _is_ticket_lock_baseline_excluded(ticket_id, lock_path):
             continue
         orphans.append(ticket_id)
     return tuple(orphans)
@@ -1202,11 +1280,12 @@ def warn_orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
         _log.warning(
             "tickets: orphaned lock file %s -- ticket %s exists in NEITHER "
             "the active ledger nor the archive, and its per-ticket lock is "
-            "not held by any live process. This is the forensic signature "
-            "of a ticket lost after `frob ticket new` printed success but "
-            "the write was later rolled back by a concurrent land "
-            "(T-4313/T-4339) -- investigate before removing the lock file, "
-            "it is the only remaining evidence of what was lost",
+            "not held by any live process. A ticket lost after `frob "
+            "ticket new` printed success but the write was later rolled "
+            "back by a concurrent land (the T-4313 shape) leaves exactly "
+            "this trace -- if the id is unfamiliar, treat the lock file as "
+            "the only remaining evidence and investigate before removing "
+            "it",
             root / _TICKET_LOCK_DIR_REL / f"{ticket_id}.lock",
             ticket_id,
         )
