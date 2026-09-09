@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 import time
+from collections import OrderedDict
 from pathlib import Path
 
 import pytest
@@ -187,6 +188,94 @@ class TestSelfScanHeavyGrouping:
             group_marker = next(m for m in item.own_markers if m.name == "xdist_group")
             assert group_marker.kwargs["name"] == "frob_self_scan_heavy"
         assert items[2].own_markers == []
+
+
+class TestLoadscopeSchedulerHardening:
+    """T-4353: `_harden_loadscope_scheduler`'s `_assign_work_unit` patch --
+    survives a worker present in `assigned_work` but missing from
+    `registered_collections` (the exact `KeyError: <WorkerController gwN>`
+    shape reproduced on Windows CI run 34298358489) instead of letting it
+    abort the whole session."""
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_missi\
+    # ng_registered_collection_is_absorbed_not_raised
+    def test_missing_registered_collection_is_absorbed_not_raised(self) -> None:
+        """A node in `self.assigned_work` (so still visited by `schedule`'s
+        `_reschedule` loop) but absent from `self.registered_collections`
+        (the crash-vs-collection race this ticket root-caused) must not
+        raise out of `_assign_work_unit` -- the patched method should drop
+        the node and put its just-claimed work unit back on the
+        workqueue instead."""
+        from xdist.scheduler.loadscope import LoadScopeScheduling
+
+        module = _load_conftest()
+        module._loadscope_hardened = False
+        original_method = LoadScopeScheduling._assign_work_unit
+        try:
+            module._harden_loadscope_scheduler()
+            sched = LoadScopeScheduling.__new__(LoadScopeScheduling)
+            dead_node = object()
+            sched.workqueue = OrderedDict({"scope-a": {"tests/x.py::test_a": False}})
+            sched.assigned_work = {dead_node: {}}
+            sched.registered_collections = {}  # dead_node missing on purpose
+
+            sched._assign_work_unit(dead_node)  # noqa: SLF001
+
+            assert dead_node not in sched.assigned_work
+            assert sched.workqueue == {"scope-a": {"tests/x.py::test_a": False}}
+        finally:
+            module._loadscope_hardened = False
+            LoadScopeScheduling._assign_work_unit = original_method
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healt\
+    # hy_node_still_gets_assigned_normally
+    def test_healthy_node_still_gets_assigned_normally(self) -> None:
+        """A node correctly present in BOTH `assigned_work` and
+        `registered_collections` still gets its work unit through the
+        patched method unchanged -- the hardening must not swallow the
+        normal, non-crashing path."""
+        from xdist.scheduler.loadscope import LoadScopeScheduling
+
+        module = _load_conftest()
+        module._loadscope_hardened = False
+        original_method = LoadScopeScheduling._assign_work_unit
+        try:
+            module._harden_loadscope_scheduler()
+            sched = LoadScopeScheduling.__new__(LoadScopeScheduling)
+            live_node = _RecordingNode()
+            sched.workqueue = OrderedDict({"scope-a": {"tests/x.py::test_a": False}})
+            sched.assigned_work = {live_node: {}}
+            sched.registered_collections = {live_node: ["tests/x.py::test_a"]}
+
+            sched._assign_work_unit(live_node)  # noqa: SLF001
+
+            assert sched.assigned_work[live_node] == {
+                "scope-a": {"tests/x.py::test_a": False}
+            }
+            assert live_node.sent == [[0]]
+        finally:
+            module._loadscope_hardened = False
+            LoadScopeScheduling._assign_work_unit = original_method
+
+
+class _RecordingNode:
+    """Minimal `WorkerController`-shaped stub (T-4353): records the index
+    list `_assign_work_unit` sends via `send_runtest_some` so the healthy
+    path can assert the real work still reaches the node, without pulling
+    in a live `xdist` worker/gateway."""
+
+    def __init__(self) -> None:
+        self.sent: list = []
+
+    # frob:waive WIRE001 reason="called by xdist's own (unpatched) \
+    # LoadScopeScheduling._assign_work_unit inside \
+    # test_healthy_node_still_gets_assigned_normally above, via this stub standing in \
+    # for a real WorkerController -- the wire gate cannot see a call site inside a \
+    # third-party library" follow_up="T-3381"
+    def send_runtest_some(self, indices) -> None:  # noqa: ANN001
+        self.sent.append(indices)
 
 
 class TestHeavySubprocessGrouping:
@@ -942,6 +1031,73 @@ class TestStallWatchdog:
             "it must be optionalhook=True for -p no:xdist to start at all"
         )
         assert marker.get("optionalhook") is True
+
+
+class TestStallAbortResultLines:
+    """T-4353: `_stall_abort_result_and_failed_lines` -- a stall-abort now
+    reports the REAL pass/fail counts and failing-id list already
+    accumulated in `terminalreporter.stats` instead of a hardcoded
+    `collected=0 failed=0`, root-caused by run 34305173304 reaching 99%
+    before one `frob_self_scan_heavy` worker died alone and the old
+    hardcoded line discarded every one of the thousands of tests that had
+    already passed."""
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_reports_rea\
+    # l_counts_and_failing_ids_from_terminalreporter_stats
+    def test_reports_real_counts_and_failing_ids_from_terminalreporter_stats(
+        self,
+    ) -> None:
+        """With a `terminalreporter` registered and `.stats` already
+        carrying passed/failed/skipped reports from before the stall, the
+        result line's counts reflect them (still labelled `(partial,
+        stall-abort)`, never claimed complete) and a `SUITE-RESULT-FAILED:`
+        line is emitted per failing/erroring node id, exactly like a normal
+        `pytest_sessionfinish` abort (T-1673)."""
+        module = _load_conftest()
+        stats = {
+            "passed": [
+                TestSuiteResultLine._FakeReport(f"tests/a.py::test_{i}")
+                for i in range(5)
+            ],
+            "failed": [TestSuiteResultLine._FakeReport("tests/b.py::test_one")],
+            "error": [TestSuiteResultLine._FakeReport("tests/c.py::test_two")],
+            "skipped": [TestSuiteResultLine._FakeReport("tests/d.py::test_skip")],
+        }
+        reporter = TestSuiteResultLine._StatsReporter(stats)
+        config = TestSuiteResultLine._FakeConfig(reporter=reporter, is_worker=False)
+
+        result_line, failed_lines = module._stall_abort_result_and_failed_lines(config)
+
+        assert result_line == (
+            "SUITE-RESULT: exitstatus=1 collected=8 (partial, stall-abort) "
+            "failed=2 (partial, stall-abort)"
+        )
+        assert (
+            "SUITE-RESULT: failing set INCOMPLETE -- run aborted before "
+            "collecting/executing all tests, this is NOT the full failing set"
+        ) in failed_lines
+        assert "SUITE-RESULT-FAILED: tests/b.py::test_one (failed)" in failed_lines
+        assert "SUITE-RESULT-FAILED: tests/c.py::test_two (error)" in failed_lines
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_falls_back_\
+    # to_zero_counts_when_no_reporter_is_registered
+    def test_falls_back_to_zero_counts_when_no_reporter_is_registered(self) -> None:
+        """No `terminalreporter` plugin registered (should not happen in a
+        real run, but this must never raise) falls back to the ORIGINAL
+        hardcoded `collected=0 failed=0` line with no failing-id lines --
+        the pre-T-4353 behavior, preserved as the degraded case."""
+        module = _load_conftest()
+        config = TestSuiteResultLine._FakeConfig(reporter=None, is_worker=False)
+
+        result_line, failed_lines = module._stall_abort_result_and_failed_lines(config)
+
+        assert result_line == (
+            "SUITE-RESULT: exitstatus=1 collected=0 (partial, stall-abort) "
+            "failed=0 (partial, stall-abort)"
+        )
+        assert failed_lines == []
 
 
 # frob:ticket T-3608

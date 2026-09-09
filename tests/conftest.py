@@ -396,6 +396,7 @@ def pytest_configure(config: pytest.Config) -> None:
     _worker_crash_rerun_counts.clear()
     _last_node_death_ts = None
     _harden_dsession_active_nodes()
+    _harden_loadscope_scheduler()
     restore_stale_journals(_REPO_ROOT)
     # T-3608: only under pytest-xdist is a "worker died, nothing ever
     # rescheduled or ended the session" stall even possible -- plain serial
@@ -1179,6 +1180,91 @@ def _format_stalled_item_lines(marker_dir: Path, now: float) -> list[str]:
 
 
 # frob:ticket T-3608
+# frob:ticket T-4353
+# frob:waive WIRE001 reason="genuinely wired -- called only by \
+# _announce_stall_and_abort below, itself reached exclusively via \
+# threading.Thread(target=...), same gap this file's own _stall_detected WIRE001 \
+# waiver above already covers, not a direct in-repo call site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_reports_real_co\
+# unts_and_failing_ids_from_terminalreporter_stats
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_falls_back_to_z\
+# ero_counts_when_no_reporter_is_registered
+def _stall_abort_result_and_failed_lines(
+    config: pytest.Config,
+) -> tuple[str, list[str]]:
+    """T-4353: the `SUITE-RESULT:`/`SUITE-RESULT-FAILED:` lines for a
+    stall-abort, built from `terminalreporter.stats` -- the SAME
+    already-accumulated, no-coordination-needed source `pytest_
+    sessionfinish`'s own T-1673 failing-set listing reads (see that
+    function's docstring). Split out of `_announce_stall_and_abort` so it
+    stays independently testable without exercising the real `os._exit`
+    tail.
+
+    Root cause this answers (run 34305173304, this ticket's own
+    evidence): the suite reached 99% -- one `frob_self_scan_heavy` worker
+    died alone, no second concurrent scan, matching this ticket's
+    "single scan plus ambient load exceeds the runner's memory" candidate
+    -- then `_announce_stall_and_abort` printed the UNCONDITIONAL
+    `collected=0 failed=0` this function replaces, discarding every one
+    of the thousands of tests that had already passed before the stall.
+    Nothing about the T-3608 stall-abort's OWN design changes here (still
+    a fast, self-inflicted, named `os._exit` the moment no worker has
+    reported progress in `_STALL_ABORT_SECONDS` -- there remains no
+    reachable graceful teardown with a worker wedged in xdist's own
+    `remote.py:run_one_test -> get`); only the counts and failing-id list
+    this line reports become real instead of a placeholder, because
+    reading `reporter.stats` needs no cooperation from the wedged worker,
+    only the controller's own already-in-memory report history.
+
+    Counts are labelled `(partial, stall-abort)` like every other
+    did-not-complete count in this file (T-3246) -- a test whose `call`
+    phase never reported before the stall is invisible to `reporter.
+    stats` the same way it would be to `session.testscollected` on any
+    other abort path, so this is a lower bound, not a promise of
+    completeness."""
+    lines: list[str] = []
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    stats = getattr(reporter, "stats", None) if reporter is not None else None
+    if not stats:
+        return (
+            "SUITE-RESULT: exitstatus=1 collected=0 (partial, stall-abort) "
+            "failed=0 (partial, stall-abort)",
+            lines,
+        )
+    passed = len(stats.get("passed", ()))
+    failing_ids: list[str] = []
+    for outcome in ("failed", "error"):
+        for report in stats.get(outcome, ()):
+            nodeid = getattr(report, "nodeid", None)
+            if nodeid is None:
+                continue
+            node_line = f"{nodeid} ({outcome})"
+            cause = _worker_crash_causes.get(nodeid)
+            if cause is not None:
+                node_line += f" -- {cause}"
+            failing_ids.append(node_line)
+    failed = len(failing_ids)
+    total = passed + failed + len(stats.get("skipped", ()))
+    result_line = (
+        f"SUITE-RESULT: exitstatus=1 collected={total} (partial, stall-abort) "
+        f"failed={failed} (partial, stall-abort)"
+    )
+    if failing_ids:
+        lines.append(
+            "SUITE-RESULT: failing set INCOMPLETE -- run aborted before "
+            "collecting/executing all tests, this is NOT the full failing set"
+        )
+        shown = failing_ids[: _suite_result_max_node_ids()]
+        lines.extend(f"SUITE-RESULT-FAILED: {node_line}" for node_line in shown)
+        remaining = len(failing_ids) - len(shown)
+        if remaining > 0:
+            lines.append(f"SUITE-RESULT-FAILED: and {remaining} more")
+    return result_line, lines
+
+
+# frob:ticket T-3608
 # frob:waive WIRE001 reason="genuinely wired -- called only by _run_stall_watchdog \
 # below, itself reached exclusively via threading.Thread(target=...), same gap this \
 # file's own _stall_detected WIRE001 waiver above already covers, not a direct in-repo \
@@ -1186,14 +1272,17 @@ def _format_stalled_item_lines(marker_dir: Path, now: float) -> list[str]:
 def _announce_stall_and_abort(config: pytest.Config, now: float) -> None:
     """T-3608: builds and prints the loud stall report (a `SUITE-RESULT:
     STALL-DETECTED` line, one `STALL-CRASH-REPORT:` per still-in-flight
-    marker, and every `WORKER-CRASH-REPORT:` entry recorded so far), then
-    hard-exits the controller process via `os._exit`. A clean pytest
-    teardown is not attempted on purpose: the failure mode this responds
-    to is every surviving worker permanently blocked in xdist's own
-    `remote.py:run_one_test -> get` -- there is no reachable graceful path
-    out of that, only an external kill, which is exactly the ~20 minute
-    CI-budget kill this replaces with a prompt, self-inflicted, and
-    NAMED one."""
+    marker, every `WORKER-CRASH-REPORT:` entry recorded so far, and
+    (T-4353) the real pass/fail counts and failing-id list already
+    accumulated in `terminalreporter.stats` -- see `_stall_abort_result_
+    and_failed_lines`'s own docstring for why that is safe to read from
+    here), then hard-exits the controller process via `os._exit`. A clean
+    pytest teardown is not attempted on purpose: the failure mode this
+    responds to is every surviving worker permanently blocked in xdist's
+    own `remote.py:run_one_test -> get` -- there is no reachable graceful
+    path out of that, only an external kill, which is exactly the ~20
+    minute CI-budget kill this replaces with a prompt, self-inflicted,
+    and NAMED one."""
     lines = [
         f"SUITE-RESULT: STALL-DETECTED no test has completed for "
         f">={_STALL_ABORT_SECONDS:g}s after a worker crash -- aborting now "
@@ -1201,10 +1290,9 @@ def _announce_stall_and_abort(config: pytest.Config, now: float) -> None:
     ]
     lines.extend(_format_stalled_item_lines(_XDIST_CRASH_MARKER_DIR, now))
     lines.extend(_worker_crash_entries)
-    lines.append(
-        "SUITE-RESULT: exitstatus=1 collected=0 (partial, stall-abort) "
-        "failed=0 (partial, stall-abort)"
-    )
+    result_line, failed_lines = _stall_abort_result_and_failed_lines(config)
+    lines.extend(failed_lines)
+    lines.append(result_line)
     # T-3608/T-3726: `os._exit` skips Python's normal buffered-stream
     # flush, AND (T-3726) a plain `sys.stdout.flush()` alone cannot
     # rescue a write made while pytest's own fd-level capture manager is
@@ -1527,6 +1615,93 @@ def _harden_dsession_active_nodes() -> None:
         _safe_errordown
     )
     _dsession_hardened = True
+
+
+# frob:ticket T-4353
+_loadscope_hardened = False
+"""T-4353: guards `_harden_loadscope_scheduler` so the monkeypatch below is
+applied at most once per process, same reasoning as `_dsession_hardened`
+above."""
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called only from pytest_configure \
+# above, same controller-only-hook gap T-3516's sibling waiver on \
+# _harden_dsession_active_nodes already covers" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_missing_r\
+# egistered_collection_is_absorbed_not_raised
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healthy_n\
+# ode_still_gets_assigned_normally
+def _harden_loadscope_scheduler() -> None:
+    """Patch `xdist.scheduler.loadscope.LoadScopeScheduling._assign_work_unit`
+    (T-4353) so a worker that vanishes between `add_node` (registered in
+    `self.assigned_work`) and `add_node_collection` (registered in
+    `self.registered_collections`) is dropped instead of crashing the whole
+    session with `INTERNALERROR> KeyError: <WorkerController gwN>` -- one
+    level below the `_active_nodes` race T-3516's `_harden_dsession_active_
+    nodes` already absorbs, in xdist's OWN scheduler bookkeeping instead of
+    `DSession`'s. `LoadGroupScheduling` (this repo's actual scheduler under
+    `--dist=loadgroup`, `pyproject.toml`) subclasses `LoadScopeScheduling`
+    and inherits `_assign_work_unit` unchanged, so patching the base class
+    covers both.
+
+    Reproduced on Windows CI (run 34298358489, this ticket's own evidence):
+    two `frob_self_scan_heavy`-group tests died from suspected OOM on two
+    DIFFERENT workers roughly 500ms apart (`test_sys_gate_zero_violations`
+    on gw0 at 300.2s, `test_checker_fleet_deploy_vet_have_no_undeclared_fs_
+    write_selfaudit001` on gw3 at 300.7s) even though the group's own
+    `xdist_group` marker (`pytest_collection_modifyitems` above) pins every
+    item in it to ONE scope, hence one work unit, hence one worker at a
+    time -- the group was never split across two LIVE workers concurrently.
+    The shape that fits both the timing and the traceback: gw0 died mid-scan
+    (single-scan-plus-ambient-`-n auto`-load memory pressure, not two
+    concurrent scans -- T-4329's fix for THAT still holds), the group's
+    remaining work was requeued and picked up by gw3, which died the same
+    way; xdist then spun up a replacement node (surfacing as `gw5` in the
+    KeyError) to hold the worker count, and that replacement crashed/
+    reconnected before its own `add_node_collection` ran -- landing exactly
+    on `loadscope.py`'s `worker_collection = self.registered_collections
+    [node]` with `node` present in `self.assigned_work` (hence still in
+    `self.nodes`, hence still visited by `schedule()`'s `_reschedule` loop)
+    but absent from `registered_collections`. This does not remove the
+    memory pressure itself (see this ticket's own follow-up ticket for
+    that); it removes the SEPARATE failure mode where hitting that race
+    destroys the entire suite's failing set instead of just costing the
+    one or two tests that could not complete.
+
+    On the KeyError, the work unit already popped from `self.workqueue` and
+    assigned to `node` in `self.assigned_work` (both writes happen before
+    the failing `registered_collections[node]` lookup, see the original
+    method) is put back onto `self.workqueue` so a live node picks it up on
+    its next reschedule, and `node` is dropped from `self.assigned_work` so
+    it is never visited again. Controller-only in effect (workers do not
+    run this scheduler), silently a no-op if `pytest_xdist` is not
+    installed/importable or its internals have changed shape -- never
+    blocks collection over a best-effort hardening patch."""
+    global _loadscope_hardened
+    if _loadscope_hardened:
+        return
+    try:
+        from xdist.scheduler.loadscope import LoadScopeScheduling
+    except ImportError:  # pragma: no cover - pytest-xdist always installed here
+        return
+
+    original_assign_work_unit = LoadScopeScheduling._assign_work_unit
+
+    def _safe_assign_work_unit(self: Any, node: Any) -> None:
+        try:
+            original_assign_work_unit(self, node)
+        except KeyError:
+            assigned_to_node = self.assigned_work.pop(node, None)  # noqa: SLF001
+            if assigned_to_node:
+                for scope, work_unit in assigned_to_node.items():
+                    self.workqueue[scope] = work_unit  # noqa: SLF001
+
+    LoadScopeScheduling._assign_work_unit = (  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+        _safe_assign_work_unit
+    )
+    _loadscope_hardened = True
 
 
 # frob:ticket T-1596

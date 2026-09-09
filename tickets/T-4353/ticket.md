@@ -1,7 +1,7 @@
 ---
 id: T-4353
 title: Windows abort recurs intermittently despite the heavy-group fix
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -43,6 +43,11 @@ scope_changes:
     itself) -- explicitly scoping until that gate gap is fixed separately
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening::test_missing_registered_collection_is_absorbed_not_raised
+- tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening::test_healthy_node_still_gets_assigned_normally
+- tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines::test_reports_real_counts_and_failing_ids_from_terminalreporter_stats
+- tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines::test_falls_back_to_zero_counts_when_no_reporter_is_registered
 designated_repro_test: null
 threat: null
 component: null
