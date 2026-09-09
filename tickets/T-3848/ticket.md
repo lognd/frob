@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
+- tests/ticket_land_suite/test_land_plan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: src/frob/tickets/_land.py
   reason: the unwind-after-merge discard at _land_plan_locked's merge/finalize failure
     branch
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/ticket_land_suite/test_land_plan.py
+  reason: must-fire/must-stay-quiet fixtures for the unwind-after-merge failure
   actor: logan
   at: '2026-09-09'
 designated_repro_test: null
