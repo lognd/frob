@@ -296,6 +296,47 @@ class TestWindowsTestStepMitigationsStayPinned:
         )
 
 
+class TestMacosTestStepPutsVenvBinOnPath:
+    """T-4368: the macOS Test step invokes the venv's own interpreter
+    directly (`.venv/bin/python -m pytest`, T-4274's fix, no `uv run`
+    supervisor in between) rather than through `uv run`, which never
+    activates the target project's own bin dir onto `PATH`. Without
+    `.venv/bin` on `PATH`, `shutil.which("ty")`/`shutil.which("mypy")`
+    inside the test process resolve to nothing even though ty/mypy are
+    this repo's own dev dependencies, sitting right at `.venv/bin/ty`/
+    `.venv/bin/mypy` -- reproduced locally, platform-independent PATH-
+    content defect: `env -i PATH=/usr/bin:/bin .venv/bin/python -m
+    pytest -q tests/test_gates_suppress.py::TestSuppressionDialects::
+    test_available_reflects_path_not_project_config` fails with
+    `dialects["ty"].available is False` before this fix, passes after."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_macos_test_step_run_script_prepends_venv_bin_to_path(self) -> None:
+        """The macOS Test step's own `run:` script must export a `PATH`
+        that prepends `.venv/bin` BEFORE the direct-interpreter pytest
+        invocation -- the exact fix for T-4368's PATH-content defect."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (macos")
+        )
+        script = test_step.get("run", "")
+        export_idx = script.find('export PATH="$PWD/.venv/bin:$PATH"')
+        invoke_idx = script.find(".venv/bin/python -m pytest -q > >(tee")
+        assert export_idx != -1, (
+            "the macOS Test step's run script must export PATH with "
+            ".venv/bin prepended -- otherwise shutil.which(ty)/"
+            "shutil.which(mypy) inside the test process resolve to "
+            "nothing even though they are this repo's own dev "
+            "dependencies (T-4368)"
+        )
+        assert invoke_idx != -1
+        assert export_idx < invoke_idx, (
+            "the PATH export must happen BEFORE the direct-interpreter "
+            "pytest invocation it is meant to fix, not after"
+        )
+
+
 class TestTestStepsNoRerunFlakes:
     """T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs
     under xdist on py3.14 (macos), turning a rare flake into a

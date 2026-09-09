@@ -367,6 +367,23 @@ jobs:
           # `uv run` would have selected anyway -- this changes WHICH
           # process receives the signal, not which environment the suite
           # runs in.
+          # T-4368: this direct-interpreter invocation does not go through
+          # `uv run`, so it never gets `uv run`'s own PATH activation (which
+          # prepends the target project's own bin dir). Without `.venv/bin`
+          # on PATH, `shutil.which("ty")`/`shutil.which("mypy")` inside the
+          # test process -- and inside any subprocess it spawns -- resolve
+          # to nothing even though ty/mypy are this repo's own dev
+          # dependencies, sitting right there at `.venv/bin/ty`/`.venv/bin/
+          # mypy`. Reproduced locally (platform-independent PATH-content
+          # defect, not a macOS-specific one): `env -i PATH=/usr/bin:/bin
+          # .venv/bin/python -m pytest -q
+          # tests/test_gates_suppress.py::TestSuppressionDialects::test_available_reflects_path_not_project_config`
+          # fails with `dialects["ty"].available is False`; prepending
+          # `.venv/bin` to PATH fixes it. Prepend rather than replace, so
+          # the runner's own ambient PATH (git, coreutils, etc) stays
+          # intact -- this only ADDS this repo's own venv bin dir, exactly
+          # what `uv run` would have done had this step used it.
+          export PATH="$PWD/.venv/bin:$PATH"
           .venv/bin/python -m pytest -q > >(tee /tmp/pytest-macos.log) 2>&1 &
           pid=$!
           started=$(date +%s)
