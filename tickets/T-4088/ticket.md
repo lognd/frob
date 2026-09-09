@@ -2,7 +2,7 @@
 id: T-4088
 title: PERF003 reports nested loops for two SEQUENTIAL loops, failing the self-gate
   on both posix legs (AST proves no nesting)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
