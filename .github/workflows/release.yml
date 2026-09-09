@@ -126,13 +126,13 @@ jobs:
             frob-core/dist/*.whl strata-core/dist/*.whl
           /tmp/native-check-venv/bin/python -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
       - name: Upload frob-core wheel
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frob-core-${{ matrix.target }}
           path: frob-core/dist/*.whl
           retention-days: 90
       - name: Upload strata-core wheel
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: strata-core-${{ matrix.target }}
           path: strata-core/dist/*.whl
@@ -160,17 +160,17 @@ jobs:
           args: --out dist
       - name: frob sdist + wheel (pure Python)
         run: uv build
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frob-core-sdist
           path: frob-core/dist/*.tar.gz
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: strata-core-sdist
           path: strata-core/dist/*.tar.gz
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frob-dist
           path: dist/*
