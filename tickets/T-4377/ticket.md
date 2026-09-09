@@ -2,7 +2,7 @@
 id: T-4377
 title: fleet_status.py LANDS IN FLIGHT has no per-repo filter, unlike the T-3885-fixed
   ledger-write scan
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
