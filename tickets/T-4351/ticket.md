@@ -15,10 +15,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_worktree_guard.py
+- tests/unit/test_main_entry.py
+- tests/test_gate_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: T-4308 ambient-venv test is windows-affected per T-4351 ticket
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_gate_cache.py
+  reason: 'T-4351: archgate recompute test hits Windows process_time clock-granularity
+    collision with the cache-hit 0.0 sentinel'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
