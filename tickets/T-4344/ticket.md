@@ -1,7 +1,7 @@
 ---
 id: T-4344
 title: Update deferred-sweep doc for T-4335's baseline-persist contract
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-08'
