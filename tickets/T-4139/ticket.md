@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_doclink_docanchor.py
+- tests/gates_suite/test_doc.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_doc.py
+  reason: 'T-4139: DOC002/DOC014 fixtures live in the shared gates_suite doc test
+    file; evidence for this ticket''s own new code'
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 acceptance:
 - text: given a doc directive whose target slug has no heading and no anchor tag in
