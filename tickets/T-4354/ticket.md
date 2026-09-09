@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_project_tool.py
 - tests/unit/test_project_tool.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_project_tool.py
   reason: add coverage for the new tool-absent classifier this ticket introduces
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: docs/modules/process.md
+  reason: new public symbol's frob:doc target
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
