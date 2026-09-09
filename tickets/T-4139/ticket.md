@@ -2,7 +2,7 @@
 id: T-4139
 title: a frob:doc pointer at a non-existent anchor resolved to nothing for as long
   as it was landed, with no finding, contradicting DOC002's own stated contract
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
