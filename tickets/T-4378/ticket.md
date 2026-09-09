@@ -2,7 +2,7 @@
 id: T-4378
 title: artifact-smoke must-stay-quiet test conflates base-install toolchain PATH with
   serve-extra verdict
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
