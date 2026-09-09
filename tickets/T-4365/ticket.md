@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_doctor.py
 - tests/test_doctor.py
+- tickets/T-draft-9249081e/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,7 +29,18 @@ scope_changes:
     root cause as tests/system/test_cli_doctor.py
   actor: logan
   at: '2026-09-09'
-designated_repro_test: null
+- op: add
+  glob: tickets/T-draft-9249081e/**
+  reason: T-draft-9249081e's ticket file was created and committed in this worktree
+    while filing the out-of-scope WIRE001 finding; scope it so SCOPE001 does not flag
+    T-4365's own commit
+  actor: logan
+  at: '2026-09-09'
+evidence:
+- tests/test_doctor.py::test_run_diagnosis_natives_present
+- tests/test_doctor.py::test_run_diagnosis_natives_absent
+- tests/test_doctor.py::test_run_diagnosis_partial_availability
+designated_repro_test: tests/test_doctor.py::test_run_diagnosis_natives_present
 threat: null
 component: null
 anchor: false
