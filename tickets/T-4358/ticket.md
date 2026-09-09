@@ -2,7 +2,7 @@
 id: T-4358
 title: Reconcile ruff-check/ty parsers' treatment of a tool absent from the target
   project
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
