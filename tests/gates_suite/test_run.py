@@ -1252,6 +1252,62 @@ class TestRunGatesQueueFailureThreadsRealTicketError:
         assert result.danger_err != GateError.QueueUnavailable
 
 
+# frob:ticket T-4343
+class TestGraphFP:
+    """T-4343: a land or a sibling agent's edit landing WHILE `build_graph`
+    walks/parses `root` can hand back a `GraphSnapshot` mixing pre- and
+    post-change reads -- the actual, measured mechanism behind five
+    identical-commit `frob check` runs disagreeing (T-4343's own
+    investigation ruled out both the gate-result cache and the invariant
+    registry, and a controlled concurrent-rebuild reproduction against one
+    unchanged commit, in isolation, found no divergence -- so the torn
+    state has to come from the repo itself moving mid-walk, not from the
+    shared sqlite cache)."""
+
+    # frob:tests \
+    # tests/gates_suite/test_run.py::TestGraphFP.test_head_move_unmeasured  # noqa: E501
+    def test_head_move_unmeasured(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-fire control: `build_graph` succeeds, but the repo's HEAD
+        moves (a land committing) between this call starting and
+        finishing -- `run_gates` must report `GateError.GraphUnavailable`
+        (GATES001's own honest-unmeasured outcome) rather than trust a
+        snapshot that may have read across the commit boundary."""
+        import frob.gates as gates_mod
+
+        _git_init(tmp_path)
+        real_build_graph = gates_mod.build_graph
+
+        def _build_then_move_head(root: Path, cache: Path):
+            result = real_build_graph(root, cache)
+            _write(root, "moved_mid_build.py", "x = 1\n")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "landed mid-build"],
+                cwd=root,
+                check=True,
+            )
+            return result
+
+        monkeypatch.setattr(gates_mod, "build_graph", _build_then_move_head)
+
+        result = run_gates(GateConfig(root=str(tmp_path)))
+
+        assert result.is_err
+        assert result.danger_err == GateError.GraphUnavailable
+
+    # frob:tests \
+    # tests/gates_suite/test_run.py::TestGraphFP.test_stable_head_ok  # noqa: E501
+    def test_stable_head_ok(self, tmp_path: Path) -> None:
+        """Negative control: an ordinary run with no concurrent write must
+        pass this check exactly as before -- `_repo_state_fingerprint` is
+        never a source of false failures on a quiescent repo."""
+        _git_init(tmp_path)
+        result = run_gates(GateConfig(root=str(tmp_path)))
+        assert result.is_ok
+
+
 # frob:ticket T-1155
 class TestNewGateRuleDynamicResolution:
     """T-1155: `_new_gate_rule_acceptance.new_gate_rule_ids` must locate

@@ -1,7 +1,7 @@
 ---
 id: T-4343
 title: Unscoped gate returns different error sets for the same commit under concurrency
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -34,6 +34,10 @@ body_changes:
   at: '2026-09-08'
   old_length: 2913
   new_length: 6179
+evidence:
+- tests/gates_suite/test_run.py::TestGraphFP::test_head_move_unmeasured
+- tests/gates_suite/test_run.py::TestGraphFP::test_stable_head_ok
+- tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError::test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror
 designated_repro_test: null
 threat: null
 component: null

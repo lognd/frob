@@ -6617,32 +6617,91 @@ def _require(
     return Ok(result.danger_ok)
 
 
+# frob:ticket T-4343
+def _repo_state_fingerprint(root: Path) -> str | None:
+    """Cheap signature of `root`'s live git state (HEAD sha + full working-
+    tree status), used to detect a concurrent write landing WHILE
+    `build_graph` walks/parses `root` (T-4343): a land or another agent's
+    edit that lands mid-walk can hand `build_graph` a mix of pre- and
+    post-edit file reads -- not a torn sqlite transaction (measured: T-4282
+    already batches ingest commits every 200 files, and each batch is
+    self-consistent by construction; a controlled 5-way concurrent rebuild
+    against one unchanged commit, in isolation, reproduced NO divergence)
+    but a torn REPO WALK, exactly matching what was actually observed
+    during the divergent runs this ticket investigates ("drifted from
+    cache" warnings naming files other agents were actively touching).
+    `None` means "cannot verify" (no git, or a spawn failure) -- a
+    synthetic test fixture with no `.git` is `_repo_root_for`'s own
+    documented fallback case, so a caller must treat `None` as
+    unverifiable, never as "state changed"."""
+    head = run_argv(("git", "-C", str(root), "rev-parse", "HEAD"))
+    if head.is_err or head.danger_ok.returncode != 0:
+        return None
+    status = run_argv(
+        (
+            "git",
+            "-C",
+            str(root),
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=all",
+            "--",
+            ".",
+            ":(exclude).frob",
+        )
+    )
+    if status.is_err or status.danger_ok.returncode != 0:
+        return None
+    return f"{head.danger_ok.stdout.strip()}\n{status.danger_ok.stdout}"
+
+
 # frob:ticket T-2710
+# frob:ticket T-4343
 # frob:tests \
 # tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError.test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_run.py::TestGraphFP.test_head_move_unmeasured  # noqa: E501
 def _load_graph_queue_lock(
     root: Path,
 ) -> Result[tuple[GraphSnapshot, TicketQueue, LockFile], GateError | TicketError]:
     """Load the graph snapshot, ticket queue, and lock file -- the first
     third of `_load_required_state`'s mandatory loads.
 
-    T-2710: the ticket-queue step deliberately does NOT go through
-    `_require` (which would collapse `load_queue`'s real `TicketError` --
-    e.g. `DuplicateId`, `MalformedFrontmatter` -- into the generic
-    `GateError.QueueUnavailable` sentinel, the exact information loss
-    T-2684's own body flags as its unfixed remainder). Propagating
-    `load_queue`'s actual `TicketError` here lets `_gates_error_result`
-    name the real failing MODE (which kind of ledger corruption) instead
-    of a single undifferentiated "queue load failed" message -- still
-    short of the exact failing file path (that needs `frob.tickets`
-    storage internals outside this ticket's scope to surface), but no
-    longer forcing a `frob ticket list`/`frob ticket show <id>` round
-    trip just to learn duplicate-id vs. malformed-frontmatter."""
+    T-4343: `build_graph`'s own walk+parse is bracketed with
+    `_repo_state_fingerprint` before and after -- if `root`'s git HEAD or
+    working-tree status moved WHILE the build ran (a land or a sibling
+    agent's edit landing mid-walk), the resulting `GraphSnapshot` can mix
+    symbols read before the change with symbols read after it. Rather
+    than hand every gate a torn cross-state snapshot (which is what
+    produced this ticket's divergent same-commit runs -- a spurious
+    finding OR a spurious clean depending on which half a given rule
+    happens to read), this is now reported the same honest, already-
+    existing way a graph build failure is: `Err(GateError.
+    GraphUnavailable)`, which `run_gates` turns into GATES001 and skips
+    every gate for this run rather than trusting a result computed from
+    a mid-flight repo. A fingerprint of `None` (no git, or a spawn
+    failure) is unverifiable, not "changed" -- it never blocks the
+    build, matching `_repo_root_for`'s own non-git-fixture fallback."""
+    fingerprint_before = _repo_state_fingerprint(root)
     build = _require(
         build_graph(root, root / _CACHE_REL), "graph build", GateError.GraphUnavailable
     )
     if build.is_err:
         return Err(build.danger_err)
+    fingerprint_after = _repo_state_fingerprint(root)
+    if (
+        fingerprint_before is not None
+        and fingerprint_after is not None
+        and fingerprint_before != fingerprint_after
+    ):
+        _log.error(
+            "run_gates: %s's git state moved while build_graph was walking it "
+            "(a land or a concurrent edit landed mid-build) -- the graph "
+            "snapshot may mix pre- and post-change reads, reporting "
+            "GraphUnavailable rather than trusting it",
+            root,
+        )
+        return Err(GateError.GraphUnavailable)
     queue_result = load_queue(root)
     if queue_result.is_err:
         _log.error("run_gates: ticket queue load failed: %s", queue_result.danger_err)
