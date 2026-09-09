@@ -1,7 +1,7 @@
 ---
 id: T-4338
 title: CI does not pin the uv version, so platform legs silently run different toolchains
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -39,6 +39,16 @@ scope_changes:
   reason: bump the fs.read ratchet ceiling for the new toolchain-pin test (SYS111)
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_ci_workflow_toolchain_pins.py::TestUvVersionIsPinned::test_workflow_declares_a_uv_version_pin
+- tests/test_ci_workflow_toolchain_pins.py::TestUvVersionIsPinned::test_every_setup_uv_step_pins_the_shared_version
+- tests/test_ci_workflow_toolchain_pins.py::TestRustToolchainVersionIsPinned::test_workflow_declares_a_rust_toolchain_pin
+- tests/test_ci_workflow_toolchain_pins.py::TestRustToolchainVersionIsPinned::test_every_rust_toolchain_step_pins_the_shared_version
+- tests/test_ci_workflow_toolchain_pins.py::TestMaturinVersionIsPinned::test_workflow_declares_a_maturin_version_pin
+- tests/test_ci_workflow_toolchain_pins.py::TestMaturinVersionIsPinned::test_every_maturin_action_step_pins_the_shared_version
+- tests/test_ci_workflow_toolchain_pins.py::TestResolvedToolchainVersionsAreReported::test_build_job_prints_resolved_toolchain_versions
+- tests/test_ci_workflow_toolchain_pins.py::TestResolvedToolchainVersionsAreReported::test_standalone_install_job_prints_resolved_toolchain_versions
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_ci_workflow_yaml_still_parses
 designated_repro_test: null
 threat: null
 component: null

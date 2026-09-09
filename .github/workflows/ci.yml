@@ -5,6 +5,42 @@ name: ci
 # (github-actions ecosystem) is the update path -- see the release
 # workflow's matching note for why hand-unpinning is never the fix.
 
+# T-4338: every TOOLCHAIN this workflow installs (as opposed to the actions
+# that install them, already covered by T-3922 above) is pinned here, once,
+# for every leg to read -- see T-4327 for why this matters. Neither CI leg
+# pinned a `uv` version; astral-sh/setup-uv caches the binary under a key
+# keyed on OS/arch/system-Python, so a cache HIT silently reuses an old `uv`
+# while a cache MISS on a different leg silently downloads the current
+# release. Ubuntu's cache hit reused an older `uv`; macOS's miss pulled
+# uv 0.12.10, whose new strict VIRTUAL_ENV-vs-project-path check produced 68
+# failures that looked like a platform bug and cost a full ticket (T-4308)
+# before T-4327 found the real cause. Every leg reading ONE pin here means
+# the legs are comparable by construction instead of by cache-state luck.
+#
+# SURVEY (T-4338): three toolchain inputs in this workflow were resolved
+# implicitly before this change -- `uv` (astral-sh/setup-uv, no `version:`),
+# the Rust toolchain (dtolnay/rust-toolchain, no `toolchain:`, defaulted to
+# whatever "stable" meant that day), and `maturin` (PyO3/maturin-action, no
+# `maturin-version:`, installed latest-matching-constraint at run time).
+# All three are pinned below. The actions that install them (`uses: ...@
+# <sha>`) were already pinned by T-3922 and are not part of this count.
+#
+# PIN-ADVANCEMENT OWNERSHIP (decided here, T-4338): these three pins are
+# OUTSIDE `.github/dependabot.yml`'s scope and deliberately stay manual.
+# Dependabot's github-actions ecosystem (T-3922) tracks the `uses: ...@sha`
+# references themselves -- it has no mechanism that watches a `with:`
+# input's string value, so UV_VERSION/RUST_TOOLCHAIN_VERSION/
+# MATURIN_VERSION would never be touched by an automated PR even if a
+# github-actions ecosystem bump landed on the same line. Advancing them is
+# a human decision (bump, rerun this workflow, confirm the "Print resolved
+# toolchain versions" step below on all three legs, then update this
+# block) -- do not fold that into the T-4268 dependabot-sequencing plan,
+# which only ever governs the `uses:` SHAs.
+env:
+  UV_VERSION: "0.11.19"
+  RUST_TOOLCHAIN_VERSION: "1.98.0"
+  MATURIN_VERSION: "1.7.4"
+
 on:
   push:
     branches: [main]
@@ -57,8 +93,28 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: ${{ env.UV_VERSION }}
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+      # T-4338: state what this run actually used -- a version that must be
+      # inferred from setup-uv/rust-toolchain's own cache-hit-or-miss log
+      # lines is not reported. Printed unconditionally (not `if: failure()`)
+      # so a passing run's own step summary is also a record of what it ran,
+      # not only a failed one's.
+      - name: Print resolved toolchain versions (T-4338)
+        shell: bash
+        run: |
+          {
+            echo '## Resolved toolchain versions (T-4338)'
+            echo '```'
+            echo "uv:      $(uv --version)"
+            echo "rustc:   $(rustc --version)"
+            echo "cargo:   $(cargo --version)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       # T-3980: the cache key MUST include runner.os (and arch, since
       # macos-latest can move between arm64/x86_64 runners) -- this path
       # covers frob-core/target and strata-core/target, which is where
@@ -731,6 +787,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: ${{ env.UV_VERSION }}
       # T-3935: frob-core/strata-core are hard `==`-pinned DEFAULT deps
       # (T-3845) and neither is published to any registry, so a plain
       # `uv pip install dist/*.whl` resolve reaches out to PyPI for them
@@ -743,16 +801,32 @@ jobs:
       # artifact dependency for a single ubuntu-only smoke check.
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+      - name: Print resolved toolchain versions (T-4338)
+        shell: bash
+        run: |
+          {
+            echo '## Resolved toolchain versions (T-4338, standalone-install)'
+            echo '```'
+            echo "uv:      $(uv --version)"
+            echo "rustc:   $(rustc --version)"
+            echo "cargo:   $(cargo --version)"
+            echo "maturin: pinned ${{ env.MATURIN_VERSION }} (see maturin-action steps below)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Build frob-core wheel (abi3-py311, local find-links only)
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: frob-core
           args: --release --out dist
+          maturin-version: ${{ env.MATURIN_VERSION }}
       - name: Build strata-core wheel (abi3-py311, local find-links only)
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: strata-core
           args: --release --out dist
+          maturin-version: ${{ env.MATURIN_VERSION }}
       - name: Build the bare wheel (no native extras)
         run: uv build --wheel
       # T-3935: `--find-links` points the resolver at the just-built core

@@ -246,9 +246,9 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 224,
-      "reason": "T-4150: adds tests/system/test_public_api_from_wheel.py to the fs.read via-list (parsing every src/frob/**/__init__.py to collect each package's real __all__, and reading each built wheel's install/probe-script output) -- bumping the ceiling 223 -> 224, one new site.",
-      "ticket": "T-4150"
+      "accepted_count": 225,
+      "reason": "T-4338: adds tests/test_ci_workflow_toolchain_pins.py to the fs.read via-list (reads .github/workflows/ci.yml to assert the uv/Rust/maturin toolchain-version pins added by this ticket) -- bumping the ceiling 224 -> 225, one new site.",
+      "ticket": "T-4338"
     },
     "testsuite::fs.write": {
       "accepted_count": 517,
