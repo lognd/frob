@@ -16,7 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_scaffold_dx.py
 - src/frob/testing/_collect.py
-- tests/unit/test_collect_python_tests.py
+- tests/test_testing_collect.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +38,18 @@ scope_changes:
     which has no visibility into a scaffolded/nested project''s own venv+deps; must
     also fix the empty-stderr diagnostic (pytest writes collection ImportErrors to
     stdout, not stderr)'
+  actor: logan
+  at: '2026-09-08'
+- op: remove
+  glob: tests/unit/test_collect_python_tests.py
+  reason: correct existing test file name for _run_collect_only coverage (tests/unit/test_collect_python_tests.py
+    does not exist)
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/test_testing_collect.py
+  reason: correct existing test file name for _run_collect_only coverage (tests/unit/test_collect_python_tests.py
+    does not exist)
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
