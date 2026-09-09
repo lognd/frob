@@ -2,7 +2,7 @@
 id: T-4377
 title: fleet_status.py LANDS IN FLIGHT has no per-repo filter, unlike the T-3885-fixed
   ledger-write scan
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -34,6 +34,9 @@ scope_changes:
     anchor'
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows::test_a_land_in_a_different_repo_is_not_counted
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows::test_own_ancestor_process_is_not_counted_as_a_land
 designated_repro_test: null
 threat: null
 component: null

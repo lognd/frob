@@ -11,6 +11,7 @@ from tests.unit.conftest import (
 )
 
 
+# frob:ticket T-4377
 class TestLandProcessRows:
     """`fleet_status.land_process_rows` (T-2180, T-2475)."""
 
@@ -83,6 +84,77 @@ class TestLandProcessRows:
         monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(stdout))
         rows = fleet_status.land_process_rows(proc)
         assert [r["pid"] for r in rows] == [101]
+
+    # frob:ticket T-4377
+    def test_own_ancestor_process_is_not_counted_as_a_land(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """T-4377: `land_process_rows` mirrors T-3885's fix -- a pid in
+        THIS process's own ancestor chain is never a competing land, even
+        when its argv/cwd would otherwise match. `proc/<self_pid>/stat`
+        reports pid 555 as this test process's parent; a `ps` row for pid
+        555 (real `ticket land` argv) must be dropped, while an unrelated
+        pid (200, same argv shape, no ancestor relationship) survives."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self_pid = os.getpid()
+        (proc / str(self_pid)).mkdir()
+        (proc / str(self_pid) / "stat").write_text(f"{self_pid} (python) S 555 0 0\n")
+        stdout = (
+            "    PID  ETIMES     TIME COMMAND\n"
+            "    555     400    00:20 timeout 540 uv run frob ticket land "
+            "T-9001 --worktree /w\n"
+            "    200     300    00:10 timeout 540 uv run frob ticket land "
+            "T-9002 --worktree /w2\n"
+        )
+        monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(stdout))
+        rows = fleet_status.land_process_rows(proc)
+        assert [r["pid"] for r in rows] == [200]
+
+    # frob:ticket T-4377
+    def test_a_land_in_a_different_repo_is_not_counted(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """T-4377's measured gap: this scan previously had NO cwd/repo
+        filter at all, so a `frob ticket land` running in a completely
+        different checkout would still count toward THIS repo's LANDS IN
+        FLIGHT. pid 100's cwd resolves inside `REPO`'s own worktree
+        directory (kept); pid 200's cwd resolves under an unrelated repo
+        entirely (dropped)."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        this_repo = tmp_path / "this-repo"
+        (this_repo / ".claude" / "worktrees" / "t-1").mkdir(parents=True)
+        other_repo = tmp_path / "other-repo"
+        other_repo.mkdir()
+        monkeypatch.setattr(fleet_status, "REPO", this_repo)
+
+        in_repo = proc / "100"
+        in_repo.mkdir()
+        (in_repo / "cmdline").write_bytes(
+            b"timeout\x00540\x00uv\x00run\x00frob\x00ticket\x00land\x00T-9003\x00"
+            b"--worktree\x00/w\x00"
+        )
+        os.symlink(this_repo / ".claude" / "worktrees" / "t-1", in_repo / "cwd")
+
+        out_of_repo = proc / "200"
+        out_of_repo.mkdir()
+        (out_of_repo / "cmdline").write_bytes(
+            b"timeout\x00540\x00uv\x00run\x00frob\x00ticket\x00land\x00T-9004\x00"
+            b"--worktree\x00/w2\x00"
+        )
+        os.symlink(other_repo, out_of_repo / "cwd")
+
+        stdout = (
+            "    PID  ETIMES     TIME COMMAND\n"
+            "    100     300    00:10 timeout 540 uv run frob ticket land "
+            "T-9003 --worktree /w\n"
+            "    200     300    00:10 timeout 540 uv run frob ticket land "
+            "T-9004 --worktree /w2\n"
+        )
+        monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(stdout))
+        rows = fleet_status.land_process_rows(proc)
+        assert [r["pid"] for r in rows] == [100]
 
 
 class TestLandInvocations:

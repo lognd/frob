@@ -1898,14 +1898,128 @@ def _pid_has_land_argv_tokens(pid: int, proc: Path = Path("/proc")) -> bool | No
 
 
 # frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-4377
+def _proc_ppid(pid: int, proc: Path = Path("/proc")) -> int | None:
+    """`pid`'s parent pid, read from `/proc/<pid>/stat` -- mirrors
+    `frob.tickets._leases._proc_ppid_linux` exactly (same field-parsing
+    logic: the `comm` field, 2nd and parenthesized, can itself contain
+    spaces or parentheses, so this splits on the LAST `)` rather than by
+    whitespace position -- everything after it is `state ppid ...`,
+    space-separated, with `ppid` the second token), duplicated here in
+    plain form rather than imported per this script's own "no `frob`
+    import" contract (module docstring). `None` on any read/parse
+    failure (pid gone, no permission, unexpected format)."""
+    try:
+        raw = (proc / str(pid) / "stat").read_text()
+    except OSError:
+        return None
+    tail = raw.rsplit(")", 1)
+    if len(tail) != 2:
+        return None
+    fields = tail[1].split()
+    if len(fields) < 2:
+        return None
+    try:
+        return int(fields[1])
+    except ValueError:
+        return None
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-4377
+#: Hard cap on how many parent-pid hops `_process_ancestor_pids` will
+#: follow -- mirrors `frob.tickets._leases._ANCESTOR_WALK_MAX_HOPS`
+#: exactly (a defense against a `/proc` read returning a cyclic or
+#: corrupted ppid chain, never expected in practice but the walk must
+#: terminate regardless of what the OS hands back).
+_ANCESTOR_WALK_MAX_HOPS = 64
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-4377
+def _process_ancestor_pids(pid: int, proc: Path = Path("/proc")) -> frozenset[int]:
+    """Every pid in `pid`'s parent chain, walked via `_proc_ppid` --
+    mirrors `frob.tickets._leases._process_ancestor_pids` exactly (same
+    stop conditions: pid 0/1/init, a self-referential ppid, a pid already
+    seen (cycle guard), an unreadable hop, or `_ANCESTOR_WALK_MAX_HOPS`,
+    whichever comes first; `pid` itself is NOT included), duplicated here
+    in plain form per this script's "no `frob` import" contract rather
+    than sharing the live import (T-4377: `land_process_rows`'s own
+    process-table scan was independently reinventing an unscoped
+    predicate instead of mirroring the ALREADY-FIXED T-3885 shape -- a
+    land's own process tree, e.g. this script running as a diagnostic
+    child of a live `frob ticket land`, must never treat its own
+    ancestors as a competing land in flight)."""
+    ancestors: set[int] = set()
+    current = pid
+    for _ in range(_ANCESTOR_WALK_MAX_HOPS):
+        parent = _proc_ppid(current, proc)
+        if parent is None or parent <= 1 or parent == current or parent in ancestors:
+            break
+        ancestors.add(parent)
+        current = parent
+    return frozenset(ancestors)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-4377
+def _pid_cwd(pid: int, proc: Path = Path("/proc")) -> Path | None:
+    """`pid`'s `/proc/<pid>/cwd` target, resolved -- `None` if it cannot
+    be read (pid gone, no permission, `/proc` unavailable). Mirrors the
+    same `os.readlink(f"/proc/{pid}/cwd")` primitive `_scan_for_live_
+    worktree_process` above already uses for a different question ("is
+    anything cwd'd into this ONE path") -- this is the per-pid form
+    `land_process_rows`'s own repo-scope filter needs (T-4377)."""
+    try:
+        return Path(os.readlink(str(proc / str(pid) / "cwd"))).resolve()
+    except OSError:
+        return None
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-4377
+def _land_row_is_out_of_scope(
+    pid: int, proc: Path, *, self_ancestors: frozenset[int], resolved_repo: Path
+) -> bool:
+    """`land_process_rows`'s own T-4377 filter, split out to keep that
+    function under ARCH001's 60-line threshold: `True` when `pid` is
+    CONFIRMED not a competing land against THIS repo -- either (1) a
+    member of `self_ancestors` (this process's own parent chain, per
+    `_process_ancestor_pids`), or (2) its `_pid_cwd` is READABLE and does
+    not resolve under `resolved_repo` (a real match against a different
+    checkout entirely). Same fail-open posture as `_pid_has_land_argv_
+    tokens` right above: an unreadable cwd is 'cannot confirm', never
+    'confirmed a different repo', so this returns `False` (keep the row)
+    whenever the cwd cannot be read at all."""
+    if pid in self_ancestors:
+        return True
+    cwd = _pid_cwd(pid, proc)
+    return cwd is not None and not cwd.is_relative_to(resolved_repo)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
 # frob:ticket T-2180
 # frob:ticket T-2475
+# frob:ticket T-4377
+# frob:waive ARCH001 reason="T-4377 pushed this from 72 to 86 lines by adding one doc \
+# paragraph and a 5-line delegated call to _land_row_is_out_of_scope (itself split out \
+# specifically to keep the real per-row filtering logic small); the function's own \
+# body is a flat ps-parse loop with no new nesting or branching complexity -- the \
+# growth is documentation density, matching this whole file's established convention \
+# of large, incident-provenance-carrying docstrings on every public function, not a \
+# function that has grown genuinely harder to read"
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_parses_matc\
 # hing_rows_and_skips_others
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_watcher_pgr\
 # ep_pattern_is_not_counted_as_a_land
+# frob:tests \
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_a_land_in_a\
+# _different_repo_is_not_counted
+# frob:tests \
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_own_ancesto\
+# r_process_is_not_counted_as_a_land
 def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
     """Every live process whose argv contains a `ticket land` invocation,
     parsed from `ps -eo pid,etimes,time,args`'s own structured columns:
@@ -1945,7 +2059,14 @@ def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
     still returns everything it can structurally confirm (or cannot
     disconfirm); the id-parse filtering happens one layer up. A caller
     auditing raw process-table rows directly (bypassing `land_
-    invocations`'s own filtering) still sees whatever survives here."""
+    invocations`'s own filtering) still sees whatever survives here.
+
+    T-4377: `_land_row_is_out_of_scope` also drops a row that is either
+    this process's own ancestor or confirmed cwd'd into a DIFFERENT
+    repository -- mirroring the ALREADY-FIXED `frob.tickets._leases.
+    _scan_for_live_land_process` shape (T-3885) instead of this function
+    independently reinventing its own; see that helper's own docstring
+    for the exact contract."""
     try:
         done = subprocess.run(
             ["ps", "-eo", "pid,etimes,time,args"],
@@ -1958,6 +2079,8 @@ def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
         return []
     if done.returncode != 0:
         return []
+    self_ancestors = _process_ancestor_pids(os.getpid(), proc)
+    resolved_repo = REPO.resolve()
     rows = []
     for line in done.stdout.splitlines()[1:]:
         parts = line.split(None, 3)
@@ -1970,6 +2093,12 @@ def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
             pid = int(pid_s)
             etimes = int(etimes_s)
         except ValueError:
+            continue
+        # T-4377: never a competing land against THIS repo -- either this
+        # process's own ancestor, or a confirmed different checkout.
+        if _land_row_is_out_of_scope(
+            pid, proc, self_ancestors=self_ancestors, resolved_repo=resolved_repo
+        ):
             continue
         # T-2475: a structural `False` (glued substring inside one argv
         # element, e.g. a `pgrep -f "... ticket land ..."` watcher) drops

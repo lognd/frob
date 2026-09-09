@@ -925,6 +925,25 @@ pid cannot be re-read (already exited, `/proc` unavailable) is kept on
 the text pre-filter alone, same as before T-2475 -- 'cannot confirm' is
 never 'confirmed absent'.
 
+T-4377: this scan previously had NO repo/cwd filter at all, so it would
+report a `frob ticket land` running in a COMPLETELY DIFFERENT repository
+as part of THIS repo's `LANDS IN FLIGHT`, and would treat its own
+ancestor process tree (this script running as a diagnostic child of a
+live land) as a competing land -- the exact shape T-3885 already fixed
+in `frob.tickets._leases._scan_for_live_land_process`, reinvented here
+independently rather than shared. `_proc_ppid`/`_process_ancestor_pids`
+mirror that fix's algorithm exactly (same stop conditions: pid 0/1,
+self-referential ppid, a cycle, an unreadable hop, or
+`_ANCESTOR_WALK_MAX_HOPS`), duplicated in plain form rather than
+imported per this script's own "no `frob` import" contract (module
+docstring) -- a pid in `_process_ancestor_pids(os.getpid(), proc)` is
+dropped before the argv re-check ever runs. `_pid_cwd` reads a row's
+`/proc/<pid>/cwd`; a row whose cwd is READABLE and resolves outside
+`REPO` is dropped (a worktree under `REPO/.claude/worktrees/...` still
+resolves under `REPO`, so a worktree-cwd'd land is correctly kept) --
+same fail-open posture as the argv re-check: an unreadable cwd is
+'cannot confirm', never 'confirmed a different repo', so the row stays.
+
 ### `land_invocations`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#land_invocations -->
