@@ -3,7 +3,7 @@ id: T-4066
 title: 'F-load: xdist-load-sensitive flake population beyond the daemon tests (test_ticket_runner_archive_force,
   test_check_runner, test_check_tool_unavailable, test_docptr_gate/test_artifact_smoke
   clusters)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -48,3 +48,6 @@ NOT YET CLASSIFIED (only sampled from log text, not locally reproduced or root-c
 SEPARATELY: runs 34005559354 through 34013571660 (5 consecutive ubuntu CI runs) show a REPEATING, non-flaky-shaped cluster (tests/system/test_artifact_smoke.py x2, tests/test_docptr_gate.py, tests/test_ticket_land_proof_claims.py x6, tests/test_ticket_runner_archive_force.py::test_force_overrides_the_live_lease_refusal) that fails IDENTICALLY across consecutive commits then stops appearing from 34019760758 onward. That is shaped like a real bug that existed for a window and was fixed by a later commit, not scheduler-driven flakiness -- flagging here for the record but it does NOT belong in the same population as this ticket's flake list; do not spend flake-remediation effort on it unless CI history shows it recurring again.
 
 Sampling method: gh api repos/{owner}/{repo}/actions/jobs/<id>/logs on the ubuntu-latest job of the last 23 CI runs (push+pull_request, both failure and success conclusions) on main, grepping the SUITE-RESULT/SUITE-RESULT-FAILED markers tests/conftest.py already emits. This is CI-history mining, not a local repro -- classification (wall-clock bet vs shared xdist resource vs order dependence) and any fix for the archive_force/check_runner/check_tool_unavailable tests is this ticket's own scope, per T-4055's own instruction not to expand its declared scope (tests/test_serve_socket.py) to cover them.
+
+## Failure log
+- 2026-09-09 attempt 1: Named tests + cluster mostly clean locally (0 failures over 5 xdist stress runs); the one deterministic failure (test_force_overrides_the_live_lease_refusal + sibling) is caused by T-4172's in-flight lease reconciliation defeating the T-0843 archive guard, not load -- filed T-draft-858a1bad, out of T-4066's scope/lease
