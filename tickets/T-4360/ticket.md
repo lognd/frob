@@ -2,7 +2,7 @@
 id: T-4360
 title: Measure whether -n auto oversubscribes memory during frob_self_scan_heavy on
   Windows CI
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
