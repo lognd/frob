@@ -2,7 +2,7 @@
 id: T-3892
 title: the scope-mirror writes a ticket to main without its evidence block, so merging
   main back conflicts or leaves conflict markers inside the ledger YAML
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
