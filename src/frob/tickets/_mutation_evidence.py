@@ -291,7 +291,6 @@ def _is_test_file(path: str) -> bool:
     return name.startswith("test_") or name.endswith("_test.py") or "tests" in parts
 
 
-# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:ticket T-4369
 def _resolve_kill_argv(
     ticket: Ticket, test_ids: tuple[str, ...]
