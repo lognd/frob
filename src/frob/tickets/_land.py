@@ -67,7 +67,8 @@ if TYPE_CHECKING:
     from frob.gates import Violation
 
     # frob:ticket T-4271
-    from frob.graph._models import LockFile
+    # frob:ticket T-4312
+    from frob.graph._models import Edge, LockFile
 
     # frob:ticket T-1979
     from frob.testing._models import CollectedTests
@@ -5603,6 +5604,208 @@ def _find_leaked_tickets(
             continue
         leaked[other_id] = hits
     return leaked
+
+
+# ---------------------------------------------------------------------------
+# T-4312: warn at close/drop time when the transition strands a LIVE
+# directive naming the ticket being closed. T-4305 repaired one instance
+# after the fact (a `frob:waive WIRE001 ... follow_up="T-4274"` orphaned
+# the moment T-4274 closed, turning a passing WIRE002 into a CI-blocking
+# failure with zero code changes); T-4316 repaired a second, unrelated
+# instance the same day (`frob:todo T-4298` orphaned by T-4298's own
+# close, failing TODO002). Neither strand had anything to do with WIRE001
+# specifically -- the mechanism is generic: ANY directive family whose own
+# gate later checks "does this named ticket id still resolve to an OPEN
+# ticket" can be stranded by an unrelated ticket's close/drop. The full
+# set of such families, cross-checked against `frob.graph.dsl`'s edge
+# vocabulary and each family's own gate:
+#   - `frob:waive WIRE001 ... follow_up="T-####"`  -> WIRE002
+#   - `frob:todo T-####`                            -> TODO002
+#   - `frob:debt <RULE> ... ticket="T-####"`        -> DEBT002
+#   - `frob:deprecated <since> ... ticket="T-####"` -> DEPR002
+# `frob:ticket T-####` is deliberately excluded: it is attribution ("this
+# code was added under T-####"), not a promise the target stays open --
+# DONE is its EXPECTED terminal state, so it can never be "stranded" in
+# this sense. `frob:invariant`/`frob:doc`/`frob:tests`/`frob:describes`/
+# `frob:secret-fake`/`frob:env` reference symrefs, doc anchors, or nothing
+# at all -- none of them name a ticket id, so none of them qualify.
+#
+# Posture (per the ticket's own design points): WARN, never REFUSE. A
+# warning that scrolls past unread is how both T-4305 and T-4316's strands
+# reached CI in the first place, so every site is named individually --
+# file, line, the exact directive, the gate rule it will trip, and the
+# remedy -- in the same log line, not a bare "something now dangles"
+# count. A refusal here would block a legitimate close/drop over an
+# ENTIRELY UNRELATED ticket's directive, which is worse than the miss it
+# replaces; this mirrors `frob.tickets._reporting.reopen_ticket`'s own
+# T-4287 disclosure (`_worktrees_carrying_terminal_copy`) -- "disclosure,
+# not a second gate."
+# ---------------------------------------------------------------------------
+
+
+class _StrandedDirective(BaseModel):
+    """One live directive elsewhere in the tree that names the ticket about
+    to leave the OPEN states -- named by file/line/exact-directive-kind so
+    the closer can act on it in the same breath, per T-4312's design
+    point that a bare "something now dangles" warning costs another
+    investigation."""
+
+    model_config = {}
+    file: str
+    line: int
+    kind: str
+    gate_rule: str
+    remedy: str
+
+
+def _strand_reference_for_edge(edge: Edge) -> tuple[str | None, str, str, str]:
+    """T-4312: for one graph edge, the ticket id it names (or `None` if this
+    edge's kind never names one), the human-readable directive shape, the
+    LATER gate rule that fires once that id stops resolving to an open
+    ticket, and the remedy to offer at close/drop time -- one dispatch
+    table entry per stranding-capable family (`_land.py`'s module
+    docstring block above enumerates why these four and no others)."""
+    from frob.gates._wire import _wire002_is_permanent_test_helper_waiver
+    from frob.graph import EdgeKind
+
+    if edge.kind == EdgeKind.WAIVE:
+        if edge.target != "WIRE001":
+            return None, "", "", ""
+        if _wire002_is_permanent_test_helper_waiver(edge):
+            return None, "", "", ""
+        return (
+            edge.attrs.get("follow_up"),
+            'frob:waive WIRE001 follow_up="..."',
+            "WIRE002",
+            'add permanent="true" if the waiver reasoning is structural '
+            "(T-1592 precedent), or repoint follow_up= at a still-open ticket",
+        )
+    if edge.kind == EdgeKind.TODO:
+        if edge.attrs.get("implicit"):
+            # Synthesized from a co-located frob:debt (dsl.py's
+            # _debt_todo_coherence) -- the DEBT branch below already
+            # reports this same site once; reporting it twice here would
+            # just be the same remedy said in two different words.
+            return None, "", "", ""
+        return (
+            edge.target,
+            "frob:todo",
+            "TODO002",
+            "rebind to a still-open ticket, or finish the work and delete "
+            "the directive",
+        )
+    if edge.kind == EdgeKind.DEBT:
+        return (
+            edge.attrs.get("ticket"),
+            'frob:debt ... ticket="..."',
+            "DEBT002",
+            "rebind ticket= to a still-open ticket, or resolve the debt and "
+            "delete the directive",
+        )
+    if edge.kind == EdgeKind.DEPRECATED:
+        return (
+            edge.attrs.get("ticket"),
+            'frob:deprecated ... ticket="..."',
+            "DEPR002",
+            "rebind ticket= to a still-open ticket, or finish the removal "
+            "and delete the symbol along with the directive",
+        )
+    return None, "", "", ""
+
+
+# frob:ticket T-4312
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge.test_waive_wire001_follow_up_is_found  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge.test_todo_directive_is_found  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_close_with_no_referencing_directives_is_silent  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_close_warns_on_stranded_todo  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_drop_warns_on_stranded_waive_follow_up  # noqa: E501
+def _stranded_directives_for_ticket(
+    root: Path, ticket_id: str
+) -> tuple[_StrandedDirective, ...]:
+    """T-4312: every live directive in `root`'s graph snapshot that names
+    `ticket_id` through one of the four stranding-capable families
+    (`_strand_reference_for_edge`) -- the set that would newly fail its
+    own later gate (WIRE002/TODO002/DEBT002/DEPR002) the moment
+    `ticket_id` leaves the OPEN states. Best-effort: a cold/unbuildable
+    graph cache degrades to `()` (logged), the same "cannot verify must
+    never silently become verified, but this check is additive" posture
+    `_close_mutation_evidence_for_ticket` already holds for its own
+    merge-base resolution failure -- a disclosure warning that
+    occasionally misses a site under a broken cache is still strictly
+    better than the T-4305/T-4316 status quo of never warning at all."""
+    from frob.gates import _site_from_edge_origin
+    from frob.graph import build_graph, load_graph
+
+    cache = root / ".frob" / "cache.db"
+    loaded = load_graph(cache)
+    if loaded.is_ok:
+        snapshot = loaded.danger_ok
+    else:
+        built = build_graph(root, cache)
+        if built.is_err:
+            _log.warning(
+                "stranding-check: %s graph unavailable (%s) -- cannot scan "
+                "for directives this transition would strand",
+                ticket_id,
+                built.danger_err,
+            )
+            return ()
+        snapshot = built.danger_ok
+
+    found: list[_StrandedDirective] = []
+    for edge in snapshot.edges:
+        ref, kind_label, gate_rule, remedy = _strand_reference_for_edge(edge)
+        if ref != ticket_id:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        found.append(
+            _StrandedDirective(
+                file=file,
+                line=line,
+                kind=kind_label,
+                gate_rule=gate_rule,
+                remedy=remedy,
+            )
+        )
+    return tuple(sorted(found, key=lambda s: (s.file, s.line, s.kind)))
+
+
+# frob:ticket T-4312
+def _stranding_warning_lines(
+    ticket_id: str, sites: tuple[_StrandedDirective, ...]
+) -> tuple[str, ...]:
+    """T-4312: one human-actionable log line per `stranded_directives_for_
+    ticket` hit -- file, line, the exact directive shape, the gate rule it
+    will trip, and the remedy, all in one line so the closer can act
+    without a second investigation (the ticket's own design point: "a
+    close-time warning that says only 'something now dangles' costs
+    another investigation")."""
+    return tuple(
+        f"{s.file}:{s.line}: {s.kind} names {ticket_id!r}, which is leaving "
+        f"the open states -- this will fail {s.gate_rule} once it does; "
+        f"remedy: {s.remedy}"
+        for s in sites
+    )
 
 
 # frob:ticket T-1618

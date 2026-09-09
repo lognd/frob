@@ -1,0 +1,89 @@
+## Done report
+
+WARN vs REFUSE: WARN, always -- a refusal here would block a legitimate close/drop
+over an entirely unrelated ticket's directive, which the ticket's own design points
+called out as worse than the miss it replaces. Every warning names file, line, the
+exact directive shape, the gate rule it will trip, and the remedy in one line, so the
+closer can act in the same breath (matches T-4287's own "disclosure, not a second
+gate" posture for `reopen_ticket`).
+
+SCOPE JUDGEMENT: the ticket as filed named WIRE001 waivers only. Surveyed every
+directive family that names a ticket id and is later checked for "still open" by its
+own gate:
+- `frob:waive WIRE001 ... follow_up="T-####"` -> WIRE002 (the T-4305 incident)
+- `frob:todo T-####` -> TODO002 (the T-4316 incident)
+- `frob:debt <RULE> ... ticket="T-####"` -> DEBT002
+- `frob:deprecated <since> ... ticket="T-####"` -> DEPR002
+`frob:ticket T-####` is excluded on purpose: it is attribution ("this code was added
+under T-####"), not a promise the target stays open -- DONE is its expected terminal
+state. `frob:invariant`/`frob:doc`/`frob:tests`/`frob:describes`/`frob:secret-fake`/
+`frob:env` reference symrefs, doc anchors, or nothing at all -- none name a ticket id.
+
+Single wiring point: `frob.tickets._evidence.transition` (not the per-CLI-command call
+sites) so `close`, `drop`, and `land`'s own terminal write all get the check for free
+with one hook, fired only when `to in (DONE, DROPPED)`, after a successful write
+(disclosure, not part of the transition guard).
+
+Also discovered mid-ticket: `frob.tickets._live_tracker.live_tracker_citations`
+(T-0854/T-1559) ALREADY refuses a direct `close` (DONE only, not DROP) whose diff
+leaves a pre-existing `follow_up=`/`ticket=` citation of the closing ticket untouched
+-- a stronger, pre-existing guard for the WIRE001-waiver and frob:debt/frob:deprecated
+`ticket=` families specifically, on the DONE path only. This ticket's WARN does not
+try to duplicate that REFUSE; it fills the two real gaps: (1) `frob:todo`, which
+`live_tracker_citations` never covered at all (the actual T-4316 mechanism), and (2)
+`frob ticket drop`, which `_transition_guard` never routes through
+`live_tracker_citations` for any family. Verified by test
+(`test_drop_warns_on_stranded_waive_follow_up`'s docstring records this finding).
+
+Changed:
+src/frob/tickets/_land.py::_StrandedDirective
+src/frob/tickets/_land.py::_strand_reference_for_edge
+src/frob/tickets/_land.py::_stranded_directives_for_ticket
+src/frob/tickets/_land.py::_stranding_warning_lines
+src/frob/tickets/_evidence.py::_warn_stranded_directives
+src/frob/tickets/_evidence.py::transition (call site added, DONE/DROPPED only)
+
+Evidence: 10 tests in tests/unit/test_land_stranding_t4312.py -- unit coverage of the
+dispatch table (`TestStrandReferenceForEdge`, all four families + the WIRE001
+permanent-waiver and implicit-todo exclusions) plus end-to-end force-the-condition
+tests (`TestTransitionWarnsOnStranding`): create a ticket, add a live directive naming
+it, close/drop it, assert the warning names the exact file/line/rule; assert silence
+when nothing references the closing ticket.
+
+Filed: T-4347/T-4347 (declare this test file's exec/fs.write capability in
+design/frob.strata) -- dropped as moot once the test file was rewritten to reuse
+tests/unit/test_land_root_resolution.py's already-declared git-fixture helpers and
+`frob.tickets._store.atomic_write` in place of raw `Path.write_text`, introducing zero
+new capability sites instead.
+
+Gates: `frob check --ticket T-4312` clean (0 errors) after fixing everything the diff
+introduced: Edge import (TYPE_CHECKING), private-symbol renames (COV001/LANDPARITY001/
+TEST001), DUP001 waiver removed by reusing shared fixture helpers instead, FMT001
+waived per pyfmt_runner.py's own precedent (unwrappable long test-node-id directive
+lines), SCOPE001 resolved by adding tickets/T-4347/** to scope (bookkeeping shard for
+a routine filed-then-dropped side-discovery ticket), PRE001 resolved via
+`frob ticket sweep T-4312`. `frob test --base main`: 26/26 touched-set tests green.
+
+### Changed
+```
+ tickets/T-4312/ticket.md | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-4347/ticket.md | 33 +++++++++++++++++++++++++++++++++
+ 2 files changed, 78 insertions(+)
+```
+
+### Evidence
+- `tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_waive_wire001_follow_up_is_found` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_todo_directive_is_found` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_debt_ticket_is_found` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_deprecated_ticket_is_found` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_unrelated_edge_kinds_are_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestStrandingWarningLines::test_message_names_file_line_directive_rule_and_remedy` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_drop_warns_on_stranded_waive_follow_up` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_close_warns_on_stranded_todo` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_close_with_no_referencing_directives_is_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_drop_warns_on_stranded_todo` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 4797 warning(s), 964 waived
+- error-findings: none (measured, zero errors)

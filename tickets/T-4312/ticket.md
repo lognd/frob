@@ -1,7 +1,7 @@
 ---
 id: T-4312
 title: Warn at ticket-close time when closing strands a live WIRE001 follow_up waiver
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -54,6 +54,17 @@ scope_changes:
     file+promote+drop lifecycle
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_waive_wire001_follow_up_is_found
+- tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_todo_directive_is_found
+- tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_debt_ticket_is_found
+- tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_deprecated_ticket_is_found
+- tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_unrelated_edge_kinds_are_silent
+- tests/unit/test_land_stranding_t4312.py::TestStrandingWarningLines::test_message_names_file_line_directive_rule_and_remedy
+- tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_drop_warns_on_stranded_waive_follow_up
+- tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_close_warns_on_stranded_todo
+- tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_close_with_no_referencing_directives_is_silent
+- tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding::test_drop_warns_on_stranded_todo
 designated_repro_test: null
 threat: null
 component: null

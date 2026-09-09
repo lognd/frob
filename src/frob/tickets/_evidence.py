@@ -1044,7 +1044,54 @@ def transition(
         return Err(write_result.danger_err)
     _log.info("tickets: %s transitioned %s -> %s", ticket_id, ticket.state, to)
     _sync_cross_worktree_lease(root, ticket_id, ticket.state, to, updated.scope)
+    if to in (TicketState.DONE, TicketState.DROPPED):
+        _warn_stranded_directives(root, ticket_id)
     return Ok(updated)
+
+
+# frob:ticket T-4312
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_close_warns_on_stranded_todo  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_drop_warns_on_stranded_todo  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
+# frob:tests \
+# tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_close_with_no_referencing_directives_is_silent  # noqa: E501
+def _warn_stranded_directives(root: Path, ticket_id: str) -> None:
+    """T-4312: fire once a ticket actually reaches a terminal state (DONE
+    or DROPPED) through the ONE state machine every close/drop/land path
+    funnels through -- a single hook here covers `frob ticket close`,
+    `frob ticket drop`, and `frob ticket land`'s own terminal write alike,
+    rather than duplicating the check at each CLI call site. WARN-only
+    (per T-4312's own design point): naming a site the closer can fix in
+    the same breath beats a refusal that blocks an unrelated close over
+    someone else's dangling directive. See `frob.tickets._land.
+    _stranded_directives_for_ticket`'s module-docstring block for the full
+    directive-family survey and why WIRE001-waiver `follow_up=`,
+    `frob:todo`, `frob:debt ticket=`, and `frob:deprecated ticket=` are
+    the exhaustive stranding-capable set."""
+    from frob.tickets._land import (
+        _stranded_directives_for_ticket,
+        _stranding_warning_lines,
+    )
+
+    sites = _stranded_directives_for_ticket(root, ticket_id)
+    if not sites:
+        return
+    for line in _stranding_warning_lines(ticket_id, sites):
+        _log.warning(
+            "tickets: %s leaving the open states strands a directive -- %s",
+            ticket_id,
+            line,
+        )
 
 
 # frob:ticket T-1005
