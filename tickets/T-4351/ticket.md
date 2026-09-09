@@ -17,6 +17,7 @@ scope:
 - tests/test_worktree_guard.py
 - tests/unit/test_main_entry.py
 - tests/test_gate_cache.py
+- tickets/T-draft-65a1a73b/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
   glob: tests/test_gate_cache.py
   reason: 'T-4351: archgate recompute test hits Windows process_time clock-granularity
     collision with the cache-hit 0.0 sentinel'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-draft-65a1a73b/**
+  reason: 'T-4351: filing the followup ticket for the non-reproducible 4th Windows
+    failure touches its own ticket file'
   actor: logan
   at: '2026-09-08'
 designated_repro_test: null
