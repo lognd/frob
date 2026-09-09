@@ -1,7 +1,7 @@
 ---
 id: T-4321
 title: SCOPE002 pre-existing closure debt on check/__init__.py's declared scope
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
