@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: Record the measured breakdown plus the detector's false data-loss claim
+    on draft ids
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2785
+  new_length: 6113
 designated_repro_test: null
 threat: null
 component: null
@@ -71,3 +79,66 @@ DO NOT WEAKEN THE DETECTION ITSELF. The fresh-loss case must still report -- tha
 is the whole point, and it was validated against a real lost id. Verify both
 directions after your change: the known residue is silent, and a newly orphaned
 lock still reports.
+
+
+
+## The residue is benign -- measured, not assumed (coordinator)
+
+The ticket asks whether any orphaned-lock id ever existed in git, because if any
+did, this becomes a recovery job rather than a noise problem. Answered by walking
+all 153 and checking each against full history (`git log --all -- tickets/<id>`):
+
+    total orphaned locks .................. 153
+    never existed in git anywhere ......... 138
+    existed at some point .................  15
+
+ALL FIFTEEN of the survivors are `T-draft-*` ids. A draft is promoted to a real
+numbered ticket as part of its normal lifecycle, so its draft-id lock is left
+behind by design -- expected residue, not loss. One of them even carries a
+`-stale-mirror` suffix, which is mirroring bookkeeping rather than a ticket.
+
+SO NO REAL TICKET WAS LOST. This is a reporting-noise problem only, and the
+recovery branch of this ticket can be closed off without work.
+
+TWO THINGS THAT FOLLOW, and they shape the fix:
+
+FIRST, the 138 that never existed are the SAME allocate-then-never-write shape
+that was fixed today at the creation path (a success line printed before the write
+was durable, with a rollback able to delete the just-written directory). These are
+its historical instances. Nothing to recover -- there was never any content -- but
+it means the steady-state count is a backlog of a defect that is now fixed at
+source, which is exactly the kind of residue a baseline or age threshold is FOR.
+
+SECOND, the draft-id class is not residue of a defect at all and will keep
+recurring on every promotion. That argues those should not be reported as orphans
+in the first place, rather than being swept into a one-time baseline: a rule that
+re-accumulates findings during normal operation has not been fixed. Handle the two
+classes differently and say how.
+
+Retiring the 138 by deletion is defensible now that they are confirmed to have
+never existed -- there is provably no content behind them. If you take that route,
+confirm each id individually rather than deleting by date range, and say how you
+confirmed it.
+
+### The message itself over-claims, observed live
+
+While appending this note the detector fired against a draft id and reported, in
+full:
+
+  "ticket <id> exists in NEITHER the active ledger nor the archive, and its
+   per-ticket lock is not held by any live process. This is the forensic signature
+   of a ticket lost after `frob ticket new` printed success but the write was later
+   rolled back by a concurrent land -- investigate before removing the lock file,
+   it is the only remaining evidence of what was lost"
+
+That id is one of the fifteen confirmed above to have EXISTED in git and been
+promoted normally. Nothing was lost. So the message states a specific, alarming
+conclusion that is false for an entire class of the findings it produces, and it
+instructs the reader to investigate before removing the only evidence -- which is
+exactly the expensive response the finding does not warrant here.
+
+A detector that names a cause must be right about the cause. Either narrow the
+message to what is actually known (a lock exists with no ticket and no live
+holder) and let the reader draw the conclusion, or establish the draft-versus-lost
+distinction before speaking. The current wording would send someone hunting for
+lost work that never existed, 153 times.
