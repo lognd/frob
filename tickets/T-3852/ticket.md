@@ -2,7 +2,7 @@
 id: T-3852
 title: 'a container ticket cannot close: MissingEvidence demands pytest ids a story
   or epic structurally cannot own'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -19,7 +19,7 @@ scope:
 - src/frob/tickets/_models.py
 - tests/test_ticket_evidence.py
 - tests/test_tickets.py
-- tickets/T-draft-f4e7c39f/**
+- tickets/T-4379/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,7 +51,7 @@ scope_changes:
   actor: logan
   at: '2026-09-09'
 - op: add
-  glob: tickets/T-draft-f4e7c39f/**
+  glob: tickets/T-4379/**
   reason: close-guard tests live in tests/test_tickets.py (the existing home for this
     guard family's tests, not test_ticket_evidence.py); the T-draft ticket file was
     created and committed in this worktree while filing an out-of-scope finding

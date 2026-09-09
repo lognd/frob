@@ -1,0 +1,102 @@
+## Done report
+
+Changed:
+src/frob/tickets/_evidence.py::_is_container_ticket
+src/frob/tickets/_evidence.py::_missing_evidence_guard
+src/frob/tickets/_evidence.py::_done_report_quality_guard
+src/frob/tickets/_evidence.py::_done_transition_structural_guard
+src/frob/tickets/_evidence.py::_done_transition_evidence_kind_and_scope_guard
+tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence
+
+Evidence:
+tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence::test_container_with_all_children_terminal_closes_without_evidence
+tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence::test_container_with_an_open_child_still_refuses
+
+Filed: T-4379 (T-2104's IN_PROGRESS scope-narrowing self-heal
+releases blocked_by on ANY empty-scope ticket, not just a narrowed one --
+the addendum FACT 2 measurement, root-caused and verdict recorded below)
+
+Gates: frob check --ticket T-3852 clean of scope-relevant findings; the
+1 remaining COV003 finding is a pre-existing repo-wide result unrelated
+to this diff (T-4346, not touched here).
+
+PREDICATE CHOSEN (T-3852's own acceptance question): "has children AND
+declares no scope" (`_is_container_ticket`), not `tier in (story,
+epic)`. Reasoning: `tier` is an organizational label independent of
+whether a ticket actually owns file scope -- a STORY that DOES scope
+real code must still owe evidence for it (own acceptance line), and an
+EPIC that never declared no-scope should not silently skip evidence
+either. `no_scope_declared` is already the EXPLICIT, reasoned assertion
+`frob ticket scope --declare-no-scope` records for exactly this shape.
+Paired with "has a child" so a childless no-scope ticket (a pure
+decision record, nothing to roll up) stays on the ORIGINAL
+evidence-required path -- verified by
+test_leaf_ticket_with_no_scope_declared_and_no_children_still_refuses.
+
+`--evidence-cmd` extension (stpone's suggested alternative) was
+considered and NOT chosen: it still requires a COMMAND that proves child
+terminality, which is either a `frob ticket show`-equivalent scripted
+check (real but redundant with `_open_descendant_ids`, which already
+runs every close) or a rubber-stamp `true`/`echo ok` (evidence-shaped
+theater, the exact anti-pattern the ticket body's own "ceremony that
+says nothing new" complaint is about). The rollup path already gets a
+mandatory real narrative (`## Done report`) PLUS the existing, unaffected
+`_open_descendant_ids` structural check -- no new command-spawn surface
+needed.
+
+Close stays EXPLICIT: no code path here auto-closes on child
+terminality. T-1382's counter-example is cited directly in
+_open_descendant_ids's caller (the is_container widening comment) so it
+is not re-litigated.
+
+Refusal message rewritten: MissingEvidence's warning (in
+_missing_evidence_guard) now names the rollup path and the
+--declare-no-scope command when the ticket is not (yet) a recognised
+container.
+
+blocked_by-resolves-on-start (FACT 2): MEASURED and root-caused, NOT
+fixed here per the ticket's explicit instruction. _open_blockers
+(src/frob/tickets/_doable.py) drops an IN_PROGRESS blocker's edge when
+scope_overlap_globs(ticket.scope, lease_scope) is None -- T-2104's
+self-heal for a blocker whose scope narrowed mid-work. scope_
+overlap_globs (src/frob/tickets/_models.py) returns None unconditionally
+whenever either side's glob list is empty, so a container (scope=(),
+by construction) has an empty lease scope the instant it starts,
+releasing every dependent regardless of whether the rollup work is
+done. VERDICT: unintended -- this is a different bug from a genuine
+scope-narrowing self-heal (there was nothing to narrow FROM). Filed as
+T-4379 rather than fixed here.
+
+T-2982 (this repo's own NEEDS CLOSE epic, cited in the ticket body) was
+NOT closed as part of this series -- out of scope for a lock-module/
+close-guard fix; left for a follow-up dispatch now that the rollup path
+exists.
+
+Known gap, noted rather than fixed (tight scope per this series'
+instruction): the container exemption lives in _evidence.py's direct-
+close guard chain only. src/frob/tickets/_land_merge.py's OWN
+NotCloseable check (`if not ticket.evidence or not _has_done_report(...)`)
+is unconditional and does not know about is_container -- T-3336's own
+stated design goal is close/land agreeing structurally, so a container
+ticket that is ever `frob ticket land`ed (unusual: it owns no scope, so
+normally nothing to merge) would still be refused there. Container
+tickets are the direct-close case in every one of this ticket's three
+reports; land-path parity is real remaining work, not covered here.
+
+### Changed
+```
+ src/frob/tickets/_evidence.py      | 263 +++++++++++++++++++++++++------------
+ tests/test_tickets.py              | 175 +++++++++++++++++++++++-
+ tickets/T-3852/ticket.md           |  44 ++++++-
+ tickets/T-4379/ticket.md |  30 +++++
+ 4 files changed, 422 insertions(+), 90 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence::test_container_with_an_open_child_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence::test_container_with_all_children_terminal_closes_without_evidence` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 4831 warning(s), 956 waived
+- error-findings: COV003@tickets/T-4364/ticket.md

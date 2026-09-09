@@ -48,6 +48,9 @@ def _ticket(
     evidence: tuple[str, ...] = (),
     body: str = "## Description\nsomething\n",
     kind: TicketKind = TicketKind.FEATURE,
+    parent: str | None = None,
+    scope: tuple[str, ...] = (),
+    no_scope_declared: bool = False,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -57,11 +60,12 @@ def _ticket(
         origin=Origin.HUMAN,
         created=created,
         blocked_by=blocked_by,
-        parent=None,
-        scope=(),
+        parent=parent,
+        scope=scope,
         evidence=evidence,
         attachments=(),
         body=body,
+        no_scope_declared=no_scope_declared,
     )
 
 
@@ -3445,6 +3449,173 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
         )
         assert result.is_ok
         assert recorded == []
+
+
+# frob:ticket T-3852
+class TestContainerTicketCloseWithoutPytestEvidence:
+    """T-3852: a CONTAINER ticket (has children, and explicitly declared
+    `--declare-no-scope`) closes via a rollup Done report with no pytest
+    evidence bound at all -- the predicate `_is_container_ticket`
+    implements, checked directly via `_done_transition_structural_guard`
+    the same way `TestDoneTransitionStructuralGuardRapidLeniency` above
+    exercises the sibling MissingEvidence path. See T-3852's own ticket
+    body for the three independent repro reports (logand.app-v2 F-040,
+    stpone F-019, this repo's own T-2982) and the T-1382 counter-example
+    against blind auto-close, which is why this predicate NEVER fires on
+    its own -- only `frob ticket close`, explicitly invoked with a real
+    rollup Done report, reaches this path at all."""
+
+    # frob:ticket T-3852
+    def test_container_with_all_children_terminal_closes_without_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
+        # tainer_with_all_children_terminal_closes_without_evidence
+        # MUST-STAY-QUIET (T-3852): a container with every child
+        # terminal (done/dropped) closes with a rollup report and zero
+        # pytest evidence -- the exact refusal (MissingEvidence) the
+        # ticket's three independent reports all measured.
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        story = _ticket(
+            ticket_id="T-0001",
+            evidence=(),
+            no_scope_declared=True,
+            body=(
+                "## Description\nstory\n\n## Done report\n"
+                "Children T-0002/T-0003 delivered the feature; goal met.\n"
+            ),
+        )
+        child_a = _ticket(ticket_id="T-0002", parent="T-0001", state=TicketState.DONE)
+        child_b = _ticket(
+            ticket_id="T-0003", parent="T-0001", state=TicketState.DROPPED
+        )
+        queue = {t.id: t for t in (story, child_a, child_b)}
+        result = _done_transition_structural_guard(
+            tmp_path, story, queue, covers_scope=None, rapid=False
+        )
+        assert result.is_ok, result
+
+    # frob:ticket T-3852
+    def test_container_with_an_open_child_still_refuses(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
+        # tainer_with_an_open_child_still_refuses
+        # MUST-FIRE (T-3852): the container exemption from MissingEvidence
+        # must never let a container close while a child is still open --
+        # T-1382's counter-example (all children "terminal" reporting a
+        # rollup as done while the real work sat unfinished) is exactly
+        # why this predicate never substitutes for _open_descendant_ids's
+        # own, unaffected refusal.
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        epic = _ticket(
+            ticket_id="T-0001",
+            evidence=(),
+            no_scope_declared=True,
+            body="## Description\nepic\n\n## Done report\nrollup\n",
+        )
+        open_child = _ticket(
+            ticket_id="T-0002", parent="T-0001", state=TicketState.QUEUED
+        )
+        queue = {t.id: t for t in (epic, open_child)}
+        result = _done_transition_structural_guard(
+            tmp_path, epic, queue, covers_scope=None, rapid=False
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.OpenDescendant
+
+    # frob:ticket T-3852
+    def test_leaf_ticket_with_no_scope_declared_and_no_children_still_refuses(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_lea\
+        # f_ticket_with_no_scope_declared_and_no_children_still_refuses
+        # MUST-FIRE (T-3852): `no_scope_declared=True` alone (a pure
+        # decision record, no children at all) is NOT a container in
+        # this ticket's sense -- there is nothing to roll up, so the
+        # ORIGINAL evidence-required path still applies. Confirms the
+        # predicate is "has children AND declares no scope", not
+        # "declares no scope" alone.
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        decision_record = _ticket(
+            ticket_id="T-0001",
+            evidence=(),
+            no_scope_declared=True,
+            body="## Description\ndecision\n\n## Done report\nnarrative\n",
+        )
+        queue = {decision_record.id: decision_record}
+        result = _done_transition_structural_guard(
+            tmp_path, decision_record, queue, covers_scope=None, rapid=False
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.MissingEvidence
+
+    # frob:ticket T-3852
+    def test_container_that_owns_real_scope_still_owes_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
+        # tainer_that_owns_real_scope_still_owes_evidence
+        # MUST-FIRE (T-3852's own acceptance): a story/epic that DOES own
+        # a real scope of its own (even alongside children) is never
+        # exempted -- `_is_container_ticket` requires an EMPTY scope, not
+        # merely `no_scope_declared` (which should not coexist with a
+        # real scope by construction, but this predicate checks scope
+        # directly rather than trusting that invariant).
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        story_with_scope = _ticket(
+            ticket_id="T-0001",
+            evidence=(),
+            scope=("docs/story.md",),
+            no_scope_declared=True,
+            body="## Description\nstory\n\n## Done report\nrollup\n",
+        )
+        child = _ticket(ticket_id="T-0002", parent="T-0001", state=TicketState.DONE)
+        queue = {t.id: t for t in (story_with_scope, child)}
+        result = _done_transition_structural_guard(
+            tmp_path, story_with_scope, queue, covers_scope=None, rapid=False
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.MissingEvidence
+
+    # frob:ticket T-3852
+    def test_container_scope_not_covering_a_leaf_test_file_still_closes(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
+        # tainer_scope_not_covering_a_leaf_test_file_still_closes
+        # T-3852's addendum FACT 1: the leaf-evidence-borrow workaround
+        # fails EvidenceScopeUnbound when the container's own scope does
+        # not cover the borrowed test file. The rollup path sidesteps
+        # this entirely -- no evidence to bind, so no scope-coverage
+        # question to ask -- WITHOUT widening the container's scope
+        # (which would hand it a write lease over a child's files, the
+        # exact cross-ticket contention hazard the ticket body warns
+        # against). `covers_scope=False` here simulates the caller-
+        # injected D-02 result a narrow-scope container with borrowed
+        # evidence would get; `_done_transition_evidence_kind_and_scope_
+        # guard` must not act on it once `is_container` is true.
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        story = _ticket(
+            ticket_id="T-0001",
+            evidence=(),
+            no_scope_declared=True,
+            body="## Description\nstory\n\n## Done report\nrollup\n",
+        )
+        child = _ticket(ticket_id="T-0002", parent="T-0001", state=TicketState.DONE)
+        queue = {t.id: t for t in (story, child)}
+        result = _done_transition_structural_guard(
+            tmp_path, story, queue, covers_scope=False, rapid=False
+        )
+        assert result.is_ok, result
 
 
 # frob:ticket T-3195

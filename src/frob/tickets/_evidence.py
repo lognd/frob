@@ -447,6 +447,54 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
     return tuple(sorted(open_ids))
 
 
+# frob:ticket T-3852
+def _is_container_ticket(ticket: Ticket, queue: dict[str, Ticket]) -> bool:
+    """`True` iff `ticket` is a CONTAINER (T-3852): it has at least one
+    direct child (`t.parent == ticket.id` for some `t` in `queue`, active
+    or archived -- `queue` here is always the merged active+archive view
+    every `_done_transition_guard` caller already loads) AND it has
+    explicitly declared `--declare-no-scope` (`ticket.no_scope_declared`).
+
+    THE PREDICATE, chosen deliberately over the cruder `tier in (STORY,
+    EPIC)` alternative: `tier` is an organizational label an operator can
+    set (or leave defaulted) independent of whether the ticket actually
+    owns file scope of its own -- a STORY that DOES scope real code
+    (T-3852's own acceptance: "a container that owns its own scope still
+    owes evidence for that scope") must not be exempted just because of
+    its tier, and an EPIC that (incorrectly) never declared no-scope
+    should not silently skip evidence either. `no_scope_declared` is
+    already the EXPLICIT, reasoned assertion `frob ticket scope
+    --declare-no-scope` records for exactly this shape (its own refusal
+    message already names "a tier=epic rollup, a pure decision record"
+    as the intended use) -- requiring it be paired with a real child
+    keeps a childless no-scope ticket (a pure decision record with
+    nothing to roll up) on the ORIGINAL evidence-required path, since
+    that shape is not a container in T-3852's sense at all, just a
+    scope-free leaf.
+
+    T-3852's own explicit non-goal: this predicate is NEVER "all children
+    terminal" alone (see T-1382's counter-example in the ticket body --
+    five children all reporting done while the epic's actual Makefile-
+    deletion work sat undone) and never triggers a close on its own; it
+    only widens what `_done_transition_structural_guard`/`_done_
+    transition_evidence_kind_and_scope_guard` will ACCEPT when a human or
+    agent explicitly runs `frob ticket close` with a real rollup Done
+    report. `_open_descendant_ids`'s existing open-descendant refusal
+    (unaffected by this predicate) is what actually stops it firing while
+    a child is still open."""
+    if not ticket.no_scope_declared or ticket.scope:
+        # T-3852 acceptance: "a container that owns its own scope still
+        # owes evidence for that scope" -- `ticket.scope` non-empty
+        # despite `no_scope_declared=True` should not happen by
+        # construction (`set_no_scope_declared` is the empty-scope-only
+        # escape hatch `_refuse_empty_scope_on_start` checks), but this
+        # predicate checks it explicitly rather than trusting that
+        # invariant, since a scope `--add` after the declaration is not
+        # itself refused.
+        return False
+    return any(t.parent == ticket.id for t in queue.values())
+
+
 # T-0215 review round 2: a cmd: entry is only ever valid evidence on a
 # docs-kind ticket (COV003 mirrors this at check time). Re-check HERE too,
 # not just at add_cmd_evidence write time -- a ticket's kind can be
@@ -471,6 +519,94 @@ def _stale_claims_guard(ticket: Ticket, skip: bool) -> TicketError | None:
     return TicketError.StaleClaimsInDoneReport
 
 
+# frob:ticket T-3852
+def _missing_evidence_guard(
+    ticket: Ticket, *, is_container: bool
+) -> TicketError | None:
+    """`_done_transition_structural_guard`'s "no evidence bound" check,
+    split out to keep that function under ARCH001's line threshold
+    (T-3852's container exemption grew it past 60 lines) -- `None` if
+    `ticket` has evidence bound OR is a genuine container (T-3852:
+    `_is_container_ticket`, has children and declares no scope, so it
+    structurally cannot own pytest evidence of its own), else
+    `TicketError.MissingEvidence`.
+
+    T-3336: `land`'s OWN NotCloseable gate requires a non-empty
+    `evidence` list UNCONDITIONALLY, with no `rapid`/profile parameter to
+    relax by -- this guard used to accept the identical missing state
+    under `rapid=True`, letting a ticket reach `state: done` locally,
+    with `close` reporting success, that `land` then refused outright.
+    This check now refuses unconditionally too, under every profile, so
+    close and land agree structurally. `is_container` is the ONE
+    additional escape (T-3852): a story/epic with no scope of its own
+    cannot satisfy this the way a leaf can, and borrowing a leaf's
+    evidence id is the wrong workaround (dilutes what evidence means,
+    and fails `EvidenceScopeUnbound` outright once the container's own
+    scope is narrow -- see `_done_transition_evidence_kind_and_scope_
+    guard`'s own `is_container` handling for that half)."""
+    if ticket.evidence or is_container:
+        return None
+    _log.warning(
+        "tickets: %s cannot close, no evidence bound -- `frob ticket land` "
+        "refuses this unconditionally (NotCloseable) regardless of "
+        "profile, so close no longer accepts it under rapid either "
+        "(T-3336). If %s is a CONTAINER (has children, and legitimately "
+        "owns no file scope of its own -- `frob ticket scope %s "
+        "--declare-no-scope --reason '...'` if that has not been declared "
+        "yet), it closes via the rollup path instead: no pytest evidence "
+        "required, but a real Done report is still mandatory (T-3852)",
+        ticket.id,
+        ticket.id,
+        ticket.id,
+    )
+    return TicketError.MissingEvidence
+
+
+# frob:ticket T-3852
+def _done_report_quality_guard(
+    ticket: Ticket, *, rapid: bool, skip_stale_claims: bool
+) -> TicketError | None:
+    """`_done_transition_structural_guard`'s Done-report-quality trio,
+    split out to keep that function under ARCH001's line threshold
+    (T-3852): a genuine `## Done report` heading present (T-4167:
+    reported separately from `_missing_evidence_guard`'s "no evidence"
+    check -- "no evidence bound" and "no Done report recognised" are
+    different facts with different remedies, and a ticket that HAD both
+    used to be refused as though it had neither, F-363's own incident),
+    not hollow (T-3195: a rapid close with the exact zero-evidence/zero-
+    changed-files placeholder pair, unless `_hollow_done_report_exempt`),
+    and no stale Captured-claims count (`_stale_claims_guard`,
+    `skip_stale_claims=True` only from `reverify_close_guard`, T-3360).
+    `None` if all three pass, else the first failing check's
+    `TicketError`."""
+    if not _has_done_report(ticket.body):
+        _log.warning(
+            "tickets: %s cannot close, no substantive '## Done report' "
+            "section was recognised in the ticket body (T-4167) -- a "
+            "genuine `## Done report` heading must be the first line of "
+            "the body or preceded by a blank line (T-0853's own "
+            "impersonation guard), or it is treated as narrative prose, "
+            "not a real section; `frob ticket land` refuses this "
+            "unconditionally (NotCloseable) regardless of profile, so "
+            "close no longer accepts it under rapid either (T-3336)",
+            ticket.id,
+        )
+        return TicketError.MissingDoneReport
+    if _is_hollow_done_report(ticket.body) and not _hollow_done_report_exempt(
+        ticket, ticket.body, rapid=rapid
+    ):
+        _log.warning(
+            "tickets: %s cannot close, Done report records zero evidence AND "
+            "zero changed files (T-3195) -- either record real evidence/a "
+            "real diff, or (if genuinely evidence-free) close it as a "
+            "DOCS-kind rapid ticket or record a no-behaviour-change front "
+            "door in the narrative",
+            ticket.id,
+        )
+        return TicketError.HollowDoneReport
+    return _stale_claims_guard(ticket, skip_stale_claims)
+
+
 # frob:ticket T-0417
 # frob:ticket T-0976
 # frob:ticket T-1685
@@ -489,95 +625,27 @@ def _done_transition_structural_guard(
     evidence, injected `covers_scope`, and unbound acceptance criteria --
     split from its review/mutation/reverify/diff-derived checks.
     `skip_stale_claims`: only `reverify_close_guard` passes `True` --
-    see T-3360."""
-    # frob:ticket T-3336
-    # T-3336: MEASURED 2026-08-28/2026-08-29 (two independent incidents,
-    # T-3277 and T-2667's landing series) -- `frob ticket land`'s OWN
-    # NotCloseable gate (`_land_merge.py`: `if not ticket.evidence or not
-    # _has_done_report(ticket.body): return Err(LandError.NotCloseable)`)
-    # requires BOTH a non-empty `evidence` list AND a literal `## Done
-    # report` heading UNCONDITIONALLY -- it has no `rapid`/profile
-    # parameter to relax by. This guard used to accept the identical
-    # missing state under `rapid=True`, downgrading it to a WARN + a
-    # rapid-debt line and reporting `close` successful. That let a
-    # ticket reach `state: done` locally, with `close` reporting
-    # success, that `land` then refused outright -- the same "an
-    # operation reports a state it has not actually achieved" shape
-    # this project has been burned by repeatedly. Per T-3336's own
-    # explicit instruction (do not loosen land's check, the guard that
-    # makes Done reports trustworthy at all): CLOSE now REFUSES here
-    # unconditionally too, under every profile, with the same
-    # `MissingEvidence` outcome and wording `rapid=False` already used
-    # -- close and land now agree structurally, so no state exists
-    # where one calls this successful and the other calls it
-    # NotCloseable. `rapid` is kept as a parameter (still governs the
-    # SEPARATE hollow-report exemption immediately below) rather than
-    # removed, so this stays a minimal, targeted fix to the one
-    # divergent condition, not a wider profile-relaxation change.
-    #
-    # DECISION (T-3336's own stated design question -- should a
-    # no-behaviour-change ticket be required to cite pytest evidence at
-    # all): YES, chosen deliberately. `land`'s gate makes no exception
-    # for a no-behaviour-change narrative, and "do not loosen land's
-    # check" forecloses adding one there -- so close cannot exempt it
-    # either without reopening the exact divergence this fix closes.
-    # The accepted cost (binding an adjacent, real, resolvable test id
-    # even for an accounting-only change, as T-3336's own "Series EJ"
-    # incident did by hand) is smaller than the alternative: trusting a
-    # close-time narrative declaration is precisely the trust boundary
-    # `land`'s evidence check exists to enforce, and a docs-kind rapid
-    # ticket already has the dedicated, visible `_hollow_done_report_
-    # exempt` escape hatch for the genuinely evidence-free case.
-    # frob:ticket T-4167
-    # T-4167: this used to be a single `if not A or not B` disjunction
-    # collapsed onto ONE error name (`MissingEvidence`) regardless of
-    # which half failed -- "no evidence bound" and "no Done report
-    # recognised" are different facts with different remedies (bind
-    # evidence vs. write/fix a Done report), and a ticket that HAD both
-    # was refused as though it had neither (F-363's own incident: closed
-    # with real evidence and a real Done report, refused MissingEvidence
-    # anyway, because the heading was not preceded by a blank line -- see
-    # `_is_real_done_report_heading`). Reporting each precondition
-    # separately means the refusal message actually names what to fix.
-    if not ticket.evidence:
-        _log.warning(
-            "tickets: %s cannot close, no evidence bound -- `frob ticket "
-            "land` refuses this unconditionally (NotCloseable) regardless "
-            "of profile, so close no longer accepts it under rapid either "
-            "(T-3336)",
-            ticket.id,
-        )
-        return Err(TicketError.MissingEvidence)
-    if not _has_done_report(ticket.body):
-        _log.warning(
-            "tickets: %s cannot close, no substantive '## Done report' "
-            "section was recognised in the ticket body (T-4167) -- a "
-            "genuine `## Done report` heading must be the first line of "
-            "the body or preceded by a blank line (T-0853's own "
-            "impersonation guard), or it is treated as narrative prose, "
-            "not a real section; `frob ticket land` refuses this "
-            "unconditionally (NotCloseable) regardless of profile, so "
-            "close no longer accepts it under rapid either (T-3336)",
-            ticket.id,
-        )
-        return Err(TicketError.MissingDoneReport)
-    # frob:ticket T-3195
-    if _is_hollow_done_report(ticket.body) and not _hollow_done_report_exempt(
-        ticket, ticket.body, rapid=rapid
-    ):
-        _log.warning(
-            "tickets: %s cannot close, Done report records zero evidence AND "
-            "zero changed files (T-3195) -- either record real evidence/a "
-            "real diff, or (if genuinely evidence-free) close it as a "
-            "DOCS-kind rapid ticket or record a no-behaviour-change front "
-            "door in the narrative",
-            ticket.id,
-        )
-        return Err(TicketError.HollowDoneReport)
-    stale_claims_err = _stale_claims_guard(ticket, skip_stale_claims)
-    if stale_claims_err is not None:
-        return Err(stale_claims_err)
-    if ticket.tier is not TicketTier.TICKET:
+    see T-3360. T-3852: `_missing_evidence_guard`'s and this function's
+    own docstrings carry the T-3336/T-4167 rationale for the evidence/
+    Done-report split this function otherwise just composes."""
+    # frob:ticket T-3852
+    is_container = _is_container_ticket(ticket, queue)
+    missing_evidence_err = _missing_evidence_guard(ticket, is_container=is_container)
+    if missing_evidence_err is not None:
+        return Err(missing_evidence_err)
+    report_quality_err = _done_report_quality_guard(
+        ticket, rapid=rapid, skip_stale_claims=skip_stale_claims
+    )
+    if report_quality_err is not None:
+        return Err(report_quality_err)
+    # frob:ticket T-3852
+    # is_container is checked here too, not just `tier is not TICKET`:
+    # `_is_container_ticket`'s predicate (has children + declares no
+    # scope) is orthogonal to `tier` -- a container ticket left at the
+    # default tier=TICKET must still never bypass the T-1382 open-
+    # descendant refusal just because this guard's own tier gate never
+    # ran for it.
+    if ticket.tier is not TicketTier.TICKET or is_container:
         open_descendants = _open_descendant_ids(ticket, queue)
         if open_descendants:
             _log.warning(
@@ -588,16 +656,23 @@ def _done_transition_structural_guard(
             )
             return Err(TicketError.OpenDescendant)
     return _done_transition_evidence_kind_and_scope_guard(
-        root, ticket, covers_scope=covers_scope, rapid=rapid, debt_sink=debt_sink
+        root,
+        ticket,
+        covers_scope=covers_scope,
+        rapid=rapid,
+        debt_sink=debt_sink,
+        is_container=is_container,
     )
 
 
 # frob:ticket T-1685
+# frob:ticket T-3852
 def _done_transition_evidence_kind_and_scope_guard(
     root: Path,
     ticket: Ticket,
     *,
     covers_scope: bool | None,
+    is_container: bool = False,
     rapid: bool = False,
     debt_sink: Callable[[str, str], None] | None = None,
 ) -> Result[None, TicketError]:
@@ -621,13 +696,23 @@ def _done_transition_evidence_kind_and_scope_guard(
             sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
         )
         return Err(TicketError.EvidenceKindNotAllowed)
-    if covers_scope is False and not rapid:
+    # frob:ticket T-3852
+    # A real container (empty scope by construction, see
+    # _is_container_ticket) already makes `covers_scope` resolve to
+    # `None` upstream (`_covers_scope_for_ticket`'s own empty-scope
+    # skip: "an undeclared scope gives the binding check nothing to bind
+    # AGAINST"), so `covers_scope is False` should never fire for one in
+    # practice -- `is_container` is checked here too, defensively, so
+    # this guard's own contract does not silently depend on every
+    # current and future `covers_scope` caller reimplementing that same
+    # empty-scope skip correctly.
+    if covers_scope is False and not rapid and not is_container:
         _log.warning(
             "tickets: %s cannot close, no evidence id covers a touched/scope symbol",
             ticket.id,
         )
         return Err(TicketError.EvidenceScopeUnbound)
-    if covers_scope is False:
+    if covers_scope is False and not is_container:
         _log.warning(
             "tickets: %s closing with no evidence id covering a touched/scope "
             "symbol -- profile=rapid (T-1681), recorded in rapid-debt.jsonl",
