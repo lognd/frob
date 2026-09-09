@@ -1,0 +1,101 @@
+## Done report
+
+CALL-SITE COUNT (established before any change, per the ticket's own
+instruction): all 17 `["uv", "run", "frob", ...]` argv literals inside the
+macOS cascade's remaining scope live in ONE file, `tests/test_app_daemon_proxy.py`
+(`TestDifferentialParity`, 8 test methods, one pair of in-process/daemon-served
+invocations each, minus one method whose comparison collapsed a 3-line argv to
+1). No other file in the ticket's scope glob used the project runner to spawn
+`frob`. This is exactly the "small number of shared call sites, not 40
+independent bugs" shape the ticket predicted -- confirmed, not re-derived.
+
+FIX, mirroring the tool's own T-3311 convention (`resolve_pytest_argv`'s
+`sys.executable -m pytest`, never `uv run pytest`) rather than inventing a
+second one: added `FROB = [sys.executable, "-m", "frob"]` at module scope --
+the same shape `tests/system/conftest.py` and `tests/integration/test_gitlog.py`
+already use -- and replaced every `["uv", "run", "frob", ...]` argv with
+`[*FROB, ...]`. All 17 call sites now resolve `frob` through the CALLING
+interpreter, which is unconditionally importable, instead of through a project
+runner that resolves the throwaway fixture project (finds no environment,
+builds an empty one, cannot find `frob` in it -- the exact failure mode in the
+ticket).
+
+Extracting the run+compare logic surfaced real duplication DUP002 flagged (two
+independent test bodies at 95% similarity, both touched in this diff) --
+factored into three shared helpers local to this file:
+  - `_bare_project(tmp_path, extra_files=None)` -- the `.frob/` + minimal
+    `pyproject.toml` + `git init` setup shared by 5 of the 8 cases.
+  - `_committed_project(tmp_path, extra_files=None, *, gitignore_frob=False)`
+    -- the same setup plus a real initial commit on `main`, shared by the
+    other 3.
+  - `_assert_daemon_parity(project, argv, *, require_ok=True, normalize=None)`
+    -- run `argv` once in-process (`FROB_NO_DAEMON=1`) and once against a live
+    daemon, assert the two rendered JSON payloads match. This is T-0321's #1
+    safety invariant, now expressed once instead of 8 times.
+  One remaining 95%-similar pair (`test_graph_affects_...` /
+  `test_graph_query_...`) is irreducible -- two distinct CLI verbs sharing the
+  same arrange/act/assert shape need their own named, separately-collected
+  tests -- waived with `frob:waive DUP002` citing T-4350, following the
+  existing waiver convention in `tests/unit/gates/test_pkg_resources.py`.
+
+VERIFICATION, honestly scoped:
+  - Linux (this environment): `python -m pytest tests/test_app_daemon_proxy.py -q`
+    -- 33/33 pass, exitstatus=0. `frob test --base main` (touched-set) selects
+    the same file and passes, exit_code=0.
+  - `frob check --ticket T-4350`, run three times after the sweep (once
+    mid-fix catching a real DUP002 this diff introduced, twice more after the
+    helper extraction and DUP002 waiver) -- 0 errors on all 70 gate families,
+    stable across repeats.
+  - macOS: NOT reachable from this environment. The fix targets exactly the
+    mechanism the ticket names (a test's own project-runner invocation
+    resolving an environment-less fixture project) and needs no macOS-specific
+    behavior to succeed or fail -- the same `sys.executable -m frob` argv the
+    tool's own T-3311/T-4327 fix already relies on, on this same OS family, in
+    this same test suite -- but the macOS-visible 50-failure count itself was
+    NOT re-measured here. That number can only be confirmed by a macOS CI run
+    (or a maintainer with local macOS access), not by this Linux session. This
+    Linux run is evidence the invocation is now hermetic and the differential-
+    invariant tests it covers still pass; it is not evidence about the macOS
+    leg specifically, and is not presented as such.
+
+Changed:
+  tests/test_app_daemon_proxy.py
+
+Evidence:
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_affects_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_query_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_doable_tickets_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_touched_tests_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_exports_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_stats_json_daemon_matches_in_process
+  tests/test_app_daemon_proxy.py::TestDifferentialParity::test_map_json_daemon_matches_in_process
+
+Filed: none (no out-of-scope work discovered)
+
+Gates: `frob check --ticket T-4350` clean (0 errors) on three consecutive runs;
+one `frob:waive DUP002` added in-file for the irreducible graph-affects/
+graph-query pair, reason cited above and in the code comment.
+
+### Changed
+```
+ tickets/T-4350/ticket.md | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+```
+
+### Evidence
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_affects_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_query_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_doable_tickets_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_touched_tests_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_exports_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_stats_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_map_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 4726 warning(s), 956 waived
+- error-findings: none (measured, zero errors)

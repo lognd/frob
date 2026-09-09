@@ -27,6 +27,21 @@ from frob.serve._socketd import socket_path
 
 _UNSET = object()  # T-2884: distinguishes "no source_sha kwarg given" from "None"
 
+# T-4350: invoke the tool through the CALLING interpreter (`python -m frob`),
+# never through the project runner (`uv run frob`). These tests build a
+# throwaway fixture project with no environment of its own; a project-runner
+# invocation resolves a project there, finds no environment, and creates an
+# empty one on whatever default interpreter it picks -- which then cannot
+# import `frob` at all ("error: Failed to spawn: `frob`"). This mirrors the
+# same convention already adopted for the tool's own pytest-spawning
+# (`frob.process._pytest_spawn.resolve_pytest_argv`, T-3311) and for other
+# system/integration test modules (`tests/system/conftest.py`,
+# `tests/integration/test_gitlog.py`): the interpreter that resolved
+# `import frob` for the calling test process is unconditionally "this repo's
+# frob", with no dependency on the fixture project having its own
+# environment.
+FROB = [sys.executable, "-m", "frob"]
+
 
 @pytest.fixture
 def root(tmp_path: Path) -> Path:
@@ -304,6 +319,122 @@ class TestSourceHeadSha:
             _daemon_proxy._client_source_sha.cache_clear()
 
 
+def _assert_daemon_parity(
+    project: Path,
+    argv: list[str],
+    *,
+    require_ok: bool = True,
+    normalize=None,
+) -> None:
+    """T-0321's #1 safety invariant, factored out of nine near-identical
+    `TestDifferentialParity` test bodies (T-4350): run `argv` once with
+    `FROB_NO_DAEMON=1` (the in-process reference) and once against a live
+    daemon (`_start_daemon`), then assert the two rendered `--json`
+    payloads are byte-for-byte identical. Both runs invoke `frob` through
+    `FROB` (`sys.executable -m frob`, T-4350) rather than the project
+    runner, since the fixture project under `project` has no environment
+    of its own for a project-runner invocation to resolve against.
+
+    `require_ok=True` (the default) asserts both runs exit 0; a caller
+    whose command can legitimately exit nonzero against a bare fixture
+    project (`test_check_delta_gates_only_json_daemon_matches_in_process`)
+    passes `require_ok=False` to assert only that the two exit codes
+    AGREE with each other instead. `normalize`, when given, is applied to
+    both JSON tails before comparison (`_normalize_gate_timing` blanks out
+    genuinely non-reproducible per-run timing/replay metadata)."""
+
+    def _run(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [*FROB, *argv],
+            cwd=project,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    in_process = _run({**_env(), "FROB_NO_DAEMON": "1"})
+    if require_ok:
+        assert in_process.returncode == 0, in_process.stderr
+
+    thread = _start_daemon(project)
+    try:
+        daemon_served = _run(_env())
+    finally:
+        _shutdown(project, thread)
+
+    if require_ok:
+        assert daemon_served.returncode == 0, daemon_served.stderr
+    else:
+        assert daemon_served.returncode == in_process.returncode
+
+    daemon_tail = _json_tail(daemon_served.stdout)
+    in_process_tail = _json_tail(in_process.stdout)
+    if normalize is not None:
+        daemon_tail = normalize(daemon_tail)
+        in_process_tail = normalize(in_process_tail)
+    assert daemon_tail == in_process_tail
+
+
+def _bare_project(tmp_path: Path, extra_files: dict[str, str] | None = None) -> Path:
+    """A throwaway `git init`-only fixture project (T-4350): `.frob/` plus
+    a minimal `pyproject.toml`, no commit -- the setup shared by every
+    bare-git `TestDifferentialParity` case below, which then layers its
+    own command-specific `extra_files` (e.g. a `helper.py` for `graph
+    affects`/`graph query`) on top before invoking `frob`."""
+    project = tmp_path
+    (project / ".frob").mkdir()
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "x"\nversion = "0.0.0"\n'
+    )
+    for rel_path, content in (extra_files or {}).items():
+        target = project / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    return project
+
+
+def _committed_project(
+    tmp_path: Path,
+    extra_files: dict[str, str] | None = None,
+    *,
+    gitignore_frob: bool = False,
+) -> Path:
+    """A throwaway fixture project with a real initial commit on `main`
+    (T-4350): `.frob/`, a minimal `pyproject.toml`, `extra_files` written
+    before the commit, then `git init -b main` + config + `add -A` +
+    `commit` -- the setup shared by every committed-history
+    `TestDifferentialParity` case below.
+
+    `gitignore_frob=True` (needed only by the `touched`-tests case) writes
+    a `.gitignore` excluding `.frob/` BEFORE the commit -- otherwise the
+    daemon's own untracked runtime files (daemon.lock, cache.db, ...)
+    would show up as "touched" in the daemon-served run but not the
+    earlier in-process reference run (which never started a daemon), a
+    spurious environmental divergence, not a real payload-shape
+    mismatch."""
+    project = tmp_path
+    (project / ".frob").mkdir()
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "x"\nversion = "0.0.0"\n'
+    )
+    for rel_path, content in (extra_files or {}).items():
+        target = project / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    if gitignore_frob:
+        (project / ".gitignore").write_text(".frob/\n")
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=project, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "t"], cwd=project, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=project, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=project, check=True)
+    return project
+
+
 class TestDifferentialParity:
     """T-0321's #1 safety invariant: daemon-served and in-process answers
     must be byte-for-byte identical for every proxied query shape."""
@@ -324,43 +455,14 @@ class TestDifferentialParity:
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_dae\
         # mon_matches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
-        )
-        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+        project = _bare_project(tmp_path)
 
-        # FROB_NO_DAEMON=1 in-process reference run.
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "perf", "hot", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "perf", "hot", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
         # Compare only the rendered JSON payload -- the log lines above it
         # legitimately differ (they narrate which path answered the query,
         # which is exactly the decision this ticket adds); the safety
         # invariant under test is that the ANSWER is byte-for-byte
         # identical, not the diagnostic narration around it.
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+        _assert_daemon_parity(project, ["perf", "hot", "--json"])
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -378,49 +480,13 @@ class TestDifferentialParity:
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_jso\
         # n_daemon_matches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        project = _bare_project(
+            tmp_path, {"helper.py": "def helper():\n    return 1\n"}
         )
-        (project / "helper.py").write_text(
-            "def helper():\n    return 1\n", encoding="utf-8"
-        )
-        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
 
-        # FROB_NO_DAEMON=1 in-process reference run.
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "graph", "affects", "helper.py::helper", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
+        _assert_daemon_parity(
+            project, ["graph", "affects", "helper.py::helper", "--json"]
         )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                [
-                    "uv",
-                    "run",
-                    "frob",
-                    "graph",
-                    "affects",
-                    "helper.py::helper",
-                    "--json",
-                ],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -433,45 +499,23 @@ class TestDifferentialParity:
             "for the tracked follow-up."
         ),
     )
+    # frob:waive DUP002 reason="near-identical to \
+    # test_graph_affects_json_daemon_matches_in_process -- distinct CLI verbs (graph \
+    # affects vs. graph query) sharing one bare-project/parity-assert shape via \
+    # _bare_project/_assert_daemon_parity (T-4350); each verb needs its own named, \
+    # separately-collected test, not a further merge"
     def test_graph_query_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_\
         # daemon_matches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        project = _bare_project(
+            tmp_path, {"helper.py": "def helper():\n    return 1\n"}
         )
-        (project / "helper.py").write_text(
-            "def helper():\n    return 1\n", encoding="utf-8"
-        )
-        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
 
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "graph", "query", "helper.py::helper", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
+        _assert_daemon_parity(
+            project, ["graph", "query", "helper.py::helper", "--json"]
         )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "graph", "query", "helper.py::helper", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -491,37 +535,9 @@ class TestDifferentialParity:
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_js\
         # on_daemon_matches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
-        )
-        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+        project = _bare_project(tmp_path)
 
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "ticket", "doable", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "ticket", "doable", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+        _assert_daemon_parity(project, ["ticket", "doable", "--json"])
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -547,52 +563,30 @@ class TestDifferentialParity:
         # exactly the narrowness this parity test (not a broader one) is
         # meant to prove.
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
-        )
-        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+        project = _bare_project(tmp_path)
 
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "check", "--only", "gates", "--delta", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "check", "--only", "gates", "--delta", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
         # A fresh project's own `--only gates` run may exit 1 (real
         # ERROR-severity findings against a bare `pyproject.toml` project)
         # -- the parity invariant under test is that daemon-served and
         # in-process agree on BOTH the exit code and the rendered payload,
-        # not that the run is clean.
-        assert daemon_served.returncode == in_process.returncode
+        # not that the run is clean, so `require_ok=False`.
+        #
         # T-1147: the `gate-summary` `ToolResult`'s own `summary` carries a
         # real per-gate wall/cpu timing blob (`_gate_summary_result`'s
         # trailing `[gate=0.02s, ...]`) that is GENUINELY non-reproducible
         # between two independent process runs (one warm-cache via the
-        # daemon, one cold in-process) -- this is the one field this
-        # parity test normalizes away, not a formatting divergence being
-        # papered over; every other field (every violation, diagnostic,
-        # per-family `ToolResult`, exit code, and the summary's own error/
-        # warning/waived counts) is still compared byte-for-byte.
-        assert _normalize_gate_timing(
-            _json_tail(daemon_served.stdout)
-        ) == _normalize_gate_timing(_json_tail(in_process.stdout))
+        # daemon, one cold in-process) -- `_normalize_gate_timing` is the
+        # one field this parity test normalizes away, not a formatting
+        # divergence being papered over; every other field (every
+        # violation, diagnostic, per-family `ToolResult`, exit code, and
+        # the summary's own error/warning/waived counts) is still compared
+        # byte-for-byte.
+        _assert_daemon_parity(
+            project,
+            ["check", "--only", "gates", "--delta", "--json"],
+            require_ok=False,
+            normalize=_normalize_gate_timing,
+        )
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -610,52 +604,12 @@ class TestDifferentialParity:
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_jso\
         # n_daemon_matches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
-        )
-        # .frob/ must be gitignored -- otherwise the daemon's own untracked
-        # runtime files (daemon.lock, cache.db, ...) show up as "touched"
-        # in the daemon-served run but not the earlier in-process
-        # reference run (which never started a daemon), a spurious
-        # environmental divergence, not a real payload-shape mismatch.
-        (project / ".gitignore").write_text(".frob/\n")
-        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "t@example.com"], cwd=project, check=True
-        )
-        subprocess.run(["git", "config", "user.name", "t"], cwd=project, check=True)
-        subprocess.run(["git", "add", "-A"], cwd=project, check=True)
-        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=project, check=True)
+        project = _committed_project(tmp_path, gitignore_frob=True)
 
         # Nothing touched (no diff against main after the initial commit) --
         # the parity-sensitive empty-selection branch both the CLI and
         # `_try_touched_via_daemon` special-case identically (T-1128).
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "test", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "test", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+        _assert_daemon_parity(project, ["test", "--json"])
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -687,30 +641,7 @@ class TestDifferentialParity:
         )
         subprocess.run(["git", "init", "-q"], cwd=project, check=True)
 
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "exports", "pkg", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "exports", "pkg", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+        _assert_daemon_parity(project, ["exports", "pkg", "--json"])
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -728,43 +659,9 @@ class TestDifferentialParity:
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon\
         # _matches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
-        )
-        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "t@example.com"], cwd=project, check=True
-        )
-        subprocess.run(["git", "config", "user.name", "t"], cwd=project, check=True)
-        subprocess.run(["git", "add", "-A"], cwd=project, check=True)
-        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=project, check=True)
+        project = _committed_project(tmp_path)
 
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "stats", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "stats", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+        _assert_daemon_parity(project, ["stats", "--json"])
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -782,45 +679,11 @@ class TestDifferentialParity:
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_m\
         # atches_in_process
         pytest.importorskip("frob_core")
-        project = tmp_path
-        (project / ".frob").mkdir()
-        (project / "pyproject.toml").write_text(
-            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        project = _committed_project(
+            tmp_path, {"pkg/mod.py": "def f() -> None:\n    pass\n"}
         )
-        (project / "pkg").mkdir()
-        (project / "pkg" / "mod.py").write_text("def f() -> None:\n    pass\n")
-        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "t@example.com"], cwd=project, check=True
-        )
-        subprocess.run(["git", "config", "user.name", "t"], cwd=project, check=True)
-        subprocess.run(["git", "add", "-A"], cwd=project, check=True)
-        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=project, check=True)
 
-        in_process = subprocess.run(
-            ["uv", "run", "frob", "map", "--json"],
-            cwd=project,
-            env={**_env(), "FROB_NO_DAEMON": "1"},
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        assert in_process.returncode == 0, in_process.stderr
-
-        thread = _start_daemon(project)
-        try:
-            daemon_served = subprocess.run(
-                ["uv", "run", "frob", "map", "--json"],
-                cwd=project,
-                env=_env(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-        finally:
-            _shutdown(project, thread)
-        assert daemon_served.returncode == 0, daemon_served.stderr
-        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+        _assert_daemon_parity(project, ["map", "--json"])
 
 
 def _normalize_gate_timing(payload_text: str) -> str:
