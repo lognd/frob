@@ -2,7 +2,7 @@
 id: T-4369
 title: check_ticket_mutation_evidence spawns bare uv run pytest against a throwaway
   repo with no project env, silently zero-mutating on macOS
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
