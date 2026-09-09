@@ -2,7 +2,7 @@
 id: T-4139
 title: a frob:doc pointer at a non-existent anchor resolved to nothing for as long
   as it was landed, with no finding, contradicting DOC002's own stated contract
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -55,18 +55,22 @@ evidence:
 - tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_section_with_no_matching_row_fires
 - tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_reported_once_per_document_not_per_row
 - tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_table_not_named_component_symbol_or_section_is_ignored
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_fires
 designated_repro_test: null
 acceptance:
 - text: given a doc directive whose target slug has no heading and no anchor tag in
     the target file, when gate DOC runs, then a DOC002 error is reported at the pointer
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_fires
 - text: given the same broken pointer attached to a python symbol and to a non-python
     symbol, when gate DOC runs, then both are reported identically
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_fires_identically_python_and_typescript
 - text: given a component table row with no matching section, when the document is
     checked, then it is reported once at the document rather than once per inbound
     pointer
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_reported_once_per_document_not_per_row
 threat: null
 component: null
 anchor: false

@@ -12,7 +12,10 @@ grep before the move; every other name here (`_doclink_config`,
 `_obligated_docs`, `_linked_from_edges`, `_crawl_reachable`,
 `_doclink_root_hint`, `_doc001_orphan`, `_doc_anchor_slugs`,
 `_anchor_mismatch_message`, `_docanchor_violation`,
-`_docanchor_check_edge`) stays private to this module, never imported
+`_docanchor_check_edge`, `_doc014_violation`,
+`_doc014_row_section_pairing`, `_doc014_broken_pairings`,
+`_doc014_registry_table_rows`, `_doc014_doc_headings`) stays private
+to this module, never imported
 elsewhere, EXCEPT `_doclink_config`/`_obligated_docs`/
 `_linked_from_edges`/`_line_index`, which `frob.gates._docstatus`
 (T-2843) also imports directly -- a deliberate, disclosed cross-module
@@ -33,7 +36,19 @@ somewhere (crawled from `docs/index.md`/`README.md` outward plus
 edge's own `<file>#<slug>` target actually resolves to a real anchor in
 that file. Both are pure read-only scans over `snapshot`/the doc tree,
 with no shared runtime state between them beyond the doc-file-reading
-posture itself."""
+posture itself.
+
+T-4139 adds DOC014 (wired into `doclink_gate`, alongside DOC001/DOC008):
+a document-local row<->section pairing check for tables that declare
+themselves a row-per-section registry (header `Component`/`Symbol`/
+`Section`) -- the incident this ticket is about was a component given a
+table row but no heading section, so every `frob:doc` pointer aimed at
+that row's slug resolved to nothing. DOC002 itself has no hole (verified
+by construction: a pointer at a non-existent anchor from both a python
+and a non-python/TypeScript symbol fires DOC002 identically -- see
+`tests/gates_suite/test_doc.py`'s T-4139 fixtures); DOC014 catches the
+authoring mistake at the document, once, before any pointer at it is
+even written."""
 
 from __future__ import annotations
 
@@ -207,7 +222,14 @@ def _doclink_root_hint(root: Path, roots: list[str]) -> str:
 # frob:ticket T-0021
 # frob:ticket T-0028
 # frob:ticket T-0231
+# frob:ticket T-4139
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive AFFECT001 reason="T-4139: doclink_gate now also runs DOC014 (new \
+# row/section pairing check, additive scanning) alongside the DOC001/DOC008 it already \
+# ran; docs/modules/gates.md#public-api's description of doclink_gate as the \
+# DOC001-family entry point is unchanged and still accurate -- the doc edit itself is \
+# out of this ticket's declared scope (src/frob/gates/_doclink_docanchor.py only), and \
+# re-verified via frob ack rather than a touch to the doc file"
 def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC001: a doc file nothing links to is an error -- orphan docs rot.
 
@@ -231,12 +253,32 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     violations = [_doc001_orphan(orphan, link_hint) for orphan in orphans]
     broken = _doc008_broken_links(root, obligated | set(roots))
     violations.extend(broken)
+    pairing = _doc014_broken_pairings(root, obligated | set(roots))
+    violations.extend(pairing)
     _log.info(
-        "doclink: %d obligated, %d orphaned, %d broken link(s)",
+        "doclink: %d obligated, %d orphaned, %d broken link(s), %d row/section "
+        "mismatch(es)",
         len(obligated),
         len(orphans),
         len(broken),
+        len(pairing),
     )
+    return tuple(violations)
+
+
+def _doc014_broken_pairings(root: Path, docs: set[str]) -> tuple[Violation, ...]:
+    """DOC014 over every obligated/root doc -- one `_doc014_row_section_pairing`
+    check per file, same posture as `_doc008_broken_links`."""
+    violations: list[Violation] = []
+    for doc_rel in sorted(docs):
+        doc_path = root / doc_rel
+        try:
+            text = doc_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        violation = _doc014_row_section_pairing(doc_rel, text)
+        if violation is not None:
+            violations.append(violation)
     return tuple(violations)
 
 
@@ -419,6 +461,19 @@ def _doc008_broken_links(root: Path, docs: set[str]) -> tuple[Violation, ...]:
 _ANCHOR_ID_RE = re.compile(r'<a\s+id="([^"]+)"')
 _MD_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 
+# frob:ticket T-4139
+# T-4139: a markdown table whose header's first column is literally one of
+# these (case-insensitive) is an author-declared row<->section registry --
+# e.g. `| Component | ... |` in docs/audits/graph.md. Opt-in by header text
+# rather than a heuristic over every table in the tree: a table that never
+# claims to be a row-per-section registry is not this check's business, and
+# guessing at that from shape alone is exactly the kind of unbounded rule
+# that turns into noise (see this ticket's own MUST-STAY-QUIET fixture).
+_ROW_SECTION_HEADER_NAMES = frozenset({"component", "symbol", "section"})
+_TABLE_HEADER_RE = re.compile(r"^\|\s*([^|]+?)\s*\|")
+_TABLE_SEP_RE = re.compile(r"^\|[\s:|-]+\|\s*$")
+_TABLE_ROW_FIRST_CELL_RE = re.compile(r"^\|\s*`?([^|`]+?)`?\s*\|")
+
 
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
@@ -444,6 +499,113 @@ def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     }
     slugs.update(m.group(1) for m in _ANCHOR_ID_RE.finditer(text))
     return Some(slugs)
+
+
+# frob:waive DUP001 reason="sibling DOC002/DOC008/DOC012 violation builders: same \
+# 'every failure mode is the same shape' Violation(...) builder, \
+# independently-evolving rule ids"
+# frob:enforces CHK-GATE-DOC014
+def _doc014_violation(doc_rel: str, message: str) -> Violation:
+    """Build one DOC014 error `Violation`, reported once per document (T-4139:
+    a row<->section mismatch is a document-authoring defect, not a
+    per-pointer one -- see `_doc014_row_section_pairing`'s docstring)."""
+    return Violation(
+        rule="DOC014",
+        severity=Severity.ERROR,
+        file=doc_rel,
+        line=0,
+        message=message,
+    )
+
+
+def _doc014_row_section_pairing(doc_rel: str, text: str) -> Violation | None:
+    """DOC014 (T-4139): a row<->section registry table (header's first column
+    reads `Component`/`Symbol`/`Section`, case-insensitive -- see
+    `_ROW_SECTION_HEADER_NAMES`) whose rows and this same document's own
+    headings do not pair up 1:1 resolved a doc pointer at that row's slug to
+    NOTHING, silently, for as long as the mismatch stood (the incident this
+    ticket is about: a component given a table row but no heading section).
+    Checked in both directions -- a row with no matching heading, and a
+    heading with no matching row -- and reported as ONE violation per
+    document (not once per inbound pointer) since the defect lives in the
+    document's own authoring, not in any particular pointer at it."""
+    row_slugs = _doc014_registry_table_rows(text)
+    if not row_slugs:
+        return None
+    heading_slugs, heading_levels = _doc014_doc_headings(text)
+    rows_without_section = sorted(set(row_slugs) - set(heading_slugs))
+    # Only headings AT THE SAME DEPTH as a matched row's heading are eligible
+    # for the reverse direction -- unrelated headings elsewhere in the
+    # document (a different section depth entirely) are not this table's
+    # business, and flagging them would be exactly the unbounded-guess shape
+    # this rule's own docstring above says to avoid.
+    matched_levels = {heading_levels[s] for s in row_slugs if s in heading_levels}
+    sections_without_row = sorted(
+        s
+        for s in heading_slugs
+        if s not in row_slugs and heading_levels[s] in matched_levels
+    )
+    if not rows_without_section and not sections_without_row:
+        return None
+    parts = []
+    if rows_without_section:
+        rows_text = ", ".join(rows_without_section)
+        parts.append(f"row(s) with no matching section: {rows_text}")
+    if sections_without_row:
+        sections_text = ", ".join(sections_without_row)
+        parts.append(f"section(s) with no matching row: {sections_text}")
+    return _doc014_violation(
+        doc_rel,
+        f"DOC014: {doc_rel} row<->section table mismatch -- " + "; ".join(parts),
+    )
+
+
+def _doc014_registry_table_rows(text: str) -> dict[str, int]:
+    """The `{slug: line}` map of every row in `text`'s row<->section
+    registry table(s) (see `_doc014_row_section_pairing`), split out for
+    ARCH001 (T-4139)."""
+    row_slugs: dict[str, int] = {}
+    header_seen = False
+    in_table = False
+    for i, line in enumerate(text.splitlines()):
+        if not in_table:
+            header = _TABLE_HEADER_RE.match(line)
+            first_col = header.group(1).strip().lower() if header else ""
+            if header and first_col in _ROW_SECTION_HEADER_NAMES:
+                header_seen = True
+            elif header_seen and _TABLE_SEP_RE.match(line):
+                in_table = True
+                header_seen = False
+            else:
+                header_seen = False
+            continue
+        row = _TABLE_ROW_FIRST_CELL_RE.match(line)
+        if row is None:
+            in_table = False
+            continue
+        cell = row.group(1).strip()
+        if not cell:
+            continue
+        seen: dict[str, int] = {}
+        row_slugs.setdefault(dedupe_slug(slugify(cell), seen), i + 1)
+    return row_slugs
+
+
+def _doc014_doc_headings(text: str) -> tuple[dict[str, int], dict[str, int]]:
+    """`({slug: line}, {slug: heading-depth})` for every heading in `text`
+    -- split out of `_doc014_row_section_pairing` for ARCH001 (T-4139).
+    Uses `_line_index` (PERF002: never `text.count` per match in a loop,
+    same discipline `_doc008_scan_doc` already follows) rather than a
+    fresh `text.count("\\n", 0, ...)` scan per heading."""
+    line_of = _line_index(text)
+    seen: dict[str, int] = {}
+    heading_slugs: dict[str, int] = {}
+    heading_levels: dict[str, int] = {}
+    for heading in _MD_HEADING_RE.finditer(text):
+        slug = dedupe_slug(slugify(heading.group(2)), seen)
+        heading_slugs[slug] = line_of(heading.start())
+        heading_levels[slug] = len(heading.group(1))
+    return heading_slugs, heading_levels
 
 
 # T-0524: frob:doc removed -- reached via docanchor_gate (public), which

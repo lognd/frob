@@ -729,6 +729,154 @@ class TestDocanchorGate:
         assert set(_rules(violations)) == {"DOC002"}
         assert any("no #anchor" in v.message for v in violations)
 
+    # frob:ticket T-4139
+    def test_unresolvable_anchor_fires_identically_python_and_typescript(
+        self, tmp_path
+    ):
+        """T-4139: the reported incident (a pointer at a non-existent anchor
+        resolving to nothing, silently) was hypothesized to be a TypeScript
+        symbol-collection gap rather than a DOC002 rule hole -- FALSIFIED by
+        construction here: a `frob:doc` comment pointing at the same
+        non-existent anchor from a `.py` file and a `.ts` file both produce
+        a DOC002 error, with the same message shape, via the real
+        `build_graph` scan (not a hand-built Edge)."""
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docanchor_gate kind="unit"
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Real Heading\n", encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#nonexistent-slug\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        (root / "src" / "m.ts").write_text(
+            "// frob:doc docs/m.md#nonexistent-slug\nexport function f(): void {}\n",
+            encoding="utf-8",
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert set(_rules(violations)) == {"DOC002"}
+        by_file = {v.file: v.message for v in violations}
+        assert set(by_file) == {"src/m.py", "src/m.ts"}
+        assert "nonexistent-slug" in by_file["src/m.py"]
+        assert "nonexistent-slug" in by_file["src/m.ts"]
+
+
+class TestDoc014RowSectionPairing:
+    """T-4139's second, cheaper ask: a document-local table declaring itself
+    a row-per-section registry (header `Component`/`Symbol`/`Section`) whose
+    rows and headings do not pair up 1:1 -- checked both directions, and
+    reported once per document rather than once per inbound pointer."""
+
+    def test_real_anchor_still_passes(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        from frob.gates import doclink_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text("[m](m.md)\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n"
+            "| Component | Notes |\n"
+            "|---|---|\n"
+            "| `Widget` | ok |\n\n"
+            "## Widget\n\ntext\n",
+            encoding="utf-8",
+        )
+        snap = _snapshot(root)
+        violations = doclink_gate(root, snap)
+        assert "DOC014" not in _rules(violations)
+
+    def test_row_with_no_matching_section_fires(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        from frob.gates import doclink_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text("[m](m.md)\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n"
+            "| Component | Notes |\n"
+            "|---|---|\n"
+            "| `Widget` | ok |\n"
+            "| `Ghost` | missing section |\n\n"
+            "## Widget\n\ntext\n",
+            encoding="utf-8",
+        )
+        snap = _snapshot(root)
+        violations = doclink_gate(root, snap)
+        (v,) = [x for x in violations if x.rule == "DOC014"]
+        assert v.file == "docs/m.md"
+        assert "ghost" in v.message
+
+    def test_section_with_no_matching_row_fires(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        from frob.gates import doclink_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text("[m](m.md)\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n"
+            "| Component | Notes |\n"
+            "|---|---|\n"
+            "| `Widget` | ok |\n\n"
+            "## Widget\n\ntext\n\n"
+            "## Orphan Section\n\ntext\n",
+            encoding="utf-8",
+        )
+        snap = _snapshot(root)
+        violations = doclink_gate(root, snap)
+        (v,) = [x for x in violations if x.rule == "DOC014"]
+        assert v.file == "docs/m.md"
+        assert "orphan-section" in v.message
+
+    def test_reported_once_per_document_not_per_row(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::_doc014_row_section_pairing \
+        # kind="unit"
+        from frob.gates import doclink_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text("[m](m.md)\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n"
+            "| Component | Notes |\n"
+            "|---|---|\n"
+            "| `Widget` | ok |\n"
+            "| `Ghost1` | missing |\n"
+            "| `Ghost2` | missing |\n\n"
+            "## Widget\n\ntext\n",
+            encoding="utf-8",
+        )
+        snap = _snapshot(root)
+        violations = doclink_gate(root, snap)
+        doc014 = [x for x in violations if x.rule == "DOC014"]
+        assert len(doc014) == 1
+        assert "ghost1" in doc014[0].message
+        assert "ghost2" in doc014[0].message
+
+    def test_table_not_named_component_symbol_or_section_is_ignored(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        from frob.gates import doclink_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text("[m](m.md)\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n"
+            "| Name | Notes |\n"
+            "|---|---|\n"
+            "| `NothingHere` | not a registry table |\n",
+            encoding="utf-8",
+        )
+        snap = _snapshot(root)
+        violations = doclink_gate(root, snap)
+        assert "DOC014" not in _rules(violations)
+
 
 class TestDoc004CsharpUsingDrift:
     """T-2906: `csharp` fenced blocks -- `_csharp_using_violations` has no
