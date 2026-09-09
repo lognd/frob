@@ -2,7 +2,7 @@
 id: T-4365
 title: Doctor tests assert healthy in a fixture lacking ruff/ty, passing only via
   ambient PATH
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
