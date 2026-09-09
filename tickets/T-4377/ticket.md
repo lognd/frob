@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/coordinator_suite/test_fleet_land.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
 - op: add
   glob: tests/unit/coordinator_suite/test_fleet_land.py
   reason: tests for the T-4377 fix live in this file
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'AFFECT001: new symbols under land_process_rows own affects-closure doc
+    anchor'
   actor: logan
   at: '2026-09-09'
 designated_repro_test: null
