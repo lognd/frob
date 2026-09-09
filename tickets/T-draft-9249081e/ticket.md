@@ -14,6 +14,8 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_wire.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -22,6 +24,11 @@ scope_changes:
 - op: remove
   glob: src/frob/gates/**
   reason: narrow to actual gate
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: narrow to the WIRE001 detector itself
   actor: logan
   at: '2026-09-09'
 designated_repro_test: null
