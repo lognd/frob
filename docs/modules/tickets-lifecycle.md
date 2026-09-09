@@ -1046,6 +1046,16 @@ ledger_change_to_primary` rather than duplicating that logic, so there is
 exactly one copy+commit implementation regardless of which caller
 decided mirroring was needed.
 
+T-3892: `_mirror_ledger_paths` gained a `union_evidence` keyword (default
+`True`) so the generic mirror can union back an evidence id primary
+carried before a blind overwrite -- F-048/F-068 (logand.app-v2) measured
+the coordinator writing `scope`/etc. directly onto primary while a
+worktree independently binds evidence, either side's next blind
+overwrite silently narrowing the other's evidence ids.
+`mirror_evidence_rebind_to_primary` passes `union_evidence=False`:
+unioning primary's PRE-rebind evidence back in here would resurrect the
+exact stale id this section's whole fix exists to stop resurrecting.
+
 This closes the gap for `evidence`'s two REBIND channels specifically.
 The append-only channels (`add_evidence`/`add_cmd_evidence`/`--designate-
 repro`) are not affected by this hazard and are deliberately left

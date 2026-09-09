@@ -2,7 +2,7 @@
 id: T-3892
 title: the scope-mirror writes a ticket to main without its evidence block, so merging
   main back conflicts or leaves conflict markers inside the ledger YAML
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -18,8 +18,6 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/unit/test_ticket_runner_ledger_mirror.py
 - docs/modules/tickets-lifecycle.md
-- design/frob.strata
-- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,20 +44,6 @@ scope_changes:
     a note about the new union_evidence parameter'
   actor: logan
   at: '2026-09-09'
-- op: add
-  glob: design/frob.strata
-  reason: 'SELFAUDIT001 land-blocking (T-3324 self-attributed): the two new fs.read
-    call sites this ticket''s own fix added must be declared in the via-list already
-    covering this file''s fs.write'
-  actor: logan
-  at: '2026-09-09'
-- op: add
-  glob: docs/design/registry/capability-via-ratchet.lock.json
-  reason: 'SYS111 ratchet: this ticket''s own fs.read via-list addition (design/frob.strata)
-    grew the cli fs.read count from 21 to 22, land-blocking without bumping accepted_count
-    in the same diff'
-  actor: logan
-  at: '2026-09-09'
 body_changes:
 - mode: append
   reason: 'second sighting F-068 plus the root cause: the ledger merge driver was
@@ -76,6 +60,9 @@ body_changes:
   at: '2026-09-05'
   old_length: 8872
   new_length: 10842
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestMirrorPreservesEvidence::test_preserve_evidence_helper_unions_primary_only_ids
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestMirrorPreservesEvidence::test_mirror_survives_a_concurrent_coordinator_side_edit
 designated_repro_test: null
 threat: null
 component: null

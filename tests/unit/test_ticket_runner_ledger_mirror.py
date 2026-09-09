@@ -1089,3 +1089,142 @@ class TestEvidenceRebindMirror:
             LEDGER_VERB_STRATEGY["evidence"]
             is LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED
         )
+
+
+# frob:ticket T-3892
+class TestMirrorPreservesEvidence:
+    """T-3892 part A (F-048/F-068, logand.app-v2): the mirror must not
+    write a partial record that silently drops an evidence id the OTHER
+    side of the ticket's own file already carries. Reproduces F-068's
+    root cause directly: the COORDINATOR runs a `GENERIC_COMMIT_MIRRORED`
+    verb straight against the primary checkout (never touching the
+    worktree at all) while the worktree independently binds evidence, so
+    by the time the worktree's own next mirror runs, primary's copy and
+    the worktree's copy have each accumulated content the other lacks.
+    Before this fix, `_copy_ledger_paths`'s blind overwrite would drop
+    whichever side wrote last; a later `git merge main` in the worktree
+    would then either conflict on the overlapping frontmatter lines, or
+    (F-068's quieter failure mode) silently union stale content back in.
+    """
+
+    def _seed_ticket_with_evidence(
+        self, root: Path, ticket_id: str, node_id: str
+    ) -> None:
+        import datetime
+
+        from frob.tickets import write_ticket
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+
+        ticket = Ticket(
+            id=ticket_id,
+            title="mirror evidence preservation fixture",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=datetime.date.today(),
+            evidence=(node_id,),
+        )
+        write_result = write_ticket(root, ticket)
+        assert write_result.is_ok, write_result.err
+
+    # frob:ticket T-3892
+    def test_preserve_evidence_helper_unions_primary_only_ids(self) -> None:
+        """Unit-level control on the pure helper: an evidence id present
+        only on the primary side is unioned into the mirrored text, in
+        addition to (not instead of) the worktree's own id."""
+        from frob.app.ticket_runner._ledger_mirror import (
+            _preserve_primary_only_evidence,
+        )
+
+        header = (
+            "id: T-0001\nstate: in-progress\nkind: bug\norigin: agent\n"
+            "title: fixture\ncreated: '2026-01-01'\n"
+        )
+        worktree_text = f"---\n{header}evidence:\n- tests/a.py::test_new\n---\nbody\n"
+        primary_text = f"---\n{header}evidence:\n- tests/a.py::test_old\n---\nbody\n"
+
+        merged = _preserve_primary_only_evidence(worktree_text, primary_text)
+
+        assert merged is not None
+        assert "tests/a.py::test_new" in merged
+        assert "tests/a.py::test_old" in merged
+
+    # frob:ticket T-3892
+    def test_mirror_survives_a_concurrent_coordinator_side_edit(
+        self, tmp_path: Path
+    ) -> None:
+        """The full F-068 reproduction: mirroring a ticket that carries an
+        evidence block, where PRIMARY independently gained content
+        (a coordinator-run `scope` edit, never touching the worktree) in
+        the meantime, must (1) keep the evidence block on primary and (2)
+        leave the worktree able to `git merge main` back in with zero
+        conflicts."""
+        primary, worktree = _setup(tmp_path)
+
+        # Replace `_setup`'s bare synthetic record with a schema-valid
+        # full one (the mirror's evidence-union helper round-trips
+        # through the real Ticket model, so it needs real required
+        # fields), carrying one evidence id -- committed on primary, then
+        # picked up by the worktree via an ordinary merge (a linked
+        # worktree shares refs with primary, so `main` is already
+        # visible; no fetch needed).
+        self._seed_ticket_with_evidence(primary, "T-0001", "tests/a.py::test_old")
+        _git("add", "-A", cwd=primary)
+        _git("commit", "-q", "-m", "seed valid record", cwd=primary)
+        synced = _git("merge", "--no-edit", "main", cwd=worktree)
+        assert synced.returncode == 0, synced.stdout + synced.stderr
+
+        # The worktree independently binds a SECOND evidence id, entirely
+        # locally (evidence is GENERIC_COMMIT_UNMIRRORED by design) --
+        # its record now carries BOTH ids.
+        self._seed_ticket_with_evidence(worktree, "T-0001", "tests/a.py::test_new")
+        worktree_ticket_path = worktree / "tickets" / "T-0001" / "ticket.md"
+        worktree_ticket_path.write_text(
+            worktree_ticket_path.read_text().replace(
+                "- tests/a.py::test_new",
+                "- tests/a.py::test_old\n- tests/a.py::test_new",
+            )
+        )
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-m", "bind second evidence id", cwd=worktree)
+
+        # Meanwhile the COORDINATOR edits the SAME ticket directly on
+        # primary (F-068's actual root cause: two sides editing one
+        # ticket's own file) -- simulated here as a direct scope-field
+        # edit + commit on primary, exactly as `frob ticket scope`
+        # running in the shared root would leave behind. Primary's
+        # evidence id (`test_old`) is untouched by this edit, so it must
+        # still be there after the worktree's mirror below -- the
+        # concurrent `scope:` field itself is a separate, still-open
+        # part of T-3892 (see the ticket body's part-A discussion of
+        # whole-record-vs-changed-fields); this fix's guaranteed surface
+        # is evidence specifically, the field whose loss F-048 reported.
+        primary_ticket_path = primary / "tickets" / "T-0001" / "ticket.md"
+        primary_ticket_path.write_text(
+            primary_ticket_path.read_text().replace(
+                "state: in-progress", "state: in-progress\nscope:\n- src/a.py"
+            )
+        )
+        _git("commit", "-q", "-am", "coordinator scope edit", cwd=primary)
+
+        # The worktree's own next mirrored verb (e.g. its own `scope`
+        # call) now runs, carrying its evidence-bearing copy onto primary.
+        mirror_ledger_change_to_primary(worktree, "T-0001", "scope")
+
+        # Fix: BOTH evidence ids now survive on primary -- the worktree's
+        # own id (which the overwrite would have carried regardless) and
+        # primary's pre-existing one (which the old blind-overwrite
+        # behaviour silently dropped).
+        assert _visible_on_primary(primary, "tests/a.py::test_new")
+        assert _visible_on_primary(primary, "tests/a.py::test_old")
+
+        # The worktree now merges main back in (e.g. picking up sibling
+        # tickets' own mirrors, as `frob ticket work` warm-up does) --
+        # conflict-free, because primary's content and the worktree's own
+        # already agree on the evidence field.
+        merged = _git("merge", "--no-edit", "main", cwd=worktree)
+        assert merged.returncode == 0, merged.stdout + merged.stderr
+        conflicted = _git("diff", "--name-only", "--diff-filter=U", cwd=worktree)
+        assert conflicted.stdout.strip() == ""
+        merged_text = (worktree / "tickets" / "T-0001" / "ticket.md").read_text()
+        assert "tests/a.py::test_new" in merged_text

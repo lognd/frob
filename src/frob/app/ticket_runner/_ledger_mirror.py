@@ -30,6 +30,13 @@ for the full enumeration this table replaces.
 """
 # frob:ticket T-2563
 # frob:ticket T-2603
+# frob:ticket T-3892
+# frob:waive LARGE001 reason="this module is declared as the SINGLE place a frob \
+# ticket verb's ledger-write/mirror behaviour lives (T-2603's own module docstring \
+# above); T-3892's evidence-union fix belongs in the same file as the copy+commit core \
+# it guards (_mirror_ledger_paths), not a second file the NO DUPLICATION principle \
+# would then require staying in lockstep with -- crossed the 800-line threshold by a \
+# fix to existing mirror logic, not a new unrelated concern grafted on"
 
 from __future__ import annotations
 
@@ -562,16 +569,101 @@ def mirror_ledger_change_to_primary(root: Path, ticket_id: str, command: str) ->
     _mirror_ledger_paths(root, primary, ticket_id, command)
 
 
+# frob:ticket T-3892
+def _ticket_md_path(root: Path, ticket_id: str) -> Path:
+    """The v2 ticket.md path for `ticket_id` under `root` (primary or
+    worktree) -- the one file `_mirror_evidence_union` reads/writes."""
+    return root / "tickets" / ticket_id / "ticket.md"
+
+
+# frob:ticket T-3892
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestMirrorPreservesEvidence.test_pres\
+# erve_evidence_helper_unions_primary_only_ids
+def _preserve_primary_only_evidence(
+    worktree_text: str, primary_text: str
+) -> str | None:
+    """The mirrored ticket.md text with any evidence id `primary_text`
+    already carries but `worktree_text` (about to overwrite it) does
+    not, unioned back in -- or `None` if nothing needs preserving
+    (either text fails to parse, or there is nothing missing).
+
+    T-3892 part A: `_copy_ledger_paths` is a blind `shutil.copy2`,
+    unsafe once F-048/F-068 (logand.app-v2) measured the fleet's real
+    operating mode -- the COORDINATOR also runs `GENERIC_COMMIT_
+    MIRRORED` verbs (most commonly `scope`) directly against PRIMARY
+    while a worktree independently binds evidence, so either side's
+    blind overwrite can silently narrow the other's evidence ids.
+    Unioning here keeps the written record monotonic regardless of
+    which side wrote last, so a later `git merge` sees matching
+    evidence content on both sides -- nothing left to conflict on."""
+    from frob.tickets._store import _parse_ticket_text, _serialize_ticket
+
+    worktree_parsed = _parse_ticket_text(worktree_text, "mirror worktree source")
+    primary_parsed = _parse_ticket_text(primary_text, "mirror primary target")
+    if worktree_parsed.is_err or primary_parsed.is_err:
+        return None
+
+    worktree_ticket = worktree_parsed.danger_ok
+    missing = tuple(
+        node_id
+        for node_id in primary_parsed.danger_ok.evidence
+        if node_id not in worktree_ticket.evidence
+    )
+    if not missing:
+        return None
+    merged = worktree_ticket.model_copy(
+        update={"evidence": tuple(worktree_ticket.evidence) + missing}
+    )
+    return _serialize_ticket(merged)
+
+
+# frob:ticket T-3892
+def _mirror_evidence_union(
+    primary: Path, ticket_id: str, primary_text_before: str | None
+) -> None:
+    """Union `primary_text_before`'s evidence ids (captured before
+    `_copy_ledger_paths` overwrote `primary`'s ticket.md) back into the
+    freshly copied file, rewriting it in place -- a no-op with nothing
+    on `primary` before, or nothing missing."""
+    if primary_text_before is None:
+        return
+    path = _ticket_md_path(primary, ticket_id)
+    if not path.is_file():
+        return
+    merged = _preserve_primary_only_evidence(path.read_text(), primary_text_before)
+    if merged is not None:
+        path.write_text(merged)
+
+
 # frob:ticket T-4267
 def _mirror_ledger_paths(
-    root: Path, primary: Path, ticket_id: str, command: str
+    root: Path,
+    primary: Path,
+    ticket_id: str,
+    command: str,
+    *,
+    union_evidence: bool = True,
 ) -> None:
     """Copy `ticket_id`'s ledger pathspecs from `root` onto `primary` and
     commit them there -- the ungated core both `mirror_ledger_change_to_
     primary` (gated on `MIRRORED_LEDGER_VERBS`) and `mirror_evidence_
     rebind_to_primary` (unconditional, T-4267) share, so there is exactly
     one copy+commit implementation regardless of which caller decided
-    mirroring is needed."""
+    mirroring is needed.
+
+    T-3892: when `union_evidence` is true (the default), reads primary's
+    pre-overwrite ticket.md BEFORE `_copy_ledger_paths` runs (the only
+    point that content is still readable) and unions any evidence id it
+    carried into the freshly copied file via `_mirror_evidence_union` --
+    see that function's docstring for the F-048/F-068 incident this
+    closes. `mirror_evidence_rebind_to_primary` (T-4267) passes
+    `union_evidence=False`: `replace_evidence`/`remove_evidence`
+    authoritatively REMOVE an id, and unioning primary's pre-rebind copy
+    back in would resurrect the exact stale id T-4267 exists to stop
+    resurrecting (T-4143) -- confirmed by
+    `TestEvidenceRebindMirror::test_prior_scope_mirror_then_replace_does_\
+    not_leave_the_old_id_resurrectable` regressing without this guard."""
     from frob.tickets._leases import _ledger_pathspecs
     from frob.tickets._store import ledger_lock
 
@@ -580,10 +672,16 @@ def _mirror_ledger_paths(
         return
 
     with ledger_lock(primary):
+        primary_md = _ticket_md_path(primary, ticket_id)
+        primary_text_before = (
+            primary_md.read_text() if union_evidence and primary_md.is_file() else None
+        )
         if not _copy_ledger_paths(
             root, primary, pathspecs, exclude_filenames=_UNMIRRORED_TICKET_FILENAMES
         ):
             return
+        if union_evidence:
+            _mirror_evidence_union(primary, ticket_id, primary_text_before)
         _commit_mirrored_paths(
             primary, _mirror_commit_pathspecs(pathspecs), ticket_id, command
         )
@@ -649,7 +747,10 @@ def mirror_evidence_rebind_to_primary(root: Path, ticket_id: str, command: str) 
     primary = _resolve_mirror_primary(root, ticket_id, command)
     if primary is None:
         return
-    _mirror_ledger_paths(root, primary, ticket_id, command)
+    # T-3892: union_evidence=False -- see `_mirror_ledger_paths`'s
+    # docstring for why a rebind must never have its authoritative
+    # removal undone by unioning primary's pre-rebind evidence back in.
+    _mirror_ledger_paths(root, primary, ticket_id, command, union_evidence=False)
 
 
 # frob:ticket T-2587

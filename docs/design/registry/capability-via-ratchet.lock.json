@@ -31,9 +31,9 @@
       "ticket": "T-3029"
     },
     "cli::fs.read": {
-      "accepted_count": 21,
-      "reason": "T-4324: frob verify status's new rapid-debt visibility fix reads .frob/rapid-debt.jsonl and .frob/rapid-sweep-baseline.json (src/frob/app/verify_runner.py::_live_deferred_sweep_debt/_read_rapid_sweep_baseline_commit) to surface live deferred-sweep debt -- one real, new fs.read via-list site.",
-      "ticket": "T-4324"
+      "accepted_count": 22,
+      "reason": "T-3892: the worktree ledger mirror's new evidence-union fix (_mirror_evidence_union/_mirror_ledger_paths in src/frob/app/ticket_runner/_ledger_mirror.py) reads a ticket's ticket.md before an overwrite to preserve evidence ids the other side already carries -- one real, new fs.read via-list site.",
+      "ticket": "T-3892"
     },
     "cli::fs.write": {
       "accepted_count": 19,
