@@ -2,7 +2,7 @@
 id: T-3852
 title: 'a container ticket cannot close: MissingEvidence demands pytest ids a story
   or epic structurally cannot own'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -18,6 +18,8 @@ scope:
 - src/frob/tickets/_evidence.py
 - src/frob/tickets/_models.py
 - tests/test_ticket_evidence.py
+- tests/test_tickets.py
+- tickets/T-draft-f4e7c39f/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +41,20 @@ scope_changes:
   glob: tests/test_ticket_evidence.py
   reason: container-tier close exemption lives in the close guard, its supporting
     model field, and its test file
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/test_tickets.py
+  reason: close-guard tests live in tests/test_tickets.py (the existing home for this
+    guard family's tests, not test_ticket_evidence.py); the T-draft ticket file was
+    created and committed in this worktree while filing an out-of-scope finding
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tickets/T-draft-f4e7c39f/**
+  reason: close-guard tests live in tests/test_tickets.py (the existing home for this
+    guard family's tests, not test_ticket_evidence.py); the T-draft ticket file was
+    created and committed in this worktree while filing an out-of-scope finding
   actor: logan
   at: '2026-09-09'
 triage_changes:
@@ -65,6 +81,9 @@ body_changes:
   at: '2026-09-05'
   old_length: 7555
   new_length: 10247
+evidence:
+- tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence::test_container_with_an_open_child_still_refuses
+- tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence::test_container_with_all_children_terminal_closes_without_evidence
 designated_repro_test: null
 threat: null
 component: null
