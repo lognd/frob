@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'waive BUG002: macOS-only PATH-dependent defect not reproducible on this
+    Linux checkout'
+  actor: logan
+  at: '2026-09-09'
+  old_length: 2295
+  new_length: 2807
+evidence:
+- tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet::test_current_pin_passes_serve_extra_check
 designated_repro_test: null
 threat: null
 component: null
@@ -68,3 +78,6 @@ returncode, with a docstring explaining why base-install's toolchain
 finding is out of this test's scope.
 
 Verify: uv run pytest tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet::test_current_pin_passes_serve_extra_check -x -q -p no:xdist
+
+
+frob:waive BUG002 reason="macOS-only defect (frob doctor reports base-install unhealthy only when ruff/ty are absent from the CI runners ambient PATH) -- unreproducible on this Linux dev checkout where ruff/ty ARE on PATH, so the bound test passes at both main and the fix here regardless. Fix is test-only, a direct read of check_base_installs own documented scope (entry-point wiring plus native-extension import status, not ambient toolchain presence) against what the failing assertion actually checked."
