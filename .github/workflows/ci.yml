@@ -623,7 +623,34 @@ jobs:
           # --reruns, no change to which tests pass or fail. Verified
           # locally (Linux) that -rA --tb=short prints the FAILURES section
           # with full tracebacks under -n auto --dist=loadgroup -q.
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","--timeout=600","-rA","--tb=short" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          # T-4360: append -n 2, overriding pyproject's `-n auto` (4 workers
+          # on this runner's 4 cores) the same way --timeout above overrides
+          # it -- pytest-xdist/argparse last-`-n`-wins. MEASURED, not a
+          # round-number guess: winrun-driven local measurement found one
+          # isolated frob_self_scan_heavy scan costs ~0.9GB resident, but
+          # the OTHER 3 workers' own real-subprocess-heavy tests (T-2099)
+          # already summed to ~5.5GB of ambient python.exe working set on
+          # their own, mid-run, on a slower/contended box -- i.e. the
+          # dominant memory cost under -n4 is ambient worker fanout, not
+          # the scan itself. windows-latest is nameplate 16GB/4-core (GH
+          # docs), but two DIFFERENT frob_self_scan_heavy tests were each
+          # observed dying independently at their own ~300s mark in one
+          # real run (34315257799, win6.log) -- ruling out "two scans
+          # compounding on one worker" and confirming a single scan plus
+          # -n4's ambient load already exceeds whatever headroom the real
+          # VM has (nameplate RAM is not headroom: AV/runner-service/Node
+          # Action overhead all eat into it, invisible to this
+          # measurement). Halving worker count roughly halves the
+          # measured ~5.5GB ambient term, leaving substantially more
+          # headroom than a smaller cut (-n 3) would, at the cost of
+          # roughly doubling this leg's own wall time -- still comfortably
+          # inside the existing 4500s/80m budget (win3/win5 finished a
+          # full -n4 run in ~70min wall time end to end). See
+          # tickets/T-4360/measurement-notes.md for the full arithmetic.
+          # NOT yet confirmed by repeated green runs -- see that file's
+          # own "consecutive completions" section for the bar this needs
+          # to clear before being called fixed.
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","-n","2","--timeout=600","-rA","--tb=short" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout ${budget} -ErrorAction Stop
           } catch {

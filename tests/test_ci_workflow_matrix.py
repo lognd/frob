@@ -256,6 +256,29 @@ class TestWindowsTestStepMitigationsStayPinned:
             '"--tb=short" in its ArgumentList'
         )
 
+    # frob:tests .github/workflows/ci.yml
+    def test_win32_test_step_caps_workers_at_n2(self) -> None:
+        """T-4360: the windows Test step must pass "-n","2" on the pytest
+        command line (overriding pyproject's `-n auto` addopts, same
+        last-`-n`-wins precedent as the --timeout override above) --
+        measured, not guessed: two frob_self_scan_heavy-group workers
+        each died independently ~300s in with no timeout dump (suspect
+        OOM) under -n auto's 4-worker fanout on a real run
+        (34315257799); halving worker count halves the dominant ambient
+        term in that memory arithmetic. See tickets/T-4360/
+        measurement-notes.md for the full measurement."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        run_text = test_step.get("run", "")
+        assert '"-n","2"' in run_text, (
+            'windows Test step\'s pytest invocation must carry "-n","2" '
+            "in its ArgumentList to cap worker count below -n auto's "
+            "4-worker fanout"
+        )
+
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """The windows Test step must stay gated to windows-latest and
         must never carry its own continue-on-error (that stays on the
