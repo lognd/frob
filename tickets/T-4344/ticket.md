@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:uv run frob check --ticket T-4344 exit=0 sha256=b69f65e5a1b2
 designated_repro_test: null
 threat: null
 component: null
