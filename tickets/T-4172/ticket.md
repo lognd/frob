@@ -2,7 +2,7 @@
 id: T-4172
 title: 'a scope lease outlives its ticket and blocks new work: lease files live outside
   the ledger and nothing reconciles the two when they disagree'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
