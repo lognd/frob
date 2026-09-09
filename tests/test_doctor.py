@@ -30,6 +30,49 @@ from frob.process._lock import derived_state_lock
 pytestmark = pytest.mark.heavy_subprocess
 
 
+# frob:ticket T-4365
+@pytest.fixture(autouse=True)
+def _stable_external_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-4365: `run_diagnosis` folds `scan_external_tools`'s real
+    `PATH`/installed-package probe (ruff/ty/pytest/uv/etc) into
+    `report.healthy`/`report.remediation`, which is genuinely absent on
+    some CI legs (no global ruff/ty there, unlike others) -- a fact about
+    the runner, not about this module's subject (native-extension
+    importability). Every test below asserts `healthy`/`remediation`
+    purely as a function of the faked `importlib.import_module`, so
+    stubbing this one collaborator to report every REQUIRED tool present
+    removes the ambient-toolchain dependency entirely, matching
+    `tests/system/test_cli_doctor.py`'s `_stable_external_tools`."""
+    from frob.doctor import ExternalToolStatus, ToolCategory
+
+    def _fake_scan_external_tools() -> list[ExternalToolStatus]:
+        return [
+            ExternalToolStatus(
+                name="ruff",
+                category=ToolCategory.REQUIRED,
+                present=True,
+                version="0.0.0-fake-T-4365",
+                install_hint="n/a",
+            ),
+            ExternalToolStatus(
+                name="ty",
+                category=ToolCategory.REQUIRED,
+                present=True,
+                version="0.0.0-fake-T-4365",
+                install_hint="n/a",
+            ),
+            ExternalToolStatus(
+                name="uv",
+                category=ToolCategory.REQUIRED,
+                present=True,
+                version="0.0.0-fake-T-4365",
+                install_hint="n/a",
+            ),
+        ]
+
+    monkeypatch.setattr("frob.doctor.scan_external_tools", _fake_scan_external_tools)
+
+
 def test_run_diagnosis_natives_present(monkeypatch, tmp_path: Path):
     # frob:tests src/frob/doctor.py::run_diagnosis
     """Every `NATIVE_EXTENSIONS` entry importing cleanly reports healthy=True

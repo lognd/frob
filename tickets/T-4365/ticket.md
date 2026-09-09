@@ -2,7 +2,7 @@
 id: T-4365
 title: Doctor tests assert healthy in a fixture lacking ruff/ty, passing only via
   ambient PATH
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -17,7 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_doctor.py
 - tests/test_doctor.py
-- tickets/T-draft-9249081e/**
+- tickets/T-4371/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,8 +30,8 @@ scope_changes:
   actor: logan
   at: '2026-09-09'
 - op: add
-  glob: tickets/T-draft-9249081e/**
-  reason: T-draft-9249081e's ticket file was created and committed in this worktree
+  glob: tickets/T-4371/**
+  reason: T-4371's ticket file was created and committed in this worktree
     while filing the out-of-scope WIRE001 finding; scope it so SCOPE001 does not flag
     T-4365's own commit
   actor: logan

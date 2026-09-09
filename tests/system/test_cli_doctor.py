@@ -42,13 +42,114 @@ def _run_with_faked_missing_native(
     )
 
 
+# frob:ticket T-4365
+# frob:waive WIRE001 reason="test-only helper, transitively called via \
+# _fake_required_toolchain_path -> real tests in this file" follow_up="T-4371"
+def _write_fake_posix_tool(bindir: Path, name: str) -> None:
+    """Write a trivial always-succeeds `<name> --version` shim into
+    `bindir` (T-4365): `scan_external_tools`'s presence probe is
+    `shutil.which(name)` plus a best-effort `--version` spawn, so a POSIX
+    shell script with the exec bit set satisfies it fully without
+    depending on a real `ruff`/`ty` install existing anywhere on the
+    runner. POSIX-only (no `.exe`/`.cmd` variant) is deliberate: on the
+    one platform where this repo's CI genuinely lacks a global ruff/ty
+    (macOS) the shim is the only candidate on `PATH` and always wins; on
+    every platform that already has a real install (linux, windows) a
+    later, unshadowed `PATH` entry keeps resolving first, so this can
+    only ever add coverage, never mask a real absence this test isn't
+    about."""
+    script = bindir / name
+    script.write_text(f"#!/bin/sh\necho '{name} 0.0.0-fake-T-4365'\n")
+    script.chmod(0o755)
+
+
+# frob:ticket T-4365
+# frob:waive WIRE001 reason="test-only helper, transitively called via \
+# _env_with_fake_required_toolchain -> real tests in this file" \
+# follow_up="T-4371"
+def _fake_required_toolchain_path(base: Path) -> str:
+    """Build a `PATH` entry (T-4365) providing `ruff`/`ty` so `frob
+    doctor`'s CLI-level healthy assertions test what they claim -- native
+    extension presence -- without depending on whether this specific
+    runner happens to have those two linters installed globally. See
+    `_write_fake_posix_tool` for why this is a strict addition, never a
+    suppression, on platforms that already have a real install."""
+    bindir = base / "_fake_required_tools_bin"
+    bindir.mkdir(exist_ok=True)
+    for name in ("ruff", "ty"):
+        _write_fake_posix_tool(bindir, name)
+    return str(bindir)
+
+
+# frob:ticket T-4365
+def _env_with_fake_required_toolchain(tmp_path: Path) -> dict[str, str]:
+    """`os.environ` with `_fake_required_toolchain_path` prepended onto
+    `PATH` (T-4365) -- used by the two CLI subprocess tests below whose
+    subject is native-extension presence, not this runner's ambient
+    ruff/ty installation."""
+    env = dict(os.environ)
+    fake_bin = _fake_required_toolchain_path(tmp_path)
+    existing = env.get("PATH", "")
+    env["PATH"] = f"{fake_bin}{os.pathsep}{existing}" if existing else fake_bin
+    return env
+
+
+@pytest.fixture(autouse=True)
+def _stable_external_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-4365: `frob.doctor.scan_external_tools` probes this runner's
+    actual `PATH`/installed packages for `ruff`/`ty`/`pytest`/etc, which
+    is genuinely absent on the macOS CI leg (no global ruff/ty there,
+    unlike linux) -- a fact about the CI runner, not about anything this
+    file's tests exercise (native-extension importability, derived-state
+    integrity, ticket-ledger scans, venv-shim drift, land-lock liveness).
+    Every non-CLI test below calls `run_diagnosis`/`verify_derived_state`
+    in-process, so stubbing this one collaborator to report every
+    REQUIRED tool present removes the ambient-toolchain dependency
+    entirely for them, leaving `report.healthy` here a function of only
+    the field each test actually names. `TestDoctorCli`'s two subprocess
+    tests spawn `frob` as a separate process instead (this monkeypatch
+    cannot reach them) and get the equivalent fix via
+    `_env_with_fake_required_toolchain`'s injected `PATH` entry."""
+    from frob.doctor import ExternalToolStatus, ToolCategory
+
+    def _fake_scan_external_tools() -> list[ExternalToolStatus]:
+        return [
+            ExternalToolStatus(
+                name="ruff",
+                category=ToolCategory.REQUIRED,
+                present=True,
+                version="0.0.0-fake-T-4365",
+                install_hint="n/a",
+            ),
+            ExternalToolStatus(
+                name="ty",
+                category=ToolCategory.REQUIRED,
+                present=True,
+                version="0.0.0-fake-T-4365",
+                install_hint="n/a",
+            ),
+        ]
+
+    monkeypatch.setattr("frob.doctor.scan_external_tools", _fake_scan_external_tools)
+
+
 class TestDoctorCli:
     # frob:tests src/frob/doctor.py
     def test_doctor_reports_healthy_when_natives_present(self, tmp_path: Path) -> None:
         """A normal environment (this worktree's own built natives) reports
-        healthy and exits 0."""
+        healthy and exits 0.
+
+        T-4365: `PATH` is augmented with a fake ruff/ty (see
+        `_env_with_fake_required_toolchain`) so this subprocess -- which
+        the in-process `_stable_external_tools` fixture cannot reach --
+        is not exercising this runner's ambient toolchain, only the
+        native-extension subject the test name describes."""
         r = subprocess.run(
-            FROB + ["doctor"], cwd=tmp_path, capture_output=True, text=True
+            FROB + ["doctor"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            env=_env_with_fake_required_toolchain(tmp_path),
         )
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
@@ -58,9 +159,16 @@ class TestDoctorCli:
     def test_doctor_json_reports_healthy_when_natives_present(
         self, tmp_path: Path
     ) -> None:
-        """`--json` emits a parseable `DoctorReport` with `healthy: true`."""
+        """`--json` emits a parseable `DoctorReport` with `healthy: true`.
+
+        T-4365: same fake-toolchain `PATH` as the plain-text case above,
+        for the same reason."""
         r = subprocess.run(
-            FROB + ["doctor", "--json"], cwd=tmp_path, capture_output=True, text=True
+            FROB + ["doctor", "--json"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            env=_env_with_fake_required_toolchain(tmp_path),
         )
         assert r.returncode == 0, r.stdout + r.stderr
         report = json.loads(r.stdout)
