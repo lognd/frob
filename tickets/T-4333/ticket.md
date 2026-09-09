@@ -1,7 +1,7 @@
 ---
 id: T-4333
 title: Survey hand-maintained membership lists for derivable-from-usage replacements
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-08'
