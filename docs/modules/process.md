@@ -54,6 +54,7 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_project_tool.py::project_import_argv -->
 <!-- frob:describes src/frob/process/_project_tool.py::ToolIdentity -->
 <!-- frob:describes src/frob/process/_project_tool.py::resolve_project_tool -->
+<!-- frob:describes src/frob/process/_project_tool.py::tool_absent_from_project -->
 
 ```python
 # frob/process/parsers/common.py -- the shared result shapes every parser below produces
@@ -687,6 +688,33 @@ at all -- every caller in this codebase today runs against an already-
 consumer project with no environment at all would still see one
 created. See `tests/unit/test_check.py::TestProjectToolSpawnNonMutation::
 test_no_sync_does_not_prevent_first_time_venv_creation`.
+
+**Tool absent from the target project (T-4354).** `project_tool_argv`
+resolves `tool` from the CHECKED PROJECT's own environment, which means a
+fixture project (`tests/fixtures/simple_python`, `_make_project`'s
+tmp_path projects) or any consumer repo frob is pointed at can be missing
+`ruff`/`ty` entirely -- that project has no obligation to depend on
+frob's own checking toolchain. T-4354 measured that `uv run`'s own
+failure to spawn a tool it cannot find (`error: Failed to spawn:
+\`<tool>\`` / `Caused by: No such file or directory (os error 2)`, exit
+2) was being treated two different ways for the identical condition:
+`ruff-check`'s parser raised a hard ERROR (`tool_no_output_result`,
+T-4308) while `ty`'s parser fell through its diagnostic regexes into
+T-4309's silent-nonzero-exit UNMEASURED path. Both cannot be right for
+one input. `project_import_argv`'s own doctrine (above) already answers
+this for the importing case -- "report UNRESOLVED/UNMEASURED, never...a
+clean pass and never by falling back to syncing one into existence" --
+and T-4354 extends that same doctrine to the run-only case:
+`tool_absent_from_project(tool, exit_code, stderr)` is the ONE place
+that recognizes uv's own spawn-failure shape (matched by exit code AND
+the tool-specific `Failed to spawn: \`<tool>\`` line, not exit code
+alone), and `resolve_project_tool` now uses it to distinguish "the tool
+genuinely is not installed in this project" (`Err(ProjectToolError.
+ToolAbsent)`) from every other resolve failure, instead of silently
+returning a garbled "version" scraped from uv's own error text. T-4354's
+scope was this module only; reconciling `ruff.py`'s and `ty.py`'s
+parsers to both call `tool_absent_from_project` and report UNMEASURED
+for this shape is filed as a follow-up ticket rather than done here.
 
 `frob.gates._bare_toolchain.bare_toolchain_gate` (BARETOOL001, WARN-tier)
 is the regrowth guard: an AST scan (`frob.vet._bare_toolchain`) over

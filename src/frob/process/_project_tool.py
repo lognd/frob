@@ -43,11 +43,19 @@ _log = get_logger(__name__)
 class ProjectToolError(ErrorSet):
     """Recoverable failures resolving or identifying a project-scoped
     toolchain binary through `uv run --project`: `uv` itself is not on
-    PATH (`UvUnavailable`), or the resolve/version probe spawn failed or
-    timed out (`ResolveFailed`)."""
+    PATH (`UvUnavailable`), the resolve/version probe spawn failed or
+    timed out for an unrelated reason (`ResolveFailed`), or the probe
+    ran fine but the TARGET project's own environment simply does not
+    have the tool installed (`ToolAbsent`, T-4354) -- see
+    `tool_absent_from_project`'s docstring for why this is a distinct,
+    named outcome rather than folded into `ResolveFailed`."""
 
     UvUnavailable = "uv is not on PATH -- cannot resolve any project tool"
     ResolveFailed = "spawning the project-scoped tool resolution probe failed"
+    ToolAbsent = (
+        "the target project's own environment does not have this tool"
+        " installed, and no PATH fallback resolved one"
+    )
 
 
 def _project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
@@ -139,6 +147,53 @@ def project_import_argv(root: Path, tool: str, *args: str) -> list[str]:
 
 
 # frob:doc docs/modules/process.md#public-api
+# frob:ticket T-4354
+# frob:tests tests/unit/test_project_tool.py::TestToolAbsent.test_true_on_spawn_failure
+# frob:tests tests/unit/test_project_tool.py::TestToolAbsent.test_false_unrelated_exit
+# frob:tests tests/unit/test_project_tool.py::TestToolAbsent.test_false_wrong_tool
+def tool_absent_from_project(tool: str, exit_code: int, stderr: str) -> bool:
+    """True iff `exit_code`/`stderr` are `uv run`'s OWN failure to spawn
+    `tool` at all inside the target project -- never a diagnostic `tool`
+    itself produced (T-4354).
+
+    DECISION (T-4354, resolving the question T-4352 misdiagnosed): a
+    target project that does not declare `ruff`/`ty`/etc. as one of its
+    own dependencies is a LEGITIMATE state, not a defect -- a fixture
+    project or an arbitrary consumer repo frob is pointed at has no
+    obligation to depend on frob's own checking toolchain, and
+    `project_tool_argv`'s whole contract (see its docstring) is to
+    resolve `tool` from THAT project's environment, never frob's PATH.
+    `project_import_argv` already established the doctrine for the
+    identical shape on the importing side: "report UNRESOLVED/
+    UNMEASURED, never...a clean pass and never by falling back to
+    syncing one into existence." This function extends that same
+    doctrine to the run-only side by giving every caller ONE place to
+    recognize the shape instead of each parser inventing its own
+    stderr-sniffing (T-4354's own filing found two parsers -- ruff-check
+    and ty -- treating the identical condition two different ways:
+    one raised a hard ERROR, the other silently fell through to
+    UNMEASURED. Both cannot be right for the same input. This function
+    is step one of making them agree: a caller-side classification any
+    parser can call before deciding error vs. unmeasured, so a project
+    with the tool absent is treated the SAME way everywhere, without
+    this scoped ticket having to also edit every parser that currently
+    hand-rolls its own detection -- see T-4354's Done report for the
+    follow-up ticket filed to actually wire this in).
+
+    `uv run`'s own text for this exact condition (reproduced locally by
+    clearing PATH so no global fallback exists) is::
+
+        error: Failed to spawn: `<tool>`
+          Caused by: No such file or directory (os error 2)
+
+    exit code 2. Matched by exit code AND the tool-specific spawn line
+    (not exit code alone, which `tool` itself could also return) and
+    NOT by a looser substring match (which could false-positive on a
+    `tool` that legitimately prints its own "Failed to spawn" text)."""
+    return exit_code == 2 and f"Failed to spawn: `{tool}`" in stderr
+
+
+# frob:doc docs/modules/process.md#public-api
 # frob:tests tests/unit/test_project_tool.py::TestToolIdentity.test_describe
 class ToolIdentity:
     """The RESOLVED identity of a project-scoped tool spawn: the
@@ -182,7 +237,9 @@ _WHICH_PROBE = (
 
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-4125
+# frob:ticket T-4354
 # frob:tests tests/unit/test_project_tool.py::TestResolveProjectTool.test_ok_resolves_path_and_version  # noqa: E501
+# frob:tests tests/unit/test_project_tool.py::TestResolveProjectTool.test_absent_err
 def resolve_project_tool(
     root: Path, tool: str, timeout_s: float = 30.0
 ) -> Result[ToolIdentity, ProjectToolError]:
@@ -198,7 +255,16 @@ def resolve_project_tool(
     yields `Ok`: some tools (rare) print version info to stderr with a
     nonzero exit, and refusing to NAME the tool because the version
     probe itself was imperfect would defeat this function's whole
-    purpose (T-4125: the refusal message must name the tool regardless)."""
+    purpose (T-4125: the refusal message must name the tool regardless).
+
+    The ONE exception to "nonzero exit still yields Ok" is
+    `Err(ProjectToolError.ToolAbsent)` (T-4354): when the nonzero exit
+    is `uv run` itself failing to spawn `tool` at all (see
+    `tool_absent_from_project`), there is no version string to salvage
+    -- `tool` never ran -- and reporting `Ok` with a garbled "version"
+    scraped from uv's own spawn-failure text would misrepresent a
+    project that simply does not depend on `tool` as one running some
+    unparseable build of it."""
     which_result = guarded_subprocess_run(
         project_tool_argv(root, "python", "-c", _WHICH_PROBE, tool),
         capture_output=True,
@@ -230,6 +296,15 @@ def resolve_project_tool(
         )
         return Err(ProjectToolError.ResolveFailed)
     proc = version_result.danger_ok
+    if tool_absent_from_project(tool, proc.returncode, proc.stderr):
+        _log.warning(
+            "resolve_project_tool: %r is not installed in %s's own"
+            " environment (T-4354) -- not resolving a version string"
+            " for a binary that was never spawned",
+            tool,
+            root,
+        )
+        return Err(ProjectToolError.ToolAbsent)
     version = (proc.stdout + proc.stderr).strip() or f"<exit {proc.returncode}>"
     return Ok(ToolIdentity(path=path, version=version))
 
@@ -240,4 +315,5 @@ __all__ = [
     "project_import_argv",
     "project_tool_argv",
     "resolve_project_tool",
+    "tool_absent_from_project",
 ]

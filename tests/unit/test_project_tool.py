@@ -15,6 +15,7 @@ from frob.process._project_tool import (
     ToolIdentity,
     project_tool_argv,
     resolve_project_tool,
+    tool_absent_from_project,
 )
 
 
@@ -140,3 +141,58 @@ class TestResolveProjectTool:
             result = resolve_project_tool(tmp_path, "ty")
         assert result.is_ok
         assert result.danger_ok.path == "<unresolved:ty>"
+
+    def test_absent_err(self, tmp_path: Path) -> None:
+        """T-4354: when the `--version` spawn is `uv run` itself failing
+        to spawn `tool` (not a diagnostic `tool` printed), the result is
+        `Err(ToolAbsent)`, never `Ok` with a garbled version string."""
+        which_proc = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="", stderr=""
+        )
+        version_proc = subprocess.CompletedProcess(
+            args=[],
+            returncode=2,
+            stdout="",
+            stderr=(
+                "error: Failed to spawn: `ty`\n"
+                "  Caused by: No such file or directory (os error 2)\n"
+            ),
+        )
+        with patch(
+            "frob.process._project_tool.guarded_subprocess_run",
+            side_effect=[Ok(which_proc), Ok(version_proc)],
+        ):
+            result = resolve_project_tool(tmp_path, "ty")
+        assert result.is_err
+        assert result.danger_err == ProjectToolError.ToolAbsent
+
+
+class TestToolAbsent:
+    """`tool_absent_from_project` -- T-4354's shared classifier for `uv
+    run`'s own "could not spawn `tool` at all" failure, distinct from any
+    diagnostic `tool` itself might print on a nonzero exit."""
+
+    def test_true_on_spawn_failure(self) -> None:
+        """The exact shape reproduced locally with PATH cleared: exit 2
+        and uv's own "Failed to spawn: `<tool>`" line."""
+        stderr = (
+            "error: Failed to spawn: `ty`\n"
+            "  Caused by: No such file or directory (os error 2)\n"
+        )
+        assert tool_absent_from_project("ty", 2, stderr) is True
+
+    def test_false_unrelated_exit(self) -> None:
+        """A real diagnostic exit (e.g. `ty` finding type errors) is
+        never mistaken for a missing binary, even at the same exit
+        code some tools happen to also use."""
+        assert tool_absent_from_project("ty", 2, "error[missing-argument]") is False
+
+    def test_false_wrong_tool(self) -> None:
+        """Matches only the SPECIFIC tool's own spawn-failure line --
+        another tool's identical failure text must not false-positive
+        for a differently named caller."""
+        stderr = (
+            "error: Failed to spawn: `ruff`\n"
+            "  Caused by: No such file or directory (os error 2)\n"
+        )
+        assert tool_absent_from_project("ty", 2, stderr) is False

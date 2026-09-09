@@ -2,7 +2,7 @@
 id: T-4354
 title: uv run --project on tool-less target fails to resolve ruff/ty, faking a hard
   FAIL
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
