@@ -2373,6 +2373,66 @@ def _land_plan_tick_gate_dirty(
     )
 
 
+# frob:ticket T-3848
+def _land_plan_unwind_after_merge_failure(
+    root: Path,
+    pre_merge_sha: str,
+    own_commits: Sequence[str],
+    *,
+    merge_error: LandError,
+    dry_run: bool,
+) -> Result[LandPlanReport, LandError]:
+    """`_land_plan_locked`'s merge/finalize-failure branch: unwind via
+    `_land_plan_unwind_after_merge` and report the RIGHT error for
+    whichever thing actually determines `root`'s state now.
+
+    T-3848 (typani TYP003, FROBLEMS T-013): the call this replaces
+    discarded `_land_plan_unwind_after_merge`'s own `Result` outright --
+    `_land_plan_tick_gate_dirty` (33 lines above) already inspects it
+    correctly, this was the one sibling call site that did not, on the
+    land path's own error path, no less: the moment something has
+    already gone wrong. If the unwind itself then ALSO failed, that
+    failure was invisible, `root` was left in whatever intermediate git
+    state the unwind got to, and the caller was told only about the
+    ORIGINAL merge error -- naming the wrong step for the actual current
+    repo state.
+
+    Both errors are surfaced (deliberately not just the unwind's,
+    dropping the merge error, nor just the merge's, dropping the
+    unwind's failure the way the code being fixed did -- the ticket body
+    explicitly rules out either): a single CRITICAL log line names both
+    by their `LandError` value, and states plainly that `root` may be
+    left inconsistent, half-unwound. The RETURNED error stays
+    `merge_error` -- unlike `_land_plan_tick_gate_dirty`'s sibling branch
+    (whose own failure has no other error to report alongside), the
+    merge/finalize error is still the reason THIS LAND failed and is
+    what every existing caller/test already branches on; a new
+    dedicated `LandError` member for "both failed" would be the more
+    complete signal (an automated caller could branch on it distinctly
+    from a clean unwind's plain merge error), but `_models.py` -- where
+    `LandError` lives -- is outside this ticket's own declared scope
+    (leased by another in-progress ticket, T-3852, at the time of this
+    fix); the CRITICAL log is the accessible half of that decision here,
+    and adding the dedicated member is left to whichever ticket next
+    touches `LandError` with `_models.py` free."""
+    unwound = _land_plan_unwind_after_merge(
+        root, pre_merge_sha, own_commits, dry_run=dry_run
+    )
+    if unwound.is_err:
+        _log.critical(
+            "land: merge/finalize failed (%s) AND the post-failure unwind "
+            "back to %s ALSO failed (%s) -- root may be left inconsistent, "
+            "half-unwound; inspect `git -C %s log --oneline -5` and `git "
+            "-C %s status` by hand before retrying",
+            merge_error,
+            pre_merge_sha,
+            unwound.danger_err,
+            root,
+            root,
+        )
+    return Err(merge_error)
+
+
 # frob:ticket T-1495
 # frob:ticket T-1522
 def _land_plan_locked(
@@ -2401,8 +2461,13 @@ def _land_plan_locked(
 
     merged_finalized, own_commits = _land_plan_merge_and_finalize(root, worktree)
     if merged_finalized.is_err:
-        _land_plan_unwind_after_merge(root, pre_merge_sha, own_commits, dry_run=dry_run)
-        return Err(merged_finalized.danger_err)
+        return _land_plan_unwind_after_merge_failure(
+            root,
+            pre_merge_sha,
+            own_commits,
+            merge_error=merged_finalized.danger_err,
+            dry_run=dry_run,
+        )
     merge_commit, finalized_ids = merged_finalized.danger_ok
 
     if check_ticks is not None and check_ticks() is False:

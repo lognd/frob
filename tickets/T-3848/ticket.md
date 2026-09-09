@@ -2,7 +2,7 @@
 id: T-3848
 title: 'land unwind failure is discarded: a failed merge whose unwind also fails leaves
   main half-unwound and reports the wrong error'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -33,6 +33,9 @@ scope_changes:
   reason: must-fire/must-stay-quiet fixtures for the unwind-after-merge failure
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSurfaces::test_double_failure_logs_both_and_still_reports_the_merge_error
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSurfaces::test_successful_unwind_reports_only_the_merge_error
 designated_repro_test: null
 threat: null
 component: null

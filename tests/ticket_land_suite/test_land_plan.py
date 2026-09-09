@@ -719,3 +719,127 @@ class TestLandSquashHelpersMutationCoverage:
         monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
         sha_str, files = _land_squash_mod._land_commit_details(tmp_path)
         assert sha_str is None
+
+
+# frob:ticket T-3848
+class TestLandPlanUnwindAfterMergeFailureSurfaces:
+    """T-3848 (typani TYP003, FROBLEMS T-013): `_land_plan_locked`'s
+    merge/finalize-failure branch used to discard `_land_plan_unwind_
+    after_merge`'s own `Result` outright. If the unwind ALSO failed,
+    that failure was invisible and the caller only ever saw the original
+    merge error, naming the wrong step for `root`'s actual state."""
+
+    # frob:ticket T-3848
+    # frob:tests \
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSur\
+    # faces.test_double_failure_logs_both_and_still_reports_the_merge_error
+    def test_double_failure_logs_both_and_still_reports_the_merge_error(
+        self,
+        repo: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """MUST-FIRE: a real injected unwind failure (not a mocked-out
+        assertion that the return value is merely read) -- the merge
+        step is forced to fail AFTER committing (so `own_commits` is
+        non-empty and an unwind actually runs), and the unwind's own
+        `git reset --hard` primitive is forced to fail too. The CRITICAL
+        log must name BOTH failures and say root may be inconsistent;
+        the returned error stays the merge error (still what determines
+        why THIS land failed), per this ticket's own reasoning."""
+        import logging
+
+        from frob.tickets import _land as land_module
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md -- durable merge content")
+
+        def _finalize_fails(
+            _root: Path, _merge_commit: str
+        ) -> Result[tuple, LandError]:
+            return Err(LandError.NotFound)
+
+        def _reset_fails(
+            _root: Path, _sha: str, *, own_commits: Sequence[str] = ()
+        ) -> Result[None, LandError]:
+            return Err(LandError.GitFailed)
+
+        monkeypatch.setattr(land_module, "_land_plan_finalize_drafts", _finalize_fails)
+        monkeypatch.setattr(land_module, "_land_plan_reset_hard", _reset_fails)
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        with caplog.at_level(logging.CRITICAL, logger="frob.tickets._land"):
+            result = land_plan(repo, worktree)
+
+        # The merge error is what THIS land failed for -- still reported.
+        assert result.is_err
+        assert result.danger_err is LandError.NotFound
+
+        # MUST-FIRE: the unwind failure is not silently dropped -- it
+        # reaches the operator via a CRITICAL log naming both failures
+        # and the inconsistent-state warning.
+        critical_records = [r for r in caplog.records if r.levelno == logging.CRITICAL]
+        assert critical_records, "expected a CRITICAL log for the double failure"
+        message = critical_records[0].getMessage()
+        assert "NotFound" in message
+        assert "GitFailed" in message
+        assert "inconsistent" in message
+
+        # root's tip moved past pre_sha (the merge commit landed and the
+        # forced-failing reset never rolled it back) -- this IS the
+        # half-unwound state the CRITICAL log warns about, not a fixture
+        # artifact: proof the failure is real, not mocked-out.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha != pre_sha
+
+    # frob:ticket T-3848
+    # frob:tests \
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSur\
+    # faces.test_successful_unwind_reports_only_the_merge_error
+    def test_successful_unwind_reports_only_the_merge_error(
+        self,
+        repo: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """MUST-STAY-QUIET: a land whose merge fails and whose unwind
+        SUCCEEDS still reports exactly the merge error, unchanged, and
+        logs no CRITICAL double-failure line."""
+        import logging
+
+        from frob.tickets import _land as land_module
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md")
+
+        def _finalize_fails(
+            _root: Path, _merge_commit: str
+        ) -> Result[tuple, LandError]:
+            return Err(LandError.NotFound)
+
+        monkeypatch.setattr(land_module, "_land_plan_finalize_drafts", _finalize_fails)
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        with caplog.at_level(logging.CRITICAL, logger="frob.tickets._land"):
+            result = land_plan(repo, worktree)
+
+        assert result.is_err
+        assert result.danger_err is LandError.NotFound
+        assert not any(r.levelno == logging.CRITICAL for r in caplog.records)
+
+        # T-1522: the unwind (real, unmocked) succeeded and kept the
+        # durable merge commit -- root's tip is the merge commit, not
+        # reset back to pre_sha, exactly the existing T-1522 contract
+        # `TestLandPlanQueueDrainCommitsDurable` already covers; asserted
+        # again here only to confirm this fix did not change that path.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha != pre_sha
+        assert (repo / "docs" / "new.md").exists()
