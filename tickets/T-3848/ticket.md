@@ -2,7 +2,7 @@
 id: T-3848
 title: 'land unwind failure is discarded: a failed merge whose unwind also fails leaves
   main half-unwound and reports the wrong error'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
