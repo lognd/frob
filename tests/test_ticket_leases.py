@@ -2469,6 +2469,158 @@ class TestOrphanedLeases:
         assert [lease.ticket_id for lease in found] == ["T-0001"]
 
 
+class TestOrphanedTicketLocks:
+    """T-4342: a `.frob/tickets/<id>.lock` file whose id has no
+    corresponding ticket anywhere is the forensic signature of the T-4313
+    ticket-loss incident -- see docs/modules/tickets-landing.md#orphaned-
+    ticket-lock-detection-t-4342. Verified in BOTH directions per that
+    ticket's own instruction: a genuinely orphaned lock must be reported,
+    and a lock belonging to an in-flight creation must not be."""
+
+    def test_lock_gone_ticket_is_orphaned(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        from frob.tickets._leases import orphaned_ticket_locks
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        (lock_dir / "T-9999.lock").touch()
+
+        assert orphaned_ticket_locks(repo) == ("T-9999",)
+
+    def test_real_ticket_not_orphaned(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        from frob.tickets._leases import orphaned_ticket_locks
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        # T-0001 is real, per the `repo` fixture.
+        (lock_dir / "T-0001.lock").touch()
+
+        assert orphaned_ticket_locks(repo) == ()
+
+    def test_archived_ticket_not_orphaned(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        from datetime import date
+
+        from frob.tickets import Priority
+        from frob.tickets._leases import orphaned_ticket_locks
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL, write_archived_ticket
+
+        archived = Ticket(
+            id="T-8888",
+            title="an archived ticket",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            priority=Priority.MEDIUM,
+            state=TicketState.DONE,
+            scope=(),
+            body="shipped",
+        )
+        assert write_archived_ticket(repo, archived).is_ok
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        (lock_dir / "T-8888.lock").touch()
+
+        assert orphaned_ticket_locks(repo) == ()
+
+    def test_live_holder_not_orphaned(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        # frob:tests src/frob/tickets/_leases.py::_lock_file_held_by_live_process \
+        # kind="unit"
+        # T-4342: the in-flight-creation case. A second, independent fd
+        # holding the SAME file's exclusive flock (never released by this
+        # test) is the same non-blocking-acquire-fails signal a genuinely
+        # live sibling process would produce -- `flock` is scoped to an
+        # open file DESCRIPTION, not a process, so two separate fds in one
+        # process already exercise the real "someone else holds it" path.
+        import os
+
+        from frob.process._lock import portable_flock_acquire
+        from frob.tickets._leases import orphaned_ticket_locks
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        lock_path = lock_dir / "T-7777.lock"
+        lock_path.touch()
+
+        fd = os.open(str(lock_path), os.O_RDWR)
+        try:
+            assert portable_flock_acquire(fd, exclusive=True, blocking=False)
+            assert orphaned_ticket_locks(repo) == ()
+        finally:
+            os.close(fd)
+
+    def test_bad_ledger_degrades_to_none(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
+        from typani.result import Err
+
+        from frob.tickets._leases import orphaned_ticket_locks
+        from frob.tickets._models import TicketError
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        (lock_dir / "T-6666.lock").touch()
+        # Force `load_queue` to Err -- must degrade to no findings, never
+        # flag every real ticket's lock as orphaned off a load failure
+        # unrelated to lock health.
+        with patch(
+            "frob.tickets._archive.load_queue",
+            return_value=Err(TicketError.MalformedFrontmatter),
+        ):
+            assert orphaned_ticket_locks(repo) == ()
+
+    def test_warn_logs_once_per_id(self, repo: Path, caplog) -> None:
+        # frob:tests src/frob/tickets/_leases.py::warn_orphaned_ticket_locks kind="unit"
+        import logging
+
+        from frob.tickets._leases import warn_orphaned_ticket_locks
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        (lock_dir / "T-5555.lock").touch()
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            first = warn_orphaned_ticket_locks(repo)
+            second = warn_orphaned_ticket_locks(repo)
+
+        assert first == ("T-5555",)
+        assert second == ("T-5555",)
+        matches = [r for r in caplog.records if "T-5555" in r.getMessage()]
+        assert len(matches) == 1
+
+    def test_land_guard_surfaces_warning(self, repo: Path, caplog) -> None:
+        # frob:tests src/frob/tickets/_leases.py::refuse_if_land_in_progress kind="unit"
+        # T-4342: the deliberate "where does this surface" choice --
+        # every ledger-mutating verb's own choke point, not the unscoped
+        # gate.
+        import logging
+
+        from frob.tickets._leases import (
+            _warned_orphaned_ticket_lock_ids,
+            refuse_if_land_in_progress,
+        )
+        from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+        _warned_orphaned_ticket_lock_ids.clear()
+        lock_dir = repo / _TICKET_LOCK_DIR_REL
+        lock_dir.mkdir(parents=True, exist_ok=True)
+        (lock_dir / "T-4444.lock").touch()
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            result = refuse_if_land_in_progress(repo)
+
+        assert result.is_ok
+        assert any("T-4444" in r.getMessage() for r in caplog.records)
+
+
 # frob:ticket T-1789
 class TestReleaseOrphanedLease:
     """T-1779 finding 7: `release_orphaned_lease` -- the SAFE, targeted

@@ -1011,6 +1011,208 @@ def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     )
 
 
+# frob:ticket T-4342
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_lock_gone_ticket_is_orphaned
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_live_holder_not_orphaned
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_real_ticket_not_orphaned
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_archived_ticket_not_orphaned
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_bad_ledger_degrades_to_none
+def _lock_file_held_by_live_process(path: Path) -> bool:
+    """`True` iff `path` (a per-ticket `ticket_lock` file, `.frob/tickets/
+    <id>.lock`) is CURRENTLY held by another live process's advisory
+    `flock`, or the answer cannot be confirmed either way -- the exact
+    "in-flight creation" guard `orphaned_ticket_locks` needs before it can
+    ever report a lock as lost (T-4342): `_write_ticket_v2_mode` holds this
+    same lock for the whole acquire-write-release span of a `frob ticket
+    new`/`mutate_scope` call, so a lock file that exists purely because a
+    SIBLING process is mid-write, not yet at the point where the new
+    ticket directory is visible on disk, must never be reported.
+
+    Modeled on `_land_flock_probe`'s own non-blocking acquire-then-
+    immediately-release pattern (T-1619) rather than re-deriving a second
+    liveness primitive: if THIS process can acquire the lock, the kernel
+    has already told us no other live process holds it (a dead holder's
+    `flock` is released by the kernel the instant it exits, no separate
+    `os.kill` probe needed); if it cannot, some other live process holds
+    it right now. Every ambiguous case -- no lock backend on this
+    platform, the file has vanished between the caller's glob and this
+    open, or the open itself fails -- returns `True` (treat as held),
+    the same "cannot confirm, so do not report" bias `lease_staleness_
+    reason`'s own holder-dead branch and `_probe_worktree_liveness`'s
+    `"ambiguous"` outcome already use: a missed orphan sits harmlessly on
+    disk for the next scan to catch, but a FALSE orphan report on ordinary
+    concurrent `ticket new` activity is the exact "worse than silence"
+    failure mode T-4342's own ticket body warns against."""
+    if not lock_backend_available():
+        return True
+    if not path.exists():
+        return False
+    fd = _open_land_lock_fd_for_probe(path)
+    if fd is None:
+        return True
+    try:
+        if not portable_flock_acquire(fd, exclusive=True, blocking=False):
+            return True
+        portable_flock_release(fd)
+        return False
+    finally:
+        os.close(fd)
+
+
+# frob:ticket T-4342
+# frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_lock_gone_ticket_is_orphaned
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_live_holder_not_orphaned
+def orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
+    """Every ticket id whose per-ticket `ticket_lock` file (`.frob/tickets/
+    <id>.lock`, `_store._ticket_lock_path`) has NO corresponding ticket
+    anywhere -- active ledger or archive -- AND is not currently held by a
+    live process (T-4342).
+
+    WHY this is a trustworthy signal, not a heuristic: `.frob/` is
+    gitignored, so the lock file survives a `git clean -fd` rollback that
+    deletes the still-untracked ticket directory it was protecting (the
+    exact T-4313 incident -- `_write_ticket_v2_mode` acquired this lock,
+    wrote the ticket, and a concurrent land's `LandInProgress` timeout
+    later rolled the write back via `_rollback_pathspecs`, which never
+    touches `.frob/`). A HEALTHY tree can never contain a lock file for an
+    id that was never written anywhere: the lock and its ticket are
+    created by the same call, in the same directory tree, and only a
+    partial-rollback failure mode like T-4313's can separate them. So an
+    orphan found here is not "probably" evidence of lost ticket data --
+    it is the ONLY shape that produces this exact combination.
+
+    Deliberately excludes the in-flight-creation case via `_lock_file_
+    held_by_live_process` FIRST (cheapest, most decisive signal) before
+    ever treating a ticket-less lock as an orphan: a lock acquired moments
+    ago by a live `frob ticket new` names a ticket that does not exist
+    YET, by design, for the entire span between acquiring the lock and
+    the write becoming visible on disk -- reporting that as data loss
+    would be the false-alarm failure mode T-4342's own ticket body argues
+    is worse than staying silent. Once the lock is confirmed not
+    currently held, there is no further race to protect against: either
+    the write completed (the ticket exists, so `known_ids` catches it and
+    this function never gets this far) or it was rolled back (the ticket
+    is gone for good, and reporting it immediately loses nothing -- unlike
+    a worktree lease's TTL-gated `"holder-dead"` shape, there is no
+    "give it more time" case here, since a released lock with no ticket on
+    disk can only mean the write never landed).
+
+    An unreadable/malformed ledger (`load_queue` returns `Err`) degrades
+    to `()` -- no findings -- rather than risk flagging every real,
+    in-ledger ticket's lock as orphaned off a load failure that has
+    nothing to do with lock health; this mirrors `lease_staleness_
+    reason`'s own "cannot confirm ticket-gone/ticket-terminal, so do not
+    guess" posture for the identical failure.
+
+    Read-only and report-safe by design, same posture as `orphaned_
+    leases` (T-1876's deliberate precedent): this function only ever
+    LISTS ids, it never touches the lock file. See `warn_orphaned_ticket_
+    locks` for the one caller that logs about what this finds, and that
+    function's docstring for why removal is deliberately not offered."""
+    from frob.tickets._archive import load_queue
+    from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+    lock_dir = root / _TICKET_LOCK_DIR_REL
+    if not lock_dir.is_dir():
+        return ()
+
+    queue = load_queue(root)
+    if queue.is_err:
+        return ()
+    known_ids = set(queue.danger_ok.tickets)
+
+    orphans: list[str] = []
+    for lock_path in sorted(lock_dir.glob("*.lock")):
+        ticket_id = lock_path.stem
+        if ticket_id in known_ids:
+            continue
+        if _lock_file_held_by_live_process(lock_path):
+            continue
+        orphans.append(ticket_id)
+    return tuple(orphans)
+
+
+# frob:ticket T-4342
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_warn_logs_once_per_id
+_warned_orphaned_ticket_lock_ids: set[tuple[Path, str]] = set()
+
+
+# frob:ticket T-4342
+# frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_warn_logs_once_per_id
+def warn_orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
+    """Logs one WARNING for every id `orphaned_ticket_locks(root)` finds,
+    at most once per (root, id) for this process's lifetime (T-4342) --
+    the same "log once per process" shape `_stale_lease_logged`/`_rejected
+    _lease_logged` already use in this module, so a caller invoking this
+    on every ticket-mutating command (see `refuse_if_land_in_progress`'s
+    call below) never re-spams the same finding forever. Returns the same
+    tuple `orphaned_ticket_locks` returned, so a caller that wants to act
+    on the ids (not just see the log) does not have to call both.
+
+    WHERE this surfaces, decided deliberately (T-4342): NOT the unscoped
+    `frob check` gate, which currently carries roughly 5,000 warnings a
+    plain addition to would be invisible by volume alone -- exactly the
+    kind of finding-nobody-reads outcome this ticket's own body warns
+    against. Instead this rides `refuse_if_land_in_progress`, the single
+    choke point every ledger-mutating ticket verb (`new`/`close`/`drop`/
+    `fail`/`requeue`/`block`/`start`/`evidence`/`done-report`, per that
+    function's own docstring) already calls before writing to `root` --
+    the same kind of small-and-loud signal `_log.warning`'s call sites
+    throughout this module already use for cross-worktree lease problems,
+    now extended to this second, structurally-identical class of finding.
+    A human running any ordinary ticket command sees it in their own
+    terminal, near a command they are already about to run, rather than
+    scrolling past it in a five-thousand-line gate report.
+
+    SEVERITY: WARNING, not ERROR -- this never blocks the caller (see the
+    call site's own try/except) and is forensic ("something was lost in
+    the past"), not an in-progress problem the current command caused or
+    can fix. `frob.tickets._new.py`'s post-T-4339 mandatory read-back
+    already makes NEW instances of this shape far rarer; this is a
+    detector for the class of failure, not a gate against causing it.
+
+    WHETHER TO CLEAN: report-only, deliberately, matching T-1876's
+    read-only posture for stale leases. The lock file is the ONLY
+    surviving forensic trace of whatever ticket was lost (T-4313's own
+    incident: it was the sole evidence anything had gone wrong at all,
+    found hours after the fact) -- deleting it on detection would destroy
+    that evidence for no operational gain, since an empty advisory-lock
+    file costs nothing to leave in place and `ticket_lock`'s own `flock`
+    usage does not care whether the file is old or freshly created."""
+    from frob.tickets._store import _TICKET_LOCK_DIR_REL
+
+    orphans = orphaned_ticket_locks(root)
+    resolved_root = root.resolve()
+    for ticket_id in orphans:
+        key = (resolved_root, ticket_id)
+        if key in _warned_orphaned_ticket_lock_ids:
+            continue
+        _warned_orphaned_ticket_lock_ids.add(key)
+        _log.warning(
+            "tickets: orphaned lock file %s -- ticket %s exists in NEITHER "
+            "the active ledger nor the archive, and its per-ticket lock is "
+            "not held by any live process. This is the forensic signature "
+            "of a ticket lost after `frob ticket new` printed success but "
+            "the write was later rolled back by a concurrent land "
+            "(T-4313/T-4339) -- investigate before removing the lock file, "
+            "it is the only remaining evidence of what was lost",
+            root / _TICKET_LOCK_DIR_REL / f"{ticket_id}.lock",
+            ticket_id,
+        )
+    return orphans
+
+
 # frob:ticket T-1789
 # frob:ticket T-1806
 # frob:doc \
@@ -2258,6 +2460,23 @@ def refuse_if_land_in_progress(
     (rather than immediately discarding) a GENUINELY different concurrent
     land using this same bounded poll, while never treating its own
     originating land as one."""
+    # frob:ticket T-4342
+    # T-4342: piggybacks the orphaned-ticket-lock scan onto this choke
+    # point -- see `warn_orphaned_ticket_locks`'s own docstring for why
+    # THIS call site (every ledger-mutating verb, not the unscoped `frob
+    # check` gate) is the deliberate answer to "where does this surface".
+    # Best-effort: this scan must never turn an otherwise-successful land-
+    # lock check into a failure, so any exception it raises is logged and
+    # swallowed rather than propagated.
+    try:
+        warn_orphaned_ticket_locks(root)
+    except Exception:
+        _log.warning(
+            "tickets: orphaned-ticket-lock scan failed under %s (non-fatal, "
+            "continuing)",
+            root,
+            exc_info=True,
+        )
     resolved_timeout, remaining_budget = _resolve_land_wait_budget(
         root, wait_timeout_s, now_wall
     )

@@ -1,7 +1,7 @@
 ---
 id: T-4342
 title: Surface orphaned per-ticket lock files as a routine detection signal
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'

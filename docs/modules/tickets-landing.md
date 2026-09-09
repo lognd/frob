@@ -1898,6 +1898,71 @@ worktree, which is why it died when its parent was retired; this is the
 root cause the orphan is a downstream symptom of, filed as its own
 ticket since it may be larger than a small guard.
 
+## Orphaned ticket lock detection (T-4342)
+
+A different survivor of the same class of incident: T-4339 found that the
+ONLY trace of `T-4313` -- a ticket `frob ticket new` printed as `created
+T-4313: ...` that was never written anywhere, no `tickets/T-4313/`, no
+commit, not in the archive nor any worktree -- was a zero-byte
+`.frob/tickets/T-4313.lock` file. Root cause: `_write_ticket_v2_mode`
+acquired that per-ticket `ticket_lock`, wrote the ticket, and released it;
+a concurrent land's `LandInProgress` timeout then ran `_rollback_
+pathspecs`'s `git clean -fd` over the still-untracked ticket directory,
+deleting it, while `.frob/` (gitignored, outside that pathspec) let the
+lock file survive. The loss sat undetected for hours until an implementer
+dispatched to work the id searched exhaustively and reported it
+unresolvable.
+
+**Why an orphaned lock is structural evidence, not a heuristic.** A
+healthy tree can never contain a `.frob/tickets/<id>.lock` file for an id
+that has no ticket anywhere: the lock and the ticket it protects are
+created by the very same call, in the very same tree, and only a
+partial-rollback failure shape like `T-4313`'s can separate the two. So
+finding one is not "probably" data loss -- it is the one shape that
+produces exactly this combination.
+
+**`frob.tickets._leases.orphaned_ticket_locks(root) -> tuple[str, ...]`**
+lists every ticket id whose lock file has no corresponding ticket in
+either the active ledger or the archive, AND is not currently held by any
+live process. That second condition is the deliberate false-positive
+guard: a lock acquired moments ago by a live `frob ticket new` names a
+ticket that does not exist YET, for the entire span between acquiring the
+lock and the write becoming visible on disk, and a naive check that fired
+on that ordinary, healthy window would be worse than the silence it
+replaces (this ticket's own explicit concern). `_lock_file_held_by_live_
+process` answers that with the same non-blocking `flock` acquire-then-
+release probe `_land_flock_probe` already uses for the land lock -- if
+this process can acquire the file's lock, the kernel has already
+confirmed no other live process holds it; every ambiguous outcome (no
+lock backend, an unreadable/vanished file) conservatively reads as "held,
+do not report," the same bias `lease_staleness_reason`'s own
+`"ambiguous"`/holder-dead checks already use elsewhere in this module.
+Once a lock is confirmed unheld and its id is absent from the ledger,
+there is no further "give it more time" case to protect, unlike a
+worktree lease's TTL-gated staleness -- a released lock naming no ticket
+can only mean the write never landed.
+
+**`frob.tickets._leases.warn_orphaned_ticket_locks(root)`** is the one
+caller that logs about what `orphaned_ticket_locks` finds: one WARNING
+per (root, id), at most once per process. **Where this surfaces was
+decided deliberately, not defaulted**: not the unscoped `frob check`
+gate, which carries roughly 5,000 warnings today -- a plain addition
+there would be exactly the "finding nobody reads" outcome this ticket's
+own body warns against. Instead it rides `refuse_if_land_in_progress`,
+the single choke point every ledger-mutating ticket verb (`new`/`close`/
+`drop`/`fail`/`requeue`/`block`/`start`/`evidence`/`done-report`) already
+calls before writing to `root`, wrapped in a best-effort try/except so
+the scan can never turn an otherwise-successful land-lock check into a
+failure. **Severity is WARNING, not ERROR**: the finding is forensic (a
+past loss), never something the current command caused or can fix, and
+must never block it. **Deliberately report-only, never auto-removing the
+lock**: matching T-1876's read-only posture for stale leases, the lock
+file is the only surviving forensic trace of whatever was lost -- exactly
+`T-4313`'s own incident, where it was the sole evidence anything had gone
+wrong at all -- and deleting it on detection would destroy that evidence
+for no operational gain, since an empty advisory-lock file costs nothing
+to leave in place.
+
 ## Verify-then-destroy: `frob ticket land --retire-on-proof` (T-1619)
 
 Real incident, same session as the lease gap above: an operator ran `frob
