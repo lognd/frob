@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 cannot be satisfied on this Linux-only session for a macOS-only defect;
+    see T-4350 body
+  actor: logan
+  at: '2026-09-08'
+  old_length: 3004
+  new_length: 3620
 evidence:
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_affects_json_daemon_matches_in_process
@@ -88,3 +96,5 @@ VERIFY honestly. If you cannot reach macos, say so and state plainly which
 conclusions are inferred; do not present a linux run as evidence about a
 macos-visible failure. Two tickets before this one were explicit about that
 boundary and it is why the diagnosis kept improving instead of thrashing.
+
+frob:waive BUG002 reason="the defect is macOS-only (uv 0.12.10s stricter VIRTUAL_ENV check, resolved via a different uv version than the ubuntu leg hits) and this session has no macOS access; the designated repro test necessarily PASSES at the parent commit on this Linux environment because Linux never exhibited the failure at that commit -- the fix is verified by mechanism (argv now resolves via sys.executable -m frob, matching the tool own T-3311/T-4327 convention already proven correct on this OS family) plus a clean 33/33 pass and a stable zero-error frob check, not by a Linux-reproduced fail/pass pair"
