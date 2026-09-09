@@ -1,7 +1,7 @@
 ---
 id: T-4373
 title: 'COV007: frob:doc on private symbol _resolve_kill_argv (T-4369 introduced)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
