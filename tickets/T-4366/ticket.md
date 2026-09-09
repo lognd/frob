@@ -2,7 +2,7 @@
 id: T-4366
 title: xdist remove_node has the same mutation-during-iteration race as the hardened
   sibling
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
