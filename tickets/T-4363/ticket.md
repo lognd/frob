@@ -5,7 +5,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-09-09'
-priority: critical
+priority: medium
 parent: null
 tier: ticket
 sprint: null
@@ -19,6 +19,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: critical
+  new_value: medium
+  reason: 'Premise corrected: not a blocker, the step completes with headroom'
+  actor: logan
+  at: '2026-09-09'
 body_changes:
 - mode: append
   reason: 'Correct a false premise: the step completed in 92 min of 120; downgrade
