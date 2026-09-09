@@ -15,10 +15,18 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/cache.py
+  reason: 'T-4159: the gate cache implementation this ticket investigates for corruption/keying'
+  actor: logan
+  at: '2026-09-09'
 body_changes:
 - mode: set
   reason: 'records the quiet-window rebuild and the measurement that narrows the cause:
