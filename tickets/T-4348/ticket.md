@@ -2,7 +2,7 @@
 id: T-4348
 title: Orphaned-lock detector reports 153 historical residue findings on a healthy
   tree
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
