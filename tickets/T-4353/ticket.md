@@ -1,7 +1,7 @@
 ---
 id: T-4353
 title: Windows abort recurs intermittently despite the heavy-group fix
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
