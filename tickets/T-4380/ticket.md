@@ -1,7 +1,7 @@
 ---
 id: T-4380
 title: two files landed unformatted by T-4088 and T-4365 lands
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
