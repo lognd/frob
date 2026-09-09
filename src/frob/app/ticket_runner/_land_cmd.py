@@ -54,7 +54,7 @@ from frob.gates._land_parity import (
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
-from frob.process._guard import ProcessGuardError
+from frob.process._guard import ProcessGuardError, guarded_subprocess_run
 from frob.process._project_tool import project_tool_argv, resolve_project_tool
 from frob.tickets._land_git_ops import _describe_git_failure, _land_internal_git_env
 from frob.tickets._leases import refuse_if_worktree_in_use
@@ -250,6 +250,7 @@ def _absorb_pre_land_fixes(
     merge_root = root if root is not None else worktree
     touched_paths = _land_touched_paths(worktree, ticket_id)
     _fmt_pre_land_step(worktree, ticket_id, touched_paths)
+    _ruff_format_pre_land_step(worktree, ticket_id, touched_paths)
     _assert_design_loads_pre_land(worktree, ticket_id, stage="pre-tier-a")
     _tier_a_pre_land_step(worktree, ticket_id, touched_paths, merge_root)
     _assert_design_loads_pre_land(worktree, ticket_id, stage="post-tier-a")
@@ -293,6 +294,102 @@ def _fmt_pre_land_step(
             ticket_id,
             fmt_changed,
         )
+
+
+# frob:ticket T-4323
+# frob:doc docs/modules/gates.md#land-format-landfmt001-t-4298
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
+# lf_rewrites_a_touched_drifted_file
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
+# lf_leaves_an_out_of_scope_drifted_file_untouched
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
+# lf_is_silent_on_a_clean_touched_file
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
+# lf_leaves_the_file_alone_when_ruff_itself_fails
+def _ruff_format_pre_land_step(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """The `ruff format` half of `_absorb_pre_land_fixes` (T-4323, the
+    APPLY half of LANDFMT001 -- `frob.gates._land_format` -- that T-4298
+    deliberately deferred as a `frob:todo` while this module's own T-4281
+    lease was live; that lease is now free). REWRITES the exact `.py`
+    files this ticket's own diff touches that `ruff format --check` would
+    reformat, so a land absorbs LANDFMT001's drift the same way
+    `_fmt_pre_land_step` already absorbs FMT001's -- matching this
+    project's Tier-A auto-fix posture (deterministic formatters are
+    exactly the case auto-apply is safe for; a refusal here is friction
+    with no reviewable decision behind it) rather than refusing every
+    land that merely drifted out of formatter-sync with `main`.
+
+    Diff-scoped, deliberately, mirroring `_land_format_touched_py_files`'s
+    own touched-set source exactly (both read `touched_paths`, this
+    step's caller's own `_land_touched_paths(worktree, "main")` diff):
+    `touched_paths is None` (the diff itself could not be computed) skips
+    this step outright rather than falling back to a whole-tree `ruff
+    format` pass -- unlike `_fmt_pre_land_step`'s own whole-tree fallback,
+    a land absorbing formatter drift in a file it never touched is
+    exactly the failure mode this ticket's scope rules out, so an
+    unmeasurable diff means "skip", not "widen to the whole tree". A
+    file `ruff format --check` would NOT rewrite is left byte-identical
+    -- `_ruff_format_would_rewrite` (`frob.gates._land_format`) is called
+    first to name precisely which touched files actually drift, and only
+    those are ever passed to `ruff format`'s own write mode, so this
+    never touches a clean file nor one outside the touched set. Every
+    rewritten file is named in the log line (T-4323's visibility
+    requirement: a land that reformats a file says so, it does not
+    silently amend it) -- unlike `_fmt_pre_land_step`'s count-only log,
+    because `ruff format`'s own touched-file names are already known
+    here for free, from the same `_ruff_format_would_rewrite` call that
+    decided whether to run at all. Best-effort, matching every other
+    step in this best-effort trio: a `ruff` spawn failure is logged and
+    skipped (LANDFMT001 itself then refuses the land on the un-rewritten
+    drift, so nothing is silently lost) rather than crashing the land."""
+    if not touched_paths:
+        return
+    py_touched = frozenset(rel for rel in touched_paths if rel.endswith(".py"))
+    if not py_touched:
+        return
+    from frob.gates._land_format import _ruff_format_would_rewrite
+
+    to_rewrite = _ruff_format_would_rewrite(worktree, py_touched)
+    if not to_rewrite:
+        return
+    run_result = guarded_subprocess_run(
+        project_tool_argv(worktree, "ruff", "format", *to_rewrite),
+        cwd=worktree,
+        capture_output=True,
+        text=True,
+    )
+    if run_result.is_err:
+        _log.warning(
+            "ticket land: %s pre-land ruff format auto-apply spawn failed "
+            "(%s) -- LANDFMT001 will refuse this land on the un-rewritten "
+            "drift instead",
+            ticket_id,
+            run_result.danger_err,
+        )
+        return
+    proc = run_result.danger_ok
+    if proc.returncode:
+        _log.warning(
+            "ticket land: %s pre-land ruff format auto-apply failed "
+            "(exit %d: %s) -- LANDFMT001 will refuse this land on the "
+            "un-rewritten drift instead",
+            ticket_id,
+            proc.returncode,
+            (proc.stdout + proc.stderr).strip(),
+        )
+        return
+    _log.info(
+        "ticket land: %s pre-land ruff format rewrote %d file(s): %s",
+        ticket_id,
+        len(to_rewrite),
+        ", ".join(to_rewrite),
+    )
 
 
 # frob:ticket T-1175

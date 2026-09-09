@@ -1,0 +1,49 @@
+## Done report
+
+Design decision (weighed, not assumed): APPLY, not just REFUSE. `ruff
+format` is deterministic and idempotent -- the same transform the
+author would run and commit by hand (`frob format --code`) -- so
+auto-rewriting a land's own touched files carries none of the risk
+this codebase's T-1900 fix-engine-rewrite incident recorded (a
+discretionary, non-idempotent handler corrupting design/frob.strata
+undetected). LANDFMT001's REFUSE path is kept, not replaced: it still
+fires whenever the apply step cannot safely rewrite (unmeasurable
+diff, failed `ruff` spawn, nonzero `ruff format` exit).
+
+Changed:
+- src/frob/app/ticket_runner/_land_cmd.py::_ruff_format_pre_land_step (new)
+- src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes (calls the new step)
+- src/frob/gates/_land_format.py (module docstring + frob:todo resolved to frob:ticket)
+- docs/modules/gates.md#land-format-landfmt001-t-4298 (design-decision section updated)
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes (3 new tests)
+
+Evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_rewrites_a_touched_drifted_file
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_is_silent_on_a_clean_touched_file
+- tests/unit/test_land_format_gate.py (all 3, unchanged, still green -- LANDFMT001's own detection logic reused by the new step, not duplicated)
+- `frob test --base main` exit=0 (9 python outcomes recorded)
+
+Filed: none
+
+Gates: `frob check --ticket T-4323` clean (exit 0, 0 unwaived errors)
+
+### Changed
+```
+ docs/modules/gates.md                     |  52 ++++++++---
+ src/frob/app/ticket_runner/_land_cmd.py   |  96 ++++++++++++++++++-
+ src/frob/gates/_land_format.py            |  42 ++++-----
+ tests/test_ticket_work_and_land_finish.py | 149 ++++++++++++++++++++++++++++++
+ tickets/T-4323/ticket.md                  |  29 ++++++
+ 5 files changed, 331 insertions(+), 37 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_rewrites_a_touched_drifted_file` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_is_silent_on_a_clean_touched_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 4853 warning(s), 956 waived
+- error-findings: none (measured, zero errors)

@@ -1,7 +1,7 @@
 ---
 id: T-4323
 title: Land-path auto-apply for LANDFMT001 ruff format drift
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-08'
@@ -44,6 +44,11 @@ scope_changes:
     the design decision of
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_rewrites_a_touched_drifted_file
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_is_silent_on_a_clean_touched_file
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_ruff_format_half_leaves_the_file_alone_when_ruff_itself_fails
 designated_repro_test: null
 threat: null
 component: null

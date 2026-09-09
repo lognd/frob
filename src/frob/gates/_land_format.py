@@ -33,29 +33,29 @@ directive below for the reasoning on the REFUSE-vs-APPLY design question
 T-4298 raised.
 
 DESIGN DECISION, RECORDED HERE PER T-4298's OWN ACCEPTANCE CRITERION 3:
-REFUSE, not auto-apply, for now. `ruff format` is deterministic and this
-project already auto-fixes other rule families (Tier-A) on the land path,
-so an auto-apply absorption step (extending `_fmt_pre_land_step`'s
-existing pattern to also run `ruff format` on the touched set, not just
-`frob fmt`) is very likely still the right end state and is recorded as a
-`frob:todo` immediately below. Refuse-first ships today, inside this
-ticket's own scope, without touching the two files a live sibling ticket
-holds a lease on; whoever picks up the auto-apply follow-up gets a
-refusing gate already proving the touched-set detection is correct before
-they wire a write path on top of it. See the `frob:todo` directive below
-for the tracked follow-up."""
+REFUSE-first shipped in T-4298; T-4323 then added the APPLY half.
+`ruff format` is deterministic and this project already auto-fixes other
+rule families (Tier-A) on the land path, and unlike an automatic FIX
+ENGINE rewrite (this codebase has one such rewrite on record that had to
+be reverted -- see T-1900 in `_land_cmd.py`'s own `_absorb_pre_land_
+fixes` docstring), running the project's own pinned `ruff format` against
+exactly the files a land already touches, and only the ones it would
+itself rewrite if the author ran `frob format --code` by hand, carries
+none of that risk: it is the SAME deterministic transform the author
+would otherwise be asked to run and commit themselves, scoped to files
+already inside their own diff, with the rewrite named in the land's own
+log output rather than silently amended. `_land_cmd.py`'s `_ruff_format_
+pre_land_step` (T-4323) is that apply half: it reuses this module's own
+`_ruff_format_would_rewrite` to name precisely which touched files drift,
+rewrites exactly those, in place, before `land()`'s own wip-commit step,
+and falls back to leaving `land_format_gate` (below) to REFUSE whenever
+the rewrite itself cannot be trusted (an unmeasurable diff, a failed
+`ruff` spawn, a nonzero `ruff format` exit) -- the refusal half built
+here is not made redundant by the apply half; it is what still fires
+when auto-apply could not."""
 
 # frob:ticket T-4298
-# Deferred: auto-apply LANDFMT001's drift the same way `_fmt_pre_land_step`
-# already absorbs `frob:` directive drift, now that `_land_cmd.py`'s T-4281
-# scope lease is free (T-4281 closed done) -- extend `_absorb_pre_land_
-# fixes` with a `ruff format`-on-touched-set step next to its existing
-# `frob fmt` one, so a land REWRITES this drift instead of refusing on it,
-# matching this project's existing Tier-A auto-fix posture. Rebound from
-# T-4298 to T-4323 by T-4316: the deferred work is still
-# genuinely outstanding (T-4298 only shipped the REFUSE half by design),
-# not residue -- T-4298 itself is closed and cannot hold an open marker.
-# frob:todo T-4323
+# frob:ticket T-4323
 
 from __future__ import annotations
 

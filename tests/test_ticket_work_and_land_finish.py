@@ -389,6 +389,7 @@ class TestRootIsItselfANestedWorktree:
 
 
 # frob:ticket T-1175
+# frob:ticket T-4323
 class TestAbsorbPreLandFixes:
     """T-1175's `_absorb_pre_land_fixes` -- the `frob fmt` half is exercised
     directly here (a real non-canonical `frob:` directive, `format_paths`'s
@@ -483,6 +484,195 @@ class TestAbsorbPreLandFixes:
         assert rewritten != original
         for line in rewritten.splitlines():
             assert len(line) <= 88
+
+    # frob:ticket T-4323
+    def test_ruff_format_half_rewrites_a_touched_drifted_file(
+        self, repo: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
+        # ormat_half_rewrites_a_touched_drifted_file
+        # T-4323 acceptance: a `.py` file genuinely inside the landing
+        # ticket's own touched set, that `ruff format --check` would
+        # rewrite, is rewritten in place by the pre-land absorption step
+        # -- and the land's own log output names it, per T-4323's
+        # visibility requirement (a rewrite must be reported, not silent).
+        # Both `guarded_subprocess_run` call sites (`_land_format`'s own
+        # detection call and `_land_cmd`'s own apply-mode call) are faked,
+        # same idiom as `tests/unit/test_land_format_gate.py`, so this
+        # does not depend on a real `uv run --project <tmp_path>` spawn
+        # resolving inside a bare git fixture with no lockfile of its own.
+        import frob.app.ticket_runner._land_cmd as land_cmd_mod
+        import frob.gates._land_format as land_format_mod
+
+        target = repo / "src" / "drifted.py"
+        original = "x=1\n"
+        formatted = "x = 1\n"
+        target.write_text(original)
+        _run(["git", "add", "-A"], repo)
+
+        def _fake_detect(cmd, **kw):  # noqa: ANN001
+            return Ok(_FakeCompletedProcess("Would reformat src/drifted.py\n", 1))
+
+        def _fake_apply(cmd, **kw):  # noqa: ANN001
+            assert kw.get("capture_output") is True
+            assert kw.get("text") is True
+            target.write_text(formatted)
+            return Ok(_FakeCompletedProcess("", 0))
+
+        monkeypatch.setattr(land_format_mod, "guarded_subprocess_run", _fake_detect)
+        monkeypatch.setattr(land_cmd_mod, "guarded_subprocess_run", _fake_apply)
+
+        with caplog.at_level(logging.INFO):
+            _absorb_pre_land_fixes(repo, "T-4323")
+
+        assert target.read_text() == formatted
+        assert any(
+            "pre-land ruff format rewrote" in record.message
+            and "src/drifted.py" in record.message
+            for record in caplog.records
+        )
+
+    # frob:ticket T-4323
+    def test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched(
+        self, repo: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
+        # ormat_half_leaves_an_out_of_scope_drifted_file_untouched
+        # T-4323's diff-scoping requirement: a file already committed to
+        # `main` (never touched by this ticket's own diff), that `ruff
+        # format --check` would ALSO rewrite, must be left byte-identical
+        # -- the apply step must not fire on a file the land is not
+        # otherwise touching.
+        import frob.app.ticket_runner._land_cmd as land_cmd_mod
+        import frob.gates._land_format as land_format_mod
+
+        out_of_scope = repo / "src" / "out_of_scope.py"
+        out_of_scope.write_text("y=2\n")
+        _commit_all(repo, "add an already-committed drifted file")
+
+        in_scope = repo / "src" / "in_scope.py"
+        in_scope.write_text("def f():\n    return 1\n")
+        _run(["git", "add", "-A"], repo)
+
+        detect_calls: list[tuple[str, ...]] = []
+
+        def _fake_detect(cmd, **kw):  # noqa: ANN001
+            detect_calls.append(tuple(cmd))
+            # Only the touched file is ever asked about -- the gate's own
+            # detection would report the out-of-scope file too if it were
+            # ever handed to it, so a passing test here depends on this
+            # step never including it in `cmd` in the first place.
+            return Ok(_FakeCompletedProcess("", 0))
+
+        apply_calls: list[tuple[str, ...]] = []
+
+        def _fake_apply(cmd, **kw):  # noqa: ANN001
+            apply_calls.append(tuple(cmd))
+            return Ok(_FakeCompletedProcess("", 0))
+
+        monkeypatch.setattr(land_format_mod, "guarded_subprocess_run", _fake_detect)
+        monkeypatch.setattr(land_cmd_mod, "guarded_subprocess_run", _fake_apply)
+
+        _absorb_pre_land_fixes(repo, "T-4323")
+
+        assert out_of_scope.read_text() == "y=2\n"
+        assert not apply_calls
+        assert all("out_of_scope.py" not in " ".join(call) for call in detect_calls)
+
+    # frob:ticket T-4323
+    def test_ruff_format_half_is_silent_on_a_clean_touched_file(
+        self, repo: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
+        # ormat_half_is_silent_on_a_clean_touched_file
+        # T-4323's other required direction: a touched file `ruff format
+        # --check` would NOT rewrite is left byte-identical and the land
+        # emits no rewrite log line for it at all -- the apply step must
+        # not touch (or claim to have touched) a file with no drift.
+        import frob.app.ticket_runner._land_cmd as land_cmd_mod
+        import frob.gates._land_format as land_format_mod
+
+        target = repo / "src" / "clean.py"
+        original = "x = 1\n"
+        target.write_text(original)
+        _run(["git", "add", "-A"], repo)
+
+        def _fake_detect(cmd, **kw):  # noqa: ANN001
+            return Ok(_FakeCompletedProcess("", 0))
+
+        apply_calls: list[tuple[str, ...]] = []
+
+        def _fake_apply(cmd, **kw):  # noqa: ANN001
+            apply_calls.append(tuple(cmd))
+            return Ok(_FakeCompletedProcess("", 0))
+
+        monkeypatch.setattr(land_format_mod, "guarded_subprocess_run", _fake_detect)
+        monkeypatch.setattr(land_cmd_mod, "guarded_subprocess_run", _fake_apply)
+
+        with caplog.at_level(logging.INFO):
+            _absorb_pre_land_fixes(repo, "T-4323")
+
+        assert target.read_text() == original
+        assert not apply_calls
+        assert not any(
+            "pre-land ruff format rewrote" in r.message for r in caplog.records
+        )
+
+    # frob:ticket T-4323
+    def test_ruff_format_half_leaves_the_file_alone_when_ruff_itself_fails(
+        self, repo: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
+        # ormat_half_leaves_the_file_alone_when_ruff_itself_fails
+        # A nonzero `ruff format` exit (not a spawn failure -- `ruff`
+        # itself refused to write, e.g. a syntax error) is best-effort:
+        # logged, with BOTH stdout and stderr surfaced in the warning, and
+        # the file left exactly as `ruff format --check` left it (its
+        # OWN write may have partially applied and is not this step's to
+        # second-guess) -- LANDFMT001 is left to refuse the land on the
+        # drift this step could not resolve.
+        import frob.app.ticket_runner._land_cmd as land_cmd_mod
+        import frob.gates._land_format as land_format_mod
+
+        target = repo / "src" / "drifted.py"
+        original = "x=1\n"
+        target.write_text(original)
+        _run(["git", "add", "-A"], repo)
+
+        def _fake_detect(cmd, **kw):  # noqa: ANN001
+            return Ok(_FakeCompletedProcess("Would reformat src/drifted.py\n", 1))
+
+        def _fake_apply(cmd, **kw):  # noqa: ANN001
+            return Ok(_FakeCompletedProcess("OUT-MARKER", 2, stderr="ERR-MARKER"))
+
+        monkeypatch.setattr(land_format_mod, "guarded_subprocess_run", _fake_detect)
+        monkeypatch.setattr(land_cmd_mod, "guarded_subprocess_run", _fake_apply)
+
+        with caplog.at_level(logging.WARNING):
+            _absorb_pre_land_fixes(repo, "T-4323")
+
+        assert target.read_text() == original
+        assert any(
+            "OUT-MARKERERR-MARKER" in record.message for record in caplog.records
+        )
+
+
+# frob:ticket T-4323
+class _FakeCompletedProcess:
+    """Minimal `subprocess.CompletedProcess` stand-in for the
+    `guarded_subprocess_run` fakes above -- same shape `tests/unit/
+    test_land_format_gate.py::_FakeProc` already uses, so a test never
+    depends on a real `uv run --project <tmp_path>` spawn resolving
+    inside a bare git fixture with no lockfile of its own."""
+
+    def __init__(self, stdout: str, returncode: int, stderr: str = "") -> None:
+        self.stdout = stdout
+        self.stderr = stderr
+        self.returncode = returncode
 
 
 # frob:ticket T-2400

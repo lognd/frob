@@ -929,21 +929,43 @@ the REFUSE half of this, and none was made: both files carried an
 in-progress scope lease held by a concurrent ticket (T-4281) for the
 whole of this ticket's session.
 
-**Design decision (REFUSE, not auto-apply, for now):** `ruff format` is
-deterministic and this project already auto-fixes other rule families
-(Tier-A) on the land path via `_absorb_pre_land_fixes`, which already
-runs `frob fmt` (directive canonicalization only) against a land's
-touched set before `land()`'s own merge/wip-commit step -- extending
-that same absorption to also run `ruff format` on the touched set is very
-likely the right end state, and refusing over a rewrite formatters are
-chosen specifically for being deterministic about is friction a rewrite
-could remove instead. That extension is recorded as a `frob:todo T-4298`
-directive in `frob.gates._land_format` rather than built here, because it
-requires editing `_land_cmd.py`, which this ticket could not touch for
-the reason above. LANDFMT001 refusing today still fully closes the
-attribution gap this ticket exists to close; a future ticket can turn the
-refusal into a rewrite once that file's lease is free, on top of a
-touched-set detection this change already proves correct.
+**Design decision (REFUSE shipped in T-4298; APPLY added by T-4323):**
+`ruff format` is deterministic and this project already auto-fixes other
+rule families (Tier-A) on the land path via `_absorb_pre_land_fixes`,
+which already runs `frob fmt` (directive canonicalization only) against
+a land's touched set before `land()`'s own merge/wip-commit step.
+T-4298 recorded the extension -- also running `ruff format` on the
+touched set -- as a `frob:todo T-4298` directive rather than building it,
+because it requires editing `_land_cmd.py`, which carried a live T-4281
+lease for the whole of that ticket's session. T-4281 has since closed;
+T-4323 (rebound from T-4298 by T-4316) built that extension:
+`_land_cmd.py`'s `_ruff_format_pre_land_step` reuses `_land_format.py`'s
+own `_ruff_format_would_rewrite` to name precisely which of the land's
+touched `.py` files `ruff format --check` would rewrite, then rewrites
+exactly those, in place, before `land()`'s wip-commit step -- the same
+diff-scoped touched-file set LANDFMT001 itself checks, never a
+whole-tree pass (that is T-4304's separate, periodic concern). The land
+NAMES every file it rewrote in its own log output rather than amending
+it silently. LANDFMT001's REFUSE path is not removed: it is what still
+fires whenever the apply step could not rewrite the drift (an
+unmeasurable diff, a failed `ruff` spawn, a nonzero `ruff format` exit),
+so a land that cannot be safely auto-fixed is still refused rather than
+merged unformatted.
+
+The auto-apply/refuse tradeoff was weighed rather than assumed:
+formatters are chosen because they are deterministic and reviewable, so
+refusing a land purely over `ruff format` drift is friction a rewrite
+can remove for free -- but this codebase also has a case on record
+(`_land_cmd.py`'s own `_assert_design_loads_pre_land` docstring, the
+T-1900 incident) where an automatic rewrite engine corrupted a file the
+old code had already left healthy, entirely undetected until three
+lands later. What makes THIS auto-apply safe where that one was not:
+`ruff format` is the exact transform the author would otherwise be
+asked to run and commit by hand (`frob format --code`), scoped to files
+already inside their own diff, deterministic and idempotent by
+construction (a second `ruff format` run on its own output is always a
+no-op) -- there is no discretionary rewrite logic here that could
+misfire the way a bespoke fix-engine handler can.
 
 ### Cross-ticket leakage (CROSSTICKET001, T-3466)
 
