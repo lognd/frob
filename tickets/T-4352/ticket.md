@@ -2,7 +2,7 @@
 id: T-4352
 title: Type checker exits 2 with no diagnostics in macOS fixture projects, failing
   14 tests
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -75,3 +75,6 @@ evidence about a macos-visible failure.
 
 ## Failure log
 - 2026-09-08 attempt 1: misdiagnosed: all 14 macOS failures are driven by ruff-check's hard tool_no_output_result error, not ty.py -- ty's silent-nonzero-exit already renders UNMEASURED and contributes 0 errors; real root cause filed as T-4354 (out of ty.py's scope, in _project_tool.py)
+
+## Drop reason
+- 2026-09-09: superseded: root cause was the macOS CI Test step never putting .venv/bin on PATH, fixed and landed as T-4368 (aab51604e)
