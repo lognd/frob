@@ -1624,6 +1624,7 @@ applied at most once per process, same reasoning as `_dsession_hardened`
 above."""
 
 
+# frob:ticket T-4366
 # frob:waive WIRE001 reason="genuinely wired -- called only from pytest_configure \
 # above, same controller-only-hook gap T-3516's sibling waiver on \
 # _harden_dsession_active_nodes already covers" follow_up="T-3381"
@@ -1633,6 +1634,9 @@ above."""
 # frob:tests \
 # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healthy_n\
 # ode_still_gets_assigned_normally
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reentrant\
+# _remove_node_during_reschedule_does_not_raise
 def _harden_loadscope_scheduler() -> None:
     """Patch `xdist.scheduler.loadscope.LoadScopeScheduling._assign_work_unit`
     (T-4353) so a worker that vanishes between `add_node` (registered in
@@ -1678,7 +1682,41 @@ def _harden_loadscope_scheduler() -> None:
     it is never visited again. Controller-only in effect (workers do not
     run this scheduler), silently a no-op if `pytest_xdist` is not
     installed/importable or its internals have changed shape -- never
-    blocks collection over a best-effort hardening patch."""
+    blocks collection over a best-effort hardening patch.
+
+    T-4366: `remove_node`, the sibling of `_assign_work_unit` above, has the
+    identical exposure one level lower -- its own last step, `for node in
+    self.assigned_work: self._reschedule(node)`, iterates `self.assigned_
+    work` LIVE rather than a snapshot. `_reschedule` can call `node.
+    shutdown()` or `node.send_runtest_some()`, both execnet channel sends;
+    if that pumps a queued worker-death event synchronously, `DSession`'s
+    `worker_workerfinished`/`worker_errordown` hook fires reentrantly and
+    calls `remove_node` again, whose `self.assigned_work.pop(node)` mutates
+    the dict the outer call is still iterating -- `RuntimeError: dictionary
+    changed size during iteration` at exactly `loadscope.py:202`, measured
+    on the same Windows run this ticket cites. `remove_node` is patched
+    below by full replacement (its own for-loop is the unsafe part, so
+    wrapping the original in try/except cannot recover the already-computed
+    `crashitem` the way `_safe_assign_work_unit`'s KeyError catch does) to
+    iterate a `list(self.assigned_work)` snapshot instead, with each
+    `_reschedule` call additionally guarded against `KeyError` in case the
+    reentrant removal drops a node between the snapshot and its turn --
+    `_reschedule` itself indexes `self.assigned_work[node]`.
+
+    The rest of this class's methods that touch `assigned_work` are NOT
+    exposed to this same race, so this ticket's audit stops at these two:
+    `nodes` (used by `schedule()`'s own reschedule loops) and `has_pending`/
+    `tests_finished` all iterate `self.assigned_work` too, but `nodes` is a
+    `@property` that already returns a fresh `list(...)` (a real snapshot,
+    not a live view), and `has_pending`/`tests_finished` only run pure
+    dict-of-bools arithmetic (`_pending_of`) over what they iterate -- they
+    never call into a node method that can pump execnet's event loop and
+    reenter a mutator, so nothing can resize the dict out from under them
+    mid-loop. `remove_node` and `_assign_work_unit` are the only two
+    `assigned_work` consumers that both iterate the LIVE dict/loop state
+    AND call something (`_reschedule` -> `node.shutdown()`/`send_runtest_
+    some()`, or the `registered_collections[node]` lookup) capable of
+    triggering a reentrant worker-death callback mid-iteration."""
     global _loadscope_hardened
     if _loadscope_hardened:
         return
@@ -1698,8 +1736,48 @@ def _harden_loadscope_scheduler() -> None:
                 for scope, work_unit in assigned_to_node.items():
                     self.workqueue[scope] = work_unit  # noqa: SLF001
 
+    def _safe_remove_node(self: Any, node: Any) -> Any:
+        """T-4366: full replacement of `remove_node`, identical to the
+        original except its trailing reschedule loop walks a
+        `list(self.assigned_work)` snapshot -- not the live dict -- so a
+        worker death that reentrantly calls `remove_node` mid-loop (see
+        `_harden_loadscope_scheduler`'s docstring) resizes a dict this loop
+        is no longer iterating, instead of raising `RuntimeError:
+        dictionary changed size during iteration`. Each `_reschedule` call
+        is also guarded against `KeyError` in case that same reentrant
+        removal drops a node between the snapshot and its turn."""
+        workload = self.assigned_work.pop(node)  # noqa: SLF001
+        if not self._pending_of(workload):  # noqa: SLF001
+            return None
+
+        crashitem = None
+        for work_unit in workload.values():
+            for nodeid, completed in work_unit.items():
+                if not completed:
+                    crashitem = nodeid
+                    break
+            if crashitem is not None:
+                break
+        if crashitem is None:
+            raise RuntimeError(
+                "Unable to identify crashitem on a workload with pending items"
+            )
+
+        self.workqueue.update(workload)  # noqa: SLF001
+
+        for pending_node in list(self.assigned_work):  # noqa: SLF001
+            try:
+                self._reschedule(pending_node)  # noqa: SLF001
+            except KeyError:
+                pass
+
+        return crashitem
+
     LoadScopeScheduling._assign_work_unit = (  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
         _safe_assign_work_unit
+    )
+    LoadScopeScheduling.remove_node = (  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+        _safe_remove_node
     )
     _loadscope_hardened = True
 

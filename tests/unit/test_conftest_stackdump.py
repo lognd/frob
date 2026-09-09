@@ -14,6 +14,7 @@ import sys
 import time
 from collections import OrderedDict
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -258,6 +259,138 @@ class TestLoadscopeSchedulerHardening:
         finally:
             module._loadscope_hardened = False
             LoadScopeScheduling._assign_work_unit = original_method
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reent\
+    # rant_remove_node_during_reschedule_does_not_raise
+    def test_reentrant_remove_node_during_reschedule_does_not_raise(self) -> None:
+        """T-4366: forces the exact race from `loadscope.py:202` -- a
+        second worker vanishing (a reentrant `remove_node` call, here
+        simulated by a node whose own `.shutting_down` check pops itself)
+        WHILE the first `remove_node` call's own trailing reschedule loop
+        is still iterating `self.assigned_work` -- and asserts the session
+        survives instead of raising `RuntimeError: dictionary changed size
+        during iteration`.
+
+        `_pristine_remove_node` below (a literal copy of xdist's own
+        unpatched `remove_node` source, not the module under test) is run
+        first against the identical setup and DOES raise that exact error
+        -- proving the setup forces the real defect rather than a
+        synthetic stand-in -- before the actually-installed, hardened
+        `LoadScopeScheduling.remove_node` (patched by this repo's own
+        `conftest.py` at collection time, same as every other test in this
+        suite runs under) is exercised against a fresh copy of the same
+        race and shown to survive it. A direct comparison against the
+        installed method's own pre-patch state is not possible here since
+        `pytest_configure` has already applied the patch process-wide by
+        the time any test body runs -- EXCEPT `_harden_loadscope_scheduler`
+        only runs on the controller (`pytest_configure` returns early when
+        `config.workerinput` is set), so a test collected onto an xdist
+        WORKER under this suite's own `-n auto` never gets the ambient
+        patch. Same `module._loadscope_hardened = False` +
+        `module._harden_loadscope_scheduler()` force-apply the sibling
+        `_assign_work_unit` tests above already use, for exactly this
+        reason."""
+        from xdist.scheduler.loadscope import LoadScopeScheduling
+
+        module = _load_conftest()
+        module._loadscope_hardened = False
+        original_method = LoadScopeScheduling.remove_node
+        module._harden_loadscope_scheduler()
+
+        def _pristine_remove_node(self, node):  # noqa: ANN001, ANN202
+            """Literal copy of `LoadScopeScheduling.remove_node`'s original
+            (T-4366-unpatched) body, kept here only to prove this test's
+            race forces the real, documented defect."""
+            workload = self.assigned_work.pop(node)
+            if not self._pending_of(workload):
+                return None
+            for work_unit in workload.values():
+                for nodeid, completed in work_unit.items():
+                    if not completed:
+                        crashitem = nodeid
+                        break
+                else:
+                    continue
+                break
+            else:
+                raise RuntimeError(
+                    "Unable to identify crashitem on a workload with pending items"
+                )
+            self.workqueue.update(workload)
+            for pending_node in self.assigned_work:
+                self._reschedule(pending_node)
+            return crashitem
+
+        def _fresh_assigned_work(
+            crashed: object, surviving_node: "_ReentrantCrashNode"
+        ) -> dict:
+            return {
+                crashed: {"scope-a": {"tests/x.py::test_a": False}},
+                surviving_node: {},
+            }
+
+        # Pristine (unpatched-shape) method: reproduce the traceback first.
+        crashed_node = object()
+        try:
+            sched = LoadScopeScheduling.__new__(LoadScopeScheduling)
+            stock_surviving_node = _ReentrantCrashNode()
+            stock_surviving_node.scheduler = sched
+            sched.workqueue = OrderedDict()
+            sched.assigned_work = _fresh_assigned_work(
+                crashed_node, stock_surviving_node
+            )
+            with pytest.raises(RuntimeError, match="dictionary changed size"):
+                _pristine_remove_node(sched, crashed_node)
+
+            # Installed, hardened method: identical race, must survive.
+            crashed_node2 = object()
+            sched2 = LoadScopeScheduling.__new__(LoadScopeScheduling)
+            surviving_node = _ReentrantCrashNode()
+            surviving_node.scheduler = sched2
+            sched2.workqueue = OrderedDict()
+            sched2.assigned_work = _fresh_assigned_work(crashed_node2, surviving_node)
+
+            crashitem = sched2.remove_node(crashed_node2)
+
+            assert crashitem == "tests/x.py::test_a"
+            assert crashed_node2 not in sched2.assigned_work
+        finally:
+            module._loadscope_hardened = False
+            LoadScopeScheduling.remove_node = original_method
+
+
+class _ReentrantCrashNode:
+    """T-4366 test double: simulates a SECOND worker dying while `remove_
+    node`'s own trailing reschedule loop is visiting this node -- reading
+    `.shutting_down` (the first thing `_reschedule` checks per node)
+    reentrantly pops this node from `scheduler.assigned_work`, mutating the
+    very dict the caller's `for node in self.assigned_work:` loop is still
+    iterating, reproducing `loadscope.py:202`'s exact
+    `RuntimeError: dictionary changed size during iteration`."""
+
+    def __init__(self) -> None:
+        self.scheduler: Any = None
+        self._fired = False
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reent\
+    # rant_remove_node_during_reschedule_does_not_raise
+    # frob:waive WIRE001 reason="only caller is xdist's own DSession._reschedule \
+    # (site-packages, outside this repo's static caller search), which reads \
+    # .shutting_down as an attribute per node it visits -- same shape as WIRE001 false \
+    # positive T-4371tracks for two-hop test-helper chains" follow_up="T-4371"
+    @property
+    def shutting_down(self) -> bool:
+        """Pop self out of the scheduler's live `assigned_work` on first
+        read (T-4366), then report shut-down so `_reschedule` returns
+        without touching anything else -- the minimal reentrant-removal
+        shape `test_reentrant_remove_node_during_reschedule_does_not_raise`
+        exercises via `_reschedule`'s per-node `.shutting_down` check."""
+        if not self._fired:
+            self._fired = True
+            self.scheduler.assigned_work.pop(self, None)  # noqa: SLF001
+        return True
 
 
 class _RecordingNode:
