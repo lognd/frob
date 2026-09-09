@@ -13,8 +13,6 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- tests/conftest.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +32,12 @@ scope_changes:
     filing ticket
   actor: logan
   at: '2026-09-08'
+- op: remove
+  glob: tests/conftest.py
+  reason: survey ticket is read-only/report-producing, no edits needed to tests/conftest.py;
+    avoids lease collision with T-4353
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
