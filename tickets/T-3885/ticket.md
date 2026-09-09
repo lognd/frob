@@ -54,9 +54,17 @@ body_changes:
   old_length: 6765
   new_length: 9879
 evidence:
-- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_a_land_targeting_a_different_repo_does_not_block_this_one
 - tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_a_land_does_not_block_on_its_own_descendant
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_a_land_targeting_a_different_repo_does_not_block_this_one
+  new_node: ''
+  reason: 'confirmatory-only for BUG002: this test proves the cross-repo isolation
+    was ALREADY correct before this diff (measured), not a defect this diff fixes
+    -- kept in the diff as a regression lock, cited only informally in the Done report,
+    not as BUG002 evidence'
+  actor: logan
+  at: '2026-09-09'
 threat: null
 component: null
 anchor: false
