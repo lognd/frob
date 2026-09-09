@@ -2,7 +2,7 @@
 id: T-4358
 title: Reconcile ruff-check/ty parsers' treatment of a tool absent from the target
   project
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -17,10 +17,31 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/parsers/ruff.py
 - src/frob/process/parsers/ty.py
+- tests/unit/test_tool_absent_parser_reconcile.py
+- tickets/T-4359/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_tool_absent_parser_reconcile.py
+  reason: 'T-4358: test coverage for the parser fix, plus the follow-up ticket filed
+    for out-of-scope caller wiring'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tickets/T-4359/**
+  reason: 'T-4358: test coverage for the parser fix, plus the follow-up ticket filed
+    for out-of-scope caller wiring'
+  actor: logan
+  at: '2026-09-08'
+evidence:
+- tests/unit/test_tool_absent_parser_reconcile.py::TestRuffAbsentToolIsUnmeasured::test_spawn_failure_is_unmeasured_not_error
+- tests/unit/test_tool_absent_parser_reconcile.py::TestRuffEmptyOutputWithoutStderrEvidenceStaysAnError::test_no_stderr_argument_is_still_an_error
+- tests/unit/test_tool_absent_parser_reconcile.py::TestRuffPresentButBrokenStaysAnError::test_truncated_json_is_still_malformed_even_with_stderr_set
+- tests/unit/test_tool_absent_parser_reconcile.py::TestTyAbsentToolIsUnmeasured::test_spawn_failure_text_is_unmeasured
+- tests/unit/test_tool_absent_parser_reconcile.py::TestBothParsersAgree::test_ruff_and_ty_both_report_zero_errors_on_absent_tool
 designated_repro_test: null
 threat: null
 component: null
