@@ -1,7 +1,7 @@
 ---
 id: T-4382
 title: COV003 must attribute platform-unavailable evidence, not report it as missing
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
