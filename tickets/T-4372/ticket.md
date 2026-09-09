@@ -2,7 +2,7 @@
 id: T-4372
 title: 'Windows CI Test step time budget: measure per-test/per-file duration and fix
   the measured cause'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_win32_test_step_budget_covers_n2_measured_wall_time
 designated_repro_test: null
 threat: null
 component: null

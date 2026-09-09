@@ -589,7 +589,23 @@ jobs:
           # 180s->1350s midrun watchdog (T-3746) and pytest-timeout still catch
           # a genuine per-test hang, so this is not a blind ceiling raise.
           # (History: T-3740 raised 1200->3000 for the single-threaded run.)
-          FROB_TEST_TOTAL_BUDGET_SECONDS: "4500"
+          # T-4372: raised 4500 -> 6000. T-4360 cut workers 4 -> 2 (`-n 2`
+          # below) to fix a real, repeated OOM (measured: two independent
+          # frob_self_scan_heavy-group tests died at ~300s each under -n4
+          # ambient load); the tradeoff it accepted was "roughly doubling
+          # this leg's wall-clock time", but that leg's own 4500s cap was
+          # never raised to match. Run 34371162715 (win4.log) MEASURED the
+          # result: the -n2 suite hit this exact cap at 83% collected-item
+          # completion (last progress line before SUITE-RESULT: TOTAL-
+          # BUDGET-EXCEEDED read "[ 83%]", timestamped at 4500.7s elapsed).
+          # Linear extrapolation from that single data point: 4500.7s /
+          # 0.83 ~= 5423s (~90.4m) to reach 100%. 6000s (100m) covers that
+          # projection with ~10% headroom for run-to-run variance without
+          # reopening the OOM this ticket is not touching (worker count is
+          # unchanged) -- see tickets/T-4372/ticket.md for the full
+          # percentage-vs-timestamp derivation. Comfortably inside this
+          # job's timeout-minutes: 150 (9000s) alongside the other steps.
+          FROB_TEST_TOTAL_BUDGET_SECONDS: "6000"
         run: |
           # T-3692: two diagnostic additions, both env-var-expansion-proof
           # (curly-brace ${...} form throughout, matching macOS's own
@@ -603,7 +619,7 @@ jobs:
           # watchdog fires; conftest.py's own new FROB-TEST-MIDRUN-
           # WATCHDOG: armed line (T-3692) answers the python-side half.
           Write-Host "T-3692: FROB_TEST_MIDRUN_WATCHDOG_SECONDS=$($env:FROB_TEST_MIDRUN_WATCHDOG_SECONDS)"
-          ${budget} = 4800  # 80m: win32 runs the suite in parallel now (T-3741 xdist) but a 4-core windows runner is still ~2x macos, so the python-side FROB_TEST_TOTAL_BUDGET_SECONDS=4500 cap fires first with a diagnostic and this Wait-Process budget is the outer backstop (T-3749)
+          ${budget} = 6300  # 105m: outer Wait-Process backstop, kept ~300s above the python-side FROB_TEST_TOTAL_BUDGET_SECONDS=6000 cap so that cap fires first with a diagnostic (T-3749); raised alongside it by T-4372 (see that env var's own comment above for the measured 83%-at-4500.7s extrapolation this is sized from)
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
           # T-3741: xdist re-enabled. `-p no:xdist -v --full-trace` was a

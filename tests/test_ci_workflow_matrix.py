@@ -3,6 +3,7 @@ macOS) could ever be detected -- locks that the `build` job's matrix
 includes windows-latest and macos-latest alongside ubuntu-latest.
 """
 
+import re
 from pathlib import Path
 
 import yaml
@@ -277,6 +278,41 @@ class TestWindowsTestStepMitigationsStayPinned:
             'windows Test step\'s pytest invocation must carry "-n","2" '
             "in its ArgumentList to cap worker count below -n auto's "
             "4-worker fanout"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_win32_test_step_budget_covers_n2_measured_wall_time(self) -> None:
+        """T-4372: with -n2 (T-4360, above) the windows Test step's own
+        internal FROB_TEST_TOTAL_BUDGET_SECONDS cap and the outer
+        Wait-Process backstop must both be raised to cover the -n2
+        wall-clock cost, not stay at their old -n4-era values. Measured
+        on run 34371162715 (win4.log): the -n2 suite hit the OLD 4500s
+        cap at 83% of collected items done, which linearly extrapolates
+        to ~5423s for 100% -- so the new internal cap must be strictly
+        above that extrapolated completion time, and the outer
+        Wait-Process backstop must stay above the internal cap so the
+        internal cap fires first with a diagnostic (T-3749's own
+        ordering contract)."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        internal_budget = float(test_step["env"]["FROB_TEST_TOTAL_BUDGET_SECONDS"])
+        measured_extrapolated_completion_s = 4500.7 / 0.83
+        assert internal_budget > measured_extrapolated_completion_s, (
+            f"internal budget {internal_budget}s must exceed the measured "
+            f"-n2 extrapolated completion time "
+            f"{measured_extrapolated_completion_s:.1f}s"
+        )
+        run_text = test_step.get("run", "")
+        match = re.search(r"\$\{budget\}\s*=\s*(\d+)", run_text)
+        assert match is not None, "windows Test step must set ${budget} = <int>"
+        outer_budget = float(match.group(1))
+        assert outer_budget > internal_budget, (
+            "outer Wait-Process backstop must stay above the internal "
+            "FROB_TEST_TOTAL_BUDGET_SECONDS cap so the internal cap fires "
+            "first with a diagnostic"
         )
 
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
