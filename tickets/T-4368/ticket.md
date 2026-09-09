@@ -2,7 +2,7 @@
 id: T-4368
 title: macOS CI direct-interpreter test step never puts .venv/bin on PATH, so shutil.which(ty/mypy)
   reports unavailable
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
