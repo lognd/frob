@@ -14,10 +14,29 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_ledger_mirror.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: the mirror module writing partial ticket records to main (T-3892 part A)
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: unit tests for the mirror-writes-partial-record fix
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: the mirror module writing partial ticket records to main (T-3892 part A)
+  actor: logan
+  at: '2026-09-09'
 body_changes:
 - mode: append
   reason: 'second sighting F-068 plus the root cause: the ledger merge driver was
