@@ -33,6 +33,11 @@ scope_changes:
   reason: new public symbol's frob:doc target
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/unit/test_project_tool.py::TestToolAbsent::test_true_on_spawn_failure
+- tests/unit/test_project_tool.py::TestToolAbsent::test_false_unrelated_exit
+- tests/unit/test_project_tool.py::TestToolAbsent::test_false_wrong_tool
+- tests/unit/test_project_tool.py::TestResolveProjectTool::test_absent_err
 designated_repro_test: null
 threat: null
 component: null
