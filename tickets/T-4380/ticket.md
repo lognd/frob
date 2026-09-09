@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 needs an explicit no-behavior-change declaration: format-only change,
+    no defect for a test to fail against'
+  actor: logan
+  at: '2026-09-09'
+  old_length: 1405
+  new_length: 1664
 designated_repro_test: null
 threat: null
 component: null
@@ -53,3 +61,6 @@ for the mechanism itself rather than fixing it as part of this ticket
 
 Verify: uv run frob check --ticket <id> reports no ruff-format finding
 on src/frob/perf/_rules.py or tests/system/test_cli_doctor.py.
+
+
+frob:no-behavior-change reason="pure ruff-format/frob-format whitespace fix on src/frob/perf/_rules.py and tests/system/test_cli_doctor.py -- no runtime code path changes; the bound evidence is expected to pass identically at both main and the fix commit"
