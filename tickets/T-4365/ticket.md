@@ -36,6 +36,13 @@ scope_changes:
     T-4365's own commit
   actor: logan
   at: '2026-09-09'
+body_changes:
+- mode: append
+  reason: record the environment-dependent BUG002 exception per land refusal
+  actor: logan
+  at: '2026-09-09'
+  old_length: 2907
+  new_length: 3543
 evidence:
 - tests/test_doctor.py::test_run_diagnosis_natives_present
 - tests/test_doctor.py::test_run_diagnosis_natives_absent
@@ -96,3 +103,5 @@ VERIFY on the platform where it reproduces if you can. If you cannot reach macos
 say so plainly and state which conclusions are inferred -- but note this one is
 reproducible anywhere by removing the tools from PATH, which an earlier ticket in
 this chain already did successfully by isolating the runner binary.
+
+frob:waive BUG002 reason="Bound evidence (tests/test_doctor.py::test_run_diagnosis_natives_present etc) is genuinely environment-dependent: the defect only manifests when ruff/ty are absent from PATH (the macOS CI condition), which this dev sandbox does not have -- --check-repro/--designate-repro-force already confirmed this at designate time. Manually verified FAILED_AT_PARENT/PASSED_AT_FIX by running the full touched test files under a PATH excluding .local/bin (ruff/ty absent): 14/14 (tests/test_doctor.py) and 44/44 (tests/system/test_cli_doctor.py) fail at parent 9392cf8c2s predecessor and pass at the fix under that PATH."
