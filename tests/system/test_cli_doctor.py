@@ -65,8 +65,7 @@ def _write_fake_posix_tool(bindir: Path, name: str) -> None:
 
 # frob:ticket T-4365
 # frob:waive WIRE001 reason="test-only helper, transitively called via \
-# _env_with_fake_required_toolchain -> real tests in this file" \
-# follow_up="T-4371"
+# _env_with_fake_required_toolchain -> real tests in this file" follow_up="T-4371"
 def _fake_required_toolchain_path(base: Path) -> str:
     """Build a `PATH` entry (T-4365) providing `ruff`/`ty` so `frob
     doctor`'s CLI-level healthy assertions test what they claim -- native

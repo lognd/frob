@@ -1,7 +1,7 @@
 ---
 id: T-4380
 title: two files landed unformatted by T-4088 and T-4365 lands
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -28,6 +28,9 @@ body_changes:
   at: '2026-09-09'
   old_length: 1405
   new_length: 1664
+evidence:
+- tests/test_perf.py::TestPerf007RedundantComputation::test_two_stages_calling_the_same_uncached_parse_is_flagged
+- tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
 designated_repro_test: null
 threat: null
 component: null

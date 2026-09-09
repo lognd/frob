@@ -698,9 +698,7 @@ def _equality_hit_in_body(body: Node, bound_names: frozenset[str]) -> Node | Non
     stack = [body]
     while stack:
         n = stack.pop()
-        if n.type == "comparison_operator" and any(
-            c.type == "==" for c in n.children
-        ):
+        if n.type == "comparison_operator" and any(c.type == "==" for c in n.children):
             if not bound_names:
                 return n
             idents: set[str] = set()
