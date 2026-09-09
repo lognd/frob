@@ -24,9 +24,6 @@ evidence:
 - tests/test_ci_workflow_matrix.py::TestSelfGateRunsOnWindowsEvenIfTestStepFails::test_self_gate_step_runs_on_windows_after_a_prior_failure
 designated_repro_test: null
 acceptance:
-- text: given a completed windows leg, when its test step duration is measured, then
-    where the time goes is established per test or per file rather than estimated
-  evidence: []
 - text: given a passing windows test step, when the job continues, then the gate step
     actually runs on windows and its result is recorded for the first time
   evidence:
@@ -40,6 +37,15 @@ acceptance_amendments:
   new_text: null
   reason: T-4269 scoped down to acceptance [3] only per direct dispatch instruction;
     per-test time decomposition and its fix (was [1]/[2]) carried forward to T-draft-226a2b6c
+  actor: logan
+  at: '2026-09-09'
+- op: remove
+  index: 1
+  old_text: given a completed windows leg, when its test step duration is measured,
+    then where the time goes is established per test or per file rather than estimated
+  new_text: null
+  reason: T-4269 scoped down to the gate-decoupling change only, per direct dispatch
+    instruction; per-test time decomposition carried forward to T-draft-226a2b6c
   actor: logan
   at: '2026-09-09'
 threat: null
