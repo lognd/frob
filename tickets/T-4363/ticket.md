@@ -19,6 +19,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'Correct a false premise: the step completed in 92 min of 120; downgrade
+    from blocker to latent budget inversion'
+  actor: logan
+  at: '2026-09-09'
+  old_length: 2872
+  new_length: 5103
 designated_repro_test: null
 threat: null
 component: null
@@ -75,3 +83,45 @@ VERIFY by showing the linux job completing to its final step with the new
 arrangement, and quote the elapsed time of this step against both budgets. A run
 that merely gets further is not evidence; the step must terminate on its own
 terms.
+
+
+
+## CORRECTION: the premise above is WRONG (coordinator, measured)
+
+I filed this claiming the step was structurally unable to finish. It finished.
+Measured from the very run I was watching:
+
+    job     02:56:25 -> 05:01:55   =  125.5 min  (budget 150)
+    step19  03:29:34 -> 05:01:52   =   92.3 min  (budget 120)
+
+The linux job completed with conclusion SUCCESS, this step included. It had roughly
+25 minutes of headroom, not a deficit. My "cannot reach its own deadline" framing
+was an unwarranted leap from an arithmetic observation to a predicted failure,
+made while the step was still running -- I should have waited for the measurement
+I was already going to get.
+
+WHAT IS ACTUALLY TRUE, AND STILL WORTH FIXING -- but at a much lower priority:
+
+The step's own wallclock deadline is 7200s (120 min), while the job ceiling can
+only ever grant it about 117 minutes, since the job spends roughly 33 minutes
+reaching it. So the two budgets are inverted by a small margin. The consequence is
+NOT that the step cannot finish -- it plainly can, in 92 minutes today. The
+consequence is that IF this step ever did need its full allowance, the job would
+be killed before the step's own deadline could fire, so the step could never fail
+on its own terms and report why. Its `continue-on-error: true` would then buy
+nothing, because a job timeout ignores step-level tolerance.
+
+That is a latent trap rather than a live defect: a safety valve wired so it can
+never open. Worth correcting, worth nobody's urgency.
+
+THE MORE INTERESTING NUMBER IS 92 MINUTES. The linux job spends about 30 minutes
+running the suite and then another 92 re-running it under coverage pinned to two
+workers -- roughly three quarters of a two-hour job spent measuring coverage on
+every push. That may be a deliberate trade, but it should be an explicit one.
+Whoever picks this up should say whether a fresh coverage stamp is worth that on
+every push, or belongs on a schedule or release gate. The headroom is real but
+thin, and it will shrink as the suite grows.
+
+Revised ask: correct the budget inversion so the step's deadline is strictly less
+than the time the job can give it, and record the coverage-cost decision. Do not
+treat this as blocking anything.
