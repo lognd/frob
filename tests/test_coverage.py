@@ -1656,6 +1656,7 @@ class TestWorkerCrashRetryRealSubprocessRecoversFromAddopts:
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_coverage.py::TestWorkerCrashRetryRealSubprocessRecoversFromAddopts.test_real_pytest_subprocess_recovers_and_produces_coverage_xml  # noqa: E501
+        # frob:ticket T-4374
         (tmp_path / "pyproject.toml").write_text(
             "[tool.pytest.ini_options]\n"
             'addopts = "-q -n auto --dist=loadgroup --timeout=60 '
@@ -1670,9 +1671,28 @@ class TestWorkerCrashRetryRealSubprocessRecoversFromAddopts:
         # The exact call `_pytest_outcome` makes after detecting a crash:
         # a plain argv still carrying the ORIGINAL explicit -n, against a
         # cwd whose pyproject.toml still carries the xdist addopts that
-        # broke this retry before the fix.
+        # broke this retry before the fix. `sys.executable, "-m", "pytest"`
+        # (T-4374) rather than a bare "pytest" argv[0] -- production
+        # callers always resolve the tool via `project_tool_argv`
+        # (`_pytest_argv`); this direct call bypasses that, and a bare
+        # name relies on PATH reaching a deeply-nested xdist-worker
+        # subprocess-of-subprocess, which is not guaranteed even with
+        # T-4368's PATH export (measured: FileNotFoundError on macOS CI,
+        # same PATH-resolution class T-4369 fixed for mutation evidence).
+        # Matches the sibling test directly below
+        # (TestNeutralizedAddoptsPytest11Entrypoint), which already uses
+        # this exact form for the identical reason.
         retry_code = _refresh_mod._retry_after_worker_crash(
-            ["pytest", "--cov=.", "--cov-report=", "-n", "4", "test_widget.py"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "--cov=.",
+                "--cov-report=",
+                "-n",
+                "4",
+                "test_widget.py",
+            ],
             cwd=tmp_path,
             code=3,
         )
