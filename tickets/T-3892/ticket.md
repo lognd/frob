@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/unit/test_ticket_runner_ledger_mirror.py
 - docs/modules/tickets-lifecycle.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,13 @@ scope_changes:
   glob: docs/modules/tickets-lifecycle.md
   reason: 'AFFECT001: mirror_evidence_rebind_to_primary''s affects()-closure doc needed
     a note about the new union_evidence parameter'
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001 land-blocking (T-3324 self-attributed): the two new fs.read
+    call sites this ticket''s own fix added must be declared in the via-list already
+    covering this file''s fs.write'
   actor: logan
   at: '2026-09-09'
 body_changes:
