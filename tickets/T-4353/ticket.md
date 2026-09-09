@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
 - tests/unit/test_conftest_stackdump.py
+- tickets/T-4360/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,14 @@ scope_changes:
     the companion test file is the natural home for it
   actor: logan
   at: '2026-09-08'
+- op: add
+  glob: tickets/T-4360/**
+  reason: 'SCOPE001 false-positive: blame attributes tickets/T-4360/ticket.md to its
+    pre-promotion draft-filing commit, whose subject names only the draft id (no T-####
+    digits for the cross-ticket exemption regex to match) -- explicitly scoping the
+    file here until that gate gap is fixed separately'
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
