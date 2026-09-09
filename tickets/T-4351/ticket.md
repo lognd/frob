@@ -40,6 +40,25 @@ scope_changes:
     failure touches its own ticket file'
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: BUG002 cannot classify a platform-specific Windows defect from a Linux repro
+    check; real before/after evidence is the winrun transcripts in the fix commits
+    and Done report
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2752
+  new_length: 3468
+evidence:
+- tests/unit/test_main_entry.py::TestEnsureVenv::test_sets_when_unset
+- tests/unit/test_main_entry.py::TestEnsureVenv::test_leaves_existing
+- tests/unit/test_main_entry.py::TestEnsureVenv::test_skips_non_venv
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_contains_only_export_lines
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_diagnostics_still_appear_on_stderr
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_no_fleet_context_still_produces_valid_eval_output
+- tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_tracked_file_edit_forces_process_gate_recompute
+- tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_second_warm_run_serves_process_gate_from_cache
 designated_repro_test: null
 threat: null
 component: null
@@ -93,3 +112,5 @@ remove the flag in this ticket -- get the four to zero first, then propose it.
 VERIFY on Windows, and quote the suite counts from a completed run rather than a
 scoped one. If a fix cannot be verified there, say which conclusions are inferred
 rather than presenting a linux run as evidence.
+
+frob:waive BUG002 reason="the designated repro (TestEnsureVenv::test_sets_when_unset) and every other bound evidence test is a Windows-ONLY defect (path-separator normalization vs a hardcoded POSIX literal, and clock-granularity/nested-uv fragility for the other two tests) -- it PASSES at the parent commit on the platform frob check/BUG002 actually runs the repro check on (linux), so a same-platform PASSED-at-parent reading is expected and not informative; the genuine before/after evidence for all three fixes is the winrun (real Windows subprocess) transcripts quoted in each fix commit message and the ticket Done report, which show FAILED before and PASSED after on win32 for the exact node ids bound here"
