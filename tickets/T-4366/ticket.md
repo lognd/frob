@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
+- tests/unit/test_conftest_stackdump.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: regression test for the remove_node fix lives here, sibling of the file
+    conftest.py's scope already covers
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
