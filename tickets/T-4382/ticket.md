@@ -1,7 +1,7 @@
 ---
 id: T-4382
 title: COV003 must attribute platform-unavailable evidence, not report it as missing
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -21,6 +21,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_attributes_platform_skipped_evidence_as_warn_not_error
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_unrelated_missing_evidence_still_errors_when_platform_skipped_present
 designated_repro_test: null
 acceptance:
 - text: given a done ticket whose evidence node id lives in a test module that pytest
@@ -29,11 +32,13 @@ acceptance:
     when frob check runs COV003 on that platform, then the evidence is reported as
     platform-unavailable (naming the excluding platform/reason) rather than as COV003
     'does not resolve to a collected test'
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_attributes_platform_skipped_evidence_as_warn_not_error
 - text: given the same ticket/evidence on a platform where the module is NOT skipped,
     when frob check runs COV003, then normal COV003 missing-evidence enforcement is
     unchanged (this is additive, not a blanket exemption)
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_unrelated_missing_evidence_still_errors_when_platform_skipped_present
 threat: null
 component: null
 anchor: false

@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import importlib.machinery
 import importlib.util
+import re
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -183,6 +184,65 @@ def _set_collection_missing_natives(missing: tuple[NativeSpec, ...]) -> None:
     never linger stale across two different calls."""
     global _last_missing_natives
     _last_missing_natives = missing
+
+
+# frob:ticket T-4382
+#: T-4382: the most recent `collect_python_tests` call's `platform_
+#: skipped` (file, reason) pairs, mirroring `_last_missing_natives`'
+#: module-state pattern -- the same "bare frozenset caller" gap
+#: `_last_missing_natives` documents applies here: a caller that only
+#: has a pytest node-id frozenset in hand cannot ask "was this file
+#: excluded at collection time for a platform reason" without a
+#: side channel.
+_last_platform_skipped: tuple[tuple[str, str], ...] = ()
+
+
+def _platform_skipped_test_modules() -> tuple[tuple[str, str], ...]:
+    """The most recent `collect_python_tests` call's `platform_skipped`
+    `(file, reason)` pairs, `()` if none or if collection has not run yet
+    in this process. Mirrors `python_collection_missing_natives`'s
+    module-state read for the analogous platform-exclusion cause."""
+    return _last_platform_skipped
+
+
+def _set_collection_platform_skipped(skipped: tuple[tuple[str, str], ...]) -> None:
+    """T-4382: reset `_platform_skipped_test_modules()` to `skipped` --
+    called once at the top of `collect_python_tests`, mirroring
+    `_set_collection_missing_natives`'s single-reset-point discipline, so
+    a stale value from a PRIOR call can never leak into this one."""
+    global _last_platform_skipped
+    _last_platform_skipped = skipped
+
+
+def _add_collection_platform_skipped(skipped: tuple[tuple[str, str], ...]) -> None:
+    """T-4382: union `skipped` into the current `platform_skipped_test_
+    modules()` value -- `_run_collect_only` calls this once per outer OR
+    nested-`[[test.runner]] cwd` collection pass within a single
+    `collect_python_tests` call, so accumulation (not overwrite) is
+    correct here; `_set_collection_platform_skipped` resets to `()` once
+    at the top of `collect_python_tests` before any of these adds run."""
+    global _last_platform_skipped
+    _last_platform_skipped = _last_platform_skipped + skipped
+
+
+_SKIPPED_MODULE_LEVEL_RE = re.compile(r"^SKIPPED \[\d+\] ([^:]+):(\d+): (.+)$")
+
+
+def _parse_platform_skipped(stdout: str) -> tuple[tuple[str, str], ...]:
+    """T-4382: parse `pytest --collect-only -rs`'s stdout for module-level
+    skip lines (`SKIPPED [N] <file>:<line>: <reason>`) -- the ONLY shape
+    `--collect-only` can produce a SKIPPED summary line for, since it
+    never runs a test's body (where a per-test `skipif` decorator would
+    normally be evaluated): these lines come exclusively from a module
+    calling `pytest.skip(..., allow_module_level=True)` at import time,
+    which is exactly the "excluded from collection on this platform"
+    shape COV003 needs to distinguish from a genuinely missing test."""
+    found: list[tuple[str, str]] = []
+    for line in stdout.splitlines():
+        match = _SKIPPED_MODULE_LEVEL_RE.match(line.strip())
+        if match is not None:
+            found.append((match.group(1), match.group(3)))
+    return tuple(found)
 
 
 _NO_TESTS_COLLECTED_EXIT = 5
@@ -505,7 +565,19 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
     # false positives on every invariant).
     collector_python = _collector_python(cwd)
     resolved_argv = resolve_pytest_argv(
-        "--collect-only", "-q", "-o", "addopts=", python=collector_python
+        # T-4382: -rs reports skip reasons in pytest's summary output --
+        # the ONLY way a --collect-only run can produce a SKIPPED line at
+        # all is a module-level `pytest.skip(allow_module_level=True)`
+        # (per-test skipif decorators are evaluated at setup time, never
+        # during collection), so this is a cheap, precise signal for
+        # platform-excluded test modules with no risk of colliding with
+        # the existing "::"-containing node-id line filter below.
+        "--collect-only",
+        "-q",
+        "-rs",
+        "-o",
+        "addopts=",
+        python=collector_python,
     )
     if resolved_argv.is_err:
         _log.error(
@@ -555,6 +627,7 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
             f"{stream_label} tail:\n{excerpt(stream_text)}"
         )
         return Err(TestingError.CollectFailed)
+    _add_collection_platform_skipped(_parse_platform_skipped(result.stdout))
     return Ok(
         frozenset(
             line.strip()
@@ -660,6 +733,16 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     if missing:
         missing = _autorebuild_missing_natives(root, natives, missing)
     _set_collection_missing_natives(missing)
+    # T-4382: reset (not accumulate) here -- this is the ONE point in
+    # collect_python_tests every return path passes through before any
+    # _run_collect_only call, mirroring missing_natives' single-reset
+    # discipline above. NOTE (known gap, out of this ticket's own scope
+    # to fix): a cache HIT below returns without ever calling
+    # _run_collect_only, so _platform_skipped_test_modules() reads back
+    # () on a cache hit even if platform-skipped modules exist -- the
+    # skip-reason cache would need its own on-disk entry to survive a
+    # hit, which the plain node-id cache does not carry.
+    _set_collection_platform_skipped(())
     key = _collection_cache_key(root, natives)
     cache_path = root / _CACHE_REL
     cached = _load_cache(cache_path, key)
@@ -711,7 +794,13 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
         len(frozen),
         len(missing),
     )
-    return Ok(CollectedTests(node_ids=frozen, missing_natives=missing))
+    return Ok(
+        CollectedTests(
+            node_ids=frozen,
+            missing_natives=missing,
+            platform_skipped=_platform_skipped_test_modules(),
+        )
+    )
 
 
 def _collection_cache_key(root: Path, natives: tuple[NativeSpec, ...]) -> str:

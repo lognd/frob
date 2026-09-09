@@ -37,6 +37,7 @@ import logging
 import multiprocessing
 import os
 import re
+import sys
 import time
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
@@ -1927,18 +1928,70 @@ def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
     well-formed cmd: shape on a kind-permitted (docs) ticket. See
     `_evidence_valid_for_ticket` for exactly what each evidence class
     proves and why a cmd: entry is format+kind checked here rather than
-    re-executed."""
+    re-executed. T-4382: an evidence id whose file was excluded from
+    collection by a platform-conditional module skip is attributed via
+    `_platform_skip_violation` (a WARN, naming the platform and reason)
+    instead of `_cov003_evidence_violation`'s ERROR -- it is neither
+    proof of coverage nor proof of a missing test, so it is reported as
+    a distinct, non-error outcome rather than silently passing or
+    blocking the gate."""
     allowed_kinds = sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS)
     violations: list[Violation] = []
     for ticket in queue.tickets.values():
         if ticket.state != TicketState.DONE:
             continue
-        violations.extend(
-            _cov003_evidence_violation(ticket, evidence, allowed_kinds, tests)
-            for evidence in ticket.evidence
-            if not _evidence_valid_for_ticket(evidence, ticket, tests)
-        )
+        for evidence in ticket.evidence:
+            if _evidence_valid_for_ticket(evidence, ticket, tests):
+                continue
+            skip_reason = _evidence_platform_skip_reason(evidence, tests)
+            if skip_reason is not None:
+                violations.append(
+                    _platform_skip_violation(ticket, evidence, skip_reason)
+                )
+            else:
+                violations.append(
+                    _cov003_evidence_violation(ticket, evidence, allowed_kinds, tests)
+                )
     return tuple(violations)
+
+
+# frob:ticket T-4382
+def _evidence_platform_skip_reason(evidence: str, tests: CollectedTests) -> str | None:
+    """The recorded skip reason if `evidence` (a pytest node id) lives in
+    a test module `tests.platform_skipped` names as excluded from
+    collection on this platform, else `None`. `cmd:` evidence never
+    matches (it never names a test file at all, T-0215's own non-pytest
+    channel) -- checked first so a malformed cmd: string can never
+    coincidentally collide with a platform_skipped file entry."""
+    if is_cmd_evidence(evidence):
+        return None
+    evidence_file = evidence.split("::", 1)[0]
+    for skipped_file, reason in tests.platform_skipped:
+        if evidence_file == skipped_file:
+            return reason
+    return None
+
+
+# frob:ticket T-4382
+def _platform_skip_violation(ticket, evidence: str, reason: str) -> Violation:  # noqa: ANN001
+    """The COV003 WARN `Violation` for evidence T-4382 attributed as
+    platform-unavailable rather than missing: `evidence`'s test module is
+    excluded from collection on THIS platform (`sys.platform`) for
+    `reason` (the module's own `pytest.skip(...)` message) -- a distinct,
+    non-error outcome naming the excluding platform and reason, per this
+    ticket's own acceptance criteria, instead of COV003's usual ERROR."""
+    return Violation(
+        rule="COV003",
+        severity=Severity.WARN,
+        file=f"tickets/{ticket.id}",
+        line=0,
+        message=(
+            f"COV003: {ticket.id} evidence {evidence!r} is platform-"
+            f"unavailable -- its test module is excluded from collection "
+            f"on {sys.platform!r} ({reason}), not genuinely missing; this "
+            f"is a WARN, not an error, and needs no fix on this platform"
+        ),
+    )
 
 
 # frob:ticket T-1161

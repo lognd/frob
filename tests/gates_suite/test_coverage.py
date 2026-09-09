@@ -776,6 +776,71 @@ class TestCoverageGate:
         assert "--collect" not in cov003[0].message
         assert "refreshes automatically" in cov003[0].message
 
+    def test_cov003_attributes_platform_skipped_evidence_as_warn_not_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_evidence_platform_skip_reason \
+        # kind="unit"
+        # T-4382: evidence pointing into a test module that pytest --collect-only
+        # excluded via allow_module_level=True for a platform reason (e.g. a
+        # POSIX-only module on Windows) must be attributed as
+        # platform-unavailable -- a WARN naming the excluding platform and
+        # reason -- not reported as COV003's usual ERROR (indistinguishable
+        # from a genuinely missing/broken test).
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/test_posix_only.py::TestX::test_sigusr1",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset(),
+            platform_skipped=(
+                ("tests/unit/test_posix_only.py", "SIGUSR1 is POSIX-only"),
+            ),
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        cov003 = [v for v in violations if v.rule == "COV003"]
+        assert cov003
+        assert cov003[0].severity == Severity.WARN
+        assert "SIGUSR1 is POSIX-only" in cov003[0].message
+        assert "platform-unavailable" in cov003[0].message
+
+    def test_cov003_unrelated_missing_evidence_still_errors_when_platform_skipped_present(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_evidence_platform_skip_reason \
+        # kind="unit"
+        # T-4382: platform_skipped is additive, not a blanket exemption --
+        # evidence in a DIFFERENT, genuinely-missing file must still ERROR
+        # even when some other file is platform_skipped.
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_x.py::test_missing",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset(),
+            platform_skipped=(
+                ("tests/unit/test_posix_only.py", "SIGUSR1 is POSIX-only"),
+            ),
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        cov003 = [v for v in violations if v.rule == "COV003"]
+        assert cov003
+        assert cov003[0].severity == Severity.ERROR
+
     def test_cov003_passes_when_evidence_collected(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         node = "tests/test_x.py::test_present"

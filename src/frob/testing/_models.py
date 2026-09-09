@@ -101,12 +101,20 @@ class CollectedTests(BaseModel):
     any declared native extensions that are NOT currently built (T-0333):
     an unbuilt native `importorskip`-skips its tests, so they never enter
     `node_ids` -- `missing_natives` lets COV003 name the real remedy (build
-    the extension) instead of blaming the evidence id."""
+    the extension) instead of blaming the evidence id. `platform_skipped`
+    (T-4382) is the analogous distinct-cause field for a test MODULE that
+    `pytest.skip(..., allow_module_level=True)` excludes from collection
+    entirely on the current platform (e.g. a POSIX-only signal-handling
+    test module on Windows): `(file, reason)` pairs parsed from `pytest
+    --collect-only -rs`'s own skip summary, so COV003 can attribute
+    evidence pointing into one of these files as platform-unavailable
+    instead of reporting it as genuinely missing."""
 
     model_config = ConfigDict(frozen=True)
 
     node_ids: frozenset[str]
     missing_natives: tuple[NativeSpec, ...] = ()
+    platform_skipped: tuple[tuple[str, str], ...] = ()
 
 
 __all__ = [
