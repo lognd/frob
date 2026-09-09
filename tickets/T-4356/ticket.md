@@ -1,7 +1,7 @@
 ---
 id: T-4356
 title: Daemon shutdown test fails Unreachable, the sole linux failure; flake or regression
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -19,6 +19,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4356 close: BUG002 flags confirmatory-only evidence because the designated
+    repro test cannot deterministically fail at the parent commit -- this is an intermittent
+    timing flake, not a logic defect a test can reliably force, so per BUG002''s own
+    remedy (3) this is waived rather than papered over with a synthetic failing test'
+  actor: logan
+  at: '2026-09-08'
+  old_length: 2542
+  new_length: 3071
+evidence:
+- tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
 designated_repro_test: null
 threat: null
 component: null
@@ -70,3 +82,5 @@ repeatedly paid for a failure that named the wrong condition.
 VERIFY on linux, where it reproduces, and quote how many runs you did and how many
 failed. A single green run does not clear an intermittent failure -- that mistake
 was made on the windows abort earlier today and had to be retracted.
+
+frob:waive BUG002 reason="the defect is an intermittent, load-triggered timing race (Unreachable due to a 10s RPC timeout shorter than the daemon's load-tolerant 20s test budget) that could not be reproduced deterministically in 73 local runs including under heavy CPU/process contention; there is no known way to force this specific interleaving in a test, so the evidence test passing at both parent and fix commits reflects the flake's rarity, not an unfixed defect -- same category as T-3699's cross-platform sibling flake"

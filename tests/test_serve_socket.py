@@ -577,8 +577,28 @@ class TestShutdownReapsChildren:
         proc = multiprocessing.Process(target=_sleep_forever, daemon=False)
         proc.start()
         try:
-            response = send_request(root, "frob_shutdown")
-            assert response.is_ok
+            # T-4356: `send_request`'s own socket timeout defaults to 10s,
+            # a budget wholly unrelated to `_JOIN_BUDGET_S` above -- on a
+            # fully-loaded box (the same `pytest-xdist` contention T-1635
+            # documents next door) the daemon can take longer than 10s to
+            # accept/answer the connection despite being perfectly healthy,
+            # which this call would have then reported as
+            # `DaemonError.Unreachable` even though the daemon was merely
+            # slow, not down. Align the RPC's own wait with the budget this
+            # test already tolerates for exactly that kind of load so a
+            # slow-but-alive daemon is not misdiagnosed as unreachable.
+            request_start = time.monotonic()
+            response = send_request(root, "frob_shutdown", timeout_s=_JOIN_BUDGET_S)
+            request_elapsed = time.monotonic() - request_start
+            assert response.is_ok, (
+                f"frob_shutdown request failed after {request_elapsed:.2f}s: "
+                f"{response.danger_err!r} -- this means the daemon socket "
+                "itself could not be reached/answered (startup never "
+                "completed, a stale socket from a prior run, or the RPC "
+                f"timed out at {_JOIN_BUDGET_S}s), which is a DIFFERENT "
+                "failure than the reap-budget assertions below and does not "
+                "mean the shutdown-and-reap behavior itself is broken"
+            )
 
             start = time.monotonic()
             thread.join(timeout=_JOIN_BUDGET_S)
