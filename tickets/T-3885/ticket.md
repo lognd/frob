@@ -2,7 +2,7 @@
 id: T-3885
 title: 'a land in another repository blocks this one''s ledger writes: the T-1619
   process scan matches any frob ticket land, ignoring its target repo'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'

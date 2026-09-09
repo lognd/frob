@@ -2097,6 +2097,118 @@ class TestRefuseIfLandInProgress:
             holder.kill()
             holder.wait(timeout=5)
 
+    @pytest.mark.skipif(
+        not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
+    )
+    def test_a_land_targeting_a_different_repo_does_not_block_this_one(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting\
+        # _a_different_repo_does_not_block_this_one
+        """T-3885: a live, `frob ticket land`-shaped process whose cwd is a
+        DIFFERENT repository root must not be treated as a competing land
+        for `repo`. `_scan_for_live_land_process` already matches on exact
+        cwd equality (not prefix/substring), so a land genuinely running
+        in `other_repo` must never surface here -- the MUST-FIRE/MUST-
+        STAY-QUIET pair T-3885's own acceptance section asks for, in one
+        fixture: this test's OWN process shape (real `ticket`/`land`
+        argv tokens, real cwd) is the positive control -- see the sibling
+        `test_belt_and_braces_process_scan_without_the_lock_file` for the
+        same shape proving a MATCH when cwd IS `repo`; this test proves
+        the same process shape does NOT match when cwd is a different
+        root."""
+        from frob.tickets._leases import refuse_if_land_in_progress
+
+        other_repo = tmp_path / "other-repo"
+        other_repo.mkdir()
+        assert not (repo / ".frob" / "land.lock").exists()
+        holder = subprocess.Popen(
+            [
+                "python3",
+                "-c",
+                "import time; time.sleep(30)",
+                "ticket",
+                "land",
+                "T-9999",
+            ],
+            cwd=str(other_repo),
+        )
+        try:
+            for _ in range(50):
+                if _proc_test_cwd_matches(holder.pid, other_repo):
+                    break
+                time.sleep(0.1)
+
+            result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
+            assert result.is_ok, (
+                f"a land running in {other_repo} must not block ledger "
+                f"writes in {repo}, got {result!r}"
+            )
+        finally:
+            holder.kill()
+            holder.wait(timeout=5)
+
+    @pytest.mark.skipif(
+        not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
+    )
+    def test_a_land_does_not_block_on_its_own_descendant(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_\
+        # block_on_its_own_descendant
+        """T-3885 (F-098): a `frob ticket land`-shaped process that is an
+        ANCESTOR of the CALLING process must not be treated as a competing
+        land, even though it shares `repo` as its cwd and matches the
+        `ticket`/`land` argv shape exactly -- the self-deadlock a single
+        `exclude_pid` could not close (the measured process trees are 3-4
+        pids deep; this test uses just one hop, but `_process_ancestor_
+        pids` walks the whole chain). Spawns a `ticket land`-shaped PARENT
+        process whose own child is `python3 -c` re-invoking `refuse_if_
+        land_in_progress(repo)` and printing its verdict to stdout -- the
+        child's own ppid IS the parent under test, so this exercises the
+        real ancestor-walk path, not a mocked pid."""
+        from frob.tickets._leases import refuse_if_land_in_progress
+
+        assert not (repo / ".frob" / "land.lock").exists()
+        repo_root_for_python_path = str(
+            Path(refuse_if_land_in_progress.__globals__["__file__"]).parents[2]
+        )
+
+        child_script = repo / "_t3885_child.py"
+        child_script.write_text(
+            "import sys\n"
+            f"sys.path.insert(0, {repo_root_for_python_path!r})\n"
+            "from pathlib import Path\n"
+            "from frob.tickets._leases import refuse_if_land_in_progress\n"
+            f"result = refuse_if_land_in_progress(Path({str(repo)!r}), "
+            "wait_timeout_s=0)\n"
+            "print('OK' if result.is_ok else result.danger_err.name)\n"
+        )
+        parent_script = repo / "_t3885_parent.py"
+        parent_script.write_text(
+            "import subprocess, sys, time\n"
+            f"p = subprocess.run([sys.executable, {str(child_script)!r}], "
+            "capture_output=True, text=True)\n"
+            "print(p.stdout.strip())\n"
+            "time.sleep(5)\n"
+        )
+
+        parent = subprocess.Popen(
+            [sys.executable, str(parent_script), "ticket", "land", "T-8888"],
+            cwd=str(repo),
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            stdout, _ = parent.communicate(timeout=15)
+        finally:
+            parent.kill()
+            parent.wait(timeout=5)
+        assert "OK" in stdout, (
+            f"a land process's own descendant must not self-block via "
+            f"refuse_if_land_in_progress, got stdout={stdout!r}"
+        )
+
     def test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger(
         self, repo: Path
     ) -> None:

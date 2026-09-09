@@ -2243,6 +2243,106 @@ def _proc_cwd(pid: int) -> Path | None:
     return None
 
 
+# frob:ticket T-3885
+def _proc_ppid_linux(pid: int) -> int | None:
+    """`pid`'s parent pid, read from `/proc/<pid>/stat` (T-3885) -- `None`
+    on any read/parse failure (pid gone, no permission, unexpected
+    format). The `comm` field (2nd, parenthesized) can itself contain
+    spaces or parentheses, so this splits on the LAST `)` rather than by
+    whitespace position -- everything after it is `state ppid ...`,
+    space-separated, with `ppid` the second token."""
+    try:
+        raw = Path(f"/proc/{pid}/stat").read_text()
+    except OSError:
+        return None
+    tail = raw.rsplit(")", 1)
+    if len(tail) != 2:
+        return None
+    fields = tail[1].split()
+    if len(fields) < 2:
+        return None
+    try:
+        return int(fields[1])
+    except ValueError:
+        return None
+
+
+# frob:ticket T-3885
+def _proc_ppid_darwin(pid: int) -> int | None:
+    """macOS equivalent of `_proc_ppid_linux` (T-3885): `ps -o ppid= -p
+    <pid>` prints just the parent pid, matching this module's existing
+    `ps`-fallback convention for the platforms with no `/proc`. `None` on
+    any spawn failure, non-zero exit, or unparseable output."""
+    guarded = guarded_subprocess_run(
+        ["ps", "-o", "ppid=", "-p", str(pid)],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if guarded.is_err:
+        return None
+    proc = guarded.danger_ok
+    if proc.returncode != 0:
+        return None
+    line = proc.stdout.strip()
+    if not line:
+        return None
+    try:
+        return int(line)
+    except ValueError:
+        return None
+
+
+def _proc_ppid(pid: int) -> int | None:
+    """Platform-dispatched `pid`'s parent pid (T-3885 Linux `/proc`, macOS
+    `ps` fallback) -- `None` on any other platform or read failure."""
+    if sys.platform == "darwin":
+        return _proc_ppid_darwin(pid)
+    if sys.platform.startswith("linux"):
+        return _proc_ppid_linux(pid)
+    return None
+
+
+# frob:ticket T-3885
+#: Hard cap on how many parent-pid hops `_process_ancestor_pids` will
+#: follow -- a defense against a `/proc`/`ps` read returning a cyclic or
+#: corrupted ppid chain (never expected in practice, but this function
+#: must terminate regardless of what the OS hands back).
+_ANCESTOR_WALK_MAX_HOPS = 64
+
+
+# frob:ticket T-3885
+def _process_ancestor_pids(pid: int) -> frozenset[int]:
+    """Every pid in `pid`'s parent chain, walked via `_proc_ppid`
+    (T-3885), stopping at pid 0/1 (init/kernel), a self-referential ppid,
+    a pid already seen (cycle guard), an unreadable hop, or
+    `_ANCESTOR_WALK_MAX_HOPS` -- whichever comes first. `pid` itself is
+    NOT included. Empty on any platform `_proc_ppid` cannot read (same
+    degrade-to-empty contract as this module's other `/proc` scans).
+
+    This is `_scan_for_live_land_process`'s fix for T-3885's second,
+    worse defect (F-098): a land's own process TREE (bash wrapper,
+    `timeout`, `uv run`, the python process -- measured 3-4 pids per
+    land) all share the land's cwd and argv shape, so a ledger write the
+    land itself triggers mid-flight (e.g. a scope/evidence mirror into
+    this same root) must never treat its OWN ancestors as a competing
+    land. A single `exclude_pid` (T-2406's existing parameter) cannot
+    cover this -- it excludes exactly one pid, and the measured process
+    trees are 3+ pids deep. Excluding the FULL ancestor chain of the
+    CURRENT process, whatever pid it happens to be, closes this
+    regardless of how many wrapper layers sit between it and the land's
+    top-level invocation."""
+    ancestors: set[int] = set()
+    current = pid
+    for _ in range(_ANCESTOR_WALK_MAX_HOPS):
+        parent = _proc_ppid(current)
+        if parent is None or parent <= 1 or parent == current or parent in ancestors:
+            break
+        ancestors.add(parent)
+        current = parent
+    return frozenset(ancestors)
+
+
 # frob:ticket T-3500
 # frob:ticket T-3622
 def _live_pids_with_cwd_linux(resolved: Path) -> tuple[int, ...]:
@@ -2401,8 +2501,15 @@ def scan_for_live_worktree_process(
 
 
 # frob:ticket T-1619
+# frob:ticket T-3885
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting_a_diffe\
+# rent_repo_does_not_block_this_one
+# frob:tests \
+# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_block_on\
+# _its_own_descendant
 # frob:waive COV007 reason="docs/modules/tickets-landing.md's Land exclusivity lease \
 # (T-1619) section documents several symbols under one section, not just a public \
 # entry point -- the many-symbols- one-section convention this repo already accepted \
@@ -2439,10 +2546,25 @@ def _scan_for_live_land_process(
     T-3500: the cwd match itself is `_live_pids_with_cwd` (Linux `/proc`
     walk or macOS `lsof`, platform-dispatched there), no longer a
     `/proc`-only walk inlined here -- extends this backstop's coverage to
-    macOS CI (T-3488 bucket C), which has no `/proc` at all."""
+    macOS CI (T-3488 bucket C), which has no `/proc` at all.
+
+    T-3885 (F-098): also skips every pid in `_process_ancestor_pids(os.
+    getpid())` -- the CALLING process's own parent chain. A land's own
+    process tree (bash wrapper, `timeout`, `uv run`, the python process
+    itself -- measured 3-4 pids deep) all share the land's cwd and argv
+    shape, so a ledger write the land triggers on itself mid-flight (a
+    scope/evidence mirror into this same root, say) would otherwise find
+    one of its OWN ancestors and refuse against itself -- a self-deadlock
+    no retry can clear, since every retry recreates the same tree. A
+    single `exclude_pid` cannot cover this (it excludes exactly one pid
+    against a 3+-deep tree); walking the full ancestor chain does,
+    regardless of how many wrapper layers sit above the calling process.
+    A genuinely different `frob ticket land` process -- not an ancestor
+    of this one -- still matches exactly as before."""
+    self_ancestors = _process_ancestor_pids(os.getpid())
     pids = _live_pids_with_cwd(root)
     for pid in pids:
-        if pid == exclude_pid:
+        if pid == exclude_pid or pid in self_ancestors:
             continue
         argv = _proc_cmdline(pid)
         if not argv or "ticket" not in argv or "land" not in argv:
