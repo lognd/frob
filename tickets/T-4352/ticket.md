@@ -2,7 +2,7 @@
 id: T-4352
 title: Type checker exits 2 with no diagnostics in macOS fixture projects, failing
   14 tests
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -72,3 +72,6 @@ legs before concluding this is macos-specific.
 VERIFY on the platform where it reproduces. If you cannot reach macos, say so
 plainly and state which conclusions are inferred; do not present a linux run as
 evidence about a macos-visible failure.
+
+## Failure log
+- 2026-09-08 attempt 1: misdiagnosed: all 14 macOS failures are driven by ruff-check's hard tool_no_output_result error, not ty.py -- ty's silent-nonzero-exit already renders UNMEASURED and contributes 0 errors; real root cause filed as T-draft-af8d1c31 (out of ty.py's scope, in _project_tool.py)
