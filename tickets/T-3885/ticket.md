@@ -2,7 +2,7 @@
 id: T-3885
 title: 'a land in another repository blocks this one''s ledger writes: the T-1619
   process scan matches any frob ticket land, ignoring its target repo'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: cross-repo/self-deadlock process-scan fix lives in this module and its own
+    test file
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: cross-repo/self-deadlock process-scan fix lives in this module and its own
+    test file
+  actor: logan
+  at: '2026-09-09'
 body_changes:
 - mode: append
   reason: 'F-098: the same T-1619 scan also matches the lands own child pid, a self-deadlock;
@@ -37,6 +53,9 @@ body_changes:
   at: '2026-09-07'
   old_length: 6765
   new_length: 9879
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_a_land_targeting_a_different_repo_does_not_block_this_one
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_a_land_does_not_block_on_its_own_descendant
 designated_repro_test: null
 threat: null
 component: null
