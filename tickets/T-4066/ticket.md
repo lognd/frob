@@ -3,7 +3,7 @@ id: T-4066
 title: 'F-load: xdist-load-sensitive flake population beyond the daemon tests (test_ticket_runner_archive_force,
   test_check_runner, test_check_tool_unavailable, test_docptr_gate/test_artifact_smoke
   clusters)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
