@@ -1599,9 +1599,35 @@ baseline. Semantics:
   new `(rule_id, file)` pair and the commit, scoped to the offending
   files. The commit STANDS -- rapid never rewrites published history,
   because under rapid other agents are already branching from it.
-- **Every sweep, red or green, rewrites the baseline.** An error already
-  filed as a ticket must not be re-filed by the next land; from then on
-  the filed ticket is the record.
+- **What gets persisted as the next baseline is decided per branch, only
+  after the filing decision is known (T-4335).** Measuring the fresh set
+  and persisting a baseline used to be one unconditional step: the
+  freshly measured set was CAS-written as the new baseline before the
+  sweep had even decided whether the new identities it found got filed.
+  That let a REFUSED new identity (the stale-verification-queue case
+  just below) get baked into the baseline as ordinary tolerated debt --
+  measured directly: a land introduced 3 gate errors, its own sweep
+  refused to file them and then rewrote the baseline to include them
+  anyway, and every later sweep printed `CLEAN (3 error(s), none new vs
+  the previous sweep)` -- a line that contradicts itself -- while the
+  errors sat in the tree. They were caught only by a human running an
+  unscoped check by hand before a push. The measurement step now returns
+  the fresh set without writing anything, and the caller persists
+  exactly what is accounted for: the whole fresh set when establishing
+  the first-ever baseline or when a new regression got filed (or
+  disposed to an existing duplicate) just now, but `fresh` MINUS the
+  refused identities when filing was refused -- so a refused identity is
+  excluded from what gets persisted and the next sweep still sees it as
+  new, rather than silently inheriting it as debt. This is the
+  distinction between a baseline TOLERATING debt it inherited from
+  before this sweep ran (correct, and the whole reason a rolling
+  baseline exists instead of a from-scratch check every land) and a
+  baseline ABSORBING a fault this sweep's own land introduced (the
+  defect above): only the first is ever safe to persist unaccounted-for.
+  A clean sweep with no new identities still persists the fresh set (an
+  inherited pre-existing error is legitimately rolled forward), but its
+  log line says so plainly -- a nonzero count is reported as TOLERATED
+  DEBT, never as CLEAN.
 - **New pairs found, but the verification queue is stale (T-2929):**
   refuse to file. Attribution's own TIER 2
   (`frob.verify._attribution`) resolves "which land caused this" from
@@ -1622,11 +1648,14 @@ baseline. Semantics:
   kind, `post-land-sweep-attribution-skipped-stale-baseline`, via the
   same `record_rapid_debt`/`_commit_rapid_debt` idiom the deferred-
   sweep-deferred line above already uses -- durable and reviewable,
-  not a log line that scrolls away. The baseline is still rewritten to
-  the freshly measured set regardless (unchanged), so the next sweep,
-  once the debt is drained (`frob verify now`), compares against a
-  clean, current baseline rather than compounding the stale window
-  further.
+  not a log line that scrolls away. The baseline persisted here (T-4335)
+  is `fresh` MINUS the refused identities, never `fresh` itself -- the
+  refused identities are filed nowhere, so they must not be absorbed as
+  tolerated debt either. The next sweep recomputes the SAME refused set
+  as new against this unchanged baseline and gets another chance to file
+  once the debt is drained (`frob verify now`) and the verification
+  queue is current again -- rather than compounding the stale window
+  further or silently losing the finding.
 
 **The debt line commits itself (T-1698).** `rapid-debt.jsonl` is tracked
 on purpose, and the deferred-sweep record is written AFTER the land
