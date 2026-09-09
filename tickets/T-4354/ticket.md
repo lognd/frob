@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_project_tool.py
+- tests/unit/test_project_tool.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_project_tool.py
+  reason: add coverage for the new tool-absent classifier this ticket introduces
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
