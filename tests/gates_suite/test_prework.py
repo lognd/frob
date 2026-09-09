@@ -353,6 +353,112 @@ class TestScopePrework:
         violations = scope_gate(diff, ticket_a, snap, root=tmp_path, queue=queue)
         assert any(v.file == "tickets/T-0003/ticket.md" for v in violations)
 
+    # frob:ticket T-4362
+    def test_scope001_exempts_promoted_drafts_pre_promotion_filing_commit(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        """MUST-FIRE (T-4362): ticket B is filed as a draft
+        (`T-draft-<hex>`) and later promoted to T-0002. `git blame` on
+        the promoted `tickets/T-0002/ticket.md` still attributes its
+        unchanged lines to the PRE-promotion `chore(tickets): file
+        T-draft-<hex> ...` commit (a `git mv` does not retarget blame),
+        whose subject names only the draft id -- `frob check --ticket
+        T-0001` must still be 0 SCOPE001 findings for
+        tickets/T-0002/ticket.md, the same exemption T-3298 already
+        grants when blame instead lands on a commit naming the final id
+        directly."""
+        _git_init(tmp_path)
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0001", scope=("src/a/**",)))
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "tickets/T-draft-abc12345/ticket.md", "id: T-draft-abc12345\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-q",
+                "-m",
+                "chore(tickets): file T-draft-abc12345 discovered bug",
+            ],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "mv", "tickets/T-draft-abc12345", "tickets/T-0002"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-q",
+                "-m",
+                "chore(tickets): promote T-draft-abc12345 -> T-0002",
+            ],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+                "T-0002": _ticket(ticket_id="T-0002", scope=()),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_a = _ticket(ticket_id="T-0001", scope=("src/a/**",))
+
+        violations = scope_gate(diff, ticket_a, snap, root=tmp_path, queue=queue)
+        assert not any(v.file == "tickets/T-0002/ticket.md" for v in violations)
+
+    # frob:ticket T-4362
+    def test_scope001_unresolved_draft_reference_does_not_exempt(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        """MUST-STILL-FIRE (T-4362): a commit subject shaped like a draft
+        filing commit (`chore(tickets): file T-draft-<hex> ...`) whose
+        draft id was NEVER promoted (no matching `chore(tickets): promote
+        T-draft-<hex> -> ...` commit exists) must not exempt anything --
+        confirms the T-4362 fix resolves a specific draft->final
+        promotion, it does not grant a blanket allow to every
+        draft-shaped filing-commit subject."""
+        _git_init(tmp_path)
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0001", scope=("src/a/**",)))
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0002", scope=("src/b/**",)))
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-q",
+                "-m",
+                "chore(tickets): file T-draft-deadbeef leftover note",
+            ],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+                "T-0002": _ticket(ticket_id="T-0002", scope=("src/b/**",)),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_b = _ticket(ticket_id="T-0002", scope=("src/b/**",))
+
+        violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
+        assert any(v.file == "src/a/mod.py" for v in violations)
+
     def test_scope001_still_flags_uncommitted_out_of_scope_edit(
         self, tmp_path: Path
     ) -> None:

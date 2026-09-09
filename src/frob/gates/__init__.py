@@ -315,6 +315,7 @@ from frob.testing._models import CollectedTests
 from frob.tickets import Ticket, TicketError, TicketQueue, TicketState, load_queue
 from frob.tickets._land import cross_ticket_leakage_gate
 from frob.tickets._models import (
+    _DRAFT_TICKET_ID_RE,
     CMD_EVIDENCE_ALLOWED_KINDS,
     _scope_globs,
     _split_scope_entries,
@@ -3510,6 +3511,80 @@ def _commit_parents(root: Path, sha: str) -> tuple[str, ...]:
     return tuple(spawned.danger_ok.stdout.split())
 
 
+# frob:ticket T-4362
+# Mirrors `frob.app.ticket_runner._ledger_mirror._PROMOTE_COMMIT_RE`'s
+# contract with the deterministic `frob ticket promote` rename subject
+# (`_draft_finalize._commit_and_warn_promote`). Duplicated rather than
+# imported: `frob.app` depends on `frob.gates`, not the reverse, so
+# importing it here would be circular -- same tradeoff `_models.py`'s
+# `_BLOCKED_BY_ID_RE` comment already documents for this id shape.
+_PROMOTE_COMMIT_RE = re.compile(r"^chore\(tickets\): promote (\S+) -> (\S+)$")
+
+
+def _resolve_promoted_ticket_id(root: Path, draft_id: str) -> str | None:
+    """The final `T-####` id `draft_id` (a `T-draft-<hex>` provisional id)
+    was promoted to, or `None` if no promote commit for it is found in
+    `root`'s full history -- T-4362: `git blame` on a promoted ticket's
+    `tickets/T-####/ticket.md` still attributes lines unchanged since the
+    file's creation to the PRE-promotion `chore(tickets): file
+    T-draft-<hex> <title>` filing commit (a `git mv` at promotion time
+    does not retarget blame), whose subject names only the draft id and
+    so cannot carry a `T-####` reference `_TICKET_REF_RE` can match. This
+    walks history for the `frob ticket promote` rename commit
+    (`chore(tickets): promote <draft_id> -> <final_id>`) that resolves it,
+    so `_commit_exempts_file`'s cross-ticket exemption reaches the SAME
+    conclusion for a blame hit on either side of the promotion."""
+    spawned = run_argv(("git", "-C", str(root), "log", "--all", "--format=%s"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug(
+            "scope_gate: could not list commit subjects to resolve promoted id for %s",
+            draft_id,
+        )
+        return None
+    for line in spawned.danger_ok.stdout.splitlines():
+        match = _PROMOTE_COMMIT_RE.match(line.strip())
+        if match is not None and match.group(1) == draft_id:
+            return match.group(2)
+    return None
+
+
+def _subject_ticket_refs(root: Path, subject_text: str) -> set[str]:
+    """Every ticket id `subject_text` names: direct `T-\\d{4}` matches, plus
+    (T-4362) a promoted draft id resolved to its final id via
+    `_resolve_promoted_ticket_id` when `subject_text` is shaped like a
+    draft's pre-promotion filing commit -- factored out of
+    `_commit_exempts_file` to keep that function under ARCH001's line
+    threshold."""
+    refs = set(_TICKET_REF_RE.findall(subject_text))
+    draft_match = _DRAFT_TICKET_ID_RE.search(subject_text)
+    if draft_match is not None:
+        resolved = _resolve_promoted_ticket_id(root, draft_match.group(0))
+        if resolved is not None:
+            refs.add(resolved)
+    return refs
+
+
+def _commit_attribution_subjects(root: Path, sha: str) -> list[str]:
+    """Subject line(s) that attribute commit `sha`: its own subject, plus
+    (T-0527) its parents' subjects when `sha` is a merge commit whose own
+    subject carries no ticket reference -- factored out of
+    `_commit_exempts_file` to keep that function under ARCH001's line
+    threshold."""
+    subjects = []
+    subject = _commit_subject(root, sha)
+    if subject.is_some:
+        subjects.append(subject.danger_some)
+    parents = _commit_parents(root, sha)
+    if len(parents) > 1 and not (
+        subject.is_some and _TICKET_REF_RE.search(subject.danger_some)
+    ):
+        for parent in parents:
+            parent_subject = _commit_subject(root, parent)
+            if parent_subject.is_some:
+                subjects.append(parent_subject.danger_some)
+    return subjects
+
+
 def _commit_exempts_file(
     root: Path, sha: str, file: str, ticket: Ticket, queue: TicketQueue
 ) -> bool:
@@ -3529,22 +3604,20 @@ def _commit_exempts_file(
     (more than one parent) whose subject has no usable ticket reference
     falls back to searching its PARENTS' subjects for the reference that
     actually attributes the reconciled content, instead of being treated as
-    a wholly unattributed touch."""
+    a wholly unattributed touch.
 
-    subjects = []
-    subject = _commit_subject(root, sha)
-    if subject.is_some:
-        subjects.append(subject.danger_some)
-    parents = _commit_parents(root, sha)
-    if len(parents) > 1 and not (
-        subject.is_some and _TICKET_REF_RE.search(subject.danger_some)
-    ):
-        for parent in parents:
-            parent_subject = _commit_subject(root, parent)
-            if parent_subject.is_some:
-                subjects.append(parent_subject.danger_some)
-    for subject_text in subjects:
-        for ref in _TICKET_REF_RE.findall(subject_text):
+    T-4362: a subject with no `T-\\d{4}` reference at all can still name a
+    ticket indirectly -- a draft's own pre-promotion filing commit
+    (`chore(tickets): file T-draft-<hex> <title>`) is the shape `git
+    blame` keeps attributing a promoted ticket's unchanged `ticket.md`
+    lines to, since the `git mv` at promotion time doesn't retarget blame.
+    When a subject matches that shape, `_resolve_promoted_ticket_id` walks
+    history for the promote commit and resolves the draft id to its final
+    `T-####` id, so this case reaches the same exemption a blame hit on
+    the promote commit itself already would."""
+
+    for subject_text in _commit_attribution_subjects(root, sha):
+        for ref in _subject_ticket_refs(root, subject_text):
             if ref == ticket.id:
                 continue
             other = queue.tickets.get(ref)

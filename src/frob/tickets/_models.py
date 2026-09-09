@@ -48,6 +48,23 @@ _log = get_logger(__name__)
 # circular; if the id-shape ever changes, update both.
 _BLOCKED_BY_ID_RE = re.compile(r"^T-(?:\d{4}|draft-[0-9a-f]{8})$")
 
+# frob:ticket T-4362
+# The UNANCHORED, search-not-fullmatch counterpart of `_BLOCKED_BY_ID_RE`'s
+# draft branch -- for recovering a `T-draft-<8 hex>` id embedded in free
+# text (a commit subject, e.g. `chore(tickets): file T-draft-<hex> <title>`)
+# rather than validating a whole field value against the id shape. Private
+# (kept alongside `_BLOCKED_BY_ID_RE`) but still imported directly by
+# `frob.gates` -- same "private helper reused across the package boundary"
+# shape as `_scope_globs`/`is_cmd_evidence` a few lines below already
+# establish for that import -- because `frob.gates`'s SCOPE001
+# cross-ticket exemption (`_commit_exempts_file`) needs it to recognize a
+# pre-promotion filing commit's subject: `git blame` on a promoted
+# ticket's `tickets/T-####/ticket.md` still attributes lines unchanged
+# since the file's creation to that original filing commit (a `git mv` at
+# promotion time does not retarget blame), whose subject names only the
+# draft id and so cannot carry a matchable `T-####` reference.
+_DRAFT_TICKET_ID_RE = re.compile(r"T-draft-[0-9a-f]{8}")
+
 
 # frob:ticket T-1132
 # frob:doc docs/modules/tickets.md#public-api

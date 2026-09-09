@@ -2,7 +2,7 @@
 id: T-4362
 title: SCOPE001 cross-ticket exemption misses a promoted draft's pre-promotion filing
   commit
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -28,6 +28,9 @@ scope_changes:
   reason: unit tests for the SCOPE001 draft-promotion exemption fix
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_exempts_promoted_drafts_pre_promotion_filing_commit
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_unresolved_draft_reference_does_not_exempt
 designated_repro_test: null
 threat: null
 component: null
