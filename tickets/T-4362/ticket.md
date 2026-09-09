@@ -2,7 +2,7 @@
 id: T-4362
 title: SCOPE001 cross-ticket exemption misses a promoted draft's pre-promotion filing
   commit
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
