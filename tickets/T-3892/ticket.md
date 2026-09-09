@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_ticket_runner_ledger_mirror.py
 - docs/modules/tickets-lifecycle.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +51,13 @@ scope_changes:
   reason: 'SELFAUDIT001 land-blocking (T-3324 self-attributed): the two new fs.read
     call sites this ticket''s own fix added must be declared in the via-list already
     covering this file''s fs.write'
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SYS111 ratchet: this ticket''s own fs.read via-list addition (design/frob.strata)
+    grew the cli fs.read count from 21 to 22, land-blocking without bumping accepted_count
+    in the same diff'
   actor: logan
   at: '2026-09-09'
 body_changes:
