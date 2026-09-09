@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
+- tests/test_gate_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gate_cache.py
+  reason: T-4361's completeness-check tests live in the existing test_gate_cache.py
+    module, which already covers _CACHEABLE_PROCESS_GATES
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
