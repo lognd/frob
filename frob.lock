@@ -3122,6 +3122,42 @@
       "old_digest": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
       "reason": "T-4139: doclink_gate now also runs DOC014 (row/section pairing) alongside the existing DOC001/DOC008 checks it already ran; docs/modules/gates.md#public-api's description of doclink_gate as the DOC001-family entry point is unchanged and still accurate -- DOC014 is additive scanning, not a new public contract",
       "ref": "src/frob/gates/_doclink_docanchor.py::doclink_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "e848ccd2edd673a75bd899b6ee40ddec06326a0994fee35372dd33ab36af2d77",
+      "old_digest": null,
+      "reason": "T-4037: new function, freshly added -- docs/modules/tickets.md#public-api's Ticket model description already covers the pre-existing findings field this reuses; no new public contract described there is needed",
+      "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "824f4d6d8fb888e9d11d1c7e5ec711bd6df11031947a2044c77601029e2d586a",
+      "old_digest": null,
+      "reason": "T-4037: new function, freshly added -- docs/modules/tickets.md#public-api's Ticket model description already covers the pre-existing findings field this reuses; no new public contract described there is needed",
+      "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "body",
+      "new_digest": "e848ccd2edd673a75bd899b6ee40ddec06326a0994fee35372dd33ab36af2d77",
+      "old_digest": "e848ccd2edd673a75bd899b6ee40ddec06326a0994fee35372dd33ab36af2d77",
+      "reason": "T-4037: new function, freshly added -- docs/modules/tickets.md#public-api's Ticket model description already covers the pre-existing findings field this reuses; no new public contract described there is needed",
+      "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-09",
+      "facet": "sig",
+      "new_digest": "824f4d6d8fb888e9d11d1c7e5ec711bd6df11031947a2044c77601029e2d586a",
+      "old_digest": "824f4d6d8fb888e9d11d1c7e5ec711bd6df11031947a2044c77601029e2d586a",
+      "reason": "T-4037: new function, freshly added -- docs/modules/tickets.md#public-api's Ticket model description already covers the pre-existing findings field this reuses; no new public contract described there is needed",
+      "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
     }
   ],
   "entries": [
@@ -4429,6 +4465,16 @@
       "digest": "ef50a5dc033e56abd39915e033f5702bf2045064e1742467a77c81702b71e165",
       "facet": "sig",
       "ref": "src/frob/tickets/_models.py::parse_claims_from_done_report"
+    },
+    {
+      "digest": "e848ccd2edd673a75bd899b6ee40ddec06326a0994fee35372dd33ab36af2d77",
+      "facet": "body",
+      "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
+    },
+    {
+      "digest": "824f4d6d8fb888e9d11d1c7e5ec711bd6df11031947a2044c77601029e2d586a",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
     },
     {
       "digest": "4a83146dd58fbec5716d49ec92a9b52e4cb098768765a9e0bd475dad508cde81",

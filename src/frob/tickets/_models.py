@@ -268,6 +268,60 @@ def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
     return not matched_any_file
 
 
+# frob:ticket T-4037
+# frob:doc docs/modules/tickets.md#public-api
+# frob:waive AFFECT001 reason="T-4037: newly-added function, freshly acked; \
+# docs/modules/tickets.md#public-api's existing Ticket model description already \
+# covers the pre-existing findings field this reuses as the rule-shaped flag -- no new \
+# public contract needs describing there, and the doc edit itself is out of this \
+# ticket's declared scope (src/frob/tickets/_models.py and \
+# src/frob/app/ticket_runner/_close_cmd.py only)"
+# frob:tests \
+# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_empty_is_ok
+# frob:tests \
+# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_loaded_resol\
+# ves
+# frob:tests \
+# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_unloaded_unr\
+# esolved
+def rule_shaped_findings_unresolved(ticket: "Ticket") -> tuple[str, ...]:
+    """T-4037: a ticket is RULE-SHAPED (an audit finding whose remediation
+    is a policy/gate rule, not a code fix) exactly when it declares one or
+    more `findings` -- deliberately reusing that EXISTING `(rule_id, file)`
+    field (T-2760) as the orthogonal flag rather than inventing a new
+    `TicketKind` or a parallel bool: a rule-shaped remediation can be a
+    `bug`/`security`/`invariant`-kind ticket exactly as easily as any other,
+    so kind is the wrong axis to gate this on (`CMD_EVIDENCE_ALLOWED_KINDS`
+    above is the sibling precedent for a kind-based escape hatch, and this
+    is deliberately NOT that shape).
+
+    Returns the sorted, de-duplicated set of `findings` rule ids that are
+    NOT (yet) present in the loaded gate/policy rule registry
+    (`frob.gates.known_gate_rule_ids`, a REGISTRY READ -- this asks only
+    whether the rule EXISTS and is wired into the active gate set, never
+    whether it currently fires any live violation, so a rule that loads
+    clean at zero violations still counts as satisfied). A non-empty
+    result means: this ticket cites rule-shaped findings whose remediation
+    rule was never actually shipped -- the T-3942/consumer-audit failure
+    mode this function exists to make a close-time refusal (T-4037's
+    Done report) instead of a silent, evidence-passes-anyway close on the
+    hand-fixed instances alone.
+
+    Deferred import of `frob.gates` (not a module-level import): `frob.
+    tickets` is imported BY `frob.gates` transitively (ticket-directive
+    parsing feeds the obligation graph gates read), so a module-level
+    import here would be circular -- same posture as `scope_has_
+    python_surface`'s deferred `frob.excludes` import just above."""
+    if not ticket.findings:
+        return ()
+    from frob.gates import known_gate_rule_ids
+
+    known = known_gate_rule_ids()
+    return tuple(
+        sorted({rule_id for rule_id, _file in ticket.findings if rule_id not in known})
+    )
+
+
 # The exact shape `run_cmd_evidence` writes: `cmd:<command> exit=0
 # sha256=<12-hex>`. Single source of truth for "does this evidence string
 # look like a cmd: entry" -- `frob.gates`'s COV003 check and every

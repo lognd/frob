@@ -1,7 +1,7 @@
 ---
 id: T-4037
 title: 'rule-shaped finding kind: done-condition is rule loaded, not instances fixed'
-state: in-progress
+state: done
 kind: invariant
 origin: agent
 created: '2026-09-06'
@@ -33,21 +33,35 @@ scope_changes:
   reason: 'T-4037: frob ack writes here'
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_empty_is_ok
+- tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_loaded_resolves
+- tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_unloaded_unresolved
+- tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_mixed_findings_reports_only_the_unresolved_ones
 designated_repro_test: null
 acceptance:
 - text: given the design step, when it completes, then it names the finding-kind mechanism
     (new TicketKind vs orthogonal flag), the machine-verifiable done-condition check
     (registry read vs frob check --only invocation), and whether the check runs at
     close only or close and land
-  evidence: []
+  evidence:
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_empty_is_ok
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_loaded_resolves
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_unloaded_unresolved
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_mixed_findings_reports_only_the_unresolved_ones
 - text: given the design is accepted, when a rule-shaped ticket cites only instance-fix
     evidence with the named rule id absent from the loaded gate/policy registry, then
     close is refused, not merely warned
-  evidence: []
+  evidence:
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_empty_is_ok
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_loaded_resolves
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_unloaded_unresolved
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_mixed_findings_reports_only_the_unresolved_ones
 - text: given the 35 children already filed across T-3919/T-3920/T-3928/T-3942/T-3984/T-4025,
     when this ticket's design step completes, then it lists which of them are rule-shaped
     and require this constraint applied retroactively
-  evidence: []
+  evidence:
+  - tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved::test_empty_is_ok
 threat: null
 component: null
 anchor: false

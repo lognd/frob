@@ -810,6 +810,33 @@ def _open_blockers_at_close(ticket, queue) -> tuple[str, ...]:  # noqa: ANN001
     return tuple(open_ids)
 
 
+# frob:ticket T-4037
+def _refuse_if_rule_shaped_findings_unresolved(ticket_id: str, ticket) -> None:  # noqa: ANN001
+    """T-4037: hard-refuse `frob ticket close` (`sys.exit(1)`, same posture
+    as `_open_blockers_at_close`'s caller just above -- a refusal, never
+    merely a warning) when `ticket` cites rule-shaped `findings` whose
+    remediation rule was never actually shipped and loaded. Split out of
+    `_close` (ARCH001, T-2214: this pushed `_close` past its own
+    long-AND-complex threshold inline) rather than merged into it."""
+    from frob.tickets._models import rule_shaped_findings_unresolved
+
+    unresolved_rule_ids = rule_shaped_findings_unresolved(ticket)
+    if not unresolved_rule_ids:
+        return
+    _log.error(
+        "close failed: RuleShapedFindingUnloaded -- %s cites rule-shaped "
+        "finding(s) %s whose remediation rule is NOT in the loaded gate/"
+        "policy registry (frob.gates.known_gate_rule_ids) -- ship and load "
+        "the rule itself before closing; fixing the cited instances alone "
+        "does not satisfy a rule-shaped finding (T-4037: a policy-rule "
+        "remediation closed by hand-fixing instances is the exact failure "
+        "this refusal exists to catch, same class as T-3942)",
+        ticket_id,
+        list(unresolved_rule_ids),
+    )
+    sys.exit(1)
+
+
 # frob:ticket T-1387
 def _own_obligations_diff_findings(
     root: Path,
@@ -1455,6 +1482,8 @@ def _close(root: Path, cfg: AppConfig) -> None:
                 cfg.ticket_id,
             )
             sys.exit(1)
+
+    _refuse_if_rule_shaped_findings_unresolved(cfg.ticket_id, fresh_ticket)
 
     (
         covers_scope,
