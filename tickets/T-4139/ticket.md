@@ -48,6 +48,13 @@ scope_changes:
   reason: 'T-4139: frob ack of doclink_gate writes here'
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_fires_identically_python_and_typescript
+- tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_real_anchor_still_passes
+- tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_row_with_no_matching_section_fires
+- tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_section_with_no_matching_row_fires
+- tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_reported_once_per_document_not_per_row
+- tests/gates_suite/test_doc.py::TestDoc014RowSectionPairing::test_table_not_named_component_symbol_or_section_is_ignored
 designated_repro_test: null
 acceptance:
 - text: given a doc directive whose target slug has no heading and no anchor tag in
