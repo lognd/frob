@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_mutation_evidence.py
 - tests/test_tickets_mutation_evidence.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
 - op: add
   glob: tests/test_tickets_mutation_evidence.py
   reason: test file bound as evidence for the two failing nodeids this fix must pass
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'AFFECT001: check_ticket_mutation_evidence''s affects()-closure doc, updated
+    to describe the T-4369 pytest-argv resolution fix'
   actor: logan
   at: '2026-09-09'
 designated_repro_test: null
