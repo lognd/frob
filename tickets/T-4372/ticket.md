@@ -2,7 +2,7 @@
 id: T-4372
 title: 'Windows CI Test step time budget: measure per-test/per-file duration and fix
   the measured cause'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
