@@ -1,7 +1,7 @@
 ---
 id: T-4356
 title: Daemon shutdown test fails Unreachable, the sole linux failure; flake or regression
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
