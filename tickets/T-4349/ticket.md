@@ -15,10 +15,31 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_scaffold_dx.py
+- src/frob/testing/_collect.py
+- tests/unit/test_collect_python_tests.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_collect.py
+  reason: 'root cause is production collection code, not the test: _run_collect_only
+    always spawns pytest through sys.executable (the outer/global frob interpreter),
+    which has no visibility into a scaffolded/nested project''s own venv+deps; must
+    also fix the empty-stderr diagnostic (pytest writes collection ImportErrors to
+    stdout, not stderr)'
+  actor: logan
+  at: '2026-09-08'
+- op: add
+  glob: tests/unit/test_collect_python_tests.py
+  reason: 'root cause is production collection code, not the test: _run_collect_only
+    always spawns pytest through sys.executable (the outer/global frob interpreter),
+    which has no visibility into a scaffolded/nested project''s own venv+deps; must
+    also fix the empty-stderr diagnostic (pytest writes collection ImportErrors to
+    stdout, not stderr)'
+  actor: logan
+  at: '2026-09-08'
 designated_repro_test: null
 threat: null
 component: null
