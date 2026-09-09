@@ -14,10 +14,33 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
+- tests/test_ticket_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: container-tier close exemption lives in the close guard, its supporting
+    model field, and its test file
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: container-tier close exemption lives in the close guard, its supporting
+    model field, and its test file
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/test_ticket_evidence.py
+  reason: container-tier close exemption lives in the close guard, its supporting
+    model field, and its test file
+  actor: logan
+  at: '2026-09-09'
 triage_changes:
 - field: priority
   old_value: high
