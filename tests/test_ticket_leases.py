@@ -3296,6 +3296,118 @@ class TestLeaseStalenessReason:
         assert lease_staleness_reason(repo, record) == "ticket-terminal"
 
 
+# frob:ticket T-4172
+class TestReadAllLeasesReconciliation:
+    """T-4172: `read_all_leases` -- the function every scope-collision
+    check (`frob.tickets._scope`) calls -- must not go on reporting a
+    lease whose OWN ticket has already finished on the ledger, even
+    though the lease's worktree is still perfectly live. Before this
+    ticket, `read_all_leases` pruned on worktree liveness alone, so a
+    lease left behind by a ticket that reached `done`/`dropped` through
+    a path that skipped `release_lease` outlived its ticket forever and
+    kept blocking any new colliding scope."""
+
+    def test_terminal_lease_does_not_block(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """MUST-FIRE fixture: a lease file whose ticket state is terminal
+        (`done`) does not block a new, scope-colliding ticket from
+        starting -- `read_all_leases` must no longer report it, and the
+        collision predicate every `start`/`--add` call funnels through
+        (`frob.tickets._scope.scope_lease_conflict`) must not treat it as
+        a conflict either. FAILS FIRST: before the fix, `read_all_leases`
+        still returns this record (worktree is live), so the new ticket
+        is refused."""
+        from frob.tickets._leases import (
+            _lease_path,
+            leases_dir,
+            read_all_leases,
+        )
+        from frob.tickets._scope import scope_lease_conflict
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="close",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_evidence_cmd="echo verified",
+            )
+        )
+        _write_lease(
+            repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat()
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        assert lease_file.exists()
+
+        leases = read_all_leases(repo)
+        assert "T-0001" not in {lease.ticket_id for lease in leases}
+        # T-4172 acceptance 4: reconciled automatically, no manual delete.
+        assert not lease_file.exists()
+
+        conflict = scope_lease_conflict(
+            "T-0002", ("src/feature.py",), queue={}, root=repo
+        )
+        assert conflict is None
+
+    def test_terminal_dropped_ticket_lease_does_not_block_new_work(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """Same as above for `dropped`, T-4172's second terminal state."""
+        from frob.tickets._leases import read_all_leases
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="drop",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_reason="test: T-4172 terminal-lease-blocks-new-work repro",
+            )
+        )
+        _write_lease(
+            repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat()
+        )
+
+        leases = read_all_leases(repo)
+        assert "T-0001" not in {lease.ticket_id for lease in leases}
+
+    def test_in_progress_lease_still_blocks(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """MUST-STAY-QUIET / positive control: a lease whose ticket is
+        genuinely `in-progress` must still be reported by `read_all_
+        leases` and still refuse a colliding new ticket -- the guard's
+        whole purpose, unweakened by the terminal-ticket reconciliation
+        above."""
+        from frob.tickets._leases import _lease_path, leases_dir, read_all_leases
+        from frob.tickets._scope import scope_lease_conflict
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        _write_lease(
+            repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat()
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        assert lease_file.exists()
+
+        leases = read_all_leases(repo)
+        assert "T-0001" in {lease.ticket_id for lease in leases}
+        assert lease_file.exists()
+
+        conflict = scope_lease_conflict(
+            "T-0002", ("src/feature.py",), queue={}, root=repo
+        )
+        assert conflict == ("T-0001", "src/feature.py")
+
+
 # frob:ticket T-1789
 class TestWorktreeReleaseLeaseCli:
     """`frob worktree release-lease TICKET-ID`'s CLI entry point."""

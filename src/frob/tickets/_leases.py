@@ -938,16 +938,9 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     if not Path(record.worktree).exists():
         return "path-gone"
 
-    from frob.tickets._archive import load_queue
-    from frob.tickets._models import TicketState
-
-    queue = load_queue(root)
-    if queue.is_ok:
-        ticket = queue.danger_ok.tickets.get(record.ticket_id)
-        if ticket is None:
-            return "ticket-gone"
-        if ticket.state in (TicketState.DONE, TicketState.DROPPED):
-            return "ticket-terminal"
+    ledger_shape = _ticket_ledger_staleness_shape(root, record.ticket_id)
+    if ledger_shape is not None:
+        return ledger_shape
 
     if (
         is_lease_ttl_expired(record)
@@ -956,6 +949,33 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     ):
         return "holder-dead"
 
+    return None
+
+
+# frob:ticket T-4172
+# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
+def _ticket_ledger_staleness_shape(root: Path, ticket_id: str) -> str | None:
+    """The ledger half of `lease_staleness_reason`, split out (T-4172) so
+    `read_all_leases`'s own liveness pruning can reuse the EXACT same
+    "does this lease's ticket say it should still be held" question
+    instead of re-deriving a second copy of it (NO DUPLICATION) --
+    `"ticket-gone"` if `ticket_id` is absent from `root`'s authoritative
+    ledger entirely (a promoted-nowhere draft), `"ticket-terminal"` if the
+    ticket IS in the ledger but its `state` is `done`/`dropped` (T-2048's
+    shape -- a finished ticket can never resume holding a lease), or
+    `None` if the ledger is unreadable/malformed (degrades to "cannot
+    confirm", never a false-positive release/prune) or the ticket is
+    present and non-terminal."""
+    from frob.tickets._archive import load_queue
+    from frob.tickets._models import TicketState
+
+    queue = load_queue(root)
+    if queue.is_ok:
+        ticket = queue.danger_ok.tickets.get(ticket_id)
+        if ticket is None:
+            return "ticket-gone"
+        if ticket.state in (TicketState.DONE, TicketState.DROPPED):
+            return "ticket-terminal"
     return None
 
 
@@ -3823,7 +3843,7 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
 
     current_paths = sorted(leases_root.glob("*.json"))
     parsed = _parse_lease_files_cached(leases_root, current_paths)
-    return _live_leases_pruning_stale(leases_root, parsed)
+    return _live_leases_pruning_stale(root, leases_root, parsed)
 
 
 # frob:ticket T-1999
@@ -3990,25 +4010,92 @@ def _recombine_lease_parse_results(
 
 
 # frob:ticket T-0976
+# frob:ticket T-4172
+# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_in_progress_lease_still_blocks kind="unit"  # noqa: E501
 def _live_leases_pruning_stale(
-    leases_root: Path, parsed: list["_LeaseRecord"]
+    root: Path, leases_root: Path, parsed: list["_LeaseRecord"]
 ) -> tuple["_LeaseRecord", ...]:
     """`read_all_leases`'s liveness-check half, re-run on EVERY call and
     never cached (see its docstring for why): filters `parsed` down to
-    leases whose worktree is confirmed present, opportunistically
-    unlinking (and dropping from `parsed`'s own file cache) any whose
-    worktree is confirmed gone, and skipping (never unlinking) any whose
-    liveness is ambiguous."""
+    leases whose worktree is confirmed present AND whose ticket is not
+    terminal on `root`'s own ledger, opportunistically unlinking (and
+    dropping from `parsed`'s own file cache) any whose worktree is
+    confirmed gone OR whose ticket has finished (T-4172), and skipping
+    (never unlinking) any whose liveness is ambiguous.
+
+    T-4172: a lease is a side-channel PROXY for "this ticket is being
+    worked right now" -- once the ticket's own ledger entry says `done`/
+    `dropped`, the proxy has outlived the fact it stands in for, no
+    matter how live the worktree that recorded it still looks. Before
+    this, `read_all_leases` (the function every collision check in
+    `frob.tickets._scope` calls) only ever pruned on WORKTREE liveness,
+    so a lease left behind by a ticket that finished through a path that
+    skipped `release_lease` (an interrupted land, T-4313's shape) blocked
+    every new ticket declaring the same scope forever, with no
+    supported reclaim short of hand-deleting the file from the git
+    common dir. Reuses `_ticket_ledger_staleness_shape`'s `"ticket-
+    terminal"` shape (the same one `lease_staleness_reason`/`orphaned_
+    leases` already report) rather than re-deriving the ledger check, so
+    the two never drift on what counts as terminal. Checked ONLY for a
+    worktree the liveness probe already confirmed `"present"` --
+    `"confirmed_absent"`/`"ambiguous"` keep their own existing, unrelated
+    handling untouched, and a ticket genuinely still `IN_PROGRESS` (or
+    any other non-terminal state) is left exactly as live as before."""
     live: list[_LeaseRecord] = []
     for record in parsed:
         liveness = _probe_worktree_liveness(record.worktree)
         if liveness == "present":
-            live.append(record)
+            shape = _ticket_ledger_staleness_shape(root, record.ticket_id)
+            if shape == "ticket-terminal":
+                _unlink_terminal_ticket_lease(leases_root, record)
+            else:
+                live.append(record)
         elif liveness == "ambiguous":
             _log_ambiguous_lease_liveness_once(leases_root, record)
         else:
             _unlink_confirmed_stale_lease(leases_root, record)
     return tuple(live)
+
+
+# frob:ticket T-4172
+# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
+def _unlink_terminal_ticket_lease(leases_root: Path, record: "_LeaseRecord") -> None:
+    """T-4172's reclaim half of `_live_leases_pruning_stale`: `record`'s
+    own ticket has already finished (`_ticket_ledger_staleness_shape` ==
+    `"ticket-terminal"`) on `root`'s authoritative ledger, so its lease
+    file is unlinked opportunistically -- mirrors `_unlink_confirmed_
+    stale_lease`'s shape exactly (best-effort unlink, drop from the file
+    cache, log once) so a terminal-ticket lease self-heals the same way a
+    dead-worktree lease already did, with no manual `release-lease` step
+    required for the common case."""
+    record_path = _lease_path(leases_root, record.ticket_id)
+    try:
+        record_path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "tickets: could not opportunistically unlink terminal-ticket lease %s: %s",
+            record_path,
+            exc,
+        )
+    else:
+        with _cache_lock:
+            file_cache = _lease_file_cache.get(leases_root)
+            if file_cache is not None:
+                file_cache.pop(record_path, None)
+    log_key = (leases_root, record.ticket_id)
+    with _cache_lock:
+        already_logged = log_key in _stale_lease_logged
+        if not already_logged:
+            _stale_lease_logged.add(log_key)
+    if not already_logged:
+        _log.info(
+            "tickets: %s lease's ticket has already finished on this "
+            "ledger -- stale lease at %s reconciled against ticket "
+            "state and unlinked (T-4172)",
+            record.ticket_id,
+            record_path,
+        )
 
 
 # frob:ticket T-0976

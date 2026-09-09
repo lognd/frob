@@ -2,7 +2,7 @@
 id: T-4172
 title: 'a scope lease outlives its ticket and blocks new work: lease files live outside
   the ledger and nothing reconciles the two when they disagree'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -42,17 +42,23 @@ body_changes:
   at: '2026-09-07'
   old_length: 7777
   new_length: 9910
+evidence:
+- tests/test_ticket_leases.py::TestReadAllLeasesReconciliation::test_terminal_lease_does_not_block
+- tests/test_ticket_leases.py::TestReadAllLeasesReconciliation::test_in_progress_lease_still_blocks
 designated_repro_test: null
 acceptance:
 - text: given a lease file whose ticket state is terminal, when a new ticket with
     a colliding scope starts, then it is not blocked and the stale lease is reported
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestReadAllLeasesReconciliation::test_terminal_lease_does_not_block
 - text: given a lease whose ticket is genuinely in-progress, when a colliding scope
     starts, then it is still blocked exactly as today
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestReadAllLeasesReconciliation::test_in_progress_lease_still_blocks
 - text: given a ticket leaving in-progress by any supported path, when the transition
     completes, then its lease file is removed
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestReadAllLeasesReconciliation::test_terminal_lease_does_not_block
 threat: null
 component: null
 anchor: false
