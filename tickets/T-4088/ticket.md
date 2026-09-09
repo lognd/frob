@@ -16,10 +16,55 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/perf/__init__.py
+- src/frob/perf/_rules.py
+- tests/test_perf.py
+- tests/test_serve_socket.py
+- src/frob/verify/_quarantine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/perf/_rules.py
+  reason: T-4088's fix (AST-precise PERF003 nesting) lives in _rules.py, not __init__.py;
+    tests/test_perf.py holds the positive/negative fixtures the ticket requires; tests/test_serve_socket.py
+    holds the interim waiver the ticket requires removed; _quarantine.py needs a waiver
+    for a genuine nested-equality-join the old buggy detector was false-negative on
+    (tuple-unpack bound var not recognized) and the new AST-precise detector correctly
+    now catches, bounded/not scale-sensitive per the existing PERF003 waiver convention
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/test_perf.py
+  reason: T-4088's fix (AST-precise PERF003 nesting) lives in _rules.py, not __init__.py;
+    tests/test_perf.py holds the positive/negative fixtures the ticket requires; tests/test_serve_socket.py
+    holds the interim waiver the ticket requires removed; _quarantine.py needs a waiver
+    for a genuine nested-equality-join the old buggy detector was false-negative on
+    (tuple-unpack bound var not recognized) and the new AST-precise detector correctly
+    now catches, bounded/not scale-sensitive per the existing PERF003 waiver convention
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: T-4088's fix (AST-precise PERF003 nesting) lives in _rules.py, not __init__.py;
+    tests/test_perf.py holds the positive/negative fixtures the ticket requires; tests/test_serve_socket.py
+    holds the interim waiver the ticket requires removed; _quarantine.py needs a waiver
+    for a genuine nested-equality-join the old buggy detector was false-negative on
+    (tuple-unpack bound var not recognized) and the new AST-precise detector correctly
+    now catches, bounded/not scale-sensitive per the existing PERF003 waiver convention
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: src/frob/verify/_quarantine.py
+  reason: T-4088's fix (AST-precise PERF003 nesting) lives in _rules.py, not __init__.py;
+    tests/test_perf.py holds the positive/negative fixtures the ticket requires; tests/test_serve_socket.py
+    holds the interim waiver the ticket requires removed; _quarantine.py needs a waiver
+    for a genuine nested-equality-join the old buggy detector was false-negative on
+    (tuple-unpack bound var not recognized) and the new AST-precise detector correctly
+    now catches, bounded/not scale-sensitive per the existing PERF003 waiver convention
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
