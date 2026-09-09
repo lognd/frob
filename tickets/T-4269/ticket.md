@@ -2,7 +2,7 @@
 id: T-4269
 title: the windows test step takes 57 minutes against its own budget, and because
   it fails the gate step is skipped so gates have never run on windows
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-07'
