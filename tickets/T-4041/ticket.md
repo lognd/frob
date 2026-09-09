@@ -2,7 +2,7 @@
 id: T-4041
 title: frob verify now drains debt but dirties the primary with an unattributed lock-file
   rewrite, creating new ledger debt
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
