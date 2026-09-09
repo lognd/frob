@@ -2,7 +2,7 @@
 id: T-4381
 title: rapid-profile lands skip the pre-commit sweep, so format drift on touched files
   ships unchecked
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -21,6 +21,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_rapid_shape_default_sweep_formats_touched_files
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_explicit_sweep_is_never_overridden_by_the_default
 designated_repro_test: null
 threat: null
 component: null

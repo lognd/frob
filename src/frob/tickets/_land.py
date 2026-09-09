@@ -1555,6 +1555,81 @@ def _stale_post_land_verify_markers(root: Path) -> tuple[tuple[str, str], ...]:
     return tuple(found)
 
 
+# frob:ticket T-4381
+# frob:tests \
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_rapid_shape_default_\
+# sweep_formats_touched_files
+# frob:tests \
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_explicit_sweep_is_ne\
+# ver_overridden_by_the_default
+def _default_touched_format_sweep(stage: Path, final_id: str) -> bool | None:
+    """T-4381: the fallback `pre_commit_sweep` `land()` substitutes when
+    a caller supplies none at all (see `land`'s own docstring) -- the
+    rapid-profile shape, where `_land_cmd.py` deliberately passes `None`
+    to skip the full T-1514 unscoped sweep (T-1575/T-1681,
+    `override_ratchet`). That full-tree sweep stays deferred exactly as
+    rapid intends -- this does NOT reinstate it. It only closes a
+    narrower, previously-uncovered gap: a rapid land's OWN touched files
+    could ship whatever `ruff format` drift they had going in, since
+    nothing else on the land path checked general code-layout formatting
+    for a rapid land (T-4088, T-4365 -- fixed after landing as T-4380).
+
+    Scoped to `stage`'s own diff against `main` (`_land_format_touched_
+    py_files`/`_ruff_format_would_rewrite`, `frob.gates._land_format` --
+    the SAME pure helpers LANDFMT001 and `_ruff_format_pre_land_step`
+    already use, reused directly rather than re-implemented here), never
+    a whole-tree scan. `stage` is the disposable/warm-stage worktree
+    `_apply_pre_commit_sweep_or_unwind` calls this with, already holding
+    the complete staged, uncommitted squash changeset -- rewriting a
+    touched file there becomes part of the same not-yet-committed
+    changeset the caller's own wip-commit already absorbs, no separate
+    commit needed.
+
+    Never refuses the land (only ever returns `True` or `None`, never
+    `False`): a deterministic formatter is exactly the case this
+    project's Tier-A auto-fix posture already treats as safe to
+    auto-apply rather than gate on (mirrors `_ruff_format_pre_land_step`'s
+    own fix-log-proceed shape). `None` (unmeasured, not a refusal) when
+    the touched set can't be computed or the `ruff format` spawn itself
+    fails -- `_apply_pre_commit_sweep_or_unwind` treats `None` the same
+    as `True`, a no-op."""
+    from frob.gates._land_format import (
+        _land_format_touched_py_files,
+        _ruff_format_would_rewrite,
+    )
+    from frob.process._guard import guarded_subprocess_run
+    from frob.process._project_tool import project_tool_argv
+
+    touched = _land_format_touched_py_files(stage)
+    if touched is None:
+        return None
+    to_rewrite = _ruff_format_would_rewrite(stage, touched)
+    if not to_rewrite:
+        return True
+    run_result = guarded_subprocess_run(
+        project_tool_argv(stage, "ruff", "format", *to_rewrite),
+        cwd=stage,
+        capture_output=True,
+        text=True,
+    )
+    if run_result.is_err or run_result.danger_ok.returncode:
+        _log.warning(
+            "land: %s default touched-format sweep (T-4381) could not "
+            "apply `ruff format` to %s -- proceeding unformatted rather "
+            "than refusing (best-effort auto-fix, not a gate)",
+            final_id,
+            ", ".join(to_rewrite),
+        )
+        return None
+    _log.info(
+        "land: %s default touched-format sweep (T-4381) rewrote %d file(s): %s",
+        final_id,
+        len(to_rewrite),
+        ", ".join(to_rewrite),
+    )
+    return True
+
+
 # frob:ticket T-0176
 # frob:ticket T-1355
 # frob:ticket T-1410
@@ -1779,7 +1854,16 @@ def land(
     LAND-PROOF ancestry check verifies against it instead of a hardcoded
     `main`. Landing onto a branch root is NOT checked out on (without
     switching root's checkout) is deliberately out of scope here and left
-    to a follow-up ticket; see docs/modules/tickets-landing.md."""
+    to a follow-up ticket; see docs/modules/tickets-landing.md.
+
+    T-4381: a caller that passes NO `pre_commit_sweep` at all (`None`,
+    the default -- `_land_cmd.py`'s own `pre_commit_sweep=(None if
+    rapid_land else ...)` call site is exactly this shape under the
+    rapid profile, T-1575/T-1681) no longer means "no sweep whatsoever"
+    once the squash-apply stage is reached: `_squash_apply_on_disposable_
+    stage` substitutes `_default_touched_format_sweep` for a `None`
+    `pre_commit_sweep` right before forwarding it on -- see that
+    function's own docstring for why."""
     root, worktree = root.resolve(), worktree.resolve()
 
     # T-1003 (churn item 4): `root` defaults to the invoker's cwd
@@ -2799,6 +2883,15 @@ def _squash_apply_on_disposable_stage(
             sync_gate_rules=sync_gate_rules,
             pre_commit_sweep=pre_commit_sweep,
         )
+    # T-4381: `pre_commit_sweep is None` here means the caller (in
+    # practice, `_land_cmd.py`'s rapid-profile call site) wants NONE of
+    # the full T-1514 unscoped sweep's warm-stage machinery above -- that
+    # stays skipped, unchanged. It does not mean this land's own touched
+    # files should ship whatever `ruff format` drift they had going in
+    # (T-4088, T-4365): substitute the cheap, diff-scoped default sweep
+    # so it still runs against the plain disposable worktree just below,
+    # no warm stage involved.
+    pre_commit_sweep = _default_touched_format_sweep
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)

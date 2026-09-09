@@ -17,6 +17,7 @@ import threading
 from pathlib import Path
 
 import pytest
+from typani.result import Ok
 
 import frob.tickets._land as _land_mod
 from frob.tickets._models import (
@@ -277,6 +278,83 @@ class TestDisposableStageFlip:
 
         assert result.is_ok, result.err
         assert seen == [v2_main]
+
+    # frob:ticket T-4381
+    def test_rapid_shape_default_sweep_formats_touched_files(
+        self, v2_main: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_rapid_shape_default_sweep_formats_touched_files  # noqa: E501
+        """MUST FIRE (T-4381): the rapid-profile shape -- `pre_commit_
+        sweep` not supplied at all, exactly what `_land_cmd.py` passes
+        under `override_ratchet=true` -- still formats this land's OWN
+        touched `.py` file before it reaches `main`. Before T-4381, a
+        `None` `pre_commit_sweep` meant no sweep whatsoever and an
+        unformatted touched file (the T-4088/T-4365 shape) landed
+        byte-for-byte as written. `guarded_subprocess_run`/the touched-
+        set helpers are faked here rather than run for real: this
+        fixture repo has no `pyproject.toml`/lockfile of its own for
+        `uv run --project` to resolve `ruff` against."""
+        import frob.gates._land_format as _land_format_mod
+        import frob.process._guard as _guard_mod
+
+        prepared = _prepare(v2_main, "16")
+        wt = prepared[0]
+        (wt / "src" / "staged.py").write_text("x=1\n")
+        _run(["git", "add", "-A"], wt)
+        _run(["git", "commit", "-q", "-m", "drift"], wt)
+
+        monkeypatch.setattr(
+            _land_format_mod,
+            "_land_format_touched_py_files",
+            lambda root: frozenset({"src/staged.py"}),
+        )
+        monkeypatch.setattr(
+            _land_format_mod,
+            "_ruff_format_would_rewrite",
+            lambda root, touched: ("src/staged.py",),
+        )
+
+        def fake_run(argv: list[str], **kwargs: object):  # noqa: ANN003, ANN202
+            stage_path = Path(argv[argv.index("--project") + 1])
+            (stage_path / "src" / "staged.py").write_text("x = 1\n")
+            return Ok(subprocess.CompletedProcess(argv, 0, "", ""))
+
+        monkeypatch.setattr(_guard_mod, "guarded_subprocess_run", fake_run)
+
+        result = _flip(v2_main, prepared)
+
+        assert result.is_ok, result.err
+        assert (v2_main / "src" / "staged.py").read_text() == "x = 1\n"
+
+    # frob:ticket T-4381
+    def test_explicit_sweep_is_never_overridden_by_the_default(
+        self, v2_main: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_explicit_sweep_is_never_overridden_by_the_default  # noqa: E501
+        """POSITIVE CONTROL (T-4381): a caller that DOES supply its own
+        `pre_commit_sweep` (every non-rapid profile, `override_ratchet`
+        unset) is unaffected by the T-4381 default -- the explicitly
+        supplied sweep still runs instead, and nothing here reformats
+        the touched file on its behalf. An unformatted touched file
+        lands UNCHANGED, proving the default substitution never fires
+        once a caller already supplied its own sweep."""
+        prepared = _prepare(v2_main, "17")
+        wt = prepared[0]
+        (wt / "src" / "staged.py").write_text("y=2\n")
+        _run(["git", "add", "-A"], wt)
+        _run(["git", "commit", "-q", "-m", "drift"], wt)
+        seen: list[Path] = []
+
+        def sweep(path: Path, final_id: str) -> bool:
+            del final_id
+            seen.append(path)
+            return True
+
+        result = _flip(v2_main, prepared, pre_commit_sweep=sweep)
+
+        assert result.is_ok, result.err
+        assert len(seen) == 1
+        assert (v2_main / "src" / "staged.py").read_text() == "y=2\n"
 
     def test_worktree_setup_failure_refuses_without_touching_root(
         self, v2_main: Path
