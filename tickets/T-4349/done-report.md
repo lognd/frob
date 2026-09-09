@@ -1,0 +1,90 @@
+## Done report
+
+Changed:
+src/frob/testing/_collect.py::_collector_python
+src/frob/testing/_collect.py::_run_collect_only
+tests/test_testing_collect.py::TestCollectorPython
+tests/test_testing_collect.py::TestCollectionFailureStdoutFallback
+
+Evidence:
+tests/test_testing_collect.py::TestCollectorPython::test_prefers_cwds_own_venv_when_pytest_importable
+tests/test_testing_collect.py::TestCollectorPython::test_falls_back_to_sys_executable_with_no_venv
+tests/test_testing_collect.py::TestCollectorPython::test_falls_back_to_sys_executable_when_venv_pytest_unimportable
+tests/test_testing_collect.py::TestCollectionFailureStdoutFallback::test_empty_stderr_falls_back_to_stdout_tail
+(plus pre-existing TestRunCollectOnlySpawnShape::test_argv_never_names_uv re-verified green -- T-4327's
+sys.executable-only guarantee for a cwd with no venv is unchanged)
+
+What the empty stderr tail actually was: reproduced the real failure directly
+against a real scaffolded python-tool project (uv sync'd .venv, git-committed).
+`sys.executable -m pytest --collect-only -q -o addopts=` inside it exits 2 with:
+
+  ERROR collecting tests/unit/test_app.py
+  ModuleNotFoundError: No module named 'demo'
+  (same for test_logging.py, test_main.py)
+  !!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+
+printed entirely to STDOUT -- pytest's own collection-error tracebacks never go
+to stderr, so `excerpt(result.stderr)` was legitimately empty; the failure was
+never silent, only read from the wrong stream. Fixed: _run_collect_only now
+falls back to the stdout tail whenever stderr is empty, labeling which stream
+the quoted detail came from.
+
+Root cause confirmed to be T-4327's sys.executable change: T-4327 correctly
+kills a uv-VIRTUAL_ENV-fallback footgun for THROWAWAY fixtures with no
+environment of their own, but collecting a SCAFFOLDED project (which gets a
+real `uv sync`'d .venv before `frob check` runs) with the outer/global frob
+process's own sys.executable spawns pytest through an interpreter that has
+none of the scaffolded project's dependencies installed.
+
+Decision recorded: the scaffold already provides enough for collection to
+succeed (its own real .venv from `uv sync`) -- collection should use THAT
+venv when it is actually usable, not assume no environment exists.
+_collector_python prefers cwd's own `.venv/bin/python` when `pytest` is
+importable through it (mirroring `_python_for_tree`'s frob-importability
+probe, T-3305's same probe-don't-assume principle applied to a different
+importable), falling back to `sys.executable` exactly as T-4327 left it for
+a cwd with no usable venv of its own -- this never reintroduces `uv run`,
+it only chooses which already-built interpreter's `-m pytest` to invoke.
+
+Verified directly against the real built scaffold (not mocked): after the
+fix, `_run_collect_only(scaffold_dir)` returns `Ok` with all 12 test node
+ids, and a full `frob check --stamp-coverage` run against it reports
+`coverage stamp written` with no COV003 (previously: `stamp-coverage
+failed`/COV003 collection failure). `TestRunCollectOnlySpawnShape::
+test_argv_never_names_uv` (T-4327's own regression test, tmp_path has no
+venv) still asserts `sys.executable` and passes unchanged, confirming the
+macOS fix is not reintroducing a `uv` dependency.
+
+Filed: none
+
+Gates: `frob check --ticket T-4349` clean (0 errors; re-ran twice after
+scope widening/directive-wrap fixups, both re-runs 0 errors). `frob test
+--base main` selected and ran the touched Python tests, exit=0, 5 outcomes
+recorded (this scope's own test file). TEST006 (no coverage stamp) is a
+pre-existing, unscoped repo-wide advisory, not from this change.
+
+Scope note: ticket started scoped only to
+tests/system/test_scaffold_dx.py; widened via `frob ticket scope --add`
+(official path, reasons recorded in the ticket's scope_changes audit
+trail) to src/frob/testing/_collect.py and tests/test_testing_collect.py
+once direct reproduction showed the root cause is production collection
+code, not the acceptance test itself.
+
+### Changed
+```
+ src/frob/testing/_collect.py  | 72 +++++++++++++++++++++++++++++++---
+ tests/test_testing_collect.py | 89 +++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-4349/ticket.md      | 38 ++++++++++++++++++
+ 3 files changed, 194 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_testing_collect.py::TestCollectorPython::test_prefers_cwds_own_venv_when_pytest_importable` (pytest node id, verified passing when recorded)
+- `tests/test_testing_collect.py::TestCollectorPython::test_falls_back_to_sys_executable_with_no_venv` (pytest node id, verified passing when recorded)
+- `tests/test_testing_collect.py::TestCollectorPython::test_falls_back_to_sys_executable_when_venv_pytest_unimportable` (pytest node id, verified passing when recorded)
+- `tests/test_testing_collect.py::TestCollectionFailureStdoutFallback::test_empty_stderr_falls_back_to_stdout_tail` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 4723 warning(s), 957 waived
+- error-findings: none (measured, zero errors)

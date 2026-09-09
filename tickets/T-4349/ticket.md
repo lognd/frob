@@ -1,7 +1,7 @@
 ---
 id: T-4349
 title: Scaffold check fails collection with an empty stderr tail, the sole linux failure
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -52,6 +52,11 @@ scope_changes:
     does not exist)
   actor: logan
   at: '2026-09-08'
+evidence:
+- tests/test_testing_collect.py::TestCollectorPython::test_prefers_cwds_own_venv_when_pytest_importable
+- tests/test_testing_collect.py::TestCollectorPython::test_falls_back_to_sys_executable_with_no_venv
+- tests/test_testing_collect.py::TestCollectorPython::test_falls_back_to_sys_executable_when_venv_pytest_unimportable
+- tests/test_testing_collect.py::TestCollectionFailureStdoutFallback::test_empty_stderr_falls_back_to_stdout_tail
 designated_repro_test: null
 threat: null
 component: null

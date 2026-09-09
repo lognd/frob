@@ -167,3 +167,92 @@ class TestRunCollectOnlySpawnShape:
         detail = collect_mod.python_collection_failure_detail()
         assert detail is not None
         assert "not importable" in detail
+
+
+class TestCollectorPython:
+    """T-4349: `_run_collect_only` must collect a project that HAS its own
+    real `.venv` (a scaffolded project after `uv sync`, T-4327's docstring
+    calls out this exact case) through THAT venv's interpreter, not the
+    calling frob process's own `sys.executable` -- the latter has none of
+    the target project's dependencies installed and fails collection with
+    e.g. `ModuleNotFoundError` on every test module importing the
+    project's own package. A `cwd` with no usable venv of its own (T-4327's
+    original throwaway-fixture case) must still fall back to `sys.
+    executable` exactly as before."""
+
+    # frob:tests src/frob/testing/_collect.py::_collector_python
+    def test_prefers_cwds_own_venv_when_pytest_importable(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A `cwd` with a `.venv/bin/python` that has `pytest` importable
+        is preferred over `sys.executable`."""
+        import frob.testing._collect as collect_mod
+
+        venv_python = tmp_path / ".venv" / "bin" / "python"
+        venv_python.parent.mkdir(parents=True)
+        venv_python.touch()
+
+        monkeypatch.setattr(collect_mod, "pytest_importable", lambda python: True)
+        assert collect_mod._collector_python(tmp_path) == str(venv_python)
+
+    # frob:tests src/frob/testing/_collect.py::_collector_python
+    def test_falls_back_to_sys_executable_with_no_venv(self, tmp_path: Path) -> None:
+        """No `.venv/bin/python` at all (the throwaway-fixture case T-4327
+        fixed) -- unchanged `sys.executable` fallback."""
+        import sys
+
+        import frob.testing._collect as collect_mod
+
+        assert collect_mod._collector_python(tmp_path) == sys.executable
+
+    # frob:tests src/frob/testing/_collect.py::_collector_python
+    def test_falls_back_to_sys_executable_when_venv_pytest_unimportable(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A `.venv/bin/python` exists but `pytest` is NOT importable
+        through it (e.g. a venv `uv sync` never populated) -- falls back
+        to `sys.executable` rather than handing back an unusable
+        interpreter."""
+        import sys
+
+        import frob.testing._collect as collect_mod
+
+        venv_python = tmp_path / ".venv" / "bin" / "python"
+        venv_python.parent.mkdir(parents=True)
+        venv_python.touch()
+
+        monkeypatch.setattr(collect_mod, "pytest_importable", lambda python: False)
+        assert collect_mod._collector_python(tmp_path) == sys.executable
+
+
+class TestCollectionFailureStdoutFallback:
+    """T-4349: pytest writes its own collection errors (ImportError
+    tracebacks, "N errors during collection") to STDOUT, not stderr --
+    the empty-stderr-tail diagnostic on the scaffold-check CI failure
+    traced to exactly this. The recorded detail must fall back to the
+    stdout tail whenever stderr has nothing in it."""
+
+    # frob:tests src/frob/testing/_collect.py::collect_python_tests
+    def test_empty_stderr_falls_back_to_stdout_tail(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        import frob.testing._collect as collect_mod
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=2,
+                    stdout="ModuleNotFoundError: No module named 'demo'",
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_err
+
+        detail = collect_mod.python_collection_failure_detail()
+        assert detail is not None
+        assert "stderr was empty" in detail
+        assert "ModuleNotFoundError: No module named 'demo'" in detail

@@ -31,7 +31,7 @@ from typani.result import Result
 from frob.excludes import load_exclude_globs, walk_pruned
 from frob.gitio import excerpt, run_argv
 from frob.logging import get_logger
-from frob.process._pytest_spawn import resolve_pytest_argv
+from frob.process._pytest_spawn import pytest_importable, resolve_pytest_argv
 
 # T-1074: the rust/ts/cpp collector bodies now live in the sibling
 # `_collect_rust`/`_collect_ts`/`_collect_cpp` modules; every name is
@@ -411,6 +411,51 @@ def _set_collection_failure_detail(detail: str | None) -> None:
     _last_python_collection_failure_detail = detail
 
 
+# frob:ticket T-4349
+# frob:tests \
+# tests/test_testing_collect.py::TestCollectorPython.test_prefers_cwds_own_venv_when_py\
+# test_importable
+# frob:tests \
+# tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_\
+# with_no_venv
+# frob:tests \
+# tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_\
+# when_venv_pytest_unimportable
+def _collector_python(cwd: Path) -> str:
+    """T-4349: the interpreter `_run_collect_only` should collect `cwd`
+    with -- `cwd`'s own `.venv/bin/python` when it exists AND has `pytest`
+    importable through it, else `sys.executable` (T-4327's fallback,
+    unchanged).
+
+    T-4327 made `sys.executable` the ONE spawn convention so a THROWAWAY
+    fixture with no environment of its own (no `.venv`, nothing for `uv`
+    to sync) never routes through `uv run pytest`'s VIRTUAL_ENV-fallback
+    footgun -- that fix stays exactly as it was for exactly that case.
+    But `cwd` is not always a throwaway fixture: a freshly scaffolded
+    project (`tests/system/test_scaffold_dx.py`) runs a real `uv sync`
+    before `frob check`, giving it a real `.venv` with its own `pytest`
+    and its own dependencies installed -- collecting THAT with `sys.
+    executable` uses the calling frob process's OWN interpreter (the
+    globally-installed `uv tool`'s venv, or this repo's dev venv), which
+    has neither the scaffolded project's dependencies nor any reason to
+    import them, and fails with e.g. `ModuleNotFoundError: No module
+    named 'demo'` on every test module that imports the project's own
+    package. Preferring `cwd`'s own venv when it is actually usable
+    (`pytest` importable through it, mirroring `_python_for_tree`'s
+    `frob`-importability probe in `frob.app.ticket_runner._verify`, T-3305's
+    same probe-don't-assume principle applied to a different importable)
+    fixes that without reintroducing any `uv` dependency: this never
+    shells out through `uv`, it only chooses WHICH already-built
+    interpreter's `-m pytest` to invoke. A `cwd` with no `.venv`, or one
+    whose `pytest` is not importable (T-4327's original throwaway-fixture
+    case), falls straight through to `sys.executable` exactly as before."""
+    venv_python = cwd / ".venv" / "bin" / "python"
+    if venv_python.is_file() and pytest_importable(str(venv_python)):
+        return str(venv_python)
+    return sys.executable
+
+
+# frob:ticket T-4349
 def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
     """Spawn `pytest --collect-only -q` in `cwd` and parse its stdout into
     node ids relative to `cwd` (the caller reroots them if `cwd` is not the
@@ -458,16 +503,19 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
     # node ids to per-file counts (and -n auto adds xdist noise) -- the
     # evidence oracle would silently see an empty set (observed: INV001
     # false positives on every invariant).
-    resolved_argv = resolve_pytest_argv("--collect-only", "-q", "-o", "addopts=")
+    collector_python = _collector_python(cwd)
+    resolved_argv = resolve_pytest_argv(
+        "--collect-only", "-q", "-o", "addopts=", python=collector_python
+    )
     if resolved_argv.is_err:
         _log.error(
             "collect_python_tests: pytest is not importable through %s -- "
             "cannot collect in %s",
-            sys.executable,
+            collector_python,
             cwd,
         )
         _set_collection_failure_detail(
-            f"pytest not importable through {sys.executable} "
+            f"pytest not importable through {collector_python} "
             f"(cwd={cwd}): {resolved_argv.danger_err}"
         )
         return Err(TestingError.CollectFailed)
@@ -488,9 +536,23 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
             result.returncode,
             cwd,
         )
+        # T-4349: pytest writes its own collection errors (ImportError
+        # tracebacks, "N errors during collection") to STDOUT, not
+        # stderr -- a genuinely empty stderr here is normal pytest
+        # behavior, not a diagnostic failure, and reporting only "stderr
+        # tail: <nothing>" leaves the actual cause unquoted (measured:
+        # COV003's empty stderr tail on the scaffold-check regression).
+        # Fall back to the stdout tail whenever stderr has nothing to
+        # say, so the detail always quotes SOME real output when pytest
+        # produced any.
+        stream_label, stream_text = (
+            ("stderr", result.stderr)
+            if result.stderr.strip()
+            else ("stdout (stderr was empty)", result.stdout)
+        )
         _set_collection_failure_detail(
             f"{' '.join(argv)} (cwd={cwd}) exited {result.returncode}\n"
-            f"stderr tail:\n{excerpt(result.stderr)}"
+            f"{stream_label} tail:\n{excerpt(stream_text)}"
         )
         return Err(TestingError.CollectFailed)
     return Ok(
