@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: new regression test bound as evidence for T-4368's PATH-export fix
+  actor: logan
+  at: '2026-09-09'
 evidence:
 - tests/test_ci_workflow_matrix.py::TestMacosTestStepPutsVenvBinOnPath::test_macos_test_step_run_script_prepends_venv_bin_to_path
 designated_repro_test: null
