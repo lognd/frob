@@ -34,6 +34,12 @@ scope_changes:
     conftest.py's scope already covers
   actor: logan
   at: '2026-09-09'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: regression test for the remove_node fix lives here, sibling of the file
+    conftest.py's scope already covers
+  actor: logan
+  at: '2026-09-09'
 evidence:
 - tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening::test_reentrant_remove_node_during_reschedule_does_not_raise
 designated_repro_test: null
