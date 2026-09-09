@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - tests/test_tickets_rule_shaped.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: tests/test_tickets_rule_shaped.py
   reason: 'T-4037: new unit tests for rule_shaped_findings_unresolved'
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: frob.lock
+  reason: 'T-4037: frob ack writes here'
   actor: logan
   at: '2026-09-09'
 designated_repro_test: null
