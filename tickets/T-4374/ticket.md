@@ -1,7 +1,7 @@
 ---
 id: T-4374
 title: Bare pytest argv in worker-crash-retry test unresolvable on macOS xdist worker
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
