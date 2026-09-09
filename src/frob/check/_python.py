@@ -99,10 +99,15 @@ _log = get_logger(__name__)
 # graph; every locally-visible fallible step here is the guarded subprocess call, \
 # already caught below"
 # frob:ticket T-2320
+# frob:ticket T-4359
 # frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_check_runs_only_format  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_format_runs_only_check  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_both_returns_empty  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_neither_skipped_runs_both_unchanged  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestRunRuffToolAbsent.test_missing_ruff_reports_unmeasured
+# frob:tests \
+# tests/unit/test_check.py::TestRunRuffToolAbsent.test_unparseable_output_still_errors
 def _run_ruff(
     root: Path,
     extra_args: list[str] | None,
@@ -131,7 +136,15 @@ def _run_ruff(
     covering "ruff" ran (or skipped) both stages together, so there was
     no way to keep one running while dropping the other. Both default
     `False`, so an unqualified call still runs both stages exactly as
-    before."""
+    before.
+
+    T-4359: the ruff-check stage now passes `proc.stderr` into
+    `parse_ruff_json` so it can recognize `tool_absent_from_project`
+    (T-4354) and report a target project with no `ruff` installed as
+    UNMEASURED rather than the T-4308 hard ERROR reserved for a `ruff`
+    that ran and produced unparseable output. `_ruff_format_result`
+    below needs no equivalent change -- it never calls
+    `parse_ruff_json`."""
     from frob.process.parsers import parse_ruff_json
 
     out: list[ToolResult] = []
@@ -151,7 +164,9 @@ def _run_ruff(
                 out.append(_guard_err_result(run_result, "ruff-check", "ruff"))
             else:
                 proc = run_result.danger_ok
-                r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
+                r = parse_ruff_json(
+                    proc.stdout, exit_code=proc.returncode, stderr=proc.stderr
+                )
                 r.tool = "ruff-check"
                 out.append(r)
     if not skip_format:

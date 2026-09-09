@@ -1,0 +1,48 @@
+## Done report
+
+Only one production call site existed: `_run_ruff`'s ruff-check stage called
+`parse_ruff_json`; `_ruff_format_result` and `_run_ruff_autofix` never call
+it (checked directly), so no other site needed wiring. `_run_ty`'s
+equivalent caller already concatenates stdout+stderr per the ticket's own
+note.
+
+Verified end-to-end, not just in isolation: a real subprocess spawn against
+a fixture project with no ruff on PATH now returns UNMEASURED (exit 0)
+instead of T-4308's hard ERROR. Confirmed the test actually catches a
+regression by reverting the stderr= wiring and re-running it -- it failed
+with the exact "did not run" hard-error text before the fix, passed after.
+The distinct "ruff ran, produced unparseable output" shape still hard-errors
+(TestRunRuffToolAbsent.test_unparseable_output_still_errors), preserving
+T-4308's protection.
+
+Evidence:
+- tests/unit/test_check.py::TestRunRuffToolAbsent.test_missing_ruff_reports_unmeasured
+- tests/unit/test_check.py::TestRunRuffToolAbsent.test_unparseable_output_still_errors
+- tests/system/test_cli_check.py::TestCheckRuffAbsentFromTargetProject.test_missing_ruff_reports_unmeasured_not_error
+- tests/unit/test_tool_absent_parser_reconcile.py (pre-existing T-4358 parser suite, still green)
+
+Filed: none.
+
+Gates: `frob check --ticket T-4359 --only gates-fast/gates-native/gates-security/lint/static` all clean (0 errors) after adding frob:ticket edges on new test methods (COV002), wrapping new frob:tests directives to canonical width (FMT001), `frob format --code` on the touched test file (LANDFMT001), extending T-4359's scope to the two test files (SCOPE001), and a reasoned frob:waive TODO001 on a pre-existing prose false positive ("...DEC/TODO gates...") exposed only because touching the file put it in the diff-driven scan. `frob test --base main`: PASS, 14 python test(s), exit 0.
+
+Local effect (macOS CI itself not observable from here): against `_make_project`'s exact fixture shape, the ruff-check stage now returns UNMEASURED with the T-4354 "ruff absent from target project" reading instead of T-4308's "ruff produced no output -- the tool did not run" -- the literal message the ticket says accounts for ~32 of the ~40 remaining macOS failures.
+
+### Changed
+```
+ src/frob/check/_python.py      | 19 ++++++++++--
+ tests/system/test_cli_check.py | 70 ++++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_check.py       | 63 +++++++++++++++++++++++++++++++++++++
+ tickets/T-4359/done-report.md  | 45 +++++++++++++++++++++++++++
+ tickets/T-4359/ticket.md       | 17 ++++++++++
+ 5 files changed, 212 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestRunRuffToolAbsent::test_missing_ruff_reports_unmeasured` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffToolAbsent::test_unparseable_output_still_errors` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_check.py::TestCheckRuffAbsentFromTargetProject::test_missing_ruff_reports_unmeasured_not_error` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 4788 warning(s), 957 waived
+- error-findings: none (measured, zero errors)

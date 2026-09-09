@@ -1,7 +1,7 @@
 ---
 id: T-4359
 title: Wire proc.stderr into parse_ruff_json's new stderr param in _run_ruff
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -32,6 +32,10 @@ scope_changes:
   reason: add regression tests for the ruff stderr wiring (T-4359)
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/unit/test_check.py::TestRunRuffToolAbsent::test_missing_ruff_reports_unmeasured
+- tests/unit/test_check.py::TestRunRuffToolAbsent::test_unparseable_output_still_errors
+- tests/system/test_cli_check.py::TestCheckRuffAbsentFromTargetProject::test_missing_ruff_reports_unmeasured_not_error
 designated_repro_test: null
 threat: null
 component: null

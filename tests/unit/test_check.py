@@ -213,6 +213,10 @@ class TestRunCheckCpp:
         assert result.results == []
 
     # frob:ticket T-0554
+    # frob:waive TODO001 reason="'TODO' below names a gate abbreviation in the \
+    # prose list COV/DOC/DRIFT/INV/DEC/TODO, not a bare deferral marker -- \
+    # T-4359 touched this file for an unrelated test addition and exposed \
+    # this pre-existing whole-word false positive"  # noqa: E501
     def test_gates_stage_runs_by_default(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2296,6 +2300,65 @@ class TestRunRuffSplitSkip:
         )
         results = python_mod._run_ruff(tmp_path, None)
         assert [r.tool for r in results] == ["ruff-check", "ruff-format"]
+
+
+# frob:ticket T-4359
+class TestRunRuffToolAbsent:
+    """T-4359: `_run_ruff`'s ruff-check stage must actually thread
+    `proc.stderr` into `parse_ruff_json` -- T-4358 taught the PARSER to
+    recognize `tool_absent_from_project`, but the production call site
+    here still called it without `stderr`, so the fix never took effect
+    on the real CI path. See `tests/system/test_cli_check.py::
+    TestCheckRuffAbsentFromTargetProject` for the genuine subprocess
+    end-to-end proof; this class proves the wiring at the `_run_ruff`
+    call-site level with a mocked subprocess result shaped exactly like
+    `uv run`'s real "Failed to spawn: `ruff`" output."""
+
+    _SPAWN_FAILURE_STDERR = (
+        "error: Failed to spawn: `ruff`\n"
+        "  Caused by: No such file or directory (os error 2)\n"
+    )
+
+    # frob:ticket T-4359
+    def test_missing_ruff_reports_unmeasured(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("", 2, stderr=self._SPAWN_FAILURE_STDERR)),
+        )
+        results = python_mod._run_ruff(tmp_path, None, skip_format=True)
+        assert len(results) == 1
+        r = results[0]
+        assert r.diagnostics == []
+        assert r.error_count == 0
+        assert not r.passed
+
+    # frob:ticket T-4359
+    def test_unparseable_output_still_errors(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        # T-4308's hard-ERROR path must survive this wiring: a ruff that
+        # RAN (present, exit 1, unrelated stderr -- not the T-4354 spawn-
+        # failure shape) and produced empty stdout is still a real
+        # failure, never silently reclassified as UNMEASURED.
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("", 1, stderr="some unrelated ruff crash\n")),
+        )
+        results = python_mod._run_ruff(tmp_path, None, skip_format=True)
+        assert len(results) == 1
+        r = results[0]
+        assert r.error_count >= 1
+        assert "did not run" in r.diagnostics[0].message
 
 
 # frob:ticket T-2320

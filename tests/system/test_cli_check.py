@@ -263,6 +263,76 @@ class TestCheckSkipFlags:
         assert "results" in data
 
 
+# frob:ticket T-4359
+class TestCheckRuffAbsentFromTargetProject:
+    """T-4359: the real end-to-end path -- `frob check` against a target
+    project whose own `uv` environment has no `ruff` installed (exactly
+    `_make_project`'s tmp_path shape: a `pyproject.toml` with no `ruff`
+    dependency) must report ruff-check as UNMEASURED, never a hard
+    ERROR, now that `_run_ruff` actually threads `proc.stderr` into
+    `parse_ruff_json` (T-4358's parser fix was inert without this
+    wiring -- see T-4359's ticket body).
+
+    The absent-tool condition only reproduces for real when `ruff` is
+    not reachable via ANY fallback `uv run` might use -- on this
+    machine plain PATH-stripping is not enough, since `ruff` sits next
+    to `uv` itself in the same directory a bare `uv` lookup needs, so
+    `_only_uv_on_path` symlinks just `uv` into an isolated directory and
+    points `PATH` at that alone."""
+
+    # frob:ticket T-4359
+    @staticmethod
+    def _only_uv_on_path(tmp_path: Path) -> str:
+        """A directory containing nothing but a symlink to the real `uv`
+        binary -- a `PATH` of just this directory can resolve `uv` but
+        can never fall back to a `ruff` sitting anywhere else on the
+        real PATH (e.g. installed alongside `uv` itself)."""
+        uv_path = shutil.which("uv")
+        assert uv_path, "uv must be on PATH to run this test at all"
+        bindir = tmp_path / "_uvonly_bin"
+        bindir.mkdir()
+        (bindir / "uv").symlink_to(uv_path)
+        return str(bindir)
+
+    # frob:ticket T-4359
+    def test_missing_ruff_reports_unmeasured_not_error(self, tmp_path):
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        git_init_and_config(tmp_path)
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        restricted_path = self._only_uv_on_path(tmp_path)
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--skip-exports",
+            "--skip-ty",
+            "--skip-arch",
+            "--skip-cycle",
+            "--skip-dup",
+            "--skip-bind",
+            "--skip-ruff-format",
+            "--skip-gates",
+            cwd=tmp_path,
+            env={"PATH": restricted_path},
+        )
+        out = r.stdout + r.stderr
+        assert "Failed to spawn" not in out, out
+        # T-4308's hard-ERROR wording ("ruff did not run") must NOT appear
+        # for this legitimate not-installed shape -- only the T-4354
+        # "absent from target project" reading may.
+        assert "did not run" not in out.lower(), out
+        assert r.returncode == 0, out
+        # T-4308's hard-ERROR path for the DISTINCT "ruff ran, produced
+        # unparseable output" shape must survive this wiring -- proven at
+        # the `_run_ruff` call-site level (mocked subprocess, no real
+        # `uv`/`ruff` spawn needed for that shape) by
+        # tests/unit/test_check.py::TestRunRuffToolAbsent
+        # .test_unparseable_output_still_errors, and at the parser level
+        # by tests/unit/test_tool_absent_parser_reconcile.py::
+        # TestRuffPresentButBrokenStaysAnError.
+
+
 class TestCheckErrors:
     def test_nonexistent_path_fails(self, tmp_path):
         r = run("check", str(tmp_path / "does_not_exist"))
