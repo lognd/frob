@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_mutation_evidence.py
+- tests/test_tickets_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_mutation_evidence.py
+  reason: test file bound as evidence for the two failing nodeids this fix must pass
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
