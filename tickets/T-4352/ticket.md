@@ -74,4 +74,4 @@ plainly and state which conclusions are inferred; do not present a linux run as
 evidence about a macos-visible failure.
 
 ## Failure log
-- 2026-09-08 attempt 1: misdiagnosed: all 14 macOS failures are driven by ruff-check's hard tool_no_output_result error, not ty.py -- ty's silent-nonzero-exit already renders UNMEASURED and contributes 0 errors; real root cause filed as T-draft-af8d1c31 (out of ty.py's scope, in _project_tool.py)
+- 2026-09-08 attempt 1: misdiagnosed: all 14 macOS failures are driven by ruff-check's hard tool_no_output_result error, not ty.py -- ty's silent-nonzero-exit already renders UNMEASURED and contributes 0 errors; real root cause filed as T-4354 (out of ty.py's scope, in _project_tool.py)
