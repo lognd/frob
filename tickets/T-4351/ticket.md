@@ -1,7 +1,7 @@
 ---
 id: T-4351
 title: Windows completes with 4 platform-specific failures; drive them to zero
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
