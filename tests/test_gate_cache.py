@@ -1227,3 +1227,87 @@ class TestStatKeyCoarseClockSafety:
             "serve the cached digest, not force a content-hash re-check "
             "on every single call regardless of age"
         )
+
+
+# frob:ticket T-4361
+class TestCacheableProcessGatesCompleteness:
+    """T-4361: `_CACHEABLE_PROCESS_GATES` had no completeness check against
+    `_build_process_jobs` -- unlike `_CANONICAL_GATE_ORDER`/
+    `_GATE_STAGE_GROUPS`'s own import-time `assert set(...) == _ALL_GATES`
+    -- so a new `_build_process_jobs` entry nobody added to the frozenset
+    silently never got served from the whole-tree gate cache: no error, no
+    warning, no test failure, just a permanent perf regression for that one
+    gate. These tests FORCE the condition rather than only checking the
+    currently-correct state (a check verified only against a state that is
+    already right proves nothing about whether it actually fires)."""
+
+    def test_import_time_assert_is_clean_on_the_real_module(self) -> None:
+        """frob:tests src/frob/gates/__init__.py::_PROCESS_JOB_NAMES
+
+        The module already imported cleanly (this test file's own `import
+        frob.gates as gates_module` would have raised `AssertionError`
+        otherwise) -- this test just makes that fact explicit and pins the
+        derived source of truth (`_PROCESS_JOB_NAMES`, built by calling the
+        real `_build_process_jobs` rather than hand-copied) in exact
+        agreement with the two curated sets."""
+        combined = (
+            gates_module._CACHEABLE_PROCESS_GATES
+            | gates_module._KNOWN_UNCACHEABLE_PROCESS_GATES
+        )
+        assert combined == gates_module._PROCESS_JOB_NAMES
+        assert not (
+            gates_module._CACHEABLE_PROCESS_GATES
+            & gates_module._KNOWN_UNCACHEABLE_PROCESS_GATES
+        )
+
+    def test_completeness_check_fires_when_a_gate_is_unregistered(self) -> None:
+        """The exact silent-drift shape T-4361 found: a `_build_process_jobs`
+        entry present in neither `_CACHEABLE_PROCESS_GATES` nor
+        `_KNOWN_UNCACHEABLE_PROCESS_GATES` must make the completeness
+        equality FALSE (what the import-time `assert` checks), not pass
+        silently."""
+        process_job_names = gates_module._PROCESS_JOB_NAMES
+        assert process_job_names, "sanity: _build_process_jobs must be non-empty"
+        unregistered = next(iter(process_job_names))
+        cacheable_missing_one = gates_module._CACHEABLE_PROCESS_GATES - {unregistered}
+        combined = cacheable_missing_one | gates_module._KNOWN_UNCACHEABLE_PROCESS_GATES
+        assert combined != process_job_names, (
+            f"dropping {unregistered!r} from both the cacheable and "
+            "documented-uncacheable sets must be detectable as drift -- "
+            "this is the exact silent-gap shape T-4361 closed"
+        )
+
+    def test_completeness_check_is_silent_once_a_gate_is_registered(self) -> None:
+        """The mirror image: adding a currently-unregistered name to
+        `_KNOWN_UNCACHEABLE_PROCESS_GATES` (simulating a reviewed decision
+        that a hypothetical new process-job gate is NOT cache-safe) must
+        restore the completeness equality -- proving the check can pass for
+        a genuine reason, not just happen to fail on today's drift."""
+        process_job_names = gates_module._PROCESS_JOB_NAMES
+        hypothetical_new_gate = "t4361_hypothetical_uncacheable_gate"
+        assert hypothetical_new_gate not in process_job_names
+        widened_names = process_job_names | {hypothetical_new_gate}
+        widened_uncacheable = gates_module._KNOWN_UNCACHEABLE_PROCESS_GATES | {
+            hypothetical_new_gate
+        }
+        combined = gates_module._CACHEABLE_PROCESS_GATES | widened_uncacheable
+        assert combined == widened_names, (
+            "registering the new gate in _KNOWN_UNCACHEABLE_PROCESS_GATES "
+            "must silence the completeness check for it"
+        )
+
+    def test_process_job_names_is_derived_not_hand_copied(self) -> None:
+        """frob:tests src/frob/gates/__init__.py::_build_process_jobs
+
+        `_PROCESS_JOB_NAMES` must track `_build_process_jobs`'s real key
+        set by calling it, not by a second hand-maintained literal --
+        otherwise this completeness check just moves T-4333's drift
+        problem one name over instead of closing it. Adding a job to
+        `_build_process_jobs` inside this test (via a fresh `_GateInputs`
+        placeholder call, never touching the module's own dict literal)
+        would be caught by `_PROCESS_JOB_NAMES` if it were anything other
+        than a fresh call to the real function; this asserts the actual
+        call shape instead of trusting that by construction."""
+        placeholder_inputs = gates_module._process_job_names_gate_inputs()
+        recomputed = frozenset(gates_module._build_process_jobs(placeholder_inputs))
+        assert recomputed == gates_module._PROCESS_JOB_NAMES

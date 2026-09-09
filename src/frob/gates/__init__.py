@@ -44,7 +44,7 @@ from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path, PurePosixPath
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import yaml
 
@@ -7231,6 +7231,26 @@ _CACHEABLE_PROCESS_GATES: frozenset[str] = frozenset(
         "cve_fingerprint_scan",
         "render_lint",
         "lexcheck",
+        # T-4361: these twelve were genuine drift, not a deliberate
+        # exclusion -- each reads only `st.repo_root` (a schema/flag-
+        # coverage check against `frob.toml`/one dotted-path import, per
+        # their own `_build_process_jobs` comments), the exact
+        # `root_content_key`-covered shape this frozenset's docstring
+        # already claims as "the full set". Caught by the
+        # `_KNOWN_UNCACHEABLE_PROCESS_GATES` completeness assert below,
+        # which fired against these twelve before this fix.
+        "flag_coverage",
+        "refs_schema",
+        "native_schema",
+        "profile_schema",
+        "toplevel_scalar_schema",
+        "testing_schema",
+        "arch_schema",
+        "docblocks_schema",
+        "gates_schema",
+        "test_runner_schema",
+        "dup_schema",
+        "graph_schema",
         "dead_symbols",
         "wire",
         "cache",
@@ -7792,6 +7812,79 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # protocol-tagged symbols.
         "protocol_summary": _ProcessJob(protocol_summary_gate, (st.root, st.snapshot)),
     }
+
+
+# frob:ticket T-4361
+def _process_job_names_gate_inputs() -> _GateInputs:
+    """A structurally-valid but semantically-empty `_GateInputs` used ONLY to
+    enumerate `_build_process_jobs`'s keys at import time (T-4361): that
+    function only forwards `st.root`/`st.repo_root`/`st.snapshot`/`st.diff`/
+    `st.queue` BY REFERENCE into each `_ProcessJob.args` tuple -- it never
+    dereferences any field's value -- so a single shared placeholder for
+    every field costs nothing and touches no filesystem, network, or real
+    gate logic. `_GateInputs` is a plain (non-pydantic) frozen dataclass, so
+    passing one placeholder for every annotated type is not a validation
+    error here the way it would be for a `BaseModel`."""
+    placeholder = cast(Any, object())
+    return _GateInputs(
+        root=placeholder,
+        repo_root=placeholder,
+        cfg=placeholder,
+        snapshot=placeholder,
+        queue=placeholder,
+        lock=placeholder,
+        diff=placeholder,
+        tests=placeholder,
+        invariants=(),
+        rules=(),
+        rule_ids=frozenset(),
+        coverage=Nothing(),
+        test_policy=placeholder,
+        systems=(),
+    )
+
+
+#: The full, always-current set of `_build_process_jobs` entry names (T-4361)
+#: -- DERIVED by calling the real function instead of hand-copied, so this
+#: can never itself drift the way `_CACHEABLE_PROCESS_GATES` silently did.
+_PROCESS_JOB_NAMES: frozenset[str] = frozenset(
+    _build_process_jobs(_process_job_names_gate_inputs())
+)
+
+# frob:ticket T-4361
+#: `_build_process_jobs` entries T-4361 found are NOT safe for the whole-
+#: tree gate cache, with the reason recorded per entry -- mirrors
+#: `_CACHEABLE_GATES`'s own "deprecated"/"capability_conformance" exclusion
+#: comments above `_CACHEABLE_GATES`'s declaration. Whether a gate belongs
+#: here is a judgement call about what it reads BEYOND its `_ProcessJob`
+#: args tuple (environment, wall-clock time, filesystem state
+#: `_GateInputs` does not model at all) that no mechanical check can see
+#: inside the gate function to verify -- exactly why this stays a curated,
+#: reviewed allowlist rather than something derived, matching several of
+#: T-4333's surveyed lists. Empty today: T-4361's audit found every current
+#: `_build_process_jobs` entry reads only `root`/`repo_root`/`snapshot`
+#: (covered unconditionally by `root_content_key`) plus, for `clones`/
+#: `wire`, a `diff`/`queue` side channel already folded via
+#: `_process_gate_extra` -- so every entry qualifies as cacheable today. A
+#: REAL future exception belongs here with its reason, never silently
+#: dropped from both sets.
+_KNOWN_UNCACHEABLE_PROCESS_GATES: frozenset[str] = frozenset()
+
+assert (
+    _CACHEABLE_PROCESS_GATES | _KNOWN_UNCACHEABLE_PROCESS_GATES == _PROCESS_JOB_NAMES
+), (
+    "_CACHEABLE_PROCESS_GATES/_KNOWN_UNCACHEABLE_PROCESS_GATES and "
+    "_build_process_jobs have drifted apart -- every _build_process_jobs "
+    "entry must be explicitly categorized as either cacheable "
+    "(_CACHEABLE_PROCESS_GATES) or documented-uncacheable "
+    "(_KNOWN_UNCACHEABLE_PROCESS_GATES, with a reason) so a new "
+    "process-job gate can never silently land uncached -- no error, no "
+    "warning, no test failure, just a permanent perf regression for that "
+    "one gate (T-4361)"
+)
+assert not (_CACHEABLE_PROCESS_GATES & _KNOWN_UNCACHEABLE_PROCESS_GATES), (
+    "a gate cannot be both cacheable and documented-uncacheable"
+)
 
 
 # frob:ticket T-0602

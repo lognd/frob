@@ -1,7 +1,7 @@
 ---
 id: T-4361
 title: Derive _CACHEABLE_PROCESS_GATES completeness check
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -27,6 +27,11 @@ scope_changes:
     module, which already covers _CACHEABLE_PROCESS_GATES
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/test_gate_cache.py::TestCacheableProcessGatesCompleteness::test_import_time_assert_is_clean_on_the_real_module
+- tests/test_gate_cache.py::TestCacheableProcessGatesCompleteness::test_completeness_check_fires_when_a_gate_is_unregistered
+- tests/test_gate_cache.py::TestCacheableProcessGatesCompleteness::test_completeness_check_is_silent_once_a_gate_is_registered
+- tests/test_gate_cache.py::TestCacheableProcessGatesCompleteness::test_process_job_names_is_derived_not_hand_copied
 designated_repro_test: null
 threat: null
 component: null
