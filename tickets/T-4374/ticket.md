@@ -19,6 +19,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'waive BUG002: macOS-only defect not reproducible on this Linux checkout'
+  actor: logan
+  at: '2026-09-09'
+  old_length: 1931
+  new_length: 2490
 evidence:
 - tests/test_coverage.py::TestWorkerCrashRetryRealSubprocessRecoversFromAddopts::test_real_pytest_subprocess_recovers_and_produces_coverage_xml
 designated_repro_test: null
@@ -58,3 +65,6 @@ production argv is already resolved via project_tool_argv and
 unaffected. No change needed in src/frob/testing/_coverage_refresh.py.
 
 Verify: uv run pytest tests/test_coverage.py::TestWorkerCrashRetryRealSubprocessRecoversFromAddopts::test_real_pytest_subprocess_recovers_and_produces_coverage_xml -x -q
+
+
+frob:waive BUG002 reason="macOS-only PATH-resolution defect (FileNotFoundError for a bare pytest argv reaching a deeply-nested xdist-worker subprocess-of-subprocess) -- unreproducible on this Linux dev checkout, same as _spawn/_spawn_with_watchdog defects generally: the test already passes at main here because the bug is an ambient-PATH fact of the macOS CI runner, not something a local test-vs-fix diff can falsify. Fix is a direct code-reading match to the established T-4369 precedent (sys.executable -m pytest instead of bare pytest), not a guess."
