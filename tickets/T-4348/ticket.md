@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: test coverage for the orphaned-lock-detector fix lives in this file
+  actor: logan
+  at: '2026-09-08'
 body_changes:
 - mode: append
   reason: Record the measured breakdown plus the detector's false data-loss claim
