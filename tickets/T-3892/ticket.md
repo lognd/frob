@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_ledger_mirror.py
   reason: the mirror module writing partial ticket records to main (T-3892 part A)
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'AFFECT001: mirror_evidence_rebind_to_primary''s affects()-closure doc needed
+    a note about the new union_evidence parameter'
   actor: logan
   at: '2026-09-09'
 body_changes:
