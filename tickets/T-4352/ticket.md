@@ -2,7 +2,7 @@
 id: T-4352
 title: Type checker exits 2 with no diagnostics in macOS fixture projects, failing
   14 tests
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
