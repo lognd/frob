@@ -2,7 +2,7 @@
 id: T-4350
 title: Tests invoke frob through the project runner inside fixture projects, 50 macOS
   failures
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
