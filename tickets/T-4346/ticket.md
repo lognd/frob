@@ -3,7 +3,7 @@ id: T-4346
 title: Audit remaining T-3844-promoted rule families for waivability/structural silence
   (PERF/SEC/PII/ARCH/DOC/REG/COMPLIANCE/KRB/DEPLOY/FFI/LANG/NATIVE/PROFILE/WAIVE/VET/REL/etc.)
 state: done
-kind: bug
+kind: docs
 origin: human
 created: '2026-09-08'
 priority: medium
@@ -28,6 +28,15 @@ scope_changes:
     ticket file is in-scope bookkeeping for closing this ticket
   actor: logan
   at: '2026-09-09'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: 'audit ticket touching only frob.toml and ticket files; closed with cmd:
+    evidence, which COV003 permits only for docs/ux kinds (CI self-gate error, run
+    34365460002)'
+  actor: logan
+  at: '2026-09-09'
 body_changes:
 - mode: append
   reason: 'BUG002 front door (T-2393): time-boxed audit ticket: examined its slice
@@ -49,6 +58,8 @@ body_changes:
   new_length: 3764
 evidence:
 - cmd:grep -c "^" tickets/T-4364/ticket.md exit=0 sha256=461144ccfd56
+kind_history:
+- 2026-09-09 bug->docs evidence=1 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
