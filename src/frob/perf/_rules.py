@@ -634,6 +634,156 @@ def _perf004_ast_hit_lines(path: str) -> frozenset[int] | None:
     return frozenset(hits)
 
 
+# frob:ticket T-4088
+_LOOP_NODE_TYPES = frozenset({"for_statement", "while_statement"})
+
+
+# frob:ticket T-4088
+def _for_bound_names(node: Node) -> frozenset[str]:
+    """Every identifier in a `for_statement` node's `left` field (its bound
+    target(s) -- `for x in a:` gives `{x}`, `for x, y in pairs:` gives
+    `{x, y}`), or `frozenset()` for a `while_statement` (no bound
+    variable to correlate against, T-4088's documented `while`-loop
+    fallback, unchanged from `_perf003_outer_var`'s lexical precedent)."""
+    if node.type != "for_statement":
+        return frozenset()
+    left = _child_by_field(node, "left")
+    if left is None:
+        return frozenset()
+    names: set[str] = set()
+    stack = [left]
+    while stack:
+        n = stack.pop()
+        if n.type == "identifier":
+            names.add(_node_text(n))
+        stack.extend(n.children)
+    return frozenset(names)
+
+
+# frob:ticket T-4088
+def _direct_child_loops(body: Node) -> list[Node]:
+    """Every `for_statement`/`while_statement` node anywhere inside `body`'s
+    own subtree -- i.e. a loop genuinely NESTED under the outer loop, as
+    opposed to a sibling statement that merely appears later in the same
+    enclosing block. This is the AST-precise replacement for the lexical
+    `_next_statement_loop`'s "next loop token at bracket-depth 0" heuristic,
+    which cannot tell a truly nested loop from two sequential loops at the
+    same indentation (Python has no brackets marking block nesting, so
+    bracket depth alone is blind to this -- T-4088)."""
+    hits: list[Node] = []
+    stack = list(body.children)
+    while stack:
+        n = stack.pop()
+        if n.type in _LOOP_NODE_TYPES:
+            hits.append(n)
+        stack.extend(n.children)
+    return hits
+
+
+# frob:ticket T-4088
+def _equality_hit_in_body(body: Node, bound_names: frozenset[str]) -> Node | None:
+    """The first `comparison_operator` node containing `==` inside `body`'s
+    OWN subtree (never beyond it -- T-4088's second fix: the lexical
+    predicate scanned every token from the inner loop's header colon to
+    the END OF THE FUNCTION, so an unrelated `==` anywhere after the inner
+    loop, even outside both loops entirely, could satisfy it). When
+    `bound_names` is non-empty (a `for` outer loop), the comparison must
+    also involve at least one of them -- mirroring `_operand_names`'
+    outer-bound-variable correlation, but checking the whole operand
+    subtree rather than a one-bracket-level unwind (AST containment
+    already rules out the false-positive class that unwind existed to
+    dodge: a genuinely un-nested `==` cannot be inside `body` at all).
+    `bound_names` empty (a `while` outer loop, no bound variable) keeps
+    the existing accepted lower-volume gap: any `==` in `body` qualifies."""
+    stack = [body]
+    while stack:
+        n = stack.pop()
+        if n.type == "comparison_operator" and any(
+            c.type == "==" for c in n.children
+        ):
+            if not bound_names:
+                return n
+            idents: set[str] = set()
+            sub = [n]
+            while sub:
+                m = sub.pop()
+                # frob:waive PERF003 reason="stack-based AST subtree walk, one pass over nodes, not a cross join"  # noqa: E501
+                if m.type == "identifier":
+                    idents.add(_node_text(m))
+                sub.extend(m.children)
+            if idents & bound_names:
+                return n
+        stack.extend(n.children)
+    return None
+
+
+# frob:ticket T-4088
+@lru_cache(maxsize=None)
+def _perf003_ast_hit_lines(path: str) -> frozenset[int] | None:
+    """1-based line numbers of AST-confirmed PERF003 hits in the file at
+    `path` -- a loop genuinely nested inside another loop's `body` field
+    (not merely a later sibling loop at the same indentation, T-4088's
+    first fix), whose OWN body contains an `==` comparison correlated to
+    the outer loop's bound variable when it has one (T-4088's second fix
+    bounds the search to the inner loop's own body, never trailing code).
+    `None` if `path` cannot be re-parsed (same contract as
+    `_perf004_ast_hit_lines`) -- callers must fall back to the coarser
+    lexical `_perf003`, not assume zero hits.
+
+    Cached per path for one `frob check` process's lifetime, same
+    rationale as `_perf004_ast_hit_lines`."""
+    result = _raw_tree(Path(path))
+    if result.is_err:
+        return None
+    tree, _source, language = result.danger_ok
+    if language != "python":
+        return None
+    hits: set[int] = set()
+    stack = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        if node.type in _LOOP_NODE_TYPES:
+            body = _child_by_field(node, "body")
+            if body is not None:
+                bound = _for_bound_names(node)
+                for inner in _direct_child_loops(body):
+                    inner_body = _child_by_field(inner, "body")
+                    if inner_body is None:
+                        continue
+                    hit = _equality_hit_in_body(inner_body, bound)
+                    if hit is not None:
+                        hits.add(hit.start_point[0] + 1)
+        stack.extend(node.children)
+    return frozenset(hits)
+
+
+# frob:ticket T-4088
+def _perf003_fires(
+    tokens: tuple[str, ...],
+    depths: tuple[int, ...],
+    path: str,
+    span: tuple[int, int],
+) -> tuple[bool, int | None]:
+    """PERF003 fire decision, preferring the AST-precise
+    `_perf003_ast_hit_lines` (true loop-body nesting, T-4088) and falling
+    back to the coarse lexical `_perf003` only when `path` cannot be
+    re-parsed -- same `None`-means-fall-back contract as
+    `_perf004_python_fires`. Returns the offending `==` comparison's own
+    line when AST-precise (the real fix for this ticket's third,
+    line-number question: the lexical path anchors at the first `==`
+    matched anywhere in the function's source text via `_first_matching_
+    line`/`_EQ_PATTERN`, which is not necessarily this finding's own
+    construct); `None` for the lexical fallback, where the caller must
+    still resolve a line itself."""
+    ast_hits = _perf003_ast_hit_lines(path)
+    if ast_hits is None:
+        return _perf003(tokens, depths), None
+    span_hits = sorted(h for h in ast_hits if span[0] <= h <= span[1])
+    if not span_hits:
+        return False, None
+    return True, span_hits[0]
+
+
 # frob:ticket T-0021
 # frob:ticket T-0161
 def _method_call_in_loop(
@@ -792,8 +942,13 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
         hits = _best_effort_violations(
             tokens, depths, file.language, file.path, span_start, lines
         )
-    if _perf003(tokens, depths):
-        line = _first_matching_line(lines, span_start, (_EQ_PATTERN,))
+    fires, ast_line = _perf003_fires(tokens, depths, file.path, symbol.span)
+    if fires:
+        line = (
+            ast_line
+            if ast_line is not None
+            else _first_matching_line(lines, span_start, (_EQ_PATTERN,))
+        )
         hits.append(
             _violation(
                 "PERF003", file.path, line, "nested loops with an equality comparison"

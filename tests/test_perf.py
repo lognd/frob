@@ -237,6 +237,60 @@ def test_perf003_does_not_fire_on_sibling_statement_loops(tmp_path):
     assert not any(v.rule == "PERF003" for v in violations)
 
 
+def test_perf003_does_not_fire_on_sequential_while_loops(tmp_path):
+    """T-4088: PERF003 does not fire on two sequential (not nested) `while`
+    loops, even with an unrelated `==` after both -- the real false
+    positive that blocked the self-gate on both posix legs. `while` loops
+    have no bound variable, so the outer-var correlation guard that keeps
+    `test_perf003_does_not_fire_on_sibling_statement_loops` clean does not
+    apply here; the fix must instead recognize the second `while` is a
+    SIBLING, not nested inside the first `while`'s own body."""
+    # frob:ticket T-4088
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def poll_then_check(deadline_a, deadline_b, expected):\n"
+        "    result = 0\n"
+        "    while not ready() and now() < deadline_a:\n"
+        "        sleep(0.02)\n"
+        "    result = fetch()\n"
+        "    while alive() and now() < deadline_b:\n"
+        "        wait(0.1)\n"
+        "    assert result == expected\n"
+        "    return result\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF003" for v in violations)
+
+
+def test_perf003_fires_on_nested_while_loops_with_equality(tmp_path):
+    """T-4088: PERF003 still fires on a genuinely NESTED `while` pair whose
+    inner body has an equality comparison -- the positive control proving
+    the fix for the sequential-loops false positive did not also blind
+    the detector to real nested `while` loops."""
+    # frob:ticket T-4088
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def scan(rows, target):\n"
+        "    i = 0\n"
+        "    while i < len(rows):\n"
+        "        j = 0\n"
+        "        while j < len(rows[i]):\n"
+        "            if rows[i][j] == target:\n"
+        "                return True\n"
+        "            j += 1\n"
+        "        i += 1\n"
+        "    return False\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule == "PERF003" for v in violations)
+
+
 def test_perf003_fires_on_nested_join_with_intervening_statement(tmp_path):
     """PERF003 fires on a real nested equality join even when a setup
     statement (an accumulator init, a guard, ...) sits between the outer

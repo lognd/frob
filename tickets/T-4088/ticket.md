@@ -2,7 +2,7 @@
 id: T-4088
 title: PERF003 reports nested loops for two SEQUENTIAL loops, failing the self-gate
   on both posix legs (AST proves no nesting)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -65,6 +65,11 @@ scope_changes:
     now catches, bounded/not scale-sensitive per the existing PERF003 waiver convention
   actor: logan
   at: '2026-09-09'
+evidence:
+- tests/test_perf.py::test_perf003_does_not_fire_on_sequential_while_loops
+- tests/test_perf.py::test_perf003_fires_on_nested_while_loops_with_equality
+- tests/test_perf.py::test_perf003_anchors_to_equality_line_not_def_line
+- tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
 designated_repro_test: null
 threat: null
 component: null

@@ -641,6 +641,17 @@ def _path_shape_hint(
             ).resolve()
         except OSError:
             continue
+        # frob:waive PERF003 reason="T-4088: nested loop over undisposed findings from \
+        # ONE quarantine batch (small, bounded by one raise's own finding count) \
+        # crossed with dispositions from ONE clear_quarantine CLI call (bounded by \
+        # --file-ticket/--dismiss args on one invocation) -- neither side is a large \
+        # or growing collection, matching the existing PERF003 waiver convention \
+        # elsewhere in this repo (fleet_status.py, graph/summary.py, ...). T-4088's \
+        # AST-precise PERF003 fix is the first detector able to see this join at all \
+        # -- the old lexical version only ever read a for-loop's FIRST tuple-target \
+        # name as its bound variable (tokens[outer+1]), so `for rule_id, file, line in \
+        # undisposed:` bound only 'rule_id' and never matched this comparison's 'file' \
+        # operand -- a false negative, not a case this code newly introduced"
         for d_rule, d_file, d_line in dispositions:
             if d_rule != rule_id or d_line != line or d_file == file:
                 continue
