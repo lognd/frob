@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_affects_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_query_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_doable_tickets_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_touched_tests_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_exports_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_stats_json_daemon_matches_in_process
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_map_json_daemon_matches_in_process
 designated_repro_test: null
 threat: null
 component: null
