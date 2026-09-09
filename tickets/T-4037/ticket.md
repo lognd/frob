@@ -1,7 +1,7 @@
 ---
 id: T-4037
 title: 'rule-shaped finding kind: done-condition is rule loaded, not instances fixed'
-state: queued
+state: in-progress
 kind: invariant
 origin: agent
 created: '2026-09-06'
