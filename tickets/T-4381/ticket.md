@@ -2,7 +2,7 @@
 id: T-4381
 title: rapid-profile lands skip the pre-commit sweep, so format drift on touched files
   ships unchecked
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
