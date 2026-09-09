@@ -2,7 +2,7 @@
 id: T-4269
 title: the windows test step takes 57 minutes against its own budget, and because
   it fails the gate step is skipped so gates have never run on windows
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
@@ -36,7 +36,7 @@ acceptance_amendments:
     the work is genuinely that large
   new_text: null
   reason: T-4269 scoped down to acceptance [3] only per direct dispatch instruction;
-    per-test time decomposition and its fix (was [1]/[2]) carried forward to T-draft-226a2b6c
+    per-test time decomposition and its fix (was [1]/[2]) carried forward to T-4372
   actor: logan
   at: '2026-09-09'
 - op: remove
@@ -45,7 +45,7 @@ acceptance_amendments:
     then where the time goes is established per test or per file rather than estimated
   new_text: null
   reason: T-4269 scoped down to the gate-decoupling change only, per direct dispatch
-    instruction; per-test time decomposition carried forward to T-draft-226a2b6c
+    instruction; per-test time decomposition carried forward to T-4372
   actor: logan
   at: '2026-09-09'
 threat: null

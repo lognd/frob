@@ -356,3 +356,37 @@ class TestTestStepsNoRerunFlakes:
         assert '"--reruns"' not in run_text, (
             "windows Test step's pytest invocation must not carry --reruns (T-3777)"
         )
+
+
+class TestSelfGateRunsOnWindowsEvenIfTestStepFails:
+    """T-4269: GitHub Actions' default per-step `if: success()` skips
+    every step after the first failure in a job, so a failing windows
+    Test step silently skipped the self-gate step after it -- gates have
+    therefore NEVER actually run on windows, independent of whether the
+    Test step's own failures were real. Locks that the self-gate step's
+    run condition was widened to also fire on windows regardless of
+    upstream step outcome, while leaving ubuntu/macos on their existing
+    fail-fast `success()` behavior."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_self_gate_step_runs_on_windows_after_a_prior_failure(self) -> None:
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        gate_step = next(
+            step for step in steps if step.get("name") == "frob check (self-gate)"
+        )
+        condition = gate_step.get("if", "")
+        assert "matrix.os == 'windows-latest'" in condition, (
+            "self-gate step's `if:` must special-case windows-latest so a "
+            "failing Test step does not silently skip it"
+        )
+        assert "success()" in condition, (
+            "ubuntu/macos must keep their existing success()-gated "
+            "fail-fast behavior -- the windows special-case must be "
+            "ADDED, not a wholesale replacement of success()"
+        )
+        assert "cancelled()" in condition, (
+            "the widened condition must still exclude a genuinely "
+            "cancelled run (bare `success() || matrix.os == "
+            "'windows-latest'` would not)"
+        )

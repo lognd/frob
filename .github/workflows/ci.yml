@@ -670,7 +670,18 @@ jobs:
       # printed line a reviewer had to notice by hand. ERROR-tier findings
       # now fail the job outright; only the swallow is gone, not the
       # command -- a genuinely warning-only run still exits 0 on its own.
+      # T-4269: this step (and the checks after it) used to carry the
+      # GitHub Actions default `if: success()`, so a failing windows Test
+      # step skipped every step after it -- including this one -- and
+      # gates have therefore NEVER actually run on windows, independent of
+      # whether the Test step's own failures are real. `matrix.os ==
+      # 'windows-latest'` is ADDED to the run condition (not swapped in
+      # for `success()`) so ubuntu/macos keep their existing fail-fast
+      # behavior unchanged; `!cancelled()` keeps a genuinely cancelled
+      # run from still executing this step, which bare
+      # `success() || matrix.os == 'windows-latest'` would not exclude.
       - name: frob check (self-gate)
+        if: ${{ !cancelled() && (success() || matrix.os == 'windows-latest') }}
         run: uv run frob check
       # T-1265: `.frob/coverage-stamp` and `.frob/baseline` are gitignored
       # (.gitignore:21,:72) and never restored in a fresh CI checkout, so
