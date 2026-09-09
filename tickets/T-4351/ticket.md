@@ -1,7 +1,7 @@
 ---
 id: T-4351
 title: Windows completes with 4 platform-specific failures; drive them to zero
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -17,7 +17,7 @@ scope:
 - tests/test_worktree_guard.py
 - tests/unit/test_main_entry.py
 - tests/test_gate_cache.py
-- tickets/T-draft-65a1a73b/**
+- tickets/T-4357/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,7 +35,7 @@ scope_changes:
   actor: logan
   at: '2026-09-08'
 - op: add
-  glob: tickets/T-draft-65a1a73b/**
+  glob: tickets/T-4357/**
   reason: 'T-4351: filing the followup ticket for the non-reproducible 4th Windows
     failure touches its own ticket file'
   actor: logan

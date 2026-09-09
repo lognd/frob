@@ -607,7 +607,21 @@ class TestAgentEnvStdoutPurity:
     def test_bare_eval_succeeds_with_no_filtering(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_bare_eval_succeeds_with_no_filtering  # noqa: E501
         _init_repo(tmp_path)
-        script = f'eval "$(uv run frob agent env {shlex.quote(str(tmp_path))})" && echo EVAL_OK'
+        # T-4351 (Windows): invoke the SAME interpreter running this test
+        # (`sys.executable -m frob`) rather than a nested `uv run frob`.
+        # MEASURED on windows-latest: a second, bash-internal `uv run`
+        # here re-resolves the active venv against the current directory
+        # and, when that match fails for any reason (observed: uv's
+        # VIRTUAL_ENV-vs-project-path check), falls back to a bare
+        # `python3` PATH lookup -- which on a stock Windows image hits
+        # the Microsoft Store App Execution Alias stub (exit 9009) instead
+        # of a real interpreter, corrupting the very stdout this test
+        # `eval`s. `sys.executable` is an absolute path needing no venv
+        # resolution or PATH search at all, so it is immune to both.
+        script = (
+            f'eval "$({shlex.quote(sys.executable)} -m frob agent env '
+            f'{shlex.quote(str(tmp_path))})" && echo EVAL_OK'
+        )
         # T-3936: `stdin=subprocess.DEVNULL` -- without it, `bash` (and
         # the `uv run frob agent env` it spawns) inherits this test
         # process's own fd 0 unchanged. Proven on Linux with a pty stand-

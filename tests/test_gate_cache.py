@@ -11,6 +11,9 @@ import random
 import subprocess
 from pathlib import Path
 
+import pytest
+
+import frob.gates as gates_module
 from frob.gates import GateConfig, run_gates
 from frob.gates._gate_cache import (
     TrackedSnapshot,
@@ -563,11 +566,25 @@ class TestRunGatesUseCacheProcessGates:
         assert second.stats.timing_s["archgate"] == 0.0
 
     def test_tracked_file_edit_forces_process_gate_recompute(
-        self, tmp_path: Path
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """A real tree edit must force a fresh `archgate` result, not a
         stale cached one -- the T-1445 correctness bar mirrored from
-        `TestEvaluateCacheableGate.test_edit_to_touched_file_forces_miss`."""
+        `TestEvaluateCacheableGate.test_edit_to_touched_file_forces_miss`.
+
+        T-4351 (Windows): this used to read `stats.timing_s["archgate"]
+        != 0.0` as the "was it actually recomputed" signal -- MEASURED on
+        windows-latest, a genuine recompute of this one-line file can
+        finish inside `time.process_time()`'s own clock granularity and
+        legitimately report 0.0, indistinguishable from the 0.0
+        `_seed_preloaded_process_cache` sentinel a cache HIT reports on
+        every platform. `FROB_DISABLE_POOL_PRELOAD=1` runs the process
+        gate serially IN this test's own process/thread (T-3670) instead
+        of a `ProcessPoolExecutor` worker, so a monkeypatched
+        `frob.gates.arch_gate` spy actually observes the call and gives a
+        platform-independent, clock-free answer to the one question this
+        test asks: did `arch_gate` run again."""
+        monkeypatch.setenv("FROB_DISABLE_POOL_PRELOAD", "1")
         _write(tmp_path, "a.py", "def f():\n    pass\n")
         _git_init(tmp_path)
         cfg = GateConfig(
@@ -576,8 +593,17 @@ class TestRunGatesUseCacheProcessGates:
         run_gates(cfg, use_cache=True)
         _write(tmp_path, "a.py", "def f():\n    return 1\n")
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
-        second = run_gates(cfg, use_cache=True).danger_ok
-        assert second.stats.timing_s["archgate"] != 0.0, (
+
+        calls: list[Path] = []
+        original_arch_gate = gates_module.arch_gate
+
+        def _spy(root: Path) -> tuple:
+            calls.append(root)
+            return original_arch_gate(root)
+
+        monkeypatch.setattr(gates_module, "arch_gate", _spy)
+        run_gates(cfg, use_cache=True)
+        assert calls, (
             "a tracked-file edit must force a real archgate re-run, not a "
             "stale cache hit"
         )

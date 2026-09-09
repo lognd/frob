@@ -426,12 +426,19 @@ class TestEnsureVenv:
         # No real filesystem write (SELFAUDIT001/T-4308): `_is_real_venv` is
         # mocked directly rather than materializing a `pyvenv.cfg` under
         # `tmp_path`, so this test needs no fs.write capability declaration.
+        # T-4351 (Windows): the implementation round-trips `sys.prefix`
+        # through `Path(...)` before storing it, which normalizes
+        # separators for the host platform (`\fake\venv` on Windows) --
+        # compare against that same round-trip rather than a hardcoded
+        # POSIX literal, or this assertion is platform-specific by
+        # accident rather than by intent.
+        fake_prefix = "/fake/venv"
         monkeypatch.delenv("VIRTUAL_ENV", raising=False)
-        monkeypatch.setattr(sys, "prefix", "/fake/venv")
+        monkeypatch.setattr(sys, "prefix", fake_prefix)
         monkeypatch.setattr(main_module, "_is_real_venv", lambda prefix: True)
         main_module._ensure_ambient_virtual_env()
         try:
-            assert main_module.os.environ["VIRTUAL_ENV"] == "/fake/venv"
+            assert main_module.os.environ["VIRTUAL_ENV"] == str(Path(fake_prefix))
         finally:
             main_module.os.environ.pop("VIRTUAL_ENV", None)
 
