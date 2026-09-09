@@ -2,7 +2,7 @@
 id: T-4346
 title: Audit remaining T-3844-promoted rule families for waivability/structural silence
   (PERF/SEC/PII/ARCH/DOC/REG/COMPLIANCE/KRB/DEPLOY/FFI/LANG/NATIVE/PROFILE/WAIVE/VET/REL/etc.)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-08'
