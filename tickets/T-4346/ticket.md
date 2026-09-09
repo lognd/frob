@@ -2,7 +2,7 @@
 id: T-4346
 title: Audit remaining T-3844-promoted rule families for waivability/structural silence
   (PERF/SEC/PII/ARCH/DOC/REG/COMPLIANCE/KRB/DEPLOY/FFI/LANG/NATIVE/PROFILE/WAIVE/VET/REL/etc.)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-08'
@@ -28,6 +28,27 @@ scope_changes:
     ticket file is in-scope bookkeeping for closing this ticket
   actor: logan
   at: '2026-09-09'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): time-boxed audit ticket: examined its slice
+    of T-3844-promoted rules, left every one at its current severity (no frob.toml
+    edits warranted), and filed the un-walked remainder as T-4364 rather than leaving
+    this ticket open indefinitely; no code changed'
+  actor: logan
+  at: '2026-09-09'
+  old_length: 3192
+  new_length: 3478
+- mode: append
+  reason: 'BUG002 front door (T-2393): time-boxed audit ticket: examined its slice
+    of T-3844-promoted rules, left every one at its current severity (no frob.toml
+    edits warranted), and filed the un-walked remainder as T-4364 rather than leaving
+    this ticket open indefinitely; no code changed'
+  actor: logan
+  at: '2026-09-09'
+  old_length: 3478
+  new_length: 3764
+evidence:
+- cmd:grep -c "^" tickets/T-4364/ticket.md exit=0 sha256=461144ccfd56
 designated_repro_test: null
 threat: null
 component: null
