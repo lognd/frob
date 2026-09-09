@@ -39,6 +39,8 @@ scope_changes:
     avoids lease collision with T-4353
   actor: logan
   at: '2026-09-09'
+evidence:
+- cmd:uv run frob check --ticket T-4333 exit=0 sha256=e0833d43ac73
 designated_repro_test: null
 threat: null
 component: null
