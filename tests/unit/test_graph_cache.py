@@ -1176,3 +1176,147 @@ class TestReplaceWithRetry:
         graph_cache._replace_with_retry(src, dst, what="probe")
         assert self._marker(dst) == "winner"
         assert not src.exists()
+
+
+# frob:ticket T-4159
+class TestCorruptCacheSelfHeals:
+    """T-4159: a `cache.db` whose bytes fail sqlite's own `PRAGMA
+    integrity_check` must be detected and rebuilt from empty, never
+    silently served or endlessly retried against -- the exact live
+    symptom measured in this checkout (`store_file_data` retrying 3
+    times against a genuinely corrupt db, then giving up with a
+    misleading "cache lock never released" message)."""
+
+    @staticmethod
+    def _corrupt_in_place(path: Path) -> None:
+        """Flip a block of bytes well past sqlite's header (offset 100)
+        so `PRAGMA integrity_check` reports real page-structure damage,
+        not merely an empty/truncated file -- the same "torn write to a
+        live page" shape production hits, not a synthetic string match."""
+        with open(path, "r+b") as fh:
+            fh.seek(100)
+            fh.write(b"\xff" * 200)
+
+    def test_integrity_check_reports_corrupt(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_chec\
+        # k_reports_corrupt
+        """MUST-FIRE half 1: a deliberately corrupted db fails the check.
+        Positive control (MUST-STAY-QUIET): an untouched db still passes."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        conn.close()
+        assert graph_cache._cache_integrity_ok(path) is True
+
+        self._corrupt_in_place(path)
+        assert graph_cache._cache_integrity_ok(path) is False
+
+    def test_corrupt_cache_self_heals(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_\
+        # self_heals
+        """MUST-FIRE fixture (THIRD FIXTURE): `_rebuild_because_corrupt`
+        replaces a corrupt db with a fresh, empty, schema-complete one
+        rather than raising or handing back the bad bytes."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        graph_cache.store_file_data(
+            conn,
+            file_path="src/a.py",
+            content_hash="deadbeef",
+            mtime_ns=1,
+            size=1,
+            symbols=(),
+            edges=(),
+            malformed=(),
+        )
+        conn.commit()
+        conn.close()
+        self._corrupt_in_place(path)
+        assert graph_cache._cache_integrity_ok(path) is False
+
+        fresh = graph_cache._rebuild_because_corrupt(path, what="test probe")
+        try:
+            assert graph_cache._cache_integrity_ok(path) is True
+            # Data loss is expected and correct: a corrupt db cannot be
+            # trusted to still hold what it appeared to hold.
+            assert graph_cache.get_file_meta(fresh, "src/a.py") is None
+        finally:
+            fresh.close()
+
+    def test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale\
+        # _reconnect_rebuilds_and_completes_on_corruption
+        """MUST-FIRE fixture, end to end: an ALREADY-OPEN connection
+        (mirroring production, where `connect()` succeeded before the db
+        went bad mid-session) that hits "database disk image is
+        malformed" mid-operation must have the operation complete
+        against a rebuilt cache, not raise the stale error forever."""
+        path = tmp_path / "cache.db"
+        setup = graph_cache.connect(path)
+        graph_cache.store_file_data(
+            setup,
+            file_path="src/a.py",
+            content_hash="deadbeef",
+            mtime_ns=1,
+            size=1,
+            symbols=(),
+            edges=(),
+            malformed=(),
+        )
+        setup.commit()
+        setup.close()
+        self._corrupt_in_place(path)
+
+        # `_open` only sets pragmas -- it does not touch a page, so it
+        # succeeds even against a corrupt file, exactly like a
+        # connection that was opened before the corruption occurred.
+        stale = graph_cache._open(path)
+
+        # Must not raise, and must not merely retry forever against the
+        # same bad bytes.
+        result = graph_cache.get_file_meta(stale, "src/a.py")
+        assert result is None, (
+            "the corrupt cache was rebuilt (empty), so the prior entry "
+            "is correctly gone rather than served from bad bytes"
+        )
+        assert graph_cache._cache_integrity_ok(path) is True, (
+            "the on-disk cache was not actually rebuilt clean"
+        )
+
+    def test_healthy_cache_never_triggers_a_rebuild(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_healthy_cache_\
+        # never_triggers_a_rebuild
+        """MUST-STAY-QUIET: an ordinary, healthy cache never calls the new
+        rebuild path -- this fix must not degrade the common case."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        graph_cache.store_file_data(
+            conn,
+            file_path="src/a.py",
+            content_hash="deadbeef",
+            mtime_ns=1,
+            size=1,
+            symbols=(),
+            edges=(),
+            malformed=(),
+        )
+        conn.commit()
+
+        calls: list[Path] = []
+        monkeypatch.setattr(
+            graph_cache,
+            "_rebuild_because_corrupt",
+            lambda p, **kw: (
+                calls.append(p) or graph_cache._recreate(sqlite3.connect(str(p)), p)
+            ),
+        )
+
+        assert graph_cache.get_file_meta(conn, "src/a.py") == ("deadbeef", 1, 1)
+        assert calls == [], "a healthy cache must never be rebuilt"

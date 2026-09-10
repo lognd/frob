@@ -3,7 +3,7 @@ id: T-4159
 title: 'the gate cache is measurably corrupt in this checkout and a consumer reports
   it serving a stale finding across clean runs: correctness surface, not a performance
   cache'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -38,17 +38,25 @@ body_changes:
   at: '2026-09-07'
   old_length: 5139
   new_length: 7354
+evidence:
+- tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_integrity_check_reports_corrupt
+- tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption
+- tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_healthy_cache_never_triggers_a_rebuild
+- tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_corrupt_cache_self_heals
 designated_repro_test: null
 acceptance:
 - text: given a file whose content changed after a finding was cached for it, when
     the gate runs, then the new result is produced rather than the cached one
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption
 - text: given an unchanged file, when the gate runs, then it is still served from
     cache
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_healthy_cache_never_triggers_a_rebuild
 - text: given a corrupted cache database, when the tool opens it, then it is detected
     and rebuilt rather than read, and the run says so
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_integrity_check_reports_corrupt
 threat: null
 component: null
 anchor: false

@@ -1422,6 +1422,103 @@ def _is_stale_or_corrupt_connection(exc: sqlite3.Error) -> bool:
     return any(shape in msg for shape in _STALE_CONNECTION_ERROR_SHAPES)
 
 
+# frob:ticket T-4159
+# T-4159: the subset of `_STALE_CONNECTION_ERROR_SHAPES` a blind reopen
+# CANNOT fix -- "no such table"/"disk i/o error"/"unable to open database
+# file" are all shapes a SIBLING's atomic os.replace produces against a
+# stale handle (T-3634's own reasoning: the file at `path` is fine, this
+# connection's view of it is not, so reopening at the canonical path
+# already resolves it). "database disk image is malformed" and "database
+# is corrupted" are different in kind: sqlite emits them when the BYTES ON
+# DISK fail its own page-structure checks, which describes the file
+# itself, not this connection's view of it -- reopening the same path
+# reads the same bad bytes again. Before this ticket, both recovery loops
+# that consult `_is_stale_or_corrupt_connection` (`_reconnect_delay_for`/
+# `_run_with_stale_reconnect` and `_recover_fingerprint_connection`)
+# treated every shape in that tuple identically: reopen-and-retry a fixed
+# number of times, then re-raise the SAME malformed-database error
+# forever -- measured live in this checkout (2026-09-07/09) as
+# `store_file_data` retrying 3 times against a genuinely corrupt
+# `cache.db` and giving up with a misleading "cache lock never released"
+# message, when the real fault was never a lock at all.
+_GENUINE_CORRUPTION_ERROR_SHAPES = (
+    "database disk image is malformed",
+    "database is corrupted",
+)
+
+
+# frob:ticket T-4159
+# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
+def _is_genuine_corruption_shape(exc: sqlite3.Error) -> bool:
+    """`True` iff `exc`'s message names one of `_GENUINE_CORRUPTION_ERROR_
+    SHAPES` -- a shape a fresh connection to the SAME path cannot recover
+    from, because the fault is in the bytes on disk, not this connection's
+    view of them (T-4159; see that constant's own docstring)."""
+    msg = str(exc).lower()
+    return any(shape in msg for shape in _GENUINE_CORRUPTION_ERROR_SHAPES)
+
+
+# frob:ticket T-4159
+# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_reports_corrupt kind="unit"  # noqa: E501
+def _cache_integrity_ok(path: Path) -> bool:
+    """`True` only if sqlite's own `PRAGMA integrity_check` reports the
+    single row `"ok"` for the database at `path` (T-4159's detection
+    half: make a corrupt cache LOUD rather than silently served).
+
+    Opens a throwaway connection rather than reusing a caller's -- a
+    connection that already raised a corruption-shaped error may itself
+    be in a state where further statements are unreliable, and this
+    check must be trustworthy in EITHER direction: reported clean means
+    genuinely clean, reported corrupt (or unreadable at all) means never
+    serve it. Any failure to even open/query `path` (a truncated file, a
+    permissions error, sqlite refusing a non-database file outright)
+    degrades to `False` -- "cannot confirm clean" -- so the caller's bias
+    stays on the side of rebuilding rather than trusting an answer this
+    check could not actually get: the ticket's own "prefer a slow correct
+    run over a fast wrong one" acceptance criterion."""
+    try:
+        conn = sqlite3.connect(str(path), timeout=5.0)
+    except sqlite3.Error:
+        return False
+    try:
+        cur = conn.execute("PRAGMA integrity_check")
+        rows = cur.fetchall()
+    except sqlite3.Error:
+        return False
+    finally:
+        conn.close()
+    return len(rows) == 1 and rows[0][0] == "ok"
+
+
+# frob:ticket T-4159
+# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_heals kind="unit"  # noqa: E501
+def _rebuild_because_corrupt(path: Path, *, what: str) -> sqlite3.Connection:
+    """T-4159's repair half: `path`'s own `PRAGMA integrity_check` has
+    already reported it corrupt (never called speculatively -- always
+    gated on `_cache_integrity_ok` returning `False` first, so this never
+    discards a database that was merely mid-replace under a sibling), so
+    quarantine it and open a fresh, schema-complete, empty replacement via
+    `_recreate`'s own atomic rename-aside-then-rebuild sequence -- the
+    exact same derived-state recovery `connect()` already applies at its
+    own two corruption-detection points (T-0019/T-0141), reused here
+    rather than re-derived (NO DUPLICATION) so a mid-life corruption
+    discovered by a live connection's failed query is repaired exactly
+    the same way a corruption discovered at connect-time already is.
+    Logged at ERROR, not WARNING: this is data loss (every cached parse
+    result for this path is gone, the next build reparses from scratch)
+    and the ticket's own acceptance criterion is that a corrupt cache
+    "says so" in the run's own output, not merely in a debug log."""
+    _log.error(
+        "cache: %s failed PRAGMA integrity_check at %s -- the cache is "
+        "corrupt, not merely busy/stale; quarantining and rebuilding "
+        "from empty rather than serving or retrying against it (T-4159)",
+        what,
+        path,
+    )
+    throwaway = sqlite3.connect(str(path), timeout=5.0)
+    return _recreate(throwaway, path)
+
+
 def _conn_path(conn: sqlite3.Connection) -> Path | None:
     """Best-effort recover the on-disk path `conn` was opened against, via
     sqlite's own `PRAGMA database_list` (T-3634).
@@ -1524,10 +1621,82 @@ def _reconnect_delay_for(
     return path, 0.0, False
 
 
+# frob:ticket T-4159
+# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
+def _rebuild_if_genuinely_corrupt(
+    active: sqlite3.Connection,
+    path: Path | None,
+    exc: sqlite3.Error,
+    *,
+    owned: bool,
+    what: str,
+) -> sqlite3.Connection | None:
+    """`_run_with_stale_reconnect`'s T-4159 pre-check, split out to keep
+    that function under ARCH001's line threshold: a genuine on-disk-
+    corruption shape can never be fixed by the blind reopen-and-retry
+    loop that function otherwise falls through to -- reopening the SAME
+    path reads the SAME bad bytes. Verified via `PRAGMA integrity_check`
+    (never trusted from `exc`'s message alone) before ever rebuilding.
+
+    Returns the fresh, rebuilt connection (closing `active` first if the
+    caller owned it) when `exc` is confirmed genuine corruption, or
+    `None` when it is not -- the caller's own signal to fall through to
+    the ordinary stale-connection retry path unchanged."""
+    if (
+        path is None
+        or not _is_genuine_corruption_shape(exc)
+        or _cache_integrity_ok(path)
+    ):
+        return None
+    if owned:
+        _close_conn(active)
+    return _rebuild_because_corrupt(path, what=what)
+
+
 # frob:ticket T-3634
 # frob:ticket T-3669
 # frob:ticket T-3706
 # frob:ticket T-3733
+def _reopen_after_error(
+    exc: sqlite3.Error,
+    active: sqlite3.Connection,
+    path: Path | None,
+    *,
+    deadline: float,
+    attempt: int,
+    readonly_attempt: int,
+    owned: bool,
+    what: str,
+) -> tuple[sqlite3.Connection, Path, int, int]:
+    """`_run_with_stale_reconnect`'s ordinary (non-corruption) reopen step,
+    split out to keep that function under ARCH001's line threshold
+    (T-4159, pure extraction -- no behavior change): asks `_reconnect_
+    delay_for` whether `exc` earns another attempt, closes `active` if
+    this function owns it, reopens at the path it returns, sleeps any
+    backoff delay, and returns `(new connection, new canonical path, new
+    attempt count, new readonly-attempt count)` for the caller to adopt.
+    Re-raises `exc` unchanged when `_reconnect_delay_for` decides it is
+    not retryable at all."""
+    new_path, delay, readonly = _reconnect_delay_for(
+        exc,
+        what=what,
+        path=path,
+        deadline=deadline,
+        attempt=attempt,
+        readonly_attempt=readonly_attempt,
+    )
+    if readonly:
+        readonly_attempt += 1
+    else:
+        attempt += 1
+    if owned:
+        _close_conn(active)
+    fresh = _open(new_path)
+    if delay:
+        time.sleep(delay)
+    return fresh, new_path, attempt, readonly_attempt
+
+
 def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # noqa: ANN001, ANN202
     """Call `op(conn)` through a connection guaranteed to be bound to the
     file currently at the cache path, reopening and retrying rather than
@@ -1561,24 +1730,24 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
                 result = op(active)
             except sqlite3.Error as exc:
                 path = _conn_path(active) or canonical
-                path, delay, readonly = _reconnect_delay_for(
+                rebuilt = _rebuild_if_genuinely_corrupt(
+                    active, path, exc, owned=owned, what=what
+                )
+                if rebuilt is not None:
+                    active, canonical, attempt = rebuilt, path, 0
+                    owned = True
+                    continue
+                active, canonical, attempt, readonly_attempt = _reopen_after_error(
                     exc,
-                    what=what,
-                    path=path,
+                    active,
+                    path,
                     deadline=deadline,
                     attempt=attempt,
                     readonly_attempt=readonly_attempt,
+                    owned=owned,
+                    what=what,
                 )
-                if readonly:
-                    readonly_attempt += 1
-                else:
-                    attempt += 1
-                if owned:
-                    _close_conn(active)
-                active, owned = _open(path), True
-                canonical = path
-                if delay:
-                    time.sleep(delay)
+                owned = True
                 continue
             if owned:
                 # The caller holds no reference to `active`, so nobody
@@ -1691,7 +1860,18 @@ def _recover_fingerprint_connection(
     not `DatabaseError`, because `sqlite3.InterfaceError` -- the shape a
     stale/closed connection raises -- is a SIBLING of `DatabaseError`,
     not a subclass of it, and `_is_stale_or_corrupt_connection` matches
-    it by type."""
+    it by type. T-4159: checked BEFORE the `attempt` ceiling below --
+    reopening cannot fix a genuine on-disk corruption no matter how many
+    attempts remain, so this never burns the retry budget on it; verified
+    via `PRAGMA integrity_check`, never trusted from the message alone."""
+    corrupt_check_path = _conn_path(conn) or path
+    if _is_genuine_corruption_shape(exc) and not _cache_integrity_ok(
+        corrupt_check_path
+    ):
+        _close_conn(conn)
+        return _rebuild_because_corrupt(
+            corrupt_check_path, what="connect() fingerprint check"
+        )
     if attempt >= _STALE_CONN_MAX_RETRIES:
         raise exc
     if _is_missing_meta_table(exc):
