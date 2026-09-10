@@ -98,6 +98,70 @@ class TestPythonCollectionFailureDetail:
         assert collect_mod.python_collection_failure_detail() is None
 
 
+class TestPlatformSkippedSurvivesCacheHit:
+    """T-4390: measured live on Windows CI (run 34415921529) -- COV003 kept
+    erroring on the SAME platform-skipped evidence T-4382's fix targets,
+    because the job's `frob check` self-gate step runs AFTER an earlier
+    `frob test` step already warmed `.frob/pytest-collect.json`; T-4382's
+    cache-HIT path read `platform_skipped` back as `()` regardless of what
+    the ORIGINAL (cache-MISS) collection found, since the plain node-id
+    cache never carried skip reasons at all. `_load_cache_extra`/
+    `_store_cache`'s `extra` payload (T-4390) closes that gap."""
+
+    # frob:tests src/frob/testing/_collect.py::collect_python_tests
+    def test_platform_skipped_round_trips_through_a_cache_hit(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A cache MISS that discovers a platform-skipped module, followed
+        by a cache HIT on an unchanged tree, must report the SAME
+        `platform_skipped` pairs both times -- not `()` on the hit."""
+        import frob.testing._collect as collect_mod
+        from tests.conftest import _write
+
+        _write(
+            tmp_path,
+            "tests/test_posix_only.py",
+            "import sys\nimport pytest\n"
+            'if sys.platform == "win32":\n'
+            '    pytest.skip("SIGUSR1 is POSIX-only", allow_module_level=True)\n'
+            "def test_a():\n    pass\n",
+        )
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=0,
+                    stdout=(
+                        "tests/test_posix_only.py::test_a\n"
+                        "SKIPPED [1] tests/test_posix_only.py:4: "
+                        "SIGUSR1 is POSIX-only\n"
+                    ),
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        collect_mod.drop_collection_cache(tmp_path)
+        first = collect_mod.collect_python_tests(tmp_path)
+        assert first.is_ok
+        assert first.danger_ok.platform_skipped == (
+            ("tests/test_posix_only.py", "SIGUSR1 is POSIX-only"),
+        )
+
+        def failing_if_called_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            raise AssertionError(
+                "a cache HIT must never re-spawn pytest --collect-only"
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", failing_if_called_run_argv)
+        second = collect_mod.collect_python_tests(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok.platform_skipped == (
+            ("tests/test_posix_only.py", "SIGUSR1 is POSIX-only"),
+        )
+
+
 class TestRunCollectOnlySpawnShape:
     """T-4327: `_run_collect_only` must never shell out through `uv` --
     the macOS CI cascade (68 -> 61 failing tests across two spawn-mechanism

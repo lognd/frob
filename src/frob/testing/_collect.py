@@ -93,6 +93,7 @@ from frob.testing._collect_shared import (  # noqa: F401
     _RUST_CACHE_REL,
     _TS_CACHE_REL,
     _load_cache,
+    _load_cache_extra,
     _prune_dirnames,
     _store_cache,
 )
@@ -733,23 +734,42 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     if missing:
         missing = _autorebuild_missing_natives(root, natives, missing)
     _set_collection_missing_natives(missing)
-    # T-4382: reset (not accumulate) here -- this is the ONE point in
-    # collect_python_tests every return path passes through before any
+    # T-4382/T-4390: reset (not accumulate) here -- this is the ONE point
+    # in collect_python_tests every return path passes through before any
     # _run_collect_only call, mirroring missing_natives' single-reset
-    # discipline above. NOTE (known gap, out of this ticket's own scope
-    # to fix): a cache HIT below returns without ever calling
-    # _run_collect_only, so _platform_skipped_test_modules() reads back
-    # () on a cache hit even if platform-skipped modules exist -- the
-    # skip-reason cache would need its own on-disk entry to survive a
-    # hit, which the plain node-id cache does not carry.
+    # discipline above. A cache HIT below used to return without ever
+    # calling _run_collect_only, so this read back () even when
+    # platform-skipped modules exist (T-4382's own documented gap,
+    # measured live on Windows CI: COV003 kept erroring on the SAME
+    # platform-skipped evidence T-4382 fixed, because the SAME job runs
+    # an earlier `frob test`/`frob check` pass that warms this cache
+    # before COV003's own collection call hits it) -- T-4390 closes it by
+    # round-tripping platform_skipped through the cache's own `extra`
+    # payload (_load_cache_extra/_store_cache), below.
     _set_collection_platform_skipped(())
     key = _collection_cache_key(root, natives)
     cache_path = root / _CACHE_REL
     cached = _load_cache(cache_path, key)
     if cached is not None:
-        _log.debug("collect_python_tests: cache hit, %d node id(s)", len(cached))
+        cached_extra = _load_cache_extra(cache_path, key)
+        cached_skipped = tuple(
+            (str(f), str(r)) for f, r in cached_extra.get("platform_skipped", [])
+        )
+        _set_collection_platform_skipped(cached_skipped)
+        _log.debug(
+            "collect_python_tests: cache hit, %d node id(s), %d platform-skipped "
+            "module(s)",
+            len(cached),
+            len(cached_skipped),
+        )
         _set_collection_failure_detail(None)
-        return Ok(CollectedTests(node_ids=cached, missing_natives=missing))
+        return Ok(
+            CollectedTests(
+                node_ids=cached,
+                missing_natives=missing,
+                platform_skipped=cached_skipped,
+            )
+        )
 
     collected = _run_collect_only(root)
     if collected.is_err:
@@ -788,7 +808,15 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
         node_ids |= nested.danger_ok
 
     frozen = frozenset(node_ids)
-    _store_cache(cache_path, key, frozen)
+    platform_skipped = _platform_skipped_test_modules()
+    _store_cache(
+        cache_path,
+        key,
+        frozen,
+        extra={"platform_skipped": [list(pair) for pair in platform_skipped]}
+        if platform_skipped
+        else None,
+    )
     _log.info(
         "collect_python_tests: collected %d node id(s), %d declared native(s) missing",
         len(frozen),
@@ -798,7 +826,7 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
         CollectedTests(
             node_ids=frozen,
             missing_natives=missing,
-            platform_skipped=_platform_skipped_test_modules(),
+            platform_skipped=platform_skipped,
         )
     )
 

@@ -59,10 +59,46 @@ def _load_cache(cache_path: Path, key: str) -> frozenset[str] | None:
     return frozenset(doc.get("node_ids", []))
 
 
-def _store_cache(cache_path: Path, key: str, node_ids: frozenset[str]) -> None:
-    """Persist `node_ids` keyed by `key` to `cache_path`."""
+# frob:ticket T-4390
+def _load_cache_extra(cache_path: Path, key: str) -> dict:
+    """T-4390: the `extra` JSON payload stored alongside `key`'s node ids
+    (e.g. Python's platform-skip `(file, reason)` pairs), `{}` if the
+    cache is absent/unreadable/stale or carries no `extra` at all -- a
+    cache HIT that predates this field (or a collector that never passes
+    `extra` to `_store_cache`) degrades to the same `{}` a miss returns,
+    never a crash. Split from `_load_cache`'s frozenset-only return so
+    every OTHER collector (rust/ts/ctest/kotlin) stays untouched by this
+    Python-only need."""
+    if not cache_path.exists():
+        return {}
+    try:
+        doc = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        _log.warning("collect: unreadable cache %s: %s", cache_path, exc)
+        return {}
+    if doc.get("key") != key:
+        return {}
+    extra = doc.get("extra")
+    return extra if isinstance(extra, dict) else {}
+
+
+# frob:ticket T-4390
+def _store_cache(
+    cache_path: Path,
+    key: str,
+    node_ids: frozenset[str],
+    extra: dict | None = None,
+) -> None:
+    """Persist `node_ids` keyed by `key` to `cache_path`. `extra` (T-4390,
+    optional, default `None`/omitted) is an opaque JSON-serializable
+    payload a collector can round-trip through a cache HIT via
+    `_load_cache_extra` -- Python's own use is `platform_skipped`
+    `(file, reason)` pairs, which `_load_cache`'s plain node-id set
+    cannot carry, so a warm cache previously read back as "nothing
+    platform-skipped" even when the fresh collection that built the
+    cache found some (T-4382's own documented gap)."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cache_path.write_text(
-        json.dumps({"key": key, "node_ids": sorted(node_ids)}, indent=2),
-        encoding="utf-8",
-    )
+    doc: dict = {"key": key, "node_ids": sorted(node_ids)}
+    if extra:
+        doc["extra"] = extra
+    cache_path.write_text(json.dumps(doc, indent=2), encoding="utf-8")

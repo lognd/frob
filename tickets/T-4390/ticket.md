@@ -1,7 +1,7 @@
 ---
 id: T-4390
 title: COV003 platform-skip attribution lost on a warm collection cache
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_testing_collect.py::TestPlatformSkippedSurvivesCacheHit::test_platform_skipped_round_trips_through_a_cache_hit
 designated_repro_test: null
 threat: null
 component: null
