@@ -1,7 +1,7 @@
 ---
 id: T-4391
 title: DRIFT001 body digest is CRLF-sensitive, false-fires on Windows checkouts
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-10'

@@ -87,6 +87,36 @@ class TestDigests:
         assert d1.body != d2.body
         assert d1.doc == d2.doc
 
+    def test_crlf_checkout_does_not_move_digest(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/digest.py::compute_digests
+        # T-4391: a Windows (core.autocrlf) checkout of the IDENTICAL source
+        # sees CRLF line endings; a multi-line docstring's leaf token then
+        # captures embedded "\r\n" instead of "\n". Digests must not move
+        # just because the line-ending byte differs.
+        multiline_py = (
+            '"""Module docstring."""\n\n\n'
+            "class Widget:\n"
+            '    """A widget."""\n\n'
+            "    def render(self, value: int) -> str:\n"
+            '        """Render the widget.\n\n'
+            "        Second line of the docstring.\n"
+            '        """\n'
+            "        # frob:doc docs/x.md#widget\n"
+            "        data = value + 1\n"
+            "        return str(data)\n"
+        )
+        lf_path = tmp_path / "lf.py"
+        lf_path.write_bytes(multiline_py.encode("utf-8"))
+        crlf_path = tmp_path / "crlf.py"
+        crlf_path.write_bytes(multiline_py.replace("\n", "\r\n").encode("utf-8"))
+        lf = parse_file(lf_path).danger_ok
+        crlf = parse_file(crlf_path).danger_ok
+        d_lf = compute_digests(self._method(lf))
+        d_crlf = compute_digests(self._method(crlf))
+        assert d_lf.sig == d_crlf.sig
+        assert d_lf.body == d_crlf.body
+        assert d_lf.doc == d_crlf.doc
+
     def test_docstring_edit_changes_doc_only(self, tmp_path: Path) -> None:
         orig = self._parse(tmp_path, _BASE_PY, "a.py")
         edited = self._parse(
