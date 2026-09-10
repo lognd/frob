@@ -203,6 +203,47 @@ class TestTick004QueueRot:
         violations = _tick004_queue_rot(tmp_path, queue)
         assert any(v.rule == "TICK004" and "T-3001" in v.message for v in violations)
 
+    # frob:ticket T-4393
+    def test_severity_is_utc_deterministic_across_local_timezones(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4393: `_tick004_queue_rot`'s severity for a ticket sitting
+        exactly at the 2x-threshold ERROR boundary must be a pure function
+        of `_utc_today()`'s injected value, never of the process's local
+        wall clock. Before this fix, the gate read local `date.today()`
+        directly -- a CI runner whose local timezone reads a different
+        calendar date near a UTC-midnight instant than another runner in
+        the same matrix could flip WARN into ERROR (or the reverse) for
+        the identical ticket on the identical commit (the measured
+        Windows-only shape, CI run 34415921529: 10+ HIGH tickets at
+        exactly 15d/threshold-7d reported ERROR on Windows, WARN
+        everywhere else). This monkeypatches `_utc_today` itself (the
+        seam the fix introduced) rather than TZ/os.environ, so the same
+        ticket data produces ERROR one day past the boundary and WARN one
+        day before it, regardless of what the local clock says -- proving
+        the gate's severity tracks ONLY the injected UTC date."""
+        from frob.gates import _tickets_gate
+
+        created = date(2026, 1, 1)
+        stale = _ticket(ticket_id="T-4001", priority=Priority.HIGH, created=created)
+        queue = TicketQueue(tickets={stale.id: stale})
+
+        # HIGH threshold is 7d, so age > 14d (2x) is ERROR: 15d past is the
+        # boundary tick, 14d past is still WARN.
+        monkeypatch.setattr(
+            _tickets_gate, "_utc_today", lambda: created + timedelta(days=15)
+        )
+        past_boundary = _tick004_queue_rot(tmp_path, queue)
+        monkeypatch.setattr(
+            _tickets_gate, "_utc_today", lambda: created + timedelta(days=14)
+        )
+        at_boundary = _tick004_queue_rot(tmp_path, queue)
+
+        past_match = next(v for v in past_boundary if "T-4001" in v.message)
+        at_match = next(v for v in at_boundary if "T-4001" in v.message)
+        assert past_match.severity is Severity.ERROR
+        assert at_match.severity is Severity.WARN
+
     def test_fresh_ticket_does_not_flag(self, tmp_path: Path) -> None:
         """A LOW ticket created today must not rot (well under any threshold)."""
         fresh = _ticket(ticket_id="T-3002", priority=Priority.LOW, created=date.today())

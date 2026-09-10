@@ -22,7 +22,7 @@ import difflib
 import os
 import re
 import tomllib
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from typani.result import Result
@@ -46,6 +46,24 @@ from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-4393
+# frob:tests \
+# tests/gates_suite/test_tick.py::TestTick004QueueRot.test_utc_today_matches_across_local_timezones  # noqa: E501
+def _utc_today() -> date:
+    """Today's UTC calendar date (T-4393), NOT the local system clock's.
+
+    `date.today()` reads the process's local timezone, which is not
+    guaranteed to agree across CI runner images dispatched from the same
+    matrix at (near-)the same wall-clock instant -- a local-time skew of
+    even a few hours can shift the computed calendar date by one day right
+    at midnight. `_tick004_queue_rot`'s age-vs-2x-threshold escalation
+    (WARN -> ERROR) is exactly the kind of hairline boundary a one-day
+    skew flips: the same tickets.md content on the same commit must
+    escalate identically on every platform, not depend on which runner's
+    local clock happened to cross a day boundary first."""
+    return datetime.now(timezone.utc).date()
 
 
 # ---------------------------------------------------------------------------
@@ -441,7 +459,7 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     function emits for every other ticket -- mirroring the report's own
     third bucket (`scripts/fleet_status.py::_print_ticket_rot`)."""
     thresholds = _tick004_rot_thresholds(root)
-    today = date.today()
+    today = _utc_today()
     violations: list[Violation] = []
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
         if t.state not in (TicketState.QUEUED, TicketState.PLANNED):
@@ -1730,9 +1748,10 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     has_legacy_content = monofile_exists or bool(_tickets_dir_glob(root))
     if not has_legacy_content:
         return ()
-    from datetime import date
-
-    expired = date.today().isoformat() > _LEDGERV1_SUNSET
+    # T-4393: UTC-anchored, not local-clock -- same reasoning as
+    # `_tick004_queue_rot`'s `_utc_today()`, so a sunset date comparison
+    # near a UTC midnight boundary reads identically on every platform.
+    expired = _utc_today().isoformat() > _LEDGERV1_SUNSET
     severity = Severity.ERROR if expired else Severity.WARN
     verb = "past its recorded sunset" if expired else "still within its recorded window"
     _log.debug(
