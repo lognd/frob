@@ -552,10 +552,16 @@ class TestScopeAddIgnoresTerminalLease:
         )
         assert write_ticket(repo, dropped_ticket).is_ok
 
-        # Confirm the premise: the lease file is still live on the shared
-        # side-channel, visible from repo.
+        # Confirm the premise. Pre-T-4172 the lease file stayed on disk
+        # and had to be separately IGNORED by the ledger-state check in
+        # scope --add's own conflict resolution. T-4172 changed this:
+        # `read_all_leases` now reconciles (opportunistically unlinks) a
+        # lease whose OWN ticket already reads terminal (DROPPED, here)
+        # on the querying root's ledger, so it no longer appears as
+        # "live" at all -- a stronger fix for the same T-1909 goal (this
+        # scope --add must not be blocked), just earlier in the pipeline.
         live = read_all_leases(repo)
-        assert any(lease.ticket_id == tid_a for lease in live)
+        assert not any(lease.ticket_id == tid_a for lease in live)
 
         # Ticket B, started fresh in repo: a scope --add onto the same
         # path must NOT be blocked by ticket A's stale lease, because

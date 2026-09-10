@@ -291,14 +291,28 @@ def _refuse_archive_if_other_worktrees_live(root: Path) -> Result[None, TicketEr
 
 
 # frob:ticket T-0976
+# frob:ticket T-4388
 def _refuse_archive_if_leased(
     root: Path, to_archive: dict
 ) -> Result[None, TicketError]:
     """`archive`'s T-0843 live-lease guard: `Err(ArchiveLiveLeaseExists)` if
     any ticket in `to_archive` still holds a live cross-worktree lease
     (T-0753's field-incident risk), else `Ok(None)` -- split from
-    `archive`'s own lock-held body."""
-    live_leases = read_all_leases(root)
+    `archive`'s own lock-held body.
+
+    T-4388: passes `to_archive`'s own ids as `read_all_leases`'s
+    `exclude_from_reconcile` -- every ticket here is BY DEFINITION
+    already `done`/`dropped` on the ledger (that is what put it in
+    `to_archive`), which is exactly the ledger state T-4172's own
+    reconciliation reads as "this lease is stale, unlink it" before this
+    guard's own membership check ever runs. Without the exclusion,
+    `read_all_leases` silently reconciled away the very lease this guard
+    exists to see, defeating the refusal for the case it was built to
+    catch (a ticket that just closed while a lease from that same close,
+    or a sibling worktree's, is still live)."""
+    live_leases = read_all_leases(
+        root, exclude_from_reconcile=frozenset(to_archive)
+    )
     leased_to_archive = sorted(
         lease.ticket_id for lease in live_leases if lease.ticket_id in to_archive
     )

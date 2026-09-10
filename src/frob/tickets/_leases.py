@@ -3770,7 +3770,9 @@ def _full_ledger_dirty(pathspecs: tuple[str, ...], *, root: Path) -> bool:
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
 # frob:ticket T-0601
-def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
+def read_all_leases(
+    root: Path, *, exclude_from_reconcile: frozenset[str] = frozenset()
+) -> tuple[_LeaseRecord, ...]:
     """Every currently-recorded cross-worktree lease visible from `root`'s
     repository (T-0473), id-ordered. Degrades to `()` if there is no shared
     git common dir, no leases directory yet (nothing has ever started a
@@ -3831,7 +3833,12 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     where two threads both miss the cache for the same file and both
     parse it is possible (last write to the dict wins) -- harmless and
     idempotent, the same reasoning `git_common_dir`'s double-spawn race
-    already relies on."""
+    already relies on.
+
+    T-4388: `exclude_from_reconcile` is forwarded verbatim to
+    `_live_leases_pruning_stale` -- see that function's docstring. Only
+    `_refuse_archive_if_leased` passes a non-empty set; every other
+    caller keeps the default and is unaffected."""
     resolved = leases_dir(root)
     if resolved.is_err:
         return ()
@@ -3843,7 +3850,9 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
 
     current_paths = sorted(leases_root.glob("*.json"))
     parsed = _parse_lease_files_cached(leases_root, current_paths)
-    return _live_leases_pruning_stale(root, leases_root, parsed)
+    return _live_leases_pruning_stale(
+        root, leases_root, parsed, exclude_from_reconcile=exclude_from_reconcile
+    )
 
 
 # frob:ticket T-1999
@@ -4011,10 +4020,17 @@ def _recombine_lease_parse_results(
 
 # frob:ticket T-0976
 # frob:ticket T-4172
+# frob:ticket T-4388
 # frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_in_progress_lease_still_blocks kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_force_overrides_the_live_lease_refusal kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_refuses_without_force_when_a_live_lease_exists kind="unit"  # noqa: E501
 def _live_leases_pruning_stale(
-    root: Path, leases_root: Path, parsed: list["_LeaseRecord"]
+    root: Path,
+    leases_root: Path,
+    parsed: list["_LeaseRecord"],
+    *,
+    exclude_from_reconcile: frozenset[str] = frozenset(),
 ) -> tuple["_LeaseRecord", ...]:
     """`read_all_leases`'s liveness-check half, re-run on EVERY call and
     never cached (see its docstring for why): filters `parsed` down to
@@ -4041,11 +4057,28 @@ def _live_leases_pruning_stale(
     worktree the liveness probe already confirmed `"present"` --
     `"confirmed_absent"`/`"ambiguous"` keep their own existing, unrelated
     handling untouched, and a ticket genuinely still `IN_PROGRESS` (or
-    any other non-terminal state) is left exactly as live as before."""
+    any other non-terminal state) is left exactly as live as before.
+
+    T-4388: `exclude_from_reconcile` (ticket ids) skips the terminal-
+    reconcile unlink entirely for a matching record, returning it as
+    still "live" instead. `_refuse_archive_if_leased` (T-0843) passes the
+    exact set of tickets an `archive()` call is about to move -- those
+    are BY DEFINITION already `done`/`dropped` on the ledger, so without
+    this exclusion this function's own T-4172 reconciliation unlinks
+    their lease (reading "ticket already terminal" as "lease is stale")
+    on every call BEFORE the T-0843 guard ever gets to inspect
+    `read_all_leases`'s return value, defeating the guard for exactly the
+    just-closed-ticket-still-has-a-live-lease case it exists to catch.
+    Every OTHER caller (the daemon, `is_effectively_in_progress`, plain
+    `doable`/`start` collision checks) passes the default empty set and
+    is completely unaffected."""
     live: list[_LeaseRecord] = []
     for record in parsed:
         liveness = _probe_worktree_liveness(record.worktree)
         if liveness == "present":
+            if record.ticket_id in exclude_from_reconcile:
+                live.append(record)
+                continue
             shape = _ticket_ledger_staleness_shape(root, record.ticket_id)
             if shape == "ticket-terminal":
                 _unlink_terminal_ticket_lease(leases_root, record)

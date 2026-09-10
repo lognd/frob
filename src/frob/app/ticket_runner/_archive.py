@@ -95,6 +95,8 @@ def _record_or_refuse_archive_force(
 
 # frob:ticket T-1615
 # frob:ticket T-1762
+# frob:ticket T-4388
+# frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_force_overrides_the_live_lease_refusal kind="unit"  # noqa: E501
 def _require_reason_for_archive_force(
     root: Path,
     force: bool,
@@ -105,12 +107,36 @@ def _require_reason_for_archive_force(
     ARCH001/ARCH103's per-body budget: a no-op unless `force` is set AND a
     live cross-worktree lease actually exists (the guard would otherwise
     have refused) -- the reason-resolve/record half is
-    `_record_or_refuse_archive_force`."""
+    `_record_or_refuse_archive_force`.
+
+    T-4388: `read_all_leases` is called here with `exclude_from_
+    reconcile` set to every DONE/DROPPED ticket id on `root`'s own
+    ledger -- the exact set `frob.tickets.archive`'s own T-0843 guard
+    (`_refuse_archive_if_leased`) uses for the same reason. Without it,
+    T-4172's terminal-ticket reconciliation unlinks a just-closed
+    ticket's lease on this very call (reading "ticket already done" as
+    "lease is stale") before this function ever sees it, so `live_leases`
+    comes back empty, this whole gate no-ops, and `record_force_override`
+    is never called even though `archive()`'s guard was in fact bypassed
+    -- an unrecorded, unlogged force override, exactly what T-1762 exists
+    to prevent. A `load_all` failure degrades to the pre-T-4172 read
+    (unfiltered) rather than blocking `--force` outright; measuring the
+    ledger is a nice-to-have narrowing here, not a hard prerequisite."""
     from frob.tickets._leases import read_all_leases
+    from frob.tickets._models import TicketState
+    from frob.tickets._store import load_all
 
     if not force:
         return
-    live_leases = read_all_leases(root)
+    terminal_ids: frozenset[str] = frozenset()
+    loaded = load_all(root)
+    if loaded.is_ok:
+        terminal_ids = frozenset(
+            tid
+            for tid, t in loaded.danger_ok.items()
+            if t.state in (TicketState.DONE, TicketState.DROPPED)
+        )
+    live_leases = read_all_leases(root, exclude_from_reconcile=terminal_ids)
     if not live_leases:
         return
     _record_or_refuse_archive_force(root, live_leases, force_reason, force_reason_file)
