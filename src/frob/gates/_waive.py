@@ -778,6 +778,15 @@ _KNOWN_GATE_RULES = frozenset(
         # T-2801: this rule existed and fired since T-2843 but was never
         # added to this generated registry.
         "DOC013",
+        # frob:ticket T-4387
+        # T-4139: a document's row<->section registry table (header's
+        # first column an id, its section headings the same ids) has a
+        # row with no matching section or a section with no matching row
+        # -- a document-authoring defect, reported once per document
+        # (frob.gates._doclink_docanchor._doc014_violation). T-4387: this
+        # rule existed and fired since T-4139 but was never added to this
+        # generated registry.
+        "DOC014",
         # T-1227: `frob:enumerates` doc-claimed member-list AST-diff, ack-
         # immune (frob.gates._docenum).
         "DOCENUM001",

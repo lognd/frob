@@ -1,7 +1,7 @@
 ---
 id: T-4387
 title: DOC014 missing from _KNOWN_GATE_RULES registry
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -22,6 +22,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null

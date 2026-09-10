@@ -1732,6 +1732,11 @@ gate_rule_entries:
     disposition: "handled_by:DOC013"
     fixability: "manual"
     cross_refs: []
+  - id: "CHK-GATE-DOC014"
+    name: "DOC014 is a live, enforced gate rule"
+    disposition: "handled_by:DOC014"
+    fixability: "manual"
+    cross_refs: []
   - id: "CHK-GATE-I001"
     name: "I001 is a live, enforced gate rule"
     disposition: "handled_by:I001"
