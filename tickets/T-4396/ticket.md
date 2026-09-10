@@ -1,7 +1,7 @@
 ---
 id: T-4396
 title: TestForceOverrideAudit fakes T-4388's new read_all_leases keyword arg
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-10'
@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_tickets_organization.py::TestForceOverrideAudit::test_archive_force_with_no_live_lease_needs_no_reason
+- tests/test_tickets_organization.py::TestForceOverrideAudit::test_archive_force_with_live_lease_and_no_reason_refuses
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_refuses_when_a_live_lease_exists
+- tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease::test_dropped_ticket_on_local_ledger_does_not_block_live_lease
 designated_repro_test: null
 threat: null
 component: null

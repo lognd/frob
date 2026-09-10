@@ -405,7 +405,9 @@ class TestForceOverrideAudit:
         from frob.app.ticket_runner._archive import _archive
 
         monkeypatch.setattr(tickets_mod, "archive", lambda root, *, force: Ok(0))
-        monkeypatch.setattr(leases_mod, "read_all_leases", lambda root: [])
+        # T-4388: real `read_all_leases` gained a keyword-only
+        # `exclude_from_reconcile` param; the fake must accept it too.
+        monkeypatch.setattr(leases_mod, "read_all_leases", lambda root, **kwargs: [])
         monkeypatch.setattr(
             leases_mod, "commit_full_ledger_change", lambda *a, **k: Ok(None)
         )
@@ -425,7 +427,11 @@ class TestForceOverrideAudit:
         class _FakeLease:
             ticket_id = "T-0001"
 
-        monkeypatch.setattr(leases_mod, "read_all_leases", lambda root: [_FakeLease()])
+        # T-4388: real `read_all_leases` gained a keyword-only
+        # `exclude_from_reconcile` param; the fake must accept it too.
+        monkeypatch.setattr(
+            leases_mod, "read_all_leases", lambda root, **kwargs: [_FakeLease()]
+        )
 
         with pytest.raises(SystemExit):
             _archive(tmp_path, force=True, no_commit=True)
