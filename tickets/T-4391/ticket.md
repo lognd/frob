@@ -26,6 +26,8 @@ body_changes:
   at: '2026-09-10'
   old_length: 0
   new_length: 1340
+evidence:
+- tests/test_graph.py::TestDigests::test_crlf_checkout_does_not_move_digest
 designated_repro_test: null
 threat: null
 component: null
