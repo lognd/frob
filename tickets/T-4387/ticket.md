@@ -1,7 +1,7 @@
 ---
 id: T-4387
 title: DOC014 missing from _KNOWN_GATE_RULES registry
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
