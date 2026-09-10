@@ -18,6 +18,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - src/frob/tickets/_leases.py
 - tickets.md
+- docs/modules/tickets-lifecycle.md
 findings:
 - - DRIFT001
   - src/frob/tickets/_leases.py
@@ -31,6 +32,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: DRIFT001's finding is anchored on src/frob/tickets/_leases.py but the acked
+    doc section it points at lives in docs/modules/tickets-lifecycle.md; fixing the
+    actual drift requires editing that file
+  actor: logan
+  at: '2026-09-10'
 designated_repro_test: null
 threat: null
 component: null
