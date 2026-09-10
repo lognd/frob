@@ -1,5 +1,7 @@
+import json
 import os
 import subprocess
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -11,9 +13,13 @@ from frob.gates import (
     Violation,
     run_gates,
 )
+from frob.gates._tickets_gate import tickets_gate
 from frob.gitio import Diff, Hunk
 from frob.graph import GraphSnapshot
-from frob.tickets._store import write_ticket
+from frob.tickets import load_queue
+from frob.tickets._archive import _load_merged
+from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+from frob.tickets._store import write_all, write_ticket
 from tests.conftest import (
     _first_rule,
     _git_init,
@@ -1404,3 +1410,171 @@ class TestNewGateRuleDynamicResolution:
         self._git(tmp_path, "commit", "-q", "-m", "init")
 
         assert new_gate_rule_ids(tmp_path, base_ref="main") == ()
+
+
+# frob:ticket T-4397
+class TestLoadQueueMemoization:
+    """T-4397: `_tick010_holder_dead_pass`
+    (`frob.gates._tickets_gate`) asks `frob.tickets._leases.
+    lease_staleness_reason` once per lease file, and that judgement
+    re-loads the WHOLE ticket ledger (`frob.tickets._archive.load_queue`)
+    on every call -- measured at ~10.2s per call via cProfile against
+    this repo's own ~4200-ticket ledger. Two other passes `tickets_gate`
+    runs pay the identical cost via `frob.tickets._leases.
+    read_all_leases`'s own per-lease judgement (`_tick007_undispatched_
+    stale`'s `doable()` call, `_tick012_lease_scope_drift` directly), so
+    N holder-dead leases meant N (or 3N, across all three passes) extra
+    full re-parses on top of the one `run_gates` already did. `tickets_
+    gate` now wraps its WHOLE body in `frob.tickets._archive.
+    load_queue_run_scope()` (a run-scoped cache local to that module,
+    entered from inside `_tickets_gate.py` -- `_leases.py` itself is
+    untouched, held by another in-flight ticket), so this proves the
+    underlying parse (`_load_merged`) runs AT MOST ONCE across the
+    whole `tickets_gate()` call no matter how many leases it walks or
+    how many of its passes touch them."""
+
+    def _init_repo(self, root: Path) -> None:
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+
+    def _write_holder_dead_tickets(self, root: Path, ticket_ids: list[str]) -> None:
+        """One `write_all` call for every ticket at once -- `write_all`
+        REPLACES the active store with exactly the mapping it is given,
+        so calling it once per ticket (as a naive loop would) clobbers
+        every earlier one instead of accumulating them."""
+        tickets = {
+            ticket_id: Ticket(
+                id=ticket_id,
+                title=f"{ticket_id} ticket",
+                state=TicketState.IN_PROGRESS,
+                kind=TicketKind.BUG,
+                origin=Origin.HUMAN,
+                created=date(2026, 1, 1),
+                scope=("src/frob/gates/_tickets_gate.py",),
+                body="## Description\nsomething\n",
+            )
+            for ticket_id in ticket_ids
+        }
+        write_all(root, tickets).danger_ok
+
+    def _write_holder_dead_lease(self, root: Path, ticket_id: str) -> None:
+        """A present worktree and a `recorded_at` well past the TTL
+        horizon for an already-persisted non-terminal ticket (see
+        `_write_holder_dead_tickets`) -- the same forced holder-dead
+        shape T-4319's own tests construct, so this test exercises the
+        real `lease_staleness_reason` -> `load_queue` path rather than
+        short-circuiting on path-gone."""
+        worktree = root / f"present-{ticket_id}"
+        worktree.mkdir()
+        leases_dir = root / ".git" / "frob-leases"
+        leases_dir.mkdir(parents=True, exist_ok=True)
+        stale_recorded_at = (datetime.now(UTC) - timedelta(hours=48)).isoformat()
+        (leases_dir / f"{ticket_id}.json").write_text(
+            json.dumps(
+                {
+                    "ticket_id": ticket_id,
+                    "scope": ["src/frob/gates/_tickets_gate.py"],
+                    "worktree": str(worktree),
+                    "branch": f"agent/{ticket_id}",
+                    "recorded_at": stale_recorded_at,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_load_queue_is_memoized_across_the_whole_tickets_gate_call(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Ten planted holder-dead leases -> `_load_merged` (the real
+        parse behind `load_queue`) runs at most once across the WHOLE
+        `tickets_gate()` call, not once per lease -- proves the fix
+        covers all three lease-touching passes `tickets_gate` runs
+        (`_tick010_holder_dead_pass` directly, plus `_tick007_
+        undispatched_stale`'s `doable()` call and `_tick012_lease_
+        scope_drift`, both of which reach `frob.tickets._leases.
+        read_all_leases`'s own per-lease `lease_staleness_reason` call --
+        the SAME O(leases) reload measured independently of TICK010's
+        own pass)."""
+        self._init_repo(tmp_path)
+        ticket_ids = [f"T-90{i:02d}" for i in range(10)]
+        self._write_holder_dead_tickets(tmp_path, ticket_ids)
+        for ticket_id in ticket_ids:
+            self._write_holder_dead_lease(tmp_path, ticket_id)
+
+        calls: list[Path] = []
+        real_load_merged = _load_merged
+
+        def _spy(root: Path):
+            calls.append(root)
+            return real_load_merged(root)
+
+        monkeypatch.setattr("frob.tickets._archive._load_merged", _spy)
+
+        queue = load_queue(tmp_path).danger_ok
+        violations = [v for v in tickets_gate(tmp_path, queue) if v.rule == "TICK010"]
+
+        assert len(violations) == 10
+        assert all(v.severity == Severity.ERROR for v in violations)
+        # One call for the explicit `load_queue(tmp_path)` line above
+        # (outside any scope, a plain fresh read as always) plus AT MOST
+        # one more for the ENTIRE `tickets_gate()` call -- covering
+        # TICK007/010/012's lease-touching passes together -- never one
+        # per lease, and never one per pass.
+        assert len(calls) <= 2, (
+            f"expected _load_merged to run at most twice total across the "
+            f"whole tickets_gate() call (the explicit load_queue call plus "
+            f"one shared cache-filling read), got {len(calls)} calls for "
+            f"10 holder-dead leases"
+        )
+
+    def test_load_queue_reloads_outside_a_run_scope(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Outside `load_queue_run_scope()` (every one of `load_queue`'s
+        other ~45 call sites -- ticket commands, CLI runners, `frob
+        serve`, none of them entering this scope), caching stays a
+        transparent no-op: two calls are two fresh reads, never a stale
+        one handed back after the ledger changed underneath."""
+        self._init_repo(tmp_path)
+        self._write_holder_dead_tickets(tmp_path, ["T-9100"])
+        self._write_holder_dead_lease(tmp_path, "T-9100")
+
+        calls: list[Path] = []
+        real_load_merged = _load_merged
+
+        def _spy(root: Path):
+            calls.append(root)
+            return real_load_merged(root)
+
+        monkeypatch.setattr("frob.tickets._archive._load_merged", _spy)
+
+        assert load_queue(tmp_path).is_ok
+        assert load_queue(tmp_path).is_ok
+        assert len(calls) == 2
+
+    def test_load_queue_run_scope_caches_within_the_with_block(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Direct proof of `load_queue_run_scope()`'s own contract,
+        independent of `tickets_gate`: N calls inside one scope are one
+        real read; a call after the scope exits reloads."""
+        from frob.tickets._archive import load_queue_run_scope
+
+        self._init_repo(tmp_path)
+        self._write_holder_dead_tickets(tmp_path, ["T-9200"])
+
+        calls: list[Path] = []
+        real_load_merged = _load_merged
+
+        def _spy(root: Path):
+            calls.append(root)
+            return real_load_merged(root)
+
+        monkeypatch.setattr("frob.tickets._archive._load_merged", _spy)
+
+        with load_queue_run_scope():
+            for _ in range(5):
+                assert load_queue(tmp_path).is_ok
+        assert len(calls) == 1
+
+        assert load_queue(tmp_path).is_ok
+        assert len(calls) == 2

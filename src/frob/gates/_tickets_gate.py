@@ -1368,7 +1368,28 @@ def _tick010_holder_dead_pass(
     cached`, not `read_all_leases`, whose liveness filter silently drops
     ambiguous leases -- `orphaned_leases`'s own precedent). A record
     already reported as path-gone is naturally skipped, since `lease_
-    staleness_reason` checks path-gone first."""
+    staleness_reason` checks path-gone first.
+
+    T-4397: `lease_staleness_reason` reloads the WHOLE ticket
+    ledger (`frob.tickets._archive.load_queue`) on every call whose
+    lease has a present worktree and a non-terminal ticket -- measured
+    at ~10s per call via cProfile against this repo's own ~4200-ticket
+    ledger, so N such leases meant N full re-parses (the O(leases)
+    blowup that kept `frob check` from finishing within 540s under real
+    fleet lease load). This is NOT the only caller that pays that cost
+    on every lease -- `frob.tickets._leases.read_all_leases`'s own
+    `_live_leases_pruning_stale` calls the identical judgement per
+    lease too, and `tickets_gate` reaches THAT path via `doable()`
+    (`_tick007_undispatched_stale`) and directly (`_tick012_lease_
+    scope_drift`) -- so `tickets_gate` itself enters `frob.tickets.
+    _archive.load_queue_run_scope()` once around its whole body (see
+    that function's own docstring) rather than narrowly here; every
+    `load_queue` call across ALL of TICK007/010/012's lease-touching
+    passes for one `frob check` run shares the same cache. No change to
+    `lease_staleness_reason` or `read_all_leases` themselves (out of
+    this ticket's scope, held by another in-flight ticket) and no
+    change to their judgement, only to how many times the ledger
+    underneath them gets re-read."""
     from frob.tickets._leases import _parse_lease_files_cached, lease_staleness_reason
 
     violations: list[Violation] = []
@@ -1762,7 +1783,32 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     independently re-reading and re-parsing the same ledger files (a
     same-shape duplicate as the cross-stage redundant-parse class the
     audit's meta-gap finding (E) describes, one level down inside a
-    single gate)."""
+    single gate).
+
+    T-4397: the whole body below runs under `frob.tickets.
+    _archive.load_queue_run_scope()` -- measured (cProfile) that
+    `frob.tickets._leases.lease_staleness_reason`, asked once per lease
+    by BOTH `_tick010_stale_lease_report` below AND `frob.tickets.
+    _leases.read_all_leases`'s own `_live_leases_pruning_stale` (reached
+    from here via `_tick007_undispatched_stale`'s `doable()` call and
+    directly by `_tick012_lease_scope_drift`), reloads the WHOLE ~4200-
+    ticket ledger (`load_queue`) on every one of those calls -- O(leases)
+    full re-parses, ~10s each on this repo, was why `frob check --only
+    tickets` did not finish within 540s under real fleet lease load.
+    Entering the scope once here, around every lease-touching pass this
+    gate runs, makes all of them share one cached read instead of each
+    re-triggering its own O(leases) walk."""
+    from frob.tickets._archive import load_queue_run_scope
+
+    with load_queue_run_scope():
+        return _tickets_gate_inner(root, queue)
+
+
+def _tickets_gate_inner(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """`tickets_gate`'s actual rule dispatch, split out only so `tickets_
+    gate` itself can wrap the whole thing in one `load_queue_run_scope()`
+    span (T-4397) via a single `with` -- no behavior of its
+    own beyond what `tickets_gate`'s docstring already describes."""
     # T-0714: TICK010 reads the leases directory directly (a plain
     # `Path.exists()` scan, not the internal liveness probe) and must run
     # BEFORE any call that touches `frob.tickets.read_all_leases` (TICK007

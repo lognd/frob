@@ -5,9 +5,19 @@ archive family, carved out verbatim with its T-0633/T-0764/T-0843/T-0889 lock an
 live-lease-refusal directives intact).
 """
 
+# frob:waive LARGE001 reason="T-4397: this file was already \
+# over the 800-line threshold on main (803 lines) before this ticket \
+# touched it -- load_queue_run_scope/load_queue's cache are ~50 load- \
+# bearing lines (the fix itself plus its own docstring reasoning), not \
+# padding; splitting this file is a real, separate restructuring this \
+# ticket's narrow perf-fix scope does not cover"  # noqa: E501
+
 from __future__ import annotations
 
 import re
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
@@ -83,22 +93,113 @@ def _load_merged(root: Path) -> Result[dict[str, Ticket], TicketError]:
     return Ok({**archived, **active})
 
 
+# T-4397: self-contained run-scoped cache for `load_queue`,
+# deliberately NOT reusing `frob.check._memo.memoize_per_run` -- that
+# would add an undeclared `tickets_ledger -> checker` component edge
+# (SYS003), the wrong direction: `checker -> tickets_ledger` is already
+# the one declared flow (design/frob.strata). This is the identical
+# opt-in, reentrant, clear-on-outermost-exit shape, kept local to this
+# module so no new cross-component dependency is created; the caller
+# that wants the span (`frob.gates._tickets_gate.tickets_gate`, already
+# legally importing `frob.tickets`) enters it directly.
+_load_queue_cache_lock = threading.Lock()
+_load_queue_cache_depth = 0
+_load_queue_cache: dict[Path, Result[TicketQueue, TicketError]] = {}
+
+
+# frob:ticket T-4397
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_run_scope_cac\
+# hes_within_the_with_block
+# frob:tests \
+# tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_is_memoized_a\
+# cross_the_whole_tickets_gate_call
+@contextmanager
+def load_queue_run_scope() -> Iterator[None]:
+    """Activate `load_queue`'s run-scoped cache for the `with` block's
+    duration: every call after the first, for the same `root`, is a
+    cache hit instead of a full ledger re-parse.
+
+    Measured root cause (T-4397): `frob.tickets._leases.
+    lease_staleness_reason` reloads the WHOLE ledger via `load_queue`
+    on every call, and TWO independent paths inside `frob.gates.
+    _tickets_gate.tickets_gate` call it once per lease file --
+    `_tick010_holder_dead_pass` directly, and `frob.tickets._leases.
+    read_all_leases`'s own `_live_leases_pruning_stale` (reached via
+    `_tick007_undispatched_stale`'s `doable()` call and directly by
+    `_tick012_lease_scope_drift`). O(leases) full re-parses of the
+    ~4200-ticket store (~10s each, measured by cProfile), on top of the
+    ONE legitimate load `run_gates`'s own `_load_graph_queue_lock`
+    already did, is why `frob check --only tickets` did not finish
+    within 540s under real fleet lease load. `tickets_gate` enters this
+    scope ONCE around its whole body so all three passes share one
+    cached read. Reentrant (a nested `with` is a no-op; only the
+    OUTERMOST exit clears the cache). NOT active by default --
+    `load_queue`'s other ~45 call sites (ticket commands, CLI runners,
+    `frob serve`, ...) see exactly the same fresh-read-every-call
+    behavior they always have; entering this scope is an explicit
+    opt-in a caller makes only when it KNOWS the on-disk ledger is
+    stable for the span (one `frob check` invocation), never an
+    ambient always-on cache that could hand back a stale read after a
+    concurrent write."""
+    global _load_queue_cache_depth
+    with _load_queue_cache_lock:
+        _load_queue_cache_depth += 1
+    try:
+        yield
+    finally:
+        with _load_queue_cache_lock:
+            _load_queue_cache_depth -= 1
+            if _load_queue_cache_depth == 0:
+                _load_queue_cache.clear()
+
+
 # frob:invariant INV-004
 # frob:tests tests/test_tickets.py::TestQueue.test_malformed_frontmatter_is_err
+# frob:tests \
+# tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_run_scope_cac\
+# hes_within_the_with_block
+# frob:tests \
+# tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_reloads_outsi\
+# de_a_run_scope
 # invariant spec: [INV-004](invariants/INV-004.md)
 # frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-4397
+# frob:waive AFFECT002 reason="T-4397 only adds an opt-in, \
+# off-by-default run-scoped cache check at the top of load_queue (perf, \
+# no signature/behavior change observable to any caller that never \
+# enters load_queue_run_scope); src/frob/gates/_waive.py::_severity_\
+# overrides is out of this ticket's scope and has nothing to update, \
+# matching the T-3478 precedent at src/frob/graph/__init__.py"  # noqa: E501
 def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
     """Load every ticket, active store AND archive merged (malformation in
     either is a hard Err) -- the resolution source for blocker/parent
-    lookups and gate joins, so an archived ticket never looks unknown."""
+    lookups and gate joins, so an archived ticket never looks unknown.
+
+    T-4397: a cache hit under an active `load_queue_run_scope()`
+    (see that function's own docstring for the measured root cause and
+    the reasoning for keeping this opt-in rather than ambient) skips the
+    re-parse entirely; outside a scope this is byte-identical to the
+    pre-existing always-fresh-read behavior."""
+    if _load_queue_cache_depth > 0:
+        with _load_queue_cache_lock:
+            cached = _load_queue_cache.get(root)
+        if cached is not None:
+            return cached
     merged = _load_merged(root)
     if merged.is_err:
-        return Err(merged.danger_err)
-    tickets = merged.danger_ok
-    _log.debug(
-        "tickets: loaded %d ticket(s) (active+archive) under %s", len(tickets), root
-    )
-    return Ok(TicketQueue(tickets=tickets))
+        result: Result[TicketQueue, TicketError] = Err(merged.danger_err)
+    else:
+        tickets = merged.danger_ok
+        _log.debug(
+            "tickets: loaded %d ticket(s) (active+archive) under %s", len(tickets), root
+        )
+        result = Ok(TicketQueue(tickets=tickets))
+    if _load_queue_cache_depth > 0:
+        with _load_queue_cache_lock:
+            _load_queue_cache[root] = result
+    return result
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -310,9 +411,7 @@ def _refuse_archive_if_leased(
     exists to see, defeating the refusal for the case it was built to
     catch (a ticket that just closed while a lease from that same close,
     or a sibling worktree's, is still live)."""
-    live_leases = read_all_leases(
-        root, exclude_from_reconcile=frozenset(to_archive)
-    )
+    live_leases = read_all_leases(root, exclude_from_reconcile=frozenset(to_archive))
     leased_to_archive = sorted(
         lease.ticket_id for lease in live_leases if lease.ticket_id in to_archive
     )
