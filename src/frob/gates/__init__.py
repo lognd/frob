@@ -4189,6 +4189,10 @@ def _test001_002_one(
             edge_langs = _edge_languages(edges)
             if edge_langs and edge_langs <= failed_test_languages:
                 return _test002_unmeasured(record, edge_langs)
+        if edges:
+            skip_reason = _edges_platform_skip_reason(edges, tests)
+            if skip_reason is not None:
+                return _test002_platform_skipped(record, skip_reason)
         return _test002_below_min(record, effective, cfg)
     if cfg.require_branch_coverage_for_test001 and coverage.is_some:
         zero_cov = _test001_zero_measured_branch_coverage(record, coverage.danger_some)
@@ -4308,6 +4312,81 @@ def _test002_unmeasured(record, langs: frozenset[str]) -> Violation:  # noqa: AN
             "measurement gap, not proof the binding has too few cases -- "
             "fix the collector (toolchain availability, project discovery) "
             "and re-run"
+        ),
+    )
+
+
+# frob:ticket T-4386
+# frob:tests \
+# tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_s\
+# kipped_edge_reports_unresolved_not_error kind="unit"
+def _edges_platform_skip_reason(
+    edges: list[Edge], tests: CollectedTests
+) -> str | None:
+    """T-4386: the recorded skip reason if every one of `edges` names a
+    test file `tests.platform_skipped` excludes from collection on this
+    platform (either side -- `src` or `target` -- since a `frob:tests`
+    directive can be written on the source symbol naming the test, or on
+    the test naming the symbol, T-4138's own `_edge_languages` precedent
+    for checking both), else `None`. An edge set is only attributed this
+    way when ALL of it resolves to skipped files -- a record with one
+    skipped edge and one genuinely-collected edge still gets judged on
+    its real collected count, same posture as T-4382's COV003 fix."""
+    if not edges:
+        return None
+    skipped_files = {f for f, _ in tests.platform_skipped}
+    if not skipped_files:
+        return None
+    reason: str | None = None
+    for edge in edges:
+        for symref in (edge.src, edge.target):
+            file = symref.split("::", 1)[0]
+            match = next(
+                (r for f, r in tests.platform_skipped if f == file), None
+            )
+            if match is not None:
+                reason = match
+                break
+        else:
+            return None
+    return reason
+
+
+# frob:ticket T-4386
+# frob:tests \
+# tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_s\
+# kipped_edge_reports_unresolved_not_error kind="unit"
+def _test002_platform_skipped(record, reason: str) -> Violation:  # noqa: ANN001
+    """TEST002 platform-skip verdict (T-4386, same shape as T-4382's COV003
+    fix): `record`'s `frob:tests` edge(s) resolve entirely to test file(s)
+    `tests.platform_skipped` excludes from collection on THIS platform
+    (`sys.platform`) -- e.g. a POSIX-only test module skipped via
+    `pytest.skip(..., allow_module_level=True)` on Windows. This is
+    `Severity.UNRESOLVED`, never the plain TEST002 WARN/below-min: the
+    binding cannot possibly have produced execution evidence on this
+    platform, so a "0 collected unit case(s)" WARN would be a false
+    measured-zero, and `[gates.severity]`'s TEST002=error override
+    (T-3844) would then silently promote that false claim to a build
+    failure -- `_apply_severity_overrides` (T-4386) leaves UNRESOLVED
+    alone precisely so this stays a measurement gap on Windows, not an
+    error."""
+    _log.debug(
+        "TEST002: %s platform-skipped -- test module excluded on %s (%s)",
+        record.symref,
+        sys.platform,
+        reason,
+    )
+    return Violation(
+        rule="TEST002",
+        severity=Severity.UNRESOLVED,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST002: {record.symref} is platform-unavailable -- its "
+            f"bound frob:tests edge's test module is excluded from "
+            f"collection on {sys.platform!r} ({reason}), not genuinely "
+            "untested; this is a measurement gap, not proof of too few "
+            "cases, and needs no fix on this platform"
         ),
     )
 

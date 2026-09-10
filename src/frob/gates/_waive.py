@@ -2766,17 +2766,30 @@ def _severity_overrides(root: Path | str) -> dict[str, Severity]:
     return overrides
 
 
+# frob:ticket T-4386
+# frob:tests \
+# tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_un\
+# resolved_severity kind="unit"
 def _apply_severity_overrides(
     violations: tuple[Violation, ...], root: Path | str
 ) -> tuple[Violation, ...]:
-    """Re-severity `violations` per the `[gates.severity]` frob.toml table."""
+    """Re-severity `violations` per the `[gates.severity]` frob.toml table.
+
+    T-4386: never touches a `Severity.UNRESOLVED` violation, regardless of
+    what `[gates.severity]` says for its rule -- UNRESOLVED means "this
+    check could not determine an answer" (a measurement gap, e.g. T-4138's
+    `_test002_unmeasured` or T-4386's own platform-skip attribution), which
+    is orthogonal to the strictness dial `[gates.severity]` controls for a
+    genuine finding. Promoting it to ERROR would silently defeat the exact
+    distinction those verdicts exist to preserve the moment a legacy-
+    adoption rule like TEST002 is flipped to error (T-3844)."""
     overrides = _severity_overrides(root)
     if not overrides:
         return violations
     return tuple(
         (
             v.model_copy(update={"severity": overrides[v.rule]})
-            if v.rule in overrides
+            if v.rule in overrides and v.severity != Severity.UNRESOLVED
             else v
         )
         for v in violations

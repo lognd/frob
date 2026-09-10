@@ -2511,6 +2511,87 @@ class TestNativeTestCollectors:
         assert "0 collected unit case(s)" in test002[0].message
         assert "UNMEASURED" not in test002[0].message
 
+    # frob:ticket T-4386
+    # frob:tests \
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platfo\
+    # rm_skipped_edge_reports_unresolved_not_error
+    def test_test002_platform_skipped_edge_reports_unresolved_not_error(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE (T-4386, measured on Windows CI run 34371162715): a
+        symbol whose sole `frob:tests` edge names a test file that
+        `CollectedTests.platform_skipped` marks as excluded from
+        collection on this platform (e.g. a POSIX-only module skipped via
+        `pytest.skip(..., allow_module_level=True)` on Windows) must
+        report TEST002 as `Severity.UNRESOLVED`, naming the platform and
+        reason -- never the plain below-min WARN, which `[gates.severity]`
+        promoting TEST002 to error (T-3844) would then silently turn into
+        a false build failure on every platform that skips the module."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/frob/thing.py",
+            "def do_thing():\n    return 0\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_thing.py",
+            '# frob:tests src/frob/thing.py::do_thing kind="unit"\n'
+            "def test_does_a_thing():\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(),
+            platform_skipped=(("tests/test_thing.py", "POSIX-only feature"),),
+        )
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        test002 = [v for v in violations if v.rule == "TEST002"]
+        assert len(test002) == 1
+        assert test002[0].severity == Severity.UNRESOLVED
+        assert "platform-unavailable" in test002[0].message
+        assert "POSIX-only feature" in test002[0].message
+        assert "0 collected unit case(s)" not in test002[0].message
+
+    # frob:ticket T-4386
+    # frob:tests \
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_unrela\
+    # ted_platform_skip_still_fires_as_warn
+    def test_test002_unrelated_platform_skip_still_fires_as_warn(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET (T-4386): a platform-skipped test file recorded
+        in `CollectedTests.platform_skipped` must NOT blanket-exempt an
+        UNRELATED symbol's genuinely-zero, non-platform-skipped edge --
+        this is additive attribution, not a global TEST002 downgrade."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/frob/thing.py",
+            "def do_thing():\n    return 0\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_thing.py",
+            '# frob:tests src/frob/thing.py::do_thing kind="unit"\n'
+            "def test_does_a_thing():\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(),
+            platform_skipped=(("tests/test_unrelated.py", "POSIX-only feature"),),
+        )
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        test002 = [v for v in violations if v.rule == "TEST002"]
+        assert len(test002) == 1
+        assert test002[0].severity == Severity.WARN
+        assert "0 collected unit case(s)" in test002[0].message
+
     # frob:ticket T-4138
     # frob:tests \
     # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_absent\

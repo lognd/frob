@@ -1,7 +1,7 @@
 ---
 id: T-4386
 title: TEST002 must attribute platform-skipped stackdump edges, not error
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_platform_skipped_edge_reports_unresolved_not_error
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_unrelated_platform_skip_still_fires_as_warn
+- tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_unresolved_severity
 designated_repro_test: null
 threat: null
 component: null

@@ -1,0 +1,26 @@
+## Done report
+
+Measured on Windows CI run 34371162715 (win4.log): `frob check` on Windows reports `gate:TEST FAIL 2 errors` -- confirmed via `frob.toml`'s `[gates.severity]` table that TEST001/TEST002 are the only TEST-family rules currently forced to error (TEST003/TEST006/TEST014 stay warn per that table's own T-3844 comment), and the win4.log summary line (`2 errors, 77 warnings, 0 unresolved, 5 waived`) is exactly matched by the two TEST002 findings on `src/frob/testing/_stackdump.py::dump_all_thread_stacks`/`::install_stackdump_handler` -- there are zero real TEST001 violations in that log (every "TEST001" text hit there is a TEST014 message mentioning it in passing).
+
+Root cause: each function's sole `frob:tests` edge points at `tests/unit/test_stackdump.py`, which `pytest.skip(..., allow_module_level=True)`s the whole module on `win32` (SIGUSR1 is POSIX-only). `_valid_edges` therefore finds 0 collected cases; `_test001_002_one` falls into the generic `_test002_below_min` WARN, which `frob.toml`'s TEST002=error override then silently promotes to a build-breaking ERROR -- indistinguishable from a genuinely undertested symbol.
+
+Reused T-4382's `CollectedTests.platform_skipped` (COV003's fix for the identical collection-exclusion shape) rather than re-deriving it. Added `_edges_platform_skip_reason` (both `edges` filename sides checked, same convention `_edge_languages` uses) and `_test002_platform_skipped`, wired into `_test001_002_one` right before the generic below-min fallback: when a record's edges resolve ENTIRELY to a platform-skipped test file, report `Severity.UNRESOLVED` naming the platform/reason, instead of the plain WARN.
+
+That alone was not sufficient: `_apply_severity_overrides` re-severities a violation purely by rule id, with no exemption for an already-`UNRESOLVED` verdict -- so the TEST002=error override would have silently promoted the new UNRESOLVED attribution (and T-4138's pre-existing collector-failure UNRESOLVED case) straight back to ERROR the moment it fired. Guarded it to never touch `Severity.UNRESOLVED`.
+
+Verified the fix is a real repro, not a vacuous test: committed the two new tests alone first, ran `frob ticket evidence --check-repro --base-ref <test-only-commit>`, and got a genuine `FAILED_AT_PARENT` verdict (both new tests fail against the un-fixed code) before committing the fix itself.
+
+A full unscoped `frob check` was attempted twice from the worktree and exceeded the 598s foreground budget both times on this large checkout (no verdict either way, timed out mid-run inside gate collection, well past the SEC110/PII012 scan phase). Relied instead on `frob test` (touched-set: exit=0, 6 python test(s) recorded stable) plus the check-repro proof above, per this session's stated verification budget (never run the full suite).
+
+### Changed
+- `src/frob/gates/__init__.py::_edges_platform_skip_reason` (new)
+- `src/frob/gates/__init__.py::_test002_platform_skipped` (new)
+- `src/frob/gates/__init__.py::_test001_002_one` (wired the new check in, before the generic below-min fallback)
+- `src/frob/gates/_waive.py::_apply_severity_overrides` (never escalates `Severity.UNRESOLVED`)
+
+### Evidence
+- `tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_platform_skipped_edge_reports_unresolved_not_error` (MUST-FIRE, verified as a genuine repro via `--check-repro`)
+- `tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_test002_unrelated_platform_skip_still_fires_as_warn` (MUST-STAY-QUIET: an unrelated platform-skipped file must not blanket-exempt a genuinely-zero symbol)
+- `tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_unresolved_severity` (locks the `_apply_severity_overrides` guard directly)
+
+Filed: none new for this ticket -- it is itself the TEST002 half of the Windows `gate:TEST` 2 errors. The coordinator's extended Windows series (COV003 persistence despite T-4382, gate:TICK/DRIFT/LARGE) is tracked separately in this same session.

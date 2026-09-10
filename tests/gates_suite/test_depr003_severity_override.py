@@ -10,7 +10,7 @@ beyond the two files (`frob.toml`, this test) the fix actually touches.
 
 from pathlib import Path
 
-from frob.gates import Severity, deprecated_gate
+from frob.gates import Severity, Violation, deprecated_gate
 from frob.gates._waive import _apply_severity_overrides, _severity_overrides
 from frob.tickets import TicketQueue, TicketState
 from tests.conftest import _first_rule, _snapshot, _ticket
@@ -42,6 +42,31 @@ def test_depr003_survives_repo_severity_overrides(tmp_path: Path) -> None:
     v = _first_rule(overridden, "DEPR003")
     assert v is not None
     assert v.severity == Severity.ERROR
+
+
+# frob:ticket T-4386
+def test_override_never_escalates_unresolved_severity(tmp_path: Path) -> None:
+    """T-4386: `[gates.severity]` promoting a rule to error must never
+    touch a `Severity.UNRESOLVED` finding of that same rule -- UNRESOLVED
+    means "could not measure", which the strictness dial does not
+    override, unlike a genuine WARN/ERROR finding above (see this
+    module's `test_depr003_survives_repo_severity_overrides`). Without
+    this guard, TEST002's T-3844 error override would silently turn every
+    measurement-gap verdict (T-4138's collector-failure case, T-4386's
+    platform-skip case) into a false build failure the moment it fires."""
+    # frob:tests \
+    # tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalate\
+    # s_unresolved_severity
+    _write_fixture(tmp_path, "frob.toml", '[gates.severity]\nTEST002 = "error"\n')
+    v = Violation(
+        rule="TEST002",
+        severity=Severity.UNRESOLVED,
+        file="src/a.py",
+        line=1,
+        message="TEST002: UNMEASURED",
+    )
+    overridden = _apply_severity_overrides((v,), tmp_path)
+    assert overridden[0].severity == Severity.UNRESOLVED
 
 
 def test_depr003_not_forced_to_error_in_this_repo() -> None:
