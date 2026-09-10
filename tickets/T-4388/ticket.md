@@ -1,7 +1,7 @@
 ---
 id: T-4388
 title: Lease reconciliation unlinks live lease before archive T-0843 guard sees it
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
