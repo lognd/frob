@@ -1,7 +1,7 @@
 ---
 id: T-4396
 title: TestForceOverrideAudit fakes T-4388's new read_all_leases keyword arg
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-10'
