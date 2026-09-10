@@ -18,6 +18,8 @@ scope:
 - tests/test_ticket_runner_archive_force.py
 - tests/test_tickets.py
 - tests/test_ticket_leases_cross_worktree.py
+- src/frob/tickets/_archive.py
+- src/frob/app/ticket_runner/_archive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +33,18 @@ scope_changes:
 - op: add
   glob: tests/test_ticket_leases_cross_worktree.py
   reason: coordinator confirmed CI failure covers 4 tests across these files
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: src/frob/tickets/_archive.py
+  reason: T-4388 fix touches both the tickets._archive guard call site and the CLI-layer
+    force-reason gate; same root-cause exclusion needed in both
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_archive.py
+  reason: T-4388 fix touches both the tickets._archive guard call site and the CLI-layer
+    force-reason gate; same root-cause exclusion needed in both
   actor: logan
   at: '2026-09-09'
 designated_repro_test: null
