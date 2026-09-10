@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
 from typani import Ok
 
 from frob.app.config import AppConfig
-from frob.app.verify_runner import _run_dispose, _run_explain, build_status
+from frob.app.verify_runner import (
+    _COVERAGE_LOCK_REL,
+    _auto_commit_coverage_lock,
+    _run_dispose,
+    _run_explain,
+    _run_now,
+    build_status,
+)
 from frob.graph import CallGraph, GraphSnapshot
 from frob.verify._quarantine import (
     QuarantinedFinding,
@@ -469,3 +477,134 @@ class TestLiveRapidDebt:
         status = build_status(tmp_path)
         assert status is not None
         assert status.rapid_debt_live == ()
+
+
+def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
+    """Small local helper: run one git subcommand against `root`,
+    raising on failure -- this test module's own throwaway-repo plumbing
+    (`_init_git_repo_with_commits` covers commit history, not a single
+    tracked-file rewrite+commit cycle)."""
+    return subprocess.run(
+        ["git", "-C", str(root), *args], check=True, capture_output=True, text=True
+    )
+
+
+def _porcelain_status(root: Path) -> str:
+    """`git status --porcelain` output for `root`, stripped -- empty
+    means a clean tree."""
+    return _git(root, "status", "--porcelain").stdout.strip()
+
+
+class TestAutoCommitCoverageLock:
+    """T-4041: `frob verify now` draining debt must never leave
+    `frob-coverage.lock.json` dirty on the primary -- `_auto_commit_
+    coverage_lock` is the fix, attributing the rewrite automatically
+    instead of manufacturing new, unattributed ledger debt."""
+
+    def test_rewritten_lock_file_is_auto_committed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_auto_commit_coverage_lock \
+        # kind="unit"
+        root = tmp_path
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        lock = root / _COVERAGE_LOCK_REL
+        lock.write_text('{"modules": {}}\n', encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "seed")
+
+        # Simulate the verify pass's own coverage measurement rewriting
+        # the committed lock file -- the exact residue T-4041 reports.
+        lock.write_text('{"modules": {"x": 1.0}}\n', encoding="utf-8")
+        assert _porcelain_status(root) != ""
+
+        _auto_commit_coverage_lock(root)
+
+        assert _porcelain_status(root) == "", (
+            "the primary must be CLEAN after the auto-commit -- a dirty "
+            "tracked file here is exactly the DirtyMain-blocking residue "
+            "this ticket fixes"
+        )
+        log = _git(root, "log", "--oneline", "-1").stdout
+        assert "frob-coverage.lock.json" in log or "verify" in log
+
+    def test_unchanged_lock_file_is_a_noop_no_empty_commit(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_auto_commit_coverage_lock \
+        # kind="unit"
+        root = tmp_path
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        (root / _COVERAGE_LOCK_REL).write_text('{"modules": {}}\n', encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "seed")
+        head_before = _git(root, "rev-parse", "HEAD").stdout.strip()
+
+        _auto_commit_coverage_lock(root)
+
+        assert _git(root, "rev-parse", "HEAD").stdout.strip() == head_before, (
+            "no rewrite happened -- must not manufacture an empty commit"
+        )
+        assert _porcelain_status(root) == ""
+
+    def test_no_lock_file_at_all_is_a_noop(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_auto_commit_coverage_lock \
+        # kind="unit"
+        root = tmp_path
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        (root / "README.md").write_text("x\n", encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "seed")
+
+        _auto_commit_coverage_lock(root)  # must not raise
+
+        assert _porcelain_status(root) == ""
+
+
+class TestRunNowLeavesPrimaryClean:
+    """T-4041's own MUST-FIRE fixture: `frob verify now` (`_run_now`)
+    leaves the primary checkout CLEAN when its underlying verify pass
+    rewrote the coverage lock, while still doing the real drain work
+    (MUST-STAY-QUIET: the watermark/outcome path is untouched)."""
+
+    def test_verify_now_auto_commits_the_rewritten_lock_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_run_now kind="unit"
+        root = tmp_path
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        lock = root / _COVERAGE_LOCK_REL
+        lock.write_text('{"modules": {}}\n', encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "seed")
+
+        def _fake_run_coalesced_verification(resolved_root: Path):
+            # Stand in for the real drain: rewrite the coverage lock
+            # (T-4041's own residue) exactly like a real `frob check
+            # --full` coverage stamp would, then report a normal green
+            # outcome -- this test is only about the file, not the
+            # queue/watermark machinery already covered elsewhere in
+            # this module.
+            lock.write_text('{"modules": {"x": 1.0}}\n', encoding="utf-8")
+            from frob.verify._worker import WorkerOutcome
+
+            return Ok(WorkerOutcome(status="empty"))
+
+        monkeypatch.setattr(
+            "frob.verify.run_coalesced_verification",
+            _fake_run_coalesced_verification,
+        )
+        cfg = AppConfig(verify_command="now", verify_path=root)
+
+        _run_now(cfg)
+
+        assert _porcelain_status(root) == "", (
+            "frob verify now must leave the primary clean even though its "
+            "own verify pass rewrote the coverage lock"
+        )

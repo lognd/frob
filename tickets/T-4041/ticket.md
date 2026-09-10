@@ -2,7 +2,7 @@
 id: T-4041
 title: frob verify now drains debt but dirties the primary with an unattributed lock-file
   rewrite, creating new ledger debt
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -42,6 +42,11 @@ body_changes:
   at: '2026-09-06'
   old_length: 5970
   new_length: 8393
+evidence:
+- tests/unit/verify/test_verify_runner.py::TestAutoCommitCoverageLock::test_rewritten_lock_file_is_auto_committed
+- tests/unit/verify/test_verify_runner.py::TestAutoCommitCoverageLock::test_unchanged_lock_file_is_a_noop_no_empty_commit
+- tests/unit/verify/test_verify_runner.py::TestAutoCommitCoverageLock::test_no_lock_file_at_all_is_a_noop
+- tests/unit/verify/test_verify_runner.py::TestRunNowLeavesPrimaryClean::test_verify_now_auto_commits_the_rewritten_lock_file
 designated_repro_test: null
 threat: null
 component: null
