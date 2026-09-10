@@ -951,3 +951,72 @@ class TestWaive004ExaminedSitesGuard:
         rel = PureWindowsPath("src") / "nested" / "inner.py"
         assert str(rel) == "src\\nested\\inner.py"
         assert rel.as_posix() == "src/nested/inner.py"
+
+
+# frob:ticket T-4392
+class TestMatchWaiverPathShape:
+    """T-4392: `_match_waiver`'s file-scoped/package-prefix branch used to
+    compare `waiver.src`/`waiver_file` against `violation.file` as raw
+    strings. `violation.file` is always POSIX-relative (producers build it
+    via `Path.relative_to(root).as_posix()`), but a waiver's `src` file
+    component can be built from an OS-native path on the platform that
+    recorded the directive -- backslash-separated on Windows. An
+    un-normalized comparison then never matches there even though the
+    identical waiver matches fine on Linux/macOS, so a finding like
+    LARGE001 surfaces as an unwaived ERROR only on Windows. This is
+    reproducible on ANY platform with a `PureWindowsPath`-shaped `src`."""
+
+    def test_backslash_waiver_path_still_matches_posix_violation(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        # frob:tests src/frob/gates/_waive.py::_match_waiver_file_scoped
+        # frob:tests src/frob/gates/_waive.py::_posix_path
+        from frob.gates._waive import _match_waiver
+        from frob.graph._models import Edge, EdgeKind
+
+        violation = Violation(
+            rule="LARGE001",
+            severity=Severity.ERROR,
+            file="src/frob/testing/_collect.py",
+            line=0,
+            message="LARGE001: file has 867 lines (threshold: 800)",
+        )
+        backslash_waiver = Edge(
+            src="src\\frob\\testing\\_collect.py",
+            kind=EdgeKind.WAIVE,
+            target="LARGE001",
+            origin="src\\frob\\testing\\_collect.py:1",
+            attrs={"reason": "cohesive module, T-1651-grade review"},
+        )
+        waivers_by_rule = {"LARGE001": [backslash_waiver]}
+
+        match = _match_waiver(violation, waivers_by_rule)
+
+        assert match is backslash_waiver
+
+    def test_backslash_waiver_still_matches_package_prefix(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        # frob:tests src/frob/gates/_waive.py::_match_waiver_file_scoped
+        # frob:tests src/frob/gates/_waive.py::_posix_path
+        from frob.gates._waive import _PACKAGE_SCOPED_RULES, _match_waiver
+        from frob.graph._models import Edge, EdgeKind
+
+        rule = next(iter(_PACKAGE_SCOPED_RULES))
+        violation = Violation(
+            rule=rule,
+            severity=Severity.WARN,
+            file="src/frob/testing",
+            line=0,
+            message="package-scoped test finding",
+        )
+        backslash_waiver = Edge(
+            src="src\\frob\\testing\\nested\\_inner.py",
+            kind=EdgeKind.WAIVE,
+            target=rule,
+            origin="src\\frob\\testing\\nested\\_inner.py:1",
+            attrs={"reason": "package-wide waiver, backslash-shaped src"},
+        )
+        waivers_by_rule = {rule: [backslash_waiver]}
+
+        match = _match_waiver(violation, waivers_by_rule)
+
+        assert match is backslash_waiver

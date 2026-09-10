@@ -2571,6 +2571,19 @@ def _closest_by_line(waiver: Edge, violation: Violation) -> tuple[int, int]:
 _LARGE_DISTANCE = 1 << 30
 
 
+# frob:ticket T-4392
+# frob:tests tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_path_still_matches_posix_violation  # noqa: E501
+def _posix_path(path: str) -> str:
+    """Normalize `path` to forward-slash form (T-4392): a waiver's `src`
+    file component can be built from an OS-native path on the platform
+    that recorded the directive, which is `\\`-separated on Windows; a raw
+    string compare against a POSIX-relative `Violation.file` then never
+    matches there even though the identical waiver matches fine on
+    Linux/macOS. Comparing on this normalized form makes matching
+    separator-independent regardless of which platform built which side."""
+    return path.replace("\\", "/")
+
+
 # frob:waive DUP001 reason="coincidental separator-normalization shape: this collapses \
 # a symref's scope-separator spellings to '.' for waiver comparison only; \
 # frob.lang._common's sibling rewrites a C++ display name's '::' to '.' for qualname \
@@ -2646,6 +2659,53 @@ def _match_waiver_by_symref(
     return None
 
 
+# frob:ticket T-4392
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_path_\
+# still_matches_posix_violation
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_still\
+# _matches_package_prefix
+def _match_waiver_file_scoped(
+    violation: Violation, candidates: Sequence[Edge], *, package_scoped: bool
+) -> Edge | None:
+    """The file-scoped/package-prefix branch of `_match_waiver` (T-4392,
+    split out to keep both under ARCH001's length ceiling, mirroring how
+    `_match_waiver_by_symref` was split out for the symref-exact branch):
+    every `candidates` entry whose (POSIX-normalized) file matches, still
+    covered by `_ceiling_ok`, collected and reduced to the LINE-NEAREST
+    one via `_closest_by_line` (T-2338 -- see `_match_waiver`'s own
+    docstring for why nearest-wins, not first-wins).
+
+    T-4392: both sides are normalized through `_posix_path` before any
+    string comparison. `violation.file` is already POSIX (producers build
+    it via `Path.relative_to(root).as_posix()`), but a waiver's `src` can
+    come from a directive-location path built with an OS-native
+    separator; on Windows that is `\\`, so an un-normalized comparison
+    never matches a waiver there even though the same commit's waiver
+    matches fine on Linux/macOS -- a finding then surfaces as an unwaived
+    ERROR only on Windows. `_posix_path` makes this comparison separator-
+    independent everywhere, not just on the platform that happens to
+    differ today."""
+    violation_file = _posix_path(violation.file)
+    package_prefix = violation_file.rstrip("/") + "/"
+    matches: list[Edge] = []
+    for waiver in candidates:
+        waiver_file = _posix_path(waiver.src.split("::", 1)[0])
+        waiver_src = _posix_path(waiver.src)
+        if (
+            waiver_src == violation_file
+            or waiver_file == violation_file
+            or (package_scoped and waiver_file.startswith(package_prefix))
+        ) and _ceiling_ok(waiver, violation):
+            matches.append(waiver)
+    if not matches:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    return min(matches, key=lambda w: _closest_by_line(w, violation))
+
+
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
@@ -2660,12 +2720,12 @@ def _match_waiver(
     genuine, differently-worded waiver comment two functions down could
     have its reason text shown against a DIFFERENT finding than the one
     its own comment actually sits above. When `violation.symref` is None
-    (the file-scoped/package-prefix path), every matching candidate is
-    now collected and the LINE-NEAREST one (`_closest_by_line`) is
-    returned, so the displayed `[waived: ...]` reason traces back to the
-    comment actually closest to the finding it explains. The symref-exact
-    path above is already precise (a symbol can only be one waiver's
-    target) and is unchanged.
+    (the file-scoped/package-prefix path, `_match_waiver_file_scoped`),
+    every matching candidate is now collected and the LINE-NEAREST one
+    (`_closest_by_line`) is returned, so the displayed `[waived: ...]`
+    reason traces back to the comment actually closest to the finding it
+    explains. The symref-exact path above is already precise (a symbol
+    can only be one waiver's target) and is unchanged.
 
     T-2438: the symbol-exact path used to be `waiver.src ==
     violation.symref` with an unconditional `return None` on a miss -- no
@@ -2690,21 +2750,9 @@ def _match_waiver(
     if violation.symref is not None:
         return _match_waiver_by_symref(violation, candidates)
     package_scoped = violation.rule in _PACKAGE_SCOPED_RULES
-    package_prefix = violation.file.rstrip("/") + "/"
-    matches: list[Edge] = []
-    for waiver in candidates:
-        waiver_file = waiver.src.split("::", 1)[0]
-        if (
-            waiver.src == violation.file
-            or waiver_file == violation.file
-            or (package_scoped and waiver_file.startswith(package_prefix))
-        ) and _ceiling_ok(waiver, violation):
-            matches.append(waiver)
-    if not matches:
-        return None
-    if len(matches) == 1:
-        return matches[0]
-    return min(matches, key=lambda w: _closest_by_line(w, violation))
+    return _match_waiver_file_scoped(
+        violation, candidates, package_scoped=package_scoped
+    )
 
 
 def _apply_waivers(

@@ -1,7 +1,7 @@
 ---
 id: T-4392
 title: LARGE001/waiver path-shape mismatch on Windows (backslash vs posix)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-10'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates_suite/test_waive.py::TestMatchWaiverPathShape::test_backslash_waiver_path_still_matches_posix_violation
+- tests/gates_suite/test_waive.py::TestMatchWaiverPathShape::test_backslash_waiver_still_matches_package_prefix
 designated_repro_test: null
 threat: null
 component: null
