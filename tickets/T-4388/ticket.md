@@ -16,10 +16,23 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_leases.py
 - tests/test_ticket_runner_archive_force.py
+- tests/test_tickets.py
+- tests/test_ticket_leases_cross_worktree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: coordinator confirmed CI failure covers 4 tests across these files
+  actor: logan
+  at: '2026-09-09'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: coordinator confirmed CI failure covers 4 tests across these files
+  actor: logan
+  at: '2026-09-09'
 designated_repro_test: null
 threat: null
 component: null
