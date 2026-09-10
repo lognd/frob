@@ -1,7 +1,7 @@
 ---
 id: T-4386
 title: TEST002 must attribute platform-skipped stackdump edges, not error
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
