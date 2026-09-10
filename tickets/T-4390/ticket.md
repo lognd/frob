@@ -1,7 +1,7 @@
 ---
 id: T-4390
 title: COV003 platform-skip attribution lost on a warm collection cache
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
