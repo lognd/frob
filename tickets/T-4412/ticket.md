@@ -6,6 +6,8 @@ kind: bug
 origin: human
 created: '2026-09-11'
 priority: critical
+blocked_by:
+- T-4402
 parent: T-4410
 tier: story
 sprint: v0.531.0
