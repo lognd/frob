@@ -3,7 +3,7 @@ id: T-4394
 title: 'post-land sweep regression from T-4388: 4 new (rule, file) identit(ies), 15
   finding(s) (DRIFT001, REG005, TICK004, TICK006)'
 state: in-progress
-kind: bug
+kind: docs
 origin: agent
 created: '2026-09-10'
 priority: high
@@ -38,6 +38,14 @@ scope_changes:
   reason: DRIFT001's finding is anchored on src/frob/tickets/_leases.py but the acked
     doc section it points at lives in docs/modules/tickets-lifecycle.md; fixing the
     actual drift requires editing that file
+  actor: logan
+  at: '2026-09-10'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: the change is a registry row count and a doc ack; no diff-touched code exists
+    for mutation evidence, so BUG002 cannot apply (land refusal 15:58)
   actor: logan
   at: '2026-09-10'
 body_changes:
