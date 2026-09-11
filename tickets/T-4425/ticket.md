@@ -1,7 +1,7 @@
 ---
 id: T-4425
 title: 'Fix DOC011: tickets-lifecycle.md cites nonexistent T-4313'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-11'
