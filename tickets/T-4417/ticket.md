@@ -1,7 +1,7 @@
 ---
 id: T-4417
 title: Instrument land phases with per-phase elapsed-seconds timestamps
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-11'
