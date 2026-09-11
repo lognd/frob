@@ -9,7 +9,7 @@ created: '2026-09-07'
 priority: high
 parent: null
 tier: ticket
-sprint: alpha-gate
+sprint: v0.531.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
