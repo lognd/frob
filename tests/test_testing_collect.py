@@ -320,3 +320,47 @@ class TestCollectionFailureStdoutFallback:
         assert detail is not None
         assert "stderr was empty" in detail
         assert "ModuleNotFoundError: No module named 'demo'" in detail
+
+
+class TestParsePlatformSkippedWindowsPathShape:
+    """T-4408: measured live on Windows CI -- COV003/TEST002 kept flooding
+    on POSIX-only test modules T-4382/T-4386's platform-skip attribution
+    was supposed to cover, because `pytest --collect-only -rs` reports the
+    skipped module's file with the platform's native path separator (a
+    backslash path on Windows), while every consumer of
+    `platform_skipped` (`_evidence_platform_skip_reason`,
+    `_edges_platform_skip_reason`) compares it against POSIX-style
+    (forward-slash) evidence ids and `frob:tests` symrefs with plain
+    `==`. `_parse_platform_skipped` must normalize the captured path to
+    forward-slash so the comparison holds regardless of platform."""
+
+    # frob:tests src/frob/testing/_collect.py::_parse_platform_skipped
+    def test_windows_backslash_path_normalizes_to_posix(self) -> None:
+        import frob.testing._collect as collect_mod
+
+        stdout = "SKIPPED [1] tests\\unit\\test_stackdump.py:12: posix-only\r\n"
+        found = collect_mod._parse_platform_skipped(stdout)
+        assert found == (("tests/unit/test_stackdump.py", "posix-only"),)
+
+    # frob:tests src/frob/testing/_collect.py::_parse_platform_skipped
+    def test_windows_crlf_and_nested_backslash_path(self) -> None:
+        import frob.testing._collect as collect_mod
+
+        stdout = (
+            "..\r\n"
+            "SKIPPED [3] tests\\unit\\test_conftest_stackdump.py:7: "
+            "posix-only fixture\r\n"
+            "5 passed, 3 skipped in 1.23s\r\n"
+        )
+        found = collect_mod._parse_platform_skipped(stdout)
+        assert found == (
+            ("tests/unit/test_conftest_stackdump.py", "posix-only fixture"),
+        )
+
+    # frob:tests src/frob/testing/_collect.py::_parse_platform_skipped
+    def test_posix_path_is_unaffected(self) -> None:
+        import frob.testing._collect as collect_mod
+
+        stdout = "SKIPPED [1] tests/unit/test_stackdump.py:12: posix-only\n"
+        found = collect_mod._parse_platform_skipped(stdout)
+        assert found == (("tests/unit/test_stackdump.py", "posix-only"),)

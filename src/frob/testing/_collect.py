@@ -229,6 +229,8 @@ def _add_collection_platform_skipped(skipped: tuple[tuple[str, str], ...]) -> No
 _SKIPPED_MODULE_LEVEL_RE = re.compile(r"^SKIPPED \[\d+\] ([^:]+):(\d+): (.+)$")
 
 
+# frob:ticket T-4408
+# frob:tests tests/test_testing_collect.py::TestParsePlatformSkippedWindowsPathShape
 def _parse_platform_skipped(stdout: str) -> tuple[tuple[str, str], ...]:
     """T-4382: parse `pytest --collect-only -rs`'s stdout for module-level
     skip lines (`SKIPPED [N] <file>:<line>: <reason>`) -- the ONLY shape
@@ -237,12 +239,24 @@ def _parse_platform_skipped(stdout: str) -> tuple[tuple[str, str], ...]:
     normally be evaluated): these lines come exclusively from a module
     calling `pytest.skip(..., allow_module_level=True)` at import time,
     which is exactly the "excluded from collection on this platform"
-    shape COV003 needs to distinguish from a genuinely missing test."""
+    shape COV003 needs to distinguish from a genuinely missing test.
+
+    T-4408: pytest reports the file with the platform's native path
+    separator, so on Windows this is a backslash path
+    (`tests\\unit\\test_stackdump.py`) while every consumer (ticket
+    evidence ids, `frob:tests` symrefs) is always POSIX-style
+    (forward-slash) by repo convention -- `_evidence_platform_skip_reason`
+    and `_edges_platform_skip_reason` both compare these paths with plain
+    `==`, so an unnormalized backslash path silently never matches on
+    Windows and every platform-skipped POSIX-only test module floods
+    COV003/TEST002 instead of being attributed. Normalize to
+    forward-slash here, once, at the source, so every downstream
+    comparison sees the same shape regardless of platform."""
     found: list[tuple[str, str]] = []
     for line in stdout.splitlines():
         match = _SKIPPED_MODULE_LEVEL_RE.match(line.strip())
         if match is not None:
-            found.append((match.group(1), match.group(3)))
+            found.append((match.group(1).replace("\\", "/"), match.group(3)))
     return tuple(found)
 
 

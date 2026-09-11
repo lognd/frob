@@ -1,7 +1,7 @@
 ---
 id: T-4408
 title: Windows platform_skipped path-separator mismatch
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-10'
@@ -26,6 +26,10 @@ scope_changes:
   reason: add test coverage for windows path parsing fix
   actor: logan
   at: '2026-09-10'
+evidence:
+- tests/test_testing_collect.py::TestParsePlatformSkippedWindowsPathShape::test_windows_backslash_path_normalizes_to_posix
+- tests/test_testing_collect.py::TestParsePlatformSkippedWindowsPathShape::test_windows_crlf_and_nested_backslash_path
+- tests/test_testing_collect.py::TestParsePlatformSkippedWindowsPathShape::test_posix_path_is_unaffected
 designated_repro_test: null
 threat: null
 component: null
