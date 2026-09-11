@@ -416,7 +416,8 @@ whose OWN ticket is already terminal (`done`/`dropped`) on `root`'s
 ledger, even when the worktree that recorded it still looks perfectly
 alive. Before T-4172, a lease left behind by a ticket that finished
 through a path that skipped `release_lease` (an interrupted land,
-T-4313's shape) blocked every new ticket declaring the same scope
+the ghost-id incident T-4342's orphaned-lock detector now catches)
+blocked every new ticket declaring the same scope
 forever, with no supported reclaim short of hand-deleting the file.
 T-4388 adds one escape hatch to that reconciliation:
 `read_all_leases(root, exclude_from_reconcile=...)` takes a set of

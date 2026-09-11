@@ -1,7 +1,7 @@
 ---
 id: T-4425
 title: 'Fix DOC011: tickets-lifecycle.md cites nonexistent T-4313'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:uv run frob check --only docstatus exit=0 sha256=47c178cc1d65
 designated_repro_test: null
 threat: null
 component: null
