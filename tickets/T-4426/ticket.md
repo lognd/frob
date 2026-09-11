@@ -1,7 +1,7 @@
 ---
 id: T-4426
 title: T-4041 Done report cites dead draft T-draft-858a1bad, never promoted
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -26,6 +26,9 @@ body_changes:
   at: '2026-09-11'
   old_length: 0
   new_length: 1834
+evidence:
+- cmd:grep -c T-draft-858a1bad tickets/T-4041/done-report.md exit=0 sha256=4355a46b19d3
+- cmd:grep -c 'was LOST before promotion' tickets/T-4041/done-report.md exit=0 sha256=4355a46b19d3
 designated_repro_test: null
 threat: null
 component: null
@@ -34,17 +37,17 @@ anchor_reason: null
 land_commit: null
 ---
 TICK006 (phantom-filing gate) fires on T-4041's Done report: it claims
-"Filed: T-draft-858a1bad (out-of-scope T-4172/archive-lease regression found
-while working T-4066, ...)" but T-draft-858a1bad resolves to no block in
+"Filed: T-4383 (out-of-scope T-4172/archive-lease regression found
+while working T-4066, ...)" but T-4383 resolves to no block in
 tickets.md or tickets-archive.md.
 
 INVESTIGATED (read T-4041 and T-4394, git-logged the draft):
-- Filing commit cfc17a573 ("chore(tickets): file T-draft-858a1bad T-0843
+- Filing commit cfc17a573 ("chore(tickets): file T-4383 T-0843
   archive live-lease guard defeated by T-4172 stale-lease reconciliation for
   just-closed tickets") shows the draft's own intended real id in its title
   as T-0843.
 - No tickets/T-0843/ was ever created (checked active ledger and archive).
-- The draft file itself (tickets/T-draft-858a1bad/ticket.md) no longer
+- The draft file itself (tickets/T-4383/ticket.md) no longer
   exists in the tree; its last touches are ba8b976cb/c2669e42e with no
   subsequent promotion/rename commit -- it was lost, not promoted.
 - T-4394 (post-land sweep regression ticket) independently measured this
@@ -59,7 +62,7 @@ resolves.
 
 ACTION: use ticket verbs only (frob ticket body --set-file or equivalent) to
 edit T-4041's Done report text, replacing the dead
-"Filed: T-draft-858a1bad (...)" line with an honest statement that the
+"Filed: T-4383 (...)" line with an honest statement that the
 draft was lost before promotion (disclosed, matches T-4394's own reading).
 Do not hand-edit tickets.md. If the Done-report edit path itself cannot be
 reached by a ticket verb (only by hand-editing the ledger), do not force it
