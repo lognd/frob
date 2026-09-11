@@ -18,6 +18,8 @@ scope:
 - src/frob/app/verify_runner.py
 - src/frob/app/_verify_coverage_lock.py
 - docs/modules/tickets-verify-sweep.md
+- src/frob/app/_verify_rapid_debt.py
+- docs/modules/verify-rapid-debt-visibility.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +28,18 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-verify-sweep.md
   reason: auto-commit helper doc lives here, moving into new module
+  actor: logan
+  at: '2026-09-10'
+- op: add
+  glob: src/frob/app/_verify_rapid_debt.py
+  reason: second cohesive split (rapid-debt helpers) needed to actually clear the
+    800-line threshold with margin
+  actor: logan
+  at: '2026-09-10'
+- op: add
+  glob: docs/modules/verify-rapid-debt-visibility.md
+  reason: second cohesive split (rapid-debt helpers) needed to actually clear the
+    800-line threshold with margin
   actor: logan
   at: '2026-09-10'
 designated_repro_test: null
