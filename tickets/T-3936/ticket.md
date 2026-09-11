@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: high
-parent: null
+parent: T-3928
 tier: ticket
 sprint: null
 runs_last: false
@@ -138,6 +138,13 @@ scope_changes:
     that will actually do the work
   actor: logan
   at: '2026-09-07'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3928
+  reason: 'pass2 backlog org: theme bucket consumer-audit'
+  actor: logan
+  at: '2026-09-11'
 body_changes:
 - mode: set
   reason: 'first COMPLETE Windows run (34024645783) after the hang fix landed: 25
