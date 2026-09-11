@@ -345,9 +345,9 @@ touch) still latches exactly as before T-2805.
 <!-- frob:describes src/frob/testing/_runners.py::load_runners -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
 <!-- frob:describes src/frob/testing/_collect_rust.py::collect_rust_tests -->
-<!-- frob:describes src/frob/testing/_collect.py::drop_collection_cache -->
-<!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
-<!-- frob:describes src/frob/testing/_collect.py::python_collection_missing_natives -->
+<!-- frob:describes src/frob/testing/_collect_python_cache.py::drop_collection_cache -->
+<!-- frob:describes src/frob/testing/_collect_python_cache.py::python_collection_failure_detail -->
+<!-- frob:describes src/frob/testing/_collect_python_cache.py::python_collection_missing_natives -->
 <!-- frob:describes src/frob/testing/_runners.py::load_natives -->
 <!-- frob:describes src/frob/strata/_native_test.py::run_native_sys_audit -->
 <!-- frob:describes src/frob/strata/_native_test.py::NativeAuditOutcome -->

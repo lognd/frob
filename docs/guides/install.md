@@ -697,7 +697,7 @@ dropped from the report.
 
 ## Honest pytest-collection failure in the coverage gate (T-1161)
 
-<!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
+<!-- frob:describes src/frob/testing/_collect_python_cache.py::python_collection_failure_detail -->
 
 The other half of the 2026-07-28 incident: when `collect_python_tests`
 itself fails outright (a broken venv shim above, a missing dependency, any

@@ -850,7 +850,8 @@ class TestCollectPythonTests:
     def test_python_collection_missing_natives_reflects_last_call(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::python_collection_missing_natives
+        # frob:tests \
+        # src/frob/testing/_collect_python_cache.py::python_collection_missing_natives
         # frob:ticket T-2090
         """`python_collection_missing_natives()` mirrors `python_collection_
         failure_detail()`'s existing module-state pattern: it reflects
@@ -1691,7 +1692,8 @@ class TestNativeFingerprint:
         assert result.danger_err == TestingError.BadRunnerSpec
 
     def test_absent_native_fingerprints_as_absent(self) -> None:
-        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # frob:tests \
+        # src/frob/testing/_collect_python_cache.py::_native_artifact_digest kind="unit"
         from frob.testing import NativeSpec
         from frob.testing._collect import _native_artifact_digest
 
@@ -1701,7 +1703,8 @@ class TestNativeFingerprint:
     def test_fingerprint_changes_absent_to_built(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::_native_fingerprint kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::_native_fingerprint \
+        # kind="unit"
         # AC1: unbuilt->built must flip the fingerprint (and thus the cache key).
         import importlib
 
@@ -1720,7 +1723,8 @@ class TestNativeFingerprint:
         assert before != after
 
     def test_fingerprint_changes_on_rebuild(self, tmp_path: Path, monkeypatch) -> None:
-        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # frob:tests \
+        # src/frob/testing/_collect_python_cache.py::_native_artifact_digest kind="unit"
         # AC1: a RECOMPILE (same package, different .so bytes) must flip it too,
         # even though the package __init__.py is unchanged.
         import importlib
@@ -1746,7 +1750,8 @@ class TestNativeFingerprint:
         assert first != f"{name}:absent"
 
     def test_collection_cache_key_reflects_native_state(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::_collection_cache_key kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::_collection_cache_key \
+        # kind="unit"
         from frob.testing import NativeSpec
         from frob.testing._collect import _collection_cache_key
 
@@ -1759,7 +1764,8 @@ class TestNativeFingerprint:
         assert key_no_native != key_absent_native
 
     def test_missing_natives_reports_unbuilt(self) -> None:
-        # frob:tests src/frob/testing/_collect.py::_missing_natives kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::_missing_natives \
+        # kind="unit"
         from frob.testing import NativeSpec
         from frob.testing._collect import _missing_natives
 
@@ -1768,7 +1774,8 @@ class TestNativeFingerprint:
         assert [s.name for s in missing] == ["frob_no_such_native_xyz"]
 
     def test_drop_collection_cache_removes_file(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::drop_collection_cache kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::drop_collection_cache \
+        # kind="unit"
         from frob.testing import drop_collection_cache
 
         cache = tmp_path / ".frob" / "pytest-collect.json"
@@ -1780,7 +1787,8 @@ class TestNativeFingerprint:
         assert drop_collection_cache(tmp_path) is False
 
     def test_drop_collection_cache_unremovable_is_false(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::drop_collection_cache kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::drop_collection_cache \
+        # kind="unit"
         # the OSError path: cache path is a non-empty directory, so unlink fails
         # -- reported as False, never raised.
         from frob.testing import drop_collection_cache
@@ -1800,7 +1808,8 @@ class TestNativeFingerprint:
         assert result.danger_err == TestingError.BadRunnerSpec
 
     def test_native_digest_error_on_bad_name(self, monkeypatch) -> None:
-        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # frob:tests \
+        # src/frob/testing/_collect_python_cache.py::_native_artifact_digest kind="unit"
         # find_spec raising (half-installed/shadowed name) fingerprints as
         # ":error", never propagating the exception into collection.
         import importlib.util
@@ -1818,7 +1827,8 @@ class TestNativeFingerprint:
     def test_single_file_extension_fingerprinted(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::_compiled_artifacts kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::_compiled_artifacts \
+        # kind="unit"
         # a single-FILE extension (origin IS the .so, no package dir) is
         # fingerprinted directly -- the c/c++-style layout, vs the maturin
         # package layout covered above.
@@ -1886,7 +1896,8 @@ class TestCollectBranchGaps:
     def test_native_artifact_digest_resolvable_no_compiled_artifact(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # frob:tests \
+        # src/frob/testing/_collect_python_cache.py::_native_artifact_digest kind="unit"
         # a name that resolves (e.g. a pure-python stub standing in for an
         # unbuilt native) but has no compiled artifact must fingerprint as
         # "absent", the same as a name that does not resolve at all.
@@ -1907,7 +1918,8 @@ class TestCollectBranchGaps:
     def test_native_artifact_digest_unreadable_artifact(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # frob:tests \
+        # src/frob/testing/_collect_python_cache.py::_native_artifact_digest kind="unit"
         # an OSError reading the compiled artifact's bytes reports
         # ":unreadable" rather than raising.
         import importlib
@@ -1934,7 +1946,8 @@ class TestCollectBranchGaps:
     def test_missing_natives_treats_find_spec_error_as_missing(
         self, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::_missing_natives kind="unit"
+        # frob:tests src/frob/testing/_collect_python_cache.py::_missing_natives \
+        # kind="unit"
         # find_spec raising ImportError/ValueError for one declared native
         # must not crash the whole scan -- it counts as missing.
         import importlib.util

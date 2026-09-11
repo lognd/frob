@@ -18,7 +18,8 @@ from frob.process._pytest_spawn import PytestSpawnError
 
 
 class TestPythonCollectionFailureDetail:
-    # frob:tests src/frob/testing/_collect.py::python_collection_failure_detail
+    # frob:tests \
+    # src/frob/testing/_collect_python_cache.py::python_collection_failure_detail
     def test_none_before_any_call(self) -> None:
         """Freshly imported, no collection has happened yet -- detail is
         `None`. Guarded by an explicit reset so an earlier test's failure
@@ -334,7 +335,7 @@ class TestParsePlatformSkippedWindowsPathShape:
     `==`. `_parse_platform_skipped` must normalize the captured path to
     forward-slash so the comparison holds regardless of platform."""
 
-    # frob:tests src/frob/testing/_collect.py::_parse_platform_skipped
+    # frob:tests src/frob/testing/_collect_python_cache.py::_parse_platform_skipped
     def test_windows_backslash_path_normalizes_to_posix(self) -> None:
         import frob.testing._collect as collect_mod
 
@@ -342,7 +343,7 @@ class TestParsePlatformSkippedWindowsPathShape:
         found = collect_mod._parse_platform_skipped(stdout)
         assert found == (("tests/unit/test_stackdump.py", "posix-only"),)
 
-    # frob:tests src/frob/testing/_collect.py::_parse_platform_skipped
+    # frob:tests src/frob/testing/_collect_python_cache.py::_parse_platform_skipped
     def test_windows_crlf_and_nested_backslash_path(self) -> None:
         import frob.testing._collect as collect_mod
 
@@ -357,7 +358,7 @@ class TestParsePlatformSkippedWindowsPathShape:
             ("tests/unit/test_conftest_stackdump.py", "posix-only fixture"),
         )
 
-    # frob:tests src/frob/testing/_collect.py::_parse_platform_skipped
+    # frob:tests src/frob/testing/_collect_python_cache.py::_parse_platform_skipped
     def test_posix_path_is_unaffected(self) -> None:
         import frob.testing._collect as collect_mod
 

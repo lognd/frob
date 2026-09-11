@@ -76,14 +76,14 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 36,
-      "reason": "T-4178: excludes.py::_load_repo_ignore_globs is a genuine, new fs.read site on the core node (reading the repository root ignore file as a second exclude source alongside BUILTIN_SKIP_DIRS) -- already declared as a via-source in design/frob.strata's core node fs.read via-list, growing the ratchet from 35 to 36 sites, not a fresh unreviewed grant.",
-      "ticket": "T-4178"
+      "accepted_count": 37,
+      "reason": "T-4409: _collect.py's LARGE001 split moved fs.read call sites (test-file-content-hash and native-artifact-digest reads) into the new sibling module _collect_python_cache.py -- same fs.read effect, one new named via-list site rather than a behavior change, growing the ratchet from 36 to 37.",
+      "ticket": "T-4409"
     },
     "core::fs.write": {
-      "accepted_count": 25,
-      "reason": "T-2407 drift sweep: measured cumulative site-count growth from this drive's many already-authorized lands (T-2390 series schema-gate children each declared into gates' via-list, T-2358's capability split, process/_reap.py-adjacent work, etc.) -- every contributing file is already a declared via-source for this (node, capability) pair, so this is accumulated legitimate growth within an existing authorization, not a newly undeclared file (SYS100 fires separately for that and is handled on its own). Bumping the ceiling to the current measured count rather than re-justifying each site individually.",
-      "ticket": "T-2407"
+      "accepted_count": 26,
+      "reason": "T-4409: _collect.py's LARGE001 split moved drop_collection_cache's fs.write (cache-file unlink) into the new sibling module _collect_python_cache.py -- same fs.write effect, one new named via-list site rather than a behavior change, growing the ratchet from 25 to 26.",
+      "ticket": "T-4409"
     },
     "core::process-control": {
       "accepted_count": 1,
