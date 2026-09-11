@@ -3,7 +3,7 @@ id: T-4407
 title: 'verify_runner.py exceeds LARGE001 800-line threshold: extract coverage-lock
   auto-commit helpers'
 state: in-progress
-kind: bug
+kind: feature
 origin: human
 created: '2026-09-10'
 priority: medium
@@ -42,6 +42,20 @@ scope_changes:
     800-line threshold with margin
   actor: logan
   at: '2026-09-10'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: feature
+  reason: behavior-preserving module split to clear LARGE001; no diff-touched behavior
+    exists for BUG002 mutation evidence (land refusal 04:17 EvidenceConfirmatoryOnly)
+  actor: logan
+  at: '2026-09-11'
+evidence:
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_no_baseline_is_live
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_later_baseline_clears
+- tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt::test_uncovered_stays_live
+kind_history:
+- 2026-09-11 bug->feature evidence=3 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
