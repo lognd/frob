@@ -7,7 +7,7 @@ kind: ux
 origin: human
 created: '2026-08-26'
 priority: medium
-parent: null
+parent: T-1597
 tier: ticket
 sprint: null
 runs_last: false
@@ -21,6 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-1597
+  reason: 'pass2 backlog org: theme bucket language'
+  actor: logan
+  at: '2026-09-11'
 designated_repro_test: null
 threat: null
 component: null
