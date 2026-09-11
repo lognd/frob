@@ -2,7 +2,7 @@
 id: T-4427
 title: set_sprint/set_milestone must record a TriageChangeEntry with the assignment
   date
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-11'
