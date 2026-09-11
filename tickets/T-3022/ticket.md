@@ -7,7 +7,7 @@ kind: docs
 origin: human
 created: '2026-08-26'
 priority: medium
-parent: null
+parent: T-2994
 tier: epic
 sprint: null
 runs_last: false
@@ -21,6 +21,13 @@ no_scope_declared_reason: 'Epic rollup enumerating per-file docs-narrative migra
   work; each child ticket declares its own file scope when dispatched, not this one.
 
   '
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-2994
+  reason: narrative migration is a child of the debloat epic
+  actor: logan
+  at: '2026-09-11'
 designated_repro_test: null
 threat: null
 component: null
