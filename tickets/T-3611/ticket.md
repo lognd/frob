@@ -7,7 +7,7 @@ kind: ux
 origin: human
 created: '2026-08-31'
 priority: high
-parent: null
+parent: T-4410
 tier: epic
 sprint: null
 runs_last: false
@@ -18,6 +18,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4410
+  reason: landing/verify cost epic T-4410 covers this scope
+  actor: logan
+  at: '2026-09-11'
 designated_repro_test: null
 threat: null
 component: null
