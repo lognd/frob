@@ -6,8 +6,6 @@ kind: bug
 origin: human
 created: '2026-09-11'
 priority: critical
-blocked_by:
-- T-4402
 parent: T-4410
 tier: story
 sprint: v0.531.0
@@ -43,3 +41,6 @@ anchor_reason: null
 land_commit: null
 ---
 A concurrent full check aborts with 'database is locked' and, before aborting, logs 'cache.connect: unreadable db at .frob/cache.db, rebuilding: database is locked'. src/frob/graph/cache.py's connect path (T-4159's self-heal) classifies a busy-lock the same as unreadable/corrupt and triggers a full rebuild, so every concurrent check or land rebuilds the graph. The primary's .frob/ directory holds cache.db.stale-* leftovers from these spurious rebuilds. Fix: distinguish 'locked' from 'corrupt' and use sqlite's busy_timeout / a bounded retry loop for the former, reserving rebuild-on-open for genuine corruption.
+
+## Unblock log
+- 2026-09-11: unblocked by T-4402 -- T-4402 landed, cache.py lease released
