@@ -8,9 +8,9 @@ created: '2026-09-05'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
-milestone: null
+milestone: v0.541.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
