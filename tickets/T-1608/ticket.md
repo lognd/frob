@@ -11,7 +11,7 @@ blocked_by:
 - T-1607
 parent: T-1597
 tier: ticket
-sprint: post-1.0
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
