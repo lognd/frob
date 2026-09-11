@@ -10,7 +10,7 @@ parent: T-0969
 tier: epic
 sprint: null
 runs_last: false
-milestone: null
+milestone: v0.552.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
