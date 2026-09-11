@@ -8,7 +8,7 @@ created: '2026-08-31'
 priority: low
 parent: T-3505
 tier: ticket
-sprint: null
+sprint: v0.531.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
