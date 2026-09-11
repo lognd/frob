@@ -50,7 +50,8 @@ _log = get_logger(__name__)
 
 # frob:ticket T-4393
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick004QueueRot.test_utc_today_matches_across_local_timezones  # noqa: E501
+# tests/test_tickets_priority.py::TestTick004QueueRot.test_severity_is_utc_deterministi\
+# c_across_local_timezones  # noqa: E501
 def _utc_today() -> date:
     """Today's UTC calendar date (T-4393), NOT the local system clock's.
 

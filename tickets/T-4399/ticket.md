@@ -2,7 +2,7 @@
 id: T-4399
 title: 'DRIFT002 on src/frob/gates/_tickets_gate.py: the acked doc digest moved when
   T-4393 introduced the _utc_today seam; re-read the doc section and ack'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-10'
@@ -44,6 +44,9 @@ scope_changes:
   reason: narrow to the three doc files that mention TICK004 severity
   actor: logan
   at: '2026-09-10'
+evidence:
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_severity_is_utc_deterministic_across_local_timezones
+- cmd:uv run frob check --only drift exit=0 sha256=d13ef50e957c
 designated_repro_test: null
 threat: null
 component: null
