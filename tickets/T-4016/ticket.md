@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: high
 parent: null
 tier: ticket
-sprint: v0.548.0
+sprint: v1.1.0
 runs_last: false
 milestone: v0.548.0
 runs_last_parallel_safe: false
