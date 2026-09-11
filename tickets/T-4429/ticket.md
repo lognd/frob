@@ -1,7 +1,7 @@
 ---
 id: T-4429
 title: gates._load_tests drops platform_skipped, so COV003 never attributes on Windows
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-11'
