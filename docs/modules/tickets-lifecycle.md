@@ -408,6 +408,31 @@ written for the internal, reason-less call `release_orphaned_lease`
 makes on its own confirmed-stale path -- only the reasoned `--force`
 override this ticket exists to make reviewable.
 
+**Terminal-ticket lease reconciliation, and an archive-time exclusion
+(T-4172, T-4388).** `read_all_leases`'s liveness half
+(`_live_leases_pruning_stale`) does not only prune a lease whose
+worktree is confirmed gone -- since T-4172 it also unlinks a lease
+whose OWN ticket is already terminal (`done`/`dropped`) on `root`'s
+ledger, even when the worktree that recorded it still looks perfectly
+alive. Before T-4172, a lease left behind by a ticket that finished
+through a path that skipped `release_lease` (an interrupted land,
+T-4313's shape) blocked every new ticket declaring the same scope
+forever, with no supported reclaim short of hand-deleting the file.
+T-4388 adds one escape hatch to that reconciliation:
+`read_all_leases(root, exclude_from_reconcile=...)` takes a set of
+ticket ids to skip the terminal-unlink for, returning their lease as
+still "live" instead. `_refuse_archive_if_leased` (T-0843) is the sole
+caller that passes a non-empty set -- the exact tickets an `archive()`
+call is about to move, which are BY DEFINITION already terminal on the
+ledger. Without the exclusion, `_live_leases_pruning_stale`'s own
+T-4172 reconciliation would unlink their lease (reading "ticket already
+terminal" as "lease is stale") on every call before the T-0843 guard
+ever got to inspect `read_all_leases`'s return value, silently
+defeating the guard for exactly the just-closed-ticket-still-has-a-
+live-lease case it exists to catch. Every other caller (the daemon,
+`is_effectively_in_progress`, plain `doable`/`start` collision checks)
+passes the default empty set and is completely unaffected.
+
 **Lease migration on renumber (T-1173).** The lease file is keyed by
 ticket id, but a `T-draft-XXXXXXXX` provisional id (T-0162) is exactly the
 kind of ticket most likely to hold a live lease at rename time -- a draft

@@ -2,7 +2,7 @@
 id: T-4394
 title: 'post-land sweep regression from T-4388: 4 new (rule, file) identit(ies), 15
   finding(s) (DRIFT001, REG005, TICK004, TICK006)'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-09-10'

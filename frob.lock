@@ -3158,6 +3158,24 @@
       "old_digest": "824f4d6d8fb888e9d11d1c7e5ec711bd6df11031947a2044c77601029e2d586a",
       "reason": "T-4037: new function, freshly added -- docs/modules/tickets.md#public-api's Ticket model description already covers the pre-existing findings field this reuses; no new public contract described there is needed",
       "ref": "src/frob/tickets/_models.py::rule_shaped_findings_unresolved"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-10",
+      "facet": "body",
+      "new_digest": "2aa78574691277de267bcf20213c8d4f2c9942623c443076d38ca736a6f7994f",
+      "old_digest": "dc5a12ff3533ee754ecb0098cae066327233c6ec92d49ed73d8619394d585819",
+      "reason": "T-4394: re-read docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473 against read_all_leases/_live_leases_pruning_stale after T-4388 added exclude_from_reconcile; added a paragraph documenting T-4172 terminal-lease reconciliation and T-4388's archive-time exclusion hatch, doc now matches code",
+      "ref": "src/frob/tickets/_leases.py::read_all_leases"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-10",
+      "facet": "sig",
+      "new_digest": "c02338508c61bbb6fdbfbccf0888929cf21cb4f4c2a98c93de6774b52597a69b",
+      "old_digest": "7d42f71cb790f455badef955102ba29e05e1fdac78ee9cb29dd988d6fc11c313",
+      "reason": "T-4394: re-read docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473 against read_all_leases/_live_leases_pruning_stale after T-4388 added exclude_from_reconcile; added a paragraph documenting T-4172 terminal-lease reconciliation and T-4388's archive-time exclusion hatch, doc now matches code",
+      "ref": "src/frob/tickets/_leases.py::read_all_leases"
     }
   ],
   "entries": [
@@ -4427,12 +4445,12 @@
       "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
     },
     {
-      "digest": "dc5a12ff3533ee754ecb0098cae066327233c6ec92d49ed73d8619394d585819",
+      "digest": "2aa78574691277de267bcf20213c8d4f2c9942623c443076d38ca736a6f7994f",
       "facet": "body",
       "ref": "src/frob/tickets/_leases.py::read_all_leases"
     },
     {
-      "digest": "7d42f71cb790f455badef955102ba29e05e1fdac78ee9cb29dd988d6fc11c313",
+      "digest": "c02338508c61bbb6fdbfbccf0888929cf21cb4f4c2a98c93de6774b52597a69b",
       "facet": "sig",
       "ref": "src/frob/tickets/_leases.py::read_all_leases"
     },
