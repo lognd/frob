@@ -8,10 +8,12 @@ from pathlib import Path
 import pytest
 from typani import Ok
 
-from frob.app.config import AppConfig
-from frob.app.verify_runner import (
+from frob.app._verify_coverage_lock import (
     _COVERAGE_LOCK_REL,
     _auto_commit_coverage_lock,
+)
+from frob.app.config import AppConfig
+from frob.app.verify_runner import (
     _run_dispose,
     _run_explain,
     _run_now,
@@ -502,7 +504,7 @@ class TestAutoCommitCoverageLock:
     instead of manufacturing new, unattributed ledger debt."""
 
     def test_rewritten_lock_file_is_auto_committed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/app/verify_runner.py::_auto_commit_coverage_lock \
+        # frob:tests src/frob/app/_verify_coverage_lock.py::_auto_commit_coverage_lock \
         # kind="unit"
         root = tmp_path
         _git(root, "init", "-q", "-b", "main")
@@ -531,7 +533,7 @@ class TestAutoCommitCoverageLock:
     def test_unchanged_lock_file_is_a_noop_no_empty_commit(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/app/verify_runner.py::_auto_commit_coverage_lock \
+        # frob:tests src/frob/app/_verify_coverage_lock.py::_auto_commit_coverage_lock \
         # kind="unit"
         root = tmp_path
         _git(root, "init", "-q", "-b", "main")
@@ -550,7 +552,7 @@ class TestAutoCommitCoverageLock:
         assert _porcelain_status(root) == ""
 
     def test_no_lock_file_at_all_is_a_noop(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/app/verify_runner.py::_auto_commit_coverage_lock \
+        # frob:tests src/frob/app/_verify_coverage_lock.py::_auto_commit_coverage_lock \
         # kind="unit"
         root = tmp_path
         _git(root, "init", "-q", "-b", "main")

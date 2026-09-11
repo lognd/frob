@@ -2,7 +2,7 @@
 id: T-4407
 title: 'verify_runner.py exceeds LARGE001 800-line threshold: extract coverage-lock
   auto-commit helpers'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-10'

@@ -31,9 +31,9 @@
       "ticket": "T-3029"
     },
     "cli::fs.read": {
-      "accepted_count": 22,
-      "reason": "T-3892: the worktree ledger mirror's new evidence-union fix (_mirror_evidence_union/_mirror_ledger_paths in src/frob/app/ticket_runner/_ledger_mirror.py) reads a ticket's ticket.md before an overwrite to preserve evidence ids the other side already carries -- one real, new fs.read via-list site.",
-      "ticket": "T-3892"
+      "accepted_count": 24,
+      "reason": "T-4407: verify_runner.py's LARGE001 split moved the coverage-lock auto-commit and rapid-debt-visibility fs.read call sites into two new sibling modules (_verify_coverage_lock.py, _verify_rapid_debt.py) -- same effects as before the split, two new named via-list sites rather than a behavior change.",
+      "ticket": "T-4407"
     },
     "cli::fs.write": {
       "accepted_count": 19,

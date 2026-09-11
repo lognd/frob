@@ -1,8 +1,9 @@
 # frob.app.verify_runner -- rapid-debt visibility (T-4324)
 
-<!-- frob:describes src/frob/app/verify_runner.py::RapidDebtEntryView -->
+<!-- frob:describes src/frob/app/_verify_rapid_debt.py::RapidDebtEntryView -->
 
-`frob verify status` (`src/frob/app/verify_runner.py`) surfaces LIVE
+`frob verify status` (`src/frob/app/verify_runner.py`, rapid-debt logic
+split into `src/frob/app/_verify_rapid_debt.py` per T-4407) surfaces LIVE
 `.frob/rapid-debt.jsonl` `post-land-unscoped-sweep-deferred` entries
 (T-1681/T-1684) as part of its `VerifyStatus` payload -- this is a small,
 self-contained doc for the ONE new public symbol that fix introduced
