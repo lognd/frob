@@ -11,7 +11,7 @@ parent: T-1273
 tier: ticket
 sprint: v0.551.0
 runs_last: false
-milestone: null
+milestone: v0.551.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
