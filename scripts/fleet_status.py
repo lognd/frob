@@ -2066,7 +2066,18 @@ def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
     repository -- mirroring the ALREADY-FIXED `frob.tickets._leases.
     _scan_for_live_land_process` shape (T-3885) instead of this function
     independently reinventing its own; see that helper's own docstring
-    for the exact contract."""
+    for the exact contract.
+
+    T-4401: in real (non-mocked) use this scan is already effectively
+    inert on `win32` -- there is no `ps` binary on PATH by default, so
+    `subprocess.run(["ps", ...])` raises `FileNotFoundError` (an
+    `OSError` subclass), caught by the `except (OSError, subprocess.
+    TimeoutExpired)` clause right below, returning `[]` the same
+    'cannot determine' way a failed `ps` invocation already does on any
+    platform -- no separate `sys.platform` branch needed here. The
+    win32 CI failure this ticket fixes was confined to one unit test's
+    own `os.symlink`-based fixture, not this function's production
+    behavior; see that test's own T-4401 comment."""
     try:
         done = subprocess.run(
             ["ps", "-eo", "pid,etimes,time,args"],

@@ -944,6 +944,16 @@ resolves under `REPO`, so a worktree-cwd'd land is correctly kept) --
 same fail-open posture as the argv re-check: an unreadable cwd is
 'cannot confirm', never 'confirmed a different repo', so the row stays.
 
+T-4401: on real win32 hosts there is no `ps` binary, so
+`subprocess.run(["ps", ...])` raises `FileNotFoundError` (an `OSError`),
+caught by the same except clause a failed `ps` invocation on any
+platform already hits, returning `[]` -- 'cannot determine', never
+'confirmed zero lands in flight'. No `sys.platform` branch was added to
+this function itself; the one win32 CI failure this ticket closed was
+confined to a single unit test's own `os.symlink`-based fixture for the
+T-4377 repo-filter (unreliable to resolve on win32), now skipped there
+with this repo's usual POSIX-only test convention.
+
 ### `land_invocations`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#land_invocations -->

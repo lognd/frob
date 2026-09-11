@@ -121,6 +121,11 @@ class TestLandProcessRows:
         FLIGHT. pid 100's cwd resolves inside `REPO`'s own worktree
         directory (kept); pid 200's cwd resolves under an unrelated repo
         entirely (dropped)."""
+        if sys.platform == "win32":
+            pytest.skip(
+                "land_process_rows is POSIX-only (ps/proc); returns [] "
+                "unconditionally on win32 (T-4401)"
+            )
         proc = tmp_path / "proc"
         proc.mkdir()
         this_repo = tmp_path / "this-repo"
