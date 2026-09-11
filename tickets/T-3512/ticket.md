@@ -10,7 +10,7 @@ blocked_by:
 - T-3511
 parent: T-3505
 tier: ticket
-sprint: null
+sprint: v0.531.0
 runs_last: false
 milestone: 1.0.0
 runs_last_parallel_safe: false
