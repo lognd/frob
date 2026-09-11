@@ -10,7 +10,7 @@ parent: T-3505
 tier: ticket
 sprint: v0.531.0
 runs_last: false
-milestone: null
+milestone: v0.531.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
