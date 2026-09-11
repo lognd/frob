@@ -11,7 +11,7 @@ parent: null
 tier: ticket
 sprint: v1.1.0
 runs_last: false
-milestone: null
+milestone: v1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
