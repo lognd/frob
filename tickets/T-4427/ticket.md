@@ -16,11 +16,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
-- tests/test_tickets_priority.py
+- tests/test_tickets_triage_dates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/test_tickets_priority.py
+  reason: T-4424 holds a live lease on test_tickets_priority.py; use a new dedicated
+    test file to avoid the collision
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: tests/test_tickets_triage_dates.py
+  reason: T-4424 holds a live lease on test_tickets_priority.py; use a new dedicated
+    test file to avoid the collision
+  actor: logan
+  at: '2026-09-11'
 body_changes:
 - mode: set
   reason: full requirements for the TriageChangeEntry recording fast-follow
