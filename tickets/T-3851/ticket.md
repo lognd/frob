@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: high
-parent: null
+parent: T-3928
 tier: ticket
 sprint: null
 runs_last: false
@@ -18,6 +18,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3928
+  reason: 'pass2 backlog org: theme bucket consumer-audit'
+  actor: logan
+  at: '2026-09-11'
 designated_repro_test: null
 threat: null
 component: null
