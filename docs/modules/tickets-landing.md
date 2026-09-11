@@ -3759,3 +3759,23 @@ path unchanged: a degraded-but-correct sweep (against `root`, as
 before), never a silently skipped one. `root` itself is never written
 to by the warm-stage attempt; only the fallback path still touches it,
 same as pre-T-3135.
+
+## Phase-transition elapsed-seconds logging (T-4417)
+
+`frob ticket land`'s log carried no timestamps at all -- the T-4408
+land ran 50+ minutes and could not be attributed to a specific phase
+without external `ps` inspection.
+
+`_land_cmd.py`'s `_LandPhaseElapsedFilter` (a `logging.Filter` attached
+to this module's `_log`, shared logger name `"frob.app.ticket_runner"`
+across the whole `ticket_runner` package) decorates every log record
+whose message starts with the literal `"ticket land:"` prefix with a
+`[+<elapsed>s]` marker, timed from the first such line this process
+emits (`_land_phase_elapsed_seconds`, lazily starting its own clock on
+first call). This is one centralized hook rather than per-call-site
+arithmetic: every existing `_log.info("ticket land: %s ...", ...)` /
+`_log.warning(...)` / `_log.error(...)` phase-transition line across
+this file is covered uniformly, present and future, with no change to
+any of those call sites' own code. Log lines from OTHER commands
+sharing the same logger name (`ticket new`, `ticket close`, ...) are
+left completely unmodified -- the prefix match is the only gate.

@@ -34,6 +34,7 @@ from __future__ import annotations
 import ast
 import itertools
 import json
+import logging
 import re
 import sys
 import time
@@ -97,6 +98,87 @@ if TYPE_CHECKING:
     from frob.gates._fix_engine import MergeTargetKnownIds
 
 _log = get_logger("frob.app.ticket_runner")
+
+
+# frob:ticket T-4417
+_LAND_PHASE_LOG_PREFIX = "ticket land:"
+
+#: Wall-clock (`time.monotonic()`) of the first "ticket land: ..." line
+#: this process has logged, lazily set by `_LandPhaseElapsedFilter` the
+#: first time one fires -- `None` before any land phase line has been
+#: emitted. T-4417: module-level rather than passed explicitly through
+#: every one of this file's ~80 existing phase-transition call sites,
+#: because doing it per-call would mean re-deriving "how long has this
+#: land run so far" independently at each of those sites (the "per-call
+#: arithmetic" the ticket explicitly asks to avoid) instead of computing
+#: it once, centrally, off the log record stream itself.
+_land_phase_timer_start: float | None = None
+
+
+# frob:ticket T-4417
+# frob:tests \
+# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_elaps\
+# ed_seconds_is_monotonic_across_phase_lines
+def _land_phase_elapsed_seconds() -> float:
+    """Seconds since this process's first "ticket land: ..." log line
+    (T-4417), starting the clock on first call rather than requiring a
+    separate explicit "land began now" call from `_land`/`_land_core` --
+    a land can be entered through several top-level paths (plain land,
+    `--finish`, the merge-driver), and starting the clock lazily off the
+    log stream itself means every one of them is covered for free. Not
+    itself logged -- `_LandPhaseElapsedFilter` is the one caller, applied
+    uniformly to every phase-transition line so no call site computes
+    this by hand."""
+    global _land_phase_timer_start
+    now = time.monotonic()
+    if _land_phase_timer_start is None:
+        _land_phase_timer_start = now
+    return now - _land_phase_timer_start
+
+
+# frob:ticket T-4417
+# frob:doc \
+# docs/modules/tickets-landing.md#phase-transition-elapsed-seconds-logging-t-4417
+# frob:tests \
+# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_elaps\
+# ed_seconds_is_monotonic_across_phase_lines
+# frob:tests \
+# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_non_p\
+# hase_log_lines_are_left_untouched
+class _LandPhaseElapsedFilter(logging.Filter):
+    """Prefixes every "ticket land: ..." record on this module's logger
+    with `[+<elapsed>s]` (T-4417), so a land's log (e.g. `/tmp/land-
+    T-4408.log`) is attributable to a phase without external `ps`
+    inspection -- the exact gap T-4408's 50+ minute land hit. Runs as a
+    `logging.Filter` rather than editing each of this file's existing
+    `_log.info("ticket land: %s ...", ...)` call sites individually: one
+    hook on the record stream covers every current AND future
+    phase-transition line uniformly (T-4417's "one helper, not per-call
+    arithmetic"), including the ones several other `_land_cmd.py`
+    functions already emit via lazy/deferred formatting (`%s` args still
+    format correctly since only `record.msg`'s literal prefix is
+    rewritten, never `record.args`).
+
+    Every OTHER `_log` call sharing this same logger name
+    ("frob.app.ticket_runner", per-module convention across this
+    package) is left completely unchanged -- the prefix match on
+    `_LAND_PHASE_LOG_PREFIX` is the whole gate."""
+
+    # frob:doc \
+    # docs/modules/tickets-landing.md#phase-transition-elapsed-seconds-logging-t-4417
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Rewrite `record.msg` in place with an elapsed-seconds prefix
+        when it is a land phase-transition line; always returns True
+        (never drops a record -- this filter only decorates)."""
+        msg = record.msg
+        if isinstance(msg, str) and msg.startswith(_LAND_PHASE_LOG_PREFIX):
+            elapsed = _land_phase_elapsed_seconds()
+            record.msg = f"[+{elapsed:.1f}s] {msg}"
+        return True
+
+
+if not any(isinstance(f, _LandPhaseElapsedFilter) for f in _log.filters):
+    _log.addFilter(_LandPhaseElapsedFilter())
 
 
 # frob:ticket T-1437
