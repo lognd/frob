@@ -1,7 +1,7 @@
 ---
 id: T-4424
 title: TICK004 rot severity should respect sprint/milestone triage
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-11'
