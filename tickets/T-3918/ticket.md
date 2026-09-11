@@ -9,7 +9,7 @@ created: '2026-09-05'
 priority: medium
 parent: T-3505
 tier: ticket
-sprint: null
+sprint: v0.531.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
