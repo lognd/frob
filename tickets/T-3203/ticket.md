@@ -8,7 +8,7 @@ created: '2026-08-27'
 priority: medium
 parent: null
 tier: epic
-sprint: null
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
