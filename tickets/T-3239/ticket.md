@@ -10,7 +10,7 @@ blocked_by:
 - T-3228
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
