@@ -1,7 +1,7 @@
 ---
 id: T-4408
 title: Windows platform_skipped path-separator mismatch
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-10'
