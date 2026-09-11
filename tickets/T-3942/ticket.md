@@ -11,7 +11,7 @@ parent: null
 tier: epic
 sprint: v0.535.0
 runs_last: false
-milestone: null
+milestone: 0.535.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
