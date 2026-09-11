@@ -1,7 +1,7 @@
 ---
 id: T-4409
 title: _collect.py exceeds LARGE001 800-line threshold
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-10'
