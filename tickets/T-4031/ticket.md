@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: medium
 parent: T-4025
 tier: ticket
-sprint: null
+sprint: v0.537.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
