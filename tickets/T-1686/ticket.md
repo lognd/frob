@@ -8,7 +8,7 @@ created: '2026-08-06'
 priority: medium
 blocked_by:
 - T-1736
-parent: null
+parent: T-4410
 tier: epic
 sprint: null
 runs_last: false
@@ -131,6 +131,12 @@ triage_changes:
     actual working priority'
   actor: logan
   at: '2026-08-31'
+- field: parent
+  old_value: null
+  new_value: T-4410
+  reason: landing/verify cost epic T-4410 covers this scope
+  actor: logan
+  at: '2026-09-11'
 evidence:
 - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue
