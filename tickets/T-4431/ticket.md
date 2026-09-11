@@ -1,7 +1,7 @@
 ---
 id: T-4431
 title: Land squash worktree rebuilds natives from scratch every land
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-11'
