@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/verify_runner.py
 - src/frob/app/_verify_coverage_lock.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: auto-commit helper doc lives here, moving into new module
+  actor: logan
+  at: '2026-09-10'
 designated_repro_test: null
 threat: null
 component: null
