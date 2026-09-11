@@ -1,7 +1,7 @@
 ---
 id: T-4367
 title: Tool-absence classifier misses the tool-unavailable shape, failing on Windows
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -84,3 +84,6 @@ venv uses `Scripts/` not `bin/`; bare `python3` hits a Store alias stub exiting
 9009). An earlier ticket also reproduced this class on linux by restricting PATH
 to a directory containing only the project runner, since the linter otherwise sits
 beside it -- that technique works and is cheaper than a Windows round trip.
+
+## Failure log
+- 2026-09-11 attempt 1: Wrong premise: not a classifier gap; test fixture bug outside declared scope
