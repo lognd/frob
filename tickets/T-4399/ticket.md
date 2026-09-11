@@ -2,7 +2,7 @@
 id: T-4399
 title: 'DRIFT002 on src/frob/gates/_tickets_gate.py: the acked doc digest moved when
   T-4393 introduced the _utc_today seam; re-read the doc section and ack'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-10'
