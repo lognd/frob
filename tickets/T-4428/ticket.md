@@ -2,7 +2,7 @@
 id: T-4428
 title: 'TICK006 still fires on T-4041: disclosure sentence still contains the literal
   draft id'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-11'
