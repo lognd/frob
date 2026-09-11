@@ -1287,6 +1287,62 @@ class TestCorruptCacheSelfHeals:
             "the on-disk cache was not actually rebuilt clean"
         )
 
+    def test_win32_rebuild_closes_the_callers_stale_connection_first(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_\
+        # closes_the_callers_stale_connection_first
+        """T-4402 (Linux-runnable): a Windows regression (CI run
+        34546329688) had this exact rebuild fail with `PermissionError:
+        [WinError 5] Access is denied` from `os.replace(tmp_path, path)`
+        inside `_recreate`, because the CALLER's own stale connection
+        (`stale` below -- the second open handle: one connection opened
+        by this test, held across the corruption, plus the internal
+        `throwaway` connection `_rebuild_because_corrupt` itself opens
+        and closes) was still open on `path` when the replace ran --
+        Windows refuses to replace a path with ANY open handle, unlike
+        POSIX rename, which never cares who else has the destination
+        open. This cannot reproduce the `PermissionError` itself on
+        Linux, so `sys.platform` is forced to `"win32"` here (the only
+        way this fix's behavior differs by platform) to run the actual
+        win32 code path natively.
+
+        `stale.execute(...)` after the rebuild must raise sqlite3's own
+        `ProgrammingError` for a closed connection -- proving the handle
+        that would have blocked Windows's `os.replace` is actually
+        closed by `_rebuild_if_genuinely_corrupt` BEFORE the replace
+        runs, not merely left dangling until some later, coincidental
+        close. The rebuild itself must still complete and report a
+        clean, empty cache regardless of platform."""
+        monkeypatch.setattr(graph_cache.sys, "platform", "win32")
+        path = tmp_path / "cache.db"
+        setup = graph_cache.connect(path)
+        graph_cache.store_file_data(
+            setup,
+            file_path="src/a.py",
+            content_hash="deadbeef",
+            mtime_ns=1,
+            size=1,
+            symbols=(),
+            edges=(),
+            malformed=(),
+        )
+        setup.commit()
+        setup.close()
+        self._corrupt_in_place(path)
+
+        stale = graph_cache._open(path)
+        result = graph_cache.get_file_meta(stale, "src/a.py")
+        assert result is None, (
+            "the corrupt cache was rebuilt (empty), so the prior entry "
+            "is correctly gone rather than served from bad bytes"
+        )
+        assert graph_cache._cache_integrity_ok(path) is True
+
+        with pytest.raises(sqlite3.ProgrammingError):
+            stale.execute("SELECT 1")
+
     def test_healthy_cache_never_triggers_a_rebuild(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

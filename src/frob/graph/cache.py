@@ -1622,7 +1622,11 @@ def _reconnect_delay_for(
 
 
 # frob:ticket T-4159
+# frob:ticket T-4402
 # frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_closes_t\
+# he_callers_stale_connection_first
 def _rebuild_if_genuinely_corrupt(
     active: sqlite3.Connection,
     path: Path | None,
@@ -1630,6 +1634,7 @@ def _rebuild_if_genuinely_corrupt(
     *,
     owned: bool,
     what: str,
+    unowned_conn: sqlite3.Connection | None = None,
 ) -> sqlite3.Connection | None:
     """`_run_with_stale_reconnect`'s T-4159 pre-check, split out to keep
     that function under ARCH001's line threshold: a genuine on-disk-
@@ -1637,6 +1642,26 @@ def _rebuild_if_genuinely_corrupt(
     loop that function otherwise falls through to -- reopening the SAME
     path reads the SAME bad bytes. Verified via `PRAGMA integrity_check`
     (never trusted from `exc`'s message alone) before ever rebuilding.
+
+    T-4402: `unowned_conn`, when given, is the CALLER's own original
+    connection -- `_reopen_without_closing`'s docstring explains why
+    `_run_with_stale_reconnect` otherwise never closes it (closing a
+    caller's handle out from under it turns their next ordinary use into
+    a `ProgrammingError`). That posture is safe on POSIX because
+    `_recreate` renames the corrupt db ASIDE rather than unlinking it in
+    place (T-3607) -- a still-open caller fd stays bound to the old,
+    now-quarantined inode, harmlessly. On win32 the platform itself makes
+    that posture unsafe instead of merely impolite: `_replace_with_retry`
+    inside `_recreate` calls `os.replace(tmp_path, path)`, and Windows
+    refuses to replace a path that still has ANY open handle on it
+    (`PermissionError: [WinError 5]`) -- unlike POSIX rename, which never
+    cares who else has the destination open. A rebuild is already a
+    full data-loss event (every cached entry is gone regardless), so on
+    win32 this closes `unowned_conn` too, before the replace ever runs,
+    rather than let a caller's leftover handle to a database that no
+    longer exists in any useful sense fail the rebuild outright. Left
+    unclosed on every other platform, matching this function's pre-
+    existing contract there exactly.
 
     Returns the fresh, rebuilt connection (closing `active` first if the
     caller owned it) when `exc` is confirmed genuine corruption, or
@@ -1650,6 +1675,17 @@ def _rebuild_if_genuinely_corrupt(
         return None
     if owned:
         _close_conn(active)
+    if sys.platform == "win32":
+        # T-4402: `active` itself needs closing here too when it was NOT
+        # already closed above -- `owned=False` means `active` IS the
+        # caller's original connection (never reopened this attempt), the
+        # exact shape the `owned` branch above does not cover.
+        # `sqlite3.Connection.close()` is idempotent, so closing `active`
+        # a second time when `owned` already did is a harmless no-op, not
+        # a double-close error.
+        _close_conn(active)
+        if unowned_conn is not None:
+            _close_conn(unowned_conn)
     return _rebuild_because_corrupt(path, what=what)
 
 
@@ -1731,7 +1767,7 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
             except sqlite3.Error as exc:
                 path = _conn_path(active) or canonical
                 rebuilt = _rebuild_if_genuinely_corrupt(
-                    active, path, exc, owned=owned, what=what
+                    active, path, exc, owned=owned, what=what, unowned_conn=conn
                 )
                 if rebuilt is not None:
                     active, canonical, attempt = rebuilt, path, 0
