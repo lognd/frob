@@ -15,8 +15,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
-- tests/gates/test_gate_cov.py
 - docs/modules/gates.md
+- tests/gates_suite/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +31,18 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: editing _load_tests, whose frob:doc target is docs/modules/gates.md
+  actor: logan
+  at: '2026-09-11'
+- op: remove
+  glob: tests/gates/test_gate_cov.py
+  reason: actual test module covering _load_tests/COV003 platform_skipped is tests/gates_suite/test_coverage.py,
+    not the guessed path
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: tests/gates_suite/test_coverage.py
+  reason: actual test module covering _load_tests/COV003 platform_skipped is tests/gates_suite/test_coverage.py,
+    not the guessed path
   actor: logan
   at: '2026-09-11'
 designated_repro_test: null
