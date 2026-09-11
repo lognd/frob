@@ -2,7 +2,7 @@
 id: T-4406
 title: 'scaffolded python-tool project fails frob check on Windows: pytest collect-only
   exits 2 (COV003)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-10'
