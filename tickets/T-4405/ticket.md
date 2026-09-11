@@ -17,10 +17,23 @@ scope:
 - src/frob/app/worktree_guard*.py
 - src/frob/cli/agent_env*.py
 - tests/test_worktree_guard.py
+- src/frob/tickets/_worktree_guard.py
+- src/frob/app/agent_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_worktree_guard.py
+  reason: actual implementation and test targets per scope-closure warnings
+  actor: logan
+  at: '2026-09-10'
+- op: add
+  glob: src/frob/app/agent_runner.py
+  reason: actual implementation and test targets per scope-closure warnings
+  actor: logan
+  at: '2026-09-10'
 designated_repro_test: null
 threat: null
 component: null
