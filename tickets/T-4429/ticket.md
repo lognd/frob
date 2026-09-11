@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - tests/gates/test_gate_cov.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: tests/test_testing_collect.py
   reason: T-4409 already leases this file; put the regression test in tests/gates/test_gate_cov.py
     instead
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: docs/modules/gates.md
+  reason: editing _load_tests, whose frob:doc target is docs/modules/gates.md
   actor: logan
   at: '2026-09-11'
 designated_repro_test: null
