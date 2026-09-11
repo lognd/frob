@@ -23,6 +23,8 @@ scope:
 - tests/unit/test_pytest_spawn_env_wiring.py
 - src/frob/testing/_collect_shared.py
 - frob.lock
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +76,18 @@ scope_changes:
   glob: frob.lock
   reason: T-4409's LARGE001 split moves symbols whose frob:doc/frob:tests edges and
     cache-key dependency land in these files -- scope closure
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: design/frob.strata
+  reason: T-4409's LARGE001 split moves fs.read/fs.write call sites into the new sibling
+    module; SELFAUDIT001/SYS100 requires declaring them, per T-4407's identical precedent
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-4409's LARGE001 split moves fs.read/fs.write call sites into the new sibling
+    module; SELFAUDIT001/SYS100 requires declaring them, per T-4407's identical precedent
   actor: logan
   at: '2026-09-11'
 triage_changes:
