@@ -2,7 +2,7 @@
 id: T-4409
 title: _collect.py exceeds LARGE001 800-line threshold
 state: in-progress
-kind: bug
+kind: feature
 origin: human
 created: '2026-09-10'
 priority: medium
@@ -24,6 +24,13 @@ triage_changes:
   old_value: null
   new_value: T-3505
   reason: windows drain epic T-3505 covers this leaf
+  actor: logan
+  at: '2026-09-11'
+- field: kind
+  old_value: bug
+  new_value: feature
+  reason: pure module split, no behavior change -- a split has no mutation evidence,
+    matches T-4407's precedent
   actor: logan
   at: '2026-09-11'
 designated_repro_test: null
