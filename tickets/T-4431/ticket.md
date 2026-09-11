@@ -19,10 +19,25 @@ scope:
 - src/frob/strata/_native_staleness.py
 - tests/unit/test_land_squash_stage.py
 - tests/test_natives.py
+- src/frob/tickets/_land_compose.py
+- tests/unit/test_land_compose.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_compose.py
+  reason: the disposable squash worktree is created by compose_squash_in_disposable_worktree
+    in this module; the natives-rebuild fix belongs at its worktree-creation point
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: tests/unit/test_land_compose.py
+  reason: the disposable squash worktree is created by compose_squash_in_disposable_worktree
+    in this module; the natives-rebuild fix belongs at its worktree-creation point
+  actor: logan
+  at: '2026-09-11'
 designated_repro_test: null
 threat: null
 component: null
