@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/_collect.py
+- tests/test_testing_collect.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_testing_collect.py
+  reason: add test coverage for windows path parsing fix
+  actor: logan
+  at: '2026-09-10'
 designated_repro_test: null
 threat: null
 component: null
