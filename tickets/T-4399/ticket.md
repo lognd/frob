@@ -16,11 +16,34 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
-- docs/modules/*.md
+- docs/modules/gates.md
+- docs/modules/tickets-lifecycle.md
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/*.md
+  reason: narrow to the three doc files that mention TICK004 severity
+  actor: logan
+  at: '2026-09-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow to the three doc files that mention TICK004 severity
+  actor: logan
+  at: '2026-09-10'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: narrow to the three doc files that mention TICK004 severity
+  actor: logan
+  at: '2026-09-10'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: narrow to the three doc files that mention TICK004 severity
+  actor: logan
+  at: '2026-09-10'
 designated_repro_test: null
 threat: null
 component: null
