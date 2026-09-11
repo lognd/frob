@@ -1,7 +1,7 @@
 ---
 id: T-4426
 title: T-4041 Done report cites dead draft T-draft-858a1bad, never promoted
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-11'
