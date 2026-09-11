@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: medium
 parent: T-3928
 tier: ticket
-sprint: null
+sprint: v0.538.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
