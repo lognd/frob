@@ -9,7 +9,7 @@ created: '2026-08-31'
 priority: high
 parent: T-4410
 tier: epic
-sprint: null
+sprint: v0.532.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
