@@ -1,7 +1,7 @@
 ---
 id: T-4367
 title: Tool-absence classifier misses the tool-unavailable shape, failing on Windows
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-09'
