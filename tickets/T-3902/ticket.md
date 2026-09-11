@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: medium
-parent: null
+parent: T-3927
 tier: ticket
 sprint: null
 runs_last: false
@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3927
+  reason: 'pass2 backlog org: theme bucket consumer-audit'
+  actor: logan
+  at: '2026-09-11'
 body_changes:
 - mode: append
   reason: four independent sightings today (FA, FI, FE, consumer); records the ratchet
