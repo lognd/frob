@@ -10,7 +10,7 @@ blocked_by:
 - T-4016
 parent: T-4036
 tier: ticket
-sprint: null
+sprint: v0.548.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
