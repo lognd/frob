@@ -6,7 +6,7 @@ kind: bug
 origin: human
 created: '2026-09-10'
 priority: medium
-parent: null
+parent: T-3505
 tier: ticket
 sprint: v0.531.0
 runs_last: false
@@ -34,6 +34,13 @@ scope_changes:
   reason: actual implementation and test targets per scope-closure warnings
   actor: logan
   at: '2026-09-10'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3505
+  reason: windows drain epic T-3505 covers this leaf
+  actor: logan
+  at: '2026-09-11'
 designated_repro_test: null
 threat: null
 component: null
