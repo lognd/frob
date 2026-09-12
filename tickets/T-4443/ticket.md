@@ -2,7 +2,7 @@
 id: T-4443
 title: 'LARGE001: _native_staleness.py at 805 lines after T-4434, extract the digest
   helpers'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
