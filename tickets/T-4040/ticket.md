@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: low
 blocked_by:
 - T-4016
-parent: T-4036
+parent: T-4016
 tier: ticket
 sprint: v0.548.0
 runs_last: false
@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: T-4036
+  new_value: T-4016
+  reason: 'MILE002: T-4036 (v0.548.0) cannot ship over descendant T-4040 (v1.1.0,
+    moved there because it is blocked_by T-4016 on v1.1.0); parenting T-4040 under
+    T-4016 keeps the dependency and the milestones consistent'
+  actor: logan
+  at: '2026-09-12'
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests directive waived for a tooling reason, when the waiver
