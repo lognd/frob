@@ -18,6 +18,8 @@ scope:
 - src/frob/graph/cache.py
 - src/frob/tickets/_land_compose.py
 - tests/unit/test_land_compose.py
+- docs/modules/graph.md
+- tests/unit/test_graph_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +37,24 @@ scope_changes:
     that T-4431 uses to seed native mtimes; the two seedings compose in one place.
   actor: logan
   at: '2026-09-11'
+- op: add
+  glob: docs/modules/graph.md
+  reason: Added a frob:doc target and unit tests for the new seed_disposable_worktree_cache
+    function directly in graph.py's own doc/test files.
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: tests/unit/test_graph_cache.py
+  reason: Added a frob:doc target and unit tests for the new seed_disposable_worktree_cache
+    function directly in graph.py's own doc/test files.
+  actor: logan
+  at: '2026-09-11'
+evidence:
+- tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_seeds_from_an_existing_primary_cache
+- tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_no_primary_cache_is_a_quiet_no_op
+- tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_primary_journal_present_skips_seeding
+- tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_empty_primary_journal_does_not_block_seeding
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_cache_db_is_seeded_against_the_disposable_worktree
 designated_repro_test: null
 acceptance:
 - text: GIVEN a rapid land creates a disposable squash worktree WHEN the land's synchronous
