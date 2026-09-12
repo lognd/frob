@@ -6958,7 +6958,16 @@ finding gates still render their ordinary `pass`/`FAIL` icon.
 - `WaiverRef` -- the `frob:waive` edge that suppressed a violation, kept
   on the `Violation` so waivers stay visible debt rather than silence.
 - `Violation` -- one gate finding: rule id, severity, site, and a message
-  that always embeds its own remedy command.
+  that always embeds its own remedy command. T-4447: also carries
+  `severity_pinned` (default `False`) -- set by a verdict builder that
+  already chose its severity as a final answer (currently the COV003/
+  TEST002 platform-skip verdicts, `_platform_skip_violation`/
+  `_test002_platform_skipped` in `frob.gates`), so `_apply_severity_
+  overrides` (`[gates.severity]`'s warn/error dial, T-3844/T-4386) skips
+  it exactly like it already skips `Severity.UNRESOLVED` -- without this,
+  a legacy-adoption rule flipped to `error` silently re-promoted a
+  deliberate platform-skip WARN back to ERROR (Windows CI: 56 false
+  COV003 errors on two POSIX-only test modules).
 - `GateStats` -- per-gate counters (violation counts, timing, skipped
   gates) attached to every `GateReport`. T-1921: also carries
   `examined_sites`, the per-site analysis-coverage substrate filed from

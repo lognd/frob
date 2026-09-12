@@ -2839,14 +2839,25 @@ def _apply_severity_overrides(
     is orthogonal to the strictness dial `[gates.severity]` controls for a
     genuine finding. Promoting it to ERROR would silently defeat the exact
     distinction those verdicts exist to preserve the moment a legacy-
-    adoption rule like TEST002 is flipped to error (T-3844)."""
+    adoption rule like TEST002 is flipped to error (T-3844).
+
+    T-4447: also never touches a `severity_pinned` violation -- a verdict
+    builder that already chose WARN as its final answer (currently the
+    COV003/TEST002 platform-skip verdicts, `_platform_skip_violation` and
+    `_test002_platform_skipped` in `frob.gates`) is not a genuine finding
+    subject to the legacy-adoption strictness dial either; without this,
+    `[gates.severity]`'s COV003=error/TEST002=error silently re-promoted a
+    deliberate platform-skip WARN back to ERROR (Windows CI: 56 COV003 +
+    2 TEST002 false errors on the two POSIX-only stackdump test modules)."""
     overrides = _severity_overrides(root)
     if not overrides:
         return violations
     return tuple(
         (
             v.model_copy(update={"severity": overrides[v.rule]})
-            if v.rule in overrides and v.severity != Severity.UNRESOLVED
+            if v.rule in overrides
+            and v.severity != Severity.UNRESOLVED
+            and not v.severity_pinned
             else v
         )
         for v in violations

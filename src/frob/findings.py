@@ -107,3 +107,19 @@ class Violation(BaseModel):
     # only suppresses while `metric <= 50`; grow the function past 50 lines
     # and the waiver stops matching, so the exception can't silently rot.
     metric: int | None = None
+    # frob:ticket T-4447
+    # T-4447: True only when the VERDICT BUILDER itself already chose this
+    # severity as a deliberate, final answer (currently the COV003/TEST002
+    # platform-skip WARN verdicts, `_platform_skip_violation` and
+    # `_test002_platform_skipped` in gates/__init__.py) -- distinct from
+    # `Severity.UNRESOLVED`, which means "no answer", because a pinned
+    # violation DOES have an answer (WARN) that must not be re-decided.
+    # `_apply_severity_overrides` (T-4386's own `[gates.severity]` dial)
+    # skips pinned violations exactly like it skips UNRESOLVED ones: T-4386
+    # already established that `[gates.severity]` is a strictness knob for
+    # a genuine finding, not license to overwrite what a check has already
+    # settled -- COV003=error/TEST002=error silently re-promoting a
+    # platform-skip WARN back to ERROR (T-4447) is the same bug in a
+    # different guise. Left False for every ordinary violation, which
+    # remains fully subject to `[gates.severity]` as before.
+    severity_pinned: bool = False

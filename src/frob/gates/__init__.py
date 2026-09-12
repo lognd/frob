@@ -1979,12 +1979,18 @@ def _platform_skip_violation(ticket, evidence: str, reason: str) -> Violation:  
     excluded from collection on THIS platform (`sys.platform`) for
     `reason` (the module's own `pytest.skip(...)` message) -- a distinct,
     non-error outcome naming the excluding platform and reason, per this
-    ticket's own acceptance criteria, instead of COV003's usual ERROR."""
+    ticket's own acceptance criteria, instead of COV003's usual ERROR.
+
+    T-4447: `severity_pinned=True` -- this WARN is the verdict, not a
+    default `[gates.severity]` can second-guess; without the pin,
+    COV003=error in frob.toml silently promoted this back to ERROR on
+    every platform-skip evidence id."""
     return Violation(
         rule="COV003",
         severity=Severity.WARN,
         file=f"tickets/{ticket.id}",
         line=0,
+        severity_pinned=True,
         message=(
             f"COV003: {ticket.id} evidence {evidence!r} is platform-"
             f"unavailable -- its test module is excluded from collection "
@@ -4365,7 +4371,12 @@ def _test002_platform_skipped(record, reason: str) -> Violation:  # noqa: ANN001
     (T-3844) would then silently promote that false claim to a build
     failure -- `_apply_severity_overrides` (T-4386) leaves UNRESOLVED
     alone precisely so this stays a measurement gap on Windows, not an
-    error."""
+    error.
+
+    T-4447: also carries `severity_pinned=True` -- belt-and-suspenders
+    alongside the `UNRESOLVED` exemption, so this verdict stays fixed even
+    if a future change ever normalizes `UNRESOLVED` handling in
+    `_apply_severity_overrides`."""
     _log.debug(
         "TEST002: %s platform-skipped -- test module excluded on %s (%s)",
         record.symref,
@@ -4377,6 +4388,7 @@ def _test002_platform_skipped(record, reason: str) -> Violation:  # noqa: ANN001
         severity=Severity.UNRESOLVED,
         file=record.id.path,
         line=record.span[0],
+        severity_pinned=True,
         message=(
             f"TEST002: {record.symref} is platform-unavailable -- its "
             f"bound frob:tests edge's test module is excluded from "
