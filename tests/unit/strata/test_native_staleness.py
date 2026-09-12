@@ -381,6 +381,92 @@ class TestStaleNatives:
         assert NATIVE_SOURCE_DIRS == ("strata-core", "frob-core")
 
 
+class TestSeedWorktreeNativeSourceMtimes:
+    """T-4431: `seed_worktree_native_source_mtimes` -- a `git worktree add`
+    checkout stamps every file's mtime at checkout time, which otherwise
+    makes a disposable land worktree's native source dirs read as "just
+    edited" relative to the SAME artifact `stale_natives` resolves via
+    `find_spec` regardless of which root it is called with."""
+
+    def test_identical_source_is_backdated_and_reads_fresh(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtime\
+        # s.test_identical_source_is_backdated_and_reads_fresh kind="unit"
+        name = "fake_native_seed"
+        source_dir = "fake-native-seed"
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.NATIVE_SOURCE_DIRS", (source_dir,)
+        )
+        repo = tmp_path / "repo"
+        worktree = tmp_path / "worktree"
+        repo.mkdir()
+        worktree.mkdir()
+        _write_frob_toml(repo, name)
+        _write_frob_toml(worktree, name)
+        # repo's own source predates the artifact -- repo itself is fresh.
+        _fake_native_package(repo, name, b"\x00compiled-seed")
+        monkeypatch.syspath_prepend(str(repo))
+        importlib.invalidate_caches()
+        artifact = repo / name / f"{name}.abi3.so"
+        artifact_mtime = artifact.stat().st_mtime
+        _write_source_dir(repo, source_dir, mtime=artifact_mtime - 1000.0)
+        assert stale_natives(repo) == ()
+
+        # worktree's copy is BYTE-IDENTICAL content, but freshly "checked
+        # out" strictly AFTER the artifact, simulating `git worktree add`'s
+        # own checkout-time mtime stamping.
+        _write_source_dir(worktree, source_dir, mtime=artifact_mtime + 100.0)
+        # sanity: before the fix, the checkout-time mtime alone reads stale
+        # against the same artifact `find_spec` resolves for both roots.
+        assert len(stale_natives(worktree)) == 1
+
+        from frob.strata._native_staleness import seed_worktree_native_source_mtimes
+
+        seeded = seed_worktree_native_source_mtimes(repo, worktree)
+        assert seeded == (name,)
+        assert stale_natives(worktree) == ()
+
+    def test_diverged_source_is_left_untouched_and_still_stale(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtime\
+        # s.test_diverged_source_is_left_untouched_and_still_stale kind="unit"
+        name = "fake_native_seed_diverged"
+        source_dir = "fake-native-seed-diverged"
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.NATIVE_SOURCE_DIRS", (source_dir,)
+        )
+        repo = tmp_path / "repo"
+        worktree = tmp_path / "worktree"
+        repo.mkdir()
+        worktree.mkdir()
+        _write_frob_toml(repo, name)
+        _write_frob_toml(worktree, name)
+        _fake_native_package(repo, name, b"\x00compiled-diverged")
+        monkeypatch.syspath_prepend(str(repo))
+        importlib.invalidate_caches()
+        artifact = repo / name / f"{name}.abi3.so"
+        artifact_mtime = artifact.stat().st_mtime
+        _write_source_dir(repo, source_dir, mtime=artifact_mtime - 1000.0)
+        assert stale_natives(repo) == ()
+
+        # worktree's copy has genuinely DIFFERENT content -- an edit the
+        # worktree's base_commit predates repo's HEAD by, or vice versa.
+        _write_source_dir(worktree, source_dir, mtime=artifact_mtime + 100.0)
+        lib = worktree / source_dir / "src" / "lib.rs"
+        lib.write_text("// genuinely different source\n")
+
+        from frob.strata._native_staleness import seed_worktree_native_source_mtimes
+
+        seeded = seed_worktree_native_source_mtimes(repo, worktree)
+        assert seeded == ()
+        # still stale: a real divergence must still trigger T-1213's rebuild.
+        assert len(stale_natives(worktree)) == 1
+
+
 class TestCheckNativeStalenessOrExit:
     """`check_native_staleness_or_exit`: the `make check` entry point."""
 

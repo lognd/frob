@@ -1,7 +1,7 @@
 ---
 id: T-4431
 title: Land squash worktree rebuilds natives from scratch every land
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-11'
@@ -38,6 +38,10 @@ scope_changes:
     in this module; the natives-rebuild fix belongs at its worktree-creation point
   actor: logan
   at: '2026-09-11'
+evidence:
+- tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes::test_identical_source_is_backdated_and_reads_fresh
+- tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes::test_diverged_source_is_left_untouched_and_still_stale
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_native_source_mtimes_are_seeded_against_the_disposable_worktree
 designated_repro_test: null
 threat: null
 component: null

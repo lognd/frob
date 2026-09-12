@@ -221,6 +221,30 @@ class TestDisposableSquashWorktree:
             assert (stage.worktree / "a.txt").read_text() == "base\n"
             assert (stage.worktree / "b.txt").read_text() == "feature content\n"
 
+    # frob:ticket T-4431
+    def test_native_source_mtimes_are_seeded_against_the_disposable_worktree(
+        self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4431: `compose_squash_in_disposable_worktree` calls
+        `seed_worktree_native_source_mtimes(repo, worktree)` right after
+        cutting the disposable worktree, BEFORE the squash-merge -- so a
+        land's later in-worktree `stale_natives`/T-1213 auto-rebuild check
+        never sees the checkout-time mtimes a bare `git worktree add`
+        leaves behind."""
+        calls: list[tuple[Path, Path]] = []
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.seed_worktree_native_source_mtimes",
+            lambda repo, worktree: calls.append((repo, worktree)) or (),
+        )
+        with compose_squash_in_disposable_worktree(
+            scratch_repo, "main", "feature"
+        ) as staged:
+            assert staged.is_ok
+            assert len(calls) == 1
+            seeded_repo, seeded_worktree = calls[0]
+            assert seeded_repo == scratch_repo
+            assert seeded_worktree == staged.danger_ok.worktree
+
     def test_conflicting_squash_reports_the_conflicted_paths(
         self, conflicting_repo: Path
     ) -> None:

@@ -79,6 +79,7 @@ import hashlib
 import importlib
 import importlib.util
 import json
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -507,6 +508,104 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
     return tuple(stale)
 
 
+# frob:ticket T-4431
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests \
+# tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_i\
+# dentical_source_is_backdated_and_reads_fresh
+# frob:tests \
+# tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_d\
+# iverged_source_is_left_untouched_and_still_stale
+def seed_worktree_native_source_mtimes(repo: Path, worktree: Path) -> tuple[str, ...]:
+    """T-4431: backdate a freshly-cut disposable worktree's native source
+    directories so `stale_natives(worktree)` does not mistake a `git
+    worktree add` checkout for a genuine source edit.
+
+    Root cause: `_artifact_mtime` resolves a native's compiled artifact via
+    `find_spec`, which always points at the SAME physical artifact
+    regardless of which `root` `stale_natives` is called with (a land's
+    synchronous check runs in-process against the primary's own venv) --
+    only the SOURCE side of the comparison varies with `root`. `git
+    worktree add` stamps every checked-out file's mtime at checkout time,
+    so a brand-new worktree's native source reads "just edited" even when
+    byte-identical to what the artifact was built from, and `stale_natives`
+    reports every native stale on its very first call there, triggering
+    T-1213's full auto-rebuild on every single land.
+
+    Fix (delegated per-native to `_seed_one_native_source_mtime`): only a
+    native whose worktree source is byte-identical to `repo`'s own gets its
+    mtimes backdated to the epoch (never exceeds a real artifact mtime, so
+    the mtime check reads "not stale" honestly); a genuinely diverged
+    native is left untouched so T-1213's rebuild guarantee is unweakened.
+
+    Returns the sorted names of natives backdated (empty if none matched,
+    including when `load_natives(repo)` itself errors -- a no-op is always
+    the safe fallback: worst case is paying the pre-existing rebuild cost
+    this ticket exists to remove, never a wrong staleness verdict)."""
+    loaded = load_natives(repo)
+    if loaded.is_err:
+        _log.debug(
+            "seed_worktree_native_source_mtimes: could not load [[native]] "
+            "entries (%s) -- skipping",
+            loaded.danger_err,
+        )
+        return ()
+    seeded = [
+        name
+        for spec in loaded.danger_ok
+        if (name := _seed_one_native_source_mtime(repo, worktree, spec)) is not None
+    ]
+    if seeded:
+        _log.info(
+            "seed_worktree_native_source_mtimes: backdated %s under %s "
+            "(content identical to %s)",
+            sorted(seeded),
+            worktree,
+            repo,
+        )
+    return tuple(sorted(seeded))
+
+
+def _seed_one_native_source_mtime(
+    repo: Path, worktree: Path, spec: NativeSpec
+) -> str | None:
+    """Backdate ONE declared native's source dir under `worktree` to the
+    epoch, iff it exists there and is byte-identical to `repo`'s own copy
+    -- private per-native split-out of `seed_worktree_native_source_mtimes`
+    (T-4431, ARCH001 length budget). Returns `spec.name` if backdated,
+    `None` if there was nothing to do (no matching source dir under
+    `worktree`) or the two copies genuinely diverge (left untouched, so a
+    real content divergence still reads as stale to `stale_natives`)."""
+    source_dir = _source_dir_for(repo, spec)
+    if source_dir is None:
+        return None
+    wt_source = worktree / source_dir
+    if not wt_source.is_dir():
+        return None
+    repo_digest = _source_content_digest(repo / source_dir)
+    wt_digest = _source_content_digest(wt_source)
+    if repo_digest != wt_digest:
+        _log.debug(
+            "seed_worktree_native_source_mtimes: %s source diverges "
+            "between %s and %s -- leaving checkout mtimes untouched",
+            spec.name,
+            repo,
+            worktree,
+        )
+        return None
+    for path in walk_pruned(wt_source):
+        try:
+            st = path.stat()
+            os.utime(path, (st.st_atime, 0.0))
+        except OSError as exc:
+            _log.debug(
+                "seed_worktree_native_source_mtimes: could not backdate %s: %s",
+                path,
+                exc,
+            )
+    return spec.name
+
+
 # frob:doc docs/modules/testing.md#public-api
 def stale_native_warning(root: Path) -> str | None:
     """One human-readable LOUD warning naming every stale native under
@@ -649,6 +748,7 @@ __all__ = [
     "check_native_staleness_or_exit",
     "native_unavailable_warning",
     "record_native_build_attempt",
+    "seed_worktree_native_source_mtimes",
     "stale_native_warning",
     "stale_natives",
     "unimportable_natives",

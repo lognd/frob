@@ -315,6 +315,8 @@ def _squash_into_worktree(
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
 # -way-squash-compose-t-3107
 # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
+# frob:ticket T-4431
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_native_source_mtimes_are_seeded_against_the_disposable_worktree  # noqa: E501
 @contextmanager
 def compose_squash_in_disposable_worktree(
     repo: Path, base_commit: str, branch_name: str
@@ -397,6 +399,20 @@ def compose_squash_in_disposable_worktree(
             )
             yield Err(LandComposeError.WorktreeSetupFailed)
             return
+        # T-4431: `git worktree add` stamps every checked-out file's mtime
+        # at checkout time, so this brand-new worktree's native source
+        # dirs (strata-core/frob-core) read as "just edited" even when
+        # their content is byte-identical to what `repo`'s own already-
+        # built artifact was built from -- `stale_natives` would otherwise
+        # report every native stale on its very first call here, and
+        # T-1213's auto-rebuild would run a full cargo build of both
+        # native cores before the land's check ever gets to real gates
+        # (measured: 60-110 minutes vs 305s for the same check warm). A
+        # native whose worktree source actually diverges from `repo`'s is
+        # left untouched, so a genuinely stale native still rebuilds.
+        from frob.strata._native_staleness import seed_worktree_native_source_mtimes
+
+        seed_worktree_native_source_mtimes(repo, worktree)
         try:
             yield _squash_into_worktree(worktree, branch_name)
         finally:
