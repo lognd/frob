@@ -2,7 +2,7 @@
 id: T-4430
 title: 'uv-only-PATH test fixture unspawnable on Windows: symlink named ''uv'' has
   no .exe extension'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-11'
@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'record BUG002 waiver: defect win32-only, repro measured off-host via winrun'
+  actor: logan
+  at: '2026-09-12'
+  old_length: 2013
+  new_length: 2785
+evidence:
+- tests/system/test_cli_check.py::TestCheckRuffAbsentFromTargetProject::test_missing_ruff_reports_unmeasured_not_error
 designated_repro_test: null
 threat: null
 component: null
@@ -61,3 +70,5 @@ posix path unchanged. Verify fail-before/pass-after on the winrun mirror
 tickets). Do not weaken the assertion itself (returncode == 0, "tool
 unavailable" text) -- only the fixture's binary-naming needs the platform
 branch.
+
+frob:waive BUG002 reason="the defect is win32-only (CreateProcess PATH search appends .exe to an extensionless name); check-repro runs the designated test at the parent commit on this (Linux) host, where the fixture always worked, so the test PASSED_AT_PARENT here regardless of the fix -- confirmatory-only by construction here, not by omission. The actual fail-before/pass-after repro was measured on the winrun Windows mirror: before the fix, test_missing_ruff_reports_unmeasured_not_error FAILED with returncode=1 (tool unavailable: ruff; git/uv WinError 2 spawn failures) because uv itself was unspawnable via the extensionless symlink; after the fix (stand-in named per Path(uv_path).name, i.e. uv.exe via file copy on win32), the same test PASSED (exitstatus=0)."

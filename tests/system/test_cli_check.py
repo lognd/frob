@@ -1,6 +1,7 @@
 """End-to-end tests for `frob check` (Python quality gate)."""
 
 import shutil
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -280,18 +281,34 @@ class TestCheckRuffAbsentFromTargetProject:
     `_only_uv_on_path` symlinks just `uv` into an isolated directory and
     points `PATH` at that alone."""
 
-    # frob:ticket T-4359
+    # frob:ticket T-4430
+    # frob:tests T-4430
     @staticmethod
     def _only_uv_on_path(tmp_path: Path) -> str:
-        """A directory containing nothing but a symlink to the real `uv`
+        """A directory containing nothing but a stand-in for the real `uv`
         binary -- a `PATH` of just this directory can resolve `uv` but
         can never fall back to a `ruff` sitting anywhere else on the
-        real PATH (e.g. installed alongside `uv` itself)."""
+        real PATH (e.g. installed alongside `uv` itself).
+
+        T-4430: the stand-in's file name must match `Path(uv_path).name`
+        (e.g. `uv.exe` on win32, `uv` on POSIX) rather than being hardcoded
+        to `uv` -- on win32, CreateProcess's PATH search for an
+        extensionless name appends `.exe` and never matches a file
+        literally named `uv`, even one whose target is `uv.exe`, so a
+        hardcoded `uv` symlink makes `uv` itself unspawnable on Windows.
+        A symlink is used on POSIX (cheap, no privilege requirement); on
+        win32, creating a symlink requires elevated privileges or Developer
+        Mode, which the CI/mirror environment cannot be assumed to have, so
+        a plain file copy is used there instead."""
         uv_path = shutil.which("uv")
         assert uv_path, "uv must be on PATH to run this test at all"
         bindir = tmp_path / "_uvonly_bin"
         bindir.mkdir()
-        (bindir / "uv").symlink_to(uv_path)
+        stand_in = bindir / Path(uv_path).name
+        if sys.platform == "win32":
+            shutil.copy2(uv_path, stand_in)
+        else:
+            stand_in.symlink_to(uv_path)
         return str(bindir)
 
     # frob:ticket T-4359
