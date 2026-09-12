@@ -2,7 +2,7 @@
 id: T-4406
 title: 'scaffolded python-tool project fails frob check on Windows: pytest collect-only
   exits 2 (COV003)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-10'
@@ -17,10 +17,26 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_scaffold_dx.py
 - src/frob/scaffold/*.py
+- src/frob/scaffold/data/**/*.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/**/*.j2
+  reason: T-4406's actual fix lives in the pyproject.toml.j2 template the scaffolder
+    renders (pythonpath fix for the win32 spawned-worker ModuleNotFoundError), not
+    just src/frob/scaffold/*.py -- the original scope missed the .j2 data glob
+  actor: logan
+  at: '2026-09-11'
+- op: add
+  glob: src/frob/scaffold/data/**/*.j2
+  reason: T-4406's actual fix lives in the pyproject.toml.j2 template the scaffolder
+    renders (pythonpath fix for the win32 spawned-worker ModuleNotFoundError), not
+    just src/frob/scaffold/*.py -- the original scope missed the .j2 data glob
+  actor: logan
+  at: '2026-09-11'
 triage_changes:
 - field: parent
   old_value: null
@@ -28,6 +44,8 @@ triage_changes:
   reason: windows drain epic T-3505 covers this leaf
   actor: logan
   at: '2026-09-11'
+evidence:
+- tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
 designated_repro_test: null
 threat: null
 component: null

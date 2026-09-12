@@ -35,10 +35,25 @@ packages = { find = { where = ["src"] } }
 [tool.setuptools.package-data]
 {{ project.import_name }} = ["py.typed", "logging/config.toml"]
 
+# frob:ticket T-4406
+# pythonpath explicitly includes "src" (not just ".") because relying
+# solely on the editable install to make the src-layout package
+# importable is not portable: on win32, an xdist worker spawned via
+# `multiprocessing.spawn` re-imports site configuration from scratch
+# rather than inheriting the parent process's already-patched sys.path,
+# and MEASURED on the win32 mirror (T-4406) this can leave a freshly
+# scaffolded project's own package unimportable in that worker
+# (`ModuleNotFoundError: No module named '<project>'`) even though `uv
+# sync`'s editable install reported success moments earlier. Adding
+# "src" here makes pytest itself put the source directory on sys.path
+# for every worker, independent of whether the editable-install shim
+# survived a spawned worker -- a portable addition (not a
+# platform branch): it is a no-op on POSIX, where the editable install
+# already makes the package importable.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-pythonpath = ["."]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 line-length = 88
