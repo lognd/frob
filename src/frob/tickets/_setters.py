@@ -846,10 +846,23 @@ def set_runs_last_parallel_safe(
     return Ok(updated)
 
 
+# frob:ticket T-4427
+#: Fixed internal reason `set_milestone` passes to `_set_ticket_field` so a
+#: milestone change always records a `TriageChangeEntry` -- the CLI has no
+#: caller-supplied reason of its own, and T-4424's TICK004 read path
+#: needs the resulting `at` date to restart a milestoned ticket's rot
+#: clock at assignment time instead of `created`.
+_MILESTONE_ASSIGNMENT_REASON = "milestone set via `frob ticket milestone`"
+
+
 # frob:ticket T-2574
+# frob:ticket T-4427
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
 # frob:tests tests/test_tickets.py::TestSetMilestone.test_valid_semver_sets_field
 # frob:tests tests/test_tickets.py::TestSetMilestone.test_invalid_semver_refused
+# frob:tests \
+# tests/test_tickets_triage_dates.py::TestSetMilestoneRecordsTriageChange.test_assign\
+# ing_a_milestone_records_a_triage_change_entry  # noqa: E501
 def set_milestone(
     root: Path, ticket_id: str, milestone: str | None
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -868,7 +881,12 @@ def set_milestone(
         if validated.is_err:
             return Err(validated.danger_err)
     return _set_ticket_field(
-        root, ticket_id, "milestone", milestone, log_value=milestone
+        root,
+        ticket_id,
+        "milestone",
+        milestone,
+        log_value=milestone,
+        reason=_MILESTONE_ASSIGNMENT_REASON,
     )
 
 
@@ -1104,17 +1122,50 @@ def set_designated_repro_test(
     return Ok(updated)
 
 
+# frob:ticket T-4427
+#: Fixed internal reason `set_sprint` passes to `_set_ticket_field` so a
+#: sprint assignment/clear always records a `TriageChangeEntry` -- same
+#: rationale as `_MILESTONE_ASSIGNMENT_REASON` above.
+_SPRINT_ASSIGNMENT_REASON = "sprint set via `frob ticket sprint assign`"
+
+
 # frob:ticket T-0715
+# frob:ticket T-4427
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
+# frob:tests \
+# tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_assignin\
+# g_a_sprint_records_a_triage_change_entry  # noqa: E501
+# frob:tests \
+# tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_reassign\
+# ing_the_same_sprint_still_records_an_entry  # noqa: E501
 def set_sprint(
     root: Path, ticket_id: str, sprint: str | None
 ) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket sprint assign <id> <label>`: set `ticket_id`'s `sprint`
     field (T-0715) -- the same single-writer, ledger-locked pattern
     `set_component` uses. `sprint=None` clears it back to uncommitted/
-    backlog."""
-    return _set_ticket_field(root, ticket_id, "sprint", sprint, log_value=sprint)
+    backlog.
+
+    T-4427: passes a fixed internal `reason` through to `_set_ticket_
+    field` so every sprint assignment/clear records a `TriageChangeEntry`
+    (`field="sprint"`) with today's date -- the CLI surface
+    (`frob ticket sprint assign`) has no caller-supplied `--reason` of its
+    own to forward, so a fixed, honest reason string is used rather than
+    adding CLI plumbing outside this module's scope. TICK004's rot gate
+    (`_tick004_triage_date`) reads this entry's `at` to restart a
+    sprinted ticket's rot clock at the assignment date instead of
+    `created`; before this fix, `sprint` was silently unlogged and every
+    sprinted ticket fell back to TICK004's fail-safe not-rotting branch
+    with no real assignment date ever recorded."""
+    return _set_ticket_field(
+        root,
+        ticket_id,
+        "sprint",
+        sprint,
+        log_value=sprint,
+        reason=_SPRINT_ASSIGNMENT_REASON,
+    )
 
 
 # frob:ticket T-2834

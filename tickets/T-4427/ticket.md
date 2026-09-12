@@ -2,7 +2,7 @@
 id: T-4427
 title: set_sprint/set_milestone must record a TriageChangeEntry with the assignment
   date
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -41,6 +41,11 @@ body_changes:
   at: '2026-09-11'
   old_length: 0
   new_length: 3301
+evidence:
+- tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_assigning_a_sprint_records_a_triage_change_entry
+- tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_reassigning_the_same_sprint_still_records_an_entry
+- tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_reloaded_ticket_carries_the_recorded_entry
+- tests/test_tickets_triage_dates.py::TestSetMilestoneRecordsTriageChange::test_assigning_a_milestone_records_a_triage_change_entry
 designated_repro_test: null
 threat: null
 component: null

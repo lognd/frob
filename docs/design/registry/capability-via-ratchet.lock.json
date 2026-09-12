@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 302,
-      "reason": "T-4041: adds tests/unit/verify/test_verify_runner.py to the exec via-list -- a real git-fixture subprocess spawn (git init/config/add/commit) exercising _auto_commit_coverage_lock's own commit against a throwaway repo, same shape tests/unit/verify/test_watermark.py's own entry already carries. Bumping the ceiling 301 -> 302, one new site.",
-      "ticket": "T-4041"
+      "accepted_count": 303,
+      "reason": "T-4427: adds tests/test_tickets_triage_dates.py to the exec via-list -- a real git-fixture subprocess spawn (git init/checkout -b main) initializing a throwaway repo for set_sprint/set_milestone TriageChangeEntry round-trip tests, same shape tests/test_tickets_priority.py's own entry already carries. Bumping the ceiling 302 -> 303, one new site.",
+      "ticket": "T-4427"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

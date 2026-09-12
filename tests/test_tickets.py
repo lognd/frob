@@ -2999,7 +2999,11 @@ class TestSetMilestone:
         assert result.danger_ok.milestone == "1.10.0"
 
     def test_invalid_semver_refused(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::set_milestone kind="unit"
+        # T-4427: coverage of set_milestone is declared above the
+        # production symbol (src/frob/tickets/_setters.py::set_milestone)
+        # via `frob:tests`, not here -- that direction is this codebase's
+        # convention (see set_runs_last_parallel_safe's directives just
+        # above it in the same file for another example).
         from frob.tickets import set_milestone
 
         self._init_repo(tmp_path)
