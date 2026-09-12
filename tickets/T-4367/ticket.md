@@ -1,7 +1,7 @@
 ---
 id: T-4367
 title: Tool-absence classifier misses the tool-unavailable shape, failing on Windows
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-09'
@@ -87,3 +87,6 @@ beside it -- that technique works and is cheaper than a Windows round trip.
 
 ## Failure log
 - 2026-09-11 attempt 1: Wrong premise: not a classifier gap; test fixture bug outside declared scope
+
+## Drop reason
+- 2026-09-12: superseded by T-4430: the failure is the _only_uv_on_path win32 fixture in tests/system/test_cli_check.py, not a classifier gap (attempt 1 recorded the wrong premise) (absorbed by T-4430)
