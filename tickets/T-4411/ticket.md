@@ -1,7 +1,7 @@
 ---
 id: T-4411
 title: Seed land squash worktree graph cache from primary
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-11'
