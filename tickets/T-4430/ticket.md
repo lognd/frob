@@ -2,7 +2,7 @@
 id: T-4430
 title: 'uv-only-PATH test fixture unspawnable on Windows: symlink named ''uv'' has
   no .exe extension'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-11'
