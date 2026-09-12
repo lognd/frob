@@ -2,7 +2,7 @@
 id: T-4404
 title: 'orphaned_ticket_locks reports pre-cutover lock on Windows: baseline exclusion
   not silent'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-10'
