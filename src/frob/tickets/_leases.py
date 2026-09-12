@@ -1116,6 +1116,7 @@ horizon, which is the opposite of what T-4348 asked for."""
 
 
 # frob:ticket T-4348
+# frob:ticket T-4404
 # frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_draft_id_never_reported
 # frob:tests \
@@ -1124,7 +1125,9 @@ horizon, which is the opposite of what T-4348 asked for."""
 # frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_rep\
 # orts
-def _is_ticket_lock_baseline_excluded(ticket_id: str, lock_path: Path) -> bool:
+def _is_ticket_lock_baseline_excluded(
+    ticket_id: str, lock_path: Path, *, lock_mtime: float | None
+) -> bool:
     """`True` iff `ticket_id`/`lock_path` is one of the TWO known-benign
     orphan shapes T-4348 measured (never a fresh loss) -- factored out of
     `orphaned_ticket_locks` so that function's own body stays under
@@ -1143,15 +1146,35 @@ def _is_ticket_lock_baseline_excluded(ticket_id: str, lock_path: Path) -> bool:
     at source, so the count only shrinks and a lock created from this
     point forward is treated as a fresh finding exactly as before.
 
+    T-4404 (win32, MEASURED on the winrun mirror): `lock_mtime` is now a
+    caller-supplied SNAPSHOT taken BEFORE `orphaned_ticket_locks` calls
+    `_lock_file_held_by_live_process`, never re-`stat()`'d in here. That
+    probe opens the lock file via `portable_flock_acquire`, and on win32
+    `_portable_flock_acquire_windows` seeds an EMPTY file with one NUL
+    byte (`os.write` + `os.fsync`) before `msvcrt.locking` can lock it --
+    `msvcrt` needs an existing byte range, unlike `fcntl.flock`'s whole-
+    descriptor lock. That write updates the file's last-write time to
+    "now". A test that `os.utime`'s a fresh, empty lock file to a pre-
+    cutover timestamp and then calls `orphaned_ticket_locks` was
+    measured failing on win32 for exactly this reason: the liveness
+    probe's own seed-write silently bumped the mtime past
+    `_ORPHAN_LOCK_BASELINE_CUTOVER` between the test's `os.utime` and
+    this function's stat, on a platform-only side effect this function
+    has no way to see from a `lock_path` alone. Reading the mtime once,
+    before that probe ever runs, makes the baseline decision immune to
+    it -- and is a NO-OP on POSIX, where `fcntl.flock` never writes to
+    the file it locks. `lock_mtime is None` (the caller's own stat
+    failed, e.g. vanished between glob and stat) degrades to `True`
+    (excluded), same posture as the try/except this replaced: nothing is
+    left to report on a file that is already gone.
+
     An unreadable lock file (vanished between the caller's glob and this
     stat -- another sweep or a live release won the race) degrades to
     `True` (excluded): nothing is left to report on a file that is
     already gone."""
     if ticket_id.startswith(_ORPHAN_DRAFT_ID_PREFIX):
         return True
-    try:
-        lock_mtime = lock_path.stat().st_mtime
-    except OSError:
+    if lock_mtime is None:
         return True
     return lock_mtime < _ORPHAN_LOCK_BASELINE_CUTOVER
 
@@ -1230,9 +1253,23 @@ def orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
         ticket_id = lock_path.stem
         if ticket_id in known_ids:
             continue
+        # frob:ticket T-4404
+        # Snapshot the mtime BEFORE the liveness probe below, never after:
+        # on win32 _lock_file_held_by_live_process's own flock attempt can
+        # seed-write an empty lock file (msvcrt.locking's precondition),
+        # which bumps the file's mtime as a side effect -- see
+        # _is_ticket_lock_baseline_excluded's docstring for the measured
+        # mechanism. Reading it first makes the baseline decision immune
+        # to that probe, a no-op on POSIX (fcntl.flock never writes).
+        try:
+            lock_mtime = lock_path.stat().st_mtime
+        except OSError:
+            lock_mtime = None
         if _lock_file_held_by_live_process(lock_path):
             continue
-        if _is_ticket_lock_baseline_excluded(ticket_id, lock_path):
+        if _is_ticket_lock_baseline_excluded(
+            ticket_id, lock_path, lock_mtime=lock_mtime
+        ):
             continue
         orphans.append(ticket_id)
     return tuple(orphans)
