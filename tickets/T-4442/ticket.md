@@ -2,7 +2,7 @@
 id: T-4442
 title: 'Windows: land phase elapsed prefix reads 0.0 twice, monotonic test fails on
   the CI runner clock'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
