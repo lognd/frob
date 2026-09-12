@@ -21,11 +21,13 @@ from frob.tickets import (
     TicketQueue,
     TicketState,
     TicketTier,
+    TriageChangeEntry,
     doable,
     set_priority,
 )
 
 
+# frob:ticket T-4424
 def _ticket(
     *,
     ticket_id: str,
@@ -35,6 +37,9 @@ def _ticket(
     runs_last: bool = False,
     tier: TicketTier = TicketTier.TICKET,
     parent: str | None = None,
+    sprint: str | None = None,
+    milestone: str | None = None,
+    triage_changes: tuple = (),
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -54,6 +59,9 @@ def _ticket(
         threat=None,
         body="",
         runs_last=runs_last,
+        sprint=sprint,
+        milestone=milestone,
+        triage_changes=triage_changes,
     )
 
 
@@ -188,6 +196,7 @@ class TestSetPriority:
 
 
 # frob:ticket T-3476
+# frob:ticket T-4424
 class TestTick004QueueRot:
     """TICK004: a queued/planned ticket past its priority's rot threshold."""
 
@@ -309,6 +318,116 @@ class TestTick004QueueRot:
         assert len(matches) == 1
         assert "already decomposed" in matches[0].message
         assert "work it" not in matches[0].message
+
+    # frob:ticket T-4424
+    def test_sprinted_ticket_past_2x_threshold_since_created_is_quiet(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4424: a HIGH ticket `created` 16d ago (past the 2x/14d ERROR
+        boundary measured from `created`) but assigned a sprint only 2d
+        ago (recorded via a `triage_changes` entry, `_tick004_triage_
+        date`'s only source of truth) must NOT rot at all -- its rot
+        clock restarts at the sprint-assignment date, which is well under
+        the 7d threshold. Must-still-pass control:
+        `test_stale_critical_ticket_flags` above, an unsprinted ticket in
+        the identical shape, still flags."""
+        sprint_assigned = date.today() - timedelta(days=2)
+        sprinted = _ticket(
+            ticket_id="T-3004",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=16),
+            sprint="v0.531.0",
+            triage_changes=(
+                TriageChangeEntry(
+                    field="sprint",
+                    old_value=None,
+                    new_value="v0.531.0",
+                    reason="sprint triage",
+                    actor="logan",
+                    at=sprint_assigned,
+                ),
+            ),
+        )
+        queue = TicketQueue(tickets={sprinted.id: sprinted})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        assert not any(v.rule == "TICK004" for v in violations)
+
+    # frob:ticket T-4424
+    def test_unsprinted_ticket_past_2x_threshold_still_errors(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4424 must-stay-quiet control: an UNSPRINTED ticket in the
+        identical shape (HIGH priority, 16d since `created`) keeps
+        escalating to ERROR exactly as before this fix -- narrowing the
+        false-positive sprinted case must not weaken the untriaged one."""
+        stale = _ticket(
+            ticket_id="T-3005",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=16),
+        )
+        queue = TicketQueue(tickets={stale.id: stale})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3005" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.ERROR
+
+    # frob:ticket T-4424
+    def test_sprinted_ticket_with_no_recorded_assignment_date_fails_safe_quiet(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4424: a ticket carrying `sprint` but NO recorded
+        `TriageChangeEntry` for it (the common case today -- `set_sprint`
+        does not yet pass a `reason` through) must fail safe to
+        not-rotting rather than falling back to `created`. This is
+        deliberate: guessing a triage date from `created` would silently
+        defeat the whole point of restarting the clock at assignment."""
+        sprinted_no_record = _ticket(
+            ticket_id="T-3006",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=16),
+            sprint="v0.531.0",
+        )
+        queue = TicketQueue(tickets={sprinted_no_record.id: sprinted_no_record})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        assert not any(v.rule == "TICK004" for v in violations)
+
+    # frob:ticket T-4424
+    def test_epic_with_in_progress_child_stays_quiet_regardless_of_sprint(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4424's own acceptance criterion: an epic/story with an open
+        (non-terminal) child is measured by the CHILD's progress, not its
+        own age -- unaffected by whether the epic itself carries a
+        sprint. A sprinted epic with no recorded sprint-assignment date
+        fails safe to quiet via the same T-4424 path as an ordinary
+        sprinted leaf ticket (`test_sprinted_ticket_with_no_recorded_
+        assignment_date_fails_safe_quiet` above); the existing decomposed-
+        epic path (`test_decomposed_epic_gets_a_distinct_message_not_
+        work_it`) already covers the unsprinted case and is untouched by
+        this fix -- both are "quiet" in the sense that matters: no ERROR
+        ever fires for a healthy decomposed epic, sprinted or not."""
+        epic = _ticket(
+            ticket_id="T-1623",
+            priority=Priority.CRITICAL,
+            created=date.today() - timedelta(days=11),
+            tier=TicketTier.EPIC,
+            sprint="v0.531.0",
+        )
+        child = _ticket(
+            ticket_id="T-2223",
+            state=TicketState.IN_PROGRESS,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-1623",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-1623" in v.message
+        ]
+        assert not any(m.severity is Severity.ERROR for m in matches)
 
     # frob:ticket T-2229
     def test_undecomposed_epic_with_no_children_still_gets_work_it(

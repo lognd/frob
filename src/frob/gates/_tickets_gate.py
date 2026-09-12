@@ -297,6 +297,32 @@ def _tick004_rot_thresholds(root: Path) -> dict[Priority, int]:
         return dict(_TICK004_DEFAULT_ROT_DAYS)
 
 
+# frob:ticket T-4424
+# frob:tests \
+# tests/test_tickets_priority.py::TestTick004QueueRot.test_sprinted_ticket_past_2x_thre\
+# shold_since_created_is_quiet  # noqa: E501
+# frob:tests \
+# tests/test_tickets_priority.py::TestTick004QueueRot.test_sprinted_ticket_with_no_reco\
+# rded_assignment_date_fails_safe_quiet  # noqa: E501
+def _tick004_triage_date(t: Ticket) -> date | None:
+    """T-4424: the date `t` was assigned a sprint or milestone -- read
+    from `t.triage_changes`'s own `at` field for the MOST RECENT entry
+    whose `field` is `"sprint"` or `"milestone"`, never from file mtime
+    or a guess. A ticket that carries `sprint`/`milestone` today but has
+    no such recorded transition (the common case as of T-4424: neither
+    `set_sprint` nor `set_milestone` currently passes a `reason` through
+    to `_set_ticket_field`, so no `TriageChangeEntry` is appended) returns
+    `None` -- the caller must fail safe (treat as untriaged-for-rot-timer
+    purposes, i.e. not rotting) rather than falling back to `t.created`,
+    which would silently defeat the whole point of this function."""
+    if t.sprint is None and t.milestone is None:
+        return None
+    dated = [c for c in t.triage_changes if c.field in ("sprint", "milestone")]
+    if not dated:
+        return None
+    return max(c.at for c in dated)
+
+
 # frob:ticket T-2229
 def _has_active_child(t: Ticket, queue: TicketQueue) -> bool:
     """Whether some OTHER ticket in `queue` carries `parent == t.id` AND
@@ -394,16 +420,162 @@ def _epic_children_all_stalled(
     return youngest_age > youngest_threshold
 
 
+# frob:ticket T-4424
+def _tick004_effective_age(
+    t: Ticket, thresholds: dict[Priority, int], today: date
+) -> tuple[int, int] | None:
+    """T-4424 (extracted from `_tick004_queue_rot` to keep it under
+    ARCH001's long-AND-complex threshold): resolves `t`'s effective
+    `(age_days, threshold)` pair, or `None` when `t` is not past its
+    threshold (the caller's `continue` signal). Age is measured from
+    `_tick004_triage_date(t)` when a sprint/milestone assignment date is
+    recorded, else from `t.created` -- except a sprinted/milestoned
+    ticket with NO recorded assignment date, which returns `None`
+    (fail-safe not-rotting) rather than falling back to `created`, which
+    would silently defeat the whole point of the triage-date restart."""
+    triage_date = _tick004_triage_date(t)
+    if triage_date is not None:
+        age_days = (today - triage_date).days
+    elif t.sprint is not None or t.milestone is not None:
+        return None
+    else:
+        age_days = (today - t.created).days
+    threshold = thresholds[t.priority]
+    if age_days <= threshold:
+        return None
+    return age_days, threshold
+
+
+# frob:ticket T-4424
+def _tick004_severity_and_message(
+    t: Ticket,
+    queue: TicketQueue,
+    thresholds: dict[Priority, int],
+    today: date,
+    age_days: int,
+    threshold: int,
+) -> tuple[Severity, str]:
+    """T-4424 (extracted from `_tick004_queue_rot`, same ARCH001 reason as
+    `_tick004_effective_age`): the severity/message decision for a ticket
+    already past its rot threshold -- the T-2229/T-3399/T-3463/T-2200
+    decomposed-epic-cap, epic-children-all-stalled, runs_last, and plain
+    "work it" branches, unchanged from `_tick004_queue_rot`'s own prior
+    inline form; see that function's docstring for the full rationale of
+    each branch."""
+    severity = Severity.ERROR if age_days > threshold * 2 else Severity.WARN
+    # T-2229: an epic/story that has already been decomposed (at least
+    # one non-terminal child ticket carries `parent == t.id`) has
+    # effectively already had "work it" taken -- the recommended
+    # action is a lie for it, the same defect SHAPE T-2200 fixed for
+    # runs_last tickets. Checked before runs_last since decomposition
+    # only applies to EPIC/STORY tier, disjoint from the leaf-only
+    # runs_last flag.
+    is_decomposed = t.tier in (
+        TicketTier.EPIC,
+        TicketTier.STORY,
+    ) and _has_active_child(t, queue)
+    # frob:ticket T-4424
+    # (logic originally under T-3399): MEASURED 2026-08-29 -- a decomposed epic/story
+    # (above)
+    # was capped at WARN in its MESSAGE ("the age is real and still
+    # worth noting, but the recommended action is checking the
+    # children's own progress instead") while `severity` above, set
+    # BEFORE this branch runs, was left untouched -- so a decomposed
+    # epic still escalated to ERROR at 2x threshold exactly like an
+    # undecomposed one, even though the rule's own text already knew
+    # "work it" was the wrong advice. `queued` while children are
+    # worked is the INTENDED lifecycle for a decomposed epic, not
+    # rot -- three healthy epics (T-0969/T-1273/T-1686) reported as
+    # hard ERRORs purely from this mismatch, each one only fixable by
+    # corrupting otherwise-correct ledger state (dropping/closing/
+    # re-prioritizing a ticket that needed none of that). Capped to
+    # WARN here, never escalated further by age alone: the signal
+    # ("still worth noting") stays live, but it can no longer become
+    # an ERROR a release gate refuses to pass without a ledger lie.
+    # DECISION (T-3399's own acceptance criterion): measuring age
+    # against the CHILDREN's own progress instead (an epic whose
+    # children are ALL also stalled really is rotting) is explicitly
+    # OUT of this fix's scope -- it needs its own recursive rot
+    # computation and its own calibration, not a one-line severity
+    # cap. Filed as a follow-up (see this ticket's Done report) --
+    # this fix only stops the false ERROR; the coarser age-only
+    # heuristic below still applies for a decomposed epic, capped at
+    # WARN, as the interim informational signal.
+    if is_decomposed and _epic_children_all_stalled(t, queue, thresholds, today):
+        # (logic originally under T-3463): the WARN cap below is for a decomposed epic
+        # whose
+        # children are ACTUALLY moving -- when even the freshest
+        # non-terminal child has itself crossed its own rot threshold
+        # and nothing is IN_PROGRESS, "check the children's own
+        # progress" is no longer useful advice: the children ARE the
+        # evidence, and they say the same thing the epic's own age
+        # does. `severity` here is whatever the ordinary age-driven
+        # computation above produced (WARN or ERROR at 2x threshold),
+        # exactly the undecomposed-ticket behavior -- this branch
+        # only stops T-3399's cap from silencing a genuinely stalled
+        # decomposition.
+        message = (
+            f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
+            f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "
+            f"-- decomposed, but its own children are ALSO stalled (no child "
+            f"is in-progress, and even the youngest queued/planned child has "
+            f"crossed its own rot threshold): this is real rot, not the "
+            f"intended decomposed lifecycle; check why the children stopped "
+            f"moving, or drop/re-prioritize the epic"
+        )
+    elif is_decomposed:
+        severity = Severity.WARN
+        message = (
+            f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
+            f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "
+            f"-- already decomposed and being worked (a non-terminal child "
+            f"ticket carries parent={t.id}); the age is real and still worth "
+            f"noting, but the recommended action is checking the children's "
+            f"own progress instead, or dropping/re-prioritizing this epic if "
+            f"the decomposition itself has stalled"
+        )
+    elif t.runs_last:
+        message = (
+            f"TICK004: {t.id} ({t.priority.value} priority) has sat "
+            f"{t.state.value} for {age_days}d (threshold {threshold}d) "
+            f"-- it is deliberately deferred (runs_last), NOT dispatchable "
+            f"via `frob ticket start` while other tickets are open "
+            f"(RunsLastBlocked); a long age here means the queue it is "
+            f"waiting on is not draining, re-prioritize it or clear "
+            f"runs_last if that is no longer the intent"
+        )
+    else:
+        message = (
+            f"TICK004: {t.id} ({t.priority.value} priority) has sat "
+            f"{t.state.value} for {age_days}d (threshold {threshold}d) "
+            f"-- it is rotting; work it, re-prioritize it "
+            f"(`frob ticket priority {t.id} <level>`), or drop it"
+        )
+    return severity, message
+
+
 # frob:ticket T-0411
 # frob:ticket T-2200
 # frob:ticket T-2229
 # frob:ticket T-3399
 # frob:ticket T-3463
+# frob:ticket T-4424
+# frob:tests \
+# tests/test_tickets_priority.py::TestTick004QueueRot.test_unsprinted_ticket_past_2x_th\
+# reshold_still_errors  # noqa: E501
+# frob:tests \
+# tests/test_tickets_priority.py::TestTick004QueueRot.test_epic_with_in_progress_child_\
+# stays_quiet_regardless_of_sprint  # noqa: E501
 # frob:enforces CHK-GATE-TICK004
 def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
     queued/planned ticket whose priority-specific rot-day threshold has
-    been crossed since `created` -- the queue-health signal T-0411's
+    been crossed since EITHER `created` OR, for a ticket with a recorded
+    sprint/milestone triage-assignment date (T-4424: `_tick004_triage_
+    date`), that assignment date instead -- a sprinted/milestoned ticket
+    is triaged by definition and its rot clock restarts there; one with
+    no recorded assignment date yet is treated as not-rotting rather than
+    falling back to `created` -- the queue-health signal T-0411's
     Description asks for: "we forgot we have a stack of things and only
     end up popping off the top half" becomes a visible gate finding
     instead of a silent, age-only queue. Only QUEUED/PLANNED tickets are
@@ -465,98 +637,20 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
         if t.state not in (TicketState.QUEUED, TicketState.PLANNED):
             continue
-        age_days = (today - t.created).days
-        threshold = thresholds[t.priority]
-        if age_days <= threshold:
+        # T-4424: a ticket that carries a recorded sprint/milestone
+        # triage-assignment date is triaged BY DEFINITION -- its rot
+        # clock restarts at that date instead of `created` (`_tick004_
+        # effective_age`, extracted for ARCH001); severity/message are
+        # decided by `_tick004_severity_and_message`, also extracted --
+        # both keep this loop's own docstring's rationale, just moved
+        # out of the loop body itself.
+        effective = _tick004_effective_age(t, thresholds, today)
+        if effective is None:
             continue
-        severity = Severity.ERROR if age_days > threshold * 2 else Severity.WARN
-        # T-2229: an epic/story that has already been decomposed (at least
-        # one non-terminal child ticket carries `parent == t.id`) has
-        # effectively already had "work it" taken -- the recommended
-        # action is a lie for it, the same defect SHAPE T-2200 fixed for
-        # runs_last tickets. Checked before runs_last since decomposition
-        # only applies to EPIC/STORY tier, disjoint from the leaf-only
-        # runs_last flag.
-        is_decomposed = t.tier in (
-            TicketTier.EPIC,
-            TicketTier.STORY,
-        ) and _has_active_child(t, queue)
-        # frob:ticket T-3399
-        # T-3399: MEASURED 2026-08-29 -- a decomposed epic/story (above)
-        # was capped at WARN in its MESSAGE ("the age is real and still
-        # worth noting, but the recommended action is checking the
-        # children's own progress instead") while `severity` above, set
-        # BEFORE this branch runs, was left untouched -- so a decomposed
-        # epic still escalated to ERROR at 2x threshold exactly like an
-        # undecomposed one, even though the rule's own text already knew
-        # "work it" was the wrong advice. `queued` while children are
-        # worked is the INTENDED lifecycle for a decomposed epic, not
-        # rot -- three healthy epics (T-0969/T-1273/T-1686) reported as
-        # hard ERRORs purely from this mismatch, each one only fixable by
-        # corrupting otherwise-correct ledger state (dropping/closing/
-        # re-prioritizing a ticket that needed none of that). Capped to
-        # WARN here, never escalated further by age alone: the signal
-        # ("still worth noting") stays live, but it can no longer become
-        # an ERROR a release gate refuses to pass without a ledger lie.
-        # DECISION (T-3399's own acceptance criterion): measuring age
-        # against the CHILDREN's own progress instead (an epic whose
-        # children are ALL also stalled really is rotting) is explicitly
-        # OUT of this fix's scope -- it needs its own recursive rot
-        # computation and its own calibration, not a one-line severity
-        # cap. Filed as a follow-up (see this ticket's Done report) --
-        # this fix only stops the false ERROR; the coarser age-only
-        # heuristic below still applies for a decomposed epic, capped at
-        # WARN, as the interim informational signal.
-        if is_decomposed and _epic_children_all_stalled(t, queue, thresholds, today):
-            # frob:ticket T-3463
-            # T-3463: the WARN cap below is for a decomposed epic whose
-            # children are ACTUALLY moving -- when even the freshest
-            # non-terminal child has itself crossed its own rot threshold
-            # and nothing is IN_PROGRESS, "check the children's own
-            # progress" is no longer useful advice: the children ARE the
-            # evidence, and they say the same thing the epic's own age
-            # does. `severity` here is whatever the ordinary age-driven
-            # computation above produced (WARN or ERROR at 2x threshold),
-            # exactly the undecomposed-ticket behavior -- this branch
-            # only stops T-3399's cap from silencing a genuinely stalled
-            # decomposition.
-            message = (
-                f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
-                f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "
-                f"-- decomposed, but its own children are ALSO stalled (no child "
-                f"is in-progress, and even the youngest queued/planned child has "
-                f"crossed its own rot threshold): this is real rot, not the "
-                f"intended decomposed lifecycle; check why the children stopped "
-                f"moving, or drop/re-prioritize the epic"
-            )
-        elif is_decomposed:
-            severity = Severity.WARN
-            message = (
-                f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
-                f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "
-                f"-- already decomposed and being worked (a non-terminal child "
-                f"ticket carries parent={t.id}); the age is real and still worth "
-                f"noting, but the recommended action is checking the children's "
-                f"own progress instead, or dropping/re-prioritizing this epic if "
-                f"the decomposition itself has stalled"
-            )
-        elif t.runs_last:
-            message = (
-                f"TICK004: {t.id} ({t.priority.value} priority) has sat "
-                f"{t.state.value} for {age_days}d (threshold {threshold}d) "
-                f"-- it is deliberately deferred (runs_last), NOT dispatchable "
-                f"via `frob ticket start` while other tickets are open "
-                f"(RunsLastBlocked); a long age here means the queue it is "
-                f"waiting on is not draining, re-prioritize it or clear "
-                f"runs_last if that is no longer the intent"
-            )
-        else:
-            message = (
-                f"TICK004: {t.id} ({t.priority.value} priority) has sat "
-                f"{t.state.value} for {age_days}d (threshold {threshold}d) "
-                f"-- it is rotting; work it, re-prioritize it "
-                f"(`frob ticket priority {t.id} <level>`), or drop it"
-            )
+        age_days, threshold = effective
+        severity, message = _tick004_severity_and_message(
+            t, queue, thresholds, today, age_days, threshold
+        )
         violations.append(
             Violation(
                 rule="TICK004",

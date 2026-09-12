@@ -1,7 +1,7 @@
 ---
 id: T-4424
 title: TICK004 rot severity should respect sprint/milestone triage
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -17,10 +17,17 @@ scope:
 - src/frob/gates/_tickets_gate.py
 - tests/*tick004*
 - tests/*tickets_gate*
+- tests/test_tickets_priority.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_priority.py
+  reason: the actual TICK004 test file wasn't matched by the original scope globs
+  actor: logan
+  at: '2026-09-11'
 body_changes:
 - mode: set
   reason: full ticket body with 14 example ids and required behavior, from CI self-gate
@@ -29,6 +36,11 @@ body_changes:
   at: '2026-09-11'
   old_length: 0
   new_length: 3049
+evidence:
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_sprinted_ticket_past_2x_threshold_since_created_is_quiet
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_unsprinted_ticket_past_2x_threshold_still_errors
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_sprinted_ticket_with_no_recorded_assignment_date_fails_safe_quiet
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_epic_with_in_progress_child_stays_quiet_regardless_of_sprint
 designated_repro_test: null
 threat: null
 component: null
