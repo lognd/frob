@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sqlite3
 import sys
 import threading
@@ -224,8 +225,11 @@ _LOCK_BACKOFF_CAP_SECONDS = _LOCK_POLL_SECONDS
 
 
 # frob:ticket T-3654
-# frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap  # noqa: E501
-# frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_never_exceeds_remaining_budget  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_never_exceeds_remaining_\
+# budget
 def _lock_backoff_seconds(attempt: int, *, remaining: float) -> float:
     """The delay (seconds) before lock-retry attempt number `attempt`
     (0-indexed) -- exponential backoff starting at
@@ -334,9 +338,110 @@ def _replace_with_retry(tmp_path: Path, path: Path, *, what: str) -> None:
             attempt += 1
 
 
+# frob:ticket T-4411
+# frob:doc docs/modules/graph.md#cache
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_seeds_from_an_ex\
+# isting_primary_cache
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_no_primary_cache\
+# _is_a_quiet_no_op
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_primary_journal_\
+# present_skips_seeding
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_empty_primary_jo\
+# urnal_does_not_block_seeding
+def seed_disposable_worktree_cache(primary_root: Path, worktree_root: Path) -> bool:
+    """T-4411: copy `primary_root`'s `.frob/cache.db` into a freshly-cut
+    disposable land worktree, so the synchronous check's `load_graph`
+    finds a warm cache instead of rebuilding the whole graph from
+    scratch (measured: 305s warm vs 60-110 minutes cold for the same
+    check).
+
+    Mirrors `seed_worktree_native_source_mtimes` (T-4431)'s shape and its
+    call site inside `compose_squash_in_disposable_worktree`: a best-
+    effort seed that degrades to the pre-existing cold-rebuild behavior
+    on any reason it cannot safely proceed, never a hard failure that
+    would block a land.
+
+    Copied via a temp-name-then-`os.replace` (through `_replace_with_retry`,
+    this module's one atomic-publish primitive) so a reader of the
+    worktree's cache.db (this land's own `load_graph` call, moments later)
+    can never observe a partially-written file.
+
+    Refuses (returns `False`, no copy) when:
+    - `primary_root`'s cache.db does not exist yet (nothing to seed from);
+    - a NON-EMPTY `cache.db-journal` sits next to it -- this module runs
+      sqlite under `PRAGMA journal_mode = TRUNCATE` (T-3644, see
+      `connect`'s own docstring), which leaves a zero-length journal file
+      behind after every ordinary commit (TRUNCATE truncates it to 0
+      bytes rather than deleting it, so mere existence is not a live-
+      write signal -- confirmed empirically, every cache.db this module
+      writes has one). A journal with actual BYTES in it, by contrast,
+      means a writer is mid-transaction against the primary's cache RIGHT
+      NOW; copying the main file alone would hand the worktree a torn,
+      pre-transaction snapshot with no rollback data to recover it with.
+      Skipping and logging is correct here, not a defect to fix: the very
+      next `load_graph` in the worktree just rebuilds that one file's
+      stale entries via normal drift detection, exactly as it would with
+      no seed at all.
+
+    Never invalidates or interprets cache CONTENT -- that stays entirely
+    `load_graph`'s job (stale on-disk hashes after the copy are exactly
+    the case its per-file drift detection already handles)."""
+    primary_cache = primary_root / ".frob" / "cache.db"
+    primary_journal = primary_cache.with_name(primary_cache.name + "-journal")
+    if primary_journal.exists() and primary_journal.stat().st_size > 0:
+        _log.info(
+            "seed_disposable_worktree_cache: non-empty %s present -- primary "
+            "cache is mid-write, skipping seed for %s (falls back to a cold "
+            "rebuild there)",
+            primary_journal,
+            worktree_root,
+        )
+        return False
+    if not primary_cache.exists():
+        _log.info(
+            "seed_disposable_worktree_cache: no cache at %s -- nothing to seed %s with",
+            primary_cache,
+            worktree_root,
+        )
+        return False
+    worktree_frob_dir = worktree_root / ".frob"
+    worktree_frob_dir.mkdir(parents=True, exist_ok=True)
+    worktree_cache = worktree_frob_dir / "cache.db"
+    tmp_path = worktree_frob_dir / f"cache.db.seed-tmp-{uuid.uuid4().hex}"
+    try:
+        shutil.copyfile(primary_cache, tmp_path)
+        _replace_with_retry(
+            tmp_path, worktree_cache, what="disposable-worktree cache seed"
+        )
+    except OSError as exc:
+        _log.warning(
+            "seed_disposable_worktree_cache: could not seed %s from %s (%s) "
+            "-- falling back to a cold rebuild there",
+            worktree_cache,
+            primary_cache,
+            exc,
+        )
+        tmp_path.unlink(missing_ok=True)
+        return False
+    _log.info(
+        "seed_disposable_worktree_cache: seeded %s from %s",
+        worktree_cache,
+        primary_cache,
+    )
+    return True
+
+
 # frob:ticket T-3644
-# frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
-# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never\
+# _commit_to_the_same_cache_concurrently
+# frob:tests \
+# tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not\
+# _retried
 def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
     """True iff `exc` is contention this module's lock-retry loops should
     poll past rather than let escape (T-3644).
@@ -631,8 +736,12 @@ def _describe_lock_holders(path: Path | None) -> str:
 
 # frob:ticket T-1423
 # frob:doc docs/modules/graph.md#lock-contention-t-1423
-# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exhausted  # noqa: E501
-# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_build_graph_reports_err_instead_of_crashing_on_cache_locked  # noqa: E501
+# frob:tests \
+# tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exh\
+# austed
+# frob:tests \
+# tests/test_graph_lock.py::TestCacheLockRetry.test_build_graph_reports_err_instead_of_\
+# crashing_on_cache_locked
 class CacheLocked(sqlite3.OperationalError):
     """A cache operation could not acquire the sqlite lock within the retry
     budget (T-1423). Distinct from a bare `sqlite3.OperationalError` so a
@@ -643,9 +752,15 @@ class CacheLocked(sqlite3.OperationalError):
 
 
 # frob:ticket T-1423
-# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transient_lock  # noqa: E501
-# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
-# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held_exclusive_lock  # noqa: E501
+# frob:tests \
+# tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transi\
+# ent_lock
+# frob:tests \
+# tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not\
+# _retried
+# frob:tests \
+# tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held\
+# _exclusive_lock
 # frob:tests \
 # tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_with_lock_retr\
 # y_names_holder_in_cache_locked_message
@@ -721,7 +836,8 @@ def _with_lock_retry(  # noqa: ANN201
 
 # frob:ticket T-3654
 # frob:ticket T-4282
-# frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap
 # frob:tests \
 # tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_connect_with_b\
 # ackoff_raises_cache_locked_naming_holder
@@ -1480,7 +1596,9 @@ _GENUINE_CORRUPTION_ERROR_SHAPES = (
 
 
 # frob:ticket T-4159
-# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconne\
+# ct_rebuilds_and_completes_on_corruption kind="unit"
 def _is_genuine_corruption_shape(exc: sqlite3.Error) -> bool:
     """`True` iff `exc`'s message names one of `_GENUINE_CORRUPTION_ERROR_
     SHAPES` -- a shape a fresh connection to the SAME path cannot recover
@@ -1491,7 +1609,9 @@ def _is_genuine_corruption_shape(exc: sqlite3.Error) -> bool:
 
 
 # frob:ticket T-4159
-# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_reports_corrupt kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_report\
+# s_corrupt kind="unit"
 def _cache_integrity_ok(path: Path) -> bool:
     """`True` only if sqlite's own `PRAGMA integrity_check` reports the
     single row `"ok"` for the database at `path` (T-4159's detection
@@ -1523,7 +1643,9 @@ def _cache_integrity_ok(path: Path) -> bool:
 
 
 # frob:ticket T-4159
-# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_heals kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_hea\
+# ls kind="unit"
 def _rebuild_because_corrupt(path: Path, *, what: str) -> sqlite3.Connection:
     """T-4159's repair half: `path`'s own `PRAGMA integrity_check` has
     already reported it corrupt (never called speculatively -- always
@@ -1655,7 +1777,9 @@ def _reconnect_delay_for(
 
 # frob:ticket T-4159
 # frob:ticket T-4402
-# frob:tests tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconne\
+# ct_rebuilds_and_completes_on_corruption kind="unit"
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_closes_t\
 # he_callers_stale_connection_first
@@ -2054,8 +2178,12 @@ _INPROCESS_WRITE_LOCKS_GUARD = threading.Lock()
 
 
 # frob:ticket T-3644
-# frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
-# frob:tests tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never\
+# _commit_to_the_same_cache_concurrently
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_\
+# after_forced_schema_rebuild_returns_a_fresh_live_connection
 def _inprocess_write_lock(path: Path) -> threading.RLock:
     """The per-resolved-path lock serializing `connect()` calls WITHIN this
     process (T-3644).
@@ -2095,8 +2223,12 @@ def _inprocess_write_lock(path: Path) -> threading.RLock:
 # frob:ticket T-3644
 # frob:ticket T-4412
 # frob:doc docs/modules/graph.md#cache
-# frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
-# frob:tests tests/test_graph.py::TestConcurrentCache.test_connect_on_current_schema_does_not_block_on_a_held_write_lock  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never\
+# _commit_to_the_same_cache_concurrently
+# frob:tests \
+# tests/test_graph.py::TestConcurrentCache.test_connect_on_current_schema_does_not_bloc\
+# k_on_a_held_write_lock
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_cla\
 # ssified_as_unreadable
@@ -2200,7 +2332,9 @@ def connect(path: Path) -> sqlite3.Connection:
 
 # frob:ticket T-0232
 # frob:doc docs/modules/graph.md#cache
-# frob:tests tests/test_graph.py::TestCacheModule.test_connect_readonly_rejects_writes_no_lock_contention  # noqa: E501
+# frob:tests \
+# tests/test_graph.py::TestCacheModule.test_connect_readonly_rejects_writes_no_lock_con\
+# tention
 def connect_readonly(path: Path) -> sqlite3.Connection:
     """A connection that can never take sqlite's write lock -- for callers
     (`load_graph`, and any gate that only reads the snapshot) that must
@@ -2264,7 +2398,10 @@ def _read_root(conn: sqlite3.Connection) -> str | None:
 
 # frob:doc docs/modules/graph.md#cache
 # frob:ticket T-3700
-# frob:waive WIRE001 reason="wired via _cache.get_root(conn) at graph/__init__.py:754 (frob explore xref confirms); WIRE FUNCTION call_pattern's negative lookbehind excludes module-alias dotted calls -- new-in-diff only because T-3700 rewrapped the body" follow_up="T-3703"  # noqa: E501
+# frob:waive WIRE001 reason="wired via _cache.get_root(conn) at graph/__init__.py:754 \
+# (frob explore xref confirms); WIRE FUNCTION call_pattern's negative lookbehind \
+# excludes module-alias dotted calls -- new-in-diff only because T-3700 rewrapped the \
+# body" follow_up="T-3703"
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_\
 # processes_connecting_concurrently_never_see_no_such_table_meta
@@ -2285,7 +2422,8 @@ def get_root(conn: sqlite3.Connection) -> str | None:
 
 # frob:ticket T-0600
 # frob:ticket T-3700
-# frob:tests tests/test_graph.py::TestCacheModule.test_store_and_load_file_data_roundtrip  # noqa: E501
+# frob:tests \
+# tests/test_graph.py::TestCacheModule.test_store_and_load_file_data_roundtrip
 def _get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     """The cached content hash for `file_path`, or `None` if never stored.
 
@@ -2538,7 +2676,8 @@ def load_file_data(
 
 # frob:doc docs/modules/graph.md#cache
 # frob:ticket T-1464
-# frob:tests tests/unit/test_graph_cache.py::TestParsedArtifacts.test_store_then_load_round_trips  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestParsedArtifacts.test_store_then_load_round_trips
 def store_parsed_artifact(
     conn: sqlite3.Connection, *, content_hash: str, fingerprint: str, payload: str
 ) -> None:
@@ -2585,7 +2724,8 @@ def store_parsed_artifact(
 
 # frob:doc docs/modules/graph.md#cache
 # frob:ticket T-1464
-# frob:tests tests/unit/test_graph_cache.py::TestParsedArtifacts.test_load_miss_returns_none  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestParsedArtifacts.test_load_miss_returns_none
 def load_parsed_artifact(
     conn: sqlite3.Connection, *, content_hash: str, fingerprint: str
 ) -> str | None:
@@ -2622,13 +2762,13 @@ def load_parsed_artifact(
 # frob:doc docs/modules/graph.md#cache
 # frob:ticket T-1214
 # frob:ticket T-3700
-# frob:waive AFFECT001 reason="T-1214 only batches load_all's internal query \
-# shape (3 whole-table SELECTs instead of 3-per-file); its documented contract \
-# in docs/modules/graph.md#cache -- reassembles the full GraphSnapshot from \
-# every row currently in the db -- is unchanged, so the doc anchor needs no \
-# prose update. Touching docs/modules/graph.md itself would pull the whole \
-# graph module's scope-closure obligations into this ticket's narrow scope, \
-# which is out of proportion to a query-shape-only perf change."  # noqa: E501
+# frob:waive AFFECT001 reason="T-1214 only batches load_all's internal query shape (3 \
+# whole-table SELECTs instead of 3-per-file); its documented contract in \
+# docs/modules/graph.md#cache -- reassembles the full GraphSnapshot from every row \
+# currently in the db -- is unchanged, so the doc anchor needs no prose update. \
+# Touching docs/modules/graph.md itself would pull the whole graph module's \
+# scope-closure obligations into this ticket's narrow scope, which is out of \
+# proportion to a query-shape-only perf change."
 def load_all(
     conn: sqlite3.Connection, *, stats: BuildStats | None = None
 ) -> GraphSnapshot:

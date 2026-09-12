@@ -1494,3 +1494,118 @@ class TestLockedDbNeverRebuilds:
             assert cur.fetchone() is not None
         finally:
             conn.close()
+
+
+# frob:ticket T-4411
+class TestSeedDisposableWorktreeCache:
+    """T-4411: `seed_disposable_worktree_cache` copies a primary
+    checkout's `.frob/cache.db` into a disposable land squash worktree so
+    `load_graph` there finds a warm cache instead of rebuilding the whole
+    graph uncached."""
+
+    def test_seeds_from_an_existing_primary_cache(self, tmp_path: Path) -> None:
+        """Given a primary checkout with a built cache.db and a fresh
+        worktree with none, when seeding runs, then the worktree's
+        cache.db is present and `load_graph` reads it as a hit, not
+        'no cache at ...'."""
+        primary = tmp_path / "primary"
+        worktree = tmp_path / "worktree"
+        (primary / ".frob").mkdir(parents=True)
+        conn = graph_cache.connect(primary / ".frob" / "cache.db")
+        conn.close()
+
+        seeded = graph_cache.seed_disposable_worktree_cache(primary, worktree)
+
+        assert seeded is True
+        worktree_cache = worktree / ".frob" / "cache.db"
+        assert worktree_cache.exists()
+        # a copied schema-complete db opens cleanly, i.e. reads as a real
+        # cache hit rather than the "no cache at ..." cold-start warning
+        conn = sqlite3.connect(str(worktree_cache))
+        conn.execute("SELECT 1")
+        conn.close()
+
+    def test_no_primary_cache_is_a_quiet_no_op(self, tmp_path: Path) -> None:
+        """Given a primary checkout that has never built a cache, when
+        seeding runs, then it declines rather than seeding an empty file
+        (a missing worktree cache still reads as a normal, honest cold
+        start)."""
+        primary = tmp_path / "primary"
+        worktree = tmp_path / "worktree"
+        primary.mkdir()
+
+        seeded = graph_cache.seed_disposable_worktree_cache(primary, worktree)
+
+        assert seeded is False
+        assert not (worktree / ".frob" / "cache.db").exists()
+
+    def test_primary_journal_present_skips_seeding(self, tmp_path: Path) -> None:
+        """Given a primary cache with a NON-EMPTY `cache.db-journal`
+        sidecar (T-3644: this module's rollback-journal mode means a
+        writer is mid-transaction right now), when seeding runs, then it
+        declines rather than copying a torn pre-transaction snapshot --
+        the next `load_graph` in the worktree just cold-starts for that
+        one file via normal drift detection."""
+        primary = tmp_path / "primary"
+        worktree = tmp_path / "worktree"
+        (primary / ".frob").mkdir(parents=True)
+        conn = graph_cache.connect(primary / ".frob" / "cache.db")
+        conn.close()
+        (primary / ".frob" / "cache.db-journal").write_bytes(b"\x00" * 16)
+
+        seeded = graph_cache.seed_disposable_worktree_cache(primary, worktree)
+
+        assert seeded is False
+        assert not (worktree / ".frob" / "cache.db").exists()
+
+    def test_empty_primary_journal_does_not_block_seeding(self, tmp_path: Path) -> None:
+        """Given a primary cache with the ZERO-length `cache.db-journal`
+        that this module's TRUNCATE journal mode routinely leaves behind
+        after an ordinary commit (not a live-write signal), when seeding
+        runs, then it still seeds -- mere existence of the journal must
+        never be mistaken for a mid-transaction write."""
+        primary = tmp_path / "primary"
+        worktree = tmp_path / "worktree"
+        (primary / ".frob").mkdir(parents=True)
+        conn = graph_cache.connect(primary / ".frob" / "cache.db")
+        conn.close()
+        assert (primary / ".frob" / "cache.db-journal").exists()
+
+        seeded = graph_cache.seed_disposable_worktree_cache(primary, worktree)
+
+        assert seeded is True
+        assert (worktree / ".frob" / "cache.db").exists()
+
+    # frob:ticket T-4411
+    # frob:tests src/frob/graph/cache.py::seed_disposable_worktree_cache
+    def test_seeded_worktree_cache_only_reparses_the_touched_file(
+        self, tmp_path: Path
+    ) -> None:
+        """T-4411 acceptance criterion 2: a cache seeded from the primary
+        checkout is stale for whatever the disposable worktree's squash
+        touched, but normal drift detection still recomputes only THOSE
+        entries on the next `build_graph` -- seeding must not force (or
+        accidentally trigger) a full uncached rebuild of the whole graph."""
+        from frob.graph import build_graph
+
+        primary = tmp_path / "primary"
+        worktree = tmp_path / "worktree"
+        for root in (primary, worktree):
+            (root / "src").mkdir(parents=True)
+            (root / "src" / "a.py").write_text("def foo() -> None:\n    pass\n")
+            (root / "src" / "b.py").write_text("def bar() -> None:\n    pass\n")
+
+        primary_cache = primary / ".frob" / "cache.db"
+        build_graph(primary, primary_cache).danger_ok
+
+        seeded = graph_cache.seed_disposable_worktree_cache(primary, worktree)
+        assert seeded is True
+
+        # the squash touched only a.py -- b.py's seeded row is still fresh
+        (worktree / "src" / "a.py").write_text("def foo() -> None:\n    return None\n")
+
+        worktree_cache = worktree / ".frob" / "cache.db"
+        result = build_graph(worktree, worktree_cache)
+        assert result.is_ok
+        assert result.danger_ok.stats.parsed == 1
+        assert result.danger_ok.stats.cache_hits == 1

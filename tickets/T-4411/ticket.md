@@ -1,7 +1,7 @@
 ---
 id: T-4411
 title: Seed land squash worktree graph cache from primary
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -55,21 +55,27 @@ evidence:
 - tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_primary_journal_present_skips_seeding
 - tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_empty_primary_journal_does_not_block_seeding
 - tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_cache_db_is_seeded_against_the_disposable_worktree
+- tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_seeded_worktree_cache_only_reparses_the_touched_file
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_load_graph_does_not_cold_start_against_a_warm_primary_cache
 designated_repro_test: null
 acceptance:
 - text: GIVEN a rapid land creates a disposable squash worktree WHEN the land's synchronous
     check loads the graph THEN the squash worktree's .frob/cache.db is seeded (copy
     or hardlink) from the primary checkout's cache.db before the graph loads, instead
     of rebuilding uncached
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_seeds_from_an_existing_primary_cache
+  - tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_cache_db_is_seeded_against_the_disposable_worktree
 - text: GIVEN the seeded cache is stale for touched files WHEN the check runs THEN
     normal drift detection invalidates and recomputes only the touched entries, not
     the whole graph
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache::test_seeded_worktree_cache_only_reparses_the_touched_file
 - text: 'GIVEN this fix lands WHEN a land runs THEN the land log no longer prints
     ''load_graph: no cache at /tmp/frob-land-squash-<id>/wt/.frob/cache.db'' for a
     repo with a warm primary cache'
-  evidence: []
+  evidence:
+  - tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_load_graph_does_not_cold_start_against_a_warm_primary_cache
 threat: null
 component: null
 anchor: false

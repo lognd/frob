@@ -1326,6 +1326,7 @@ tree -- safe to delete at any time (see Design decisions below).
 <!-- frob:describes src/frob/graph/cache.py::store_file_data -->
 <!-- frob:describes src/frob/graph/cache.py::load_file_data -->
 <!-- frob:describes src/frob/graph/cache.py::load_all -->
+<!-- frob:describes src/frob/graph/cache.py::seed_disposable_worktree_cache -->
 
 ```python
 def connect(path: Path) -> sqlite3.Connection
@@ -1356,6 +1357,12 @@ def load_file_data(conn: sqlite3.Connection, file_path: str) -> tuple[...]
     # Reads back everything previously stored for one file -- a cache hit.
 def load_all(conn: sqlite3.Connection, *, stats=None) -> GraphSnapshot
     # Reassembles the full GraphSnapshot from every row currently in the db.
+def seed_disposable_worktree_cache(primary_root: Path, worktree_root: Path) -> bool
+    # T-4411: best-effort copy of primary_root's .frob/cache.db into a
+    # freshly-cut disposable land worktree, so load_graph finds a warm
+    # cache instead of rebuilding the whole graph. Declines (returns
+    # False, no copy) if the primary has no cache yet, or if a live
+    # cache.db-journal shows a writer is mid-transaction there.
 ```
 
 ### Persistent parse-artifact cache (T-1464)

@@ -245,6 +245,64 @@ class TestDisposableSquashWorktree:
             assert seeded_repo == scratch_repo
             assert seeded_worktree == staged.danger_ok.worktree
 
+    # frob:ticket T-4411
+    def test_cache_db_is_seeded_against_the_disposable_worktree(
+        self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4411: `compose_squash_in_disposable_worktree` calls
+        `seed_disposable_worktree_cache(repo, worktree)` right after cutting
+        the disposable worktree (alongside the T-4431 native-mtime seed) --
+        so a land's synchronous check finds a warm `.frob/cache.db` instead
+        of `load_graph` rebuilding the whole graph from a cold cache."""
+        calls: list[tuple[Path, Path]] = []
+        monkeypatch.setattr(
+            "frob.graph.cache.seed_disposable_worktree_cache",
+            lambda primary_root, worktree_root: (
+                calls.append((primary_root, worktree_root)) or True
+            ),
+        )
+        with compose_squash_in_disposable_worktree(
+            scratch_repo, "main", "feature"
+        ) as staged:
+            assert staged.is_ok
+            assert len(calls) == 1
+            seeded_repo, seeded_worktree = calls[0]
+            assert seeded_repo == scratch_repo
+            assert seeded_worktree == staged.danger_ok.worktree
+
+    # frob:ticket T-4411
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    def test_load_graph_does_not_cold_start_against_a_warm_primary_cache(
+        self, scratch_repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-4411 acceptance criterion 3: with a real (unmocked) built
+        cache.db in the primary checkout, `compose_squash_in_disposable_
+        worktree`'s seeding leaves the disposable worktree's `.frob/
+        cache.db` warm -- so `load_graph` against it never logs
+        'load_graph: no cache at ...', the exact cold-start warning a land
+        used to print for a repo with a warm primary cache."""
+        import logging
+
+        from frob.graph import build_graph, load_graph
+
+        primary_cache = scratch_repo / ".frob" / "cache.db"
+        build_graph(scratch_repo, primary_cache).danger_ok
+
+        with caplog.at_level(logging.WARNING, logger="frob.graph"):
+            with compose_squash_in_disposable_worktree(
+                scratch_repo, "main", "feature"
+            ) as staged:
+                assert staged.is_ok
+                worktree = staged.danger_ok.worktree
+                worktree_cache = worktree / ".frob" / "cache.db"
+                assert worktree_cache.exists()
+                load_graph(worktree_cache)
+
+        assert not any("no cache at" in record.message for record in caplog.records), (
+            "load_graph cold-started against a warm-seeded worktree cache"
+        )
+
     def test_conflicting_squash_reports_the_conflicted_paths(
         self, conflicting_repo: Path
     ) -> None:
