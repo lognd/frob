@@ -2,7 +2,7 @@
 id: T-4403
 title: 'pre-land lint-diff attribution refuses on Windows: shift-only violation mis-detected
   as new'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-10'
@@ -59,3 +59,6 @@ via PurePosixPath / os.path.normcase-aware comparison, or Path equality
 instead of string equality) with a declared reason, rather than adding a
 platform skip -- this is real cross-platform lint-diff behavior CI must
 exercise on Windows.
+
+## Drop reason
+- 2026-09-12: already fixed on main (T-4257/T-4275 land d927ca7a4): tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand all 4 tests pass on win32 at current main (winrun mirror, verified twice by the previous coordinator session)
