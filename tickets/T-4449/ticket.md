@@ -2,7 +2,7 @@
 id: T-4449
 title: 'Windows runner: platform_skipped empty in the self-gate AFTER the Test step
   (56 COV003 + 2 TEST002 persist past T-4447)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
