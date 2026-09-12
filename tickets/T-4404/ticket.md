@@ -28,6 +28,8 @@ triage_changes:
   reason: windows drain epic T-3505 covers this leaf
   actor: logan
   at: '2026-09-11'
+evidence:
+- tests/test_ticket_leases.py::TestOrphanedTicketLocks::test_pre_cutover_lock_is_baseline_silent
 designated_repro_test: null
 threat: null
 component: null
