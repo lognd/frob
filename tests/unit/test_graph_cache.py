@@ -6,6 +6,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -1376,3 +1377,120 @@ class TestCorruptCacheSelfHeals:
 
         assert graph_cache.get_file_meta(conn, "src/a.py") == ("deadbeef", 1, 1)
         assert calls == [], "a healthy cache must never be rebuilt"
+
+
+# frob:ticket T-4412
+class TestLockedDbNeverRebuilds:
+    """T-4412: `database is locked` (T-3644: or its TRUNCATE-mode
+    `readonly database` sibling) must never be classified as an
+    unreadable/corrupt db and rebuilt -- it is a live, healthy cache a
+    sibling process merely has open right now. `connect()` must instead
+    resolve it via `_with_lock_retry`'s existing bounded busy-wait, either
+    succeeding once the lock clears or raising `CacheLocked` (naming the
+    holder) once the retry budget is exhausted."""
+
+    def test_locked_db_is_never_classified_as_unreadable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_n\
+        # ever_classified_as_unreadable
+        """Positive control (real second connection holding an exclusive
+        lock, not a synthetic monkeypatch of the error): `connect()` must
+        wait out the lock and succeed, never rebuild. Rebuild is detected
+        by asserting the file's inode is unchanged (a rebuild replaces
+        the inode via `os.replace`, T-3607) and that no `cache.db.stale-*`
+        quarantine sidecar appears -- NOT by a byte-identity check, since
+        the blocker's own committed `INSERT` legitimately changes the
+        file's bytes and that is expected, correct behavior."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        conn.commit()
+        conn.close()
+        original_inode = path.stat().st_ino
+
+        blocker = sqlite3.connect(str(path), timeout=0.1, check_same_thread=False)
+        blocker.execute("BEGIN EXCLUSIVE")
+        blocker.execute("INSERT INTO meta (key, value) VALUES ('x', '1')")
+
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.05)
+        monkeypatch.setattr(graph_cache, "_LOCK_TOTAL_TIMEOUT_SECONDS", 2.0)
+
+        rebuild_calls: list[Path] = []
+        monkeypatch.setattr(
+            graph_cache,
+            "_recreate",
+            lambda c, p: rebuild_calls.append(p) or c,
+        )
+
+        def _release_after_delay() -> None:
+            time.sleep(0.2)
+            blocker.commit()
+            blocker.close()
+
+        releaser = threading.Thread(target=_release_after_delay)
+        releaser.start()
+        try:
+            reopened = graph_cache.connect(path)
+            reopened.close()
+        finally:
+            releaser.join()
+
+        assert rebuild_calls == []
+        assert path.stat().st_ino == original_inode
+        assert not list(tmp_path.glob("cache.db.stale-*"))
+
+    def test_lock_exhaustion_raises_cache_locked_naming_the_holder(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_lock_exhaustio\
+        # n_raises_cache_locked_naming_the_holder
+        """A lock that never clears within the retry budget must surface
+        as `CacheLocked` naming the lock, never a rebuild."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        conn.commit()
+        conn.close()
+
+        blocker = sqlite3.connect(str(path), timeout=0.1, check_same_thread=False)
+        blocker.execute("BEGIN EXCLUSIVE")
+        blocker.execute("INSERT INTO meta (key, value) VALUES ('x', '1')")
+
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.01)
+        monkeypatch.setattr(graph_cache, "_LOCK_TOTAL_TIMEOUT_SECONDS", 0.05)
+
+        rebuild_calls: list[Path] = []
+        monkeypatch.setattr(
+            graph_cache,
+            "_recreate",
+            lambda c, p: rebuild_calls.append(p) or c,
+        )
+
+        try:
+            with pytest.raises(graph_cache.CacheLocked) as excinfo:
+                graph_cache.connect(path)
+            assert "locked" in str(excinfo.value).lower()
+        finally:
+            blocker.commit()
+            blocker.close()
+
+        assert rebuild_calls == []
+
+    def test_genuinely_malformed_db_still_rebuilds(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malf\
+        # ormed_db_still_rebuilds
+        """Positive control: a truly non-sqlite file (never a lock error)
+        must still self-heal via `connect()`'s pre-existing T-0141
+        recreate path -- this fix narrows the lock case only, it must not
+        blunt real corruption recovery."""
+        path = tmp_path / "cache.db"
+        path.write_bytes(b"not a sqlite file at all")
+
+        conn = graph_cache.connect(path)
+        try:
+            cur = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'")
+            assert cur.fetchone() is not None
+        finally:
+            conn.close()

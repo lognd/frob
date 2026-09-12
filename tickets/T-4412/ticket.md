@@ -1,7 +1,7 @@
 ---
 id: T-4412
 title: Graph cache treats 'database is locked' as corruption and rebuilds
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-11'
@@ -20,20 +20,28 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_locked_db_is_never_classified_as_unreadable
+- tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_genuinely_malformed_db_still_rebuilds
+- tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_lock_exhaustion_raises_cache_locked_naming_the_holder
 designated_repro_test: null
 acceptance:
 - text: GIVEN a second connection holds an exclusive lock on cache.db WHEN this process's
     connect path hits sqlite 'database is locked' THEN it performs a bounded busy-wait/retry
     (sqlite busy_timeout) instead of classifying the db as unreadable and rebuilding
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_locked_db_is_never_classified_as_unreadable
 - text: GIVEN a test holds an exclusive lock on cache.db from a second connection
     WHEN the primary process opens the cache THEN the test asserts no rebuild is triggered
     and the busy-wait eventually succeeds or times out cleanly
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_locked_db_is_never_classified_as_unreadable
+  - tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_lock_exhaustion_raises_cache_locked_naming_the_holder
 - text: GIVEN cache.db is genuinely malformed (not merely locked) WHEN connect runs
     THEN it still self-heals via rebuild as today (T-4159 behavior preserved for real
     corruption)
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds::test_genuinely_malformed_db_still_rebuilds
 threat: null
 component: null
 anchor: false

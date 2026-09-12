@@ -989,15 +989,47 @@ def _open(path: Path) -> sqlite3.Connection:
 
 
 # frob:ticket T-0141
+# frob:ticket T-4412
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_cla\
+# ssified_as_unreadable
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malformed_db\
+# _still_rebuilds
 def _read_schema_version(
     conn: sqlite3.Connection, path: Path
 ) -> tuple[sqlite3.Connection, int | None]:
-    """Read the stored schema version, recreating the file if it is not sqlite."""
+    """Read the stored schema version, recreating the file if it is not sqlite.
+
+    T-4412: a transient `database is locked` (T-3644: or its TRUNCATE-mode
+    `readonly database` sibling -- see `_is_transient_lock_error`) is NOT
+    "unreadable" -- it is a live, healthy db that a sibling process merely
+    has open right now. Before this fix, that exact `sqlite3.OperationalError`
+    subclasses `DatabaseError` and was caught by the same branch as genuine
+    corruption, logged as "unreadable db ... rebuilding" (a rebuild this
+    function does not even perform itself, but its caller's retry of the
+    immediately-following `SELECT 1` probe hit the SAME still-held lock and
+    DID trigger `_recreate` -- destroying and rebuilding a perfectly good
+    cache under nothing but contention, measured verbatim: "cache.connect:
+    unreadable db at .frob/cache.db, rebuilding: database is locked").
+    Re-raising here instead routes the caller (`connect()`) through
+    `_with_lock_retry`'s existing bounded busy-wait/backoff, which either
+    succeeds once the lock clears or raises `CacheLocked` naming the
+    holding pid (`_describe_lock_holders`) -- never a rebuild. A genuinely
+    malformed file (T-4159's target case) raises a DIFFERENT
+    `sqlite3.DatabaseError` shape (not lock-classified), so it still falls
+    through to the corrupt-file `SELECT 1` probe and `_recreate` below,
+    unchanged.
+    """
     try:
         cur = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'")
         row = cur.fetchone()
         _warn_if_empty_row(row, table="meta", key="schema_version")
         return conn, (int(row[0]) if row else None)
+    except sqlite3.OperationalError as exc:
+        if _is_transient_lock_error(exc):
+            raise
+        _log.warning("cache.connect: unreadable db at %s, rebuilding: %s", path, exc)
     except sqlite3.DatabaseError as exc:
         _log.warning("cache.connect: unreadable db at %s, rebuilding: %s", path, exc)
     try:
@@ -2061,9 +2093,13 @@ def _inprocess_write_lock(path: Path) -> threading.RLock:
 # frob:ticket T-0141
 # frob:ticket T-1519
 # frob:ticket T-3644
+# frob:ticket T-4412
 # frob:doc docs/modules/graph.md#cache
 # frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
 # frob:tests tests/test_graph.py::TestConcurrentCache.test_connect_on_current_schema_does_not_block_on_a_held_write_lock  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_cla\
+# ssified_as_unreadable
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.
 
@@ -2135,7 +2171,23 @@ def connect(path: Path) -> sqlite3.Connection:
             # race harmlessly -- os.replace is atomic either way.
             _create_schema_complete_db(path)
         conn = _open(path)
-        conn, existing = _read_schema_version(conn, path)
+
+        # T-4412: `_read_schema_version` re-raises a transient lock error
+        # (rather than misclassifying it as unreadable/corrupt) precisely
+        # so this call can wrap it in the same bounded busy-wait/backoff
+        # every other cache read/write path already gets -- resolving to
+        # either a successful read once the lock clears or `CacheLocked`
+        # (naming the holder) once the retry budget is exhausted, never a
+        # rebuild.
+        existing: int | None = None
+
+        def _read_schema_version_step() -> None:
+            nonlocal conn, existing
+            conn, existing = _read_schema_version(conn, path)
+
+        _with_lock_retry(
+            _read_schema_version_step, what="schema version read", path=path
+        )
         conn = _apply_schema_with_recovery(conn, existing, path)
 
         def _check_fingerprint_step() -> None:
