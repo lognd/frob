@@ -1,7 +1,7 @@
 ---
 id: T-4405
 title: frob agent env stdout is UTF-16-garbled under bash eval on Windows
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-10'
@@ -71,3 +71,6 @@ BOM/UTF-16 default sneaking in via a Windows-specific stdout reconfigure),
 declared with a sys.platform-aware comment if the root cause is
 platform-specific. Do not skip the test -- stdout purity for eval is a
 real cross-platform contract.
+
+## Drop reason
+- 2026-09-12: already fixed on main: tests/test_worktree_guard.py::TestAgentEnvStdoutPurity all 4 tests pass on win32 at current main (winrun mirror, verified by the previous coordinator session)
