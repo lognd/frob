@@ -2,7 +2,7 @@
 id: T-4444
 title: 'Windows self-gate: platform_skipped lost on a warm collection cache, 56 COV003
   and 2 TEST002 persist after T-4429'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
