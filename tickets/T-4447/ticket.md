@@ -2,7 +2,7 @@
 id: T-4447
 title: 'Severity override re-promotes platform-skip WARN verdicts to ERROR: Windows
   COV003 x56 and TEST002 x2 persist'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
