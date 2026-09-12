@@ -1,7 +1,7 @@
 ---
 id: T-4429
 title: gates._load_tests drops platform_skipped, so COV003 never attributes on Windows
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-11'
@@ -45,6 +45,8 @@ scope_changes:
     not the guessed path
   actor: logan
   at: '2026-09-11'
+evidence:
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_load_tests_threads_platform_skipped_through
 designated_repro_test: null
 threat: null
 component: null

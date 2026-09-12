@@ -1123,6 +1123,48 @@ class TestCoverageGate:
         assert merged2.node_ids == frozenset({"tests/test_x.py::test_a"})
         assert python_collection_failed2 is None
 
+    # frob:ticket T-4429
+    def test_load_tests_threads_platform_skipped_through(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-4429: `_load_tests` rebuilt a fresh `CollectedTests(node_ids=
+        ...)` from `collect_python_tests`'s node ids alone, silently
+        dropping its `platform_skipped` to the model default `()` --
+        MEASURED on the Windows CI mirror: `collect_python_tests` itself
+        correctly returned the two POSIX-only module pairs below, but
+        `_load_tests(root).platform_skipped` came back empty, so COV003/
+        TEST002 lost platform attribution for every POSIX-only test module
+        on that leg (56 unattributed COV003, zero-attribution symptom).
+        On Linux this was invisible: nothing is platform_skipped running
+        ON posix, so an always-empty default cost nothing there -- this
+        test feeds the measured Windows shape through `_load_tests`
+        directly so the regression is caught without the Windows mirror."""
+        from typani import Ok
+
+        import frob.gates as gates_mod
+
+        windows_platform_skipped = (
+            ("tests/unit/test_conftest_stackdump.py", "SIGUSR1 is POSIX-only"),
+            ("tests/unit/test_stackdump.py", "SIGUSR1 is POSIX-only"),
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_python_tests",
+            lambda root: Ok(
+                CollectedTests(
+                    node_ids=frozenset({"tests/test_x.py::test_a"}),
+                    platform_skipped=windows_platform_skipped,
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_rust_tests",
+            lambda root: Ok(CollectedTests(node_ids=frozenset())),
+        )
+        merged, _, _ = gates_mod._load_tests(tmp_path)
+        assert merged.platform_skipped == windows_platform_skipped
+
     # frob:ticket T-1161
     def test_load_tests_captures_python_collection_failure_detail(
         self, tmp_path: Path, monkeypatch

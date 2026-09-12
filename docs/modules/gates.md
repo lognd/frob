@@ -7930,3 +7930,20 @@ deferred to its own ticket rather than riding in on T-4138's scope.
 012/017/019 family) already treats an entirely absent `coverage.xml` as
 a silent skip, safe because TEST006 independently reports the missing
 coverage stamp as its own loud ERROR -- no conflation found there.
+
+**T-4429 (platform_skipped dropped on the way out of `_load_tests`)**:
+a separate, longer-lived bug in this same function -- `_load_tests`
+rebuilt a brand-new `CollectedTests(node_ids=frozenset(node_ids))` from
+`collect_python_tests`'s node ids alone, silently discarding the
+collector's own `platform_skipped` (populated correctly since T-4382,
+cache-round-tripped since T-4390, backslash-normalized since T-4408) to
+the model's default `()`. On Linux this cost nothing -- nothing is
+`platform_skipped` running ON posix -- which is why T-4382/T-4386/
+T-4390/T-4408 each verified clean there. MEASURED on the Windows CI
+mirror: `collect_python_tests(root).platform_skipped` correctly
+returned the POSIX-only module pairs, but `_load_tests(root).
+platform_skipped` came back `()`, so `_evidence_platform_skip_reason`/
+`_edges_platform_skip_reason` (COV003/TEST002) never saw them and every
+POSIX-only test module's evidence flooded COV003 with zero platform
+attribution. Fixed by threading `collect_python_tests`'s
+`platform_skipped` into the `CollectedTests` `_load_tests` returns.

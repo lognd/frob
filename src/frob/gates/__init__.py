@@ -4320,9 +4320,7 @@ def _test002_unmeasured(record, langs: frozenset[str]) -> Violation:  # noqa: AN
 # frob:tests \
 # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_s\
 # kipped_edge_reports_unresolved_not_error kind="unit"
-def _edges_platform_skip_reason(
-    edges: list[Edge], tests: CollectedTests
-) -> str | None:
+def _edges_platform_skip_reason(edges: list[Edge], tests: CollectedTests) -> str | None:
     """T-4386: the recorded skip reason if every one of `edges` names a
     test file `tests.platform_skipped` excludes from collection on this
     platform (either side -- `src` or `target` -- since a `frob:tests`
@@ -4341,9 +4339,7 @@ def _edges_platform_skip_reason(
     for edge in edges:
         for symref in (edge.src, edge.target):
             file = symref.split("::", 1)[0]
-            match = next(
-                (r for f, r in tests.platform_skipped if f == file), None
-            )
+            match = next((r for f, r in tests.platform_skipped if f == file), None)
             if match is not None:
                 reason = match
                 break
@@ -6715,6 +6711,9 @@ def _load_diff(root: Path, base: str) -> tuple[Diff, bool, bool]:
     return diff_result.danger_ok, False, False
 
 
+# frob:tests \
+# tests/gates_suite/test_coverage.py::TestCoverageGate.test_load_tests_threads_platform\
+# _skipped_through
 def _load_tests(root: Path) -> tuple[CollectedTests, str | None, frozenset[str]]:
     """Collected pytest + cargo + vitest + ctest node ids, degrading each
     collector independently to an empty set on failure (a missing/broken
@@ -6747,6 +6746,8 @@ def _load_tests(root: Path) -> tuple[CollectedTests, str | None, frozenset[str]]
     two different rules."""
     node_ids: set[str] = set()
     failed_languages: set[str] = set()
+    # frob:ticket T-4429
+    platform_skipped: tuple[tuple[str, str], ...] = ()
 
     python_result = collect_python_tests(root)
     python_collection_failed: str | None = None
@@ -6758,6 +6759,16 @@ def _load_tests(root: Path) -> tuple[CollectedTests, str | None, frozenset[str]]
         )
     else:
         node_ids.update(python_result.danger_ok.node_ids)
+        # T-4429: collect_python_tests's own CollectedTests already carries
+        # platform_skipped (parsed by T-4382, cache-round-tripped by
+        # T-4390, path-normalized by T-4408) -- but this function was
+        # rebuilding a BRAND NEW CollectedTests below from node_ids alone,
+        # silently dropping it to the model's default `()`. On Linux that
+        # default costs nothing (nothing is platform_skipped running ON
+        # posix); on Windows it meant every POSIX-only module's evidence
+        # permanently lost its platform attribution and flooded COV003,
+        # no matter how correct the upstream parse was. Thread it through.
+        platform_skipped = python_result.danger_ok.platform_skipped
 
     rust_result = collect_rust_tests(root)
     if rust_result.is_err:
@@ -6781,7 +6792,7 @@ def _load_tests(root: Path) -> tuple[CollectedTests, str | None, frozenset[str]]
         node_ids.update(cpp_result.danger_ok.node_ids)
 
     return (
-        CollectedTests(node_ids=frozenset(node_ids)),
+        CollectedTests(node_ids=frozenset(node_ids), platform_skipped=platform_skipped),
         python_collection_failed,
         frozenset(failed_languages),
     )
