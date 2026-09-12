@@ -1,7 +1,7 @@
 ---
 id: T-4434
 title: 'Native staleness seeder still fails frob_core: untracked-file digest mismatch'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-11'
