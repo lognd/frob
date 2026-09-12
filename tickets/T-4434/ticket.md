@@ -1,7 +1,7 @@
 ---
 id: T-4434
 title: 'Native staleness seeder still fails frob_core: untracked-file digest mismatch'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-11'
@@ -20,7 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes::test_identical_source_is_backdated_and_reads_fresh
+- tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes::test_diverged_source_is_left_untouched_and_still_stale
+- tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes::test_repo_side_untracked_file_does_not_block_seeding
+designated_repro_test: tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes::test_repo_side_untracked_file_does_not_block_seeding
 threat: null
 component: null
 anchor: false
