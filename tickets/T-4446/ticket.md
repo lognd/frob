@@ -2,7 +2,7 @@
 id: T-4446
 title: 'Windows CI: frob agent env stdout is UTF-16 under bash eval on the runner
   (successor to T-4405)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
