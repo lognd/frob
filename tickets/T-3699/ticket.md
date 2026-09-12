@@ -1,7 +1,7 @@
 ---
 id: T-3699
 title: 'macOS flake: test_daemon_proxy_lease_t1276 Unreachable in run 33625622797'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
