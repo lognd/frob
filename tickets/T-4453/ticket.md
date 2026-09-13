@@ -2,7 +2,7 @@
 id: T-4453
 title: 'pydantic serializer warning: Ticket.scope reaches model_dump as a list (corrupt-row
   path bypasses validation)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
