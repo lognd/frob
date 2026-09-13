@@ -2,7 +2,7 @@
 id: T-4436
 title: Draft-id finalizer rewrote a lost draft id to an unrelated real ticket in a
   worktree's Done report
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
