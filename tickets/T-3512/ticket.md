@@ -24,6 +24,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record BUG002 waiver for pre-land check-repro TEST_ABSENT_AT_PARENT
+  actor: logan
+  at: '2026-09-13'
+  old_length: 3220
+  new_length: 3477
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_has_no_continue_on_error
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_matrix_still_includes_all_three_platforms
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_no_step_level_continue_on_error_smuggled_onto_other_legs
 designated_repro_test: null
 threat: null
 component: null
@@ -94,3 +105,7 @@ BLOCKED BY: T-3511 (re-measure) -- this must be the truly last leaf;
 removing the flag before a stable-zero re-measurement would either
 immediately redden CI or, if the re-measurement step was skipped,
 falsely certify a release gate that was never actually verified green.
+
+
+
+## frob:waive BUG002 reason="CI-config change measurable only on the runner; new test does not exist at the parent commit (T-2025 pre-land check-repro limitation) -- confirmed passing locally, TEST_ABSENT_AT_PARENT is expected for a not-yet-landed test"
