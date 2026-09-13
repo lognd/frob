@@ -28,6 +28,7 @@ from frob.tickets._land import (
     _reopen_log_entries,
     _sibling_reopen_log_signatures,
     _sibling_ticket_states,
+    _timed_load_all,
     land,
 )
 from frob.tickets._models import LandError
@@ -540,3 +541,94 @@ class TestNamesStrandedWorktreesBeforeReopen:
         # No live-worktree lease at all -- no names, no error.
         no_stranding = _worktrees_carrying_terminal_copy(v2_repo, "T-3000")
         assert no_stranding == ()
+
+
+# frob:ticket T-4435
+class TestSharedSiblingLoad:
+    """T-4435: `_sibling_ticket_states` and `_sibling_reopen_log_signatures`
+    each used to call `load_all(worktree)` independently -- two full
+    ledger loads per snapshot (pre-merge, then again post-merge) instead
+    of one. Both now accept an already-loaded ticket map via `loaded=`
+    and `_timed_load_all` is the single shared entry point `_land_
+    merge_stage`/`_assert_no_sibling_state_regression` call once per
+    snapshot and pass to both helpers."""
+
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_loa\
+    # d_is_reused_by_both_helpers
+    def test_shared_load_is_reused_by_both_helpers(self, tmp_path: Path) -> None:
+        """A single `_timed_load_all` result, passed as `loaded=` to both
+        helpers, is read verbatim -- no second `load_all` call happens
+        (verified by monkeypatching `load_all` in `_land` to fail if
+        called again after the first, shared load)."""
+        _git_init(tmp_path)
+        _seed_v2_ticket(tmp_path, "T-1000")
+        _commit_all(tmp_path, "seed")
+
+        loaded = _timed_load_all(tmp_path)
+        assert loaded == {"T-1000": loaded["T-1000"]}
+
+        import frob.tickets._land as land_module
+
+        original_load_all = land_module.load_all
+        calls = {"n": 0}
+
+        def _counting_load_all(root: Path):
+            calls["n"] += 1
+            return original_load_all(root)
+
+        land_module.load_all = _counting_load_all  # type: ignore[assignment]  # ty: ignore[invalid-assignment]  # noqa: E501
+        try:
+            states = _sibling_ticket_states(tmp_path, "T-9999", loaded=loaded)
+            signatures = _sibling_reopen_log_signatures(
+                tmp_path, "T-9999", loaded=loaded
+            )
+        finally:
+            land_module.load_all = original_load_all  # type: ignore[assignment]
+
+        assert calls["n"] == 0, "passing loaded= must skip load_all entirely"
+        assert states == {"T-1000": TicketState.QUEUED.value}
+        assert signatures == {"T-1000": ()}
+
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_a_fake_led\
+    # ger_of_n_tickets_loads_once_for_both_helpers
+    def test_a_fake_ledger_of_n_tickets_loads_once_for_both_helpers(
+        self, tmp_path: Path
+    ) -> None:
+        """A ledger with N tickets: `_timed_load_all` is called ONCE by
+        the test (standing in for `_land_merge_stage`'s single shared
+        pre/post-merge load), and both helpers derive their maps from
+        that one result -- covering the N-tickets shape the ticket's
+        acceptance criteria names, not just the one-ticket fixture above."""
+        _git_init(tmp_path)
+        n = 25
+        for i in range(n):
+            _seed_v2_ticket(tmp_path, f"T-{2000 + i}")
+        _commit_all(tmp_path, "seed n tickets")
+
+        loaded = _timed_load_all(tmp_path)
+        assert len(loaded) == n
+
+        states = _sibling_ticket_states(tmp_path, "T-9999", loaded=loaded)
+        signatures = _sibling_reopen_log_signatures(tmp_path, "T-9999", loaded=loaded)
+        assert len(states) == n
+        assert len(signatures) == n
+        assert all(v == TicketState.QUEUED.value for v in states.values())
+        assert all(v == () for v in signatures.values())
+
+    # frob:tests \
+    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_default_no\
+    # _loaded_arg_still_loads_standalone
+    def test_default_no_loaded_arg_still_loads_standalone(self, tmp_path: Path) -> None:
+        """`loaded=None` (the default) preserves the original standalone
+        behavior -- unchanged for every existing caller/test that does not
+        pass a preloaded map in."""
+        _git_init(tmp_path)
+        _seed_v2_ticket(tmp_path, "T-1000")
+        _commit_all(tmp_path, "seed")
+
+        assert _sibling_ticket_states(tmp_path, "T-9999") == {
+            "T-1000": TicketState.QUEUED.value
+        }
+        assert _sibling_reopen_log_signatures(tmp_path, "T-9999") == {"T-1000": ()}

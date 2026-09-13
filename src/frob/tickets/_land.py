@@ -53,6 +53,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from enum import StrEnum
@@ -7854,23 +7855,64 @@ def _merge_main_into_worktree_v2(
     return Ok(True)
 
 
+# frob:ticket T-4435
+def _timed_load_all(worktree: Path) -> dict[str, Ticket]:
+    """`load_all(worktree)` with an elapsed-time log line around it (T-4435
+    ACCEPTANCE 1) -- the two sibling-state helpers below used to call
+    `load_all` with no log line before or after, so a slow post-wip-commit
+    ledger load (measured 40+ minutes single-threaded on a 4000+ ticket
+    ledger, T-4435) was invisible in the land log until the next line
+    printed at the merge. Logs at WARNING when the load takes over 30s
+    (the phase this ticket exists to make visible), DEBUG otherwise. A
+    load failure (corrupt/unparseable ledger) degrades to an empty map --
+    the same fail-open posture `_sibling_ticket_states`/
+    `_sibling_reopen_log_signatures` already used individually, now
+    centralized here so both share exactly one `load_all` call per
+    snapshot instead of one each (T-4435 ACCEPTANCE 2)."""
+    start = time.monotonic()
+    loaded = load_all(worktree)
+    elapsed = time.monotonic() - start
+    if elapsed > 30:
+        _log.warning(
+            "land: sibling ledger load under %s took %.1fs (>30s)", worktree, elapsed
+        )
+    else:
+        _log.debug("land: sibling ledger load under %s took %.3fs", worktree, elapsed)
+    if loaded.is_err:
+        return {}
+    return loaded.danger_ok
+
+
 # frob:ticket T-1914
+# frob:ticket T-4435
 # frob:tests \
 # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_\
 # fix_shape_would_have_silently_reverted_sibling
-def _sibling_ticket_states(worktree: Path, landing_id: str) -> dict[str, str]:
+# frob:tests \
+# tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_load_is\
+# _reused_by_both_helpers
+def _sibling_ticket_states(
+    worktree: Path,
+    landing_id: str,
+    loaded: dict[str, Ticket] | None = None,
+) -> dict[str, str]:
     """Every OTHER ticket id's current on-disk state under `worktree`,
     excluding `landing_id` itself (T-1914). A load failure (corrupt/
     unparseable ledger) degrades to an empty map -- the same fail-open
     posture `_tick005_land_regressions` already uses for its own parse
     failures, rather than blocking every land on a ledger the rest of
-    `land()` already tolerates parsing failures around elsewhere."""
-    loaded = load_all(worktree)
-    if loaded.is_err:
-        return {}
-    return {
-        tid: t.state.value for tid, t in loaded.danger_ok.items() if tid != landing_id
-    }
+    `land()` already tolerates parsing failures around elsewhere.
+
+    T-4435: `loaded`, when given, is an already-`_timed_load_all`-loaded
+    ticket map (the SAME snapshot `_sibling_reopen_log_signatures` reads)
+    so a caller that needs both maps for one worktree state pays for
+    exactly one `load_all` instead of two. `loaded=None` (the default)
+    preserves the original standalone behavior -- this function loads for
+    itself, unchanged for any caller (including the existing tests) that
+    does not pass one in."""
+    if loaded is None:
+        loaded = _timed_load_all(worktree)
+    return {tid: t.state.value for tid, t in loaded.items() if tid != landing_id}
 
 
 # frob:ticket T-4287
@@ -7910,8 +7952,11 @@ def _reopen_log_entries(body: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-4287
+# frob:ticket T-4435
 def _sibling_reopen_log_signatures(
-    worktree: Path, landing_id: str
+    worktree: Path,
+    landing_id: str,
+    loaded: dict[str, Ticket] | None = None,
 ) -> dict[str, tuple[str, ...]]:
     """Every OTHER ticket id's current `_reopen_log_entries` under
     `worktree` (T-4287), excluding `landing_id` -- the reopen-side twin of
@@ -7920,13 +7965,17 @@ def _sibling_reopen_log_signatures(
     DELIBERATE, audited `frob ticket reopen` (which appends a NEW dated
     entry) apart from an accidental hand-resolved-merge resurrection
     (which does not touch this section at all). Same fail-open posture as
-    `_sibling_ticket_states`: a load failure degrades to `{}`."""
-    loaded = load_all(worktree)
-    if loaded.is_err:
-        return {}
+    `_sibling_ticket_states`: a load failure degrades to `{}`.
+
+    T-4435: `loaded`, when given, is the SAME `_timed_load_all` snapshot
+    `_sibling_ticket_states` was given for this worktree state -- see that
+    function's docstring. `loaded=None` (the default) is unchanged
+    standalone behavior."""
+    if loaded is None:
+        loaded = _timed_load_all(worktree)
     return {
         tid: _reopen_log_entries(t.body)
-        for tid, t in loaded.danger_ok.items()
+        for tid, t in loaded.items()
         if tid != landing_id
     }
 
@@ -8009,9 +8058,13 @@ def _assert_no_sibling_state_regression(
     general loosening of the guard (T-4287's own explicit non-goal)."""
     from frob.tickets._models import TicketState
 
-    post_states = _sibling_ticket_states(worktree, landing_id)
+    # One post-merge load shared by both helpers (was two independent
+    # `load_all(worktree)` calls).
+    # frob:ticket T-4435
+    post_loaded = _timed_load_all(worktree)
+    post_states = _sibling_ticket_states(worktree, landing_id, loaded=post_loaded)
     post_reopen_signatures = (
-        _sibling_reopen_log_signatures(worktree, landing_id)
+        _sibling_reopen_log_signatures(worktree, landing_id, loaded=post_loaded)
         if pre_reopen_signatures is not None
         else {}
     )
@@ -8076,9 +8129,17 @@ def _land_merge_stage(
         return Err(wip.danger_err)
     wip_committed = wip.danger_ok
 
-    pre_merge_sibling_states = _sibling_ticket_states(worktree, ticket_id)
+    # One pre-merge load shared by both helpers (was two independent
+    # `load_all(worktree)` calls).
+    # frob:ticket T-4435
+    pre_loaded = _timed_load_all(worktree)
+    pre_merge_sibling_states = _sibling_ticket_states(
+        worktree, ticket_id, loaded=pre_loaded
+    )
     # frob:ticket T-4287
-    pre_merge_reopen_signatures = _sibling_reopen_log_signatures(worktree, ticket_id)
+    pre_merge_reopen_signatures = _sibling_reopen_log_signatures(
+        worktree, ticket_id, loaded=pre_loaded
+    )
 
     merged = (
         _merge_main_into_worktree_v2(root, worktree, ticket, main_branch_name)

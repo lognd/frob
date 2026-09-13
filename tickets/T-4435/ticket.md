@@ -2,7 +2,7 @@
 id: T-4435
 title: 'Land spends 40+ min single-threaded after the wip commit: two load_all(worktree)
   calls in the sibling-state helpers'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-12'
@@ -21,6 +21,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad::test_shared_load_is_reused_by_both_helpers
+- tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad::test_a_fake_ledger_of_n_tickets_loads_once_for_both_helpers
+- tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad::test_default_no_loaded_arg_still_loads_standalone
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_pre_fix_shape_would_have_silently_reverted_sibling
 designated_repro_test: null
 threat: null
 component: null
