@@ -2,7 +2,7 @@
 id: T-4454
 title: 'Regression: _recreate leaves cache.db absent, read-only sibling dies with
   ''unable to open database file'' (macOS T-3607 test)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
