@@ -2,7 +2,7 @@
 id: T-4461
 title: 'Windows CI: baseline ruff identities are relativized against the live root
   (..\..\runner~1\...), the last red test'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
