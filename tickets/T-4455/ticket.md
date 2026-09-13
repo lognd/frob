@@ -19,10 +19,27 @@ scope:
 - tests/helpers/*.py
 - tests/conftest.py
 - tests/unit/test_helpers_bash*.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: T-4455's new tests/helpers/bash.py fs.write/env.read capability sites require
+    the standard testsuite via-list + ratchet-lock bookkeeping edit, per repo convention
+    (see T-4427)
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-4455's new tests/helpers/bash.py fs.write/env.read capability sites require
+    the standard testsuite via-list + ratchet-lock bookkeeping edit, per repo convention
+    (see T-4427)
+  actor: logan
+  at: '2026-09-13'
 body_changes:
 - mode: append
   reason: 'record BUG002 waiver: WSL-stub defect is win32-only, repro measured off-host
