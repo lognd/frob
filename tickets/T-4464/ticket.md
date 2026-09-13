@@ -22,6 +22,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestManylinuxPinAndWindowsSmoke::test_manylinux_targets_pin_2_28
+- tests/unit/test_release_workflow_gate.py::TestManylinuxPinAndWindowsSmoke::test_manylinux_pin_reason_is_documented
+- tests/unit/test_release_workflow_gate.py::TestManylinuxPinAndWindowsSmoke::test_smoke_step_is_os_aware
 designated_repro_test: null
 threat: null
 component: null
