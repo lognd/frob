@@ -779,12 +779,24 @@ jobs:
       # This step promotes exactly that one check to a hard CI failure --
       # the narrowest of T-1265's three suggested fixes, chosen because it
       # is the only one that needs no fresh .frob state to evaluate.
+      # T-4462: this step used to write/read /tmp/frob-test-check.json under
+      # the job's DEFAULT shell, which is pwsh on windows-latest -- pwsh has
+      # no /tmp, so the write failed with OpenError before this step (and
+      # every step after it) ever ran on Windows (CI run 34752551520).
+      # `shell: bash` (Windows runners ship Git Bash, T-3531/T-4450
+      # precedent) plus `$RUNNER_TEMP` (a real per-job temp dir on all three
+      # OSes) fixes the write; the path is passed to the python one-liner
+      # via an env var, not embedded in the string literal, so it is read
+      # the same way `os.environ` would read any other CI-provided path.
       - name: frob-coverage.lock.json must not be missing or drifted (TEST012)
+        shell: bash
+        env:
+          FROB_TEST_CHECK_PATH: ${{ runner.temp }}/frob-test-check.json
         run: |
-          uv run frob check --only test --json > /tmp/frob-test-check.json
+          uv run frob check --only test --json > "$FROB_TEST_CHECK_PATH"
           uv run python -c "
-          import json, sys
-          report = json.load(open('/tmp/frob-test-check.json'))
+          import json, os, sys
+          report = json.load(open(os.environ['FROB_TEST_CHECK_PATH']))
           hits = [
               d
               for result in report.get('results', [])

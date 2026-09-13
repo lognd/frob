@@ -541,3 +541,79 @@ class TestSelfGateCollectsFresh:
             "must never touch .frob/baseline (T-1265, same reasoning as "
             "coverage-stamp above)"
         )
+
+
+class TestPostSelfGateStepsAreWindowsSafe:
+    """T-4462: on windows-latest the job's DEFAULT shell is pwsh, which has
+    no /tmp -- the TEST012 step wrote/read /tmp/frob-test-check.json under
+    the default shell and failed with OpenError the first time a Windows
+    run ever got past the self-gate (CI run 34752551520), so every step
+    after it had never once executed on Windows. Locks that the TEST012
+    step runs under bash with a RUNNER_TEMP-based path, and that no OTHER
+    step after 'frob check (self-gate)' references /tmp without either
+    `shell: bash` or an explicit non-Windows `if:` gate."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_test012_step_uses_bash_and_runner_temp(self) -> None:
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        step = next(
+            s
+            for s in steps
+            if s.get("name")
+            == "frob-coverage.lock.json must not be missing or drifted (TEST012)"
+        )
+        assert step.get("shell") == "bash", (
+            "the TEST012 step must run under bash on all three legs -- "
+            "the job's default shell on windows-latest is pwsh, which "
+            "has no /tmp"
+        )
+        run_text = step.get("run", "")
+        assert "/tmp/" not in run_text, (
+            "the TEST012 step's run script must not reference /tmp "
+            "directly -- use $FROB_TEST_CHECK_PATH (RUNNER_TEMP-based) "
+            "instead so the path resolves on Windows too"
+        )
+        env = step.get("env", {})
+        assert "FROB_TEST_CHECK_PATH" in env, (
+            "the JSON report path must be passed via an env var, not "
+            "embedded in the python -c string literal"
+        )
+        assert "runner.temp" in env["FROB_TEST_CHECK_PATH"], (
+            "FROB_TEST_CHECK_PATH must be derived from runner.temp "
+            "(RUNNER_TEMP), which is a real per-job temp dir on all "
+            "three OSes, unlike /tmp"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_no_post_self_gate_step_references_tmp_without_bash_or_os_gate(
+        self,
+    ) -> None:
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        names = [step.get("name", "") for step in steps]
+        gate_idx = names.index("frob check (self-gate)")
+        offenders = []
+        for step in steps[gate_idx + 1 :]:
+            run_text = step.get("run", "")
+            if "/tmp" not in run_text:
+                continue
+            if step.get("shell") == "bash":
+                continue
+            condition = step.get("if", "")
+            if "windows-latest" in condition and "!=" in condition.replace(
+                " ", ""
+            ).replace("matrix.os", "matrix.os"):
+                # explicit windows-exclusion gate, e.g.
+                # matrix.os != 'windows-latest'
+                continue
+            if "ubuntu-latest" in condition or "macos-latest" in condition:
+                # gated to a single non-Windows OS
+                continue
+            offenders.append(step.get("name", "<unnamed>"))
+        assert offenders == [], (
+            "every step after 'frob check (self-gate)' that references "
+            "/tmp must either run under shell: bash or be gated away "
+            "from windows-latest (PLATFORM001); offending steps: "
+            f"{offenders}"
+        )
