@@ -24,6 +24,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 confirmatory-only waiver: T-2025 squash-lands-repro-with-fix limitation,
+    real before/after measured manually'
+  actor: logan
+  at: '2026-09-13'
+  old_length: 1240
+  new_length: 2835
 evidence:
 - tests/unit/test_doctor.py::TestImportSourceStatus::test_matching_worktree_reports_clean
 - tests/unit/test_doctor.py::TestImportSourceStatus::test_mismatched_worktree_reports_loudly
@@ -38,3 +46,8 @@ anchor_reason: null
 land_commit: null
 ---
 MEASURED 2026-09-13 by the T-4449 rebase agent: running the root checkout's interpreter (`/home/logan/projects/frob/.venv/bin/python -m pytest ...`) with a worktree as cwd imports `frob` from the ROOT src/ because the editable install's .pth points at /home/logan/projects/frob/src, not at the worktree's src/. A worktree test run therefore exercises main's code, not the branch under test, unless PYTHONPATH="$(pwd)/src" is set. The alternative agents use, `uv run` inside the worktree, builds a stray per-worktree .venv (seen today: a Python 3.11 venv in t-4445 whose `frob ticket body` sat in D-state for 50+ minutes). Both shapes silently mis-measure. ACCEPTANCE: (1) `frob ticket work`/`frob agent env` (whatever provisions or enters a worktree) exports PYTHONPATH=<worktree>/src (or installs the worktree's src editable into a shared venv) so the checked-out branch is what imports; (2) `frob doctor` in a worktree reports which src/ `import frob` resolves to and fails loudly when it is another checkout's; (3) a test that creates a worktree, runs python -c "import frob; print(frob.__file__)" through the documented entry point, and asserts the worktree path; (4) docs/modules (agent/worktree docs) state the rule. Sprint v0.532.0.
+
+
+
+
+frob:waive BUG002 reason="check-repro cannot produce a real verdict for these node ids: T-2025's squash-lands-the-repro-test-with-its-fix limitation applies here too -- the repro tests and the PYTHONPATH-export fix were added in the same worktree commit, so no ancestor commit contains the tests without the fix (TEST_ABSENT_AT_PARENT at the merge-base). Confirmatory-only by construction, not by omission. The real fail-before/pass-after was measured manually in this worktree: BEFORE the agent_runner.py change, \`cd <worktree> && env -u PYTHONPATH uv run frob agent env .\` printed only FROB_WORKTREE/FROB_AGENT/PYTEST_XDIST_AUTO_NUM_WORKERS -- no PYTHONPATH line -- and a subprocess python -c \"import frob; print(frob.__file__)\" run with PYTHONPATH unset from inside the worktree resolved to /home/logan/projects/frob/src/frob/__init__.py (the ROOT checkout), not the worktree's own src/. AFTER the fix, the same \`uv run frob agent env .\` invocation additionally printed export PYTHONPATH=<worktree>/src, and evaluating that export before the same import check resolved frob.__file__ to <worktree>/src/frob/__init__.py. Symmetrically for doctor.py's _import_source_status: before this ticket the function/ImportSourceStatus did not exist at all; after, calling it with a root whose own src/frob/__init__.py differs from the currently-imported module's file returns mismatched=True (measured directly against /home/logan/projects/frob as the mismatched root while running from the t-4459 worktree's own src/), and mismatched=False when root IS the worktree the import resolved from."
