@@ -2,7 +2,7 @@
 id: T-4462
 title: 'CI Windows: TEST012 lock step writes /tmp under pwsh (OpenError); post-self-gate
   steps never ran on Windows'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
