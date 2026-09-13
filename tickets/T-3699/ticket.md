@@ -1,7 +1,7 @@
 ---
 id: T-3699
 title: 'macOS flake: test_daemon_proxy_lease_t1276 Unreachable in run 33625622797'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -19,6 +19,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-3699 close: BUG002 flags confirmatory-only evidence because the designated
+    repro test cannot deterministically fail at the parent commit; this is an intermittent
+    macOS timing/race flake, hardened (bounded timeouts + explicit finalizer teardown)
+    rather than made to fail synthetically, same category as T-4356'
+  actor: logan
+  at: '2026-09-12'
+  old_length: 1195
+  new_length: 1993
+evidence:
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
 designated_repro_test: null
 threat: null
 component: null
@@ -46,3 +58,5 @@ deterministic capacity-exhausted rejection) -- needs its own
 investigation, out of T-3692's declared scope.
 
 References: T-3692 (found while triaging its Part C).
+
+frob:waive BUG002 reason="same category as T-4356 (cross-platform sibling flake, referenced by name in that ticket own waiver): the defect is an intermittent, load/scheduler-sensitive daemon-startup or socket-teardown race causing Err(ProxyReason.Unreachable), not a deterministic logic defect a test can reliably force. 5/5 local runs of the hardened test passed (bounded startup wait, explicit frob_shutdown RPC teardown, joined-thread assertion to prevent a leaked daemon socket from destabilizing a later test on the same xdist worker) -- consistent with a rare, load-dependent race rather than an unfixed defect. The test already passes at parent (be614850b), so BUG002 confirmatory-only evidence is waived rather than papered over with a synthetic failing test, matching T-4356 remedy (3)."

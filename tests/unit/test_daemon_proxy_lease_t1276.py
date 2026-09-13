@@ -35,7 +35,15 @@ from frob.app._daemon_proxy import (
     try_daemon_lease,
 )
 from frob.serve import SocketDaemonConfig, run_socket_daemon
-from frob.serve._socketd import lock_path, socket_path
+from frob.serve._socketd import lock_path, send_request, socket_path
+
+# T-3699: bounded join/shutdown budget for the real-daemon fixture below --
+# named the same way T-1635/T-4356's own `_JOIN_BUDGET_S` is, so a daemon
+# that is merely slow (not dead) under xdist CI contention gets the same
+# load-slack `send_request`'s own timeout_s is given, instead of the two
+# budgets silently disagreeing the way T-4356's root-cause hypothesis
+# documented for the Linux-side shutdown-reap flake.
+_JOIN_BUDGET_S = 5.0
 
 
 @pytest.fixture
@@ -48,28 +56,54 @@ def root(tmp_path: Path) -> Path:
 def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
     """Start a real `run_socket_daemon` in a background thread and block
     until its socket file exists -- mirrors `tests/test_app_daemon_proxy.
-    py`'s own helper of the same name."""
+    py`'s own helper of the same name. Bounded by `_JOIN_BUDGET_S` (T-3699)
+    rather than a bare literal, so the startup wait and the teardown wait
+    below share one deliberately-chosen load-tolerance budget."""
     cfg = SocketDaemonConfig(root=root, idle_timeout_s=idle_timeout_s)
     thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
     thread.start()
-    deadline = time.monotonic() + 5
+    deadline = time.monotonic() + _JOIN_BUDGET_S
     while not socket_path(root).exists() and time.monotonic() < deadline:
         time.sleep(0.02)
-    assert socket_path(root).exists()
+    assert socket_path(root).exists(), (
+        f"daemon socket for {root} did not appear within "
+        f"{_JOIN_BUDGET_S}s -- server thread never reached listen()"
+    )
     return thread
 
 
 def _shutdown(root: Path, thread: threading.Thread) -> None:
-    """Force the idle-timeout daemon down promptly rather than waiting out
-    its full `idle_timeout_s` at teardown."""
-    deadline = time.monotonic() + 5
+    """T-3699: explicit, bounded daemon teardown -- send the real
+    `frob_shutdown` RPC (same call T-4356 aligned to its own
+    `_JOIN_BUDGET_S` on the Linux side) instead of only passively polling
+    for `lock_path`/`socket_path` to disappear on their own. A daemon that
+    never receives an explicit shutdown can keep its background thread
+    (and its bound AF_UNIX socket) alive past this test's return, leaking
+    into whatever test runs next on the same xdist worker -- exactly the
+    kind of cross-test interference that can destabilize a worker rather
+    than fail cleanly. `thread.join()`'s result is asserted, not just
+    called, so a leak becomes a loud assertion failure here instead of a
+    silent, later crash somewhere else."""
+    if socket_path(root).exists():
+        # Best-effort: a daemon that is merely slow (not dead) gets the
+        # same explicit wait `send_request` already grants everywhere
+        # else; failure here is harmless -- the idle-timeout poll below
+        # is the real backstop.
+        send_request(root, "frob_shutdown", timeout_s=_JOIN_BUDGET_S)
+    deadline = time.monotonic() + _JOIN_BUDGET_S
     while (
         lock_path(root).exists() and time.monotonic() < deadline and thread.is_alive()
     ):
         time.sleep(0.05)
         if not socket_path(root).exists():
             break
-    thread.join(timeout=1)
+    thread.join(timeout=_JOIN_BUDGET_S)
+    assert not thread.is_alive(), (
+        f"daemon thread for {root} did not exit within "
+        f"{2 * _JOIN_BUDGET_S:.0f}s of frob_shutdown -- it would otherwise "
+        "leak a live AF_UNIX socket into whatever test runs next on this "
+        "worker"
+    )
 
 
 # frob:ticket T-1636
