@@ -22,6 +22,8 @@ scope:
 - tests/unit/test_land_dry_run*.py
 - src/frob/gates/_fmt_directives.py
 - tests/test_gates_fmt_directives.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +76,29 @@ scope_changes:
     updating the tests that encoded the old always-under-limit invariant
   actor: logan
   at: '2026-09-13'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/SYS100 capability declarations needed for the new test suite
+    file's subprocess/git exec+fs.write+fs.read
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS100 capability declarations needed for the new test suite
+    file's subprocess/git exec+fs.write+fs.read
+  actor: logan
+  at: '2026-09-13'
+evidence:
+- tests/test_gates_fmt_directives.py::TestNodeIdNeverSplitT4179::test_pytest_node_id_directive_value_is_never_split
+- tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly::test_dry_run_leaves_the_worktree_tree_hash_unchanged
+- tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly::test_dry_run_leaves_the_noncanonical_file_byte_identical
+- tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly::test_running_dry_run_twice_is_still_a_noop_both_times
+- tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly::test_real_run_still_rewrites_the_noncanonical_file
+- tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_own_fmt_rewrap_is_recognized
+- tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_a_genuine_hand_deletion_is_not_misattributed
+- tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_a_rewrap_that_stays_parseable_does_not_refuse_at_all
+- tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_attribute_helper_suffixes_only_own_rewrap_findings
+- tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_attribute_helper_suffixes_an_own_rewrap_finding
 designated_repro_test: null
 acceptance:
 - text: given a directive comment whose value would exceed the wrap width, when the
