@@ -2,7 +2,7 @@
 id: T-4142
 title: nine named failures plus two suspected-OOM worker deaths survive the CI regression
   fixes, from a run that did not complete and is a lower bound
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -183,3 +183,6 @@ retained self-scan test still fails when a real finding of its kind is
 introduced, and additionally make those tests either skip or exclude nested agent
 worktrees so a local run is meaningful again. That second half is the same fix a
 consumer asked for and is worth doing here.
+
+## Drop reason
+- 2026-09-13: superseded: every failure it enumerated is fixed by the Windows drain landed 2026-09-12/13 (T-4404 T-4430 T-4442 T-4446 T-4447 T-4450 T-4455 T-4456 T-4457 T-4461 T-4462); CI run 34758499278 at 020d2db1f shows the Windows leg green with 13962/13962 tests, self-gate 0 errors, and no worker deaths (absorbed by T-4236)
