@@ -192,12 +192,25 @@ class TestAssertTouchedFilesLintCleanPreLand:
     attributed to the DIFF, not the FILE."""
 
     def test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse(
-        self, repo: Path
+        self,
+        repo: Path,
+        capsys: pytest.CaptureFixture[str],
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse  # noqa: E501
         # Must-stay-quiet fixture: the diff shifts the pre-existing
         # F401 a few lines down the file without touching the offending
         # import at all. Must NOT refuse.
+        #
+        # T-4457: CI run 34739935923's Windows leg refused here with only
+        # a bare `SystemExit: 1` in the trimmed traceback -- the actual
+        # mismatching identity pair was captured by `_refuse_pre_land_
+        # lint`'s stderr message and `_ruff_new_violations`' own
+        # `_log.warning`, neither of which the runner log printed. Wrap
+        # the call so a REGRESSION here surfaces that detail directly in
+        # the failure's own message instead of an opaque `SystemExit`.
+        import logging
+
         from frob.app.ticket_runner._land_cmd import (
             _assert_touched_files_lint_clean_pre_land,
         )
@@ -205,9 +218,19 @@ class TestAssertTouchedFilesLintCleanPreLand:
         bad = repo / "src" / "bad_lint.py"
         bad.write_text("\n\n\n\n\n" + _BAD_FN)
 
-        _assert_touched_files_lint_clean_pre_land(
-            repo, "T-3132", frozenset({"src/bad_lint.py"})
-        )  # must not raise -- pre-existing, only relocated
+        with caplog.at_level(logging.WARNING):
+            try:
+                _assert_touched_files_lint_clean_pre_land(
+                    repo, "T-3132", frozenset({"src/bad_lint.py"})
+                )
+            except SystemExit as exc:
+                captured = capsys.readouterr()
+                raise AssertionError(
+                    "expected no refusal (pre-existing violation merely "
+                    f"shifted lines) but got SystemExit({exc.code}); "
+                    f"stdout={captured.out!r} stderr={captured.err!r} "
+                    f"log={caplog.text!r}"
+                ) from exc
 
     def test_genuinely_new_violation_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_genuinely_new_violation_still_refuses  # noqa: E501
@@ -279,3 +302,83 @@ class TestAssertTouchedFilesLintCleanPreLand:
                 repo, "T-3132", frozenset({"src/bad_lint.py"})
             )
         assert exc_info.value.code == 1
+
+
+# frob:ticket T-4457
+class TestRelativizeDiagPath:
+    """`_relativize_diag_path` (T-4457): the pure, mock-free path-shaping
+    half of `_ruff_diagnostic_identity`, driven through an injectable
+    `path_mod` so its win32 drive-letter behavior is exercisable on any
+    host -- `ntpath` implements the real win32 `splitdrive`/`relpath`/
+    `normcase` rules regardless of which OS this test itself runs on."""
+
+    def test_same_drive_relativizes_normally(self) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
+        # same_drive_relativizes_normally
+        import ntpath
+
+        from frob.app.ticket_runner._land_cmd import _relativize_diag_path
+
+        assert _relativize_diag_path(
+            "C:\\work\\worktree\\src\\bad_lint.py",
+            "C:\\work\\worktree",
+            path_mod=ntpath,
+        ) == ntpath.normcase("src\\bad_lint.py")
+
+    def test_cross_drive_diag_and_base_do_not_crash(self) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
+        # cross_drive_diag_and_base_do_not_crash
+        # Defense in depth: `ntpath.relpath` RAISES ValueError when its
+        # two arguments name different drives. Nothing in the current
+        # call sites ever pairs a diag_file with a same-tree-foreign
+        # base (each pass's diagnostics are always relative to the SAME
+        # directory that pass spawned `ruff` in -- see `_ruff_diagnostic_
+        # identity`'s own docstring), but a caller that ever did must
+        # degrade to a stable fallback rather than crash the land.
+        import ntpath
+
+        from frob.app.ticket_runner._land_cmd import _relativize_diag_path
+
+        identity = _relativize_diag_path(
+            "D:\\a\\frob\\frob\\src\\bad_lint.py",
+            "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\frob-land-baseline-xyz",
+            path_mod=ntpath,
+        )
+        assert identity == ntpath.normcase(
+            ntpath.abspath("D:\\a\\frob\\frob\\src\\bad_lint.py")
+        )
+
+    def test_live_and_baseline_pass_agree_across_differently_drived_trees(
+        self,
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
+        # live_and_baseline_pass_agree_across_differently_drived_trees
+        # T-4457's own acceptance shape: a GitHub-hosted Windows runner's
+        # checkout (D:\a\frob\frob, the live pass's tree) and its
+        # baseline snapshot (spawned under the process temp dir,
+        # C:\Users\runneradmin\...\Temp, the baseline pass's tree) sit on
+        # DIFFERENT drives from EACH OTHER -- but within each individual
+        # pass, `diag_file` and `base` are always drawn from that SAME
+        # pass's own tree (ruff reports paths under whatever directory it
+        # was spawned in), so `relpath` never actually crosses drives
+        # WITHIN one call. The byte-identical file at the same relative
+        # position in both trees must still produce the SAME identity.
+        import ntpath
+
+        from frob.app.ticket_runner._land_cmd import _relativize_diag_path
+
+        live_identity = _relativize_diag_path(
+            "D:\\a\\frob\\frob\\src\\bad_lint.py",
+            "D:\\a\\frob\\frob",
+            path_mod=ntpath,
+        )
+        baseline_identity = _relativize_diag_path(
+            "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\frob-land-baseline-xyz"
+            "\\src\\bad_lint.py",
+            "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\frob-land-baseline-xyz",
+            path_mod=ntpath,
+        )
+        assert live_identity == baseline_identity == "src\\bad_lint.py"

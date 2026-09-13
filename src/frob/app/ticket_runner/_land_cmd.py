@@ -4828,28 +4828,85 @@ def _ruff_diagnostic_identity(  # noqa: ANN001
     measured `SystemExit: 1` symptom (a merely-shifted, pre-existing
     violation misclassified as genuinely new). `base.resolve()` makes
     this symlink-consistent with `diag.file` regardless of platform,
-    not just on a host where the two happened to already agree."""
-    import os
+    not just on a host where the two happened to already agree.
 
+    T-4457: a GitHub-hosted Windows runner's checkout and its process-
+    default temp directory (where `_spawn_baseline_snapshot_worktree`'s
+    `tempfile.mkdtemp()` lands) can sit on DIFFERENT drive letters (`D:`
+    vs `C:`, CI run 34739935923). `os.path.relpath` is purely lexical
+    and raises `ValueError` when its two arguments name different
+    drives -- uncaught, that crashes the land instead of refusing it
+    cleanly, and even a caught fallback that picked an ad hoc shape
+    (bare `diag.file`, say) would compare unequal against whatever the
+    OTHER pass's fallback produced. `_relativize_diag_path` (below)
+    guards this with `path_mod.splitdrive`-implied `ValueError` handling
+    and, on a genuine drive mismatch, both sides fall back to
+    `normcase(abspath)` identically -- still not relativized (nothing
+    CAN relativize across drives), but at least shaped the same way on
+    both passes so a byte-identical file still compares equal."""
     if diag.file is None:
         return (None, diag.code, diag.message)
-    # T-4445: `os.path.relpath` is purely lexical -- it neither
-    # case-folds nor separator-normalizes. On win32 the filesystem is
-    # case-insensitive and two spawns of the SAME relative file can
-    # legitimately come back with different backslash/forward-slash or
-    # drive-letter-case text (observed: a CI runner's checkout diverges
-    # from a local mirror in exactly this way), which would otherwise
-    # make a byte-identical, merely-shifted violation compare unequal
-    # between the live and baseline pass and misclassify it as new.
-    # `os.path.normcase` is a no-op on POSIX and lowercases + flips `/`
-    # to `\` on win32, so both sides land on the same identity text
-    # regardless of which OS-native spelling either spawn happened to
-    # produce.
     return (
-        os.path.normcase(os.path.relpath(diag.file, base.resolve())),
+        _relativize_diag_path(diag.file, str(base.resolve())),
         diag.code,
         diag.message,
     )
+
+
+# frob:ticket T-4457
+# frob:tests \
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_same_dri\
+# ve_relativizes_normally
+# frob:tests \
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_cross_dr\
+# ive_diag_and_base_do_not_crash
+# frob:tests \
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_live_and\
+# _baseline_pass_agree_across_differently_drived_trees
+def _relativize_diag_path(diag_file: str, base: str, *, path_mod=None) -> str:  # noqa: ANN001
+    """The pure, mock-free path-shaping half of `_ruff_diagnostic_identity`
+    (T-4457): relativizes `diag_file` against `base` when both name the
+    same drive, falls back to `normcase(abspath)` for BOTH when they do
+    not (or when the drive-aware `path_mod` reports no drive concept at
+    all -- POSIX `posixpath.splitdrive` always returns `("", path)`, so
+    this degrades to the pre-T-4457 `normcase(relpath(...))` shape there,
+    unchanged).
+
+    Takes an injectable `path_mod` (defaults to the real `os.path`) so a
+    test can drive this through `ntpath`'s Windows-shaped rules (drive
+    letters, backslashes, case-insensitive `normcase`) on a Linux/macOS
+    dev box or CI leg -- `os.path.relpath` and `os.path.normcase` are
+    platform-native and cannot otherwise be exercised for win32 path
+    text without actually running on win32.
+
+    T-4457's own guard: `path_mod.relpath` raises `ValueError` when
+    `diag_file` and `base` name different drives (`os.path.relpath`'s
+    documented behavior on win32-shaped path modules) -- caught here
+    rather than left to crash the land. On that mismatch neither side
+    CAN be relativized against the other (there is no relative path
+    between two different drives), so both a live-pass and a baseline-
+    pass identity fall back to the exact same shape --
+    `normcase(abspath(diag_file))` -- so a byte-identical file still
+    compares equal across the two passes even though neither value is
+    actually a relative path."""
+    import os as _os
+
+    pm = path_mod if path_mod is not None else _os.path
+    try:
+        rel = pm.relpath(diag_file, base)
+    except ValueError:
+        # T-4457: cross-drive on win32 (or an analogous path_mod) --
+        # relpath is undefined here, so fall back to a shape that does
+        # not depend on `base` at all, ensuring both the live pass
+        # (base=worktree) and the baseline pass (base=snapshot) land on
+        # an identical value for the identical underlying file.
+        rel = pm.abspath(diag_file)
+    # T-4445: `normcase` is a no-op on POSIX and lowercases + flips `/`
+    # to `\` on win32, so both sides land on the same identity text
+    # regardless of which OS-native spelling either spawn happened to
+    # produce -- unchanged by T-4457, still applied to whichever of the
+    # two shapes above was chosen.
+    return pm.normcase(rel)
 
 
 # frob:ticket T-3132
@@ -5046,7 +5103,27 @@ def _refuse_pre_land_lint(
     at all. Per T-3311's lesson, a split only helps when it takes a
     whole concern with it, not just some branches: this one is
     unconditional (no decision points of its own), so it cannot itself
-    become a new mixed-concern site no matter how the caller grows."""
+    become a new mixed-concern site no matter how the caller grows.
+
+    T-4457: on win32 the summary also names each new violation's raw
+    `diag.file` text -- CI run 34739935923's trimmed traceback showed
+    only `SystemExit: 1`, with the actual mismatching identity pair
+    visible solely in a captured `_log.warning` the runner log never
+    printed. `diag.file` alone cannot show the OTHER side of the
+    comparison (the baseline's `base`, a temp snapshot directory already
+    removed by the time this fires), but naming it here at least says
+    which drive/path the CURRENT pass saw, alongside
+    `_ruff_new_violations`' own warning logging the full baseline
+    identity set."""
+    if sys.platform == "win32":
+        detail = "; ".join(
+            f"{d.file}:{d.line}: {d.code} {d.message} (raw diag.file={d.file!r})"
+            for d in new_violations
+        )
+    else:
+        detail = "; ".join(
+            f"{d.file}:{d.line}: {d.code} {d.message}" for d in new_violations
+        )
     _log.error(
         "ticket land: %s refused -- `ruff check` found %d NEW violation(s) "
         "in this ticket's own touched file(s): %s; a scoped `ruff check "
@@ -5056,7 +5133,7 @@ def _refuse_pre_land_lint(
         "are excluded)",
         ticket_id,
         len(new_violations),
-        "; ".join(f"{d.file}:{d.line}: {d.code} {d.message}" for d in new_violations),
+        detail,
         " ".join(py_files),
         ticket_id,
     )

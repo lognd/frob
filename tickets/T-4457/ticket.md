@@ -2,7 +2,7 @@
 id: T-4457
 title: 'Windows CI: lint-diff attribution still refuses after T-4445; surface the
   identity mismatch and stop relpath from crossing drive letters'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
