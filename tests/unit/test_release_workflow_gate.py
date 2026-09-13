@@ -340,30 +340,28 @@ class TestCiStatusGate:
         assert set(doc[_ON_KEY]) == {"workflow_dispatch"}
 
 
+# frob:ticket T-3512
+# frob:tests TestCiWindowsLegAdvisoryOnly
 class TestCiWindowsLegAdvisoryOnly:
-    """T-3425: only the windows-latest matrix leg may be advisory
-    (continue-on-error) in ci.yml's build job -- ubuntu-latest and
-    macos-latest must still fail the workflow on a test failure. See
+    """T-3512 (closing T-3425): windows-latest is a normal, blocking
+    matrix leg again -- the job-level `continue-on-error` advisory flag
+    was removed once CI run 34758499278 (head 020d2db1f, 2026-09-13)
+    measured green on all three legs. ubuntu-latest and macos-latest
+    were never advisory and remain unaffected. See
     docs/design/windows-portability.md."""
 
     def test_build_job_continue_on_error_is_windows_only(self) -> None:
-        """MUST-FIRE: the job-level `continue-on-error` expression must
-        name matrix.os == 'windows-latest' and nothing broader (e.g. not
-        an unconditional `true`, which would silence ubuntu/macOS too)."""
+        """MUST-FIRE regression guard: the job-level `continue-on-error`
+        key must be ABSENT from the build job -- if it ever reappears,
+        this must fail so reintroducing the advisory carve-out requires
+        a ticket, not a silent edit."""
         doc = _load(_CI_WORKFLOW)
         job = doc["jobs"]["build"]
-        assert "continue-on-error" in job, (
-            "expected T-3425's windows-latest advisory flag on the build "
-            "job -- see docs/design/windows-portability.md"
-        )
-        expr = job["continue-on-error"]
-        assert isinstance(expr, str)
-        assert "matrix.os" in expr and "windows-latest" in expr, (
-            f"continue-on-error must be conditioned on matrix.os == "
-            f"'windows-latest', got: {expr!r}"
-        )
-        assert "ubuntu-latest" not in expr and "macos-latest" not in expr, (
-            f"continue-on-error must not also cover ubuntu/macos: {expr!r}"
+        assert "continue-on-error" not in job, (
+            "the T-3425 windows-latest advisory flag was removed under "
+            "T-3512 (2026-09-13, CI run 34758499278) -- it must not be "
+            "reintroduced without a ticket; see "
+            "docs/design/windows-portability.md"
         )
 
     def test_matrix_still_includes_all_three_platforms(self) -> None:
@@ -381,9 +379,10 @@ class TestCiWindowsLegAdvisoryOnly:
         exception -- T-3756's coverage-stamp step (T-1366), which is a
         separate, non-blocking best-effort MEASUREMENT step, not the
         pass/fail gate (that stays the ubuntu Test step's coverage-free
-        `pytest -q`, unaffected by this exception). Any other step-level
-        continue-on-error would still smuggle an advisory boundary outside
-        the single job-level windows-only expression asserted above."""
+        `pytest -q`, unaffected by this exception). Now that the job-level
+        windows-only advisory flag is gone (T-3512), no step-level
+        continue-on-error may exist at all outside that one sanctioned
+        exception."""
         doc = _load(_CI_WORKFLOW)
         sanctioned = "coverage stamp + delta baseline must be freshly measurable and clean (T-1366)"
         for step in doc["jobs"]["build"].get("steps", []):
@@ -391,9 +390,9 @@ class TestCiWindowsLegAdvisoryOnly:
                 continue
             assert "continue-on-error" not in step, (
                 f"unexpected step-level continue-on-error on step "
-                f"{step.get('name', '<unnamed>')!r} -- the advisory "
-                f"boundary must stay job-level/windows-only or the "
-                f"T-3756-sanctioned coverage step"
+                f"{step.get('name', '<unnamed>')!r} -- windows-latest is "
+                f"a normal blocking leg again (T-3512); only the "
+                f"T-3756-sanctioned coverage step may carry this"
             )
 
 

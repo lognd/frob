@@ -142,3 +142,19 @@ the KeyboardInterrupt bucket above, which must be fixed before the
 suite can even finish collecting a real failure count to drain. That
 removal should land as an explicit acceptance line on T-3076 itself,
 not edited into T-3076's body from this ticket.
+
+## Closure (T-3512, 2026-09-13)
+
+The advisory flag was removed. The drain tickets T-4404..T-4462
+(landed 2026-09-12/2026-09-13) cleared the remaining KeyboardInterrupt
+and path-shape buckets above, and the T-3511 re-measurement confirmed
+a stable, completed windows-latest run. Removal condition met: CI run
+34758499278 (head `020d2db1f`) was green on all three legs, with the
+windows-latest leg passing 13962/13962 tests and a 0-error self-gate.
+`continue-on-error: ${{ matrix.os == 'windows-latest' }}` was removed
+from the `build` job in `.github/workflows/ci.yml` under T-3512, and
+`docs/guides/release.md`'s "what green means" note was tightened to
+match: `scripts/verify_release_ci_status.py` now reads GREEN off all
+three legs again, not just ubuntu/macos. `windows-latest` is a normal,
+blocking matrix leg from this point on. The removal is also recorded
+as a completed acceptance line on T-3076.
