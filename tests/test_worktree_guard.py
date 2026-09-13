@@ -34,6 +34,7 @@ from frob.tickets._worktree_guard import (
     warn_if_xdist_plugin_missing,
 )
 from frob.tickets._worktree_sweep import sweep_worktrees
+from tests.helpers.bash import resolve_bash
 
 
 def _git(*args: str, cwd: Path) -> None:
@@ -631,8 +632,11 @@ class TestAgentEnvStdoutPurity:
         # console handle on the job's stdin where ubuntu-latest's does
         # not, so this command's true behavior should not depend on
         # which CI runner happens to be underneath it.
+        # T-4455 (Windows): resolve a real bash explicitly -- plain "bash"
+        # PATH lookup on windows-latest hits the WSL launcher stub under
+        # System32 ahead of Git for Windows' bash.
         result = subprocess.run(
-            ["bash", "-c", script],
+            [resolve_bash(), "-c", script],
             cwd=Path(__file__).resolve().parents[1],
             capture_output=True,
             text=True,

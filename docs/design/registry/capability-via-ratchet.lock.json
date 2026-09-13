@@ -216,9 +216,9 @@
       "ticket": "T-3591"
     },
     "testsuite::env.read": {
-      "accepted_count": 24,
-      "reason": "T-3777: the win32 hook-guard fixes add a shared `_env()` test helper (tests/test_hook_root_write_guard.py, tests/test_hook_root_cleanliness_detector.py) that reads PATH/SystemRoot from os.environ so the spawned hook subprocess can still locate git.exe/python on Windows -- 2 real, new env.read sites; measured live via-list count.",
-      "ticket": "T-3777"
+      "accepted_count": 25,
+      "reason": "T-4455: adds tests/helpers/bash.py to the env.read via-list -- resolve_bash() reads ProgramFiles from os.environ to locate Git for Windows' bash.exe, avoiding the WSL System32 stub. Bumping the ceiling 24 -> 25, one new site.",
+      "ticket": "T-4455"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
@@ -251,9 +251,9 @@
       "ticket": "T-4338"
     },
     "testsuite::fs.write": {
-      "accepted_count": 517,
-      "reason": "T-4298: adds tests/unit/test_land_format_gate.py to the fs.write via-list -- write_text on a real git-fixture repo's tracked .py file, same shape tests/unit/test_land_parity_gate.py's own entry already carries. Bumping the ceiling 516 -> 517, one new site.",
-      "ticket": "T-4298"
+      "accepted_count": 518,
+      "reason": "T-4455: adds tests/unit/test_helpers_bash.py to the fs.write via-list -- write_text creates fake bash.exe fixture files under tmp_path so resolve_bash()'s Git-vs-WSL-stub preference can be exercised without a real Windows filesystem. Bumping the ceiling 517 -> 518, one new site.",
+      "ticket": "T-4455"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

@@ -2,7 +2,7 @@
 id: T-4455
 title: 'Windows CI: tests spawn ''bash'' and get the WSL System32 stub (UTF-16 ''no
   installed distributions''), not Git Bash'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
