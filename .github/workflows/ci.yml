@@ -120,6 +120,22 @@ jobs:
       # `macosx_11_0_arm64` on an x86_64 Linux runner and fail with a
       # uv "no wheels with a matching platform tag" resolver error that
       # has nothing to do with the artifact under test.
+      # T-4465: the cache key now ALSO hashes both kernels' pyproject.toml
+      # (where their `version` lives, T-3011's version-coupling pin) --
+      # previously it hashed only the two Cargo.lock files, which a
+      # pure version bump (no dependency change) leaves byte-identical,
+      # so a cache HIT after a version bump restored the PRIOR version's
+      # `target/wheels/*.whl` verbatim. `scripts/artifact_smoke.py`
+      # globs `frob_core-*.whl`/`strata_core-*.whl` version-blind, so
+      # that stale wheel then failed `uv pip install`'s exact-pin
+      # resolve with an opaque "requirements are unsatisfiable" trace
+      # (CI run 34768157963) instead of ever being rebuilt. Adding the
+      # pyproject.toml hashes busts this cache entry on exactly a
+      # version bump, same as a Cargo.lock change already does; the
+      # "Build native extension wheels" step below is the second half of
+      # this fix -- it also removes and rebuilds target/wheels/*.whl
+      # unconditionally, so even a cache HIT with a coincidentally-stale
+      # wheel cannot reach the smoke stage.
       - name: Cache cargo
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -127,11 +143,23 @@ jobs:
             ~/.cargo/registry
             frob-core/target
             strata-core/target
-          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frob-core/Cargo.lock', 'strata-core/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frob-core/Cargo.lock', 'strata-core/Cargo.lock', 'frob-core/pyproject.toml', 'strata-core/pyproject.toml') }}
       - name: Sync deps
         run: uv sync --all-extras --all-groups
       - name: Build native extensions (frob-core + strata-core, Rust/PyO3)
         run: make core
+      # T-4465: build a fresh, CURRENT-version wheel per crate straight
+      # into `<crate>/target/wheels` every run (removing any wheel
+      # already there first) -- `make core` above (`maturin develop`)
+      # refreshes only the venv's editable install, not this directory,
+      # so it cannot be relied on to keep target/wheels in sync with a
+      # version bump on its own. See `Makefile`'s `core-wheels` target
+      # (where this logic actually lives, not duplicated here) and
+      # `scripts/artifact_smoke.py::_require_core_wheels`, which now
+      # also checks the wheel's OWN version against the pin it is about
+      # to install as a second, independent guard.
+      - name: Build native extension wheels (frob-core + strata-core, T-4465)
+        run: make core-wheels
       - name: cargo test (frob-core kernels)
         run: cd frob-core && cargo test --lib
       - name: cargo test (strata-core kernels)

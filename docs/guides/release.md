@@ -572,3 +572,27 @@ checks find nothing to inspect and stay quiet, while the health verdict
 `doctor` still reports keeps reflecting native-extension import
 failures, so a genuinely broken wheel still fails this stage exactly as
 before -- only the unrelated repo-hygiene coupling is gone.
+
+**T-4465: `_require_core_wheels` also checks the candidate wheel's OWN
+version against the pin about to be installed.** CI run 34768157963 (the
+first run after the 0.531.0 version bump) failed on ubuntu and macOS
+with an opaque uv "requirements are unsatisfiable" trace: the
+`actions/cache` entry backing <!-- frob:waive DOC006 reason="build-output directory, gitignored -- never a tracked source file, illustrative of a CI-runner-local path" -->`frob-core/target`/`strata-core/target` is
+keyed on the two `Cargo.lock` files, which a version-only bump (no
+dependency change) leaves byte-identical, so the cache restored the
+PRIOR version's `frob_core-0.530.0`/`strata_core-0.530.0` wheels
+verbatim while the smoke stage was about to install
+`frob-core==0.531.0`. Three layers, no single one trusted alone: (1) the
+cache key (`.github/workflows/ci.yml`) now also hashes both kernels'
+`pyproject.toml`, so a version bump busts the cache entry the same way a
+dependency change already does; (2) `make core-wheels` (a new Makefile
+target `ci.yml` calls after `make core`) unconditionally removes and
+rebuilds each crate's `target/wheels/*.whl` every run, so even a cache
+hit cannot leave a stale wheel there; (3) `main` reads the
+wheel-about-to-install's own `Requires-Dist: frob-core==X`/
+`strata-core==X` pins straight out of its METADATA (`_read_core_pins`)
+and `_require_core_wheels` (via `_classify_core_wheels`) rejects any
+candidate wheel whose filename version does not match, naming the stale
+version found and the version needed -- so even if (1) and (2) were both
+somehow bypassed, this preflight still fails loudly and specifically
+instead of the ambiguous resolver trace CI run 34768157963 produced.

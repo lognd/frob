@@ -1,7 +1,7 @@
 # Stamp file: uv sync runs only when pyproject.toml changes.
 STAMP := .venv/.install-stamp
 
-.PHONY: all check install install-tool core format lint lint-fix typecheck test test-fast \
+.PHONY: all check install install-tool core core-wheels format lint lint-fix typecheck test test-fast \
         test-unit test-integration test-system coverage coverage-fast clean upload \
         sync-skills playbook deploy-audit pool-warm pool-lease pool-status
 
@@ -586,3 +586,29 @@ upload: clean
 core: $(STAMP)
 	uv run frob natives build
 # frob:managed-block END makefile-core-shim
+
+# frob:ticket T-4465
+# T-4465: `core` (above, `frob natives build` -> `maturin develop`)
+# refreshes the ACTIVE VENV's editable install but does not guarantee
+# `<crate>/target/wheels` holds a wheel for the CURRENT crate version --
+# CI's `actions/cache` restore of `frob-core/target`/`strata-core/target`
+# is keyed on the two `Cargo.lock` files (see `.github/workflows/ci.yml`'s
+# cache-key comment), which a pyproject.toml-only version bump does not
+# change, so a stale older-version wheel can sit there indefinitely.
+# `scripts/artifact_smoke.py` (`_require_core_wheels`) and
+# `tests/system/test_artifact_smoke.py` both read wheels straight out of
+# `<crate>/target/wheels`, so a stale wheel there surfaced as an opaque
+# uv "requirements are unsatisfiable" resolver trace at install time
+# (CI run 34768157963, the incident this target exists to fix). This
+# target removes any wheel already sitting in each crate's `target/
+# wheels` and builds a fresh one directly with `maturin build`, so the
+# directory holds exactly the current crate version on every invocation,
+# cache hit or not -- the single place this logic lives; `ci.yml` calls
+# this target rather than re-implementing the loop inline.
+core-wheels: core
+	@for crate in frob-core strata-core; do \
+		if [ -f "$$crate/Cargo.toml" ]; then \
+			rm -f "$$crate"/target/wheels/*.whl; \
+			uv run maturin build --release --manifest-path "$$crate/Cargo.toml" --out "$$crate/target/wheels"; \
+		fi; \
+	done

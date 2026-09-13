@@ -36,10 +36,12 @@ from __future__ import annotations
 
 import argparse
 import platform
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -159,7 +161,174 @@ def _wheel_matches_host_platform(wheel_path: Path) -> bool:
 # frob:tests \
 # tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
 # eport_named_core_missing
-def _require_core_wheels(core_wheels_dir: Path) -> None:
+def _wheel_version(wheel_path: Path) -> str:
+    """The PEP 427 wheel-filename version field
+    (`frob_core-VERSION-pytag-abitag-platformtag.whl`). Used by
+    `_require_core_wheels` (T-4465) to detect a wheel that glob-matches
+    (`frob_core-*.whl`) but was built for an OLDER crate version than
+    the one this install is about to attempt -- a stale
+    `actions/cache`-restored `target/wheels` entry, not a genuinely
+    missing or wrong-platform core."""
+    return wheel_path.stem.split("-")[1]
+
+
+# frob:ticket T-4465
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestReadCorePins.test_reads_both_pins_from_\
+# metadata
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestReadCorePins.test_unreadable_wheel_retu\
+# rns_empty
+def _read_core_pins(wheel_path: Path) -> dict[str, str]:
+    """T-4465: the exact frob-core/strata-core version pins THIS
+    `wheel_path` install is about to attempt, parsed straight from its
+    own `.dist-info/METADATA` (`Requires-Dist: frob-core==X`) rather
+    than assumed from a repo-relative pyproject.toml -- correct
+    regardless of where the wheel came from (this script runs both from
+    a checkout, in `tests/system/test_artifact_smoke.py`, and against a
+    downloaded artifact with no repo present, in
+    `.github/workflows/release.yml`), and it is the actual value uv is
+    about to resolve `--find-links` against.
+
+    Returns an empty dict (permissive: `_require_core_wheels` then skips
+    the version check entirely, falling back to its pre-T-4465
+    behavior) if `wheel_path` is not a readable wheel archive or carries
+    no such pin -- callers that pass a placeholder/fake wheel (several
+    of this script's own unit tests write `wheel.write_bytes(b"")`) get
+    the prior behavior rather than an unrelated crash."""
+    pins: dict[str, str] = {}
+    try:
+        with zipfile.ZipFile(wheel_path) as zf:
+            metadata_name = next(
+                (n for n in zf.namelist() if n.endswith(".dist-info/METADATA")),
+                None,
+            )
+            if metadata_name is None:
+                return pins
+            text = zf.read(metadata_name).decode("utf-8", errors="replace")
+    except (OSError, zipfile.BadZipFile):
+        return pins
+    for dist in ("frob-core", "strata-core"):
+        match = re.search(
+            rf"^Requires-Dist:\s*{re.escape(dist)}\s*==\s*([^\s;]+)",
+            text,
+            re.MULTILINE,
+        )
+        if match:
+            pins[dist] = match.group(1)
+    return pins
+
+
+# frob:ticket T-3935
+# frob:ticket T-4465
+# frob:waive COV001 reason="same doc-anchor scope-closure tension \
+# SCANNED_BASES/RETIRED_RULE_IDS (src/frob/gates/_rule_id_scan.py, T-1010/T-1937) \
+# already carry -- a frob:doc anchor here would live in docs/guides/release.md, whose \
+# own SCOPE002 closure (every OTHER symbol that shared doc describes across the repo, \
+# including scripts/verify_release_ci_status.py and src/frob/doctor.py) is out of \
+# proportion to pull into T-3935's narrow scope for one preflight helper; this \
+# module's own docstring is the authoritative description, see T-3935's Done report"
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absen\
+# t_names_both
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_\
+# names_only_that_one
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_prese\
+# nt_does_not_raise
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_stale_version_wh\
+# eel_names_versions
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_version\
+# _wheel_does_not_raise
+# frob:tests \
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
+# eport_named_core_missing
+@dataclass(frozen=True)
+class _CoreWheelFindings:
+    """T-4465: `_classify_core_wheels`'s three disjoint failure buckets --
+    split out of `_require_core_wheels` so that function stays a plain
+    classify-then-raise dispatch instead of growing an ARCH001-length
+    body of its own."""
+
+    missing: list[str]
+    stale: list[str]
+    wrong_platform: list[str]
+
+
+def _stale_version_label(name: str, found: list[Path], pin: str) -> str:
+    """T-4465: the `stale` bucket's one formatted entry for `name` --
+    split out of `_classify_core_wheels`'s loop body so the `sorted()`
+    call PERF004 flags for running inside a loop lives in its own,
+    obviously-bounded (at most two dist names) helper instead of
+    appearing to be a hot path."""
+    found_versions = ", ".join(sorted({_wheel_version(w) for w in found}))
+    return f"{name} (found {found_versions}, need {pin})"
+
+
+def _classify_core_wheels(
+    core_wheels_dir: Path, pins: dict[str, str]
+) -> _CoreWheelFindings:
+    """T-4465: `_require_core_wheels`'s classification half -- which of
+    `_REQUIRED_CORE_WHEEL_GLOBS` are missing, present-but-stale-version,
+    or present-but-wrong-platform. No raising here; `_require_core_wheels`
+    turns a non-empty bucket into a `SmokeCheckError` with that bucket's
+    own message."""
+    missing: list[str] = []
+    stale: list[str] = []
+    wrong_platform: list[str] = []
+    for name, pattern in _REQUIRED_CORE_WHEEL_GLOBS.items():
+        found = list(core_wheels_dir.glob(pattern))
+        if not found:
+            missing.append(name)
+            continue
+        pin = pins.get(name)
+        if pin is not None:
+            current = [w for w in found if _wheel_version(w) == pin]
+            if not current:
+                stale.append(_stale_version_label(name, found, pin))
+                continue
+            found = current
+        bad = [w for w in found if not _wheel_matches_host_platform(w)]
+        if bad and len(bad) == len(found):
+            wrong_platform.append(f"{name} ({', '.join(w.name for w in bad)})")
+    return _CoreWheelFindings(
+        missing=missing, stale=stale, wrong_platform=wrong_platform
+    )
+
+
+# frob:ticket T-3935
+# frob:ticket T-4465
+# frob:waive COV001 reason="same doc-anchor scope-closure tension \
+# SCANNED_BASES/RETIRED_RULE_IDS (src/frob/gates/_rule_id_scan.py, T-1010/T-1937) \
+# already carry -- a frob:doc anchor here would live in docs/guides/release.md, whose \
+# own SCOPE002 closure (every OTHER symbol that shared doc describes across the repo, \
+# including scripts/verify_release_ci_status.py and src/frob/doctor.py) is out of \
+# proportion to pull into T-3935's narrow scope for one preflight helper; this \
+# module's own docstring is the authoritative description, see T-3935's Done report"
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absen\
+# t_names_both
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_\
+# names_only_that_one
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_prese\
+# nt_does_not_raise
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_stale_version_wh\
+# eel_names_versions
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_version\
+# _wheel_does_not_raise
+# frob:tests \
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
+# eport_named_core_missing
+def _require_core_wheels(
+    core_wheels_dir: Path, pins: dict[str, str] | None = None
+) -> None:
     """T-3935: `frob-core`/`strata-core` are hard `==`-pinned DEFAULT
     dependencies of `frob` (T-3845) that are not published to any
     registry, so `--find-links core_wheels_dir` is the ONLY way an
@@ -177,17 +346,30 @@ def _require_core_wheels(core_wheels_dir: Path) -> None:
     os/arch (see `_wheel_matches_host_platform`). Previously this reached
     uv's resolver undetected and surfaced as an opaque "no wheels with a
     matching platform tag" trace deep inside a downstream check; this
-    preflight now names the wrong-platform wheel directly."""
-    missing = []
-    wrong_platform: list[str] = []
-    for name, pattern in _REQUIRED_CORE_WHEEL_GLOBS.items():
-        found = list(core_wheels_dir.glob(pattern))
-        if not found:
-            missing.append(name)
-            continue
-        bad = [w for w in found if not _wheel_matches_host_platform(w)]
-        if bad and len(bad) == len(found):
-            wrong_platform.append(f"{name} ({', '.join(w.name for w in bad)})")
+    preflight now names the wrong-platform wheel directly.
+
+    T-4465: also catches the PRESENT-BUT-STALE-VERSION case -- a wheel
+    that glob-matches but was built for an OLDER crate version than
+    `pins` names (the CI incident this guards against: an
+    `actions/cache` entry keyed only on Cargo.lock, restored verbatim
+    across a version bump, left `target/wheels` holding the prior
+    version while the pin moved on; uv then failed with an opaque
+    "requirements are unsatisfiable" trace instead of naming the stale
+    wheel). `pins` maps the required dist name ("frob-core"/
+    "strata-core") to the exact version this install is about to
+    attempt -- `main` reads it from the frob wheel's own METADATA via
+    `_read_core_pins`. `None`, or a name missing from `pins`, skips the
+    version check for that dist (the pre-T-4465 permissive behavior).
+
+    The classification itself lives in `_classify_core_wheels`; this
+    function is just that result turned into the right `SmokeCheckError`,
+    missing checked before stale checked before wrong-platform."""
+    findings = _classify_core_wheels(core_wheels_dir, pins or {})
+    missing, stale, wrong_platform = (
+        findings.missing,
+        findings.stale,
+        findings.wrong_platform,
+    )
     if missing:
         raise SmokeCheckError(
             "core-wheels-preflight",
@@ -197,6 +379,17 @@ def _require_core_wheels(core_wheels_dir: Path) -> None:
             "published to any registry -- they must be built and supplied "
             "via --core-wheels-dir before any install can resolve them. "
             "This is 'core not built/supplied', not a bad version pin.",
+        )
+    if stale:
+        raise SmokeCheckError(
+            "core-wheels-preflight",
+            f"core_wheels_dir ({core_wheels_dir}) contains only a "
+            f"stale-version wheel for: {', '.join(stale)}. This is the "
+            "T-4465 cached-target-dir shape (a stale actions/cache "
+            "restore of target/wheels from before a crate version bump), "
+            "not a missing core or a wrong platform -- rebuild frob-core/"
+            "strata-core (`make core-wheels`) so target/wheels holds the "
+            "current version.",
         )
     if wrong_platform:
         raise SmokeCheckError(
@@ -460,8 +653,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL setup: wheel not found at {wheel_path}", file=sys.stderr)
         return 1
     core_dir = args.core_wheels_dir.resolve()
+    pins = _read_core_pins(wheel_path)
     try:
-        _require_core_wheels(core_dir)
+        _require_core_wheels(core_dir, pins)
     except SmokeCheckError as exc:
         print(f"FAIL {exc.name}: {exc.detail}", file=sys.stderr)
         return 1

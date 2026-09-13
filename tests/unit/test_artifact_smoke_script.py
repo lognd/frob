@@ -274,6 +274,45 @@ class TestRequireCoreWheels:
         _touch_core_wheels(core_dir)
         artifact_smoke._require_core_wheels(core_dir)  # must not raise
 
+    def test_stale_version_wheel_names_versions(self, tmp_path: Path) -> None:
+        """T-4465 MUST-FIRE fixture: a wheel that glob-matches but carries
+        an OLDER version than `pins` names must fail, naming the stale
+        version found and the version needed -- the exact CI incident
+        shape (a stale actions/cache restore of target/wheels surviving
+        a version bump, T-4465), not a missing core or wrong platform."""
+        core_dir = tmp_path / "cores"
+        core_dir.mkdir()
+        tag = _host_platform_tag()
+        (core_dir / f"frob_core-0.530.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+        (core_dir / f"strata_core-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+        pins = {"frob-core": "0.531.0", "strata-core": "0.531.0"}
+        with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
+            artifact_smoke._require_core_wheels(core_dir, pins)
+        message = str(exc_info.value)
+        assert "frob-core" in message
+        assert "0.530.0" in message
+        assert "0.531.0" in message
+        assert "strata-core" not in message.split("frob-core", 1)[0]
+
+    def test_matching_version_wheel_does_not_raise(self, tmp_path: Path) -> None:
+        """T-4465 MUST-STAY-QUIET fixture: both wheels at exactly the
+        pinned version must not be flagged as stale."""
+        core_dir = tmp_path / "cores"
+        core_dir.mkdir()
+        tag = _host_platform_tag()
+        (core_dir / f"frob_core-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+        (core_dir / f"strata_core-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+        pins = {"frob-core": "0.531.0", "strata-core": "0.531.0"}
+        artifact_smoke._require_core_wheels(core_dir, pins)  # must not raise
+
+    def test_no_pins_skips_version_check(self, tmp_path: Path) -> None:
+        """`pins=None` (the pre-T-4465 default) must not enforce a
+        version match -- callers with no pin to check against keep the
+        prior, version-blind behavior."""
+        core_dir = tmp_path / "cores"
+        _touch_core_wheels(core_dir)  # writes 0.1.0-tagged wheels
+        artifact_smoke._require_core_wheels(core_dir)  # must not raise
+
     def test_wheel_matches_host_platform_rejects_foreign_tag(self) -> None:
         """`_wheel_matches_host_platform` directly: a wheel tagged for a
         foreign os+arch is rejected regardless of this test's own host."""
@@ -307,6 +346,47 @@ class TestRequireCoreWheels:
 
         assert code == 1
         mock_run.assert_not_called()
+
+
+def _build_fake_wheel(path: Path, requires: list[str]) -> None:
+    """A minimal, real zip archive at `path` carrying a
+    `.dist-info/METADATA` with one `Requires-Dist:` line per entry in
+    `requires` -- just enough for `_read_core_pins` to parse against,
+    without a real `uv build`."""
+    import zipfile as _zipfile
+
+    metadata = "Metadata-Version: 2.1\nName: frob\nVersion: 0.531.0\n" + "".join(
+        f"Requires-Dist: {r}\n" for r in requires
+    )
+    with _zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("frob-0.531.0.dist-info/METADATA", metadata)
+
+
+class TestReadCorePins:
+    """T-4465: `_read_core_pins` parses the exact frob-core/strata-core
+    version pins a wheel is about to install, straight from its own
+    METADATA -- the value `_require_core_wheels` checks a candidate
+    wheel's filename version against."""
+
+    def test_reads_both_pins_from_metadata(self, tmp_path: Path) -> None:
+        """A wheel whose METADATA carries both `Requires-Dist` lines ->
+        both pins parsed exactly."""
+        wheel = tmp_path / "frob-0.531.0-py3-none-any.whl"
+        _build_fake_wheel(
+            wheel,
+            ["frob-core==0.531.0", "strata-core==0.531.0", "pydantic>=2"],
+        )
+        pins = artifact_smoke._read_core_pins(wheel)
+        assert pins == {"frob-core": "0.531.0", "strata-core": "0.531.0"}
+
+    def test_unreadable_wheel_returns_empty(self, tmp_path: Path) -> None:
+        """A placeholder/non-wheel file (this script's own `main`-level
+        tests write `wheel.write_bytes(b"")`) must return an empty dict,
+        not raise -- `_require_core_wheels` treats that as "skip the
+        version check", the pre-T-4465 behavior."""
+        wheel = tmp_path / "frob.whl"
+        wheel.write_bytes(b"")
+        assert artifact_smoke._read_core_pins(wheel) == {}
 
 
 class TestMain:
