@@ -276,6 +276,100 @@ _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS = 2.0
 # tests/unit/test_graph_cache.py model exactly that persistent-handle case.
 # frob:ticket T-3820
 # frob:raises OSError
+# frob:ticket T-4456
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_\
+# absent_during_recreate
+def _publish_by_overwrite_win32(tmp_path: Path, path: Path, *, what: str) -> bool:
+    """Windows-only last-resort publish for `_replace_with_retry`: write
+    `tmp_path`'s bytes into `path` IN PLACE instead of retargeting
+    `path`'s directory entry via `os.replace` (T-4456).
+
+    Reached only once `_replace_with_retry`'s bounded retry window has
+    already been exhausted -- i.e. `os.replace(tmp_path, path)` kept
+    raising `PermissionError: [WinError 5]` the whole time, the shape
+    T-4454's `_recreate` hits when THIS process itself still holds an
+    open handle on `path` across the whole publish (its own stale
+    connection kept alive by a caller elsewhere -- the exact case
+    T-4402 closes for the corruption-rebuild path via `unowned_conn`,
+    but `_recreate` is also reachable directly, with no such caller
+    handle to close). `CreateFile`/`MoveFileEx` refuse a RENAME onto a
+    path with any open handle lacking `FILE_SHARE_DELETE` (which
+    Python's bundled sqlite3 VFS never requests, T-3781) -- but an
+    ordinary read/write open of the SAME path is a different Windows
+    operation, gated only by `FILE_SHARE_READ`/`FILE_SHARE_WRITE`, which
+    sqlite's default Windows VFS open DOES grant siblings (confirmed via
+    winrun, T-4456). Overwriting `path`'s bytes in place therefore lands
+    the publish without ever needing the rename Windows is refusing, and
+    `path` is never absent for even an instant either way -- T-4454's
+    own invariant, preserved here exactly as `os.replace` preserves it
+    on POSIX.
+
+    Returns `False` (never raises) on any further `OSError` so the
+    caller re-raises the ORIGINAL `os.replace` failure -- the more
+    diagnostic of the two -- instead of masking it with this fallback's
+    own."""
+    try:
+        data = tmp_path.read_bytes()
+        with open(path, "r+b") as fh:
+            fh.write(data)
+            fh.truncate()
+        tmp_path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "cache: %s win32 overwrite-in-place fallback also failed "
+            "publishing %s over %s: %s",
+            what,
+            tmp_path,
+            path,
+            exc,
+        )
+        return False
+    _log.warning(
+        "cache: %s published %s over %s via the win32 overwrite-in-place "
+        "fallback (os.replace's rename was refused by an open handle for "
+        "the whole retry window)",
+        what,
+        tmp_path,
+        path,
+    )
+    return True
+
+
+# frob:ticket T-4456
+# frob:waive DUP001 reason="flags this against \
+# src/frob/_cli_parsers/_ticket/_closeout.py::_RefuseRepeatedEvidenceCmd.__call__ and \
+# 4 other unrelated functions at 95% structural similarity -- a coincidental shape \
+# match (check-a-condition-then-log-then-raise/return), not shared logic; each site's \
+# condition, log message, and exception are specific to its own module (cache-publish \
+# backoff here vs. CLI argument re-use elsewhere) and share no domain concept a helper \
+# could name. Permanent exemption, not deferred work."
+def _replace_retry_exhausted(
+    tmp_path: Path, path: Path, *, what: str, exc: OSError
+) -> None:
+    """`_replace_with_retry`'s deadline-exhausted branch, split out to keep
+    that function under ARCH001's line threshold (T-4456): tries the
+    win32 overwrite-in-place fallback once, then re-raises `exc` (the
+    original `os.replace` failure, more diagnostic than any error the
+    fallback itself could raise) if that also does not land the publish.
+    """
+    if sys.platform == "win32" and _publish_by_overwrite_win32(
+        tmp_path, path, what=what
+    ):
+        return
+    _log.warning(
+        "cache: %s could not publish %s over %s within %.1fs "
+        "(a reader is holding the destination open, e.g. Windows "
+        "[WinError 5]) -- re-raising: %s",
+        what,
+        tmp_path,
+        path,
+        _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS,
+        exc,
+    )
+    raise exc
+
+
 def _replace_with_retry(tmp_path: Path, path: Path, *, what: str) -> None:
     """Atomically publish `tmp_path` over `path` via `os.replace`, retrying
     with backoff on a transient `PermissionError`/`OSError` before giving up
@@ -314,17 +408,8 @@ def _replace_with_retry(tmp_path: Path, path: Path, *, what: str) -> None:
         except OSError as exc:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                _log.warning(
-                    "cache: %s could not publish %s over %s within %.1fs "
-                    "(a reader is holding the destination open, e.g. Windows "
-                    "[WinError 5]) -- re-raising: %s",
-                    what,
-                    tmp_path,
-                    path,
-                    _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS,
-                    exc,
-                )
-                raise
+                _replace_retry_exhausted(tmp_path, path, what=what, exc=exc)
+                return
             _log.warning(
                 "cache: %s hit a transient os.replace fault publishing %s "
                 "over %s (%.1fs remaining), retrying: %s",
