@@ -20,10 +20,56 @@ scope:
 - src/frob/tickets/_setters.py
 - tests/gates_suite/test_release*.py
 - tests/gates_suite/test_milestone*.py
+- src/frob/gates/_debt_deprecated.py
+- tests/gates_suite/test_debt.py
+- tests/test_gates_milestone.py
+- src/frob/tickets/_models.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: REL001 lives in _debt_deprecated.py (not _release*.py as scoped -- no such
+    file exists) tested by test_debt.py; MILE001/002 tests live at tests/test_gates_milestone.py
+    not tests/gates_suite/test_milestone*.py. Widening to the real files that must
+    change per acceptance criteria.
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/gates_suite/test_debt.py
+  reason: REL001 lives in _debt_deprecated.py (not _release*.py as scoped -- no such
+    file exists) tested by test_debt.py; MILE001/002 tests live at tests/test_gates_milestone.py
+    not tests/gates_suite/test_milestone*.py. Widening to the real files that must
+    change per acceptance criteria.
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/test_gates_milestone.py
+  reason: REL001 lives in _debt_deprecated.py (not _release*.py as scoped -- no such
+    file exists) tested by test_debt.py; MILE001/002 tests live at tests/test_gates_milestone.py
+    not tests/gates_suite/test_milestone*.py. Widening to the real files that must
+    change per acceptance criteria.
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'shared normalizer belongs alongside validate_milestone in _models.py (existing
+    dependency direction: gates imports from tickets, not reverse); existing validate_milestone
+    tests live in tests/test_tickets.py::TestValidateMilestone, need a normalization
+    test there too.'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'shared normalizer belongs alongside validate_milestone in _models.py (existing
+    dependency direction: gates imports from tickets, not reverse); existing validate_milestone
+    tests live in tests/test_tickets.py::TestValidateMilestone, need a normalization
+    test there too.'
+  actor: logan
+  at: '2026-09-13'
 designated_repro_test: null
 threat: null
 component: null
