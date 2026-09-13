@@ -381,7 +381,7 @@ wheels = [
 
 [[package]]
 name = "frob"
-version = "0.530.1.dev1"
+version = "0.531.0"
 source = { editable = "." }
 dependencies = [
     { name = "frob-core" },
@@ -471,7 +471,7 @@ dev = [
 
 [[package]]
 name = "frob-core"
-version = "0.530.0"
+version = "0.531.0"
 source = { directory = "frob-core" }
 
 [[package]]
@@ -1438,7 +1438,7 @@ wheels = [
 
 [[package]]
 name = "strata-core"
-version = "0.530.0"
+version = "0.531.0"
 source = { directory = "strata-core" }
 
 [[package]]

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.530.1.dev1"
+version = "0.531.0"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -80,8 +80,8 @@ dependencies = [
     # native modules and return a clear Err, never crash; see
     # tests/system/test_cli_native_missing.py and
     # docs/guides/release.md#native-acceleration-degrade-doctrine-t-3011.
-    "frob-core==0.530.0",
-    "strata-core==0.530.0",
+    "frob-core==0.531.0",
+    "strata-core==0.531.0",
 ]
 
 # Optional: `frob serve` (the MCP adapter) needs the mcp SDK; installing it
@@ -111,7 +111,7 @@ serve = ["mcp>=1.28.1,<2"]
 # `[dependency-groups]` pin -- by package name, not by table name, so it
 # enforces both lists (and any future one) match frob's own version and
 # each other without needing to be told where a new pin site is.
-native = ["frob-core==0.530.0", "strata-core==0.530.0"]
+native = ["frob-core==0.531.0", "strata-core==0.531.0"]
 # R7 (docs/modules/dup.md's bounded-SMT rung): translates tiny pure int/bool
 # functions to Z3 and checks equivalence formally. Optional -- z3-solver
 # ships native binaries and is only needed for `probe_smt_equivalence`;
@@ -217,7 +217,7 @@ dev = [
 # published wheel of its own natives. Verified 2026-09-05 this does not
 # leak into the published artifact: `[tool.uv.sources]` path entries are
 # a uv-lock/dev-resolution-only construct -- a built wheel's METADATA
-# carries only `Requires-Dist: frob-core==0.530.0` / `strata-core==...`,
+# carries only `Requires-Dist: frob-core==0.531.0` / `strata-core==...`,
 # no path information, confirmed by inspecting `uv build --wheel`'s
 # actual output. A consumer resolving frob from the index is unaffected;
 # this section only matters inside this checkout.
