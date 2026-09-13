@@ -38,12 +38,16 @@ def resolve_bash() -> str:
     qualifies -- callers should call this from inside a test, not at
     import/collection time.
     """
+    # frob:tests T-4458
     if sys.platform != "win32":
         return "bash"
 
     import pytest
 
     candidates: list[Path] = []
+    # frob:waive SEC110 reason="ProgramFiles/ProgramFiles(x86) are Windows \
+    # install-root paths, not credentials, read only to locate Git for Windows' \
+    # bash.exe for tests"
     program_files = os.environ.get("ProgramFiles")
     if program_files:
         candidates.append(Path(program_files) / "Git" / "bin" / "bash.exe")

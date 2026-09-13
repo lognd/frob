@@ -2,7 +2,7 @@
 id: T-4458
 title: 'SEC110 on tests/helpers/bash.py: ProgramFiles env read in the Git Bash resolver
   needs the repo''s non-secret disposition'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
