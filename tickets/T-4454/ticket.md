@@ -2,7 +2,7 @@
 id: T-4454
 title: 'Regression: _recreate leaves cache.db absent, read-only sibling dies with
   ''unable to open database file'' (macOS T-3607 test)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-12'
@@ -21,7 +21,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives::test_path_never_absent_during_recreate
+- tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives::test_quarantined_sidecars_are_renamed_not_unlinked
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives::test_sibling_reader_survives_concurrent_recreate
+  new_node: ''
+  reason: already PASSES at parent (T-3607's own race is not reliably reproducible
+    on this Linux runner), so it is confirmatory-only for --check-repro/BUG002; the
+    deterministic test_path_never_absent_during_recreate is the repro-proof evidence
+    instead, still cited via frob:tests in code for the 20/20 acceptance criterion
+  actor: logan
+  at: '2026-09-13'
 threat: null
 component: null
 anchor: false

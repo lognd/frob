@@ -767,16 +767,36 @@ class CacheLocked(sqlite3.OperationalError):
 # frob:raises CacheLocked
 # frob:ticket T-3669
 # frob:ticket T-4282
+# frob:ticket T-4454
+def _should_retry_lock_error(exc: sqlite3.OperationalError, extra_transient) -> bool:  # noqa: ANN001
+    """True iff `_with_lock_retry` should poll past `exc` rather than
+    re-raise it -- `_is_transient_lock_error`'s ordinary shapes, OR
+    `extra_transient(exc)` when the caller supplied one (T-4454: a shape
+    transient only for THAT caller, e.g. `connect_readonly`'s "unable to
+    open database file" sibling race against `_recreate`'s publish
+    window, not every user of this shared retry loop)."""
+    return _is_transient_lock_error(exc) or (
+        extra_transient is not None and extra_transient(exc)
+    )
+
+
+# frob:ticket T-4454
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_rea\
+# der_survives_concurrent_recreate
 def _with_lock_retry(  # noqa: ANN201
     op,  # noqa: ANN001
     *,
     what: str,
     retry_readonly: bool = True,
     path: Path | None = None,
+    extra_transient=None,  # noqa: ANN001
 ):
     """Run `op()`, retrying while sqlite reports the db as locked, up to
     `_LOCK_TOTAL_TIMEOUT_SECONDS`; raises `CacheLocked` once the budget is
     exhausted instead of letting the raw `sqlite3.OperationalError` escape.
+
+    `extra_transient` (T-4454, optional): see `_should_retry_lock_error`.
 
     T-1239 and T-1416 already retry a locked/racing `OperationalError`
     during schema application (`_apply_schema_with_recovery`); this is the
@@ -801,7 +821,7 @@ def _with_lock_retry(  # noqa: ANN201
         try:
             return op()
         except sqlite3.OperationalError as exc:
-            if not _is_transient_lock_error(exc):
+            if not _should_retry_lock_error(exc, extra_transient):
                 raise
             # T-3669: a caller that owns an outer reopen layer passes
             # retry_readonly=False so the readonly-database shape escapes
@@ -1240,6 +1260,7 @@ def _rebuild_schema_atomically(
         _close_conn(conn)
         tmp_path = _build_schema_complete_db(path)
         _quarantine_sidecars(path)
+        _quarantine_main_db(path)
         _replace_with_retry(
             tmp_path, path, what="atomic schema-complete rebuild publish"
         )
@@ -1453,6 +1474,7 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
         # regression when this was tried the other way around).
         tmp_path = _build_schema_complete_db(path)
         _quarantine_sidecars(path)
+        _quarantine_main_db(path)
         _replace_with_retry(
             tmp_path, path, what="atomic schema-complete rebuild publish"
         )
@@ -1463,14 +1485,40 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
             os.close(lock_fd)
 
 
+# frob:ticket T-4454
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_\
+# absent_during_recreate
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarantined\
+# _sidecars_are_renamed_not_unlinked
 def _quarantine_sidecars(path: Path) -> None:
-    """Rename `path`'s db/`-wal`/`-shm` files aside to a quarantined
+    """Rename `path`'s `-wal`/`-shm` sidecars aside to a quarantined
     sibling name (T-3607), best-effort -- shared by `_recreate` so the
     rename-not-unlink step has one home distinct from the schema-build
     step it now runs alongside (T-3623 split this out of `_recreate`
-    itself to keep that function under ARCH001's complexity threshold)."""
+    itself to keep that function under ARCH001's complexity threshold).
+
+    T-4454: this used to ALSO rename `path` itself aside, before the
+    caller's `_replace_with_retry(tmp_path, path, ...)` published the
+    fresh db there -- a window with NO file at `path` at all between the
+    two calls (harmless on a fast local disk, but wide enough on a loaded
+    macOS CI runner for a concurrent `connect_readonly` sibling's
+    `sqlite3.connect(..., mode=ro)` to land inside it and raise
+    `OperationalError: unable to open database file`, T-3607's own
+    concurrent-reader test caught it). `os.replace(tmp_path, path)` is
+    ALREADY the rename-not-unlink swap this function exists to give the
+    sidecars (POSIX `rename(2)` never leaves the destination name
+    momentarily absent, and a sibling with `path` already open keeps its
+    fd/mmap bound to the old inode exactly as if this function had
+    quarantined it first) -- so quarantining `path` here was redundant
+    with that guarantee AND the one thing standing between it and a
+    reader. Only the sidecars need a manual rename-aside: `os.replace`
+    only ever touches the one name it is given, so `-wal`/`-shm` would
+    otherwise sit next to the NEW db under the OLD db's now-stale
+    WAL/SHM state if left in place."""
     suffix = f"{_STALE_SUFFIX_PREFIX}{os.getpid()}-{uuid.uuid4().hex[:8]}"
-    for name in (path.name, path.name + "-wal", path.name + "-shm"):
+    for name in (path.name + "-wal", path.name + "-shm"):
         src = path.with_name(name)
         try:
             if src.exists():
@@ -1480,6 +1528,47 @@ def _quarantine_sidecars(path: Path) -> None:
             # lock, or a sidecar that never existed, is not fatal;
             # the reopen below still produces a valid fresh db.
             _log.debug("cache.connect: quarantine rename of %s failed", src)
+
+
+# frob:ticket T-4454
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_\
+# absent_during_recreate
+def _quarantine_main_db(path: Path) -> None:
+    """Preserve the CURRENT `path` under a quarantined sibling name via a
+    hard LINK (not a rename), best-effort, before the caller's
+    `_replace_with_retry(tmp_path, path, ...)` atomically swaps a fresh
+    db into `path` (T-4454).
+
+    T-3607's original design renamed `path` itself aside here, then
+    published the replacement with a separate `os.replace`, leaving a
+    window with NO file at `path` between the two calls -- wide enough on
+    a loaded macOS CI runner for a concurrent `connect_readonly` sibling
+    to land inside it and raise `OperationalError: unable to open
+    database file` (this exact test's own regression). A hard link keeps
+    a SECOND directory entry pointing at the same inode as `path` --
+    `path` itself is never removed or absent -- so `_sweep_stale_
+    quarantined_sidecars` still finds a named, inspectable copy of the
+    pre-rebuild db to reclaim later, without ever creating the absence
+    window a plain rename-then-replace does. `os.replace(tmp_path, path)`
+    immediately afterward only ever retargets the `path` NAME to the new
+    inode; the quarantined link keeps the old inode (and any sibling's
+    already-open fd/mmap on it) alive and untouched, exactly like the
+    rename it replaces.
+
+    Skipped (not fatal) when `path` does not exist yet -- the very first
+    build has nothing to quarantine -- or when the filesystem refuses a
+    hard link (e.g. crossing a device boundary, or a backend without
+    link support): the reopen below still produces a valid fresh db
+    either way, just without a quarantined copy of what came before."""
+    if not path.exists():
+        return
+    suffix = f"{_STALE_SUFFIX_PREFIX}{os.getpid()}-{uuid.uuid4().hex[:8]}"
+    dest = path.with_name(path.name + suffix)
+    try:
+        os.link(path, dest)
+    except OSError:
+        _log.debug("cache.connect: quarantine hardlink of %s failed", path)
 
 
 def _is_concurrent_meta_key_race(exc: sqlite3.IntegrityError) -> bool:
@@ -2331,10 +2420,14 @@ def connect(path: Path) -> sqlite3.Connection:
 
 
 # frob:ticket T-0232
+# frob:ticket T-4454
 # frob:doc docs/modules/graph.md#cache
 # frob:tests \
 # tests/test_graph.py::TestCacheModule.test_connect_readonly_rejects_writes_no_lock_con\
 # tention
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_rea\
+# der_survives_concurrent_recreate
 def connect_readonly(path: Path) -> sqlite3.Connection:
     """A connection that can never take sqlite's write lock -- for callers
     (`load_graph`, and any gate that only reads the snapshot) that must
@@ -2351,14 +2444,36 @@ def connect_readonly(path: Path) -> sqlite3.Connection:
     a readonly database`) instead of silently blocking on `busy_timeout`
     -- a bug that would otherwise reintroduce this contention.
 
-    Raises `sqlite3.OperationalError` if `path` does not exist; callers
-    must check existence first (`load_graph` already does).
+    Raises `sqlite3.OperationalError` if `path` does not exist and stays
+    absent for the whole retry budget; callers must still check existence
+    first for the ordinary case (`load_graph` already does).
+
+    T-4454: "unable to open database file" is treated as transient here
+    (via `extra_transient`, bounded by the same
+    `_LOCK_TOTAL_TIMEOUT_SECONDS` budget as an ordinary lock) as a second,
+    independent layer of defense alongside `_recreate`'s own fix -- a
+    read-only sibling's `mode=ro` connect can legitimately race a WRITER's
+    `_recreate`/`_rebuild_schema_atomically` publish and land in whatever
+    residual window this or some other future rebuild path leaves, and
+    that shape is recoverable (the file reappears the instant the
+    publish's `os.replace` lands) rather than a real "no such cache"
+    condition, which only ever arises here from a caller that skipped the
+    documented existence check.
     """
     uri = f"file:{path}?mode=ro"
+
+    def _is_open_failure(exc: sqlite3.OperationalError) -> bool:
+        """True iff `exc` is sqlite's "unable to open database file" --
+        the shape a `mode=ro` connect takes when it lands in the brief
+        window a sibling's atomic db-publish leaves `path` momentarily
+        unreadable (T-4454)."""
+        return "unable to open database file" in str(exc).lower()
+
     conn = _with_lock_retry(
         lambda: sqlite3.connect(uri, uri=True, timeout=30.0),
         what=f"connect_readonly({path})",
         path=path,
+        extra_transient=_is_open_failure,
     )
     conn.execute("PRAGMA query_only = ON")
     return conn

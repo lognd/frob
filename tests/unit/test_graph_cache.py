@@ -340,6 +340,68 @@ class TestRecreateConcurrentReaderSurvives:
         )
 
     # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_ne\
+    # ver_absent_during_recreate
+    def test_path_never_absent_during_recreate(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4454: `_recreate` must never leave `path` absent, at ANY
+        observable point -- the old quarantine-`path`-aside-then-replace
+        ordering had exactly one such window (between `_quarantine_
+        sidecars` renaming `path` away and `_replace_with_retry`
+        publishing the fresh db there), wide enough for a concurrent
+        `connect_readonly` sibling to land inside it and raise
+        `OperationalError: unable to open database file` (this ticket's
+        own macOS CI regression). Patches the three primitives `_recreate`
+        can touch `path` through (`os.replace`, `os.link`, and `Path.
+        rename` for the sidecar quarantine) to record whether `path`
+        existed immediately before and immediately after each call, then
+        asserts every single recorded observation says `True`."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        graph_cache.store_parsed_artifact(
+            conn, content_hash="h", fingerprint="f", payload="one"
+        )
+
+        observations: list[tuple[str, bool]] = []
+
+        real_replace = os.replace
+        real_link = os.link
+        real_rename = Path.rename
+
+        def _record(label: str) -> None:
+            observations.append((label, path.exists()))
+
+        def traced_replace(src: str | os.PathLike, dst: str | os.PathLike) -> None:
+            _record(f"before os.replace->{dst}")
+            real_replace(src, dst)
+            _record(f"after os.replace->{dst}")
+
+        def traced_link(src: str | os.PathLike, dst: str | os.PathLike) -> None:
+            _record(f"before os.link->{dst}")
+            real_link(src, dst)
+            _record(f"after os.link->{dst}")
+
+        def traced_rename(self: Path, target: str | os.PathLike) -> Path:
+            _record(f"before rename {self}->{target}")
+            result = real_rename(self, target)
+            _record(f"after rename {self}->{target}")
+            return result
+
+        monkeypatch.setattr(os, "replace", traced_replace)
+        monkeypatch.setattr(os, "link", traced_link)
+        monkeypatch.setattr(Path, "rename", traced_rename)
+
+        conn = graph_cache._recreate(graph_cache._open(path), path)
+        graph_cache._close_conn(conn)
+
+        assert observations, "expected _recreate to touch path via a traced primitive"
+        absent = [label for label, existed in observations if not existed]
+        assert not absent, (
+            f"path was observed absent around: {absent} (full sequence: {observations})"
+        )
+
+    # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarant\
     # ined_sidecars_are_renamed_not_unlinked
     def test_quarantined_sidecars_are_renamed_not_unlinked(
