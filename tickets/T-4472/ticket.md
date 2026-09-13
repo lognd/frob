@@ -2,7 +2,7 @@
 id: T-4472
 title: 'release.yml: cross-built targets still run uv pip install before the T-4470
   cross skip, failing the smoke step'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'

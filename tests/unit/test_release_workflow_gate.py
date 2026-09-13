@@ -710,3 +710,65 @@ class TestCrossBuiltTargetsSkipImportSmoke:
         assert "matrix.target }} = 'macos-x86_64'" not in run.replace('"', "'"), (
             "import-smoke step must not hardcode a single cross target"
         )
+
+    # frob:ticket T-4472
+    def test_install_only_runs_inside_the_non_cross_branch(self) -> None:
+        """MUST-FIRE (T-4472): run 34786316434 (post-T-4470 land
+        e16d97290) showed both cross entries still failing this step --
+        `uv pip install` of a foreign-arch wheel fails on its own
+        ("Failed to determine installation plan ... incompatible with
+        the current platform"), and that install used to run
+        UNCONDITIONALLY before the cross/native `if` branch, so the
+        skip branch was never reached in time. `uv pip install` (and
+        the venv creation feeding it) must appear ONLY inside the
+        `else` (non-cross) arm of the `if matrix.cross` block, never
+        before the `if` and never inside the cross arm."""
+        doc = _load(_RELEASE_WORKFLOW)
+        step = _find_step_by_name_prefix(
+            doc["jobs"]["build"], "Install the just-built wheels into a clean venv"
+        )
+        run = step["run"]
+        # Strip full-line comments so a comment MENTIONING "uv pip
+        # install" (as this very test's own explanatory comment in the
+        # workflow does) does not get counted as the real command.
+        lines = [line for line in run.splitlines() if not line.strip().startswith("#")]
+
+        if_idx = next(i for i, line in enumerate(lines) if "matrix.cross" in line)
+        else_idx = next(
+            i for i, line in enumerate(lines) if i > if_idx and line.strip() == "else"
+        )
+        # The non-cross arm nests its own if/fi (RUNNER_OS), so find the
+        # matching OUTER `fi` by depth-tracking, not the first `fi` seen.
+        depth = 0
+        fi_idx = None
+        for i in range(else_idx + 1, len(lines)):
+            stripped = lines[i].strip()
+            if stripped.startswith("if "):
+                depth += 1
+            elif stripped == "fi":
+                if depth == 0:
+                    fi_idx = i
+                    break
+                depth -= 1
+        assert fi_idx is not None, "could not find the outer fi closing the else arm"
+
+        before_if = "\n".join(lines[:if_idx])
+        cross_arm = "\n".join(lines[if_idx : else_idx + 1])
+        non_cross_arm = "\n".join(lines[else_idx : fi_idx + 1])
+
+        assert "uv pip install" not in before_if, (
+            "uv pip install must not run before the matrix.cross branch"
+        )
+        assert "uv pip install" not in cross_arm, (
+            "uv pip install must not run in the cross (skip) arm"
+        )
+        assert "uv pip install" in non_cross_arm, (
+            "uv pip install must run inside the non-cross (native) arm"
+        )
+        assert "uv venv" not in before_if, (
+            "the venv used for install must not be created before the "
+            "matrix.cross branch"
+        )
+        assert "uv venv" in non_cross_arm, (
+            "the venv must be created inside the non-cross (native) arm"
+        )

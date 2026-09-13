@@ -164,29 +164,41 @@ jobs:
         shell: bash
         run: |
           set -e
-          venv_dir="$RUNNER_TEMP/native-check-venv"
-          uv venv "$venv_dir"
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            python_bin="$venv_dir/Scripts/python.exe"
-          else
-            python_bin="$venv_dir/bin/python"
-          fi
-          uv pip install --python "$python_bin" \
-            frob-core/dist/*.whl strata-core/dist/*.whl
+          # T-4472: `uv pip install` of a foreign-arch wheel itself fails
+          # ("Failed to determine installation plan ... incompatible
+          # with the current platform") -- it is not only the `import`
+          # call after it that a cross build can't survive on its own
+          # host. Run 34786316434 (post-T-4470 land e16d97290) showed
+          # both cross entries still failing this step because the venv
+          # creation and uv pip install used to run UNCONDITIONALLY
+          # before the cross/native branch below, so the skip branch was
+          # never reached in time -- the install itself already blew up.
+          # Cross entries now do nothing but a wheel-existence check;
+          # only the native branch creates a venv and installs/imports.
+          #
           # T-4470 (+coordinator addendum): a `cross: true` matrix entry
           # is built for an architecture that does NOT match this job's
           # own host (macos-x86_64 cross-built on arm64 macos-latest;
           # manylinux-aarch64 cross-built via QEMU/manylinux container
-          # on x86_64 ubuntu-latest). The host process can never import
-          # a wheel for a different architecture -- that failure has
-          # nothing to do with the wheel's correctness -- so cross
-          # entries skip the import and fall back to a wheel-file
+          # on x86_64 ubuntu-latest). The host process can never install
+          # or import a wheel for a different architecture -- that
+          # failure has nothing to do with the wheel's correctness -- so
+          # cross entries skip both and fall back to a wheel-file
           # existence check; every native (non-cross) target still
-          # imports for real.
+          # installs and imports for real.
           if [ "${{ matrix.cross }}" = "true" ]; then
-            echo "T-4470: skipping cross-arch import smoke for ${{ matrix.target }} (host cannot import a wheel built for a different architecture)"
+            echo "T-4470/T-4472: skipping cross-arch install+import smoke for ${{ matrix.target }} (host cannot install/import a wheel built for a different architecture)"
             ls frob-core/dist/*.whl strata-core/dist/*.whl
           else
+            venv_dir="$RUNNER_TEMP/native-check-venv"
+            uv venv "$venv_dir"
+            if [ "$RUNNER_OS" = "Windows" ]; then
+              python_bin="$venv_dir/Scripts/python.exe"
+            else
+              python_bin="$venv_dir/bin/python"
+            fi
+            uv pip install --python "$python_bin" \
+              frob-core/dist/*.whl strata-core/dist/*.whl
             "$python_bin" -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
           fi
       - name: Upload frob-core wheel
