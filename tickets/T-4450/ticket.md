@@ -2,7 +2,7 @@
 id: T-4450
 title: 'CI self-gate must collect fresh: wipe the Test step''s collection cache and
   dump diagnostics before frob check (Windows COV003 x56)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
