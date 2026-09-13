@@ -41,6 +41,12 @@ body_changes:
   at: '2026-08-31'
   old_length: 4360
   new_length: 5513
+- mode: append
+  reason: record T-3512 advisory-flag-removed acceptance
+  actor: logan
+  at: '2026-09-13'
+  old_length: 5493
+  new_length: 6091
 designated_repro_test: null
 threat: null
 component: null
@@ -139,3 +145,16 @@ ACCEPTANCE
 ## T-3511 re-measurement (2026-08-31)
 
 After all five primitive fixes (T-3506/T-3507/T-3508/T-3509/T-3510) landed, run 33353658750 (HEAD 2654ca1ff, job 99371614987) again DID-NOT-COMPLETE: exitstatus=2 INTERRUPTED, collected=12924 (partial), only ~1% ran before a bare KeyboardInterrupt killed the session ~49s in -- unrelated to any of the five primitives, and not the old 278/365-shaped failure set (too little of the suite ran to compare). Per this ticket's own acceptance criterion (a completed, not-interrupted run with a stable count), this is NOT yet met -- the 278/365 numbers are retired as stale, not replaced by a new stable count, since none exists yet. See docs/design/windows-portability.md's 'Re-measurement after the five primitive fixes (T-3511)' section for the full diagnosis. New leaf tickets filed: T-3540 (the KeyboardInterrupt root cause -- Start-Process/Wait-Process console-sharing hypothesis) and T-3539 (Cplace symref os.sep bug, 3 of the failures visible before the interrupt). The KeyboardInterrupt bucket blocks re-measuring the rest of the suite and should be treated as this ticket's next blocker.
+
+
+## T-3512 acceptance: advisory flag removed (2026-09-13)
+
+The T-3425 windows-latest `continue-on-error` advisory flag was removed
+under T-3512. Removal condition met: CI run 34758499278 (head
+`020d2db1f`) was green on all three legs, with the windows-latest leg
+passing 13962/13962 tests and a 0-error self-gate. The drain tickets
+T-4404..T-4462 (landed 2026-09-12/2026-09-13) cleared the remaining
+KeyboardInterrupt and path-shape buckets. See
+docs/design/windows-portability.md's "Closure (T-3512, 2026-09-13)"
+section for the full record. windows-latest is now a normal, blocking
+matrix leg.
