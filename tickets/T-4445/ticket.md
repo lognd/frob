@@ -21,6 +21,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse
+- tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity::test_backslash_and_drive_letter_case_do_not_break_identity
 designated_repro_test: null
 threat: null
 component: null
