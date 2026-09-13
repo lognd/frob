@@ -33,7 +33,6 @@ body_changes:
   old_length: 1240
   new_length: 2835
 evidence:
-- tests/unit/test_doctor.py::TestImportSourceStatus::test_matching_worktree_reports_clean
 - tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_env_output_names_worktree_src_on_pythonpath
 - tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_documented_entry_point_makes_worktree_code_importable
 - tests/test_worktree_pythonpath.py::TestImportSourceStatus::test_matching_worktree_reports_clean
@@ -48,6 +47,11 @@ evidence_changes:
   actor: logan
   at: '2026-09-13'
 - old_node: tests/unit/test_doctor.py::TestImportSourceStatus::test_mismatched_worktree_reports_loudly
+  new_node: ''
+  reason: stale, file outside T-4459 declared scope; superseded by tests/test_worktree_pythonpath.py::TestImportSourceStatus
+  actor: logan
+  at: '2026-09-13'
+- old_node: tests/unit/test_doctor.py::TestImportSourceStatus::test_matching_worktree_reports_clean
   new_node: ''
   reason: stale, file outside T-4459 declared scope; superseded by tests/test_worktree_pythonpath.py::TestImportSourceStatus
   actor: logan
