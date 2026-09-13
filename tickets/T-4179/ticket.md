@@ -14,10 +14,52 @@ runs_last: false
 milestone: 0.532.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/tickets/_land.py
+- src/frob/gates/_fix_engine_text.py
+- tests/test_ticket_land_dry_run*.py
+- tests/unit/test_land_dry_run*.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'coordinator: the three defects live in the land dry-run path (_land_cmd.py/_land.py)
+    and the Tier-A directive re-wrapper (_fix_engine_text.py); the ticket was filed
+    with an empty scope'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'coordinator: the three defects live in the land dry-run path (_land_cmd.py/_land.py)
+    and the Tier-A directive re-wrapper (_fix_engine_text.py); the ticket was filed
+    with an empty scope'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: src/frob/gates/_fix_engine_text.py
+  reason: 'coordinator: the three defects live in the land dry-run path (_land_cmd.py/_land.py)
+    and the Tier-A directive re-wrapper (_fix_engine_text.py); the ticket was filed
+    with an empty scope'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/test_ticket_land_dry_run*.py
+  reason: 'coordinator: the three defects live in the land dry-run path (_land_cmd.py/_land.py)
+    and the Tier-A directive re-wrapper (_fix_engine_text.py); the ticket was filed
+    with an empty scope'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/unit/test_land_dry_run*.py
+  reason: 'coordinator: the three defects live in the land dry-run path (_land_cmd.py/_land.py)
+    and the Tier-A directive re-wrapper (_fix_engine_text.py); the ticket was filed
+    with an empty scope'
+  actor: logan
+  at: '2026-09-13'
 designated_repro_test: null
 acceptance:
 - text: given a directive comment whose value would exceed the wrap width, when the
