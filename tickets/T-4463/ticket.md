@@ -2,7 +2,7 @@
 id: T-4463
 title: 'REL001 ignores v-prefixed milestones: 13 open v0.531.0 tickets invisible to
   the release gate'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
