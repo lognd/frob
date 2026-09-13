@@ -30,6 +30,7 @@ inherent to the sweep's own correctness contract, not a leftover coupling.
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -46,6 +47,7 @@ from frob.tickets._leases import (
     read_all_leases,
     scan_for_live_worktree_process,
 )
+from frob.tickets._unlanded import _TERMINAL_STATES, _all_ticket_states_on_main
 
 _log = get_logger(__name__)
 
@@ -368,6 +370,139 @@ def _kept_live_verdict_if_process_present(candidate: Path) -> "_WorktreeVerdict 
     )
 
 
+# frob:ticket T-4448
+def _branch_ahead_of_main_count(root: Path, branch: str) -> int | None:
+    """Count of commits `branch` carries that are not reachable from
+    `main` (`git rev-list --count main..<branch>`), or `None` if
+    unresolvable (branch missing on `root`, or a `git` failure) -- a
+    caller MUST treat `None` the same as "commits are present" (fail
+    closed), the same posture every other gate in this module already
+    takes for its own unresolvable case (`_worktree_is_clean`,
+    `_worktree_head_age_seconds`)."""
+    spawned = gitio.run_argv(
+        ("git", "-C", str(root), "rev-list", "--count", f"main..{branch}")
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    try:
+        return int(spawned.danger_ok.stdout.strip())
+    except (TypeError, ValueError):
+        return None
+
+
+# frob:ticket T-4448
+_TICKET_DIR_RE = re.compile(r"^tickets/(?:archive/)?(T-[0-9A-Za-z][0-9A-Za-z-]*)/")
+
+
+# frob:ticket T-4448
+def _branch_touched_ticket_ids(root: Path, branch: str) -> frozenset[str]:
+    """Every ticket id under `tickets/T-####/` (or `tickets/archive/
+    T-####/`) that `branch`'s OWN commits touched (any file, not only
+    `ticket.md`/`done-report.md` -- T-4448's broadening over T-1934's
+    `_finished_signals_on_branch`, whose narrower done-report/state:done/
+    directive-anchored signal matching is one more place a real signal
+    can silently fail to match). Reuses `_branch_own_changed_files`'s
+    three-dot `main...branch` diff (T-1955's own already-fixed two-dot/
+    three-dot lesson), so a path `main` itself touched independently of
+    `branch` never counts. Returns an empty set (never raises) if the
+    diff itself is unresolvable -- callers already fail closed on an
+    empty result via `_branch_ahead_of_main_count`, this function's own
+    sibling gate below."""
+    from frob.tickets._unlanded import _branch_own_changed_files
+
+    ids: set[str] = set()
+    for path in _branch_own_changed_files(root, branch):
+        match = _TICKET_DIR_RE.match(path)
+        if match is not None:
+            ids.add(match.group(1))
+    return frozenset(ids)
+
+
+# frob:ticket T-4448
+def _kept_ahead_of_main_verdict_if_present(
+    root: Path, candidate: Path
+) -> "_WorktreeVerdict | None":
+    """T-4448's direct fix for the MEASURED shape where T-1934's finished-
+    signal detector (`_kept_unlanded_verdict_if_present`, below) missed
+    real unlanded work: `.frob/rapid-sweep/T-4430-899a8b12b8e0.log`
+    recorded t-4442 and t-4446 -- clean, committed, 3-commits-ahead-of-
+    main worktrees carrying a `done-report.md` -- both `-> removed`,
+    while t-4404 and t-4412 in the SAME sweep pass correctly read
+    `kept:unlanded`. T-1934's gate depends on `_finished_signals_on_
+    branch` correctly recognizing a narrow set of "looks finished"
+    shapes (a `done-report.md` path, or `ticket.md`'s own `state:` line)
+    before it ever consults a ticket's state on `main` -- a miss in that
+    narrower signal match makes the whole gate silently skip a branch
+    that plainly touched `tickets/T-####/` and was never landed.
+
+    This gate drops the "looks finished" requirement: ANY ticket id
+    `branch`'s own commits touched under `tickets/` (`_branch_touched_
+    ticket_ids`, above) whose state on `main` is not yet terminal (`done`/
+    `dropped`, INCLUDING an id `main` has no record of at all -- never
+    started there, or unresolvable, both reported rather than assumed
+    safe) means real, unlanded ticket work sits on this branch, so the
+    worktree is kept. This is why the gate is keyed on `main`'s own
+    per-ticket STATE rather than a raw `git rev-list --count main..
+    <branch>` -- this repo's own `frob ticket land` SQUASHES a ticket's
+    branch commits into one new commit on `main` (see `~/.claude/refs/
+    frob.md`'s land contract) rather than merging or fast-forwarding, so
+    a landed branch's own commits stay permanently unreachable from
+    `main` and a raw ahead-count would never fall back to 0 -- keying on
+    that alone would leak every worktree forever (T-4437's OPPOSITE
+    failure), not fix this ticket's data-loss one. The ahead-of-main
+    COUNT (`_branch_ahead_of_main_count`) is still resolved and logged in
+    the verdict `detail` for every id this gate keeps for, per this
+    ticket's own acceptance criterion that a kept/removed verdict's
+    reason names the ahead-count and the ticket's state.
+
+    Runs BEFORE the dirty gate, same as T-1934's own gate, and is
+    likewise NOT overridden by `force` -- losing committed-but-unlanded
+    work is a data-loss failure mode `force` (T-1739's live-process
+    override) was never meant to reach. `candidate`'s current branch is
+    resolved via `gitio.current_branch`; an unresolvable branch fails
+    closed to `kept:unlanded` rather than falling through, the same
+    posture this module's other gates take on their own unresolvable
+    case."""
+    branch_result = gitio.current_branch(candidate)
+    if branch_result.is_err:
+        _log.warning(
+            "tickets: worktree sweep: kept %s -- current branch unresolvable, "
+            "failing closed on the T-4448 ahead-of-main gate",
+            candidate,
+        )
+        return _WorktreeVerdict(
+            path=str(candidate), verdict="kept:unlanded", detail="branch unresolvable"
+        )
+    branch = branch_result.danger_ok
+    touched_ids = _branch_touched_ticket_ids(root, branch)
+    if not touched_ids:
+        return None
+    main_states = _all_ticket_states_on_main(root)
+    unlanded_ids = sorted(
+        tid for tid in touched_ids if main_states.get(tid) not in _TERMINAL_STATES
+    )
+    if not unlanded_ids:
+        return None
+    ahead = _branch_ahead_of_main_count(root, branch)
+    ahead_str = str(ahead) if ahead is not None else "unknown"
+    states = ",".join(
+        f"{tid}={main_states.get(tid, 'not-on-main')}" for tid in unlanded_ids
+    )
+    _log.warning(
+        "tickets: worktree sweep: kept %s -- branch %s touched ticket(s) %s "
+        "not terminal on main (%d commit(s) ahead of main)",
+        candidate,
+        branch,
+        states,
+        ahead if ahead is not None else -1,
+    )
+    return _WorktreeVerdict(
+        path=str(candidate),
+        verdict="kept:unlanded",
+        detail=f"branch {branch}: {states} ({ahead_str} ahead of main)",
+    )
+
+
 # frob:ticket T-1934
 def _kept_unlanded_verdict_if_present(
     root: Path, candidate: Path, leases: tuple["_LeaseRecord", ...]
@@ -439,6 +574,26 @@ def _kept_lease_or_age_verdict(
     return None
 
 
+# frob:ticket T-4448
+# frob:ticket T-1934
+def _kept_unlanded_or_ahead_verdict_if_present(
+    root: Path, candidate: Path, leases: tuple["_LeaseRecord", ...]
+) -> "_WorktreeVerdict | None":
+    """`_sweep_verdict_for_worktree`'s combined unlanded-work gate, split
+    out to stay under ARCH001's per-function line budget: runs the T-4448
+    ticket-touched/ahead-of-main check (`_kept_ahead_of_main_verdict_if_
+    present`) FIRST, then T-1934's narrower done-report/state:done/
+    directive-anchored signal check (`_kept_unlanded_verdict_if_present`)
+    as a second, independent pass -- either firing keeps the worktree.
+    Both run BEFORE the dirty gate, unconditionally (not gated by
+    `force`: `force` overrides only the T-1739 live-process gate, never
+    either of these data-loss guards)."""
+    ahead = _kept_ahead_of_main_verdict_if_present(root, candidate)
+    if ahead is not None:
+        return ahead
+    return _kept_unlanded_verdict_if_present(root, candidate, leases)
+
+
 # frob:ticket T-1739
 def _sweep_verdict_for_worktree(
     root: Path,
@@ -472,11 +627,7 @@ def _sweep_verdict_for_worktree(
         if live is not None:
             return live
 
-    # frob:ticket T-1934
-    # Unlanded work outranks cleanliness -- checked BEFORE the dirty gate,
-    # unconditionally (not gated by `force`: `force` overrides only the
-    # T-1739 live-process gate, never this data-loss guard).
-    unlanded = _kept_unlanded_verdict_if_present(root, candidate, leases)
+    unlanded = _kept_unlanded_or_ahead_verdict_if_present(root, candidate, leases)
     if unlanded is not None:
         return unlanded
 

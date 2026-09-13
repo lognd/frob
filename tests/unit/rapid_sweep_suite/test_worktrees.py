@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -12,9 +13,145 @@ from frob.app.ticket_runner._rapid_sweep import (
     spawn_deferred_post_land_sweep,
     sweep_stale_worktrees_after_land,
 )
+from frob.tickets._worktree_sweep import sweep_worktrees
 from tests.conftest import (
     _init_git_repo,
 )
+
+
+def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    """Small real-`git` helper for the T-4448 fixture repos below -- same
+    shape as `tests/test_ticket_leases.py`'s own `_run`, kept local since
+    that module is outside this ticket's declared scope."""
+    return subprocess.run(argv, cwd=cwd, capture_output=True, text=True, check=True)
+
+
+# frob:waive PERF012 reason="each call spawns against a DIFFERENT tmp_path repo per \
+# test -- the shared argv shape is real git plumbing (init/config), not a redundant \
+# re-run of the same computation"
+def _git_init(root: Path) -> None:
+    """A real `main`-branch repo with one commit, ready to host a
+    `.claude/worktrees/`-shaped linked worktree (T-4448's own real-repo
+    fixture, mirroring `tests/test_ticket_leases.py::sweep_repo`)."""
+    root.mkdir(parents=True, exist_ok=True)
+    _run(["git", "init", "-q", "-b", "main"], root)
+    _run(["git", "config", "user.email", "test@example.com"], root)
+    _run(["git", "config", "user.name", "Test"], root)
+    (root / "README.md").write_text("root\n")
+    _run(["git", "add", "."], root)
+    _run(["git", "commit", "-q", "-m", "init"], root)
+
+
+def _add_agent_worktree(repo: Path, name: str, branch: str) -> Path:
+    """Add a linked worktree under `repo`'s `.claude/worktrees/<name>`
+    dispatch convention, on a fresh `branch`."""
+    wt = repo / ".claude" / "worktrees" / name
+    wt.parent.mkdir(parents=True, exist_ok=True)
+    _run(["git", "worktree", "add", "-q", "-b", branch, str(wt), "main"], repo)
+    return wt
+
+
+# frob:waive PERF012 reason="each call commits a DIFFERENT file/message into a \
+# DIFFERENT tmp_path repo per test -- the shared argv shape is real git plumbing \
+# (add/commit), not a redundant re-run of the same computation"
+def _commit_file(repo: Path, rel: str, content: str, message: str) -> None:
+    """Write `content` to `rel` (parents created as needed) and commit it
+    in `repo`."""
+    path = repo / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    _run(["git", "add", rel], repo)
+    _run(["git", "commit", "-q", "-m", message], repo)
+
+
+class TestSweepWorktreesAheadOfMain:
+    """`_worktree_sweep._kept_ahead_of_main_verdict_if_present` (T-4448):
+    the sweep never removes a clean worktree whose branch carries commits
+    `main` does not, independent of whether T-1934's finished-signal
+    detector also fires -- the direct fix for the MEASURED false
+    `-> removed` on t-4442/t-4446 (`.frob/rapid-sweep/
+    T-4430-899a8b12b8e0.log`), two clean, 3-commits-ahead, done-report-
+    carrying worktrees the signal-based gate alone missed."""
+
+    def test_clean_worktree_one_commit_ahead_is_kept(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain\
+        # .test_clean_worktree_one_commit_ahead_is_kept
+        repo = tmp_path / "main"
+        _git_init(repo)
+        wt = _add_agent_worktree(repo, "t-9001", "t-9001")
+        _commit_file(
+            wt,
+            "tickets/T-9001/ticket.md",
+            "---\nid: T-9001\nstate: in-progress\n---\nbody\n",
+            "one commit ahead of main",
+        )
+
+        result = sweep_worktrees(repo, dry_run=True)
+
+        assert result.is_ok
+        (verdict,) = result.danger_ok
+        assert verdict.path == str(wt.resolve())
+        assert verdict.verdict == "kept:unlanded"
+        assert "1 ahead of main" in verdict.detail
+        assert "T-9001" in verdict.detail
+        assert wt.exists()
+
+    def test_clean_worktree_zero_ahead_ticket_done_is_removed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain\
+        # .test_clean_worktree_zero_ahead_ticket_done_is_removed
+        repo = tmp_path / "main"
+        _git_init(repo)
+        _commit_file(
+            repo,
+            "tickets/T-9002/ticket.md",
+            "---\nid: T-9002\nstate: done\n---\nbody\n",
+            "T-9002 done on main",
+        )
+        wt = _add_agent_worktree(repo, "t-9002", "t-9002")
+        # `t-9002`'s branch tip is now identical to `main` (0 ahead): no
+        # commit this branch made itself is missing from `main`, so
+        # neither the T-4448 ahead-of-main gate nor T-1934's signal gate
+        # has anything to keep it for.
+        _run(["git", "-C", str(wt), "merge", "-q", "--ff-only", "main"], repo)
+
+        result = sweep_worktrees(repo, dry_run=False)
+
+        assert result.is_ok
+        (verdict,) = result.danger_ok
+        assert verdict.verdict == "removed"
+        assert not wt.exists()
+
+    def test_clean_worktree_ahead_survives_even_with_done_report(
+        self, tmp_path: Path
+    ) -> None:
+        """The exact measured shape: a clean, committed worktree carrying
+        a `done-report.md` (T-1934's own signal) is ALSO kept by the new,
+        independent ahead-of-main gate -- proving the fix does not rely
+        on the signal detector at all."""
+        # frob:tests \
+        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain\
+        # .test_clean_worktree_ahead_survives_even_with_done_report
+        repo = tmp_path / "main"
+        _git_init(repo)
+        wt = _add_agent_worktree(repo, "t-9003", "t-9003")
+        _commit_file(wt, "code.py", "x = 1\n", "fix")
+        _commit_file(
+            wt,
+            "tickets/T-9003/done-report.md",
+            "## Done report\nstuff\n",
+            "done report",
+        )
+
+        result = sweep_worktrees(repo, dry_run=False)
+
+        assert result.is_ok
+        (verdict,) = result.danger_ok
+        assert verdict.verdict == "kept:unlanded"
+        assert wt.exists()
 
 
 class TestSweepStaleWorktreesAfterLand:

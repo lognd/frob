@@ -2,7 +2,7 @@
 id: T-4448
 title: Post-land rapid sweep removes clean UNLANDED agent worktrees (t-4442, t-4446
   deleted while READY)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-12'
@@ -48,6 +48,10 @@ scope_changes:
     the declared globs matched no files
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain::test_clean_worktree_one_commit_ahead_is_kept
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain::test_clean_worktree_zero_ahead_ticket_done_is_removed
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain::test_clean_worktree_ahead_survives_even_with_done_report
 designated_repro_test: null
 threat: null
 component: null
