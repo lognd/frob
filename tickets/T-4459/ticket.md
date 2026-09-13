@@ -53,7 +53,8 @@ evidence_changes:
   at: '2026-09-13'
 - old_node: tests/unit/test_doctor.py::TestImportSourceStatus::test_matching_worktree_reports_clean
   new_node: ''
-  reason: stale, file outside T-4459 declared scope; superseded by tests/test_worktree_pythonpath.py::TestImportSourceStatus
+  reason: 'stale id: the test lives in tests/test_worktree_pythonpath.py (already
+    bound); the land refused because this id does not resolve post-merge'
   actor: logan
   at: '2026-09-13'
 threat: null
