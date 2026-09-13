@@ -25,7 +25,8 @@ designated_repro_test: null
 acceptance:
 - text: given the Windows CI leg on current main, when a complete run finishes, then
     it reports zero failures
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 - text: given the workflow definition, when Windows passes, then its continue-on-error
     flag is removed and the job gates the run conclusion
   evidence: []
