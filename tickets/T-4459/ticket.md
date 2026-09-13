@@ -24,6 +24,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_doctor.py::TestImportSourceStatus::test_matching_worktree_reports_clean
+- tests/unit/test_doctor.py::TestImportSourceStatus::test_mismatched_worktree_reports_loudly
+- tests/unit/test_doctor.py::TestImportSourceStatus::test_no_worktree_src_never_mismatches
+- tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_env_output_names_worktree_src_on_pythonpath
+- tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_documented_entry_point_makes_worktree_code_importable
 designated_repro_test: null
 threat: null
 component: null
