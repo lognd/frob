@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import logging
+import os
 import shlex
 import sys
 from collections.abc import Iterator
@@ -25,7 +26,7 @@ from pathlib import Path
 from frob.logging import get_logger
 from frob.logging.handler import _LazyStderrHandler, _LazyStdoutHandler
 from frob.render import Renderer
-from frob.tickets._worktree_guard import agent_env_exports
+from frob.tickets._worktree_guard import FROB_WORKTREE_ENV, agent_env_exports
 
 _log = get_logger(__name__)
 
@@ -115,6 +116,11 @@ def _force_utf8_stdout() -> None:
         reconfigure(encoding="utf-8", errors="strict", newline="\n")
 
 
+# frob:waive ARCH103 reason="report-and-exit CLI helper (frob agent env's one \
+# subcommand body): resolve exports, add the T-4459 PYTHONPATH line, print -- \
+# splitting the print loop from the export-building it prints would separate an \
+# operation from the one caller that uses it, not reduce real complexity, matching \
+# bind_runner.py's identical posture"
 def _run_env(path: str) -> None:
     """`frob agent env [path]`: resolve `path`'s (default cwd) worktree
     root and print `export FROB_WORKTREE=...` / `export FROB_AGENT=1`
@@ -128,7 +134,21 @@ def _run_env(path: str) -> None:
     resolve to a git worktree at all. T-4446: forces `sys.stdout` to
     UTF-8 first (`_force_utf8_stdout`) so the exported bytes are always
     plain ASCII/UTF-8 shell, never UTF-16, regardless of the runner's
-    console code page."""
+    console code page.
+
+    T-4459: also exports `PYTHONPATH=<resolved worktree>/src` whenever
+    that directory exists, AHEAD of anything else the caller's shell
+    already carries (`shlex.quote`d, `:`-joined with any inherited
+    `PYTHONPATH` so an existing value is extended, not clobbered) -- a
+    worktree test run through the root checkout's own interpreter
+    otherwise silently imports `frob` from the ROOT src/ (its editable
+    install's `.pth` wins over an unset `PYTHONPATH`), measuring main's
+    code instead of the branch under test. This is deliberately NOT part
+    of `agent_env_exports` itself (that function's contract is
+    `FROB_WORKTREE`/`FROB_AGENT`/xdist-worker env, and its own tests
+    assert an exact export-key set); the PYTHONPATH line is `frob agent
+    env`'s own CLI-level addition, same as this function already owns
+    `_force_utf8_stdout`."""
     _force_utf8_stdout()
     with _all_logs_to_stderr():
         result = agent_env_exports(Path(path))
@@ -139,7 +159,25 @@ def _run_env(path: str) -> None:
                 result.danger_err.value,
             )
             sys.exit(1)
-        exports = result.danger_ok
+        exports = dict(result.danger_ok)
+        worktree_root = Path(exports[FROB_WORKTREE_ENV])
+        worktree_src = worktree_root / "src"
+        if worktree_src.is_dir():
+            # frob:waive SEC110 reason="PYTHONPATH is a path-list env var, never a \
+            # secret -- same posture as _worktree_guard.py's own FROB_WORKTREE_ENV \
+            # reads"
+            # frob:waive SELFAUDIT001 reason="same PYTHONPATH env.read the SEC110 \
+            # waiver above already covers -- a path-list env var, not a capability \
+            # requiring SYS100 design-graph declaration"
+            inherited = os.environ.get("PYTHONPATH", "")
+            pythonpath = (
+                f"{worktree_src}:{inherited}" if inherited else str(worktree_src)
+            )
+            exports["PYTHONPATH"] = pythonpath
+            _log.info(
+                "agent env: exporting PYTHONPATH=%s (worktree src/, T-4459)",
+                pythonpath,
+            )
         renderer = Renderer.for_stream(sys.stdout)
         for key, value in exports.items():
             renderer.line(f"export {key}={shlex.quote(value)}")

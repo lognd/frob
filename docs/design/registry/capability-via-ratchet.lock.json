@@ -11,9 +11,9 @@
       "ticket": "T-1628"
     },
     "cli::env.read": {
-      "accepted_count": 13,
-      "reason": "T-3411: leaf-module extraction (CYCLE001 fix) moved is_disabled's os.environ.get(FROB_NO_TELEMETRY) read from frob.app.telemetry.__init__ into the new frob.app.telemetry._state leaf module, adding that file to design/frob.strata's env.read via-list -- the via-list ratchet counts SITES, not files, and this checkout's own declared via-list grew by 1 (12 -> 13) as a direct result; not a fresh grant of new capability, the read itself pre-dates this ticket.",
-      "ticket": "T-3411"
+      "accepted_count": 14,
+      "reason": "T-4459: adds src/frob/app/agent_runner.py to the env.read via-list -- _run_env reads os.environ.get(PYTHONPATH) to extend (not clobber) the exported PYTHONPATH the T-4459 worktree-import-source fix adds, same posture as this node's other FROB_WORKTREE_ENV-style path-list env reads. Bumping the ceiling 13 -> 14, one new site.",
+      "ticket": "T-4459"
     },
     "cli::env.write": {
       "accepted_count": 1,
@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 303,
-      "reason": "T-4427: adds tests/test_tickets_triage_dates.py to the exec via-list -- a real git-fixture subprocess spawn (git init/checkout -b main) initializing a throwaway repo for set_sprint/set_milestone TriageChangeEntry round-trip tests, same shape tests/test_tickets_priority.py's own entry already carries. Bumping the ceiling 302 -> 303, one new site.",
-      "ticket": "T-4427"
+      "accepted_count": 304,
+      "reason": "T-4459: adds tests/test_worktree_pythonpath.py to the exec via-list -- a real git-fixture subprocess spawn (git worktree add) plus a fresh python3 -c \"import frob\" subprocess spawned under the exported PYTHONPATH, the exact T-4459 acceptance measurement. One file, two call sites (git init/worktree-add helper and the spawned interpreter), same via-list-is-per-file shape every other entry here already carries. Bumping the ceiling 303 -> 304, one new site.",
+      "ticket": "T-4459"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-4338"
     },
     "testsuite::fs.write": {
-      "accepted_count": 518,
-      "reason": "T-4455: adds tests/unit/test_helpers_bash.py to the fs.write via-list -- write_text creates fake bash.exe fixture files under tmp_path so resolve_bash()'s Git-vs-WSL-stub preference can be exercised without a real Windows filesystem. Bumping the ceiling 517 -> 518, one new site.",
-      "ticket": "T-4455"
+      "accepted_count": 519,
+      "reason": "T-4459: adds tests/test_worktree_pythonpath.py to the fs.write via-list -- write_text creates a fake worktree's src/frob/__init__.py fixture (both the matching and mismatched ImportSourceStatus cases) plus tickets.md under pytest's own tmp_path, never a real repo path. Bumping the ceiling 518 -> 519, one new site.",
+      "ticket": "T-4459"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

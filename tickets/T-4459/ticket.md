@@ -2,7 +2,7 @@
 id: T-4459
 title: Worktree test runs import frob from the ROOT src (editable .pth), measuring
   main instead of the branch
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'

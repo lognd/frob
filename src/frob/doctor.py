@@ -85,6 +85,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+import frob as _frob_pkg
 from frob.derived_state import DerivedArtifactStatus, verify_derived_state
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
@@ -935,6 +936,71 @@ def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | Non
     return "required tool(s) missing: " + "; ".join(lines)
 
 
+# frob:ticket T-4459
+# frob:doc docs/modules/agent-worktree.md#pythonpath-import-source-t-4459
+# frob:tests \
+# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_matching_worktree_repo\
+# rts_clean
+# frob:tests \
+# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_mismatched_worktree_re\
+# ports_loudly
+# frob:tests \
+# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_no_worktree_src_never_\
+# mismatches
+class ImportSourceStatus(BaseModel):
+    """Where `import frob` actually resolved from vs. where `resolved_root`'s
+    own checkout would put it (T-4459). A worktree test run using the
+    root checkout's editable-install `.pth` (rather than a PYTHONPATH
+    pointed at the worktree's own `src/`) silently imports and measures
+    ANOTHER checkout's code, not the branch checked out at `resolved_root`
+    -- this is the diagnostic surface for that, distinct from every other
+    `DoctorReport` field in that it reports on `frob`'s OWN identity, not
+    a scan of repo state. `worktree_src` is `None` when `resolved_root`
+    has no `src/frob/__init__.py` of its own (a non-source checkout, e.g.
+    an installed tool with no worktree layout) -- there is nothing to
+    mismatch against, so `mismatched` is always `False` in that case."""
+
+    model_config = {}
+
+    resolved_module_path: str
+    worktree_src: str | None
+    mismatched: bool
+
+
+def _import_source_status(resolved_root: Path) -> ImportSourceStatus:
+    """Compare the currently-imported `frob` package's file location
+    against `resolved_root`'s own `src/frob/__init__.py` (T-4459): a
+    worktree whose own `src/` exists but whose imported `frob.__file__`
+    resolves elsewhere means THIS process is silently measuring another
+    checkout (typically the root checkout's editable-install `.pth`
+    winning over an unset `PYTHONPATH`), not the branch checked out at
+    `resolved_root`. Logs a WARNING (loud, not silent) the moment a
+    mismatch is detected, since this is exactly the class of bug that
+    otherwise produces a passing-but-meaningless test run."""
+    resolved_module = Path(_frob_pkg.__file__).resolve()
+    candidate_src = (resolved_root / "src" / "frob" / "__init__.py").resolve()
+    worktree_src = str(candidate_src) if candidate_src.is_file() else None
+    mismatched = worktree_src is not None and resolved_module != candidate_src
+    if mismatched:
+        _log.warning(
+            "doctor: import frob resolves to %s, not this checkout's own %s "
+            "-- PYTHONPATH is not pointed at this worktree's src/",
+            resolved_module,
+            candidate_src,
+        )
+    else:
+        _log.debug(
+            "doctor: import frob resolves to %s (worktree_src=%s)",
+            resolved_module,
+            worktree_src,
+        )
+    return ImportSourceStatus(
+        resolved_module_path=str(resolved_module),
+        worktree_src=worktree_src,
+        mismatched=mismatched,
+    )
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:ticket T-1501
 # frob:ticket T-1515
@@ -1001,6 +1067,7 @@ class DoctorReport(BaseModel):
     stale_binary: str | None = None
     global_binary: GlobalBinarySkew | None = None
     live_land_process: LiveLandProcess | None = None
+    import_source: ImportSourceStatus | None = None
     healthy: bool
     remediation: str | None = None
 
@@ -1090,6 +1157,7 @@ def _combined_remediation(
     global_binary: GlobalBinarySkew | None = None,
     live_land_process: LiveLandProcess | None = None,
     external_tools: tuple[ExternalToolStatus, ...] = (),
+    import_source: ImportSourceStatus | None = None,
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
@@ -1133,6 +1201,12 @@ def _combined_remediation(
     external_tools_hint = _external_tools_remediation(list(external_tools))
     if external_tools_hint is not None:
         parts.append(external_tools_hint)
+    if import_source is not None and import_source.mismatched:
+        parts.append(
+            f"import frob resolves to {import_source.resolved_module_path}, "
+            f"not this checkout's own {import_source.worktree_src} -- set "
+            "PYTHONPATH=<worktree>/src (T-4459)"
+        )
     return " | ".join(parts) if parts else None
 
 
@@ -1254,6 +1328,7 @@ def _doctor_healthy(
     global_binary,
     live_land_process,
     missing_required_tools: list[ExternalToolStatus],
+    import_source: ImportSourceStatus | None = None,
 ) -> bool:
     """`_assemble_doctor_report`'s own `healthy` boolean, split out
     (T-3276) to keep that function under the ARCH001 threshold -- pure
@@ -1282,6 +1357,7 @@ def _doctor_healthy(
         and not (global_binary is not None and global_binary.skewed)
         and not (live_land_process is not None and live_land_process.alive is None)
         and not missing_required_tools
+        and not (import_source is not None and import_source.mismatched)
     )
 
 
@@ -1302,6 +1378,7 @@ def _assemble_doctor_report(
     live_land_process=None,
     global_binary=None,
     external_tools: list[ExternalToolStatus] | None = None,
+    import_source: ImportSourceStatus | None = None,
 ) -> DoctorReport:
     """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
@@ -1343,6 +1420,7 @@ def _assemble_doctor_report(
         global_binary,
         live_land_process,
         missing_required_tools,
+        import_source,
     )
     return DoctorReport(
         frob_version=_frob_version(),
@@ -1358,6 +1436,7 @@ def _assemble_doctor_report(
         stale_binary=stale_binary,
         global_binary=global_binary,
         live_land_process=live_land_process,
+        import_source=import_source,
         healthy=healthy,
         remediation=_combined_remediation(
             natives_healthy,
@@ -1436,6 +1515,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     stale_binary = stale_binary_warning(resolved_root)
     global_binary = global_binary_skew(f"frob {_frob_version()}")
     external_tools = scan_external_tools()
+    import_source = _import_source_status(resolved_root)
 
     report = _assemble_doctor_report(
         resolved_root,
@@ -1454,6 +1534,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         live_land_process,
         global_binary,
         external_tools,
+        import_source,
     )
     _log_doctor_diagnosis(
         report.healthy,
