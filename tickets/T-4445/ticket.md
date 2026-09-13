@@ -2,7 +2,7 @@
 id: T-4445
 title: 'Windows CI: pre-land lint-diff attribution refuses on a shift-only violation
   (successor to T-4403)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
