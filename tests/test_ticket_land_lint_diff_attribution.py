@@ -382,3 +382,100 @@ class TestRelativizeDiagPath:
             path_mod=ntpath,
         )
         assert live_identity == baseline_identity == "src\\bad_lint.py"
+
+    # frob:ticket T-4461
+    def test_ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity(
+        self,
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
+        # ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity
+        # T-4461's own acceptance shape, ported from T-4457's sibling test
+        # above: a baseline pass's `diag.file` reported as an ABSOLUTE
+        # path under the snapshot root, relativized against that SAME
+        # snapshot root as `base` -- exactly `_ruff_baseline_diagnostic_
+        # identities`' own call shape (`_ruff_diagnostic_identity(
+        # snapshot, d)`) -- must land on the identical identity a live
+        # pass produces for the same relative file under a DIFFERENT
+        # root.
+        import ntpath
+
+        from frob.app.ticket_runner._land_cmd import _relativize_diag_path
+
+        live_identity = _relativize_diag_path(
+            "D:\\a\\frob\\frob\\src\\bad_lint.py",
+            "D:\\a\\frob\\frob",
+            path_mod=ntpath,
+        )
+        baseline_identity = _relativize_diag_path(
+            "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\frob-land-baseline-5d1uymtm"
+            "\\src\\bad_lint.py",
+            "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\frob-land-baseline-5d1uymtm",
+            path_mod=ntpath,
+        )
+        assert live_identity == baseline_identity == "src\\bad_lint.py"
+
+    # frob:ticket T-4461
+    def test_posix_absolute_tmp_snapshot_path_matches_live_identity(self) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
+        # posix_absolute_tmp_snapshot_path_matches_live_identity
+        # The POSIX-side analogue of the ntpath test above: an absolute
+        # `/tmp`-rooted snapshot path relativized against that same
+        # snapshot root must agree with a live pass's identity for the
+        # same relative file under a different root.
+        import posixpath
+
+        from frob.app.ticket_runner._land_cmd import _relativize_diag_path
+
+        live_identity = _relativize_diag_path(
+            "/home/runner/work/frob/frob/src/bad_lint.py",
+            "/home/runner/work/frob/frob",
+            path_mod=posixpath,
+        )
+        baseline_identity = _relativize_diag_path(
+            "/tmp/frob-land-baseline-5d1uymtm/src/bad_lint.py",
+            "/tmp/frob-land-baseline-5d1uymtm",
+            path_mod=posixpath,
+        )
+        assert live_identity == baseline_identity == "src/bad_lint.py"
+
+    # frob:ticket T-4461
+    def test_symlinked_snapshot_diag_file_unresolved_matches_realpath_base(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
+        # symlinked_snapshot_diag_file_unresolved_matches_realpath_base
+        # The genuine, filesystem-level REPRO of T-4461's bug class on
+        # POSIX (no 8.3 short names exist here, but the same shape --
+        # `diag_file` and `base` naming the identical file through two
+        # DIFFERENT-depth resolutions -- reproduces via a real symlink,
+        # matching T-3497's own macOS /tmp -> /private/tmp precedent).
+        # `diag_file` is given UNRESOLVED, through the symlink; `base` is
+        # given already fully resolved. Before T-4461's fix (only `base`
+        # went through any realpath-equivalent step, never `diag_file`),
+        # `os.path.relpath` would compute a WRONG, climbing-out relative
+        # path here because the two strings do not share a lexical
+        # prefix even though they name the same file -- run this test
+        # against the pre-fix code (single-sided `base.resolve()`, raw
+        # `diag_file`) and it fails, which is exactly the check-repro
+        # evidence this ticket requires.
+        import os
+
+        from frob.app.ticket_runner._land_cmd import _relativize_diag_path
+
+        real_dir = tmp_path / "real-target"
+        (real_dir / "src").mkdir(parents=True)
+        (real_dir / "src" / "bad_lint.py").write_text("import os\n")
+        link_dir = tmp_path / "symlinked-snapshot"
+        link_dir.symlink_to(real_dir)
+
+        diag_file = str(link_dir / "src" / "bad_lint.py")
+        base = str(real_dir)
+
+        identity = _relativize_diag_path(diag_file, base)
+
+        expected = os.path.normcase(os.path.join("src", "bad_lint.py"))
+        assert identity == expected
+        assert not identity.startswith("..")

@@ -4781,6 +4781,7 @@ def _ruff_check_files(  # noqa: ANN201
 
 
 # frob:ticket T-3132
+# frob:ticket T-4461
 def _ruff_diagnostic_identity(  # noqa: ANN001
     base: Path, diag
 ) -> tuple[str | None, str | None, str]:
@@ -4843,17 +4844,33 @@ def _ruff_diagnostic_identity(  # noqa: ANN001
     and, on a genuine drive mismatch, both sides fall back to
     `normcase(abspath)` identically -- still not relativized (nothing
     CAN relativize across drives), but at least shaped the same way on
-    both passes so a byte-identical file still compares equal."""
+    both passes so a byte-identical file still compares equal.
+
+    T-4461: `base.resolve()` here used to be the ONLY realpath-style
+    resolution on either side -- `diag.file` itself was passed to
+    `_relativize_diag_path` raw. A GitHub-hosted Windows runner's %TEMP%
+    is expressed via an 8.3 short name (`RUNNER~1`), so `ruff`'s baseline
+    pass (spawned inside the snapshot) reports `diag.file` in short-name
+    form while `base` (built from the same snapshot `Path`) resolved to
+    its long-name equivalent -- two strings naming the identical file
+    that no longer share a common prefix, so `os.path.relpath` climbs
+    all the way out (`..\\..\\..\\..\\..\\runner~1\\...`) instead of landing
+    on the relative path. `_relativize_diag_path` now resolves BOTH sides
+    through its own `path_mod.realpath` before relativizing, so this
+    function only has to pass `base` through unresolved (as a plain
+    string) -- the realpath step happens once, symmetrically, in the one
+    place both `diag_file` and `base` are available together."""
     if diag.file is None:
         return (None, diag.code, diag.message)
     return (
-        _relativize_diag_path(diag.file, str(base.resolve())),
+        _relativize_diag_path(diag.file, str(base)),
         diag.code,
         diag.message,
     )
 
 
 # frob:ticket T-4457
+# frob:ticket T-4461
 # frob:tests \
 # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_same_dri\
 # ve_relativizes_normally
@@ -4863,6 +4880,15 @@ def _ruff_diagnostic_identity(  # noqa: ANN001
 # frob:tests \
 # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_live_and\
 # _baseline_pass_agree_across_differently_drived_trees
+# frob:tests \
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_ntpath_a\
+# bsolute_snapshot_rooted_diag_file_matches_live_identity
+# frob:tests \
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_posix_ab\
+# solute_tmp_snapshot_path_matches_live_identity
+# frob:tests \
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_symlinke\
+# d_snapshot_diag_file_unresolved_matches_realpath_base
 def _relativize_diag_path(diag_file: str, base: str, *, path_mod=None) -> str:  # noqa: ANN001
     """The pure, mock-free path-shaping half of `_ruff_diagnostic_identity`
     (T-4457): relativizes `diag_file` against `base` when both name the
@@ -4888,10 +4914,37 @@ def _relativize_diag_path(diag_file: str, base: str, *, path_mod=None) -> str:  
     pass identity fall back to the exact same shape --
     `normcase(abspath(diag_file))` -- so a byte-identical file still
     compares equal across the two passes even though neither value is
-    actually a relative path."""
+    actually a relative path.
+
+    T-4461: BOTH `diag_file` and `base` are run through `path_mod.
+    realpath` before relativizing. A GitHub-hosted Windows runner's
+    %TEMP% is expressed via an 8.3 short name (`RUNNER~1`); `ruff`'s
+    baseline pass (spawned with the snapshot directory as its cwd)
+    reports `diag.file` in that short-name form, while a caller building
+    `base` from the same snapshot directory via `pathlib.Path.resolve()`
+    (or any other realpath-equivalent step) lands on the long-name
+    spelling -- two strings naming the identical file with no common
+    prefix, so a plain `relpath` climbs all the way out
+    (`..\\..\\..\\..\\..\\runner~1\\...`) instead of landing on the
+    relative path, and the pre-existing violation it names gets
+    misattributed as new. `realpath` (not `abspath` -- `abspath` is
+    purely lexical and
+    does not expand short names) expands 8.3 short names to long form on
+    win32 and resolves macOS's `/tmp` -> `/private/tmp` symlink chain
+    (T-3497) elsewhere, so both sides land on the SAME spelling for the
+    same file regardless of which form either pass's raw path string
+    happened to use. `path_mod.realpath` (not the real `os.path.
+    realpath` unconditionally) so the injectable `ntpath`/`posixpath`
+    test double still drives this deterministically: neither module's
+    `realpath` touches the filesystem for a path that does not exist on
+    the host actually running the test, so it degrades to lexical
+    normalization there and only performs real short-name/symlink
+    resolution when `path_mod` is the live `os.path` on a real run."""
     import os as _os
 
     pm = path_mod if path_mod is not None else _os.path
+    diag_file = pm.realpath(diag_file)
+    base = pm.realpath(base)
     try:
         rel = pm.relpath(diag_file, base)
     except ValueError:
@@ -4906,7 +4959,25 @@ def _relativize_diag_path(diag_file: str, base: str, *, path_mod=None) -> str:  
     # regardless of which OS-native spelling either spawn happened to
     # produce -- unchanged by T-4457, still applied to whichever of the
     # two shapes above was chosen.
-    return pm.normcase(rel)
+    identity = pm.normcase(rel)
+    # T-4461: a relativized path that still starts with ".." always
+    # means `base` was the wrong tree for `diag_file` -- there is no
+    # legitimate case where a diagnostic's file lives outside the tree
+    # that produced it. Logged rather than raised: the multiset
+    # comparison degrades safely (worst case, a pre-existing violation
+    # is over-attributed as new and the land refuses conservatively),
+    # but a WARNING here means the NEXT such base mismatch names itself
+    # in the log instead of surfacing only as an opaque refusal.
+    if identity.startswith(".."):
+        _log.warning(
+            "ticket land: relativized ruff diagnostic path %r climbs "
+            "above its base -- base=%r diag_file=%r is always a wrong "
+            "base pairing",
+            identity,
+            base,
+            diag_file,
+        )
+    return identity
 
 
 # frob:ticket T-3132

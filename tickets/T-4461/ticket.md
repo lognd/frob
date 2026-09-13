@@ -2,7 +2,7 @@
 id: T-4461
 title: 'Windows CI: baseline ruff identities are relativized against the live root
   (..\..\runner~1\...), the last red test'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
@@ -21,7 +21,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity
+- tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_posix_absolute_tmp_snapshot_path_matches_live_identity
+- tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_symlinked_snapshot_diag_file_unresolved_matches_realpath_base
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse
+designated_repro_test: tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_symlinked_snapshot_diag_file_unresolved_matches_realpath_base
 threat: null
 component: null
 anchor: false
