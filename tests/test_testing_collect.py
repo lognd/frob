@@ -163,6 +163,86 @@ class TestPlatformSkippedSurvivesCacheHit:
         )
 
 
+class TestOldFormatCacheForcesRecollection:
+    """T-4449: measured on the CI Windows runner (run 34735688390) -- a
+    live `.frob/pytest-collect.json` matching the current content-hash
+    `key` had top-level keys `['key', 'node_ids']` ONLY, no
+    `platform_skipped` extra at all, and a live `collect_python_tests(
+    root).platform_skipped` call served from that hit returned `()` even
+    though two POSIX-only modules should have platform-skipped. An
+    old-format entry (or any writer that omits the field) must be a cache
+    MISS, never a same-as-empty hit."""
+
+    # frob:tests src/frob/testing/_collect.py::collect_python_tests
+    def test_old_format_cache_entry_triggers_fresh_collection(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Hand-write a cache doc shaped exactly like the runner-measured
+        one (matching `key`, no `extra` at all) for a tree with a real
+        platform-skipped module, then call `collect_python_tests` -- it
+        must NOT trust the stale hit's implied `platform_skipped == ()`;
+        it must re-spawn `--collect-only` and report the real pair."""
+        import json
+
+        import frob.testing._collect as collect_mod
+        from frob.testing._collect_python_cache import _collection_cache_key
+        from frob.testing._collect_shared import _CACHE_REL, _load_cache_extra
+        from tests.conftest import _write
+
+        _write(
+            tmp_path,
+            "tests/test_posix_only.py",
+            "import sys\nimport pytest\n"
+            'if sys.platform == "win32":\n'
+            '    pytest.skip("SIGUSR1 is POSIX-only", allow_module_level=True)\n'
+            "def test_a():\n    pass\n",
+        )
+
+        key = _collection_cache_key(tmp_path, ())
+        cache_path = tmp_path / _CACHE_REL
+        # T-4449: writes the OLD-format cache doc through the already-
+        # declared testsuite fs.write via-list site `tests.conftest._write`
+        # (rather than a raw `Path.write_text` of this file's own) so this
+        # module adds no new capability site design/frob.strata needs to
+        # declare.
+        _write(
+            tmp_path,
+            _CACHE_REL.as_posix(),
+            json.dumps({"key": key, "node_ids": ["tests/test_posix_only.py::test_a"]}),
+        )
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=0,
+                    stdout=(
+                        "tests/test_posix_only.py::test_a\n"
+                        "SKIPPED [1] tests/test_posix_only.py:4: "
+                        "SIGUSR1 is POSIX-only\n"
+                    ),
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.platform_skipped == (
+            ("tests/test_posix_only.py", "SIGUSR1 is POSIX-only"),
+        )
+
+        # the re-collection must also have re-persisted the cache IN THE
+        # CURRENT format, so a subsequent hit is correct without another
+        # re-spawn -- read back through the already-declared production
+        # accessor `_load_cache_extra` rather than a raw `Path.read_text`
+        # of this file's own.
+        refreshed = _load_cache_extra(cache_path, key)
+        assert refreshed.get("platform_skipped") == [
+            ["tests/test_posix_only.py", "SIGUSR1 is POSIX-only"]
+        ]
+
+
 class TestRunCollectOnlySpawnShape:
     """T-4327: `_run_collect_only` must never shell out through `uv` --
     the macOS CI cascade (68 -> 61 failing tests across two spawn-mechanism

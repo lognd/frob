@@ -347,6 +347,13 @@ def _collect_nested_python(
 
 # frob:doc docs/modules/testing.md#public-api
 # frob:ticket T-3099
+# frob:waive AFFECT001 reason="T-4449's own fix (an old-format platform_skipped-less \
+# cache entry is now a MISS, not a same-as-empty hit) is a behavior refinement of an \
+# already-documented public API, no new fact for docs/modules/testing.md's public-api \
+# anchor to describe; docs/modules/testing.md is not in T-4449's declared scope \
+# (src/frob/testing/_collect*.py, tests/*), same shape \
+# src/frob/app/ticket_runner/_close_cmd.py's own T-1146 AFFECT001 waiver documents" \
+# follow_up="T-4449"
 # frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestCollectPythonTestsWiring.test_must_fire_applies_and_warns_before_collection  # noqa: E501
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     """`uv run pytest --collect-only -q` node ids for the outer tree, UNIONED
@@ -391,24 +398,45 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     cached = _load_cache(cache_path, key)
     if cached is not None:
         cached_extra = _load_cache_extra(cache_path, key)
-        cached_skipped = tuple(
-            (str(f), str(r)) for f, r in cached_extra.get("platform_skipped", [])
-        )
-        _set_collection_platform_skipped(cached_skipped)
-        _log.debug(
-            "collect_python_tests: cache hit, %d node id(s), %d platform-skipped "
-            "module(s)",
-            len(cached),
-            len(cached_skipped),
-        )
-        _set_collection_failure_detail(None)
-        return Ok(
-            CollectedTests(
-                node_ids=cached,
-                missing_natives=missing,
-                platform_skipped=cached_skipped,
+        if "platform_skipped" not in cached_extra:
+            # T-4449: an OLD-FORMAT cache entry (written before T-4390's
+            # `extra` payload existed, or by any writer that skipped the
+            # field) matches `key` on content alone but carries no
+            # `platform_skipped` term at all -- reading that back as `()`
+            # is indistinguishable from a genuine "nothing platform-skipped"
+            # collection and is exactly the runner-measured failure mode
+            # (CI run 34735688390: a 1.5MB cache with only
+            # `['key', 'node_ids']`, no `platform_skipped`, silently served
+            # as if it were). Treat the absence of the field itself as a
+            # cache MISS so a fresh `_run_collect_only` below re-derives
+            # (and re-persists, in the current format) the real answer,
+            # rather than trusting a payload from before this field
+            # existed.
+            _log.info(
+                "collect_python_tests: cache entry for %s has no "
+                "'platform_skipped' extra field (old format) -- treating "
+                "as a miss, re-collecting",
+                cache_path,
             )
-        )
+        else:
+            cached_skipped = tuple(
+                (str(f), str(r)) for f, r in cached_extra.get("platform_skipped", [])
+            )
+            _set_collection_platform_skipped(cached_skipped)
+            _log.debug(
+                "collect_python_tests: cache hit, %d node id(s), %d platform-skipped "
+                "module(s)",
+                len(cached),
+                len(cached_skipped),
+            )
+            _set_collection_failure_detail(None)
+            return Ok(
+                CollectedTests(
+                    node_ids=cached,
+                    missing_natives=missing,
+                    platform_skipped=cached_skipped,
+                )
+            )
 
     collected = _run_collect_only(root)
     if collected.is_err:
@@ -448,13 +476,18 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
 
     frozen = frozenset(node_ids)
     platform_skipped = _platform_skipped_test_modules()
+    # T-4449: always persist the `platform_skipped` term, even when it is
+    # `()` -- an EMPTY-but-present field is how a later cache HIT tells
+    # "this collection genuinely found nothing platform-skipped" apart
+    # from "this cache entry predates the field entirely" (the load-side
+    # miss check above). Omitting it here for the common empty case is
+    # exactly what let an old-format-shaped entry look identical to a
+    # fresh empty one.
     _store_cache(
         cache_path,
         key,
         frozen,
-        extra={"platform_skipped": [list(pair) for pair in platform_skipped]}
-        if platform_skipped
-        else None,
+        extra={"platform_skipped": [list(pair) for pair in platform_skipped]},
     )
     _log.info(
         "collect_python_tests: collected %d node id(s), %d declared native(s) missing",
