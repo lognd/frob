@@ -278,6 +278,17 @@ class TestMile001:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
         assert violations == []
 
+    def test_v_prefixed_and_bare_milestone_treated_equal(self, tmp_path: Path) -> None:
+        """T-4463: "v1.0.0" and "1.0.0" must compare as the SAME
+        milestone -- a v-prefixed blocker at the same effective milestone
+        as its blocked ticket is ordinary in-milestone sequencing, not a
+        deadlock."""
+        blocker = _ticket(ticket_id="T-2", milestone="v1.0.0")
+        t = _ticket(ticket_id="T-1", milestone="1.0.0", blocked_by=("T-2",))
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert violations == []
+
 
 # frob:ticket T-2580
 class TestMile002:
@@ -380,6 +391,21 @@ class TestMile002:
         assert len(violations) == 2
         assert any("T-EPIC" in v.message and "T-LEAF" in v.message for v in violations)
         assert any("T-STORY" in v.message and "T-LEAF" in v.message for v in violations)
+
+    def test_v_prefixed_and_bare_milestone_treated_equal(self, tmp_path: Path) -> None:
+        """T-4463: "v1.0.0" and "1.0.0" must compare as the SAME
+        milestone -- a v-prefixed descendant at the same effective
+        milestone as its ancestor is ordinary hierarchy, not a
+        deadlock."""
+        epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="1.0.0")
+        child = _ticket(
+            ticket_id="T-CHILD",
+            parent="T-EPIC",
+            milestone="v1.0.0",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
+        assert violations == []
 
 
 class TestMile004:

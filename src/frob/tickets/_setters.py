@@ -860,6 +860,7 @@ _MILESTONE_ASSIGNMENT_REASON = "milestone set via `frob ticket milestone`"
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
 # frob:tests tests/test_tickets.py::TestSetMilestone.test_valid_semver_sets_field
 # frob:tests tests/test_tickets.py::TestSetMilestone.test_invalid_semver_refused
+# frob:tests tests/test_tickets.py::TestSetMilestone.test_v_prefix_normalized_on_write
 # frob:tests \
 # tests/test_tickets_triage_dates.py::TestSetMilestoneRecordsTriageChange.test_assign\
 # ing_a_milestone_records_a_triage_change_entry  # noqa: E501
@@ -875,17 +876,28 @@ def set_milestone(
     write -- an invalid string is refused here, never accepted and sorted
     arbitrarily later (that read-time-arbitrary-order failure mode is
     exactly what M1 exists to prevent). `milestone=None` clears the field
-    unconditionally and needs no validation."""
-    if milestone is not None:
+    unconditionally and needs no validation.
+
+    Stores `validate_milestone`'s NORMALIZED return value, not the raw
+    `milestone` argument (T-4463): a leading `v`/`V` is stripped going
+    forward, so a fresh `frob ticket milestone T-1234 v0.531.0` writes
+    `"0.531.0"`, the same bare form REL001/MILE001/MILE002 already
+    compare against via the shared `normalize_milestone`. This does not
+    touch the ledger's pre-existing v-prefixed strings -- a one-time
+    migration, out of this ticket's scope."""
+    if milestone is None:
+        normalized_milestone = None
+    else:
         validated = validate_milestone(milestone)
         if validated.is_err:
             return Err(validated.danger_err)
+        normalized_milestone = validated.danger_ok
     return _set_ticket_field(
         root,
         ticket_id,
         "milestone",
-        milestone,
-        log_value=milestone,
+        normalized_milestone,
+        log_value=normalized_milestone,
         reason=_MILESTONE_ASSIGNMENT_REASON,
     )
 

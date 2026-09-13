@@ -102,6 +102,25 @@ def _mile003_unresolved_milestone(
     return tuple(violations)
 
 
+# frob:ticket T-4463
+def _milestone_is_later(candidate: str, baseline: str) -> bool:
+    """`True` if `candidate` is a LATER milestone than `baseline` (real
+    semver order via `packaging.version.Version`, never a string
+    compare) -- the one comparison MILE001 and MILE002 both need,
+    factored out (T-4463) so their bodies stay under ARCH001's line
+    budget and the shared `normalize_milestone` call is written ONCE.
+    Both sides route through `normalize_milestone` first: a leading
+    `v`/`V` must never make an otherwise-equal milestone read as
+    later."""
+    from packaging.version import Version
+
+    from frob.tickets._models import normalize_milestone
+
+    return Version(normalize_milestone(candidate)) > Version(
+        normalize_milestone(baseline)
+    )
+
+
 # frob:enforces CHK-GATE-MILE001
 # frob:ticket T-2580
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_later_milestone_fires  # noqa: E501
@@ -110,6 +129,9 @@ def _mile003_unresolved_milestone(
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_blocker_does_not_fire  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_ticket_never_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_unresolved_milestone_does_not_fire  # noqa: E501
+# frob:tests \
+# tests/test_gates_milestone.py::TestMile001.test_v_prefixed_and_bare_milestone_treated\
+# _equal
 def _mile001_blocked_by_later_milestone(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -130,8 +152,6 @@ def _mile001_blocked_by_later_milestone(
     Either side's milestone failing to resolve at all is MILE003's
     concern -- this gate only compares two REAL values, never guesses one
     is "later" than an absent one."""
-    from packaging.version import Version
-
     from frob.tickets._doable import effective_milestone
 
     violations: list[Violation] = []
@@ -149,7 +169,7 @@ def _mile001_blocked_by_later_milestone(
             blocker_milestone, _b_source = effective_milestone(queue, blocker, root)
             if blocker_milestone is None:
                 continue
-            if Version(blocker_milestone) <= Version(t_milestone):
+            if not _milestone_is_later(blocker_milestone, t_milestone):
                 continue
             violations.append(
                 Violation(
@@ -215,6 +235,9 @@ def _descendants_of(
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_descendant_does_not_fire  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_ancestor_never_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_grandchild_descendant_fires  # noqa: E501
+# frob:tests \
+# tests/test_gates_milestone.py::TestMile002.test_v_prefixed_and_bare_milestone_treated\
+# _equal
 def _mile002_descendant_later_milestone(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -227,8 +250,6 @@ def _mile002_descendant_later_milestone(
     descendant does -- meaning the ancestor's own (earlier) milestone can
     never ship either. This is that existing structural rule projected
     onto milestones, caught statically instead of only at close time."""
-    from packaging.version import Version
-
     from frob.tickets._doable import effective_milestone
 
     children_of = _children_by_parent(queue)
@@ -250,7 +271,7 @@ def _mile002_descendant_later_milestone(
             )
             if descendant_milestone is None:
                 continue
-            if Version(descendant_milestone) <= Version(ancestor_milestone):
+            if not _milestone_is_later(descendant_milestone, ancestor_milestone):
                 continue
             violations.append(
                 Violation(

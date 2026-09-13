@@ -121,11 +121,41 @@ def _validate_parent(value: str | None) -> str | None:
     return _validate_ticket_id_ref(value, field="parent")
 
 
+# frob:ticket T-4463
+# frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
+# frob:tests tests/test_tickets.py::TestNormalizeMilestone.test_strips_v_prefix
+# frob:tests tests/test_tickets.py::TestNormalizeMilestone.test_bare_form_unchanged
+def normalize_milestone(value: str) -> str:
+    """Canonicalize a milestone string for BOTH comparison and storage
+    (T-4463): `packaging.version.Version` already accepts an optional
+    leading `v`/`V` per PEP 440 and `str(Version(...))` renders the
+    canonical bare-digits form, so `"v0.531.0"`, `"V0.531.0"`, and
+    `"0.531.0"` all normalize to `"0.531.0"`. This is the ONE place
+    milestone equality/ordering is resolved -- `validate_milestone`
+    (below, normalizes on ticket-write), REL001
+    (`frob.gates._debt_deprecated._release_open_milestone_violations`),
+    and MILE001/MILE002 (`frob.gates._milestone`) all call this rather
+    than each re-deriving the same v-prefix-strip rule, the silent-zero
+    T-4463 found: REL001's old literal string compare against
+    `release_version` silently excluded every v-prefixed ticket from the
+    release gate. Caller must have already confirmed `value` parses (via
+    `validate_milestone` or an equivalent `Version(value)` try/except) --
+    this raises `packaging.version.InvalidVersion` on a malformed string,
+    same as `Version` itself, rather than swallowing it, since a gate
+    comparing two already-resolved effective milestones has no
+    recoverable fallback for one suddenly not parsing."""
+    from packaging.version import Version
+
+    return str(Version(value))
+
+
 # frob:ticket T-2574
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
 # frob:tests tests/test_tickets.py::TestValidateMilestone.test_valid_semver_accepted
 # frob:tests tests/test_tickets.py::TestValidateMilestone.test_invalid_string_refused
 # frob:tests tests/test_tickets.py::TestValidateMilestone.test_ordering_is_numeric_not_lexical  # noqa: E501
+# frob:tests \
+# tests/test_tickets.py::TestValidateMilestone.test_v_prefix_normalized_on_write
 def validate_milestone(value: str) -> Result[str, TicketError]:
     """Refuse an invalid `Ticket.milestone`/`TicketSpec.milestone` string
     at WRITE time (T-2574 M1) rather than accepting it and sorting
@@ -142,18 +172,21 @@ def validate_milestone(value: str) -> Result[str, TicketError]:
     Uses `packaging.version.Version` (already a project dependency --
     `frob.vet._cve`/`frob.tickets._land_release` precedent) for a REAL
     ordered comparison, not a string compare: `"1.10.0"` must sort AFTER
-    `"1.9.0"`, which a lexical compare gets wrong. Returns the original
-    string unchanged on success (the `Ticket.milestone` field stores the
-    string, not a `Version` object -- callers that need the ORDER re-parse
-    via `Version(value)` once the string is known-valid, e.g. M2's
-    doable-sort key, out of this ticket's own scope)."""
+    `"1.9.0"`, which a lexical compare gets wrong. Returns the value
+    NORMALIZED via `normalize_milestone` on success (T-4463: a leading
+    `v`/`V` is stripped going forward, so new/re-milestoned tickets stop
+    adding to the bare-vs-v-prefixed split REL001 silently mishandled --
+    this does NOT rewrite the existing ledger's already-stored v-prefixed
+    strings, a separate one-time migration) -- callers that need the
+    ORDER re-parse via `Version(value)` once the string is known-valid,
+    e.g. M2's doable-sort key, out of this ticket's own scope."""
     from packaging.version import InvalidVersion, Version
 
     try:
         Version(value)
     except InvalidVersion:
         return Err(TicketError.InvalidMilestone)
-    return Ok(value)
+    return Ok(normalize_milestone(value))
 
 
 # frob:doc docs/modules/tickets-data-storage.md#data-models

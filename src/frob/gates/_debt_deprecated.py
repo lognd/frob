@@ -1050,6 +1050,7 @@ def _release_expired_deprecated_violations(
 
 
 # frob:ticket T-2581
+# frob:ticket T-4463
 # frob:enforces CHK-GATE-REL001
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_open_ticket_in_cut_milestone_refuses  # noqa: E501
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_open_ticket_in_other_milestone_does_not_refuse  # noqa: E501
@@ -1057,6 +1058,9 @@ def _release_expired_deprecated_violations(
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_no_open_tickets_in_milestone_succeeds  # noqa: E501
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_names_every_blocking_ticket  # noqa: E501
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_queue_unavailable_does_not_crash  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_v_prefixed_ti\
+# cket_milestone_refuses
 def _release_open_milestone_violations(
     root: Path, release_version: str
 ) -> tuple[Violation, ...]:
@@ -1078,6 +1082,15 @@ def _release_open_milestone_violations(
     already reports each individual `frob:debt` site by name rather than
     a total.
 
+    Compares via `frob.tickets._models.normalize_milestone` (T-4463),
+    never a literal string compare: the old `milestone == release_version`
+    silently excluded every v-prefixed ticket milestone ("v0.531.0") from
+    a bare-form release version ("0.531.0"), reporting fewer blockers
+    than the ledger actually held. `normalize_milestone` is the SAME
+    normalizer `validate_milestone` and MILE001/MILE002 use, so this
+    check can never again drift from what the rest of the milestone
+    machinery considers equal.
+
     Loads the ticket queue independently (`frob.tickets.load_queue`)
     rather than requiring `release_gate`'s caller to thread one through --
     `release_gate`'s signature (`root, snapshot, ticket_id`) lives outside
@@ -1087,8 +1100,11 @@ def _release_open_milestone_violations(
     `frob.toml` -- a release gate must not hard-crash the whole `frob
     check`/release-cut run over a queue-load hiccup a DIFFERENT gate
     (`tickets`/`milestone`) already reports on its own terms."""
+    from packaging.version import InvalidVersion
+
     from frob.tickets import _OPEN_STATES, load_queue
     from frob.tickets._doable import effective_milestone
+    from frob.tickets._models import normalize_milestone
 
     queue_result = load_queue(root)
     if queue_result.is_err:
@@ -1100,12 +1116,27 @@ def _release_open_milestone_violations(
         return ()
     queue = queue_result.danger_ok
 
+    # T-4463: release_version comes from the release manifest (never
+    # v-prefixed in practice) but is normalized anyway so this comparison
+    # can never itself become the next asymmetric-form bug.
+    normalized_release_version = normalize_milestone(release_version)
+
     blockers: list[str] = []
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
         if t.state not in _OPEN_STATES:
             continue
         milestone, _source = effective_milestone(queue, t, root)
-        if milestone == release_version:
+        if milestone is None:
+            continue
+        try:
+            normalized_milestone = normalize_milestone(milestone)
+        except InvalidVersion:
+            # A ticket's stored milestone failed validation before this
+            # check could ever run (validate_milestone gates every write)
+            # -- MILE003's concern, not REL001's; never crash the release
+            # gate over one unparsable historical value.
+            continue
+        if normalized_milestone == normalized_release_version:
             blockers.append(t.id)
     if not blockers:
         return ()

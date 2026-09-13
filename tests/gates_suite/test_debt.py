@@ -541,6 +541,20 @@ class TestReleaseOpenMilestoneViolations:
         assert "T-0001" in violations[0].message
         assert "T-0002" in violations[0].message
 
+    def test_v_prefixed_ticket_milestone_refuses(self, tmp_path: Path) -> None:
+        """T-4463: an open ticket carrying milestone "v1.0.0" must still
+        block a "1.0.0" release cut -- REL001's old literal string
+        compare silently excluded exactly this case (the actual T-4463
+        incident: 13 open v-prefixed tickets invisible to the gate)."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        t = self._milestone_ticket(ticket_id="T-0001", milestone="v1.0.0")
+        write_ticket(tmp_path, t).danger_ok
+        violations = _release_open_milestone_violations(tmp_path, "1.0.0")
+        assert len(violations) == 1
+        assert violations[0].rule == "REL001"
+        assert "T-0001" in violations[0].message
+
     def test_queue_unavailable_does_not_crash(self, tmp_path: Path) -> None:
         """A queue-load failure degrades to "skip this check", never a
         hard crash of the whole release gate -- write a malformed ledger

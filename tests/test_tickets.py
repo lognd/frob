@@ -2961,6 +2961,40 @@ class TestValidateMilestone:
         assert lower.is_ok
         assert Version(higher.danger_ok) > Version(lower.danger_ok)
 
+    def test_v_prefix_normalized_on_write(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::validate_milestone kind="unit"
+        # T-4463: the ONE regression this ticket exists to prevent --
+        # validate_milestone must return the NORMALIZED (bare-form)
+        # string, not the raw v-prefixed one, so a fresh write never adds
+        # to the bare-vs-v-prefixed split REL001 silently mishandled.
+        from frob.tickets._models import validate_milestone
+
+        result = validate_milestone("v0.531.0")
+        assert result.is_ok
+        assert result.danger_ok == "0.531.0"
+
+
+# frob:ticket T-4463
+class TestNormalizeMilestone:
+    """`normalize_milestone` (T-4463): the ONE shared normalizer REL001,
+    MILE001/MILE002, and `validate_milestone` all resolve milestone
+    equality/ordering through, so the v-prefix silent-zero (a v-prefixed
+    ticket milestone invisible to REL001's literal string compare) can
+    only be fixed in one place."""
+
+    def test_strips_v_prefix(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::normalize_milestone kind="unit"
+        from frob.tickets._models import normalize_milestone
+
+        assert normalize_milestone("v0.531.0") == "0.531.0"
+        assert normalize_milestone("V0.531.0") == "0.531.0"
+
+    def test_bare_form_unchanged(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::normalize_milestone kind="unit"
+        from frob.tickets._models import normalize_milestone
+
+        assert normalize_milestone("0.531.0") == "0.531.0"
+
 
 # frob:ticket T-2574
 class TestSetMilestone:
@@ -2997,6 +3031,27 @@ class TestSetMilestone:
         result = set_milestone(tmp_path, ticket_id, "1.10.0")
         assert result.is_ok
         assert result.danger_ok.milestone == "1.10.0"
+
+    def test_v_prefix_normalized_on_write(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::set_milestone kind="unit"
+        # T-4463: `frob ticket milestone T-1234 v0.531.0` must store the
+        # NORMALIZED bare form, not the raw v-prefixed argument.
+        from frob.tickets import set_milestone
+
+        self._init_repo(tmp_path)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_milestone(tmp_path, ticket_id, "v0.531.0")
+        assert result.is_ok
+        assert result.danger_ok.milestone == "0.531.0"
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[ticket_id].milestone == "0.531.0"
 
     def test_invalid_semver_refused(self, tmp_path: Path) -> None:
         # T-4427: coverage of set_milestone is declared above the

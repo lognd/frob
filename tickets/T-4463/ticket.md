@@ -2,7 +2,7 @@
 id: T-4463
 title: 'REL001 ignores v-prefixed milestones: 13 open v0.531.0 tickets invisible to
   the release gate'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
@@ -70,6 +70,14 @@ scope_changes:
     test there too.'
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/test_tickets.py::TestNormalizeMilestone::test_strips_v_prefix
+- tests/test_tickets.py::TestNormalizeMilestone::test_bare_form_unchanged
+- tests/test_tickets.py::TestValidateMilestone::test_v_prefix_normalized_on_write
+- tests/test_tickets.py::TestSetMilestone::test_v_prefix_normalized_on_write
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_v_prefixed_ticket_milestone_refuses
+- tests/test_gates_milestone.py::TestMile001::test_v_prefixed_and_bare_milestone_treated_equal
+- tests/test_gates_milestone.py::TestMile002::test_v_prefixed_and_bare_milestone_treated_equal
 designated_repro_test: null
 threat: null
 component: null
