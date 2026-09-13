@@ -324,8 +324,18 @@ against exactly this source) refreshes the stamp instead of re-flagging;
 no match (no build attempt recorded for this exact source, e.g. a bare
 touch) still latches exactly as before T-2805.
 
+T-4443: `_native_staleness.py` crossed the 800-line `LARGE001` threshold;
+`seed_worktree_native_source_mtimes`'s digest-comparison and mtime-
+backdating internals (`_tracked_source_digest`,
+`_seed_one_native_source_mtime`) moved to the sibling module
+`_native_staleness_digest.py`. `seed_worktree_native_source_mtimes`
+itself stays a thin, same-signature wrapper in `_native_staleness.py`, so
+every existing caller keeps importing it from there unchanged.
+
 <!-- frob:describes src/frob/strata/_native_staleness.py::record_native_build_attempt -->
 <!-- frob:describes src/frob/strata/_native_staleness.py::stale_natives -->
+<!-- frob:describes src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes -->
+<!-- frob:describes src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes -->
 
 <!-- frob:describes src/frob/gitio.py::repo_root -->
 <!-- frob:describes src/frob/gitio.py::working_diff -->

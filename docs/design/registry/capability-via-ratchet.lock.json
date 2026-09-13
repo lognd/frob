@@ -191,9 +191,9 @@
       "ticket": "T-1628"
     },
     "stratamod::fs.read": {
-      "accepted_count": 10,
-      "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (real fs.read sites in shrink_report's design-file loader/scanner); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
-      "ticket": "T-2923"
+      "accepted_count": 11,
+      "reason": "T-4443: LARGE001 split moved _tracked_source_digest's Path.read_bytes() fs.read site from src/frob/strata/_native_staleness.py into the new sibling src/frob/strata/_native_staleness_digest.py; design/frob.strata's stratamod fs.read via-list now names both files for the same, already-declared call site -- not a fresh grant, the site pre-dates this ticket.",
+      "ticket": "T-4443"
     },
     "stratamod::fs.write": {
       "accepted_count": 5,
@@ -364,9 +364,9 @@
   "generated_by": "T-1628",
   "schema_version": 1,
   "stratamod::fs.read": {
-    "accepted_count": 10,
-    "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (real fs.read sites in shrink_report's design-file loader/scanner); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
-    "ticket": "T-2923"
+    "accepted_count": 11,
+    "reason": "T-4443: LARGE001 split moved _tracked_source_digest's Path.read_bytes() fs.read site from src/frob/strata/_native_staleness.py into the new sibling src/frob/strata/_native_staleness_digest.py; design/frob.strata's stratamod fs.read via-list now names both files for the same, already-declared call site -- not a fresh grant, the site pre-dates this ticket.",
+    "ticket": "T-4443"
   },
   "stratamod::fs.write": {
     "accepted_count": 4,
