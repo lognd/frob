@@ -19,6 +19,8 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'tier=epic: Windows-green container; scope belongs on the
   leaves'
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 designated_repro_test: null
 acceptance:
 - text: given the Windows CI leg on current main, when a complete run finishes, then
