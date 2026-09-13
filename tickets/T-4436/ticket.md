@@ -2,7 +2,7 @@
 id: T-4436
 title: Draft-id finalizer rewrote a lost draft id to an unrelated real ticket in a
   worktree's Done report
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-12'
@@ -49,6 +49,10 @@ scope_changes:
     unrelated tickets
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/test_gates_fix_engine.py::TestTick006RenameConfirmation::test_git_m_false_positive_pairing_is_not_trusted_body_untouched
+- tests/test_gates_fix_engine.py::TestTick006RenameConfirmation::test_confirmed_promotion_is_rewritten_with_info_log
+- tests/test_gates_fix_engine.py::TestTick006RenameConfirmation::test_no_rename_at_all_is_unresolved_body_untouched_pending_new_ticket
 designated_repro_test: null
 threat: null
 component: null

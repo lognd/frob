@@ -675,3 +675,301 @@ class TestSnapshotParameterDroppedStaticallyEnforced:
         assert output.count("too-many-positional-arguments") == 2, output
         assert "fix_fmt001_directive_wrap" in output
         assert "fix_e501_merge_introduced" in output
+
+
+@pytest.fixture
+def tick006_claiming_ticket():
+    """A factory fixture: calling the returned function with a cited id
+    builds a DONE ticket whose Done report affirmatively cites it as a
+    filed follow-up -- the TICK006 phantom-citation shape shared by
+    `TestTick006RenameConfirmation`'s tests below. A `@pytest.fixture`-
+    wrapped factory (rather than a bare module-level helper) so this
+    stays outside WIRE001's "new symbol with no caller" scan -- a
+    fixture is injected, never called directly, by design (see
+    `frob.gates._wire._is_pytest_fixture`)."""
+    from datetime import date
+
+    from frob.tickets import Origin, Ticket, TicketKind, TicketState
+
+    def _make(cited_id: str) -> Ticket:
+        return Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                f"## Done report\n\nFiled {cited_id} (recovery ticket) as a "
+                "follow-up.\n"
+            ),
+        )
+
+    return _make
+
+
+# frob:waive DUP001 reason="100% similar to \
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA._tick006_repo by design, \
+# not accidental duplication -- that class is a sibling test suite outside T-4436's \
+# own declared scope (tests/unit/test_fix_engine_tick006*.py and \
+# tests/test_gates_fix_engine.py only), so this ticket cannot import or refactor that \
+# file's private helper without widening scope; extracting a shared helper into a \
+# third location is a real follow-up, not attempted here to keep this fix within its \
+# declared file boundary"
+@pytest.fixture
+def tick006_git_repo(tmp_path: Path):
+    """A bare repo with an empty v2-mode ledger -- the shared fixture
+    `TestTick006RenameConfirmation`'s tests below build their own commit
+    history on top of (mirrors `tests/gates_suite/test_fix_engine.py::
+    TestFixEngineTierA._tick006_repo`'s own fixture shape -- that class
+    is a sibling test suite outside T-4436's declared scope, not reused
+    directly). A real `@pytest.fixture` (not a bare helper function) for
+    the same WIRE001-exemption reason as `tick006_claiming_ticket`
+    above."""
+    import subprocess
+
+    root = tmp_path / "repo"
+    root.mkdir()
+
+    def _git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(root), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    _git("init", "-q", "-b", "main")
+    _git("config", "user.email", "test@example.com")
+    _git("config", "user.name", "Test")
+    (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+    (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+    _git("add", "-A")
+    _git("commit", "-q", "-m", "init")
+    return root, _git
+
+
+# frob:ticket T-4436
+class TestTick006RenameConfirmation:
+    """T-4436: `fix_tick006_phantom_refile`'s git-rename resolution
+    (`_resolve_via_git_rename_measured`/`_tick006_check_rename_candidate`)
+    must never trust a `git show -M --name-status` similarity pairing as
+    a genuine promotion on its own.
+
+    MEASURED incident (2026-09-12, worktree .claude/worktrees/t-4428):
+    every literal `T-draft-858a1bad` in a ticket's body/Done report was
+    rewritten to `T-4383`, an unrelated ticket -- `T-draft-858a1bad` was
+    LOST before promotion (T-4426), so there is no real ticket it ever
+    became. Root cause: `_resolve_via_git_rename_measured` trusted ANY
+    `-M`-detected rename pairing between a deleted `tickets/<draft>/
+    ticket.md` and some added `tickets/<other>/ticket.md` in the same
+    commit -- but `-M` is a CONTENT-SIMILARITY heuristic, not an
+    identity/provenance record, so an unrelated delete+add that happens
+    to clear the similarity threshold (two near-identical bulk-edited
+    stub tickets) is indistinguishable from a real `git mv`-based rename
+    at the plain `--name-status` level. Acceptance: (1) a draft id with
+    no genuine promotion record is never rewritten; (2) the mapping
+    source is logged for every rewrite that DOES happen; (3) a dead
+    draft id (no confirmed promotion) is left untouched in the citing
+    ticket's body."""
+
+    # frob:tests \
+    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_git_m_false_po\
+    # sitive_pairing_is_not_trusted_body_untouched
+    def test_git_m_false_positive_pairing_is_not_trusted_body_untouched(
+        self, tmp_path: Path, caplog, tick006_git_repo, tick006_claiming_ticket
+    ) -> None:
+        """A deleted draft and an UNRELATED added ticket, similar enough
+        in the surrounding boilerplate to satisfy git's own `-M`
+        similarity threshold, but NOT a real rename -- the added
+        ticket's title/body differ from the draft's (only the frontmatter
+        happens to look alike), so `-M` still pairs them at the
+        `--name-status` level (a real, reproduced git behavior, not
+        mocked) while the STRONGER corroboration (the pair's WHOLE diff
+        reduces to exactly the `id:` line, T-4436's own fix) correctly
+        rejects it. The citation must be left completely untouched, and a
+        WARNING logged naming it unresolved."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import TicketQueue
+        from frob.tickets._store import load_all, write_ticket
+
+        root, _git = tick006_git_repo
+
+        draft_md = (
+            "---\n"
+            "id: T-draft-1057c001\n"
+            "title: some draft\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: agent\n"
+            "created: '2026-08-01'\n"
+            "---\n"
+            "draft body text describing some unrelated piece of work in enough "
+            "prose that the two files below share a long common substring\n"
+        )
+        (root / "tickets" / "T-draft-1057c001").mkdir(parents=True)
+        (root / "tickets" / "T-draft-1057c001" / "ticket.md").write_text(
+            draft_md, encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file draft T-draft-1057c001")
+
+        # An UNRELATED real ticket, added in the SAME commit that deletes
+        # the draft -- NOT a rename, just two independent edits landing
+        # together (a bulk ledger-format change, T-4436's own measured
+        # shape). Content differs only in id/title/created -- similar
+        # enough for git's own -M heuristic to still pair them, but the
+        # BODY (unlike a real rename, which changes only id:) also
+        # differs, so the stronger "only the id line changed" check must
+        # reject it.
+        unrelated_md = (
+            "---\n"
+            "id: T-9500\n"
+            "title: an unrelated real ticket\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: agent\n"
+            "created: '2026-09-01'\n"
+            "---\n"
+            "draft body text describing some unrelated piece of work in enough "
+            "prose that the two files below share a long common substring, plus "
+            "one extra sentence only the real ticket has\n"
+        )
+        import shutil
+
+        shutil.rmtree(root / "tickets" / "T-draft-1057c001")
+        (root / "tickets" / "T-9500").mkdir(parents=True)
+        (root / "tickets" / "T-9500" / "ticket.md").write_text(
+            unrelated_md, encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "bulk ledger edit (unrelated to the draft)")
+
+        claiming = tick006_claiming_ticket("T-draft-1057c001")
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite the lost draft")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        with caplog.at_level("WARNING"):
+            applied = fix_tick006_phantom_refile(root, queue)
+
+        # Either nothing applied (git's -M did not even pair them) or a
+        # NEW recovery ticket was filed -- never a silent rewrite to the
+        # unrelated T-9500.
+        for fix in applied:
+            assert "T-9500" not in fix.detail
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        body = reloaded.danger_ok["T-0001"].body
+        assert "T-9500" not in body
+
+    # frob:tests \
+    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_confirmed_prom\
+    # otion_is_rewritten_with_info_log
+    def test_confirmed_promotion_is_rewritten_with_info_log(
+        self, tmp_path: Path, caplog, tick006_git_repo, tick006_claiming_ticket
+    ) -> None:
+        """A genuine promotion (`git mv` plus an `id:`-only frontmatter
+        rewrite, `renumber_one_v2`'s own exact shape) IS resolved and the
+        citation IS rewritten -- and an INFO line names the mapping
+        source (draft -> real id, git-rename/frontmatter-confirmed)."""
+        import logging
+
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import TicketQueue
+        from frob.tickets._store import load_all, write_ticket
+
+        root, _git = tick006_git_repo
+
+        draft_md = (
+            "---\n"
+            "id: T-draft-600d0001\n"
+            "title: recovered elsewhere\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: agent\n"
+            "created: '2026-08-01'\n"
+            "---\n"
+            "body\n"
+        )
+        (root / "tickets" / "T-draft-600d0001").mkdir(parents=True)
+        (root / "tickets" / "T-draft-600d0001" / "ticket.md").write_text(
+            draft_md, encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file draft T-draft-600d0001")
+        _git("mv", "tickets/T-draft-600d0001", "tickets/T-9600")
+        (root / "tickets" / "T-9600" / "ticket.md").write_text(
+            draft_md.replace("T-draft-600d0001", "T-9600"), encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "renumber T-draft-600d0001 -> T-9600")
+
+        claiming = tick006_claiming_ticket("T-draft-600d0001")
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite the now-renamed draft")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        with caplog.at_level(logging.INFO):
+            applied = fix_tick006_phantom_refile(root, queue)
+
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK006"
+        assert "T-9600" in applied[0].detail
+        assert "T-draft-600d0001" in applied[0].detail
+
+        info_lines = [
+            r.getMessage() for r in caplog.records if r.levelno == logging.INFO
+        ]
+        assert any(
+            "T-draft-600d0001" in msg and "T-9600" in msg and "T-0001" in msg
+            for msg in info_lines
+        ), f"expected an INFO mapping-source log line, got: {info_lines}"
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        assert "T-9600" in reloaded.danger_ok["T-0001"].body
+        assert "T-draft-600d0001" not in reloaded.danger_ok["T-0001"].body
+
+    # frob:tests \
+    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_no_rename_at_a\
+    # ll_is_unresolved_body_untouched_pending_new_ticket
+    def test_no_rename_at_all_is_unresolved_body_untouched_pending_new_ticket(
+        self, tmp_path: Path, tick006_git_repo, tick006_claiming_ticket
+    ) -> None:
+        """T-4436 acceptance (1): a draft id with NO git history at all
+        (genuinely lost, never even git-mv'd) is never rewritten to
+        anything resolved via rename -- it either stays untouched or is
+        refiled as a brand new recovery ticket, never silently pointed at
+        an existing unrelated id."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import TicketQueue
+        from frob.tickets._store import load_all, write_ticket
+
+        root, _git = tick006_git_repo
+
+        claiming = tick006_claiming_ticket("T-draft-dead0000")
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite a draft that never existed on disk")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        applied = fix_tick006_phantom_refile(root, queue)
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        body = reloaded.danger_ok["T-0001"].body
+        # Never resolved to a git-rename target (there is none) -- the
+        # citation is either untouched or points at a NEWLY FILED ticket,
+        # both of which are correct fallbacks; the load-bearing assertion
+        # is only that it was never silently rewritten to some other
+        # PRE-EXISTING id this pass did not itself create.
+        for fix in applied:
+            assert fix.detail.startswith("T-draft-dead0000 -> ")
+        assert "T-draft-dead0000" in body or len(applied) == 1

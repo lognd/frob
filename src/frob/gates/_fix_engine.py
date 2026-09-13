@@ -691,11 +691,20 @@ def _resolve_via_git_rename_measured(root: Path, tid: str) -> tuple[str | None, 
         if not candidate_measured:
             return None, False
         if resolved is not None:
+            _log.info(
+                "_resolve_via_git_rename_measured: %s -> %s CONFIRMED (git "
+                "rename at %s, frontmatter id: field transition verified -- "
+                "T-4436)",
+                tid,
+                resolved,
+                commit_sha,
+            )
             return resolved, True
     return None, True
 
 
 # frob:ticket T-2702
+# frob:ticket T-4436
 def _tick006_check_rename_candidate(
     root: Path, commit_sha: str, old_path: str, tid: str
 ) -> tuple[str | None, bool]:
@@ -706,7 +715,27 @@ def _tick006_check_rename_candidate(
     must short-circuit the caller's whole scan as UNMEASURED, same
     T-2391 doctrine as the rest of this module -- a partial scan across
     candidates is not the same as "checked every candidate, found
-    nothing"."""
+    nothing".
+
+    T-4436: a `git show -M --name-status` `R` line alone is NOT trusted
+    as a genuine promotion any more -- git's `-M` rename detection is a
+    CONTENT-SIMILARITY heuristic, not an identity/provenance record, and
+    a deleted `tickets/<tid>/ticket.md` plus an unrelated added
+    `tickets/<other-id>/...` in the same bulk-edit commit can clear the
+    similarity threshold with zero real connection between the two
+    tickets (the measured T-4436 incident: `T-draft-858a1bad`, a draft
+    LOST before promotion, paired by `-M` with the unrelated `T-4383`).
+    Every `R` line candidate is now additionally corroborated by
+    `_tick006_confirm_rename_by_frontmatter` -- the actual promotion
+    primitive (`renumber_one`/`renumber_one_v2`) rewrites the ticket
+    file's own `id:` frontmatter field from the old id to the new one IN
+    THE SAME rename commit, a ledger-level identity record `-M`'s fuzzy
+    content match cannot fake. An `R` line whose frontmatter transition
+    does not confirm it is skipped (not returned, not trusted) -- the
+    scan continues to the next `R` line/commit exactly as if that
+    candidate had never matched at all, and the caller's normal
+    "genuinely no rename" fallback (leave the citation untouched, or file
+    a real recovery ticket) applies."""
     from frob.gitio import run_argv
 
     show_result = run_argv(
@@ -724,16 +753,136 @@ def _tick006_check_rename_candidate(
         )
         return None, False
     for line in show_result.danger_ok.stdout.splitlines():
-        parts = line.split("\t")
-        if len(parts) != 3 or not parts[0].startswith("R"):
-            continue
-        status, src, dst = parts
-        if src != old_path:
-            continue
-        dst_parts = dst.split("/")
-        if len(dst_parts) >= 2 and dst_parts[0] == "tickets":
-            return dst_parts[1], True
+        resolved, measured = _tick006_evaluate_rename_line(
+            root, line, commit_sha, old_path, tid
+        )
+        if not measured:
+            return None, False
+        if resolved is not None:
+            return resolved, True
     return None, True
+
+
+# frob:ticket T-4436
+def _tick006_evaluate_rename_line(
+    root: Path, line: str, commit_sha: str, old_path: str, tid: str
+) -> tuple[str | None, bool]:
+    """One `--name-status` line from `_tick006_check_rename_candidate`'s
+    scan, split out purely to keep that function under ARCH001's line
+    threshold (no behavior change): parses it as a candidate `R` line for
+    `old_path`, then requires `_tick006_confirm_rename_by_frontmatter`'s
+    corroboration before trusting it. Returns `(None, True)` for any line
+    that is not a matching `R` line for `old_path` (not a candidate at
+    all) OR is a candidate that `_tick006_confirm_rename_by_frontmatter`
+    rejects (logged at WARNING) -- both are "keep scanning," identical to
+    the caller's own pre-T-4436 "no match on this line" case. Returns
+    `(None, False)` only when the corroboration spawn itself is
+    UNMEASURED, short-circuiting the whole scan per T-2391/T-2702
+    doctrine."""
+    parts = line.split("\t")
+    if len(parts) != 3 or not parts[0].startswith("R"):
+        return None, True
+    _status, src, dst = parts
+    if src != old_path:
+        return None, True
+    dst_parts = dst.split("/")
+    if len(dst_parts) < 2 or dst_parts[0] != "tickets":
+        return None, True
+    candidate_id = dst_parts[1]
+    confirmed, confirm_measured = _tick006_confirm_rename_by_frontmatter(
+        root, commit_sha, old_path, dst, tid, candidate_id
+    )
+    if not confirm_measured:
+        return None, False
+    if not confirmed:
+        _log.warning(
+            "_resolve_via_git_rename_measured: %s (candidate -> %s at "
+            "%s) is a git -M CONTENT-SIMILARITY match only -- no "
+            "frontmatter id: transition confirms it, NOT treated as a "
+            "promotion (T-4436); draft is unresolved",
+            tid,
+            candidate_id,
+            commit_sha,
+        )
+        return None, True
+    return candidate_id, True
+
+
+# frob:ticket T-4436
+def _tick006_confirm_rename_by_frontmatter(
+    root: Path,
+    commit_sha: str,
+    old_path: str,
+    dst_path: str,
+    tid: str,
+    candidate_id: str,
+) -> tuple[bool, bool]:
+    """T-4436: the ledger-level corroboration `_tick006_check_rename_
+    candidate` requires before trusting a `git show -M --name-status` `R`
+    line as a genuine promotion.
+
+    A weaker version of this check (any removed `-id: <tid>` line plus
+    any added `+id: <candidate_id>` line, ANYWHERE in the pair's diff)
+    was tried and rejected: since every two distinct tickets necessarily
+    have DIFFERENT `id:` lines by construction, that pair of lines is
+    trivially present in the diff of ANY `-M`-paired rewrite, genuine or
+    coincidental -- it would have confirmed every candidate `-M` already
+    found, making this corroboration step a no-op relative to the bug
+    T-4436 exists to fix.
+
+    The actual discriminating signal is `_rewrite_v2_id_field` (the real
+    promotion primitive's own behavior, `frob.tickets._renumber_v2`):
+    a genuine promotion `git mv`s the ticket directory and rewrites
+    ONLY that file's `id:` frontmatter line -- title, body, every other
+    field are BYTE-IDENTICAL before and after. A coincidental `-M`
+    content-similarity pairing between two UNRELATED tickets (the
+    measured T-4436 incident: a lost draft and an unrelated real ticket,
+    both similar enough in bulk-edited boilerplate to clear git's
+    similarity threshold) almost always differs in MORE than just the id
+    line too -- different title, different created date, different body
+    -- even when it differs in few enough lines to pass `-M`'s threshold.
+    So this checks the STRONGER claim: the pair's entire diff consists of
+    EXACTLY one removed content line (`-id: <tid>`) and exactly one added
+    content line (`+id: <candidate_id>`) -- no other `+`/`-` content line
+    at all. `git show -M <commit> -- <old_path> <dst_path>` (BOTH paths
+    given, so `-M` still pairs them the same way the caller's own
+    `--name-status` scan already did, but the unified diff for the pair
+    is not dropped the way a single-path pathspec would drop it, T-2690's
+    own docstring).
+
+    Returns `(confirmed, measured)`: `measured=False` (the `git show`
+    spawn failed/timed out) must short-circuit the caller's whole scan as
+    UNMEASURED, same T-2391/T-2702 doctrine as every other git spawn in
+    this module -- an incomplete corroboration attempt is never treated
+    as "not confirmed", only a genuinely completed one that found more
+    than the expected two lines changed is."""
+    from frob.gitio import run_argv
+
+    show_result = run_argv(
+        ["git", "show", "-M", "--format=", commit_sha, "--", old_path, dst_path],
+        cwd=root,
+        timeout_s=_TICK006_GIT_RENAME_TIMEOUT_S,
+    )
+    if show_result.is_err or show_result.danger_ok.returncode != 0:
+        _log.warning(
+            "_tick006_confirm_rename_by_frontmatter: git show spawn "
+            "failed for %s -> %s at %s -- UNMEASURED, not a confirmed "
+            "non-promotion (T-4436)",
+            tid,
+            candidate_id,
+            commit_sha,
+        )
+        return False, False
+    removed_id_line = f"-id: {tid}"
+    added_id_line = f"+id: {candidate_id}"
+    content_changes = [
+        line
+        for line in show_result.danger_ok.stdout.splitlines()
+        if (line.startswith("+") and not line.startswith("+++"))
+        or (line.startswith("-") and not line.startswith("---"))
+    ]
+    confirmed = sorted(content_changes) == sorted([removed_id_line, added_id_line])
+    return confirmed, True
 
 
 def _tick006_refile_ticket_spec(ticket: Ticket, tid: str, excerpt: str):  # noqa: ANN201
@@ -771,12 +920,27 @@ def _tick006_rewrite_citation(
     body plus a `FixApplied` when the rewrite actually hit something, or
     `None` when `_rewrite_body_prose_references` found nothing to touch
     (defensive; `tid` was just found IN this body, so this should not
-    happen in practice)."""
+    happen in practice).
+
+    T-4436: every actual rewrite is now logged at INFO -- the mapping
+    source (`reason`, e.g. "resolved via git rename, frontmatter id:
+    confirmed" or "already recovered by an earlier pass") plus which
+    ticket's citation is being changed, so a rewrite this significant
+    (silently changing what a Done report's citation MEANS) is always
+    visible in the land/check log, not just in the returned `FixApplied`
+    a caller might not print."""
     from frob.tickets._new_renumber import _rewrite_body_prose_references
 
     new_body, hits = _rewrite_body_prose_references(current_body, {tid: resolved_id})
     if not hits:
         return new_body, None
+    _log.info(
+        "fix_tick006_phantom_refile: rewriting %s's citation of %s -> %s (%s)",
+        ticket_id,
+        tid,
+        resolved_id,
+        reason,
+    )
     return new_body, FixApplied(
         rule="TICK006",
         file="tickets.md",
@@ -834,7 +998,11 @@ def _tick006_try_resolve_without_filing(
     if renamed_to is not None:
         known_ids.add(renamed_to)
         body, applied = _tick006_rewrite_citation(
-            current_body, tid, renamed_to, ticket.id, "resolved via git rename"
+            current_body,
+            tid,
+            renamed_to,
+            ticket.id,
+            "resolved via git rename, frontmatter id: transition confirmed",
         )
         return body, applied, True
     if not rename_measured:
