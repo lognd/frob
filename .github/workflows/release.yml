@@ -75,14 +75,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # T-4464: pinned to 2_28 (glibc 2.28), not "auto" (manylinux2014,
+          # glibc 2.17). tree-sitter 0.25.10's build.rs compiles its C
+          # sources with -std=c11 and -D_DEFAULT_SOURCE; _DEFAULT_SOURCE as
+          # a feature-test macro was introduced in glibc 2.19, so on 2.17
+          # the endian.h shim never exposes le16toh/etc and the symbol goes
+          # unresolved at import time (undefined symbol: le16toh). glibc
+          # 2.28 defines _DEFAULT_SOURCE's macros, so the import smoke step
+          # below succeeds. Do not revert to "auto" without re-verifying
+          # the import smoke on a manylinux2014 container.
           - target: manylinux-x86_64
             os: ubuntu-latest
             maturin_target: x86_64-unknown-linux-gnu
-            manylinux: auto
+            manylinux: "2_28"
           - target: manylinux-aarch64
             os: ubuntu-latest
             maturin_target: aarch64-unknown-linux-gnu
-            manylinux: auto
+            manylinux: "2_28"
           - target: macos-x86_64
             os: macos-13
             maturin_target: x86_64-apple-darwin
@@ -117,14 +126,26 @@ jobs:
       # Acceptance: "a built wheel installs into a clean venv on each
       # target platform and the natives import successfully" -- verified
       # HERE, on the real runner that just built it, not asserted.
+      # T-4464: OS-aware venv layout. The POSIX bin/python path does not
+      # exist on Windows (uv lays a Windows venv out as Scripts/python.exe)
+      # -- previously hardcoded, which made this step fail to find an
+      # interpreter on windows-x86_64 every run. Also moved the venv under
+      # $RUNNER_TEMP instead of a hardcoded /tmp path, which is not valid
+      # on Windows runners either.
       - name: Install the just-built wheels into a clean venv and import them
         shell: bash
         run: |
           set -e
-          uv venv /tmp/native-check-venv
-          uv pip install --python /tmp/native-check-venv/bin/python \
+          venv_dir="$RUNNER_TEMP/native-check-venv"
+          uv venv "$venv_dir"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            python_bin="$venv_dir/Scripts/python.exe"
+          else
+            python_bin="$venv_dir/bin/python"
+          fi
+          uv pip install --python "$python_bin" \
             frob-core/dist/*.whl strata-core/dist/*.whl
-          /tmp/native-check-venv/bin/python -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
+          "$python_bin" -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
       - name: Upload frob-core wheel
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

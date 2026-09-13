@@ -2,7 +2,7 @@
 id: T-4464
 title: 'release.yml: manylinux wheels fail to import (le16toh) and the Windows wheel
   smoke uses bin/python'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'

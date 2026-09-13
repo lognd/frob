@@ -13,6 +13,21 @@ frob ships three separately-published artifacts:
 manylinux x86_64, manylinux aarch64, macOS x86_64, macOS arm64, Windows
 x86_64 -- five platform wheels per crate, plus one sdist per crate.
 
+**manylinux floor: `2_28`, not `auto` (T-4464).** Both Linux matrix
+entries pin `manylinux: "2_28"` (glibc 2.28) in `release.yml` rather than
+maturin-action's default `auto` (manylinux2014, glibc 2.17). Release run
+34769124533 built manylinux2014 wheels that then failed the import smoke
+step with `undefined symbol: le16toh`: the vendored tree-sitter 0.25.10
+crate's `build.rs` compiles its C sources with `-std=c11` and
+`-D_DEFAULT_SOURCE`, but `_DEFAULT_SOURCE` was only introduced as a
+feature-test macro in glibc 2.19, so on glibc 2.17 the `endian.h` shim
+never exposes `le16toh`/friends and the symbol goes unresolved at
+import time. glibc 2.28 postdates `_DEFAULT_SOURCE`, so the same build
+imports cleanly. `ci.yml` never hit this because `make core` there
+builds on `ubuntu-latest`'s glibc 2.39, not inside a manylinux container.
+Do not drop the pin back to `auto` without re-verifying the import smoke
+against a manylinux2014 build.
+
 ## Workflow structure (`.github/workflows/release.yml`)
 
 1. **`build`** (+ `build-sdists`) -- runs on every manual dispatch

@@ -34,6 +34,17 @@ def _load(path: Path) -> dict:
     return doc
 
 
+def _find_step_by_name_prefix(job: dict, name_prefix: str) -> dict:
+    """Return the first step in `job` whose `name` starts with
+    `name_prefix`, raising loudly (not returning None) if no step
+    matches -- shared lookup so callers do not each re-write their own
+    for/if/return-or-raise loop over a job's steps (frob:doc DUP001)."""
+    for step in job["steps"]:
+        if step.get("name", "").startswith(name_prefix):
+            return step
+    raise AssertionError(f"no step named {name_prefix!r} found")
+
+
 def _assert_step_uses_faulthandler_and_marker(name_prefix: str, marker: str) -> None:
     """Shared MUST-STAY-QUIET check (T-3426/T-3482) for the ubuntu/macOS
     Test steps: PYTHONFAULTHANDLER=1 plus each platform's own
@@ -42,12 +53,9 @@ def _assert_step_uses_faulthandler_and_marker(name_prefix: str, marker: str) -> 
     ubuntu/macOS variants of this same assertion do not duplicate each
     other's body (frob:doc DUP001)."""
     doc = _load(_CI_WORKFLOW)
-    for step in doc["jobs"]["build"]["steps"]:
-        if step.get("name", "").startswith(name_prefix):
-            assert step["env"]["PYTHONFAULTHANDLER"] == "1"
-            assert marker in step["run"]
-            return
-    raise AssertionError(f"no {name_prefix!r} Test step found")
+    step = _find_step_by_name_prefix(doc["jobs"]["build"], name_prefix)
+    assert step["env"]["PYTHONFAULTHANDLER"] == "1"
+    assert marker in step["run"]
 
 
 class TestReleaseWorkflowNoAutomaticTrigger:
@@ -513,4 +521,66 @@ class TestCiUbuntuTestBudgetRaised:
             f"ubuntu Test step budget ({ubuntu_minutes}m) and macOS's "
             f"({macos_minutes}m) must match now that both run a bare "
             f"`pytest -q` (T-3756)"
+        )
+
+
+# frob:ticket T-4464
+class TestManylinuxPinAndWindowsSmoke:
+    """T-4464: release run 34769124533 failed the import smoke on
+    manylinux-x86_64/aarch64 (undefined symbol: le16toh -- tree-sitter
+    0.25.10's build.rs compiles with -std=c11 -D_DEFAULT_SOURCE, and
+    manylinux2014's glibc 2.17 predates _DEFAULT_SOURCE as a feature-test
+    macro) and on windows-x86_64 (the smoke step hardcoded the POSIX
+    bin/python venv layout, so uv found no interpreter)."""
+
+    def test_manylinux_targets_pin_2_28(self) -> None:
+        """MUST-FIRE: both Linux matrix entries must pin manylinux: 2_28,
+        not 'auto' (manylinux2014/glibc 2.17, where the endian macros
+        stay hidden and le16toh is unresolved at import time)."""
+        doc = _load(_RELEASE_WORKFLOW)
+        matrix = doc["jobs"]["build"]["strategy"]["matrix"]["include"]
+        linux_entries = {
+            entry["target"]: entry
+            for entry in matrix
+            if entry["target"].startswith("manylinux-")
+        }
+        assert set(linux_entries) == {"manylinux-x86_64", "manylinux-aarch64"}
+        for target, entry in linux_entries.items():
+            assert entry["manylinux"] == "2_28", (
+                f"{target} must pin manylinux: 2_28 (glibc 2.28, which "
+                f"defines the _DEFAULT_SOURCE endian macros tree-sitter "
+                f"0.25.10 needs) -- got {entry['manylinux']!r}"
+            )
+
+    def test_manylinux_pin_reason_is_documented(self) -> None:
+        """MUST-FIRE: the glibc/_DEFAULT_SOURCE reasoning must be recorded
+        as a comment directly in the workflow, not only in the ticket."""
+        text = _RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        assert "le16toh" in text
+        assert "_DEFAULT_SOURCE" in text
+        assert "2.28" in text or "2_28" in text
+
+    def test_smoke_step_is_os_aware(self) -> None:
+        """MUST-FIRE: the import smoke step must branch on RUNNER_OS and
+        use Scripts/python.exe on Windows rather than hardcoding the
+        POSIX bin/python layout, and must place the venv under
+        $RUNNER_TEMP rather than a hardcoded /tmp path."""
+        doc = _load(_RELEASE_WORKFLOW)
+        step = _find_step_by_name_prefix(
+            doc["jobs"]["build"], "Install the just-built wheels into a clean venv"
+        )
+        run = step["run"]
+        assert "RUNNER_OS" in run, (
+            "smoke step must branch on RUNNER_OS to pick the "
+            "per-platform interpreter path"
+        )
+        assert "Scripts/python.exe" in run, (
+            "smoke step must use Scripts/python.exe on Windows"
+        )
+        assert "RUNNER_TEMP" in run, (
+            "smoke step must place the venv under $RUNNER_TEMP, "
+            "not a hardcoded POSIX /tmp path"
+        )
+        assert "/tmp/native-check-venv" not in run, (
+            "smoke step must not hardcode a POSIX /tmp venv path"
         )
