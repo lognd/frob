@@ -11,7 +11,7 @@ blocked_by:
 - T-4110
 parent: T-4109
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -31,6 +31,13 @@ scope_changes:
     land as a small unscoped doc append at close time
   actor: logan
   at: '2026-09-06'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.541.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-13'
 designated_repro_test: null
 threat: null
 component: null
