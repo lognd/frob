@@ -2,7 +2,7 @@
 id: T-4236
 title: 'make the Windows CI leg green and remove its advisory flag: the owner will
   not cut a PyPI release until it passes'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-07'
