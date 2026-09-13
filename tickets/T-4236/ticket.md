@@ -33,7 +33,8 @@ acceptance:
   - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 - text: given the path-shape failures, when they are fixed, then the fix is one shared
     mechanism rather than a per-test correction
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 threat: null
 component: null
 anchor: false
