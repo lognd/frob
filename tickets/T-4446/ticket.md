@@ -2,7 +2,7 @@
 id: T-4446
 title: 'Windows CI: frob agent env stdout is UTF-16 under bash eval on the runner
   (successor to T-4405)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-12'
@@ -24,7 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_contains_only_export_lines
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_diagnostics_still_appear_on_stderr
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_no_fleet_context_still_produces_valid_eval_output
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_is_utf8_even_under_forced_utf16_ioencoding
+designated_repro_test: tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_is_utf8_even_under_forced_utf16_ioencoding
 threat: null
 component: null
 anchor: false

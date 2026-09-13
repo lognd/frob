@@ -91,6 +91,30 @@ def _build_agent_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _force_utf8_stdout() -> None:
+    """T-4446: reconfigure `sys.stdout` to UTF-8 (text-mode, so `print`/
+    `Renderer` keep working unchanged), regardless of the interpreter's
+    inherited console code page or `PYTHONIOENCODING`. `frob agent env`'s
+    whole output contract is "pure ASCII shell, `eval`-able" -- but on the
+    GitHub Windows runner, `sys.stdout`'s default encoding can resolve to
+    UTF-16 (console code page / `PYTHONIOENCODING` interaction), so a
+    plain `print("export ...")` writes UTF-16 code units, interleaving a
+    NUL byte after every ASCII byte. Bash's `eval "$(...)"` reads that as
+    garbage (the exact CI failure this fixes: NUL-interleaved bytes in
+    the captured `frob agent env` output). `TextIOWrapper.reconfigure`
+    (py3.7+) is the one supported way to change the encoding of the
+    ALREADY-BOUND `sys.stdout` object in place, so every other caller of
+    this module (logging's `_LazyStdoutHandler`, any other write to the
+    same stream) is unaffected -- this is called only in `_run_env`'s own
+    narrow window, not at import time or module scope. Silently no-ops if
+    `sys.stdout` is something that does not support `reconfigure` (e.g. a
+    test harness's `io.StringIO` stand-in) rather than crashing a command
+    whose whole job is to never break the caller's shell."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(encoding="utf-8", errors="strict", newline="\n")
+
+
 def _run_env(path: str) -> None:
     """`frob agent env [path]`: resolve `path`'s (default cwd) worktree
     root and print `export FROB_WORKTREE=...` / `export FROB_AGENT=1`
@@ -101,7 +125,11 @@ def _run_env(path: str) -> None:
     before printing so a worktree path containing a space/quote/shell
     metacharacter cannot break the `eval` (or worse, get interpreted as a
     second command). Exits 1 with a logged error if `path` does not
-    resolve to a git worktree at all."""
+    resolve to a git worktree at all. T-4446: forces `sys.stdout` to
+    UTF-8 first (`_force_utf8_stdout`) so the exported bytes are always
+    plain ASCII/UTF-8 shell, never UTF-16, regardless of the runner's
+    console code page."""
+    _force_utf8_stdout()
     with _all_logs_to_stderr():
         result = agent_env_exports(Path(path))
         if result.is_err:

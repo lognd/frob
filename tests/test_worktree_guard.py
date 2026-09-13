@@ -696,6 +696,47 @@ class TestAgentEnvStdoutPurity:
         for line in (line for line in result.stdout.splitlines() if line):
             assert line.startswith("export ")
 
+    def test_stdout_is_utf8_even_under_forced_utf16_ioencoding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_stdout_is_utf8_ev\
+        # en_under_forced_utf16_ioencoding
+        """T-4446: on the GitHub Windows runner, `sys.stdout`'s default
+        encoding resolved to UTF-16 (console code page / PYTHONIOENCODING
+        interaction), so `frob agent env`'s exported lines came out as
+        UTF-16 code units -- a NUL byte interleaved after every ASCII
+        byte -- and bash's `eval "$(...)"` choked on it (CI run
+        34675057655). Forces `PYTHONIOENCODING=utf-16` here to reproduce
+        that shape directly (subprocess.run(text=False) so the RAW bytes
+        are inspected, not a decoded str that would hide the corruption):
+        `_force_utf8_stdout`'s `sys.stdout.reconfigure(encoding="utf-8")`
+        must win regardless, so the captured bytes are plain ASCII/UTF-8
+        with no interleaved NUL."""
+        _init_repo(tmp_path)
+        env = dict(os.environ)
+        env["PYTHONIOENCODING"] = "utf-16"
+        result = subprocess.run(
+            [sys.executable, "-m", "frob", "agent", "env", str(tmp_path)],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=False,
+            timeout=60,
+            env=env,
+        )
+        assert result.returncode == 0, result.stderr
+        assert b"\x00" not in result.stdout, (
+            f"NUL byte in stdout under forced UTF-16 PYTHONIOENCODING "
+            f"(raw bytes: {result.stdout!r})"
+        )
+        decoded = result.stdout.decode("utf-8")
+        lines = [line for line in decoded.splitlines() if line]
+        assert lines, "expected at least one export line on stdout"
+        for line in lines:
+            assert line.startswith("export "), (
+                f"non-export line on stdout: {line!r} (full stdout: {decoded!r})"
+            )
+
 
 class TestStashGuardHook:
     """T-0574: the scaffold-managed `reference-transaction` hook that
