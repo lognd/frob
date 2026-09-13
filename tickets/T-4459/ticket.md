@@ -2,7 +2,7 @@
 id: T-4459
 title: Worktree test runs import frob from the ROOT src (editable .pth), measuring
   main instead of the branch
-state: done
+state: queued
 kind: bug
 origin: agent
 created: '2026-09-13'
@@ -90,3 +90,6 @@ MEASURED 2026-09-13 by the T-4449 rebase agent: running the root checkout's inte
 
 
 frob:waive BUG002 reason="check-repro cannot produce a real verdict for these node ids: T-2025's squash-lands-the-repro-test-with-its-fix limitation applies here too -- the repro tests and the PYTHONPATH-export fix were added in the same worktree commit, so no ancestor commit contains the tests without the fix (TEST_ABSENT_AT_PARENT at the merge-base). Confirmatory-only by construction, not by omission. The real fail-before/pass-after was measured manually in this worktree: BEFORE the agent_runner.py change, \`cd <worktree> && env -u PYTHONPATH uv run frob agent env .\` printed only FROB_WORKTREE/FROB_AGENT/PYTEST_XDIST_AUTO_NUM_WORKERS -- no PYTHONPATH line -- and a subprocess python -c \"import frob; print(frob.__file__)\" run with PYTHONPATH unset from inside the worktree resolved to /home/logan/projects/frob/src/frob/__init__.py (the ROOT checkout), not the worktree's own src/. AFTER the fix, the same \`uv run frob agent env .\` invocation additionally printed export PYTHONPATH=<worktree>/src, and evaluating that export before the same import check resolved frob.__file__ to <worktree>/src/frob/__init__.py. Symmetrically for doctor.py's _import_source_status: before this ticket the function/ImportSourceStatus did not exist at all; after, calling it with a root whose own src/frob/__init__.py differs from the currently-imported module's file returns mismatched=True (measured directly against /home/logan/projects/frob as the mismatched root while running from the t-4459 worktree's own src/), and mismatched=False when root IS the worktree the import resolved from."
+
+## Reopen log
+- 2026-09-13: the refused land (18:57 UTC, PreLandUnscopedSweepFailed) wrote state=done to main before unwinding; no code landed (git log main --grep 'land T-4459' is empty); reopening so the corrected worktree can land
