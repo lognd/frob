@@ -2,7 +2,7 @@
 id: T-4473
 title: artifact-smoke native-extra runs frob doctor inside the repo checkout; fails
   on hooks/claude drift/detached HEAD/import-source, not the wheel
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
