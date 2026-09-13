@@ -20,10 +20,19 @@ scope:
 - scripts/artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
 - tests/test_ci_workflow*.py
+- tests/system/test_artifact_smoke.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_artifact_smoke.py
+  reason: T-4465's own acceptance criteria names the two node ids in this file; existing
+    frob:tests annotations on _require_core_wheels already cover TestArtifactSmokeAbsentCores,
+    SCOPE002 requires declaring it
+  actor: logan
+  at: '2026-09-13'
 evidence:
 - tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_stale_version_wheel_names_versions
 - tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_matching_version_wheel_does_not_raise
