@@ -2,7 +2,7 @@
 id: T-4465
 title: 'CI artifact-smoke resolves kernels from stale cached target/wheels: unsatisfiable
   frob-core==0.531.0 after the bump'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
