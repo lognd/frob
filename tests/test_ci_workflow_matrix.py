@@ -17,6 +17,17 @@ def _load_ci_workflow() -> dict:
     return yaml.safe_load(text)
 
 
+def _diagnostics_step(workflow: dict) -> dict:
+    """The T-4450 self-gate diagnostics/cache-wipe step's own parsed dict,
+    shared by every test that inspects its condition or run script."""
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if step.get("name") == "self-gate: fresh collection + diagnostics"
+    )
+
+
 class TestCiBuildMatrixCoversAllThreePlatforms:
     """T-2917: a single-OS CI matrix cannot detect a platform regression."""
 
@@ -466,4 +477,67 @@ class TestSelfGateRunsOnWindowsEvenIfTestStepFails:
             "the widened condition must still exclude a genuinely "
             "cancelled run (bare `success() || matrix.os == "
             "'windows-latest'` would not)"
+        )
+
+
+class TestSelfGateCollectsFresh:
+    """T-4450: the Windows self-gate reported 56 COV003 + 2 TEST002 on the
+    two POSIX-only stackdump test modules on every run since 2026-09-09,
+    never reproducible on the winrun mirror EXCEPT from stale `.frob/`
+    collection-cache state left by an earlier session (T-4449 findings).
+    Locks that a diagnostics-and-wipe step runs immediately before the
+    self-gate on all three legs, so the self-gate always performs a fresh
+    collection instead of reading a leftover `.frob/*-collect.json` from
+    the same job's own Test step."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diagnostics_step_exists_and_precedes_self_gate(self) -> None:
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        names = [step.get("name", "") for step in steps]
+        diag_idx = names.index("self-gate: fresh collection + diagnostics")
+        gate_idx = names.index("frob check (self-gate)")
+        assert diag_idx < gate_idx, (
+            "the T-4450 diagnostics/cache-wipe step must run BEFORE "
+            "'frob check (self-gate)', not after"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diagnostics_step_runs_on_all_three_legs(self) -> None:
+        workflow = _load_ci_workflow()
+        diag_step = _diagnostics_step(workflow)
+        condition = diag_step.get("if", "")
+        assert "matrix.os == 'windows-latest'" in condition, (
+            "the diagnostics step must run on windows even after a "
+            "failing Test step, matching the self-gate step's own condition"
+        )
+        assert "success()" in condition and "cancelled()" in condition, (
+            "the diagnostics step's condition must match the self-gate "
+            "step's condition (T-4269) so it never runs on a leg where "
+            "the self-gate itself is skipped"
+        )
+        assert diag_step.get("shell") == "bash", (
+            "must run under bash on all three legs (Windows runners ship "
+            "Git Bash) so one step's script works for every OS"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diagnostics_step_wipes_collection_caches_not_coverage_state(
+        self,
+    ) -> None:
+        workflow = _load_ci_workflow()
+        diag_step = _diagnostics_step(workflow)
+        run_text = diag_step.get("run", "")
+        assert "pytest-collect.json" in run_text
+        assert ".frob/*-collect.json" in run_text, (
+            "must glob-delete every *-collect.json, not just the python one"
+        )
+        assert ".frob/coverage-stamp" not in run_text, (
+            "must never touch .frob/coverage-stamp (T-1265: gitignored "
+            "and never restored in a fresh checkout -- deleting it would "
+            "permanently blind TEST005/006 for the rest of the job)"
+        )
+        assert ".frob/baseline" not in run_text, (
+            "must never touch .frob/baseline (T-1265, same reasoning as "
+            "coverage-stamp above)"
         )

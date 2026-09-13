@@ -713,6 +713,56 @@ jobs:
       # behavior unchanged; `!cancelled()` keeps a genuinely cancelled
       # run from still executing this step, which bare
       # `success() || matrix.os == 'windows-latest'` would not exclude.
+      # T-4450: Windows self-gate had reported 56 COV003 + 2 TEST002 on the
+      # two POSIX-only stackdump test modules on every run since 2026-09-09
+      # (T-4429/T-4408/T-4447), never reproducible on the winrun mirror --
+      # but an investigator (T-4449 findings) DID reproduce exactly this
+      # error class on the mirror from stale `.frob/` collection-cache
+      # state left by an earlier session, cleared only by deleting
+      # `.frob/` outright. The runner-only difference from the mirror is
+      # that this self-gate runs AFTER the full Test step in the SAME
+      # checkout, so a leftover `.frob/*-collect.json` from that step (or
+      # an earlier tool invocation within it) is a live candidate for
+      # poisoning this gate's own collection. This step (1) DIAGNOSES the
+      # runner's `.frob/` state so the next run names the poisoned
+      # artifact directly if one exists, then (2) DELETES the known
+      # collection-cache files so the self-gate below always performs a
+      # fresh collection, matching the mirror measurement that reads 0
+      # errors. `.frob/coverage-stamp` and `.frob/baseline` are NEVER
+      # touched here -- T-1265 (see that step's own comment further down)
+      # already documents why: they are gitignored and never restored in
+      # a fresh checkout, so deleting them would not "wipe a cache", it
+      # would permanently blind TEST005/006 for the rest of this job.
+      # `shell: bash` explicitly, matching the T-3531 precedent above:
+      # GitHub's hosted Windows runners ship Git Bash, so one step covers
+      # all three legs instead of a per-platform duplicate, and every
+      # command below is written to tolerate a missing/empty `.frob/`
+      # (globs guarded with a `2>/dev/null || true`, the python one-liners
+      # each wrapped so an absent pytest-collect.json just skips that
+      # print) -- a cold self-hosted run with no cache yet must not fail
+      # this step.
+      - name: 'self-gate: fresh collection + diagnostics'
+        if: ${{ !cancelled() && (success() || matrix.os == 'windows-latest') }}
+        shell: bash
+        run: |
+          echo '--- .frob/ listing (T-4450) ---'
+          ls -la .frob 2>/dev/null || echo '.frob/ does not exist yet'
+          echo '--- .frob/pytest-collect.json (T-4450) ---'
+          if [ -f .frob/pytest-collect.json ]; then
+            wc -c < .frob/pytest-collect.json
+            uv run python -c "import json; data = json.load(open('.frob/pytest-collect.json')); print('top-level keys:', sorted(data.keys()) if isinstance(data, dict) else type(data)); targets = ('tests/unit/test_conftest_stackdump.py', 'tests/unit/test_stackdump.py'); containers = [data.get(k) for k in ('entries', 'files', 'node_ids', 'items') if isinstance(data, dict) and isinstance(data.get(k), dict)]; [print(f'{p}: ' + repr(next((c[p] for c in containers if p in c), None))) for p in targets]" || echo 'pytest-collect.json present but not parseable as JSON'
+          else
+            echo '.frob/pytest-collect.json does not exist'
+          fi
+          echo '--- live collect_python_tests().platform_skipped (T-4450) ---'
+          uv run python -c "from pathlib import Path; from frob.testing._collect import collect_python_tests; result = collect_python_tests(Path('.')); print('platform_skipped:', result.danger_ok.platform_skipped) if result.is_ok else print('collect_python_tests failed:', result.danger_err)" || echo 'collect_python_tests diagnostic failed to run'
+          echo '--- wiping collection caches for a fresh self-gate collection (T-4450) ---'
+          rm -f .frob/pytest-collect.json .frob/cargo-collect.json \
+                .frob/ctest-collect.json .frob/kotlin-junit-collect.json \
+                2>/dev/null || true
+          rm -f .frob/*-collect.json 2>/dev/null || true
+          echo 'remaining .frob/ contents after wipe:'
+          ls -la .frob 2>/dev/null || echo '.frob/ does not exist'
       - name: frob check (self-gate)
         if: ${{ !cancelled() && (success() || matrix.os == 'windows-latest') }}
         run: uv run frob check
