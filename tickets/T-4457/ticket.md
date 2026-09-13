@@ -21,6 +21,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse
+- tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_same_drive_relativizes_normally
+- tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_cross_drive_diag_and_base_do_not_crash
+- tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath::test_live_and_baseline_pass_agree_across_differently_drived_trees
 designated_repro_test: null
 threat: null
 component: null
