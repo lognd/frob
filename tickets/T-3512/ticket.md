@@ -32,10 +32,16 @@ body_changes:
   old_length: 3220
   new_length: 3477
 evidence:
-- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_has_no_continue_on_error
 - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_matrix_still_includes_all_three_platforms
 - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_no_step_level_continue_on_error_smuggled_onto_other_legs
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_has_no_continue_on_error
+  new_node: ''
+  reason: test kept original name to preserve T-3425/T-3540/T-3549 evidence resolution
+  actor: logan
+  at: '2026-09-13'
 threat: null
 component: null
 anchor: false
