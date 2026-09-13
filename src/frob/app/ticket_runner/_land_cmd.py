@@ -103,10 +103,17 @@ _log = get_logger("frob.app.ticket_runner")
 # frob:ticket T-4417
 _LAND_PHASE_LOG_PREFIX = "ticket land:"
 
-#: Wall-clock (`time.monotonic()`) of the first "ticket land: ..." line
-#: this process has logged, lazily set by `_LandPhaseElapsedFilter` the
-#: first time one fires -- `None` before any land phase line has been
-#: emitted. T-4417: module-level rather than passed explicitly through
+#: Wall-clock (`time.perf_counter()`, T-4442) of the first "ticket land:
+#: ..." line this process has logged, lazily set by
+#: `_LandPhaseElapsedFilter` the first time one fires -- `None` before any
+#: land phase line has been emitted. T-4442: `time.monotonic()` ticks in
+#: ~15.6ms steps on win32 (the GitHub Windows runner's clock, measured),
+#: so two phase lines less than a tick apart both round to the same
+#: [+0.0s] prefix and a strict `second > first` assertion flakes; `time.
+#: perf_counter()` is also monotonic but backed by a high-resolution
+#: counter (QueryPerformanceCounter on win32, sub-microsecond) so it
+#: advances between any two real log lines. T-4417: module-level rather
+#: than passed explicitly through
 #: every one of this file's ~80 existing phase-transition call sites,
 #: because doing it per-call would mean re-deriving "how long has this
 #: land run so far" independently at each of those sites (the "per-call
@@ -130,7 +137,7 @@ def _land_phase_elapsed_seconds() -> float:
     uniformly to every phase-transition line so no call site computes
     this by hand."""
     global _land_phase_timer_start
-    now = time.monotonic()
+    now = time.perf_counter()
     if _land_phase_timer_start is None:
         _land_phase_timer_start = now
     return now - _land_phase_timer_start

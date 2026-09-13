@@ -35,10 +35,19 @@ class TestLandPhaseElapsedLogging:
     def test_elapsed_seconds_is_monotonic_across_phase_lines(self, caplog) -> None:
         """Two "ticket land: ..." lines a measurable gap apart must carry
         strictly increasing elapsed-seconds prefixes, and the very first
-        one must start at (approximately) zero."""
+        one must start at (approximately) zero.
+
+        T-4442: sleeps 0.25s (not the original 0.05s) -- on the GitHub
+        Windows runner `time.monotonic()` ticks in ~15.6ms steps and the
+        one-decimal `[+N.Ns]` prefix rounds both a 0.05s-apart pair to the
+        same `[+0.0s]`, failing the strict `second > first` assertion even
+        though the underlying clock (now `time.perf_counter()`) actually
+        advanced; 0.25s is comfortably larger than both the win32 tick AND
+        the one-decimal formatting's rounding step, so the *formatted*
+        prefixes themselves must differ, not just the raw float."""
         with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
             _land_cmd._log.info("ticket land: %s phase one starting", "T-TEST")
-            time.sleep(0.05)
+            time.sleep(0.25)
             _land_cmd._log.info("ticket land: %s phase two starting", "T-TEST")
 
         messages = [r.getMessage() for r in caplog.records]
