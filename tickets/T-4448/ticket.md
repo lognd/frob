@@ -19,10 +19,35 @@ scope:
 - src/frob/tickets/_rapid_sweep*.py
 - src/frob/verify/_sweep*.py
 - tests/unit/test_rapid_sweep*.py
+- src/frob/tickets/_worktree_sweep.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/rapid_sweep_suite/*.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_worktree_sweep.py
+  reason: attempt 1 found the disposal verdict lives in _worktree_sweep.py (_sweep_verdict_for_worktree,
+    _kept_* gates, remove_worktree) called from app/ticket_runner/_rapid_sweep.py;
+    the declared globs matched no files
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: attempt 1 found the disposal verdict lives in _worktree_sweep.py (_sweep_verdict_for_worktree,
+    _kept_* gates, remove_worktree) called from app/ticket_runner/_rapid_sweep.py;
+    the declared globs matched no files
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/unit/rapid_sweep_suite/*.py
+  reason: attempt 1 found the disposal verdict lives in _worktree_sweep.py (_sweep_verdict_for_worktree,
+    _kept_* gates, remove_worktree) called from app/ticket_runner/_rapid_sweep.py;
+    the declared globs matched no files
+  actor: logan
+  at: '2026-09-13'
 designated_repro_test: null
 threat: null
 component: null
