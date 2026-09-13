@@ -2,7 +2,7 @@
 id: T-4448
 title: Post-land rapid sweep removes clean UNLANDED agent worktrees (t-4442, t-4446
   deleted while READY)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
