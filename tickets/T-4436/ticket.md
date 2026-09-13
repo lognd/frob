@@ -17,10 +17,38 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - tests/unit/test_land_finalize_drafts*.py
+- src/frob/gates/_fix_engine.py
+- tests/unit/test_fix_engine_tick006*.py
+- tests/test_gates_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: attempt 1 traced the rewrite to fix_tick006_phantom_refile/_resolve_via_git_rename_measured
+    in src/frob/gates/_fix_engine.py (trusts any git -M rename pairing as a promotion
+    record), invoked from the pre-land Tier-A pass; _land.py's finalizer never rewrites
+    unrelated tickets
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/unit/test_fix_engine_tick006*.py
+  reason: attempt 1 traced the rewrite to fix_tick006_phantom_refile/_resolve_via_git_rename_measured
+    in src/frob/gates/_fix_engine.py (trusts any git -M rename pairing as a promotion
+    record), invoked from the pre-land Tier-A pass; _land.py's finalizer never rewrites
+    unrelated tickets
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: attempt 1 traced the rewrite to fix_tick006_phantom_refile/_resolve_via_git_rename_measured
+    in src/frob/gates/_fix_engine.py (trusts any git -M rename pairing as a promotion
+    record), invoked from the pre-land Tier-A pass; _land.py's finalizer never rewrites
+    unrelated tickets
+  actor: logan
+  at: '2026-09-13'
 designated_repro_test: null
 threat: null
 component: null
