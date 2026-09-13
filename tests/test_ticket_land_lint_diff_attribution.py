@@ -19,6 +19,7 @@ ticket's own gate.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -143,6 +144,46 @@ class TestRuffDiagnosticIdentity:
         assert _ruff_diagnostic_identity(
             live_base, live_diag
         ) == _ruff_diagnostic_identity(snapshot_base, snapshot_diag)
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="T-4445: backslash/drive-letter path shape is win32-only "
+        "-- os.path.relpath/normcase are platform-native, so exercising "
+        "Windows-style path text through posixpath on linux/macOS would "
+        "test posixpath's rules, not the win32 behavior this guards",
+    )
+    def test_backslash_and_drive_letter_case_do_not_break_identity(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity.test_backslash_and_drive_letter_case_do_not_break_identity  # noqa: E501
+        # T-4445: a Windows CI runner and a Windows dev mirror can each
+        # report the SAME relative file with different backslash/forward-
+        # slash or drive-letter-case text (`os.path.relpath` is purely
+        # lexical, so it never normalizes either). Both spellings of the
+        # same file must still compare equal.
+        from frob.app.ticket_runner._land_cmd import _ruff_diagnostic_identity
+        from frob.process.parsers.common import Diagnostic
+
+        base = Path("C:\\work\\worktree")
+        lower_backslash = Diagnostic(
+            file="c:\\work\\worktree\\src\\bad_lint.py",
+            line=1,
+            col=8,
+            severity="error",
+            code="F401",
+            message="`os` imported but unused",
+        )
+        upper_forwardslash = Diagnostic(
+            file="C:/work/worktree/src/bad_lint.py",
+            line=9,
+            col=8,
+            severity="error",
+            code="F401",
+            message="`os` imported but unused",
+        )
+        assert _ruff_diagnostic_identity(
+            base, lower_backslash
+        ) == _ruff_diagnostic_identity(base, upper_forwardslash)
 
 
 # frob:ticket T-3132

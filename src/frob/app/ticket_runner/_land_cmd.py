@@ -4833,7 +4833,23 @@ def _ruff_diagnostic_identity(  # noqa: ANN001
 
     if diag.file is None:
         return (None, diag.code, diag.message)
-    return (os.path.relpath(diag.file, base.resolve()), diag.code, diag.message)
+    # T-4445: `os.path.relpath` is purely lexical -- it neither
+    # case-folds nor separator-normalizes. On win32 the filesystem is
+    # case-insensitive and two spawns of the SAME relative file can
+    # legitimately come back with different backslash/forward-slash or
+    # drive-letter-case text (observed: a CI runner's checkout diverges
+    # from a local mirror in exactly this way), which would otherwise
+    # make a byte-identical, merely-shifted violation compare unequal
+    # between the live and baseline pass and misclassify it as new.
+    # `os.path.normcase` is a no-op on POSIX and lowercases + flips `/`
+    # to `\` on win32, so both sides land on the same identity text
+    # regardless of which OS-native spelling either spawn happened to
+    # produce.
+    return (
+        os.path.normcase(os.path.relpath(diag.file, base.resolve())),
+        diag.code,
+        diag.message,
+    )
 
 
 # frob:ticket T-3132
@@ -4898,6 +4914,23 @@ def _ruff_new_violations(
         if remaining[identity] > 0:
             remaining[identity] -= 1
         else:
+            # T-4445: this is the exact refusal-attribution decision a
+            # cross-platform path-shape mismatch (backslash vs forward
+            # slash, drive-letter case, CRLF-shifted line numbers -- line/
+            # col are excluded from identity already, so CRLF cannot be
+            # the cause post-fix, but the path text can) would silently
+            # misfire on: a violation that IS pre-existing gets charged
+            # as new because its identity text does not match any
+            # baseline key. Logging both the computed identity and the
+            # full baseline key set here means the NEXT such mismatch
+            # names itself in the CI log instead of surfacing only as an
+            # opaque `SystemExit: 1`.
+            _log.warning(
+                "ticket land: ruff identity %r not found in baseline "
+                "(baseline identities: %r) -- attributing as new",
+                identity,
+                list(baseline_counts.keys()),
+            )
             new_violations.append(d)
     return new_violations
 
