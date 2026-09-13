@@ -2,7 +2,7 @@
 id: T-4456
 title: 'Windows: T-4454''s _recreate publish hits WinError 5 (os.replace over an open
   handle), test_path_never_absent_during_recreate fails'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
