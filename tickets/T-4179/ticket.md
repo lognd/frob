@@ -2,7 +2,7 @@
 id: T-4179
 title: land --dry-run writes to the worktree, its auto-fix splits a node id inside
   a directive, and the next run refuses the operator for the tool's own edit
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-07'
