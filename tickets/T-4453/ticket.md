@@ -19,10 +19,18 @@ scope:
 - src/frob/tickets/_new*.py
 - tests/unit/test_new_ticket_scope_overlap_warning.py
 - tests/unit/test_ticket_models*.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: ACCEPTANCE criterion 3 requires documenting that scope normalizes to a tuple;
+    the field is documented there, not in docs/modules/tickets.md
+  actor: logan
+  at: '2026-09-12'
 body_changes:
 - mode: append
   reason: 'record BUG002 waiver: check-repro flags confirmatory-only evidence because
