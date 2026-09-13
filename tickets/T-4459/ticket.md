@@ -35,10 +35,16 @@ body_changes:
 evidence:
 - tests/unit/test_doctor.py::TestImportSourceStatus::test_matching_worktree_reports_clean
 - tests/unit/test_doctor.py::TestImportSourceStatus::test_mismatched_worktree_reports_loudly
-- tests/unit/test_doctor.py::TestImportSourceStatus::test_no_worktree_src_never_mismatches
 - tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_env_output_names_worktree_src_on_pythonpath
 - tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_documented_entry_point_makes_worktree_code_importable
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_doctor.py::TestImportSourceStatus::test_no_worktree_src_never_mismatches
+  new_node: ''
+  reason: moved into tests/test_worktree_pythonpath.py to stay within T-4459's declared
+    scope (SCOPE001)
+  actor: logan
+  at: '2026-09-13'
 threat: null
 component: null
 anchor: false
