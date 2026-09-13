@@ -2,7 +2,7 @@
 id: T-4470
 title: 'release.yml: macos-x86_64 build pinned to the retired macos-13 runner never
   schedules and blocks the release concurrency group'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
