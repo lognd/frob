@@ -2,7 +2,7 @@
 id: T-4459
 title: Worktree test runs import frob from the ROOT src (editable .pth), measuring
   main instead of the branch
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
@@ -20,10 +20,31 @@ scope:
 - src/frob/doctor.py
 - tests/test_worktree_pythonpath*.py
 - docs/modules/agent*.md
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: pre-land unscoped sweep found 6 SELFAUDIT001 (SYS100) findings attributable
+    to T-4459's touched files (cli::env.read at agent_runner.py, testsuite::exec+fs.write
+    at test_worktree_pythonpath.py); not waivable in-file (symref binds to design-graph
+    node names), must be declared in design/frob.strata plus the matching capability-via-ratchet.lock.json
+    ceiling bumps, same recipe T-4455/T-4443 used
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: pre-land unscoped sweep found 6 SELFAUDIT001 (SYS100) findings attributable
+    to T-4459's touched files (cli::env.read at agent_runner.py, testsuite::exec+fs.write
+    at test_worktree_pythonpath.py); not waivable in-file (symref binds to design-graph
+    node names), must be declared in design/frob.strata plus the matching capability-via-ratchet.lock.json
+    ceiling bumps, same recipe T-4455/T-4443 used
+  actor: logan
+  at: '2026-09-13'
 body_changes:
 - mode: append
   reason: 'BUG002 confirmatory-only waiver: T-2025 squash-lands-repro-with-fix limitation,
