@@ -21,6 +21,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestPostSelfGateStepsAreWindowsSafe::test_test012_step_uses_bash_and_runner_temp
+- tests/test_ci_workflow_matrix.py::TestPostSelfGateStepsAreWindowsSafe::test_no_post_self_gate_step_references_tmp_without_bash_or_os_gate
 designated_repro_test: null
 threat: null
 component: null
