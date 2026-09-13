@@ -103,6 +103,15 @@ class Ticket(BaseModel):
         # arbitrarily. Never blocks on its own at this stage (M1); M2's
         # MILE00x gates give it teeth.
     scope: tuple[str, ...]      # path globs and/or symrefs
+        # T-4453: normalized to a tuple by `_normalize_scope`
+        # (`field_validator("scope", mode="before")`) on every
+        # `model_validate`/construction, AND by `Ticket.model_copy`'s own
+        # override -- `model_copy` deliberately bypasses field validators,
+        # so without that override an `update={"scope": [...]}` call (the
+        # T-2308 corrupt-row admin-repro shape) could leave a plain list
+        # in a field the model annotates `tuple[str, ...]`, which
+        # pydantic's serializer warns about the moment the model is
+        # dumped.
     findings: tuple[tuple[str, str], ...] = ()   # T-2760: (rule, file) gate-finding
         # identity/ies this ticket exists to resolve -- `--finding RULE:FILE` at
         # filing time, sorted/de-duped, checked cross-ticket for overlap (never

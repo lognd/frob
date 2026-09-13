@@ -2131,6 +2131,38 @@ class Ticket(BaseModel):
     land_commit: str | None = None
     body: str = ""
 
+    # frob:ticket T-4453
+    # frob:doc docs/modules/tickets-data-storage.md#data-models
+    # frob:tests \
+    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotC\
+    # rash.test_corrupt_row_is_named_loudly_not_silently_coerced
+    # frob:tests \
+    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotC\
+    # rash.test_unrelated_ticket_still_files_despite_one_corrupt_row
+    # frob:tests \
+    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotC\
+    # rash.test_multiple_corrupt_entries_use_plural_wording
+    def model_copy(
+        self, *, update: Mapping[str, object] | None = None, deep: bool = False
+    ) -> "Ticket":
+        """T-4453: keep `scope` a `tuple[str, ...]` even through
+        `model_copy` -- pydantic's own `model_copy` deliberately bypasses
+        every `field_validator` (see `_normalize_scope`'s docstring right
+        below), so a corrupt-row `update={"scope": [...]}` call (the
+        T-2308 admin-repro shape `tests/unit/
+        test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash`
+        exercises) used to leave a plain `list` sitting in a field
+        declared `tuple[str, ...]`, which pydantic's serializer then
+        warned about (`PydanticSerializationUnexpectedValue`) the moment
+        anything -- `write_ticket`, `frob check`, a Done report -- dumped
+        the model. Normalizing here closes the gap without weakening
+        `_normalize_scope`'s own documented reason for not validating
+        glob SYNTAX on load."""
+        copied = super().model_copy(update=update, deep=deep)
+        if not isinstance(copied.scope, tuple):
+            object.__setattr__(copied, "scope", _split_scope_entries(copied.scope))
+        return copied
+
     @field_validator("scope", mode="before")
     @classmethod
     def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
