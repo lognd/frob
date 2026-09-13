@@ -2,7 +2,7 @@
 id: T-4435
 title: 'Land spends 40+ min single-threaded after the wip commit: two load_all(worktree)
   calls in the sibling-state helpers'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-12'
