@@ -20,6 +20,8 @@ scope:
 - src/frob/gates/_fix_engine_text.py
 - tests/test_ticket_land_dry_run*.py
 - tests/unit/test_land_dry_run*.py
+- src/frob/gates/_fmt_directives.py
+- tests/test_gates_fmt_directives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +60,18 @@ scope_changes:
   reason: 'coordinator: the three defects live in the land dry-run path (_land_cmd.py/_land.py)
     and the Tier-A directive re-wrapper (_fix_engine_text.py); the ticket was filed
     with an empty scope'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: src/frob/gates/_fmt_directives.py
+  reason: the token-split wrap bug (defect 2) is implemented in _canonical_lines here,
+    not in _fix_engine_text.py which only calls format_paths
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: tests/test_gates_fmt_directives.py
+  reason: the wrap-invariant change (no token split; over-budget line allowed) requires
+    updating the tests that encoded the old always-under-limit invariant
   actor: logan
   at: '2026-09-13'
 designated_repro_test: null
