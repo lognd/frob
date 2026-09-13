@@ -513,7 +513,12 @@ class TestLandFinishPendingMarkerSigterm:
         sha = _git_head(repo)
         ready_path = repo.parent / "finish-ready.flag"
 
-        ctx = multiprocessing.get_context("fork")
+        # T-4452: `spawn`, not `fork` -- forking a process that already
+        # has threads (xdist worker, stackdump thread) is a
+        # DeprecationWarning on py3.14, and `_t1845_child_finish` is a
+        # module-level function with picklable args, so `spawn` costs
+        # nothing here.
+        ctx = multiprocessing.get_context("spawn")
         proc = ctx.Process(
             target=_t1845_child_finish, args=(repo, "T-9010", sha, wt, ready_path)
         )

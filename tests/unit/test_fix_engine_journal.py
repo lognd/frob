@@ -21,7 +21,6 @@ and `frob check` against a tree with no journal at all is unaffected."""
 from __future__ import annotations
 
 import multiprocessing
-import os
 import time
 from pathlib import Path
 
@@ -151,7 +150,12 @@ class TestAbandonedAutofixJournalSigkillSubprocess:
     ) -> None:
         # frob:tests src/frob/gates/_fix_engine_shared.py::read_abandoned_autofix_manifest kind="unit"  # noqa: E501
         (tmp_path / ".frob").mkdir()
-        ctx = multiprocessing.get_context("fork" if os.name != "nt" else "spawn")
+        # T-4452: `spawn` on every platform, not `fork` on POSIX --
+        # forking a process that already has threads (xdist worker,
+        # stackdump thread) is a DeprecationWarning on py3.14, and
+        # `_write_journal_and_block` is a module-level function with
+        # picklable args, so `spawn` costs nothing here.
+        ctx = multiprocessing.get_context("spawn")
         ready = ctx.Event()
         proc = ctx.Process(target=_write_journal_and_block, args=(str(tmp_path), ready))
         proc.start()

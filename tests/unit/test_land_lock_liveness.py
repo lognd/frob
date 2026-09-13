@@ -25,7 +25,9 @@ art: a shared, OS-arbitrated primitive instead of a per-process recorded
 field a reader must independently prove stale).
 
 This module locks that behavior in with a REAL subprocess and a REAL
-`SIGKILL` (`multiprocessing.get_context("fork")`, matching `test_ticket_
+`SIGKILL` (`multiprocessing.get_context("spawn")` -- T-4452 switched
+this off `"fork"` to stop forking the already-multi-threaded test
+process, py3.14's own DeprecationWarning -- matching `test_ticket_
 land.py::TestSigkillMidStaging`'s own precedent and rationale for why an
 in-process monkeypatch cannot stand in for this: a fake concurrency
 simulation that calls back into the same lock from inside the same
@@ -56,7 +58,7 @@ from frob.tickets._leases import refuse_if_land_in_progress
 # test_ticket_land.py's own _t0907_child_land precedent" permanent="true"
 def _child_hold_lock(root: Path, ready_path: Path) -> None:
     """Acquire `root`'s land.lock, signal readiness, then sleep -- the
-    target `multiprocessing.get_context("fork")` runs as a real, separate
+    target `multiprocessing.get_context("spawn")` runs as a real, separate
     OS process so a `SIGKILL` delivered to its pid is a genuine, kernel-
     level process death, not an in-process simulation."""
     with _land_lock(root, ticket_id="T-9999"):
@@ -72,7 +74,11 @@ def _spawn_and_kill_holder(root: Path, tmp_path: Path) -> int:
     if sys.platform == "win32":
         pytest.skip("POSIX-only (T-3244)")
     ready_path = tmp_path / "ready.flag"
-    ctx = multiprocessing.get_context("fork")
+    # T-4452: `spawn`, not `fork` -- forking a process that already has
+    # threads (xdist worker, stackdump thread) is a DeprecationWarning
+    # on py3.14, and `_child_hold_lock` is a module-level function with
+    # picklable args, so `spawn` costs nothing here.
+    ctx = multiprocessing.get_context("spawn")
     proc = ctx.Process(target=_child_hold_lock, args=(root, ready_path))
     proc.start()
     deadline = time.monotonic() + 20

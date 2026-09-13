@@ -2,7 +2,7 @@
 id: T-4452
 title: 'pytest DeprecationWarning: SIGKILL-victim test helpers fork a multi-threaded
   process (py3.14 macOS)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-12'

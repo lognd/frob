@@ -609,7 +609,12 @@ class TestSigkillMidStaging:
         before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         ready_path = repo.parent / "ready.flag"
 
-        ctx = multiprocessing.get_context("fork")
+        # T-4452: `spawn`, not `fork` -- forking a process that
+        # already has threads (xdist worker, stackdump thread) is a
+        # DeprecationWarning on py3.14; the child target is a
+        # module-level, importable function with picklable args, so
+        # `spawn` costs nothing here.
+        ctx = multiprocessing.get_context("spawn")
         proc = ctx.Process(target=_t0907_child_land, args=(repo, tid, wt, ready_path))
         proc.start()
         deadline = time.monotonic() + 20
@@ -680,7 +685,12 @@ class TestSigkillMidStaging:
         before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         ready_path = repo.parent / "ready.flag"
 
-        ctx = multiprocessing.get_context("fork")
+        # T-4452: `spawn`, not `fork` -- forking a process that
+        # already has threads (xdist worker, stackdump thread) is a
+        # DeprecationWarning on py3.14; the child target is a
+        # module-level, importable function with picklable args, so
+        # `spawn` costs nothing here.
+        ctx = multiprocessing.get_context("spawn")
         proc = ctx.Process(
             target=_t0907_child_land, args=(repo, tid_a, wt_a, ready_path)
         )
@@ -778,7 +788,12 @@ class TestSigkillMidStaging:
         before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         ready_path = repo.parent / "ready2.flag"
 
-        ctx = multiprocessing.get_context("fork")
+        # T-4452: `spawn`, not `fork` -- forking a process that
+        # already has threads (xdist worker, stackdump thread) is a
+        # DeprecationWarning on py3.14; the child target is a
+        # module-level, importable function with picklable args, so
+        # `spawn` costs nothing here.
+        ctx = multiprocessing.get_context("spawn")
         proc = ctx.Process(target=_t2679_child_land, args=(repo, tid, wt, ready_path))
         proc.start()
         deadline = time.monotonic() + 20
@@ -908,7 +923,12 @@ class TestSigkillMidStaging:
         before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         ready_path = repo.parent / "ready3.flag"
 
-        ctx = multiprocessing.get_context("fork")
+        # T-4452: `spawn`, not `fork` -- forking a process that
+        # already has threads (xdist worker, stackdump thread) is a
+        # DeprecationWarning on py3.14; the child target is a
+        # module-level, importable function with picklable args, so
+        # `spawn` costs nothing here.
+        ctx = multiprocessing.get_context("spawn")
         proc = ctx.Process(target=_t2679b_child_land, args=(repo, tid, wt, ready_path))
         proc.start()
         deadline = time.monotonic() + 20
