@@ -88,14 +88,38 @@ jobs:
             os: ubuntu-latest
             maturin_target: x86_64-unknown-linux-gnu
             manylinux: "2_28"
+          # cross: true -- built via maturin-action's manylinux
+          # container/QEMU on an x86_64 ubuntu-latest host, so the
+          # resulting wheel's platform tag (aarch64) does not match the
+          # host's own architecture -- an x86_64 process cannot `uv pip
+          # install`/import it (coordinator addendum to T-4470, run
+          # 34781548188: "Failed to determine installation plan").
+          # Import-smoke below is skipped for cross entries; a wheel
+          # QEMU-running Python is deliberately out of scope.
           - target: manylinux-aarch64
             os: ubuntu-latest
             maturin_target: aarch64-unknown-linux-gnu
             manylinux: "2_28"
+            cross: true
+          # T-4470: macos-13 (Intel hosted image) was retired by GitHub
+          # in late 2025 -- the label never schedules a runner, the job
+          # queues forever, and (because this workflow's concurrency
+          # group is `release` with cancel-in-progress: false) every
+          # later dispatch queues behind it too (run 34769124533 sat
+          # queued 4h18m). Fix: build x86_64-apple-darwin as a CROSS
+          # build on the arm64 macos-latest runner -- maturin-action
+          # adds the x86_64-apple-darwin rustup target itself when the
+          # requested target differs from the host, so no separate
+          # toolchain/target-add step is needed here (this job has no
+          # explicit rust-toolchain step at all; maturin-action owns
+          # that). The abi3 wheel this cross-build produces needs no
+          # x86_64 Python to build, only to import -- see the
+          # import-smoke step below for the matching skip.
           - target: macos-x86_64
-            os: macos-13
+            os: macos-latest
             maturin_target: x86_64-apple-darwin
             manylinux: "off"
+            cross: true
           - target: macos-arm64
             os: macos-latest
             maturin_target: aarch64-apple-darwin
@@ -104,6 +128,10 @@ jobs:
             os: windows-latest
             maturin_target: x86_64-pc-windows-msvc
             manylinux: "off"
+    # T-4470: an unschedulable label (a retired image, or a future one)
+    # must FAIL after a bounded wait, not sit queued indefinitely and
+    # hold `concurrency: group: release` against every later dispatch.
+    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -145,7 +173,22 @@ jobs:
           fi
           uv pip install --python "$python_bin" \
             frob-core/dist/*.whl strata-core/dist/*.whl
-          "$python_bin" -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
+          # T-4470 (+coordinator addendum): a `cross: true` matrix entry
+          # is built for an architecture that does NOT match this job's
+          # own host (macos-x86_64 cross-built on arm64 macos-latest;
+          # manylinux-aarch64 cross-built via QEMU/manylinux container
+          # on x86_64 ubuntu-latest). The host process can never import
+          # a wheel for a different architecture -- that failure has
+          # nothing to do with the wheel's correctness -- so cross
+          # entries skip the import and fall back to a wheel-file
+          # existence check; every native (non-cross) target still
+          # imports for real.
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            echo "T-4470: skipping cross-arch import smoke for ${{ matrix.target }} (host cannot import a wheel built for a different architecture)"
+            ls frob-core/dist/*.whl strata-core/dist/*.whl
+          else
+            "$python_bin" -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
+          fi
       - name: Upload frob-core wheel
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -210,6 +253,19 @@ jobs:
   # local-dist-vs-index decision. This job's failure BLOCKS `upload`
   # (see `upload`'s own `needs:` below) -- an advisory smoke test is a
   # green light nobody reads.
+  # T-4470: unlike `build`'s import-smoke step (a single import call this
+  # job's own artifact_smoke.py does more than that -- it installs the
+  # wheel into a clean venv and RUNS real `frob` commands against it
+  # (see the script's own docstring: "a REAL command, never just an
+  # import statement"). That needs a genuinely-executable x86_64
+  # interpreter, not just an x86_64-tagged wheel, and this repo has no
+  # verified way to get one on the arm64 macos-latest hosted runner
+  # (no macos-13 x86_64 image is left to run it on, and an unverified
+  # Rosetta/uv-managed-interpreter guess is worse than an honest gap --
+  # PLATFORM001). So macos-x86_64 is DROPPED from this matrix rather
+  # than faked: the x86_64 wheel still gets built and retained as a CI
+  # artifact (see `build`'s matrix), it is just not smoke-executed here.
+  # docs/guides/release.md notes this boundary explicitly.
   artifact-smoke:
     needs: [build, build-sdists]
     strategy:
@@ -220,12 +276,14 @@ jobs:
             os: ubuntu-latest
           - target: manylinux-aarch64
             os: ubuntu-latest
-          - target: macos-x86_64
-            os: macos-13
           - target: macos-arm64
             os: macos-latest
           - target: windows-x86_64
             os: windows-latest
+    # T-4470: an unschedulable label (a retired image, or a future one)
+    # must FAIL after a bounded wait, not sit queued indefinitely and
+    # hold `concurrency: group: release` against every later dispatch.
+    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

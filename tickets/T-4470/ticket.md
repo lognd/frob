@@ -2,7 +2,7 @@
 id: T-4470
 title: 'release.yml: macos-x86_64 build pinned to the retired macos-13 runner never
   schedules and blocks the release concurrency group'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
@@ -30,6 +30,13 @@ body_changes:
   at: '2026-09-13'
   old_length: 1675
   new_length: 2780
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_artifact_smoke_covers_every_build_target
+- tests/unit/test_release_workflow_gate.py::TestNoRetiredRunnerImages::test_no_matrix_entry_uses_a_retired_image
+- tests/unit/test_release_workflow_gate.py::TestNoRetiredRunnerImages::test_build_and_artifact_smoke_jobs_have_timeout_minutes
+- tests/unit/test_release_workflow_gate.py::TestCrossBuiltTargetsSkipImportSmoke::test_expected_targets_are_marked_cross
+- tests/unit/test_release_workflow_gate.py::TestCrossBuiltTargetsSkipImportSmoke::test_native_targets_are_not_marked_cross
+- tests/unit/test_release_workflow_gate.py::TestCrossBuiltTargetsSkipImportSmoke::test_import_smoke_step_branches_on_matrix_cross
 designated_repro_test: null
 threat: null
 component: null

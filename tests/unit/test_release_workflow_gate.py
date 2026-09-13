@@ -312,10 +312,20 @@ class TestCiStatusGate:
         needs_set = {needs} if isinstance(needs, str) else set(needs)
         assert needs_set == {"build", "build-sdists"}
 
+    # T-4470: macos-x86_64 is a CROSS build on the arm64 macos-latest
+    # runner -- see `build`'s matrix comment. `artifact-smoke` does more
+    # than import the wheel (it installs into a clean venv and RUNS real
+    # `frob` commands via artifact_smoke.py), which needs a genuinely
+    # executable x86_64 interpreter this repo has no verified way to get
+    # on that runner, so this one target is deliberately excluded from
+    # smoke coverage (docs/guides/release.md documents the boundary).
+    _SMOKE_EXEMPT_TARGETS = frozenset({"macos-x86_64"})
+
     def test_artifact_smoke_covers_every_build_target(self) -> None:
         """T-3884: a linux-only smoke test would not catch a
         Windows-only packaging fault -- `artifact-smoke`'s matrix must
-        cover every target `build`'s own matrix covers."""
+        cover every target `build`'s own matrix covers, except the
+        documented cross-build exemption above."""
         doc = _load(_RELEASE_WORKFLOW)
         build_targets = {
             entry["target"]
@@ -325,7 +335,8 @@ class TestCiStatusGate:
             entry["target"]
             for entry in doc["jobs"]["artifact-smoke"]["strategy"]["matrix"]["include"]
         }
-        assert smoke_targets == build_targets
+        assert smoke_targets == build_targets - self._SMOKE_EXEMPT_TARGETS
+        assert smoke_targets.isdisjoint(self._SMOKE_EXEMPT_TARGETS)
 
     def test_override_input_declared_and_defaults_to_false(self) -> None:
         """The escape hatch exists, but its default must be false (never
@@ -583,4 +594,119 @@ class TestManylinuxPinAndWindowsSmoke:
         )
         assert "/tmp/native-check-venv" not in run, (
             "smoke step must not hardcode a POSIX /tmp venv path"
+        )
+
+
+# frob:ticket T-4470
+class TestNoRetiredRunnerImages:
+    """T-4470: run 34769124533 queued 4h18m against a `build` matrix
+    entry pinned to macos-13 -- GitHub retired that hosted image, so the
+    job never got scheduled, and because release.yml's concurrency
+    group has `cancel-in-progress: false`, every later dispatch queued
+    behind the stuck one forever. Guards against this whole class of
+    retired-image regression, not just the one label that bit us."""
+
+    # GitHub's own retirement notices, as of this ticket's fix.
+    _RETIRED_IMAGES = frozenset(
+        {"macos-13", "macos-12", "ubuntu-20.04", "windows-2019"}
+    )
+
+    def _all_os_labels(self, doc: dict) -> set[str]:
+        """Every `os:`/`runs-on:` value reachable in release.yml, both
+        matrix entries and plain job-level `runs-on:` strings."""
+        labels: set[str] = set()
+        for job in doc["jobs"].values():
+            matrix = job.get("strategy", {}).get("matrix", {})
+            for entry in matrix.get("include", []):
+                if "os" in entry:
+                    labels.add(entry["os"])
+            runs_on = job.get("runs-on")
+            if isinstance(runs_on, str) and "matrix.os" not in runs_on:
+                labels.add(runs_on)
+        return labels
+
+    def test_no_matrix_entry_uses_a_retired_image(self) -> None:
+        """MUST-FIRE: no `os:` in any matrix `include` entry, and no
+        plain `runs-on:` string, names a hosted image GitHub has
+        retired."""
+        doc = _load(_RELEASE_WORKFLOW)
+        labels = self._all_os_labels(doc)
+        retired_in_use = labels & self._RETIRED_IMAGES
+        assert not retired_in_use, (
+            f"release.yml pins a retired hosted image: {retired_in_use!r} "
+            f"-- it will never schedule a runner and, under this "
+            f"workflow's cancel-in-progress: false concurrency group, "
+            f"will block every later dispatch (T-4470)"
+        )
+
+    def test_build_and_artifact_smoke_jobs_have_timeout_minutes(self) -> None:
+        """MUST-FIRE: `build` and `artifact-smoke` are both matrix jobs
+        whose `os:` labels can drift to an unschedulable image again --
+        each must declare `timeout-minutes` so that failure mode fails
+        the job instead of holding the release concurrency group open
+        indefinitely."""
+        doc = _load(_RELEASE_WORKFLOW)
+        for name in ("build", "artifact-smoke"):
+            job = doc["jobs"][name]
+            assert "timeout-minutes" in job, (
+                f"jobs.{name} must declare timeout-minutes (T-4470)"
+            )
+            assert isinstance(job["timeout-minutes"], int)
+            assert job["timeout-minutes"] > 0
+
+
+# frob:ticket T-4470
+class TestCrossBuiltTargetsSkipImportSmoke:
+    """Coordinator addendum to T-4470 (run 34781548188): manylinux-aarch64
+    is cross-built via QEMU/the manylinux container on an x86_64
+    ubuntu-latest host, so `build`'s import-smoke step failed installing
+    the aarch64 wheel into the x86_64 host venv ("Failed to determine
+    installation plan") -- the identical architecture-mismatch class as
+    macos-x86_64 cross-built on arm64 macos-latest. Both are marked
+    `cross: true` in `build`'s matrix and the import-smoke step branches
+    on that field, not a hardcoded target name."""
+
+    _EXPECTED_CROSS_TARGETS = frozenset({"manylinux-aarch64", "macos-x86_64"})
+
+    def _build_matrix(self, doc: dict) -> list[dict]:
+        return doc["jobs"]["build"]["strategy"]["matrix"]["include"]
+
+    def test_expected_targets_are_marked_cross(self) -> None:
+        """MUST-FIRE: exactly the known cross-built targets carry
+        `cross: true` -- a target silently missing the flag would fall
+        through to a real import call and fail for an architecture
+        reason that looks like a genuine defect."""
+        doc = _load(_RELEASE_WORKFLOW)
+        cross_targets = {
+            entry["target"]
+            for entry in self._build_matrix(doc)
+            if entry.get("cross") is True
+        }
+        assert cross_targets == self._EXPECTED_CROSS_TARGETS
+
+    def test_native_targets_are_not_marked_cross(self) -> None:
+        """The three native (host-architecture-matching) targets must
+        NOT carry `cross: true` -- they still get a real import smoke."""
+        doc = _load(_RELEASE_WORKFLOW)
+        for entry in self._build_matrix(doc):
+            if entry["target"] not in self._EXPECTED_CROSS_TARGETS:
+                assert entry.get("cross") is not True, (
+                    f"{entry['target']} is native but marked cross: true"
+                )
+
+    def test_import_smoke_step_branches_on_matrix_cross(self) -> None:
+        """MUST-FIRE: the import-smoke step must key its skip on
+        `matrix.cross`, not a hardcoded single target name -- a
+        hardcoded check would silently miss the next cross-built target
+        added to the matrix."""
+        doc = _load(_RELEASE_WORKFLOW)
+        step = _find_step_by_name_prefix(
+            doc["jobs"]["build"], "Install the just-built wheels into a clean venv"
+        )
+        run = step["run"]
+        assert "matrix.cross" in run, (
+            "import-smoke step must branch on matrix.cross, not a hardcoded target name"
+        )
+        assert "matrix.target }} = 'macos-x86_64'" not in run.replace('"', "'"), (
+            "import-smoke step must not hardcode a single cross target"
         )

@@ -28,6 +28,58 @@ builds on `ubuntu-latest`'s glibc 2.39, not inside a manylinux container.
 Do not drop the pin back to `auto` without re-verifying the import smoke
 against a manylinux2014 build.
 
+**macOS x86_64 is a CROSS build on `macos-latest`, never a retired image
+(T-4470).** Run 34769124533 (2026-09-13) pinned `build`'s macos-x86_64
+entry to `os: macos-13`, GitHub's now-retired Intel hosted image: the
+label never got a runner, the job queued for 4h18m, and because
+`release.yml` declares `concurrency: group: release,
+cancel-in-progress: false`, every later dispatch (34781548188) queued
+behind the stuck one indefinitely. Fix: both `build` and
+`artifact-smoke`'s macos-x86_64/`x86_64-apple-darwin` legs now run on
+`macos-latest` (an arm64 host) and cross-compile -- maturin-action adds
+the `x86_64-apple-darwin` rustup target itself when the requested target
+differs from the host, so no separate toolchain step was needed. Two
+consequences fall out of an arm64 host building an x86_64 wheel:
+
+- `build`'s import-smoke step cannot literally `import` the x86_64
+  wheel it just built (an arm64 process cannot load an x86_64 Mach-O
+  extension module) -- it is skipped for that one target with an
+  explicit in-workflow comment, falling back to a wheel-existence check;
+  every other target still imports for real.
+- `artifact-smoke` does more than import (it installs the wheel into a
+  clean venv and runs real `frob` commands), which needs a genuinely
+  executable x86_64 interpreter. This repo has no verified way to get
+  one on the arm64 `macos-latest` runner, and an unverified Rosetta or
+  uv-managed-interpreter guess would be worse than an honest gap
+  (PLATFORM001) -- so macos-x86_64 is deliberately DROPPED from
+  `artifact-smoke`'s matrix rather than faked. The x86_64 wheel is still
+  built and retained as a CI artifact; it is just not smoke-executed.
+  `tests/unit/test_release_workflow_gate.py`'s
+  `TestManylinuxPinAndWindowsSmoke._SMOKE_EXEMPT_TARGETS` documents and
+  enforces this one exemption mechanically.
+
+**manylinux-aarch64 is also cross-built and also skips import smoke
+(coordinator addendum to T-4470, run 34781548188).** It is built via
+maturin-action's manylinux container/QEMU on the x86_64 `ubuntu-latest`
+host, so the resulting aarch64-tagged wheel cannot be `uv pip
+install`ed into that same x86_64 host venv either ("Failed to determine
+installation plan"). Both manylinux-aarch64 and macos-x86_64 carry
+`cross: true` in `build`'s matrix, and the import-smoke step branches on
+that field (not a hardcoded target name) so any future cross-built
+target added to the matrix is covered automatically. `artifact-smoke`'s
+matrix is unaffected by this addendum -- only `build`'s import-smoke
+step hit it.
+
+**Runner-image rule.** Never pin a matrix `os:` (or a plain `runs-on:`)
+to a GitHub-retired hosted image label (macos-13, macos-12,
+ubuntu-20.04, windows-2019, and whatever else GitHub retires next) --
+`TestNoRetiredRunnerImages` in `tests/unit/test_release_workflow_gate.py`
+fails the build if one sneaks back in. Every matrix job in this
+workflow (`build`, `artifact-smoke`) also declares `timeout-minutes`, so
+an unschedulable label fails that job after a bounded wait instead of
+sitting queued and holding the `release` concurrency group open forever
+for every later dispatch.
+
 ## Workflow structure (`.github/workflows/release.yml`)
 
 1. **`build`** (+ `build-sdists`) -- runs on every manual dispatch
