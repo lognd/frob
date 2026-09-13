@@ -23,6 +23,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_helpers_bash.py::test_non_windows_returns_plain_bash
+- tests/unit/test_helpers_bash.py::test_prefers_git_bash_over_system32_stub
+- tests/unit/test_helpers_bash.py::test_system32_stub_only_skips
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
 designated_repro_test: null
 threat: null
 component: null
