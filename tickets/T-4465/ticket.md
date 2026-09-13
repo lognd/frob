@@ -24,6 +24,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_stale_version_wheel_names_versions
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_matching_version_wheel_does_not_raise
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_no_pins_skips_version_check
+- tests/unit/test_artifact_smoke_script.py::TestReadCorePins::test_reads_both_pins_from_metadata
+- tests/unit/test_artifact_smoke_script.py::TestReadCorePins::test_unreadable_wheel_returns_empty
+- tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores::test_absent_cores_report_named_core_missing
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_both_cores_absent_names_both
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_one_core_absent_names_only_that_one
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_both_cores_present_does_not_raise
 designated_repro_test: null
 threat: null
 component: null
