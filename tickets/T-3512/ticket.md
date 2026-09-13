@@ -1,7 +1,7 @@
 ---
 id: T-3512
 title: Remove T-3425 windows-latest continue-on-error advisory flag
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-30'
