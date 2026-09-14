@@ -2,7 +2,7 @@
 id: T-4481
 title: test_ci_workflow_self_gate_does_not_swallow_errors pins the pre-T-4460 self-gate
   run line
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-14'

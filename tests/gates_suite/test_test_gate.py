@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 from frob.gates import (
     GateConfig,
@@ -26,6 +27,72 @@ from tests.conftest import (
     _snapshot,
     _write,
 )
+
+
+# frob:ticket T-4481
+def _load_ci_workflow_for_test_gate() -> dict:
+    """Parse .github/workflows/ci.yml into a dict -- local to this test
+    module (not shared with tests/test_ci_workflow_*.py's own identical
+    helper: those live in a different package/directory, and DUP001's
+    cross-directory reach does not treat a `tests/gates_suite/` helper
+    and a `tests/` top-level helper as the same extraction opportunity)."""
+    text = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "ci.yml"
+    ).read_text(encoding="utf-8")
+    return yaml.safe_load(text)
+
+
+# frob:ticket T-4481
+def _self_gate_run_script(workflow: dict) -> str:
+    """The `build` job's "frob check (self-gate)" step's own `run:` shell
+    script text -- the one surface `test_ci_workflow_self_gate_does_not_
+    swallow_errors` and `TestSelfGateRunScriptSwallowDetection` both
+    check."""
+    steps = workflow["jobs"]["build"]["steps"]
+    step = next(s for s in steps if s.get("name") == "frob check (self-gate)")
+    return step["run"]
+
+
+# frob:ticket T-4481
+def _self_gate_run_script_errors(run: str) -> list[str]:
+    """T-1265/T-4481: every way the self-gate's own `uv run frob check`
+    exit code can be silently swallowed, as a list of human-readable
+    reasons (empty means clean). Two swallow shapes are checked:
+
+    1. an explicit `|| echo "::warning` / `|| true` / `; true` suffix on
+       the invocation itself (T-1265's original incident: `uv run frob
+       check || echo "::warning..."` turned every finding, ERROR-tier
+       included, into a non-failing warning annotation).
+    2. T-4460's `tee`d form (`uv run frob check | tee "$RUNNER_TEMP/
+       frob-check.log"`, added so a follow-up job-summary step can read
+       the self-gate's output even when it fails) piping through `tee`
+       WITHOUT `set -o pipefail` in effect somewhere in the same script --
+       without it, `... | tee ...`'s reported exit code is `tee`'s own
+       (always 0), not `frob check`'s, which silently reopens the exact
+       T-1265 hole under a different mechanism."""
+    errors = []
+    if "uv run frob check" not in run:
+        errors.append(
+            "self-gate step's run script no longer invokes `uv run frob check` at all"
+        )
+        return errors
+    if 'uv run frob check || echo "::warning' in run:
+        errors.append(
+            '`uv run frob check || echo "::warning...` swallows every finding as a non-failing warning (T-1265)'
+        )
+    if "|| true" in run:
+        errors.append("`|| true` swallows the self-gate's exit code")
+    if "; true" in run:
+        errors.append("`; true` swallows the self-gate's exit code")
+    pipe_idx = run.index("uv run frob check")
+    if "tee" in run[pipe_idx:] and "set -o pipefail" not in run:
+        errors.append(
+            "`uv run frob check` is piped through `tee` without `set -o "
+            "pipefail` in effect -- tee's own always-0 exit code silently "
+            "swallows a real gate error (the T-4460 tee'd form of the "
+            "T-1265 hole)"
+        )
+    return errors
 
 
 # frob:ticket T-0549
@@ -289,8 +356,7 @@ class TestTestGate:
         assert any(v.rule == "TEST003" for v in violations)
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestTestGate.test_test003_exempts_strata_des\
-    # ign_files kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestTestGate.test_test003_exempts_strata_design_files kind="unit"  # noqa: E501
     def test_test003_exempts_strata_design_files(self, tmp_path: Path) -> None:
         """T-0225: `design/*.strata` must not be counted as a TEST003
         "interface package" -- it owns no pytest surface, so
@@ -1196,8 +1262,7 @@ class TestTestGate:
         symbol must not fire -- WAIVE008 only flags the specific
         structurally-guaranteed-dead shape."""
         # frob:tests \
-        # tests/gates_suite/test_test_gate.py::TestTestGate.test_waive008_stays_silent_\
-        # on_a_non_rescued_symbol
+        # tests/gates_suite/test_test_gate.py::TestTestGate.test_waive008_stays_silent_on_a_non_rescued_symbol  # noqa: E501
         from frob.gates import _waive008_violations
         from frob.graph import (
             Digests,
@@ -1846,13 +1911,20 @@ class TestTestGate:
         step used to run `uv run frob check || echo "::warning..."` --
         swallowing every finding, ERROR-tier included, so a real gate
         error never failed the build. Locks that the swallow is gone.
-        """
+
+        T-4460/T-4481: the self-gate step now tees its output to
+        `$RUNNER_TEMP/frob-check.log` (so a follow-up job-summary step can
+        read it even on a failing self-gate) -- `run: uv run frob check\\n`
+        alone no longer matches. Asserts the SURVIVING intent structurally
+        instead of pinning one literal line, via `_self_gate_run_script_
+        errors` (this class's own reusable check, exercised against
+        synthetic swallow shapes by
+        `TestSelfGateRunScriptSwallowDetection` below so this real-file
+        assertion is proven to actually fire, not just proven true by
+        construction against the one script it happens to read)."""
         # frob:tests .github/workflows/ci.yml
-        text = (
-            Path(__file__).resolve().parents[2] / ".github" / "workflows" / "ci.yml"
-        ).read_text(encoding="utf-8")
-        assert 'uv run frob check || echo "::warning' not in text
-        assert "run: uv run frob check\n" in text
+        run = _self_gate_run_script(_load_ci_workflow_for_test_gate())
+        assert _self_gate_run_script_errors(run) == []
 
     def test_ci_workflow_hard_fails_on_test012_drift(self) -> None:
         """T-1265: `frob-coverage.lock.json` (T-0545, the one coverage-
@@ -1980,6 +2052,60 @@ class TestTestGate:
         assert any(v.rule == "TEST002" for v in violations)
 
 
+# frob:ticket T-4481
+class TestSelfGateRunScriptSwallowDetection:
+    """T-4481 positive control: proves `_self_gate_run_script_errors`
+    actually FIRES on every swallow shape it claims to catch, rather than
+    `test_ci_workflow_self_gate_does_not_swallow_errors` merely being true
+    by construction against the one real script it happens to read (the
+    "positive control or it proves nothing" failure mode -- a detector
+    that has never been tried against a planted defect is unproven)."""
+
+    def test_clean_bare_invocation_has_no_errors(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        assert _self_gate_run_script_errors("uv run frob check\n") == []
+
+    def test_clean_teed_invocation_with_pipefail_has_no_errors(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        run = 'set -o pipefail\nuv run frob check | tee "$RUNNER_TEMP/frob-check.log"\n'
+        assert _self_gate_run_script_errors(run) == []
+
+    def test_original_t1265_warning_swallow_is_caught(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        run = 'uv run frob check || echo "::warning::gate findings"\n'
+        errors = _self_gate_run_script_errors(run)
+        assert errors, "the original T-1265 warning-swallow must be caught"
+
+    def test_bare_or_true_swallow_is_caught(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        errors = _self_gate_run_script_errors("uv run frob check || true\n")
+        assert errors, "`|| true` must be caught"
+
+    def test_semicolon_true_swallow_is_caught(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        errors = _self_gate_run_script_errors("uv run frob check; true\n")
+        assert errors, "`; true` must be caught"
+
+    def test_teed_invocation_without_pipefail_is_caught(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        run = 'uv run frob check | tee "$RUNNER_TEMP/frob-check.log"\n'
+        errors = _self_gate_run_script_errors(run)
+        assert errors, (
+            "tee without `set -o pipefail` reports tee's own always-0 "
+            "exit code, silently reopening T-1265 under the tee'd form"
+        )
+
+    def test_missing_invocation_entirely_is_caught(self) -> None:
+        # frob:tests tests/gates_suite/test_test_gate.py::_self_gate_run_script_errors
+        errors = _self_gate_run_script_errors("echo nothing to see here\n")
+        assert errors, "a script that dropped the invocation entirely must be caught"
+
+    def test_real_ci_workflow_self_gate_script_is_clean(self) -> None:
+        # frob:tests .github/workflows/ci.yml
+        run = _self_gate_run_script(_load_ci_workflow_for_test_gate())
+        assert _self_gate_run_script_errors(run) == []
+
+
 class TestConventionUnitBinding:
     def test_test001_satisfied_by_convention_name(self, tmp_path):
         """T-0018: a public function is unit-covered by a conventionally
@@ -2056,8 +2182,7 @@ class TestConventionUnitBinding:
         )
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test001_exemp\
-    # ts_strata_flow_declarations kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations kind="unit"  # noqa: E501
     def test_test001_exempts_strata_flow_declarations(self, tmp_path):
         """T-0168: a `flow` (or other) `.strata` declaration has no defined
         "unit test" meaning -- design conformance is proven by the sys
@@ -2081,8 +2206,7 @@ class TestConventionUnitBinding:
         )
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_fires\
-    # _on_unbound_design_file kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_fires_on_unbound_design_file kind="unit"  # noqa: E501
     def test_test009_fires_on_unbound_design_file(self, tmp_path):
         """T-0225: a `.strata` design file with no `frob:tests kind="e2e"`
         edge owes TEST009 -- the e2e-binding obligation that replaces the
@@ -2101,8 +2225,7 @@ class TestConventionUnitBinding:
         )
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_exemp\
-    # ts_test_fixture_strata kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_exempts_test_fixture_strata kind="unit"  # noqa: E501
     def test_test009_exempts_test_fixture_strata(self, tmp_path):
         """T-0225 follow-up: a `.strata` file under a tests dir (a litmus /
         parser fixture) is test DATA, not a deployable design model, so it
@@ -2120,8 +2243,7 @@ class TestConventionUnitBinding:
         assert not any(v.rule == "TEST009" for v in violations)
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_satis\
-    # fied_by_e2e_edge kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge kind="unit"  # noqa: E501
     def test_test009_satisfied_by_e2e_edge(self, tmp_path):
         """T-0225: a `frob:tests ... kind="e2e"` edge bound to the design
         file's module (or one of its declared ids) and backed by a
@@ -2157,8 +2279,7 @@ class TestTest010KindValidation:
     TEST010."""
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestTest010KindValidation.test_invalid_kind_\
-    # reported kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestTest010KindValidation.test_invalid_kind_reported kind="unit"  # noqa: E501
     def test_invalid_kind_reported(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -2180,8 +2301,7 @@ class TestTest010KindValidation:
         assert "drift" in v.message
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestTest010KindValidation.test_valid_kind_no\
-    # t_reported kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestTest010KindValidation.test_valid_kind_not_reported kind="unit"  # noqa: E501
     def test_valid_kind_not_reported(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -2199,8 +2319,7 @@ class TestTest010KindValidation:
         assert "TEST010" not in _rules(violations)
 
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestTest010KindValidation.test_dangling_test\
-    # s_endpoint_still_caught_by_drift002 kind="unit"
+    # tests/gates_suite/test_test_gate.py::TestTest010KindValidation.test_dangling_tests_endpoint_still_caught_by_drift002 kind="unit"  # noqa: E501
     def test_dangling_tests_endpoint_still_caught_by_drift002(
         self, tmp_path: Path
     ) -> None:
@@ -2260,8 +2379,7 @@ class TestTest013NativeUnverified:
     # frob:ticket T-0552
     def test_silent_on_executed_edge(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified.test_silent_\
-        # on_executed_edge
+        # tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
         # A python edge with real collected execution evidence (pytest node
         # id) must never be mistaken for the native-unverified case -- the
         # extension check in `_edge_is_native_unverified` is what keeps
@@ -2437,8 +2555,7 @@ class TestNativeTestCollectors:
 
     # frob:ticket T-4138
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_unmeas\
-    # ured_when_ts_collector_failed
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_unmeasured_when_ts_collector_failed  # noqa: E501
     def test_test002_unmeasured_when_ts_collector_failed(self, tmp_path: Path) -> None:
         """MUST-FIRE (T-4138, F-340): a symbol with a bound `frob:tests`
         edge to a vitest test and NO collected TS node ids at all, because
@@ -2475,8 +2592,7 @@ class TestNativeTestCollectors:
 
     # frob:ticket T-4138
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_still_\
-    # fires_when_collector_did_not_fail
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_still_fires_when_collector_did_not_fail  # noqa: E501
     def test_test002_still_fires_when_collector_did_not_fail(
         self, tmp_path: Path
     ) -> None:
@@ -2513,8 +2629,7 @@ class TestNativeTestCollectors:
 
     # frob:ticket T-4386
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platfo\
-    # rm_skipped_edge_reports_unresolved_not_error
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_skipped_edge_reports_unresolved_not_error  # noqa: E501
     def test_test002_platform_skipped_edge_reports_unresolved_not_error(
         self, tmp_path: Path
     ) -> None:
@@ -2557,8 +2672,7 @@ class TestNativeTestCollectors:
 
     # frob:ticket T-4386
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_unrela\
-    # ted_platform_skip_still_fires_as_warn
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_unrelated_platform_skip_still_fires_as_warn  # noqa: E501
     def test_test002_unrelated_platform_skip_still_fires_as_warn(
         self, tmp_path: Path
     ) -> None:
@@ -2594,8 +2708,7 @@ class TestNativeTestCollectors:
 
     # frob:ticket T-4138
     # frob:tests \
-    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_absent\
-    # _vs_measured_zero_render_differently
+    # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_absent_vs_measured_zero_render_differently  # noqa: E501
     def test_test002_absent_vs_measured_zero_render_differently(
         self, tmp_path: Path
     ) -> None:
@@ -2951,8 +3064,7 @@ class TestTest015VacuousCredit:
     # frob:ticket T-0548
     def test_fires_on_no_op_test_body(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_fires_on_n\
-        # o_op_test_body
+        # tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
         # The audit's own repro: a public function whose only covering
         # test, matched by naming convention, has an empty (no-op) body.
         from typani.option import Nothing
