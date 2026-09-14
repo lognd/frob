@@ -2,7 +2,7 @@
 id: T-4479
 title: 'make core-wheels spawns bare maturin (not on PATH in CI): every leg red after
   T-4465'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-14'

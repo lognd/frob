@@ -605,10 +605,27 @@ core: $(STAMP)
 # directory holds exactly the current crate version on every invocation,
 # cache hit or not -- the single place this logic lives; `ci.yml` calls
 # this target rather than re-implementing the loop inline.
+#
+# T-4479: `uv run maturin` (the original T-4465 form) resolves `maturin`
+# against the PROJECT's own synced venv/PATH -- and this repo does not
+# declare `maturin` as a project dependency (only `maturin>=1.7,<2` in
+# each kernel's OWN `[build-system].requires`, resolved by the build
+# frontend, not by `uv run`), so on every CI leg (no maturin preinstalled
+# on PATH) it failed to spawn: "Failed to spawn: `maturin` ... No such
+# file or directory" (CI run 34809307457, all three legs, the first run
+# after T-4465 landed). `frob natives build` (`src/frob/natives/
+# _build.py::_build_one_crate`, what `core` above actually runs) already
+# solves this exact problem for `maturin develop` via `uvx maturin ...`
+# -- `uvx` (`uv tool run`) installs and runs an EPHEMERAL maturin tool
+# environment regardless of what is or is not already on PATH, unlike
+# `uv run`, which only resolves names the project's own venv already
+# has. `core-wheels` now spawns maturin the identical way -- the single
+# shared resolution mechanism this repo already has for maturin, not a
+# second one invented here.
 core-wheels: core
 	@for crate in frob-core strata-core; do \
 		if [ -f "$$crate/Cargo.toml" ]; then \
 			rm -f "$$crate"/target/wheels/*.whl; \
-			uv run maturin build --release --manifest-path "$$crate/Cargo.toml" --out "$$crate/target/wheels"; \
+			uvx maturin build --release --manifest-path "$$crate/Cargo.toml" --out "$$crate/target/wheels"; \
 		fi; \
 	done

@@ -1,0 +1,91 @@
+"""T-4479: `make core-wheels` (the T-4465 step that builds fresh
+frob-core/strata-core wheels into target/wheels every CI run) spawned a
+BARE `maturin` via `uv run maturin build ...` -- `uv run` only resolves
+names the project's own synced venv/PATH already has, and this repo does
+not declare `maturin` as a project dependency, so every CI leg (no
+maturin preinstalled on PATH) failed to spawn it at all (CI run
+34809307457, all three legs, the first run after T-4465 landed).
+`frob natives build` (what `core-wheels`'s own `core` prerequisite runs)
+already solves this via `uvx maturin ...` -- `uv tool run`, which
+installs and runs an ephemeral maturin tool regardless of PATH content.
+These tests lock the Makefile target onto that same, single resolution
+mechanism so a future edit cannot silently regress back to a bare/`uv
+run` spawn.
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _core_wheels_recipe() -> str:
+    """The `core-wheels:` target's own recipe lines out of the Makefile,
+    the exact text a future edit is most likely to touch."""
+    text = (_REPO_ROOT / "Makefile").read_text(encoding="utf-8")
+    match = re.search(r"^core-wheels:.*?\n((?:\t.*\n?)+)", text, re.MULTILINE)
+    assert match is not None, (
+        "Makefile has no 'core-wheels:' target at all -- T-4465's own "
+        "step has regressed further than a maturin-resolution bug"
+    )
+    return match.group(1)
+
+
+class TestCoreWheelsResolvesMaturinViaUvx:
+    """T-4479 MUST-FIRE/MUST-STAY-QUIET: `core-wheels`'s own recipe must
+    spawn maturin through `uvx`, never a bare `maturin` or `uv run
+    maturin` (both fail on a runner with no maturin preinstalled on
+    PATH, exactly the CI incident this ticket fixes)."""
+
+    def test_recipe_invokes_uvx_maturin(self) -> None:
+        # frob:tests Makefile
+        recipe = _core_wheels_recipe()
+        assert "uvx maturin" in recipe, (
+            "core-wheels' recipe does not call 'uvx maturin' -- it will "
+            "fail to spawn maturin on any runner that has uv but no "
+            "maturin preinstalled on PATH (CI run 34809307457)\n" + recipe
+        )
+
+    def test_recipe_does_not_invoke_uv_run_maturin(self) -> None:
+        # frob:tests Makefile
+        recipe = _core_wheels_recipe()
+        assert "uv run maturin" not in recipe, (
+            "core-wheels' recipe still calls 'uv run maturin' -- this is "
+            "the exact T-4479 regression: 'uv run' only resolves names "
+            "the project's own synced venv/PATH already has, and maturin "
+            "is not a declared project dependency, so this fails to spawn "
+            "on every CI leg\n" + recipe
+        )
+
+    def test_recipe_does_not_invoke_bare_maturin(self) -> None:
+        # frob:tests Makefile
+        recipe = _core_wheels_recipe()
+        # every "maturin" occurrence must be immediately preceded by
+        # "uvx " -- stripping the good pairs first and then checking
+        # what remains gives a precise failure instead of a blunt
+        # substring count.
+        stripped = recipe.replace("uvx maturin", "")
+        assert "maturin" not in stripped, (
+            "core-wheels' recipe calls 'maturin' somewhere other than "
+            "'uvx maturin' -- a bare spawn is not resolvable on a runner "
+            "with no maturin on PATH\n" + recipe
+        )
+
+    def test_recipe_still_rebuilds_target_wheels_per_crate(self) -> None:
+        """T-4465's own acceptance must survive T-4479's fix: stale
+        wheels removed first, then a fresh `maturin build --release
+        --out .../target/wheels` per crate."""
+        # frob:tests Makefile
+        recipe = _core_wheels_recipe()
+        assert "rm -f" in recipe and "target/wheels" in recipe, (
+            "core-wheels no longer removes stale wheels before "
+            "rebuilding -- T-4465's own stale-cache fix has regressed\n" + recipe
+        )
+        assert "maturin build" in recipe and "--release" in recipe, (
+            "core-wheels no longer builds a release wheel per crate\n" + recipe
+        )
+        assert "--out" in recipe, (
+            "core-wheels no longer directs maturin's output at target/wheels\n" + recipe
+        )
