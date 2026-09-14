@@ -599,3 +599,21 @@ since that shape genuinely did run a check over part of the repo.
 frob check src/ && echo "all clear"
 # Exits 0 only if zero errors across all tools.
 ```
+
+T-4460: `.github/workflows/ci.yml`'s `build` job (all three matrix legs)
+tees the "frob check (self-gate)" step's output to
+`$RUNNER_TEMP/frob-check.log` (`set -o pipefail` under `shell: bash`, so
+the step's own exit code is still the real gate verdict, never `tee`'s)
+and follows it with an `if: always()` step that re-runs
+`frob check --json` (a cheap T-2585 gate-replay cache HIT against an
+unchanged tree) and appends a compact Markdown block to
+`$GITHUB_STEP_SUMMARY`: the `gate-summary` counts line, every `FAIL`
+gate's row, and up to 40 error-severity findings (rule id + `file:line` +
+the first 120 characters of the message). This is a SEPARATE step from
+the self-gate itself, so it still writes even when the gate run fails or
+the job is cancelled mid-step -- and it never fails the job on its own,
+regardless of what it finds. A companion step (T-3516/T-3531) surfaces
+the Test step's own `SUITE-RESULT`/`SUITE-RESULT-FAILED` lines the same
+way, from the Test step's own captured log. Together, a red CI run's
+verdict is readable from the run page itself, without scrolling either
+step's raw log.

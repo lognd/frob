@@ -246,9 +246,9 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 226,
-      "reason": "T-4179: adds tests/test_ticket_land_dry_run.py to the fs.read via-list -- read_text on a real git-fixture repo's tracked .py file plus git write-tree/show subprocess stdout, verifying `_absorb_pre_land_fixes`'s dry-run non-mutation and the tool-authored-edit attribution helper. Bumping the ceiling 225 -> 226, one new site.",
-      "ticket": "T-4179"
+      "accepted_count": 227,
+      "reason": "T-4460: adds tests/test_ci_workflow_job_summary.py to the fs.read via-list -- read_text on this repo's own tracked .github/workflows/ci.yml and docs/commands/check.md, same posture as the pre-existing tests/test_ci_workflow_matrix.py/tests/test_ci_workflow_timeout.py entries already on this via-list. Bumping the ceiling 226 -> 227, one new site.",
+      "ticket": "T-4460"
     },
     "testsuite::fs.write": {
       "accepted_count": 520,

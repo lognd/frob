@@ -784,9 +784,111 @@ jobs:
           rm -f .frob/*-collect.json 2>/dev/null || true
           echo 'remaining .frob/ contents after wipe:'
           ls -la .frob 2>/dev/null || echo '.frob/ does not exist'
+      # T-4460: this step's own stdout used to go nowhere but the raw job
+      # log -- the ubuntu self-gate failure that opened this ticket left
+      # the run page with no summary at all; every per-gate row and the
+      # trailing gate-summary line were buried thousands of lines up in a
+      # log a reader had to scroll to find. `tee` a copy to
+      # `$RUNNER_TEMP/frob-check.log` (never `/tmp`, T-4462: Windows
+      # runners have no /tmp) so the follow-up step below can build a job
+      # summary from it even when this step FAILS; `set -o pipefail`
+      # keeps `... | tee ...`'s exit code the real `frob check` exit code
+      # (a red gate run), not tee's always-0, so this step still fails
+      # exactly as before. `shell: bash` explicit (T-3531/T-4450
+      # precedent): the job's default shell is pwsh on windows-latest,
+      # which has neither `tee` nor `set -o pipefail`.
       - name: frob check (self-gate)
         if: ${{ !cancelled() && (success() || matrix.os == 'windows-latest') }}
-        run: uv run frob check
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run frob check | tee "$RUNNER_TEMP/frob-check.log"
+      # T-4460: writes a compact Markdown block to $GITHUB_STEP_SUMMARY so
+      # the self-gate's verdict is readable from the run page itself, not
+      # only by scrolling the step log. `if: always()` and a SEPARATE step
+      # from the one above (never inside the failing step itself) so this
+      # still runs -- and still reports -- on a red or cancelled self-gate,
+      # the exact run this exists to make visible. Re-runs `frob check
+      # --json` rather than reparsing the human-readable log above: T-2585's
+      # whole-run replay cache makes this a cheap cache HIT against an
+      # unchanged tree (see `frob check`'s own gate-replay log line),
+      # avoiding a second real gate pass while still getting a stable,
+      # machine-parsable shape (`results[].diagnostics[]`) instead of
+      # reimplementing the text renderer's own parsing here. Never fails
+      # the job on its own -- a parsing problem here must not mask (or pile
+      # onto) the self-gate step's own real verdict above.
+      - name: Write self-gate results to job summary (T-4460)
+        if: always()
+        shell: bash
+        run: |
+          uv run frob check --json > "$RUNNER_TEMP/frob-check.json" 2>/dev/null || true
+          uv run python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          json_path = Path(os.environ["RUNNER_TEMP"]) / "frob-check.json"
+          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+
+          lines = ["## frob check self-gate (T-4460)", ""]
+          try:
+              data = json.loads(json_path.read_text(encoding="utf-8"))
+              results = data.get("results", [])
+          except Exception as exc:  # noqa: BLE001 -- must never fail this step
+              lines.append(
+                  f"no parsable `frob check --json` output this run ({exc})."
+              )
+              results = None
+
+          if results is not None:
+              gate_summary = next(
+                  (r for r in results if r.get("tool") == "gate-summary"), None
+              )
+              if gate_summary is not None:
+                  lines.append(f"gate-summary: {gate_summary.get('summary', '')}")
+                  lines.append("")
+
+              fail_rows = [
+                  r
+                  for r in results
+                  if r.get("tool", "").startswith("gate:")
+                  and r.get("exit_code", 0) != 0
+              ]
+              if fail_rows:
+                  lines.append("### FAIL gates")
+                  lines.append("")
+                  lines.append("| gate | exit code |")
+                  lines.append("| --- | --- |")
+                  for r in fail_rows:
+                      lines.append(f"| {r.get('tool')} | {r.get('exit_code')} |")
+                  lines.append("")
+
+              errors = [
+                  d
+                  for r in results
+                  for d in r.get("diagnostics", [])
+                  if d.get("severity") == "error"
+              ]
+              if errors:
+                  shown = errors[:40]
+                  lines.append(
+                      f"### Error findings (showing {len(shown)} of {len(errors)})"
+                  )
+                  lines.append("")
+                  lines.append("| rule | location | message |")
+                  lines.append("| --- | --- | --- |")
+                  for d in shown:
+                      loc = d.get("file") or "?"
+                      if d.get("line") is not None:
+                          loc += f":{d['line']}"
+                      msg = (d.get("message") or "")[:120].replace("|", "\\|")
+                      code = d.get("code") or "?"
+                      lines.append(f"| {code} | {loc} | {msg} |")
+                  lines.append("")
+
+          with open(summary_path, "a", encoding="utf-8") as f:
+              f.write("\n".join(lines) + "\n")
+          PY
       # T-1265: `.frob/coverage-stamp` and `.frob/baseline` are gitignored
       # (.gitignore:21,:72) and never restored in a fresh CI checkout, so
       # TEST005/006 (per-symbol/per-module coverage floors) are

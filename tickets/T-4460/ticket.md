@@ -1,7 +1,7 @@
 ---
 id: T-4460
 title: 'CI: write the self-gate and test results to the GitHub job summary'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-13'
