@@ -3266,6 +3266,24 @@
       "old_digest": null,
       "reason": "T-4409: moved from _collect.py to _collect_python_cache.py by the LARGE001 split, no behavior change",
       "ref": "src/frob/testing/_collect_python_cache.py::_parse_platform_skipped"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-14",
+      "facet": "body",
+      "new_digest": "5a9c69ae7facaef67265d3ae70fb6d07aaca78e711f692a23fdcd65ce63d20bc",
+      "old_digest": "e599971b5e9bb3052eb46c5dc51c16503f395147b83d6a7a628a47ff4b6a30fa",
+      "reason": "T-4483: body digest moved because T-4459 added the import_source computation (_import_source_status) and threaded it through _assemble_doctor_report; re-verified docs/guides/install.md's doctor section still describes the same native-extension/derived-state contract, and the new import-source field is documented in docs/modules/agent-worktree.md#pythonpath-import-source-t-4459",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-14",
+      "facet": "sig",
+      "new_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "reason": "T-4483: body digest moved because T-4459 added the import_source computation (_import_source_status) and threaded it through _assemble_doctor_report; re-verified docs/guides/install.md's doctor section still describes the same native-extension/derived-state contract, and the new import-source field is documented in docs/modules/agent-worktree.md#pythonpath-import-source-t-4459",
+      "ref": "src/frob/doctor.py::run_diagnosis"
     }
   ],
   "entries": [
@@ -3525,7 +3543,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "e599971b5e9bb3052eb46c5dc51c16503f395147b83d6a7a628a47ff4b6a30fa",
+      "digest": "5a9c69ae7facaef67265d3ae70fb6d07aaca78e711f692a23fdcd65ce63d20bc",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },

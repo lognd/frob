@@ -2,7 +2,7 @@
 id: T-4483
 title: 'main red after T-4480: DRIFT001 run_diagnosis ack, REF002 macos-portability
   single anchor, win32 agent env quoted PYTHONPATH assertion'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-14'

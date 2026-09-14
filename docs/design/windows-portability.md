@@ -42,7 +42,10 @@ level. Concretely:
 - A `windows-latest` failure no longer fails the `build` job or the
   overall `ci.yml` workflow conclusion.
 - `ubuntu-latest` and `macos-latest` are unchanged: a failure on either
-  still fails the workflow, exactly as before this ticket.
+  still fails the workflow, exactly as before this ticket. Why
+  `macos-latest` keeps its blocking status despite its own failure set is
+  the subject of the sibling doc `docs/design/macos-portability.md`
+  (T-3488): that set is small and mechanical, so it gets no carve-out.
 - `scripts/verify_release_ci_status.py` (docs/guides/release.md#decision-4-verify-ci-status----ci-must-be-green-for-the-released-commit-t-3251)
   therefore reads GREEN off `ubuntu-latest`/`macos-latest` health; a red
   `windows-latest` leg is a known, tracked gap that does not need

@@ -11,6 +11,7 @@ doctor` side of this same check) for the full contract."""
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -72,10 +73,11 @@ class TestAgentEnvExportsWorktreePythonpath:
         agent_run(["env", str(worktree)])
 
         out = capsys.readouterr().out
-        expected_src = str((worktree / "src").resolve())
-        assert f"export PYTHONPATH={expected_src}" in out or (
-            f"PYTHONPATH={expected_src}" in out
-        )
+        # The emitter renders every value through shlex.quote (a Windows
+        # path with backslashes comes out single-quoted; a POSIX path is
+        # printed bare), so assert the exact form it prints (T-4483).
+        expected_src = shlex.quote(str((worktree / "src").resolve()))
+        assert f"export PYTHONPATH={expected_src}" in out
 
     # frob:ticket T-4459
     def test_documented_entry_point_makes_worktree_code_importable(
