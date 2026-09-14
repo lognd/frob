@@ -2,7 +2,7 @@
 id: T-4476
 title: 'release.yml: artifact-smoke manylinux-aarch64 leg runs on an x86_64 host and
   cannot install the aarch64 wheel'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
