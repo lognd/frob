@@ -19,10 +19,24 @@ scope:
 - .github/workflows/ci.yml
 - tests/test_ci_workflow*.py
 - scripts/build_natives*.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the new test file's fs.read capability on
+    the testsuite node in design/frob.strata; a one-line addition to an existing via=
+    list, not a new capability grant
+  actor: logan
+  at: '2026-09-14'
+evidence:
+- tests/test_ci_workflow_core_wheels.py::TestCoreWheelsResolvesMaturinViaUvx::test_recipe_invokes_uvx_maturin
+- tests/test_ci_workflow_core_wheels.py::TestCoreWheelsResolvesMaturinViaUvx::test_recipe_does_not_invoke_uv_run_maturin
+- tests/test_ci_workflow_core_wheels.py::TestCoreWheelsResolvesMaturinViaUvx::test_recipe_does_not_invoke_bare_maturin
+- tests/test_ci_workflow_core_wheels.py::TestCoreWheelsResolvesMaturinViaUvx::test_recipe_still_rebuilds_target_wheels_per_crate
 designated_repro_test: null
 threat: null
 component: null
