@@ -21,6 +21,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_job_summary.py::TestSelfGateStepCapturesItsOutput::test_self_gate_step_uses_bash
+- tests/test_ci_workflow_job_summary.py::TestSelfGateStepCapturesItsOutput::test_self_gate_step_tees_to_runner_temp_with_pipefail
+- tests/test_ci_workflow_job_summary.py::TestSelfGateStepCapturesItsOutput::test_self_gate_step_still_runs_frob_check
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_exists
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_is_always
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_uses_bash
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_is_separate_and_runs_after_self_gate
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_reads_json_not_the_human_log
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_python_is_syntactically_valid
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryStepExists::test_summary_step_never_fails_the_job
+- tests/test_ci_workflow_job_summary.py::TestJobSummaryDocumented::test_check_docs_mention_the_job_summary
 designated_repro_test: null
 threat: null
 component: null
