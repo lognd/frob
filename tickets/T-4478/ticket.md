@@ -23,6 +23,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 confirmatory-only at land; perf-only change, same posture as T-4458
+  actor: logan
+  at: '2026-09-14'
+  old_length: 1261
+  new_length: 1660
+evidence:
+- tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate::test_leaked_sibling_scope_fires
 designated_repro_test: null
 threat: null
 component: null
@@ -43,3 +52,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - PERF004  src/frob/tickets/_land.py  -> attributed to T-4474 (commit 383d31bb90a1, already closed/dropped -- filed below) via src/frob/tickets/_land.py::_check_passenger_tickets -> src/frob/tickets/_land.py::_directive_ticket_ids_in_diff
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:waive BUG002 reason="behaviour-preserving perf fix: _cross_ticket_leakage_violations now sorts the flattened (other_id, path) pairs once instead of once per leaked ticket; the output order is identical, so the bound tests pass at the parent by construction. The defect is a PERF004 gate finding (sweep-filed T-4478), measured 1 -> 0 with frob check --only perf on src/frob/tickets/_land.py."
