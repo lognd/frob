@@ -418,8 +418,7 @@ def _verified_reset_root(
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_does_not_touch_a_live_lands_own_staging  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test\
-# _clean_root_is_a_no_op
+# tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_clean_root_is_a_no_op  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
@@ -1366,17 +1365,13 @@ def _read_text_at_commit_or_none(cwd: Path, commit: str, path: str) -> str | Non
 # frob:ticket T-2105
 # frob:doc docs/modules/tickets-landing.md#detect_duplicate_ticket_id_collisions-t-2105
 # frob:tests \
-# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
-# st_flags_id_with_genuinely_different_content_on_both_sides
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_flags_id_with_genuinely_different_content_on_both_sides  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
-# st_ignores_the_landing_tickets_own_id
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_the_landing_tickets_own_id  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
-# st_ignores_identical_content_on_both_sides
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_identical_content_on_both_sides  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
-# st_ignores_an_id_that_already_existed_at_the_merge_base
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_an_id_that_already_existed_at_the_merge_base  # noqa: E501
 def detect_duplicate_ticket_id_collisions(
     worktree: Path, root: Path, landing_ticket_id: str, main_branch: str
 ) -> frozenset[str]:
@@ -1928,21 +1923,46 @@ def _fold_waive_blocks(lines: Sequence[str]) -> list[tuple[str, str]]:
 # frob:ticket T-1468
 _WAIVE_COMMENT_LEADER_RE = re.compile(r"^\s*(#|//)\s*")
 
+# frob:ticket T-4475
+_WAIVE_TRAILING_NOQA_RE = re.compile(
+    r"\s*#\s*noqa(:\s*[A-Z0-9]+(\s*,\s*[A-Z0-9]+)*)?\s*$"
+)
+"""Matches a trailing `# noqa`/`# noqa: CODE[,CODE...]` pragma at the end
+of one physical line's already comment-leader-stripped text -- the same
+shape `frob.gates._fmt_directives._NOQA_SUFFIX_RE` matches, duplicated
+here rather than imported (T-1468's own module boundary: this function
+has no other dependency on `frob.gates`, and a one-line regex is cheaper
+than a cross-package import for a single shared pattern). T-4475:
+`_fmt_directives._wrap_cut_point`'s own fix auto-appends this exact
+marker to the final physical line of a `frob:` directive run whose value
+is an unsplittable token wider than the wrap width (ruff E501
+suppression, so the over-limit line that fix intentionally produces
+stays lint-clean) -- `_normalize_waive_fragments` must strip it before
+comparing, or a purely COSMETIC re-wrap (the SAME rule/reason, now also
+carrying this marker) reads as a semantic content change and refuses the
+land on a manufactured deletion, the exact class of false refusal T-1468
+itself exists to prevent for ordinary re-wraps."""
+
 
 def _normalize_waive_fragments(fragments: Sequence[str]) -> str:
     """Canonical, wrap-insensitive text for a `frob:waive` comment block
-    (T-1468): strips each physical line's comment leader (`#`/`//`) and any
+    (T-1468): strips each physical line's comment leader (`#`/`//`), a
+    trailing `# noqa[: CODE...]` pragma (T-4475 -- `frob fmt`'s own
+    auto-appended E501 suppression on an unbreakable directive token's
+    final line, not part of the waiver's actual content), and any
     trailing backslash continuation marker, joins the remaining fragments
     with a single space, and collapses internal whitespace runs to one
     space each -- so two comments carrying byte-identical waiver content
     but wrapped across a different number of physical lines (a `frob fmt`
-    re-wrap of an over-long line, say) normalize to the exact same string."""
+    re-wrap of an over-long line, say) normalize to the exact same
+    string."""
     parts: list[str] = []
     for frag in fragments:
         text = _WAIVE_COMMENT_LEADER_RE.sub("", frag.strip())
         text = text.rstrip()
         if text.endswith("\\"):
             text = text[:-1].rstrip()
+        text = _WAIVE_TRAILING_NOQA_RE.sub("", text).rstrip()
         parts.append(text)
     normalized = " ".join(part for part in parts if part)
     return re.sub(r"\s+", " ", normalized).strip()

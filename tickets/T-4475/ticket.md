@@ -2,7 +2,7 @@
 id: T-4475
 title: 'T-4179 regression: directive canonicalizer emits over-limit lines for long
   node ids, every land then refuses on NEW E501'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'

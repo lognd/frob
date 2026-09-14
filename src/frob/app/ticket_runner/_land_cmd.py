@@ -124,8 +124,7 @@ _land_phase_timer_start: float | None = None
 
 # frob:ticket T-4417
 # frob:tests \
-# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_elaps\
-# ed_seconds_is_monotonic_across_phase_lines
+# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_elapsed_seconds_is_monotonic_across_phase_lines  # noqa: E501
 def _land_phase_elapsed_seconds() -> float:
     """Seconds since this process's first "ticket land: ..." log line
     (T-4417), starting the clock on first call rather than requiring a
@@ -147,11 +146,9 @@ def _land_phase_elapsed_seconds() -> float:
 # frob:doc \
 # docs/modules/tickets-landing.md#phase-transition-elapsed-seconds-logging-t-4417
 # frob:tests \
-# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_elaps\
-# ed_seconds_is_monotonic_across_phase_lines
+# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_elapsed_seconds_is_monotonic_across_phase_lines  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_non_p\
-# hase_log_lines_are_left_untouched
+# tests/unit/test_land_phase_elapsed_logging.py::TestLandPhaseElapsedLogging.test_non_phase_log_lines_are_left_untouched  # noqa: E501
 class _LandPhaseElapsedFilter(logging.Filter):
     """Prefixes every "ticket land: ..." record on this module's logger
     with `[+<elapsed>s]` (T-4417), so a land's log (e.g. `/tmp/land-
@@ -291,7 +288,7 @@ def _absorb_pre_land_fixes(
     root: Path | None = None,
     *,
     dry_run: bool = False,
-) -> None:
+) -> list[str]:
     """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
     (directive canonicalization) and the T-1138 Tier-A deterministic
     auto-fix handlers against `worktree`, BEFORE `land()`'s own merge/
@@ -305,6 +302,14 @@ def _absorb_pre_land_fixes(
     Best-effort: either step's own failure (an unloadable queue) is
     logged and skipped rather than refusing the land -- these are
     auto-fix conveniences, not a land precondition.
+
+    T-4475: returns every `root`-relative path this call actually wrote
+    (empty under `dry_run`) -- `_land_core_prepare` restores exactly this
+    set if a pre-land check it runs AFTER this one refuses the land
+    (`sys.exit(1)`), so a refusal never leaves the worktree dirty with an
+    absorbed rewrite the operator never asked for and cannot attribute
+    (T-4473's own incident: a canonicalized `frob:tests` directive left
+    uncommitted after the land it was absorbed FOR was refused on it).
 
     T-1870: this used to also run `frob sys sync-interface` (interface=
     drift auto-write) as a third absorbed step -- deleted along with the
@@ -359,13 +364,17 @@ def _absorb_pre_land_fixes(
     closes."""
     merge_root = root if root is not None else worktree
     touched_paths = _land_touched_paths(worktree, ticket_id)
-    _fmt_pre_land_step(worktree, ticket_id, touched_paths, dry_run=dry_run)
-    _ruff_format_pre_land_step(worktree, ticket_id, touched_paths, dry_run=dry_run)
+    written: list[str] = []
+    written += _fmt_pre_land_step(worktree, ticket_id, touched_paths, dry_run=dry_run)
+    written += _ruff_format_pre_land_step(
+        worktree, ticket_id, touched_paths, dry_run=dry_run
+    )
     _assert_design_loads_pre_land(worktree, ticket_id, stage="pre-tier-a")
-    _tier_a_pre_land_step(
+    written += _tier_a_pre_land_step(
         worktree, ticket_id, touched_paths, merge_root, dry_run=dry_run
     )
     _assert_design_loads_pre_land(worktree, ticket_id, stage="post-tier-a")
+    return sorted(set(written))
 
 
 # frob:ticket T-1404
@@ -377,7 +386,7 @@ def _fmt_pre_land_step(
     touched_paths: frozenset[str] | None,
     *,
     dry_run: bool = False,
-) -> None:
+) -> list[str]:
     """The fmt half of `_absorb_pre_land_fixes`. T-1404: scoped to this
     ticket's own touched-file set when it can be computed -- the pre-T-1404
     whole-tree `format_paths(worktree, ...)` call rewrote ANY non-canonical
@@ -392,7 +401,13 @@ def _fmt_pre_land_step(
     `format_paths` call instead of `False` -- `format_paths` already
     supports a non-mutating preview mode (`FmtReport.changes` still lists
     what WOULD be rewritten), so a dry run's `worktree` is never written
-    to by this step."""
+    to by this step.
+
+    T-4475: returns every `root`-relative path this step actually
+    rewrote (empty under `dry_run`, since nothing was written) -- the
+    caller (`_absorb_pre_land_fixes`) aggregates these across all three
+    absorbed steps so a later pre-land refusal can restore exactly what
+    THIS invocation wrote, not leave it as unattributed dirty state."""
     # T-2761: no `limit=` override here any more -- letting `format_paths`
     # resolve each file's own width (T-1606) instead of pre-resolving one
     # ruff-derived number via `read_line_length` and forcing every
@@ -401,47 +416,45 @@ def _fmt_pre_land_step(
     from frob.gates._fmt_directives import format_paths
 
     check_only = dry_run
+    changed_paths: list[str]
     if touched_paths is None:
         fmt_report = format_paths(worktree, check_only=check_only)
-        fmt_changed = len(fmt_report.changes)
+        changed_paths = [change.path for change in fmt_report.changes]
     else:
-        fmt_changed = 0
+        changed_paths = []
         for rel in sorted(touched_paths):
             path = worktree / rel
             if not path.is_file():
                 continue
             scoped_report = format_paths(path, check_only=check_only)
-            fmt_changed += len(scoped_report.changes)
-    if fmt_changed:
+            changed_paths.extend(change.path for change in scoped_report.changes)
+    if changed_paths:
         _log.info(
             "ticket land: %s pre-land frob fmt %s %d file(s)",
             ticket_id,
             "would canonicalize" if dry_run else "canonicalized",
-            fmt_changed,
+            len(changed_paths),
         )
+    return changed_paths
 
 
 # frob:ticket T-4323
 # frob:doc docs/modules/gates.md#land-format-landfmt001-t-4298
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
-# lf_rewrites_a_touched_drifted_file
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_rewrites_a_touched_drifted_file  # noqa: E501
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
-# lf_leaves_an_out_of_scope_drifted_file_untouched
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched  # noqa: E501
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
-# lf_is_silent_on_a_clean_touched_file
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_is_silent_on_a_clean_touched_file  # noqa: E501
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
-# lf_leaves_the_file_alone_when_ruff_itself_fails
+# tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_leaves_the_file_alone_when_ruff_itself_fails  # noqa: E501
 def _ruff_format_pre_land_step(
     worktree: Path,
     ticket_id: str,
     touched_paths: frozenset[str] | None,
     *,
     dry_run: bool = False,
-) -> None:
+) -> list[str]:
     """The `ruff format` half of `_absorb_pre_land_fixes` (T-4323, the
     APPLY half of LANDFMT001 -- `frob.gates._land_format` -- that T-4298
     deliberately deferred as a `frob:todo` while this module's own T-4281
@@ -481,17 +494,23 @@ def _ruff_format_pre_land_step(
     T-4179: `dry_run=True` still calls `_ruff_format_would_rewrite` (a
     read-only check, per its own name) to compute `to_rewrite` for the
     log line, but never spawns the actual `ruff format` write-mode
-    subprocess -- `worktree` is left byte-identical."""
+    subprocess -- `worktree` is left byte-identical.
+
+    T-4475: returns the `to_rewrite` list on a successful REAL rewrite
+    (empty under `dry_run`, on a spawn/exit failure, or when nothing
+    needed rewriting) -- `_absorb_pre_land_fixes` aggregates this across
+    all three absorbed steps so a later pre-land refusal can restore
+    exactly what THIS invocation wrote."""
     if not touched_paths:
-        return
+        return []
     py_touched = frozenset(rel for rel in touched_paths if rel.endswith(".py"))
     if not py_touched:
-        return
+        return []
     from frob.gates._land_format import _ruff_format_would_rewrite
 
     to_rewrite = _ruff_format_would_rewrite(worktree, py_touched)
     if not to_rewrite:
-        return
+        return []
     if dry_run:
         _log.info(
             "ticket land: %s pre-land ruff format would rewrite %d file(s): %s",
@@ -499,7 +518,7 @@ def _ruff_format_pre_land_step(
             len(to_rewrite),
             ", ".join(to_rewrite),
         )
-        return
+        return []
     run_result = guarded_subprocess_run(
         project_tool_argv(worktree, "ruff", "format", *to_rewrite),
         cwd=worktree,
@@ -514,7 +533,7 @@ def _ruff_format_pre_land_step(
             ticket_id,
             run_result.danger_err,
         )
-        return
+        return []
     proc = run_result.danger_ok
     if proc.returncode:
         _log.warning(
@@ -525,13 +544,14 @@ def _ruff_format_pre_land_step(
             proc.returncode,
             (proc.stdout + proc.stderr).strip(),
         )
-        return
+        return []
     _log.info(
         "ticket land: %s pre-land ruff format rewrote %d file(s): %s",
         ticket_id,
         len(to_rewrite),
         ", ".join(to_rewrite),
     )
+    return list(to_rewrite)
 
 
 # frob:ticket T-1175
@@ -698,7 +718,7 @@ def _tier_a_pre_land_step(
     root: Path,
     *,
     dry_run: bool = False,
-) -> None:
+) -> list[str]:
     """The Tier-A deterministic auto-fix half of `_absorb_pre_land_fixes`,
     logging and skipping when the graph or queue cannot load (a land
     convenience, not a precondition).
@@ -721,7 +741,13 @@ def _tier_a_pre_land_step(
     a real design decision each handler would need to earn), a dry run
     logs that this step was skipped and previews without it: read-only
     beats a complete-but-mutating preview, which is the exact defect
-    (F-380) this ticket closes."""
+    (F-380) this ticket closes.
+
+    T-4475: returns every `root`-relative path `apply_tier_a_fixes`
+    actually rewrote (empty under `dry_run`, or when the graph/queue
+    could not load) -- `_absorb_pre_land_fixes` aggregates this across
+    all three absorbed steps so a later pre-land refusal can restore
+    exactly what THIS invocation wrote."""
     if dry_run:
         _log.info(
             "ticket land: %s pre-land Tier-A fixes SKIPPED under --dry-run "
@@ -729,7 +755,7 @@ def _tier_a_pre_land_step(
             "land may still apply fixes a dry run did not show)",
             ticket_id,
         )
-        return
+        return []
     from frob.gates._fix_engine import apply_tier_a_fixes
     from frob.graph import build_graph
     from frob.tickets import load_active
@@ -742,7 +768,7 @@ def _tier_a_pre_land_step(
             "queue load failed)",
             ticket_id,
         )
-        return
+        return []
     # frob:ticket T-1323
     # WAIVE004 ran unexcluded here until the 2026-07-29 incident: its
     # staleness self-check trusts a fresh gates run, but in a natives-stale
@@ -830,6 +856,7 @@ def _tier_a_pre_land_step(
             ticket_id,
             len(applied),
         )
+    return sorted({fix.file for fix in applied})
 
 
 # frob:ticket T-1456
@@ -1111,8 +1138,7 @@ def _unscoped_error_findings(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
 # frob:tests \
-# tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam.te\
-# st_delegates_with_the_same_arguments
+# tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_the_same_arguments  # noqa: E501
 def unscoped_error_findings(
     root: Path,
     ticket_id: str,
@@ -2494,11 +2520,9 @@ def _ticket_terminal_state_on_main(root: Path, ticket_id: str) -> str | None:
 
 # frob:ticket T-2949
 # frob:tests \
-# tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_reads_commi\
-# tted_state_not_dirty_working_tree
+# tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_reads_committed_state_not_dirty_working_tree  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_returns_non\
-# e_when_head_has_no_such_ticket
+# tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_returns_none_when_head_has_no_such_ticket  # noqa: E501
 def _read_ticket_state_at_head(root: Path, ticket_id: str) -> str | None:
     """`ticket_id`'s raw `state:` value as committed at `root`'s `HEAD` --
     never the working tree (T-2949). Tries v2 mode first (`git show
@@ -2809,8 +2833,7 @@ def _finish_land_after_success(
 # frob:ticket T-1720
 # frob:ticket T-2173
 # frob:doc \
-# docs/modules/tickets-landing.md#auto-sync-after-a-successful-land-t-1720-rebase-repla\
-# ced-by-merge-in-t-2173
+# docs/modules/tickets-landing.md#auto-sync-after-a-successful-land-t-1720-rebase-replaced-by-merge-in-t-2173  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_merges_the_worktree_onto_the_new_main_tip  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_dirty_worktree_is_skipped_rather_than_merged_into  # noqa: E501
@@ -4946,23 +4969,17 @@ def _ruff_diagnostic_identity(  # noqa: ANN001
 # frob:ticket T-4457
 # frob:ticket T-4461
 # frob:tests \
-# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_same_dri\
-# ve_relativizes_normally
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_same_drive_relativizes_normally  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_cross_dr\
-# ive_diag_and_base_do_not_crash
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_cross_drive_diag_and_base_do_not_crash  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_live_and\
-# _baseline_pass_agree_across_differently_drived_trees
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_live_and_baseline_pass_agree_across_differently_drived_trees  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_ntpath_a\
-# bsolute_snapshot_rooted_diag_file_matches_live_identity
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_posix_ab\
-# solute_tmp_snapshot_path_matches_live_identity
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_posix_absolute_tmp_snapshot_path_matches_live_identity  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_symlinke\
-# d_snapshot_diag_file_unresolved_matches_realpath_base
+# tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_symlinked_snapshot_diag_file_unresolved_matches_realpath_base  # noqa: E501
 def _relativize_diag_path(diag_file: str, base: str, *, path_mod=None) -> str:  # noqa: ANN001
     """The pure, mock-free path-shaping half of `_ruff_diagnostic_identity`
     (T-4457): relativizes `diag_file` against `base` when both name the
@@ -5415,14 +5432,11 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
 # landing this change: a waiver citing its own landing ticket blocks its close \
 # (T-2280's own LiveTrackerCited lesson)" follow_up="T-3504"
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors\
-# .test_a_new_render001_refuses_the_land
+# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_new_render001_refuses_the_land  # noqa: E501
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors\
-# .test_a_bare_print_outside_the_render001_pathspec_does_not_refuse
+# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_bare_print_outside_the_render001_pathspec_does_not_refuse  # noqa: E501
 # frob:tests \
-# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors\
-# .test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope
+# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope  # noqa: E501
 def _render001_checker(
     worktree: Path, rel_path: str, text: str
 ) -> tuple[Violation, ...]:
@@ -5829,6 +5843,59 @@ def _assert_diff_does_not_add_new_file_local_errors_pre_land(
     sys.exit(1)
 
 
+# frob:ticket T-4475
+def _restore_absorbed_paths(worktree: Path, ticket_id: str, paths: list[str]) -> None:
+    """`git checkout -- <paths>` in `worktree`, best-effort -- called from
+    `_land_core_prepare`'s `except SystemExit` handler to undo exactly
+    what `_absorb_pre_land_fixes` wrote before a pre-land check refuses
+    the land, so the refusal leaves `worktree` exactly as the operator
+    left it rather than dirty with an unattributed rewrite (T-4473's own
+    incident: a canonicalized `frob:tests` directive left uncommitted
+    after the land it was absorbed FOR was refused on the NEW E501
+    finding that same canonicalization introduced). A restore failure
+    (spawn error, non-zero exit) is logged, never raised -- the
+    `SystemExit` this is called from is already propagating and must
+    reach the caller regardless; a best-effort restore that could not
+    run is a worse dirty-worktree outcome than before T-4475, never a
+    better one, so it does not block or replace the original exit."""
+    if not paths:
+        return
+    run_result = run_argv(["git", "-C", str(worktree), "checkout", "--", *paths])
+    if run_result.is_err:
+        _log.warning(
+            "ticket land: %s pre-land refusal restore spawn failed (%s) -- "
+            "%s left with the absorbed rewrite still uncommitted; restore "
+            "by hand: cd %s && git checkout -- %s",
+            ticket_id,
+            run_result.danger_err,
+            worktree,
+            worktree,
+            " ".join(paths),
+        )
+        return
+    proc = run_result.danger_ok
+    if proc.returncode:
+        _log.warning(
+            "ticket land: %s pre-land refusal restore failed (exit %d: "
+            "%s) -- %s left with the absorbed rewrite still uncommitted; "
+            "restore by hand: cd %s && git checkout -- %s",
+            ticket_id,
+            proc.returncode,
+            (proc.stdout + proc.stderr).strip(),
+            worktree,
+            worktree,
+            " ".join(paths),
+        )
+        return
+    _log.info(
+        "ticket land: %s pre-land refusal restored %d absorbed path(s) "
+        "(%s) -- worktree left clean",
+        ticket_id,
+        len(paths),
+        ", ".join(paths),
+    )
+
+
 # frob:ticket T-1593
 # frob:ticket T-1692
 # frob:ticket T-1845
@@ -5874,29 +5941,51 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # modified files left behind by a flag whose entire point is safety.
     # `_absorb_pre_land_fixes` now runs every absorbed step read-only
     # under `--dry-run` instead.
-    _absorb_pre_land_fixes(worktree, cfg.ticket_id, root, dry_run=cfg.ticket_dry_run)
+    absorbed_paths = _absorb_pre_land_fixes(
+        worktree, cfg.ticket_id, root, dry_run=cfg.ticket_dry_run
+    )
 
     # frob:ticket T-1907
     touched_paths = _land_touched_paths(worktree, cfg.ticket_id)
-    _assert_touched_files_type_check_pre_land(worktree, cfg.ticket_id, touched_paths)
+    # T-4475: every pre-land assertion in this block can `sys.exit(1)`
+    # (T-4473's own incident: `_assert_touched_files_lint_clean_pre_land`
+    # refused on a NEW E501 finding the absorption step above had JUST
+    # introduced by canonicalizing a directive comment). A `SystemExit`
+    # here restores `absorbed_paths` -- exactly what `_absorb_pre_land_
+    # fixes` itself wrote, nothing more -- before propagating the exit,
+    # so a refused land leaves `worktree` exactly as the operator left
+    # it, not dirty with an unattributed, unreviewed rewrite. Chosen over
+    # the alternative (commit the absorbed rewrite as its own WIP-style
+    # commit even on refusal): restoring keeps "the land failed" meaning
+    # "nothing changed", and does not risk publishing a Tier-A rewrite
+    # that itself introduced the very violation refusing the land.
+    try:
+        _assert_touched_files_type_check_pre_land(
+            worktree, cfg.ticket_id, touched_paths
+        )
 
-    # frob:ticket T-3061
-    _assert_touched_files_lint_clean_pre_land(worktree, cfg.ticket_id, touched_paths)
+        # frob:ticket T-3061
+        _assert_touched_files_lint_clean_pre_land(
+            worktree, cfg.ticket_id, touched_paths
+        )
 
-    # frob:ticket T-2114
-    _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
-        worktree, cfg.ticket_id, touched_paths
-    )
+        # frob:ticket T-2114
+        _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+            worktree, cfg.ticket_id, touched_paths
+        )
 
-    # frob:ticket T-2214
-    _assert_diff_does_not_worsen_long_functions_pre_land(
-        worktree, cfg.ticket_id, touched_paths
-    )
+        # frob:ticket T-2214
+        _assert_diff_does_not_worsen_long_functions_pre_land(
+            worktree, cfg.ticket_id, touched_paths
+        )
 
-    # frob:ticket T-2280
-    _assert_diff_does_not_add_new_file_local_errors_pre_land(
-        worktree, cfg.ticket_id, touched_paths
-    )
+        # frob:ticket T-2280
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            worktree, cfg.ticket_id, touched_paths
+        )
+    except SystemExit:
+        _restore_absorbed_paths(worktree, cfg.ticket_id, absorbed_paths)
+        raise
 
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
@@ -6748,8 +6837,7 @@ def _require_merge_driver_args(cfg: AppConfig) -> None:
 
 # frob:ticket T-4201
 # frob:tests \
-# tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_single_ti\
-# cket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence
+# tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_single_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence  # noqa: E501
 def _merge_single_ticket_file(
     ours_text: str, theirs_text: str, base_text: str | None, ours_path: Path
 ) -> bool:

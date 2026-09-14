@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 305,
-      "reason": "T-4179: adds tests/test_ticket_land_dry_run.py to the exec via-list -- the established `_run`/`_git_init`/`_commit_all` real-git-fixture idiom (subprocess.run of git init/add/commit/write-tree) this test-module family already repeats across many other via-list entries. One file, same via-list-is-per-file shape every other entry here already carries. Bumping the ceiling 304 -> 305, one new site.",
-      "ticket": "T-4179"
+      "accepted_count": 306,
+      "reason": "T-4475: adds tests/test_gates_fmt_directives.py to the exec via-list -- TestUnbreakableTokenGetsNoqaE501T4475.test_ruff_check_e501_is_clean_on_the_result spawns a real `ruff check --select E501` subprocess (skipif ruff missing) to prove the canonicalizer's auto-appended noqa suppression actually satisfies ruff, not just this repo's own regex. One file, same via-list-is-per-file shape every other entry here already carries. Bumping the ceiling 305 -> 306, one new site.",
+      "ticket": "T-4475"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

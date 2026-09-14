@@ -8,16 +8,32 @@ git hash, not just a spot-checked file), while a real (non-dry-run) run
 still applies the fixes exactly as before. The second class covers this
 ticket's defect (3): a refusal caused by the tool's OWN uncommitted edit
 now names the tool, not just the operator.
+
+T-4475 regression: T-4179's own fix (never split an unbreakable directive
+token) left the resulting over-limit physical line E501-dirty, so a REAL
+(non-dry-run) land's own pre-land `ruff check` refused on a NEW violation
+the absorption step it ran right before had JUST introduced -- and left
+that rewrite uncommitted in the worktree afterward (T-4473's incident).
+The third class here covers the worktree-left-dirty-after-refusal half of
+that fix (the noqa-suppression half lives in
+tests/test_gates_fmt_directives.py::TestUnbreakableTokenGetsNoqaE501T4475).
 """
 
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
-from frob.app.ticket_runner._land_cmd import _absorb_pre_land_fixes
+from frob.app.config import AppConfig
+from frob.app.ticket_runner import _land_cmd
+from frob.app.ticket_runner._land_cmd import (
+    _absorb_pre_land_fixes,
+    _land_core_prepare,
+    _restore_absorbed_paths,
+)
 from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
 from frob.tickets._land import (
     _attribute_own_fmt_rewrap,
@@ -93,8 +109,7 @@ class TestAbsorbPreLandFixesDryRunIsReadOnly:
 
     def test_dry_run_leaves_the_worktree_tree_hash_unchanged(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.tes\
-        # t_dry_run_leaves_the_worktree_tree_hash_unchanged
+        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.test_dry_run_leaves_the_worktree_tree_hash_unchanged  # noqa: E501
         _write_noncanonical_directive(repo)
         _run(["git", "add", "-A"], repo)
         before = _run(["git", "write-tree"], repo).stdout.strip()
@@ -109,8 +124,7 @@ class TestAbsorbPreLandFixesDryRunIsReadOnly:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.tes\
-        # t_dry_run_leaves_the_noncanonical_file_byte_identical
+        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.test_dry_run_leaves_the_noncanonical_file_byte_identical  # noqa: E501
         target = _write_noncanonical_directive(repo)
         original = target.read_text()
 
@@ -120,8 +134,7 @@ class TestAbsorbPreLandFixesDryRunIsReadOnly:
 
     def test_running_dry_run_twice_is_still_a_noop_both_times(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.tes\
-        # t_running_dry_run_twice_is_still_a_noop_both_times
+        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.test_running_dry_run_twice_is_still_a_noop_both_times  # noqa: E501
         # T-4179 defect (3)'s regression fixture: since a dry run no
         # longer writes anything, a SECOND consecutive dry run cannot
         # trip over the first one's own edit -- there is no edit to trip
@@ -141,8 +154,7 @@ class TestAbsorbPreLandFixesDryRunIsReadOnly:
 
     def test_real_run_still_rewrites_the_noncanonical_file(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.tes\
-        # t_real_run_still_rewrites_the_noncanonical_file
+        # tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly.test_real_run_still_rewrites_the_noncanonical_file  # noqa: E501
         # Control: a REAL (non-dry-run) call keeps applying the fix exactly
         # as before T-4179 -- only `--dry-run` changed behavior.
         target = _write_noncanonical_directive(repo)
@@ -193,8 +205,7 @@ class TestOutOfScopeRefusalAttributesOwnFmtRewrap:
 
     def test_own_fmt_rewrap_is_recognized(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewra\
-        # p.test_own_fmt_rewrap_is_recognized
+        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap.test_own_fmt_rewrap_is_recognized  # noqa: E501
         _commit_noncanonical_waiver_on_a_ticket_branch(repo)
         tid = _new_out_of_scope_ticket(repo)
 
@@ -206,8 +217,7 @@ class TestOutOfScopeRefusalAttributesOwnFmtRewrap:
 
     def test_a_genuine_hand_deletion_is_not_misattributed(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewra\
-        # p.test_a_genuine_hand_deletion_is_not_misattributed
+        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap.test_a_genuine_hand_deletion_is_not_misattributed  # noqa: E501
         _run(["git", "checkout", "-q", "-b", "ticket-branch-2"], repo)
         target = repo / "src" / "other.py"
         target.write_text(
@@ -226,8 +236,7 @@ class TestOutOfScopeRefusalAttributesOwnFmtRewrap:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewra\
-        # p.test_a_rewrap_that_stays_parseable_does_not_refuse_at_all
+        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap.test_a_rewrap_that_stays_parseable_does_not_refuse_at_all  # noqa: E501
         # T-4179's OWN fix (defect 2: never split a directive token) means
         # a legitimate `frob fmt` re-wrap can no longer corrupt a waiver
         # past `_uncommitted_out_of_scope_waive_deletions`'s own parser --
@@ -254,8 +263,7 @@ class TestOutOfScopeRefusalAttributesOwnFmtRewrap:
 
     def test_attribute_helper_suffixes_an_own_rewrap_finding(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewra\
-        # p.test_attribute_helper_suffixes_an_own_rewrap_finding
+        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap.test_attribute_helper_suffixes_an_own_rewrap_finding  # noqa: E501
         _commit_noncanonical_waiver_on_a_ticket_branch(repo)
         tid = _new_out_of_scope_ticket(repo)
         _absorb_pre_land_fixes(repo, tid, dry_run=False)
@@ -271,8 +279,7 @@ class TestOutOfScopeRefusalAttributesOwnFmtRewrap:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewra\
-        # p.test_attribute_helper_suffixes_only_own_rewrap_findings
+        # tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap.test_attribute_helper_suffixes_only_own_rewrap_findings  # noqa: E501
         (repo / "src" / "hand_edited.py").write_text(
             '# frob:waive PERF002 reason="genuinely needed"\ndef h():\n    pass\n'
         )
@@ -283,3 +290,128 @@ class TestOutOfScopeRefusalAttributesOwnFmtRewrap:
 
         assert rendered == ["src/hand_edited.py:PERF002"]
         assert "frob fmt" not in rendered[0]
+
+
+# frob:ticket T-4475
+class TestRestoreAbsorbedPathsOnRefusal:
+    """T-4475: a pre-land refusal (`sys.exit(1)`, from any of the checks
+    `_land_core_prepare` runs right after `_absorb_pre_land_fixes`) must
+    not leave the absorption step's own rewrite uncommitted in the
+    worktree (T-4473's incident: a canonicalized `frob:tests` directive
+    left dirty after the land it was absorbed FOR was refused on the NEW
+    E501 finding that same canonicalization introduced)."""
+
+    def test_restore_absorbed_paths_reverts_a_real_rewrite(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal.test_restore_absorbed_paths_reverts_a_real_rewrite  # noqa: E501
+        # Unit-level: `_restore_absorbed_paths` on its own, given the exact
+        # shape `_absorb_pre_land_fixes` produces -- a committed file,
+        # rewritten uncommitted.
+        target = repo / "src" / "feature.py"
+        original = target.read_text()
+        target.write_text(original + "# an absorbed rewrite\n")
+        assert target.read_text() != original
+
+        _restore_absorbed_paths(repo, "T-4475", ["src/feature.py"])
+
+        assert target.read_text() == original
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        assert "src/feature.py" not in status
+
+    def test_restore_absorbed_paths_is_a_noop_on_an_empty_list(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal.test_restore_absorbed_paths_is_a_noop_on_an_empty_list  # noqa: E501
+        target = repo / "src" / "feature.py"
+        original = target.read_text()
+
+        # No paths given -- nothing to restore, nothing raised.
+        _restore_absorbed_paths(repo, "T-4475", [])
+
+        assert target.read_text() == original
+
+    def test_pre_land_refusal_restores_the_absorbed_rewrite(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal.test_pre_land_refusal_restores_the_absorbed_rewrite  # noqa: E501
+        # Integration-shaped: `_land_core_prepare` itself, with the FIRST
+        # pre-land check it runs after absorption (`_assert_touched_files_
+        # type_check_pre_land`) monkeypatched to refuse unconditionally --
+        # standing in for T-4473's real refusal
+        # (`_assert_touched_files_lint_clean_pre_land`, on a NEW E501
+        # finding) without needing a real `ty`/`ruff` violation fixture.
+        # `_absorb_pre_land_fixes` still runs for REAL here (`dry_run=
+        # False`, matching a real land) and genuinely rewrites
+        # `src/noncanon.py` before the monkeypatched check exits.
+        target = _write_noncanonical_directive(repo)
+        original = target.read_text()
+
+        def _refuse(*_args: object, **_kwargs: object) -> None:
+            sys.exit(1)
+
+        monkeypatch.setattr(
+            _land_cmd, "_assert_touched_files_type_check_pre_land", _refuse
+        )
+
+        cfg = AppConfig(ticket_command="land", ticket_id="T-4475", ticket_dry_run=False)
+
+        with pytest.raises(SystemExit):
+            _land_core_prepare(repo, cfg, repo)
+
+        # The refusal propagated (proven by pytest.raises above) AND the
+        # worktree is exactly as it was before this call -- the absorbed
+        # rewrite was restored, not left dirty.
+        assert target.read_text() == original
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        # The ORIGINAL staged addition of src/noncanon.py is still there
+        # (untouched by fmt) -- only the fmt rewrite itself was undone.
+        assert "src/noncanon.py" in status
+
+    def test_pre_land_success_leaves_the_absorbed_rewrite_in_place(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal.test_pre_land_success_leaves_the_absorbed_rewrite_in_place  # noqa: E501
+        # Control: when every pre-land check the try/except wraps
+        # succeeds, the absorbed rewrite is left in place exactly as
+        # before T-4475 -- restoration is refusal-only.
+        target = _write_noncanonical_directive(repo)
+        original = target.read_text()
+
+        def _pass(*_args: object, **_kwargs: object) -> None:
+            return None
+
+        for name in (
+            "_assert_touched_files_type_check_pre_land",
+            "_assert_touched_files_lint_clean_pre_land",
+            "_assert_new_public_symbols_have_doc_and_test_edge_pre_land",
+            "_assert_diff_does_not_worsen_long_functions_pre_land",
+            "_assert_diff_does_not_add_new_file_local_errors_pre_land",
+        ):
+            monkeypatch.setattr(_land_cmd, name, _pass)
+
+        # `_land_core_prepare` also resolves the land root and reconciles
+        # stale markers after the try/except block -- stub those too so
+        # this test only exercises the absorb-then-checks seam T-4475
+        # touches, not the rest of a real land's own preconditions.
+        monkeypatch.setattr(_land_cmd, "_resolve_land_root", lambda root, *a, **k: root)
+        monkeypatch.setattr(_land_cmd, "_report_stale_post_land_verify_markers", _pass)
+        monkeypatch.setattr(
+            _land_cmd, "_report_stale_land_finish_pending_markers", _pass
+        )
+        monkeypatch.setattr(_land_cmd, "_warn_land_override_flags", _pass)
+
+        cfg = AppConfig(ticket_command="land", ticket_id="T-4475", ticket_dry_run=False)
+
+        try:
+            _land_core_prepare(repo, cfg, repo)
+        except Exception:
+            # This stub does not attempt to satisfy every precondition
+            # `_land_core_prepare` checks past the try/except block (rapid
+            # profile resolution, backpressure, ...) -- only that a
+            # SUCCESSFUL pre-land-checks block does NOT restore.
+            pass
+
+        assert target.read_text() != original
