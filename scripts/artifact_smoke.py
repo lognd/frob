@@ -49,8 +49,7 @@ from pathlib import Path
 
 # frob:doc docs/guides/release.md#artifact-smoke-stage-t-3884
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_failing_doctor_ra\
-# ises_smoke_check_error
+# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_failing_doctor_raises_smoke_check_error  # noqa: E501
 @dataclass(frozen=True)
 class SmokeCheckError(Exception):
     """One `check_*` step failed; `name` identifies which, `detail` is the
@@ -116,14 +115,11 @@ _HOST_ARCH_TAG_TOKENS = {
 
 # frob:ticket T-3980
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_wheel_matches_ho\
-# st_platform_rejects_foreign_tag
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_wheel_matches_host_platform_rejects_foreign_tag  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_wrong_platform_w\
-# heel_names_the_mismatch
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_wrong_platform_wheel_names_the_mismatch  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_platfor\
-# m_wheel_does_not_raise
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_platform_wheel_does_not_raise  # noqa: E501
 def _wheel_matches_host_platform(wheel_path: Path) -> bool:
     """T-3980: whether `wheel_path`'s filename platform tag is one this
     host could actually install -- `_require_core_wheels`'s glob match
@@ -150,17 +146,13 @@ def _wheel_matches_host_platform(wheel_path: Path) -> bool:
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as \
 # _REQUIRED_CORE_WHEEL_GLOBS above -- see that waiver's reason"
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absen\
-# t_names_both
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absent_names_both  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_\
-# names_only_that_one
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_names_only_that_one  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_prese\
-# nt_does_not_raise
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_present_does_not_raise  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
-# eport_named_core_missing
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_report_named_core_missing  # noqa: E501
 def _wheel_version(wheel_path: Path) -> str:
     """The PEP 427 wheel-filename version field
     (`frob_core-VERSION-pytag-abitag-platformtag.whl`). Used by
@@ -174,11 +166,9 @@ def _wheel_version(wheel_path: Path) -> str:
 
 # frob:ticket T-4465
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestReadCorePins.test_reads_both_pins_from_\
-# metadata
+# tests/unit/test_artifact_smoke_script.py::TestReadCorePins.test_reads_both_pins_from_metadata  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestReadCorePins.test_unreadable_wheel_retu\
-# rns_empty
+# tests/unit/test_artifact_smoke_script.py::TestReadCorePins.test_unreadable_wheel_returns_empty  # noqa: E501
 def _read_core_pins(wheel_path: Path) -> dict[str, str]:
     """T-4465: the exact frob-core/strata-core version pins THIS
     `wheel_path` install is about to attempt, parsed straight from its
@@ -229,23 +219,17 @@ def _read_core_pins(wheel_path: Path) -> dict[str, str]:
 # proportion to pull into T-3935's narrow scope for one preflight helper; this \
 # module's own docstring is the authoritative description, see T-3935's Done report"
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absen\
-# t_names_both
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absent_names_both  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_\
-# names_only_that_one
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_names_only_that_one  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_prese\
-# nt_does_not_raise
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_present_does_not_raise  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_stale_version_wh\
-# eel_names_versions
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_stale_version_wheel_names_versions  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_version\
-# _wheel_does_not_raise
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_version_wheel_does_not_raise  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
-# eport_named_core_missing
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_report_named_core_missing  # noqa: E501
 @dataclass(frozen=True)
 class _CoreWheelFindings:
     """T-4465: `_classify_core_wheels`'s three disjoint failure buckets --
@@ -309,23 +293,17 @@ def _classify_core_wheels(
 # proportion to pull into T-3935's narrow scope for one preflight helper; this \
 # module's own docstring is the authoritative description, see T-3935's Done report"
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absen\
-# t_names_both
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absent_names_both  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_\
-# names_only_that_one
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_one_core_absent_names_only_that_one  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_prese\
-# nt_does_not_raise
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_present_does_not_raise  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_stale_version_wh\
-# eel_names_versions
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_stale_version_wheel_names_versions  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_version\
-# _wheel_does_not_raise
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_version_wheel_does_not_raise  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_r\
-# eport_named_core_missing
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores.test_absent_cores_report_named_core_missing  # noqa: E501
 def _require_core_wheels(
     core_wheels_dir: Path, pins: dict[str, str] | None = None
 ) -> None:
@@ -459,16 +437,40 @@ def _run_module(
     return result
 
 
+def _run_doctor_in_scratch_cwd(
+    python: Path, work_dir: Path, *, name: str
+) -> subprocess.CompletedProcess:
+    """`frob doctor`, run from a scratch `work_dir / "doctor-cwd"` rather
+    than this process's own cwd (T-3980, extended by T-4473 to every
+    doctor invocation in this script): the smoke script's process cwd is
+    the release runner's own repo checkout, and `doctor` also inspects
+    whatever git/`.frob` state happens to surround wherever it runs
+    (stale ticket leases, hook drift, a detached-HEAD `git diff`
+    failure, T-4459's import-source check) -- none of which has
+    anything to do with whether the installed wheel under test works.
+    Every `check_*` that shells out to `doctor` must go through this
+    one helper so that scratch-cwd behavior stays a single fact, not
+    one copy per check that can silently drift apart."""
+    doctor_cwd = work_dir / "doctor-cwd"
+    doctor_cwd.mkdir(exist_ok=True)
+    return _run_module(python, "doctor", name=name, cwd=doctor_cwd)
+
+
 # frob:doc docs/guides/release.md#artifact-smoke-stage-t-3884
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_installs_and_runs\
-# _version_and_doctor
+# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_installs_and_runs_version_and_doctor  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_\
-# passes_serve_extra_check
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_passes_serve_extra_check  # noqa: E501
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_doctor_runs_outsi\
-# de_work_dir_not_process_cwd
+# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_doctor_runs_outside_work_dir_not_process_cwd  # noqa: E501
+# frob:waive AFFECT001 reason="T-4473 is an internal implementation fix (which cwd the \
+# already-documented doctor call runs from) -- \
+# docs/guides/release.md#artifact-smoke-stage-t-3884 already documents item 2 as \
+# running frob doctor against the installed artifact, which is exactly what this \
+# change makes true; widening this ticket's scope to the shared release doc to restate \
+# the same fact in different words is disproportionate to a cwd-plumbing bugfix, the \
+# same shape T-2521's neighboring AFFECT001 waiver on this identical doc already \
+# accepted"
 def check_base_install(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -> None:
     """Bare `frob` (no extras) must install into a clean venv and run a
     real command: `frob --version` (entry point wiring) AND `frob
@@ -497,21 +499,16 @@ def check_base_install(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) 
     python = _make_venv(work_dir / "venv-base")
     _pip_install(python, str(wheel_path), find_links=core_wheels_dir)
     _run_module(python, "--version", name="frob --version")
-    doctor_cwd = work_dir / "doctor-cwd"
-    doctor_cwd.mkdir(exist_ok=True)
-    _run_module(python, "doctor", name="frob doctor", cwd=doctor_cwd)
+    _run_doctor_in_scratch_cwd(python, work_dir, name="frob doctor")
 
 
 # frob:doc docs/guides/release.md#artifact-smoke-stage-t-3884
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestCheckServeExtra.test_installs_and_impor\
-# ts_mcp
+# tests/unit/test_artifact_smoke_script.py::TestCheckServeExtra.test_installs_and_imports_mcp  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustFire.test_unbounded_mcp_pin\
-# _fails_serve_extra_check
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustFire.test_unbounded_mcp_pin_fails_serve_extra_check  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_\
-# passes_serve_extra_check
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_passes_serve_extra_check  # noqa: E501
 def check_serve_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -> None:
     """`frob[serve]` must install into a clean venv AND the mcp import
     must actually resolve -- the exact T-3857 shape (an unbounded lower
@@ -532,8 +529,17 @@ def check_serve_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -
 
 # frob:doc docs/guides/release.md#artifact-smoke-stage-t-3884
 # frob:tests \
-# tests/unit/test_artifact_smoke_script.py::TestCheckNativeExtra.test_installs_and_impo\
-# rts_natives_via_doctor
+# tests/unit/test_artifact_smoke_script.py::TestCheckNativeExtra.test_installs_and_imports_natives_via_doctor  # noqa: E501
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestCheckNativeExtra.test_doctor_runs_outside_work_dir_not_process_cwd  # noqa: E501
+# frob:waive AFFECT001 reason="T-4473 is an internal implementation fix (which cwd the \
+# already-documented doctor call runs from) -- \
+# docs/guides/release.md#artifact-smoke-stage-t-3884 already documents item 4 as \
+# running frob doctor against the installed artifact, which is exactly what this \
+# change makes true; widening this ticket's scope to the shared release doc to restate \
+# the same fact in different words is disproportionate to a cwd-plumbing bugfix, the \
+# same shape T-2521's neighboring AFFECT001 waiver on this identical doc already \
+# accepted"
 def check_native_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -> None:
     """`frob[native]` must install into a clean venv (resolving
     `frob-core`/`strata-core`'s exact pins against `core_wheels_dir` --
@@ -541,7 +547,16 @@ def check_native_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) 
     publish and the index does not have this release's cores yet) and
     the natives must import through FROB'S OWN code path
     (`frob.doctor.native_degrade_warning`), not just a bare `import
-    frob_core, strata_core` -- the acceptance text's own distinction."""
+    frob_core, strata_core` -- the acceptance text's own distinction.
+
+    T-4473: like `check_base_install`, the `doctor` call runs from a
+    scratch `work_dir`-relative cwd via `_run_doctor_in_scratch_cwd`,
+    never this process's own cwd (the release runner's repo checkout)
+    -- running it against the checkout is exactly what made every
+    artifact-smoke leg fail on release 34789841956 despite the wheel
+    itself being fine (managed-hooks/Claude-config/detached-HEAD/
+    import-source findings are all properties of the checkout, not
+    the installed artifact)."""
     python = _make_venv(work_dir / "venv-native")
     _pip_install(python, f"{wheel_path}[native]", find_links=core_wheels_dir)
     _python_c(
@@ -550,7 +565,7 @@ def check_native_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) 
         "print(frob_core.__name__, strata_core.__name__)",
         name="native extra bare import",
     )
-    result = _run_module(python, "doctor", name="frob doctor (native)")
+    result = _run_doctor_in_scratch_cwd(python, work_dir, name="frob doctor (native)")
     if "native" not in (result.stdout + result.stderr).lower():
         raise SmokeCheckError(
             "frob doctor (native)",
@@ -597,10 +612,10 @@ def _run_checks(checks: list[tuple[str, Callable[[Path], None]]]) -> int:
                 failures += 1
             else:
                 # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, same \
-                # as \
-                # scripts/branch_stranded_work_analysis.py's/scripts/verify_release_ci_\
-                # status.py's own identical bare-print waivers -- this runs as a \
-                # release.yml step, not through frob's own gate-rendered output surface"
+                # as scripts/branch_stranded_work_analysis.py's / \
+                # scripts/verify_release_ci_status.py's own identical bare-print \
+                # waivers -- this runs as a release.yml step, not through frob's own \
+                # gate-rendered output surface"
                 print(f"PASS {name}")
             finally:
                 shutil.rmtree(work_dir, ignore_errors=True)
@@ -633,11 +648,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 # frob:doc docs/guides/release.md#artifact-smoke-stage-t-3884
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustFire.test_unbounded_mcp_pin\
-# _fails_serve_extra_check
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustFire.test_unbounded_mcp_pin_fails_serve_extra_check  # noqa: E501
 # frob:tests \
-# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_\
-# passes_serve_extra_check
+# tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_passes_serve_extra_check  # noqa: E501
 # frob:tests \
 # tests/unit/test_artifact_smoke_script.py::TestMain.test_all_checks_pass_exits_zero
 def main(argv: list[str] | None = None) -> int:

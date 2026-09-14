@@ -189,6 +189,33 @@ class TestCheckNativeExtra:
                 tmp_path / "frob.whl", tmp_path, tmp_path / "cores"
             )
 
+    def test_doctor_runs_outside_work_dir_not_process_cwd(self, tmp_path: Path) -> None:
+        """T-4473: `check_native_extra`'s `doctor` subprocess call must
+        pass a `cwd` under `work_dir` (its own scratch area), never
+        `None` (i.e. never "inherit the smoke script's own process cwd",
+        the release runner's repo checkout) -- release 34789841956 saw
+        the native-extra doctor call inherit that checkout and report
+        the checkout's own hook/Claude-config/detached-HEAD/import-source
+        conditions instead of the installed wheel's health, exactly the
+        coupling `check_base_install`'s pre-existing T-3980 fixture
+        guards against for the base install path."""
+        seen_cwd: dict[str, object] = {}
+
+        def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            if "doctor" in argv:
+                seen_cwd["cwd"] = kwargs.get("cwd")
+                return _ok(stdout="native extensions: accelerated")
+            return _ok()
+
+        with patch.object(artifact_smoke, "_run", side_effect=fake_run):
+            artifact_smoke.check_native_extra(
+                tmp_path / "frob.whl", tmp_path, tmp_path / "cores"
+            )
+
+        cwd = seen_cwd["cwd"]
+        assert isinstance(cwd, Path)
+        assert cwd.is_relative_to(tmp_path)
+
     def test_doctor_silent_on_native_raises(self, tmp_path: Path) -> None:
         """MUST-FIRE (unit level, missing-runtime-file shape): `doctor`
         exits 0 but says nothing about native extensions at all -- this

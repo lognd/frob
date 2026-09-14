@@ -2,7 +2,7 @@
 id: T-4473
 title: artifact-smoke native-extra runs frob doctor inside the repo checkout; fails
   on hooks/claude drift/detached HEAD/import-source, not the wheel
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-13'
@@ -21,6 +21,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_artifact_smoke_script.py::TestCheckNativeExtra::test_doctor_runs_outside_work_dir_not_process_cwd
 designated_repro_test: null
 threat: null
 component: null
