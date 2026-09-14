@@ -17,10 +17,23 @@ scope:
 - .github/workflows/ci.yml
 - tests/test_ci_workflow*.py
 - docs/commands/check.md
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'SYS100: testsuite fs.read via-list for tests/test_ci_workflow_job_summary.py'
+  actor: logan
+  at: '2026-09-14'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SYS100: testsuite fs.read via-list for tests/test_ci_workflow_job_summary.py'
+  actor: logan
+  at: '2026-09-14'
 evidence:
 - tests/test_ci_workflow_job_summary.py::TestSelfGateStepCapturesItsOutput::test_self_gate_step_uses_bash
 - tests/test_ci_workflow_job_summary.py::TestSelfGateStepCapturesItsOutput::test_self_gate_step_tees_to_runner_temp_with_pipefail
