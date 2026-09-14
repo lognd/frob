@@ -20,6 +20,7 @@ scope:
 - tests/test_ci_workflow*.py
 - scripts/build_natives*.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,19 @@ scope_changes:
   reason: SELFAUDIT001 requires declaring the new test file's fs.read capability on
     the testsuite node in design/frob.strata; a one-line addition to an existing via=
     list, not a new capability grant
+  actor: logan
+  at: '2026-09-14'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS111 requires bumping the testsuite::fs.read ratchet ceiling
+    alongside the design/frob.strata via-list addition, same one-count-bump pattern
+    every prior test-file addition to this node has made
+  actor: logan
+  at: '2026-09-14'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS111 requires bumping the testsuite::fs.read ratchet ceiling
+    alongside the design/frob.strata via-list addition
   actor: logan
   at: '2026-09-14'
 evidence:
