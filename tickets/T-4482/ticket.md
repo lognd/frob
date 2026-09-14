@@ -17,10 +17,21 @@ scope:
 - src/frob/doctor.py
 - src/frob/exports*
 - tests/unit/test_exports.py
+- src/frob/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__init__.py
+  reason: registering ImportSourceStatus as public API requires editing src/frob/__init__.py's
+    import+__all__ list, the same file every other DoctorReport-sibling export already
+    lives in
+  actor: logan
+  at: '2026-09-14'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 threat: null
 component: null
