@@ -772,3 +772,49 @@ class TestCrossBuiltTargetsSkipImportSmoke:
         assert "uv venv" in non_cross_arm, (
             "the venv must be created inside the non-cross (native) arm"
         )
+
+
+# frob:ticket T-4476
+class TestArtifactSmokeAarch64UsesNativeArmRunner:
+    """T-4476: release run 34799974130 -- `artifact-smoke`'s
+    manylinux-aarch64 leg previously ran on ubuntu-latest (x86_64) and
+    tried to install the aarch64 wheel into an x86_64 host venv, the
+    same cross-architecture boundary T-4470 hit for macos-x86_64.
+    Unlike macos-x86_64 (no native arm64 hosted image was available
+    there), GitHub DOES publish a hosted native arm64 Linux image --
+    `ubuntu-24.04-arm` -- free for public repos since GA (Jan 2025).
+    This repo is public, so the leg is moved there instead of being
+    dropped: it keeps this smoke test REAL rather than falling back to
+    the PLATFORM001 wheel-existence-only boundary."""
+
+    def test_manylinux_aarch64_smoke_runs_on_a_native_arm_image(self) -> None:
+        """MUST-FIRE: `artifact-smoke`'s manylinux-aarch64 entry must
+        run on an arm64 hosted image, not ubuntu-latest (x86_64) -- a
+        regression back to ubuntu-latest reproduces run 34799974130's
+        failure exactly."""
+        doc = _load(_RELEASE_WORKFLOW)
+        entries = {
+            entry["target"]: entry
+            for entry in doc["jobs"]["artifact-smoke"]["strategy"]["matrix"]["include"]
+        }
+        assert "manylinux-aarch64" in entries, (
+            "manylinux-aarch64 must still be covered by artifact-smoke "
+            "(T-4476 keeps the smoke real via a native arm runner, "
+            "unlike T-4470's macos-x86_64 drop)"
+        )
+        os_label = entries["manylinux-aarch64"]["os"]
+        assert os_label != "ubuntu-latest", (
+            "manylinux-aarch64's artifact-smoke leg must not run on "
+            "ubuntu-latest (x86_64) -- it cannot install the aarch64 "
+            "wheel there (T-4476, run 34799974130)"
+        )
+        assert "arm" in os_label, (
+            f"manylinux-aarch64's artifact-smoke os ({os_label!r}) must "
+            f"be an arm64 hosted image"
+        )
+
+    def test_manylinux_aarch64_not_in_smoke_exempt_targets(self) -> None:
+        """manylinux-aarch64 gets a real native runner, not the
+        PLATFORM001 documented-boundary drop macos-x86_64 uses -- it
+        must NOT be added to `TestCiStatusGate._SMOKE_EXEMPT_TARGETS`."""
+        assert "manylinux-aarch64" not in TestCiStatusGate._SMOKE_EXEMPT_TARGETS

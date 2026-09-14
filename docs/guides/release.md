@@ -70,6 +70,26 @@ target added to the matrix is covered automatically. `artifact-smoke`'s
 matrix is unaffected by this addendum -- only `build`'s import-smoke
 step hit it.
 
+**artifact-smoke's manylinux-aarch64 leg runs on a native arm64 hosted
+image, not dropped (T-4476, run 34799974130).** After the above fix,
+`artifact-smoke`'s manylinux-aarch64 entry still ran on `ubuntu-latest`
+(x86_64) and hit the same cross-architecture boundary: `uv pip install`
+of the aarch64 wheel into an x86_64 host venv fails. Unlike
+macos-x86_64 -- where no native arm64 hosted image was available and
+the leg was dropped with a PLATFORM001 comment -- GitHub publishes a
+hosted native arm64 Linux image, `ubuntu-24.04-arm`, free for public
+repos since GA (Jan 2025); this repo is public
+(`gh repo view --json isPrivate` -> false). `artifact-smoke`'s
+manylinux-aarch64 entry now runs there instead of being dropped, so the
+smoke test stays REAL (a genuine install + `frob` execution on matching
+hardware) rather than falling back to the documented-boundary gap.
+`build`'s manylinux-aarch64 entry is UNCHANGED by this ticket (still
+`cross: true`, built via QEMU on `ubuntu-latest` -- only the smoke leg
+moved). `tests/unit/test_release_workflow_gate.py`'s
+`TestArtifactSmokeAarch64UsesNativeArmRunner` enforces the label
+mechanically and guards against manylinux-aarch64 being silently added
+to the PLATFORM001 exemption list instead.
+
 **Runner-image rule.** Never pin a matrix `os:` (or a plain `runs-on:`)
 to a GitHub-retired hosted image label (macos-13, macos-12,
 ubuntu-20.04, windows-2019, and whatever else GitHub retires next) --

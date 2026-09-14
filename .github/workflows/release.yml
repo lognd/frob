@@ -286,8 +286,20 @@ jobs:
         include:
           - target: manylinux-x86_64
             os: ubuntu-latest
+          # T-4476: run 34799974130 -- this leg previously ran on
+          # ubuntu-latest (x86_64) and tried to `uv pip install` the
+          # aarch64 wheel into an x86_64 host venv, the same
+          # cross-architecture boundary T-4470 hit for macos-x86_64.
+          # Unlike macos-x86_64 (no native arm64 hosted image was
+          # available there), GitHub DOES publish a hosted native
+          # arm64 Linux image -- `ubuntu-24.04-arm` -- free for public
+          # repos (this repo is public: gh repo view --json isPrivate
+          # -> false) since it went GA in Jan 2025. Running the leg
+          # there keeps this smoke test REAL (a genuine install +
+          # `frob` execution on matching hardware) instead of falling
+          # back to the PLATFORM001 wheel-existence-only boundary.
           - target: manylinux-aarch64
-            os: ubuntu-latest
+            os: ubuntu-24.04-arm
           - target: macos-arm64
             os: macos-latest
           - target: windows-x86_64
