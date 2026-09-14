@@ -21,6 +21,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_clean_bare_invocation_has_no_errors
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_clean_teed_invocation_with_pipefail_has_no_errors
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_original_t1265_warning_swallow_is_caught
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_bare_or_true_swallow_is_caught
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_semicolon_true_swallow_is_caught
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_teed_invocation_without_pipefail_is_caught
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_missing_invocation_entirely_is_caught
+- tests/gates_suite/test_test_gate.py::TestSelfGateRunScriptSwallowDetection::test_real_ci_workflow_self_gate_script_is_clean
 designated_repro_test: null
 threat: null
 component: null
