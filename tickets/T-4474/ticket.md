@@ -2,7 +2,7 @@
 id: T-4474
 title: PassengerTickets fires on MOVED directives (5 false refusals in one day); compare
   directive identities, not diff lines
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-13'
