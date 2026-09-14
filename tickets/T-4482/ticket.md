@@ -1,7 +1,7 @@
 ---
 id: T-4482
 title: frob.doctor.ImportSourceStatus (T-4459) missing from the exports policy
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-14'
