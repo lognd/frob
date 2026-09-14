@@ -2,7 +2,7 @@
 id: T-4477
 title: 'T-4475 follow-up: noqa marker only on the last physical line; mid-run long
   tokens still refuse lands with E501'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-14'
