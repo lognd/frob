@@ -19,10 +19,45 @@ scope:
 - tests/test_gates_fmt_directives.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_ticket_land_dry_run*.py
+- src/frob/tickets/_land_git_ops.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'the waive-deletion block normalizer (_normalize_waive_fragments) joins
+    each fragment''s stripped text verbatim, including a trailing # noqa: E501 T-4475''s
+    own auto-suffix introduces on an unbreakable-token final line, so a legitimate
+    rewrap now reads as a semantic content change and refuses the land (the exact
+    defect this ticket closes must not resurface one call site downstream) -- the
+    directive parser this ticket''s own text names must strip that marker too'
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/SYS100 capability declaration for tests/test_gates_fmt_directives.py's
+    new real ruff subprocess spawn (TestUnbreakableTokenGetsNoqaE501T4475.test_ruff_check_e501_is_clean_on_the_result)
+  actor: logan
+  at: '2026-09-13'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS100 capability declaration for tests/test_gates_fmt_directives.py's
+    new real ruff subprocess spawn (TestUnbreakableTokenGetsNoqaE501T4475.test_ruff_check_e501_is_clean_on_the_result)
+  actor: logan
+  at: '2026-09-13'
+evidence:
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenGetsNoqaE501T4475::test_long_node_id_canonicalizes_to_one_line_ending_in_noqa
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenGetsNoqaE501T4475::test_idempotent_on_a_second_canonicalize_pass
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenGetsNoqaE501T4475::test_directive_still_parses_to_the_same_node_id
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenGetsNoqaE501T4475::test_ruff_check_e501_is_clean_on_the_result
+- tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal::test_restore_absorbed_paths_reverts_a_real_rewrite
+- tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal::test_pre_land_refusal_restores_the_absorbed_rewrite
+- tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal::test_pre_land_success_leaves_the_absorbed_rewrite_in_place
+- tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_a_rewrap_that_stays_parseable_does_not_refuse_at_all
 designated_repro_test: null
 threat: null
 component: null
