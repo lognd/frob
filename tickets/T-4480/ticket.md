@@ -18,10 +18,22 @@ scope:
 - src/frob/gates/_todo_fmt.py
 - tests/gates_suite/test_fix_engine.py
 - src/frob/gates/_fmt_directives.py
+- src/frob/gates/_lexical_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_lexical_selfcheck.py
+  reason: LEXCHECK001 flags _fmt001_violations_for_runs (a raw regex/length decision,
+    same class as the existing TODO001/_todo001_bare_comment allowlist entry in this
+    same file) once T-4480's own noqa-awareness edit makes it diff-touched -- needs
+    the identical allowlist entry
+  actor: logan
+  at: '2026-09-14'
+evidence:
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
 designated_repro_test: null
 threat: null
 component: null
