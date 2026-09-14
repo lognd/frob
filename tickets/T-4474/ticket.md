@@ -23,7 +23,6 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_allow_cross_ticket_logs_and_proceeds
 - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_no_op_when_only_the_landing_tickets_own_directives_are_present
 - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_dropped_siblings_still_present_code_is_still_reported
 - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_pure_relocation_of_a_preexisting_directive_does_not_refuse
@@ -34,6 +33,12 @@ evidence:
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id
+  new_node: ''
+  reason: not repro evidence for T-4474 -- these predate the fix and already pass
+    at parent; T-4474's own repro evidence is the 3 new normalized-identity tests
+  actor: logan
+  at: '2026-09-13'
+- old_node: tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_allow_cross_ticket_logs_and_proceeds
   new_node: ''
   reason: not repro evidence for T-4474 -- these predate the fix and already pass
     at parent; T-4474's own repro evidence is the 3 new normalized-identity tests
