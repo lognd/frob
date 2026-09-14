@@ -131,7 +131,7 @@ _ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
         # SUBJECT is `.strata` source text itself, not a resolved code
         # symbol, matching this table's own "directive/DSL parse" class.
         ("src/frob/strata/_effects.py", "check_ambient_capability_reasons"),
-        # TODO001: deciding whether a comment LINE is a bare TODO/FIXME
+        # TODO001: deciding whether a comment LINE is a bare todo/fixme
         # marker vs a `frob:`-prefixed directive is a directive-vs-prose
         # text question by nature (same class as SEC004/`frob fmt`'s own
         # directive-wrap reasoning) -- the comment node itself is already
@@ -160,6 +160,14 @@ _ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
         # "whole-file/whole-doc, no AST substrate" class as INV003/INV004
         # above.
         ("src/frob/gates/_comment_placement.py", "scan_cplace002_docs_narrative"),
+        # T-4480: FMT001 deciding whether a diff-touched physical line is
+        # over-limit-but-compliant is a raw column-count plus a trailing-
+        # marker text match (NOQA_SUFFIX_RE.search) -- same "directive/
+        # DSL parse" class as this table's own TODO001 entry above
+        # (`_todo001_bare_comment`): the comment node itself is already
+        # AST-resolved via `frob.lang.parse_file` upstream, only the
+        # compliant-vs-flagged call inside it is textual.
+        ("src/frob/gates/_todo_fmt.py", "_fmt001_violations_for_runs"),
     }
 )
 

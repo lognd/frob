@@ -1564,8 +1564,7 @@ class TestAutofixManifest:
     # frob:ticket T-1348
     def test_write_then_clear_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_cle\
-        # ar_roundtrip
+        # tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_clear_roundtrip  # noqa: E501
         from frob.gates._fix_engine import FixApplied
         from frob.gates._fix_engine_shared import (
             _autofix_manifest_path,
@@ -1754,8 +1753,28 @@ class TestFixEngineTierABatch2:
     ) -> None:
         # frob:tests src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap \
         # kind="unit"
+        # T-4480: `long_reason` is one unbreakable 100-char token (no
+        # internal space) -- since T-4475/T-4477, its own final physical
+        # line is deliberately left over `limit` with a trailing
+        # `# noqa: E501` rather than split, so "every physical line fits
+        # `limit`" is no longer the right invariant on its own. The
+        # correct one: every line EITHER fits OR ends with the noqa
+        # marker, the rewritten file is E501-clean under a REAL `ruff
+        # check` (not just this test's own regex opinion of what ruff
+        # would say), and FMT001 itself re-verifies clean on the result
+        # (the CI failure this ticket fixes: FMT001's raw `len(line) <=
+        # limit` check used to flag the canonicalizer's own deliberate
+        # noqa'd line as a NEW finding).
+        import shutil
+        import subprocess
+
         from frob.gates._fix_engine import fix_fmt001_directive_wrap
-        from frob.gates._fmt_directives import canonicalize_text, read_line_length
+        from frob.gates._fmt_directives import (
+            NOQA_SUFFIX_RE,
+            canonicalize_text,
+            read_line_length,
+        )
+        from frob.gates._todo_fmt import _fmt001_file
 
         root = tmp_path / "repo"
         (root / "src").mkdir(parents=True)
@@ -1771,10 +1790,43 @@ class TestFixEngineTierABatch2:
         assert applied[0].rule == "FMT001"
         assert applied[0].file == "src/m.py"
 
-        rewritten = (root / "src" / "m.py").read_text(encoding="utf-8")
-        assert all(len(line) <= limit for line in rewritten.splitlines())
+        rewritten_path = root / "src" / "m.py"
+        rewritten = rewritten_path.read_text(encoding="utf-8")
+        assert all(
+            len(line) <= limit or NOQA_SUFFIX_RE.search(line) is not None
+            for line in rewritten.splitlines()
+        ), rewritten
         # idempotent: canonicalize_text agrees this is already canonical
         assert canonicalize_text(rewritten, path="src/m.py", limit=limit) == rewritten
+
+        if shutil.which("ruff") is not None:
+            result = subprocess.run(
+                [
+                    "ruff",
+                    "check",
+                    "--select",
+                    "E501",
+                    "--no-cache",
+                    str(rewritten_path),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            assert result.returncode == 0, (
+                f"ruff check --select E501 found a violation on the "
+                f"FMT001-rewritten file:\nstdout={result.stdout}\n"
+                f"stderr={result.stderr}"
+            )
+
+        # FMT001 itself must re-verify clean on the rewrite (T-4480's own
+        # gap: the detector used to have no noqa awareness at all). Every
+        # physical line counts as "touched" here -- this re-verify is
+        # over the FIX's own full output, not scoped to a smaller diff.
+        n_lines = len(rewritten.split("\n"))
+        reverified = _fmt001_file(
+            root, "src/m.py", limit, touched=set(range(1, n_lines + 1))
+        )
+        assert reverified == []
 
     # frob:ticket T-3662
     # frob:tests src/frob/gates/_fmt_directives.py::_relpath_for_change kind="unit"
@@ -2780,8 +2832,7 @@ class TestFixEngineTierB:
     # frob:ticket T-1643
     def test_dead001_removes_unreferenced_private_symbol(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_removes\
-        # _unreferenced_private_symbol
+        # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_removes_unreferenced_private_symbol  # noqa: E501
         from frob.gates._fix_engine_tier_b import (
             fix_dead001_unreferenced_symbol_removal,
         )
@@ -2808,8 +2859,7 @@ class TestFixEngineTierB:
     # frob:ticket T-1643
     def test_dead001_skips_a_waived_finding(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_skips_a\
-        # _waived_finding
+        # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_skips_a_waived_finding  # noqa: E501
         from frob.gates._fix_engine_tier_b import (
             fix_dead001_unreferenced_symbol_removal,
         )
@@ -2835,8 +2885,7 @@ class TestFixEngineTierB:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_at_most\
-        # _one_deletion_per_file_per_pass
+        # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_at_most_one_deletion_per_file_per_pass  # noqa: E501
         from frob.gates._fix_engine_tier_b import (
             fix_dead001_unreferenced_symbol_removal,
         )

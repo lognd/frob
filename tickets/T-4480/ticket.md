@@ -2,7 +2,7 @@
 id: T-4480
 title: FMT001 test and gate must accept the T-4475 noqa-suffixed over-limit directive
   line
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-14'
@@ -19,6 +19,7 @@ scope:
 - tests/gates_suite/test_fix_engine.py
 - src/frob/gates/_fmt_directives.py
 - src/frob/gates/_lexical_selfcheck.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
     same class as the existing TODO001/_todo001_bare_comment allowlist entry in this
     same file) once T-4480's own noqa-awareness edit makes it diff-touched -- needs
     the identical allowlist entry
+  actor: logan
+  at: '2026-09-14'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 requires NOQA_SUFFIX_RE's own affects()-closure doc (docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441)
+    to be touched in the same diff that changes the public symbol
   actor: logan
   at: '2026-09-14'
 evidence:

@@ -7236,6 +7236,18 @@ Public API (`src/frob/gates/_fmt_directives.py`):
   all in the same run. Passing an explicit `limit` overrides this
   per-file resolution uniformly for the whole walk (used by tests, and by
   any caller that genuinely wants one number everywhere).
+- `NOQA_SUFFIX_RE` (T-4480) -- public alias of the module's own
+  `_NOQA_SUFFIX_RE`: matches a trailing `# noqa`/`# noqa: CODE[,CODE...]`
+  pragma at the end of a directive line. T-4475/T-4477 made
+  `_wrap_cut_point` auto-append this exact marker to the final physical
+  line of a run whose value is a token wider than the wrap width (so that
+  line stays whole AND `ruff check --select E501`-clean instead of being
+  split mid-token); `frob.gates._todo_fmt`'s FMT001 detector imports this
+  public alias to treat that same line as compliant rather than a NEW
+  over-length finding on the canonicalizer's own deliberate output (CI
+  run 34817719845's own failure once T-4475/T-4477 landed) -- one shared
+  regex object, never two copies that could drift apart on what counts
+  as "already noqa'd".
 
 **T-0985: repo-wide recompaction was deliberately deferred, then unblocked
 by T-0987.** A large slice of this repo's own `frob:` directive comments

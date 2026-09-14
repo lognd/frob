@@ -88,6 +88,19 @@ directive text and force-wrapping it defeats the whole point of the
 pragma. `canonicalize_text` checks single-line runs against this pattern
 and leaves a match byte-identical rather than re-wrapping it."""
 
+# frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
+# frob:ticket T-4480
+NOQA_SUFFIX_RE = _NOQA_SUFFIX_RE
+"""Public alias of `_NOQA_SUFFIX_RE` above (T-4480): `frob.gates._todo_fmt`'s
+FMT001 detector shares this EXACT pattern rather than duplicating it, so a
+line this module's own canonicalizer deliberately leaves over-limit (an
+unbreakable directive token, `_wrap_cut_point`/T-4475/T-4477) -- suffixed
+with the same marker FMT001 must also treat as compliant -- can never
+drift out of sync between the two modules' own copies of "what counts as
+noqa'd". `_NOQA_SUFFIX_RE` stays the name every existing in-module
+reference already uses; this is purely an additional public name for the
+one shared regex object, not a second implementation."""
+
 _MARKERS: dict[str, str] = {
     ".py": "#",
     ".pyi": "#",
