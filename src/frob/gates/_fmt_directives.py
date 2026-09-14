@@ -410,28 +410,54 @@ def resolve_line_length(path: Path, root: Path) -> int | None:
     return read_line_length(root)
 
 
-# frob:ticket T-0991
-def _shift_cut_off_boundary_space(remaining: str, budget: int) -> int:
-    """The fallback (no-breakable-space-within-budget) cut point for
-    `_canonical_lines`, walked back off `budget` while `remaining[cut]` is
-    a space.
-
-    `rfind(" ", 0, budget)` only sees indices `< budget`, so a word
-    boundary sitting exactly AT `budget` is invisible to it and the naive
-    fallback (`cut = budget`) would land right on top of that space --
-    stranding it as the first character of the continuation line
-    (`remaining[cut:]`). The real directive parser's comment extraction
-    (`_strip_comment_delims`) fully `.strip()`s each physical line, so a
-    leading space there is silently dropped, concatenating the token
-    before and after the boundary with no separator (T-0991). Backing
-    `cut` off any such space(s) leaves both `head` (`remaining[:cut]`) and
-    `tail` (`remaining[cut:]`) free of an edge space -- it lands safely
-    mid-line on the next physical line instead.
-    """
-    cut = budget
-    while cut > 0 and remaining[cut] == " ":
-        cut -= 1
-    return cut
+# frob:ticket T-4179
+def _wrap_cut_point(remaining: str, budget: int) -> tuple[str, str] | None:
+    """The `(head, tail)` split of `remaining` for one physical line of
+    `_canonical_lines`'s wrap loop, given `budget` columns of room --
+    extracted (T-4179, ARCH001) so that loop's own body stays a plain
+    dispatch over this function's three cases: a clean word-boundary cut
+    within `budget` (`rfind`), the T-0991 boundary-space edge case (a
+    space sitting exactly AT `budget`, invisible to `rfind`'s exclusive
+    end bound), and a token wider than `budget` (searched FORWARD from
+    `budget` for its own end, per T-4179 -- see `_canonical_lines`'s own
+    docstring for why a split token is worse than an over-`limit` line).
+    Returns `None` only for the last case's own sub-case: `remaining` is,
+    or ends in, one unbreakable token with nothing after it to wrap onto
+    a further line -- the caller emits `remaining` whole and stops."""
+    cut = remaining.rfind(" ", 0, budget)
+    if cut <= 0 and budget < len(remaining) and remaining[budget] == " ":
+        # frob:ticket T-0991
+        # `rfind`'s exclusive end bound makes a space sitting exactly AT
+        # index `budget` invisible to the scan above -- not an oversized
+        # token, just the natural word boundary landing on the one index
+        # `rfind(..., 0, budget)` cannot see. Back `cut` off any such
+        # boundary space(s) so neither `head` nor `tail` carries a
+        # leading/trailing space (the real parser's per-line `.strip()`
+        # would silently eat a leading one, concatenating the words on
+        # either side with no separator).
+        cut = budget
+        while cut > 0 and remaining[cut] == " ":
+            cut -= 1
+        return remaining[:cut], remaining[cut:]
+    if cut <= 0:
+        # frob:ticket T-4179
+        # No breakable space anywhere in or at `budget` -- the token
+        # straddling `budget` is genuinely wider than the remaining room.
+        # T-0991/T-0984 used to break at the `budget` boundary verbatim
+        # here, which can land INSIDE that token (a node id, path,
+        # symref, quoted reason word) and silently corrupt the directive
+        # it wraps (the fragment still looks like a binding; it no longer
+        # resolves). Search FORWARD from `budget` for the token's own end
+        # instead, so the cut always lands on a real space -- the
+        # physical line this produces runs over `limit`, which is an
+        # acceptable, visible lint finding, unlike a split token.
+        next_space = remaining.find(" ", budget)
+        if next_space == -1:
+            return None
+        return remaining[: next_space + 1], remaining[next_space + 1 :]
+    # Keep the space attached to the earlier line so folding with the
+    # empty string reproduces the original spacing exactly.
+    return remaining[: cut + 1], remaining[cut + 1 :]
 
 
 def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list[str]:
@@ -441,16 +467,22 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
     ending in a trailing `\\` continuation -- such that every physical line
     is at most `limit` columns wide.
 
-    A single line is returned whenever `text` already fits: this is what
-    makes the operation a canonicalizer rather than a one-way wrapper --
-    the same function handles both "wrap because it's too long" and
-    "un-wrap because it now fits", the caller just re-runs it on whatever
-    physical-line count currently exists. The split always lands on a
-    space boundary (never mid-word) when one exists within budget, and the
-    space is kept on the EARLIER line so re-joining with the empty string
-    (T-0286's own fold rule) reproduces `text` exactly -- this is the
-    property the round-trip test asserts.
-    """
+    A single line is returned whenever `text` already fits -- this is what
+    makes it a canonicalizer, not a one-way wrapper: the same function
+    handles "wrap, too long" and "un-wrap, now fits" alike, the caller
+    just re-runs it. The split always lands on a space boundary, space
+    kept on the EARLIER line, so re-joining with the empty string
+    reproduces `text` exactly (T-0286's fold rule; the round-trip test's
+    own property).
+
+    T-4179: the split NEVER lands inside a token -- a directive value
+    (node id, path, symref, quoted reason word) is atomic here. A token
+    wider than the wrap budget leaves its physical line over `limit`
+    rather than being cut mid-token: a split token reads as an intact
+    value but silently no longer resolves, worse than an over-length
+    line a formatter would still flag. See `_wrap_cut_point`'s own
+    docstring for the three cases (T-0984/T-0991/T-4179) it dispatches
+    between."""
     prefix = f"{indent}{marker} "
     if len(prefix) + len(text) <= limit:
         return [prefix + text]
@@ -467,39 +499,23 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
         budget = room - 1
         if budget <= 0:
             # Degenerate: indent/marker alone leave no room to wrap into.
-            # Emit the remainder verbatim rather than infinite-loop or
-            # corrupt the text -- round-trip correctness beats staying
-            # under `limit` in this unwrappable corner case.
+            # Emit verbatim rather than infinite-loop/corrupt -- round-trip
+            # beats staying under `limit` in this unwrappable corner case.
             lines.append(f"{prefix}{remaining}\\")
             return lines
         # frob:ticket T-0984
-        # Off-by-one (T-0972 incident): searching for a space up to and
-        # INCLUDING index `budget` (`rfind`'s end bound is exclusive, so
-        # `budget + 1` lets index `budget` itself match), then keeping that
-        # space attached to `head` (`remaining[: cut + 1]` below), yields a
-        # `head` of length `budget + 1` -- one column over `budget`, which
-        # becomes one column over `limit` once `prefix` and the trailing
-        # "\" continuation marker are added. The search span must exclude
-        # index `budget` itself (`[0, budget)`, not `[0, budget]`) so the
-        # latest possible cut still leaves `head` at length `budget`, never
-        # `budget + 1`.
-        cut = remaining.rfind(" ", 0, budget)
-        if cut <= 0:
-            # frob:ticket T-0991
-            # No breakable space within [0, budget) -- break at the budget
-            # boundary verbatim, UNLESS `remaining[budget]` is itself a
-            # space (one column past `rfind`'s exclusive bound): stranding
-            # that as `tail`'s leading char gets silently eaten by the real
-            # parser's full-`.strip()` comment extraction, concatenating
-            # the two tokens with no separator (T-0991). Walk `cut` back
-            # over it so neither `head` nor `tail` carries a boundary
-            # space -- see `_shift_cut_off_boundary_space`'s docstring.
-            cut = _shift_cut_off_boundary_space(remaining, budget)
-            head, tail = remaining[:cut], remaining[cut:]
-        else:
-            # Keep the space attached to the earlier line so folding with
-            # the empty string reproduces the original spacing exactly.
-            head, tail = remaining[: cut + 1], remaining[cut + 1 :]
+        # frob:ticket T-0991
+        # frob:ticket T-4179
+        # `_wrap_cut_point`'s own docstring covers its three cases
+        # (T-0984 off-by-one, T-0991 boundary-space, T-4179 oversized
+        # token); `None` means "unbreakable token, nothing left to wrap
+        # onto a further line" -- emit `remaining` whole and stop, same
+        # contract as the `budget <= 0` branch above.
+        cut_point = _wrap_cut_point(remaining, budget)
+        if cut_point is None:
+            lines.append(f"{prefix}{remaining}")
+            return lines
+        head, tail = cut_point
         lines.append(f"{prefix}{head}\\")
         remaining = tail
 

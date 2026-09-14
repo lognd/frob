@@ -2,7 +2,7 @@
 id: T-4179
 title: land --dry-run writes to the worktree, its auto-fix splits a node id inside
   a directive, and the next run refuses the operator for the tool's own edit
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -103,13 +103,16 @@ designated_repro_test: null
 acceptance:
 - text: given a directive comment whose value would exceed the wrap width, when the
     auto-fix runs, then the value is left unsplit and the directive still resolves
-  evidence: []
+  evidence:
+  - tests/test_gates_fmt_directives.py::TestNodeIdNeverSplitT4179::test_pytest_node_id_directive_value_is_never_split
 - text: given a dry run, when it completes, then the worktree is byte-identical to
     how it found it
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_dry_run.py::TestAbsorbPreLandFixesDryRunIsReadOnly::test_dry_run_leaves_the_worktree_tree_hash_unchanged
 - text: given a refusal caused by the tool's own uncommitted edit, when the message
     is printed, then it names the verb that made the change
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_dry_run.py::TestOutOfScopeRefusalAttributesOwnFmtRewrap::test_attribute_helper_suffixes_an_own_rewrap_finding
 threat: null
 component: null
 anchor: false

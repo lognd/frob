@@ -700,17 +700,29 @@ class TestCanonicalLinesMutantKiller:
         # frob:tests \
         # tests/test_gates_fmt_directives.py::TestCanonicalLinesMutantKiller.test_no_br\
         # eakable_space_still_stays_within_limit
-        # A single unbroken run (no spaces) forces the fallback "cut at the
-        # budget boundary verbatim" branch -- this is the branch a
-        # room-vs-room-minus-1 off-by-one mutant overflows by exactly one
-        # column, where the space-seeking `rfind` branch above usually
-        # masks the bug by finding an earlier, safe cut point instead.
+        # T-0441's original name kept verbatim (T-4179: T-0441's own
+        # archived Done report cites this exact node id as evidence;
+        # renaming it orphans that citation -- COV003) even though the
+        # invariant it proves changed shape. A single unbroken run (no
+        # spaces) wider than the wrap budget used to force a "cut at the
+        # budget boundary verbatim" fallback that could land mid-token
+        # (T-4179: exactly the pytest-node-id-split incident). The
+        # contract is now "never split a token" -- the unbreakable run is
+        # emitted whole, on its own over-`limit` line, rather than
+        # fragmented across a `\\` continuation. Only the FIRST physical
+        # line (the short leading word) still literally "stays within
+        # limit"; the second line's own over-`limit` shape is exactly
+        # what T-4179 intentionally introduces, asserted below.
         text = "frob:ticket " + ("x" * 200)
         limit = 50
         lines = _canonical_lines(text, marker="#", indent="", limit=limit)
-        assert len(lines) > 1
-        for line in lines:
-            assert len(line) <= limit, f"{line!r} exceeds limit={limit}"
+        assert len(lines) == 2
+        # The leading word wraps normally, within budget.
+        assert len(lines[0]) <= limit, f"{lines[0]!r} exceeds limit={limit}"
+        # The 200-char unbreakable run is intact -- not split across any
+        # further physical line -- even though its line runs over `limit`.
+        assert lines[1].endswith("x" * 200)
+        assert "\\" not in lines[1]
         assert _fold_lines(lines, "#") == text
 
 
@@ -825,12 +837,19 @@ class TestNoqaSuffixPragmaT0985:
         # line_without_noqa_still_wraps
         # Control case: the same over-long content WITHOUT the trailing
         # noqa pragma is still wrapped as usual -- the pragma, not mere
-        # length, is what suppresses the rewrap.
+        # length, is what suppresses the rewrap. The `reason="..."` value
+        # here is itself one unbreakable 80-char token, so the physical
+        # line carrying it stays over `limit` by design (T-4179: never
+        # split a token to force it under width) -- the earlier
+        # `frob:waive RULE-1` words still wrap onto their own line(s).
         src = '    # frob:waive RULE-1 reason="' + ("x" * 80) + '"\n'
         out = canonicalize_text(src, path="a.py", limit=88)
         assert out != src
-        for line in out.splitlines():
-            assert len(line) <= 88
+        assert len(out.splitlines()) > 1
+        content_lines = [
+            line[len("    # ") :].rstrip("\\") for line in out.splitlines()
+        ]
+        assert "".join(content_lines) == src.splitlines()[0][len("    # ") :]
 
 
 # frob:ticket T-1987
@@ -955,16 +974,60 @@ class TestConventionUnitBinding:
         # via `canonicalize_text` and folding the result back through the
         # REAL parser's stricter per-line strip must reproduce the exact
         # original logical directive text -- no dropped, merged, or
-        # inserted characters.
+        # inserted characters. `target` is itself one unbreakable token
+        # (no internal space), so when it is wider than the wrap budget
+        # the physical line carrying it legitimately runs over `limit`
+        # (T-4179: a wrapper must never split a token to force it under
+        # width) -- round-trip fidelity, not per-line width, is the
+        # property this test guards.
         target = "x" * target_len
         attrs = "".join(f' kind="unit{i}"' for i in range(n_attrs))
         content_text = f"frob:tests {target}{attrs}"
         suffix = ".py" if marker == "#" else ".rs"
         src = f"{marker} {content_text}\n"
         out = canonicalize_text(src, path=f"a{suffix}", limit=limit)
-        for line in out.splitlines():
-            assert len(line) <= limit, f"{line!r} exceeds limit={limit}"
         physical = [
             line for line in out.splitlines() if line.lstrip().startswith(marker)
         ]
         assert _fold_lines_real_extractor(physical, marker) == content_text
+
+
+# frob:ticket T-4179
+class TestNodeIdNeverSplitT4179:
+    """T-4179 (consumer report F-380): the Tier-A directive re-wrapper
+    split a pytest node id across the wrap -- the fragment
+    `...resolves_static_impor` followed by `t kind="unit"` on the next
+    physical line, so the `frob:tests` directive no longer resolved the
+    test it named while still reading, to a human, as a binding. The
+    MUST-FIRE fixture: a directive value wider than the wrap width is
+    left unwrapped (over-`limit`) rather than split, and the emitted node
+    id is byte-identical to the source, never fragmented at a `\\`
+    continuation."""
+
+    def test_pytest_node_id_directive_value_is_never_split(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestNodeIdNeverSplitT4179.test_pytest_nod\
+        # e_id_directive_value_is_never_split
+        # The exact reported shape: a `frob:tests` directive whose target
+        # is a long dotted node id, immediately followed by a `kind=`
+        # attribute -- the boundary the original incident split on.
+        node_id = (
+            "tests/unit/test_symbol_resolution.py::"
+            "TestStaticImportResolver.test_resolves_static_import"
+        )
+        content_text = f'frob:tests {node_id} kind="unit"'
+        src = f"# {content_text}\n"
+        limit = 60  # narrower than `node_id` alone -- forces the wrap.
+        assert len(node_id) > limit
+        out = canonicalize_text(src, path="a.py", limit=limit)
+        assert out != src
+        # The node id must appear byte-identical, on ONE physical line --
+        # never fragmented across a "\\" continuation mid-token.
+        assert any(node_id in line for line in out.splitlines())
+        for line in out.splitlines():
+            fragment = line.strip().removeprefix("#").strip().removesuffix("\\")
+            assert not (
+                fragment and node_id.startswith(fragment) and fragment != node_id
+            ), f"node id fragment split onto its own line: {line!r}"
+        physical = [line for line in out.splitlines() if line.lstrip().startswith("#")]
+        assert _fold_lines_real_extractor(physical, "#") == content_text

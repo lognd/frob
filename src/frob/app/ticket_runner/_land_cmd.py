@@ -286,7 +286,11 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
 def _absorb_pre_land_fixes(
-    worktree: Path, ticket_id: str, root: Path | None = None
+    worktree: Path,
+    ticket_id: str,
+    root: Path | None = None,
+    *,
+    dry_run: bool = False,
 ) -> None:
     """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
     (directive canonicalization) and the T-1138 Tier-A deterministic
@@ -313,6 +317,23 @@ def _absorb_pre_land_fixes(
     damages-others rule for what stays synchronous): that `design/
     frob.strata` still PARSES before this land can commit on top of it.
 
+    T-4179: `dry_run` (default `False`, matching every pre-T-4179 caller)
+    makes every one of the three absorbed steps below strictly read-only
+    -- `format_paths`/`ruff format`/`apply_tier_a_fixes` are each run in
+    preview mode (or, for the Tier-A batch, skipped with a logged notice;
+    see `_tier_a_pre_land_step`'s own docstring) instead of write mode.
+    Before this, `--dry-run` ran the identical write-mode absorption a
+    real land does -- the module comment above this function's own call
+    site used to justify that as "a dry run should preview the exact same
+    landed state a real run would produce", but previewing by actually
+    writing to the caller's worktree is the broken contract T-4179 (F-380)
+    reported: three modified files left behind by a run whose entire
+    point was to be safe to try. A `--dry-run` preview is now measured,
+    not applied, at the cost of no longer simulating what a REAL run's
+    Tier-A rewrite would additionally change further downstream --
+    round-trip safety (the worktree is untouched) outweighs preview
+    completeness here.
+
     T-1903: `_assert_design_loads_pre_land` is called TWICE -- once here,
     before `_tier_a_pre_land_step`, and once again immediately after it.
     The first call only proves the design root was already healthy going
@@ -338,17 +359,24 @@ def _absorb_pre_land_fixes(
     closes."""
     merge_root = root if root is not None else worktree
     touched_paths = _land_touched_paths(worktree, ticket_id)
-    _fmt_pre_land_step(worktree, ticket_id, touched_paths)
-    _ruff_format_pre_land_step(worktree, ticket_id, touched_paths)
+    _fmt_pre_land_step(worktree, ticket_id, touched_paths, dry_run=dry_run)
+    _ruff_format_pre_land_step(worktree, ticket_id, touched_paths, dry_run=dry_run)
     _assert_design_loads_pre_land(worktree, ticket_id, stage="pre-tier-a")
-    _tier_a_pre_land_step(worktree, ticket_id, touched_paths, merge_root)
+    _tier_a_pre_land_step(
+        worktree, ticket_id, touched_paths, merge_root, dry_run=dry_run
+    )
     _assert_design_loads_pre_land(worktree, ticket_id, stage="post-tier-a")
 
 
 # frob:ticket T-1404
 # frob:ticket T-2761
+# frob:ticket T-4179
 def _fmt_pre_land_step(
-    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+    worktree: Path,
+    ticket_id: str,
+    touched_paths: frozenset[str] | None,
+    *,
+    dry_run: bool = False,
 ) -> None:
     """The fmt half of `_absorb_pre_land_fixes`. T-1404: scoped to this
     ticket's own touched-file set when it can be computed -- the pre-T-1404
@@ -358,7 +386,13 @@ def _fmt_pre_land_step(
     collision T-1391 diagnosed but did not wire a fix for). Falls back to
     the old whole-tree call when the touched set could not be computed
     (`touched_paths is None`) -- degrading to the pre-T-1404 behaviour,
-    never silently skipping the fix outright."""
+    never silently skipping the fix outright.
+
+    T-4179: `dry_run=True` passes `check_only=True` through to every
+    `format_paths` call instead of `False` -- `format_paths` already
+    supports a non-mutating preview mode (`FmtReport.changes` still lists
+    what WOULD be rewritten), so a dry run's `worktree` is never written
+    to by this step."""
     # T-2761: no `limit=` override here any more -- letting `format_paths`
     # resolve each file's own width (T-1606) instead of pre-resolving one
     # ruff-derived number via `read_line_length` and forcing every
@@ -366,8 +400,9 @@ def _fmt_pre_land_step(
     # unreachable through land's absorbed fmt step.
     from frob.gates._fmt_directives import format_paths
 
+    check_only = dry_run
     if touched_paths is None:
-        fmt_report = format_paths(worktree, check_only=False)
+        fmt_report = format_paths(worktree, check_only=check_only)
         fmt_changed = len(fmt_report.changes)
     else:
         fmt_changed = 0
@@ -375,12 +410,13 @@ def _fmt_pre_land_step(
             path = worktree / rel
             if not path.is_file():
                 continue
-            scoped_report = format_paths(path, check_only=False)
+            scoped_report = format_paths(path, check_only=check_only)
             fmt_changed += len(scoped_report.changes)
     if fmt_changed:
         _log.info(
-            "ticket land: %s pre-land frob fmt canonicalized %d file(s)",
+            "ticket land: %s pre-land frob fmt %s %d file(s)",
             ticket_id,
+            "would canonicalize" if dry_run else "canonicalized",
             fmt_changed,
         )
 
@@ -400,7 +436,11 @@ def _fmt_pre_land_step(
 # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_ha\
 # lf_leaves_the_file_alone_when_ruff_itself_fails
 def _ruff_format_pre_land_step(
-    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+    worktree: Path,
+    ticket_id: str,
+    touched_paths: frozenset[str] | None,
+    *,
+    dry_run: bool = False,
 ) -> None:
     """The `ruff format` half of `_absorb_pre_land_fixes` (T-4323, the
     APPLY half of LANDFMT001 -- `frob.gates._land_format` -- that T-4298
@@ -436,7 +476,12 @@ def _ruff_format_pre_land_step(
     decided whether to run at all. Best-effort, matching every other
     step in this best-effort trio: a `ruff` spawn failure is logged and
     skipped (LANDFMT001 itself then refuses the land on the un-rewritten
-    drift, so nothing is silently lost) rather than crashing the land."""
+    drift, so nothing is silently lost) rather than crashing the land.
+
+    T-4179: `dry_run=True` still calls `_ruff_format_would_rewrite` (a
+    read-only check, per its own name) to compute `to_rewrite` for the
+    log line, but never spawns the actual `ruff format` write-mode
+    subprocess -- `worktree` is left byte-identical."""
     if not touched_paths:
         return
     py_touched = frozenset(rel for rel in touched_paths if rel.endswith(".py"))
@@ -446,6 +491,14 @@ def _ruff_format_pre_land_step(
 
     to_rewrite = _ruff_format_would_rewrite(worktree, py_touched)
     if not to_rewrite:
+        return
+    if dry_run:
+        _log.info(
+            "ticket land: %s pre-land ruff format would rewrite %d file(s): %s",
+            ticket_id,
+            len(to_rewrite),
+            ", ".join(to_rewrite),
+        )
         return
     run_result = guarded_subprocess_run(
         project_tool_argv(worktree, "ruff", "format", *to_rewrite),
@@ -643,6 +696,8 @@ def _tier_a_pre_land_step(
     ticket_id: str,
     touched_paths: frozenset[str] | None,
     root: Path,
+    *,
+    dry_run: bool = False,
 ) -> None:
     """The Tier-A deterministic auto-fix half of `_absorb_pre_land_fixes`,
     logging and skipping when the graph or queue cannot load (a land
@@ -655,7 +710,26 @@ def _tier_a_pre_land_step(
     exists on `root` but postdates `worktree`'s own cut -- see
     `frob.gates._fix_engine.fix_tick006_phantom_refile`'s docstring for
     the false-positive incident (T-2382/T-2383, T-2398/T-2399, T-2404,
-    T-2439) this closes."""
+    T-2439) this closes.
+
+    T-4179: `dry_run=True` SKIPS this step outright rather than calling
+    `apply_tier_a_fixes` -- unlike the fmt/ruff-format halves above,
+    `apply_tier_a_fixes` (`frob.gates._fix_engine`) has no `check_only`/
+    preview mode; every one of its Tier-A handlers writes unconditionally
+    when it finds something to fix. Rather than add a preview mode to a
+    dispatcher this many handlers hang off (out of this fix's scope, and
+    a real design decision each handler would need to earn), a dry run
+    logs that this step was skipped and previews without it: read-only
+    beats a complete-but-mutating preview, which is the exact defect
+    (F-380) this ticket closes."""
+    if dry_run:
+        _log.info(
+            "ticket land: %s pre-land Tier-A fixes SKIPPED under --dry-run "
+            "(apply_tier_a_fixes has no non-mutating preview mode; a real "
+            "land may still apply fixes a dry run did not show)",
+            ticket_id,
+        )
+        return
     from frob.gates._fix_engine import apply_tier_a_fixes
     from frob.graph import build_graph
     from frob.tickets import load_active
@@ -5785,16 +5859,22 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
-    # own merge, in dry-run and real mode alike (a dry run should preview
-    # the exact same landed state a real run would produce) -- any file
-    # rewritten here becomes an ordinary uncommitted change `land()`'s own
-    # wip-commit step already picks up, so this needs no separate commit.
+    # own merge, for a real land -- any file rewritten here becomes an
+    # ordinary uncommitted change `land()`'s own wip-commit step already
+    # picks up, so this needs no separate commit.
     # T-2400: `root` here is ALREADY the resolved primary checkout (T-1884
     # -- `_resolve_land_root` runs once, up front in `_land`, before
     # `_land_core`/`_land_core_prepare` are ever called), so it is exactly
     # the merge target TICK006's Tier-A handler needs to resolve a
     # citation against.
-    _absorb_pre_land_fixes(worktree, cfg.ticket_id, root)
+    # T-4179: `dry_run=cfg.ticket_dry_run` -- a dry run used to run this
+    # exact write-mode absorption against the caller's own `worktree`
+    # ("a dry run should preview the exact same landed state a real run
+    # would produce"), which is the broken contract F-380 reported: three
+    # modified files left behind by a flag whose entire point is safety.
+    # `_absorb_pre_land_fixes` now runs every absorbed step read-only
+    # under `--dry-run` instead.
+    _absorb_pre_land_fixes(worktree, cfg.ticket_id, root, dry_run=cfg.ticket_dry_run)
 
     # frob:ticket T-1907
     touched_paths = _land_touched_paths(worktree, cfg.ticket_id)

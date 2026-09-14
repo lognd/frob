@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 304,
-      "reason": "T-4459: adds tests/test_worktree_pythonpath.py to the exec via-list -- a real git-fixture subprocess spawn (git worktree add) plus a fresh python3 -c \"import frob\" subprocess spawned under the exported PYTHONPATH, the exact T-4459 acceptance measurement. One file, two call sites (git init/worktree-add helper and the spawned interpreter), same via-list-is-per-file shape every other entry here already carries. Bumping the ceiling 303 -> 304, one new site.",
-      "ticket": "T-4459"
+      "accepted_count": 305,
+      "reason": "T-4179: adds tests/test_ticket_land_dry_run.py to the exec via-list -- the established `_run`/`_git_init`/`_commit_all` real-git-fixture idiom (subprocess.run of git init/add/commit/write-tree) this test-module family already repeats across many other via-list entries. One file, same via-list-is-per-file shape every other entry here already carries. Bumping the ceiling 304 -> 305, one new site.",
+      "ticket": "T-4179"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 225,
-      "reason": "T-4338: adds tests/test_ci_workflow_toolchain_pins.py to the fs.read via-list (reads .github/workflows/ci.yml to assert the uv/Rust/maturin toolchain-version pins added by this ticket) -- bumping the ceiling 224 -> 225, one new site.",
-      "ticket": "T-4338"
+      "accepted_count": 226,
+      "reason": "T-4179: adds tests/test_ticket_land_dry_run.py to the fs.read via-list -- read_text on a real git-fixture repo's tracked .py file plus git write-tree/show subprocess stdout, verifying `_absorb_pre_land_fixes`'s dry-run non-mutation and the tool-authored-edit attribution helper. Bumping the ceiling 225 -> 226, one new site.",
+      "ticket": "T-4179"
     },
     "testsuite::fs.write": {
-      "accepted_count": 519,
-      "reason": "T-4459: adds tests/test_worktree_pythonpath.py to the fs.write via-list -- write_text creates a fake worktree's src/frob/__init__.py fixture (both the matching and mismatched ImportSourceStatus cases) plus tickets.md under pytest's own tmp_path, never a real repo path. Bumping the ceiling 518 -> 519, one new site.",
-      "ticket": "T-4459"
+      "accepted_count": 520,
+      "reason": "T-4179: adds tests/test_ticket_land_dry_run.py to the fs.write via-list -- write_text on a real git-fixture repo's tracked .py file (a non-canonical frob: directive fixture), same shape tests/test_ticket_work_and_land_finish.py's own entry already carries. Bumping the ceiling 519 -> 520, one new site.",
+      "ticket": "T-4179"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

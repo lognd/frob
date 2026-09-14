@@ -4011,6 +4011,69 @@ def _refuse_if_root_is_worktree(
     return Ok(None)
 
 
+# frob:ticket T-4179
+def _uncommitted_change_is_own_fmt_rewrap(worktree: Path, rel_path: str) -> bool:
+    """True if `rel_path`'s CURRENT on-disk content is exactly what
+    `frob fmt`'s own directive canonicalizer (`frob.gates._fmt_directives.
+    canonicalize_text`) produces from `HEAD`'s committed version -- i.e.
+    this land's own pre-land absorption step (`_absorb_pre_land_fixes`,
+    `frob.app.ticket_runner._land_cmd`) rewrapped `rel_path`, not an
+    operator edit.
+
+    T-4179 (F-380): a `frob:waive` deletion an out-of-scope-waive-deletion
+    refusal reports is sometimes the TOOL's own rewrite (a re-wrap that
+    happened to fold a waiver line into a run FMT001 then counts as a
+    deletion+insert pair), and the refusal used to name only the
+    operator, never the tool that actually made the edit. This is a
+    best-effort, read-only check: any git-show failure, unreadable file,
+    or width-resolution failure returns `False` (never over-attributes an
+    edit to the tool that a human genuinely made) -- the caller falls
+    back to the pre-T-4179 message shape in that case."""
+    from frob.gates._fmt_directives import (
+        canonicalize_text,
+        marker_for,
+        resolve_line_length,
+    )
+
+    if marker_for(rel_path) is None:
+        return False
+    disk_path = worktree / rel_path
+    if not disk_path.is_file():
+        return False
+    committed = run_argv(["git", "-C", str(worktree), "show", f"HEAD:{rel_path}"])
+    if committed.is_err or committed.danger_ok.returncode != 0:
+        return False
+    original = committed.danger_ok.stdout
+    try:
+        current = disk_path.read_text()
+    except (OSError, UnicodeDecodeError):
+        return False
+    if current == original:
+        return False
+    limit = resolve_line_length(disk_path, worktree)
+    rewrapped = canonicalize_text(original, path=rel_path, limit=limit)
+    return current == rewrapped
+
+
+# frob:ticket T-4179
+def _attribute_own_fmt_rewrap(
+    worktree: Path, findings: list[tuple[str, str]]
+) -> list[str]:
+    """`findings` (`(file, rule)` pairs) rendered for a refusal log line,
+    each suffixed `" [frob fmt's own rewrap, not an operator edit]"` when
+    `_uncommitted_change_is_own_fmt_rewrap` says this land's own pre-land
+    absorption step produced that file's uncommitted content -- T-4179's
+    attribution fix: a refusal caused by the tool's own edit now says so,
+    naming the step, instead of reading as though the operator made it."""
+    rendered: list[str] = []
+    for file, rule in findings:
+        label = f"{file}:{rule}"
+        if _uncommitted_change_is_own_fmt_rewrap(worktree, file):
+            label += " [frob fmt's own rewrap, not an operator edit]"
+        rendered.append(label)
+    return rendered
+
+
 # frob:ticket T-1323
 def _check_uncommitted_waive_deletions(
     worktree: Path, ticket: Ticket, ticket_id: str
@@ -4040,7 +4103,7 @@ def _check_uncommitted_waive_deletions(
             "`frob ticket land %s --worktree %s`",
             ticket_id,
             list(ticket.scope),
-            [f"{file}:{rule}" for file, rule in found.danger_ok],
+            _attribute_own_fmt_rewrap(worktree, list(found.danger_ok)),
             worktree,
             ticket_id,
             worktree,
