@@ -2,7 +2,7 @@
 id: T-4477
 title: 'T-4475 follow-up: noqa marker only on the last physical line; mid-run long
   tokens still refuse lands with E501'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-14'
@@ -22,6 +22,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477::test_target_plus_trailing_kind_joins_one_final_noqa_line
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477::test_directive_still_parses_to_the_same_node_id_and_kind
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477::test_idempotent_on_a_second_canonicalize_pass
+- tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477::test_ruff_check_e501_is_clean_on_every_line
+- tests/test_gates_fmt_directives.py::TestNodeIdNeverSplitT4179::test_pytest_node_id_directive_value_is_never_split
 designated_repro_test: null
 threat: null
 component: null

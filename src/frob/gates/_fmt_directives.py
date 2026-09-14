@@ -408,12 +408,32 @@ def _wrap_cut_point(remaining: str, budget: int) -> tuple[str, str] | None:
     dispatch over this function's three cases: a clean word-boundary cut
     within `budget` (`rfind`), the T-0991 boundary-space edge case (a
     space sitting exactly AT `budget`, invisible to `rfind`'s exclusive
-    end bound), and a token wider than `budget` (searched FORWARD from
-    `budget` for its own end, per T-4179 -- see `_canonical_lines`'s own
-    docstring for why a split token is worse than an over-`limit` line).
-    Returns `None` only for the last case's own sub-case: `remaining` is,
-    or ends in, one unbreakable token with nothing after it to wrap onto
-    a further line -- the caller emits `remaining` whole and stops."""
+    end bound), and a token wider than `budget` (T-4179 -- see
+    `_canonical_lines`'s own docstring for why a split token is worse
+    than an over-`limit` line). Returns `None` for the last case: once no
+    clean cut exists within `budget`, `remaining` -- WHATEVER follows the
+    offending token, not just the token itself -- is emitted whole as the
+    final physical line of this run.
+
+    T-4477: this used to search FORWARD from `budget` for just the
+    offending token's own end, then keep wrapping whatever followed it on
+    further physical lines. That produced a MIDDLE physical line (the
+    token plus its trailing continuation backslash) that was ALSO over
+    `budget` but never got T-4475's own end-of-run noqa treatment (only
+    the true final line did) -- T-4474's land was refused on exactly this
+    shape (a long `frob:tests` node id immediately followed by a
+    trailing `kind="..."` attribute on its own physical line). Embedding
+    a noqa marker mid-run instead (before the token's own trailing
+    continuation backslash) was considered and rejected: the marker would
+    fold back into `logical_text` on the NEXT canonicalize pass sitting
+    BEFORE the trailing attrs rather than at the true end, so
+    `_NOQA_SUFFIX_RE`'s end-anchored escape hatch would never recognize
+    it as already-suppressed and would re-wrap (and re-embed) it every
+    pass -- not idempotent. Treating the whole remainder as unsplittable
+    once ONE token in it does not fit reuses T-4475's own already-
+    idempotent, already-tested final-line contract unchanged: exactly one
+    physical line, ending in the caller's own noqa suffix, nothing left
+    to wrap further."""
     cut = remaining.rfind(" ", 0, budget)
     if cut <= 0 and budget < len(remaining) and remaining[budget] == " ":
         # frob:ticket T-0991
@@ -431,20 +451,19 @@ def _wrap_cut_point(remaining: str, budget: int) -> tuple[str, str] | None:
         return remaining[:cut], remaining[cut:]
     if cut <= 0:
         # frob:ticket T-4179
+        # frob:ticket T-4477
         # No breakable space anywhere in or at `budget` -- the token
         # straddling `budget` is genuinely wider than the remaining room.
         # T-0991/T-0984 used to break at the `budget` boundary verbatim
         # here, which can land INSIDE that token (a node id, path,
         # symref, quoted reason word) and silently corrupt the directive
         # it wraps (the fragment still looks like a binding; it no longer
-        # resolves). Search FORWARD from `budget` for the token's own end
-        # instead, so the cut always lands on a real space -- the
-        # physical line this produces runs over `limit`, which is an
-        # acceptable, visible lint finding, unlike a split token.
-        next_space = remaining.find(" ", budget)
-        if next_space == -1:
-            return None
-        return remaining[: next_space + 1], remaining[next_space + 1 :]
+        # resolves). T-4477: rather than searching forward for just this
+        # token's own end and continuing to wrap whatever follows it,
+        # treat the ENTIRE remainder as the final, unsplittable line --
+        # see this function's own docstring for why a mid-run cut here
+        # cannot carry a noqa marker safely.
+        return None
     # Keep the space attached to the earlier line so folding with the
     # empty string reproduces the original spacing exactly.
     return remaining[: cut + 1], remaining[cut + 1 :]

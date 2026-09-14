@@ -1005,7 +1005,14 @@ class TestNodeIdNeverSplitT4179:
                 fragment and node_id.startswith(fragment) and fragment != node_id
             ), f"node id fragment split onto its own line: {line!r}"
         physical = [line for line in out.splitlines() if line.lstrip().startswith("#")]
-        assert _fold_lines_real_extractor(physical, "#") == content_text
+        # T-4477: the node id's own trailing `kind="unit"` attribute now
+        # joins it on the SAME final physical line (never split off onto
+        # a middle line with no noqa of its own -- T-4474's own
+        # incident), so the folded text carries the auto-appended noqa
+        # suffix, same shape as TestUnbreakableTokenGetsNoqaE501T4475.
+        assert (
+            _fold_lines_real_extractor(physical, "#") == content_text + "  # noqa: E501"
+        )
 
 
 # frob:ticket T-4475
@@ -1081,6 +1088,106 @@ class TestUnbreakableTokenGetsNoqaE501T4475:
             pytest.skip("ruff binary not available")
 
         src = f"def f():\n    # frob:tests {self._NODE_ID}\n    pass\n"
+        out = canonicalize_text(src, path="a.py", limit=88)
+        target = tmp_path / "a.py"
+        target.write_text(out)
+        result = subprocess.run(
+            ["ruff", "check", "--select", "E501", "--no-cache", str(target)],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, (
+            f"ruff check --select E501 found a violation on the "
+            f"canonicalized output:\nstdout={result.stdout}\nstderr={result.stderr}"
+        )
+
+
+# frob:ticket T-4477
+class TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477:
+    """T-4477 (T-4475 follow-up): T-4475's own noqa fix only landed on the
+    FINAL physical line of a directive run. A run whose unsplittable
+    token is immediately followed by a trailing `kind=`/`reason=`
+    attribute -- `# frob:tests \\` / `# <139-char node id> \\` /
+    `# kind="integration"` -- used to keep the token on a MIDDLE physical
+    line with no noqa of its own; the land's own pre-land `ruff check`
+    then refused it as a NEW E501 finding (T-4474's own incident, 7 such
+    lines in src/frob/tickets/_land.py and
+    src/frob/tickets/_land_passenger_identity.py). Fix: once one token in
+    a run does not fit the wrap budget, the ENTIRE remainder (attrs
+    included) joins it on that one final physical line instead of being
+    wrapped further -- reusing T-4475's already-idempotent end-of-run
+    noqa contract unchanged, rather than embedding a marker mid-run
+    (round-trip-unsafe: see `_wrap_cut_point`'s own docstring)."""
+
+    #: The exact T-4474 incident shape: a 135-char node id (longer than
+    #: any reasonable wrap budget on its own) immediately followed by a
+    #: `kind="integration"` attribute.
+    _NODE_ID = (
+        "tests/ticket_land_suite/test_land_core.py::"
+        "TestLandChainedCdRootResolution."
+        "test_root_equal_to_a_real_linked_worktree_resolves_and_lands"
+    )
+
+    def test_target_plus_trailing_kind_joins_one_final_noqa_line(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477.test_target_plus_trailing_kind_joins_one_final_noqa_line  # noqa: E501
+        assert len(self._NODE_ID) == 135
+        content_text = f'frob:tests {self._NODE_ID} kind="integration"'
+        src = f"# {content_text}\n"
+        out = canonicalize_text(src, path="a.py", limit=88)
+        lines = out.splitlines()
+        # "frob:tests" wraps onto its own leading line; the node id and
+        # its trailing kind= attribute join on ONE final line, never a
+        # middle line of their own.
+        assert len(lines) == 2, f"expected two physical lines, got {lines!r}"
+        assert lines[0] == "# frob:tests \\"
+        assert lines[1] == f'# {self._NODE_ID} kind="integration"  # noqa: E501'
+        # No physical line other than the final one is over the limit --
+        # the exact T-4474 defect (a middle line over budget, unmarked).
+        for line in lines[:-1]:
+            assert len(line) <= 88, f"non-final line over limit: {line!r}"
+
+    def test_directive_still_parses_to_the_same_node_id_and_kind(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477.test_directive_still_parses_to_the_same_node_id_and_kind  # noqa: E501
+        # `_parse_line` takes one already-FOLDED logical line (the same
+        # shape `fold_comment_runs` produces from the physical lines
+        # `canonicalize_text` emits) -- the real parser's own per-directive
+        # entry point, one layer below the file-level `parse_directives`.
+        from frob.graph.dsl import _parse_line
+
+        content_text = f'frob:tests {self._NODE_ID} kind="integration"'
+        src = f"# {content_text}\n"
+        out = canonicalize_text(src, path="a.py", limit=88)
+        physical = [line for line in out.splitlines() if line.lstrip().startswith("#")]
+        folded = _fold_lines_real_extractor(physical, "#")
+        edge = _parse_line(folded, path="a.py", lineno=1, src="")
+        assert edge is not None and not hasattr(edge, "reason"), (
+            f"expected a parsed Edge, got {edge!r}"
+        )
+        assert edge.target == self._NODE_ID
+        assert edge.attrs.get("kind") == "integration"
+
+    def test_idempotent_on_a_second_canonicalize_pass(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477.test_idempotent_on_a_second_canonicalize_pass  # noqa: E501
+        src = f'# frob:tests {self._NODE_ID} kind="integration"\n'
+        once = canonicalize_text(src, path="a.py", limit=88)
+        twice = canonicalize_text(once, path="a.py", limit=88)
+        assert twice == once
+
+    def test_ruff_check_e501_is_clean_on_every_line(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477.test_ruff_check_e501_is_clean_on_every_line  # noqa: E501
+        import shutil
+        import subprocess
+
+        if shutil.which("ruff") is None:
+            pytest.skip("ruff binary not available")
+
+        src = (
+            f'def f():\n    # frob:tests {self._NODE_ID} kind="integration"\n    pass\n'
+        )
         out = canonicalize_text(src, path="a.py", limit=88)
         target = tmp_path / "a.py"
         target.write_text(out)
