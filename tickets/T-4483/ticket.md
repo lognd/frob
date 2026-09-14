@@ -2,7 +2,7 @@
 id: T-4483
 title: 'main red after T-4480: DRIFT001 run_diagnosis ack, REF002 macos-portability
   single anchor, win32 agent env quoted PYTHONPATH assertion'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-14'
@@ -22,6 +22,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4483: BUG002 refused the land because the win32-only repro passes on
+    the Linux land host; record the platform boundary as a waiver'
+  actor: logan
+  at: '2026-09-14'
+  old_length: 1492
+  new_length: 1937
+evidence:
+- tests/test_worktree_pythonpath.py::TestAgentEnvExportsWorktreePythonpath::test_env_output_names_worktree_src_on_pythonpath
 designated_repro_test: null
 threat: null
 component: ci
@@ -56,3 +66,7 @@ Windows Test step has exactly one failing test:
 - frob check self-gate reports 0 errors on main.
 - The named test passes on windows-latest (measured by the CI run that
   lands this ticket; the quoted form is asserted on every platform).
+
+## Reproduction boundary
+
+frob:waive BUG002 reason="the defect is win32-only: shlex.quote leaves a POSIX path bare, so the bound test PASSES at main on Linux and macOS and only fails on windows-latest (CI run 34836067875, job 103950053791); the Linux land host cannot fail it at the parent commit, and the other two findings are a doc anchor and an ack, which have no test at all -- the Windows CI leg of the landing push is the reproduction"
