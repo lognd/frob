@@ -22,7 +22,23 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_allow_cross_ticket_logs_and_proceeds
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_no_op_when_only_the_landing_tickets_own_directives_are_present
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_dropped_siblings_still_present_code_is_still_reported
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_pure_relocation_of_a_preexisting_directive_does_not_refuse
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_relocation_that_also_edits_the_directive_line_still_refuses
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_moved_and_rewrapped_directive_does_not_refuse
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refusal_message_distinguishes_new_from_moved_ids
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_brand_new_directive_still_refuses
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id
+  new_node: ''
+  reason: not repro evidence for T-4474 -- these predate the fix and already pass
+    at parent; T-4474's own repro evidence is the 3 new normalized-identity tests
+  actor: logan
+  at: '2026-09-13'
 threat: null
 component: null
 anchor: false
