@@ -121,6 +121,7 @@ from frob.tickets._land_merge import _validate_closeable
 # `frob.tickets._land_merge`; this module keeps the public import path
 # stable.
 from frob.tickets._land_merge import splice_ledger as splice_ledger  # noqa: E402
+from frob.tickets._land_passenger_identity import classify_directive_ids
 from frob.tickets._land_squash import _land_squash_apply, _v2_effective_scope
 from frob.tickets._land_verify import (
     _ClaimsReverifyOutcome,
@@ -322,14 +323,11 @@ def _prune_dead_land_status_entries(
 # frob:ticket T-2691
 # frob:ticket T-4266
 # frob:tests \
-# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_phase_transitions_are_\
-# pollable
+# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_phase_transitions_are_pollable  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_write_failure_is_best_\
-# effort_and_never_raises
+# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_write_failure_is_best_effort_and_never_raises  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_concurrent_lands_each_\
-# get_their_own_entry
+# tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_concurrent_lands_each_get_their_own_entry  # noqa: E501
 def _write_land_status(
     root: Path,
     ticket_id: str,
@@ -412,11 +410,9 @@ def _write_land_status(
 
 # frob:ticket T-2091
 # frob:tests \
-# tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_skipped_unmea\
-# sured_is_not_printed_as_verified_true
+# tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_skipped_unmeasured_is_not_printed_as_verified_true  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_passed_health\
-# y_path_is_unchanged
+# tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_passed_healthy_path_is_unchanged  # noqa: E501
 _LAST_CLAIMS_OUTCOME: dict[str, _ClaimsReverifyOutcome] = {}
 """T-2091: the most recent `_ClaimsReverifyOutcome` `land()` observed for a
 given `ticket_id`, in THIS process. `LandReport` (`frob.tickets._models`)
@@ -462,11 +458,9 @@ class _OrphanEvidenceCheckOutcome(StrEnum):
 
 # frob:ticket T-2255
 # frob:tests \
-# tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_skippe\
-# d_unmeasured_recorded_and_logged_on_collection_failure
+# tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_skipped_unmeasured_recorded_and_logged_on_collection_failure  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_ran_re\
-# corded_on_healthy_pass
+# tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_ran_recorded_on_healthy_pass  # noqa: E501
 _LAST_ORPHAN_EVIDENCE_OUTCOME: dict[str, _OrphanEvidenceCheckOutcome] = {}
 """T-2255: the most recent `_OrphanEvidenceCheckOutcome`
 `_check_orphaned_evidence_deletion` observed for a given `ticket_id`, in
@@ -580,40 +574,29 @@ _FROB_LAND_INLINE_WAIT_ENV = "FROB_LAND_INLINE_WAIT_S"
 # frob:ticket T-2774
 # frob:ticket T-2816
 # frob:doc \
-# docs/modules/tickets-landing.md#declared-land-deadline-bounds-the-lock-wait-not-a-fla\
-# t-constant-t-2774
+# docs/modules/tickets-landing.md#declared-land-deadline-bounds-the-lock-wait-not-a-flat-constant-t-2774  # noqa: E501
 # frob:doc \
-# docs/modules/tickets-landing.md#in-land-wait-defaults-near-zero----queueing-belongs-t\
-# o-the-caller-t-2816
+# docs/modules/tickets-landing.md#in-land-wait-defaults-near-zero----queueing-belongs-to-the-caller-t-2816  # noqa: E501
 # frob:tests \
-# TestLandLockWaitBudgetFromDeclaredDeadline.test_no_declaration_keeps_the_flat_timeout\
-# _unchanged
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_no_declaration_keeps_the_flat_timeout_unchanged  # noqa: E501
 # frob:tests \
-# TestLandLockWaitBudgetFromDeclaredDeadline.test_ample_deadline_derives_a_wait_budget_\
-# and_proceeds
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_ample_deadline_derives_a_wait_budget_and_proceeds  # noqa: E501
 # frob:tests \
-# TestLandLockWaitBudgetFromDeclaredDeadline.test_insufficient_deadline_refuses_immedia\
-# tely_with_no_lock_attempt
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_insufficient_deadline_refuses_immediately_with_no_lock_attempt  # noqa: E501
 # frob:tests \
-# TestLandLockWaitBudgetFromDeclaredDeadline.test_short_wait_then_acquire_still_complet\
-# es
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_short_wait_then_acquire_still_completes  # noqa: E501
 # frob:tests \
-# TestLandLockWaitBudgetFromDeclaredDeadline.test_unparseable_deadline_falls_back_to_th\
-# e_flat_timeout
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_unparseable_deadline_falls_back_to_the_flat_timeout  # noqa: E501
 # frob:tests \
-# TestLandLockInlineWaitDefaultsNearZero.test_ample_deadline_defaults_to_the_near_zero_\
-# ceiling_not_the_flat_500s
+# TestLandLockInlineWaitDefaultsNearZero.test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s  # noqa: E501
 # frob:tests \
 # TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env_restores_a_longer_in_land_wait
 # frob:tests \
-# TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env_is_still_capped_by_the_remaini\
-# ng_budget
+# TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env_is_still_capped_by_the_remaining_budget  # noqa: E501
 # frob:tests \
-# TestLandLockInlineWaitDefaultsNearZero.test_unparseable_inline_wait_env_falls_back_to\
-# _the_near_zero_default
+# TestLandLockInlineWaitDefaultsNearZero.test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default  # noqa: E501
 # frob:tests \
-# TestLandLockInlineWaitDefaultsNearZero.test_held_lock_released_quickly_leaves_almost_\
-# the_whole_deadline_for_work
+# TestLandLockInlineWaitDefaultsNearZero.test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work  # noqa: E501
 def _resolve_land_lock_wait_budget_s(root: Path) -> Result[float, LandError]:
     """T-2774 root-cause fix: `_LAND_LOCK_TIMEOUT_S` (500s, a flat constant)
     bounds only the land.lock WAIT, but the caller's own outer wrapper
@@ -834,17 +817,13 @@ def _read_land_lock_holder(path: Path) -> dict | None:
 # frob:ticket T-1634
 # frob:ticket T-3018
 # frob:tests \
-# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_dead_holder_pid_is_re\
-# ported_dead_but_self_healing_and_healthy
+# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy  # noqa: E501
 # frob:tests \
-# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_live_holder_pid_is_re\
-# ported_alive_and_healthy
+# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_live_holder_pid_is_reported_alive_and_healthy  # noqa: E501
 # frob:tests \
-# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_ambiguous_holder_live\
-# ness_is_reported_unhealthy
+# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_ambiguous_holder_liveness_is_reported_unhealthy  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.test_\
-# orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged
+# tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged  # noqa: E501
 def _probe_land_lock_pid_liveness(pid: int) -> bool | None:
     """Three-state liveness probe for a land.lock holder's pid (T-1634):
     `True` (alive), `False` (CONFIRMED dead), or `None` (ambiguous, e.g.
@@ -1129,11 +1108,9 @@ def _finalize_repair_marker_path(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-2679
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_sigkill_duri\
-# ng_finalize_close_leaves_ticket_recoverable_not_a_silent_lie
+# tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_normal_land_\
-# reaches_done_exactly_once_no_extra_transition
+# tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
 def _write_finalize_repair_marker(root: Path, ticket_id: str, worktree: Path) -> None:
     """Record `worktree` under `root`'s finalize-repair marker for
     `ticket_id` (T-2679), immediately BEFORE `_land_finalize_and_close`
@@ -1163,8 +1140,7 @@ def _write_finalize_repair_marker(root: Path, ticket_id: str, worktree: Path) ->
 
 # frob:ticket T-2679
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_normal_land_\
-# reaches_done_exactly_once_no_extra_transition
+# tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
 def _clear_finalize_repair_marker(root: Path, ticket_id: str) -> None:
     """Remove `ticket_id`'s finalize-repair marker under `root`, if any
     (T-2679) -- called when `_land_finalize_and_close` returns for ANY
@@ -1182,14 +1158,11 @@ def _clear_finalize_repair_marker(root: Path, ticket_id: str) -> None:
 
 # frob:ticket T-2679
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_repair_lo\
-# gs_loudly_when_worktree_still_shows_done_but_root_does_not
+# tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_repair_is\
-# _silent_when_root_already_shows_the_ticket_done
+# tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_repair_is_silent_when_root_already_shows_the_ticket_done  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_no_marker\
-# _is_a_silent_no_op
+# tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
 def _repair_stale_finalize_markers(root: Path) -> None:
     """Reconcile every leftover T-2679 finalize-repair marker under `root`
     (called at the very start of `_land_locked`, right alongside its
@@ -1264,14 +1237,11 @@ def _repair_stale_finalize_markers(root: Path) -> None:
 # frob:ticket T-0907
 # frob:ticket T-1963
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_repair_resets\
-# _root_when_current_tip_matches_the_marker
+# tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_repair_recove\
-# rs_even_when_current_tip_has_drifted_from_the_marker
+# tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_no_marker_is_\
-# a_silent_no_op
+# tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
 def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
     """Reconcile every leftover T-0907 land-repair marker under `root`, if
     any exist -- called at the very start of `_land_locked`, under `root`'s
@@ -1517,11 +1487,9 @@ def _clear_post_land_verify_marker(root: Path, ticket_id: str) -> None:
 
 # frob:ticket T-1523
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_st\
-# ale_marker_reports_verified_true_when_commit_is_a_clean_ancestor
+# tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_no\
-# _marker_is_a_silent_empty_result
+# tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
 def _stale_post_land_verify_markers(root: Path) -> tuple[tuple[str, str], ...]:
     """`(ticket_id, commit_sha)` for every leftover T-1523 post-land-
     verify-pending marker under `root`, read-only (never mutates `root`
@@ -1558,11 +1526,9 @@ def _stale_post_land_verify_markers(root: Path) -> tuple[tuple[str, str], ...]:
 
 # frob:ticket T-4381
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_rapid_shape_default_\
-# sweep_formats_touched_files
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_rapid_shape_default_sweep_formats_touched_files  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_explicit_sweep_is_ne\
-# ver_overridden_by_the_default
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_explicit_sweep_is_never_overridden_by_the_default  # noqa: E501
 def _default_touched_format_sweep(stage: Path, final_id: str) -> bool | None:
     """T-4381: the fallback `pre_commit_sweep` `land()` substitutes when
     a caller supplies none at all (see `land`'s own docstring) -- the
@@ -1967,16 +1933,13 @@ def land(
 # frob:ticket T-1269
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land---plan-t-1269
 # frob:tests \
-# tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merges_and_finalizes_eve\
-# ry_draft_atomically
+# tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
 # frob:tests \
 # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_unwinds_the_merge
 # frob:tests \
-# tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merge_conflict_aborts_an\
-# d_refuses
+# tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_tick_gate_dirty_unwinds_\
-# finalize_but_keeps_the_durable_merge
+# tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
 # frob:ticket T-1495
 def land_plan(
     root: Path,
@@ -2735,20 +2698,15 @@ def _squash_into_warm_stage(stage: Path, branch_name: str) -> bool:
 # frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
 # frob:doc docs/modules/tickets-landing.md#the-t-3135-warm-sweep-stage
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirt\
-# y_during_the_squash_apply
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_worktree_setup_failu\
-# re_refuses_without_touching_root
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_worktree_setup_failure_refuses_without_touching_root  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_pre_commit_sweep_eng\
-# ages_the_warm_stage_not_root
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_pre_commit_sweep_engages_the_warm_stage_not_root  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_reused_ac\
-# ross_lands
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_reused_across_lands  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_unavailab\
-# le_falls_back_to_root
+# tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_unavailable_falls_back_to_root  # noqa: E501
 # frob:waive ARCH001 reason="147 lines is the warm-stage try/fallback branch (ensure \
 # stage, squash-compose, fall back to in-root on either failure) plus the pre-existing \
 # disposable-stage compose this function already had at this length before T-3135; \
@@ -3252,20 +3210,15 @@ def _land_locked(
 
 # frob:ticket T-1736
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.\
-# test_dry_run_is_a_noop
+# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.\
-# test_real_land_records_an_intent_entry
+# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_real_land_records_an_intent_entry  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.\
-# test_no_resolvable_symbols_records_nothing
+# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.\
-# test_diff_failure_is_logged_not_raised
+# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_diff_failure_is_logged_not_raised  # noqa: E501
 def _record_verify_intent_for_landed_commit(
     root: Path, ticket_id: str, report: LandReport, pre_land_tip: str
 ) -> None:
@@ -3873,11 +3826,9 @@ def _log_dirty_main_refusal(root: Path, worktree: Path, ticket_id: str) -> None:
 # frob:ticket T-0795
 # frob:ticket T-1003
 # frob:tests \
-# tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution.test_root_\
-# equal_to_a_real_linked_worktree_resolves_and_lands kind="integration"
+# tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution.test_root_equal_to_a_real_linked_worktree_resolves_and_lands kind="integration"  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution.test_root_\
-# equal_to_the_primary_checkout_itself_still_refuses kind="integration"
+# tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution.test_root_equal_to_the_primary_checkout_itself_still_refuses kind="integration"  # noqa: E501
 def _resolve_primary_checkout(worktree: Path) -> Path | None:
     """The primary checkout for `worktree`'s clone -- the parent directory
     of `git -C worktree rev-parse --git-common-dir` -- or `None` if that
@@ -4192,11 +4143,9 @@ def _check_committed_waive_deletions(
 # frob:ticket T-1922
 # frob:doc docs/modules/tickets-landing.md#outofscopewaivedeletion-false-refusal-on-a-stale-worktree-t-1922  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal.tes\
-# t_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse
+# tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal.test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal.tes\
-# t_a_genuine_committed_deletion_the_branch_made_itself_still_refuses
+# tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal.test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses  # noqa: E501
 def _restrict_to_branch_own_files(
     worktree: Path,
     ticket_id: str,
@@ -4303,11 +4252,9 @@ def _land_is_rapid(worktree: Path, ticket_id: str) -> bool:
 # frob:doc \
 # docs/modules/tickets-landing.md#inline-claims-reverify-skipped-under-rapid-t-2913
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.t\
-# est_rapid_profile_skips_inline_check_gates_spawn kind="integration"
+# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.test_rapid_profile_skips_inline_check_gates_spawn kind="integration"  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.t\
-# est_non_rapid_profile_still_runs_inline_check_gates_spawn kind="integration"
+# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.test_non_rapid_profile_still_runs_inline_check_gates_spawn kind="integration"  # noqa: E501
 def _land_should_skip_inline_claims_reverify(worktree: Path) -> bool:
     """T-2913: whether `land()` should skip its own inline `check_gates`/
     `check_gate_findings` spawn (T-0754/T-0846 -- a fresh, full `frob
@@ -4394,17 +4341,13 @@ def _land_should_skip_inline_claims_reverify(worktree: Path) -> bool:
 
 # frob:ticket T-3054
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclare\
-# dDeadline.test_insufficient_deadline_skips_regardless_of_profile
+# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclare\
-# dDeadline.test_ample_deadline_still_runs_the_spawn
+# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclare\
-# dDeadline.test_no_declared_deadline_is_unchanged
+# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclare\
-# dDeadline.test_unparseable_deadline_is_unchanged
+# tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
 def _land_deadline_cannot_afford_inline_claims_reverify(worktree: Path) -> bool:
     """T-3054: `True` iff `FROB_LAND_DEADLINE_S` is declared, parseable,
     and smaller than this land's estimated inline `check_gates` spawn
@@ -4515,11 +4458,9 @@ _BUG003_WAIVER_RE = re.compile(r'frob:waive\s+BUG003\s+reason="([^"]*)"')
 
 # frob:ticket T-2215
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_reason_pres\
-# ent_suppresses
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_reason_present_suppresses  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_bare_direct\
-# ive_without_reason_does_not_suppress
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_bare_directive_without_reason_does_not_suppress  # noqa: E501
 def _must_still_pass_waiver_reason(ticket: Ticket) -> str | None:
     """The `reason="..."` text of a `frob:waive BUG003 reason="..."` line
     found anywhere in `ticket.body`, or `None` if no such (well-formed)
@@ -4537,14 +4478,11 @@ def _must_still_pass_waiver_reason(ticket: Ticket) -> str | None:
 
 # frob:ticket T-2215
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring.test_land_refuse\
-# s_when_control_broke_at_fix
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring.test_land_refuses_when_control_broke_at_fix  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring.test_land_succee\
-# ds_when_gate_reports_clean
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring.test_land_succeeds_when_gate_reports_clean  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_reason_pres\
-# ent_suppresses
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_reason_present_suppresses  # noqa: E501
 def _must_still_pass_land_violations(
     root: Path, ticket: Ticket, base_ref: str
 ) -> tuple[Violation, ...]:
@@ -4586,11 +4524,9 @@ def _must_still_pass_land_violations(
 
 # frob:ticket T-1518
 # frob:tests \
-# tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.tes\
-# t_close_refuses_when_evidence_passes_at_parent
+# tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.tes\
-# t_close_succeeds_when_evidence_fails_at_parent
+# tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
 def _check_mutation_evidence(
     worktree: Path,
     ticket: Ticket,
@@ -4673,20 +4609,15 @@ def _check_mutation_evidence(
 
 # frob:ticket T-3057
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_logs_a_warning_fo\
-# r_an_implementation_first_pair_without_blocking
+# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_logs_a_warning_for_an_implementation_first_pair_without_blocking  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_stays_quiet_when_\
-# no_tests_edges_are_touched
+# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_stays_quiet_when_no_tests_edges_are_touched  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_never_refuses_the\
-# _land
+# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_never_refuses_the_land  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_passes_the_resolv\
-# ed_merge_base_as_since
+# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_passes_the_resolved_merge_base_as_since  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_falls_back_to_unb\
-# ounded_when_merge_base_is_unresolvable
+# tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_falls_back_to_unbounded_when_merge_base_is_unresolvable  # noqa: E501
 def _check_tdd_order(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
@@ -4882,8 +4813,7 @@ def _mutation_evidence_sync_decision(
 # frob:ticket T-1593
 # frob:ticket T-2215
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test\
-# _land_deferred_refuses_on_bug003_alone
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test_land_deferred_refuses_on_bug003_alone  # noqa: E501
 def _mutation_evidence_deferred(
     worktree: Path, ticket: Ticket, base_ref: str, rapid: bool
 ) -> Result[None, LandError]:
@@ -4928,8 +4858,7 @@ def _mutation_evidence_deferred(
 # frob:ticket T-1593
 # frob:ticket T-2215
 # frob:tests \
-# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test\
-# _land_synchronous_refuses_on_bug003_alone
+# tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test_land_synchronous_refuses_on_bug003_alone  # noqa: E501
 def _mutation_evidence_synchronous(
     worktree: Path, ticket: Ticket, base_ref: str, skip: bool
 ) -> Result[None, LandError]:
@@ -5165,12 +5094,9 @@ def _branch_changed_files(
 
 # frob:ticket T-2711
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_s\
-# hared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical\
-# _content
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_b\
-# ranch_committed_real_unlanded_content_differing_from_base_ref
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref  # noqa: E501
 def _branch_vs_base_content_diff(
     worktree: Path, base_ref: str, ref: str = "HEAD"
 ) -> Result[frozenset[str], LandError]:
@@ -5472,11 +5398,9 @@ def _lock_entry_keys_changed(
 
 # frob:ticket T-4271
 # frob:tests \
-# tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_dis\
-# joint_frob_lock_ack_entries_do_not_block
+# tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_disjoint_frob_lock_ack_entries_do_not_block  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_col\
-# liding_frob_lock_ack_entry_still_refuses
+# tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_colliding_frob_lock_ack_entry_still_refuses  # noqa: E501
 def _frob_lock_edits_disjoint(root: Path, worktree: Path, branch: str) -> bool | None:
     """T-4271: whether `branch`'s (an OTHER ticket's) `frob.lock` edits and
     `worktree`'s (the LANDING ticket's) own `frob.lock` edits touch
@@ -5696,8 +5620,7 @@ def _leaked_hits_for_candidate(
 # frob:ticket T-1639
 # frob:ticket T-1967
 # frob:doc \
-# docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-s\
-# ibling-t-1639
+# docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t-1639  # noqa: E501
 def _find_leaked_tickets(
     root: Path,
     worktree: Path,
@@ -6036,40 +5959,35 @@ _DIRECTIVE_TICKET_ID_RE = re.compile(r"frob:ticket\s+(T-[A-Za-z0-9_-]+)")
 
 
 # frob:ticket T-2082
+# frob:ticket T-4474
 # frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 def _passenger_ids_from_line_buckets(
     added_lines: dict[str, list[str]], removed_lines: dict[str, list[str]]
-) -> frozenset[str]:
-    """The T-2082 discriminator: which ids in `added_lines` (ticket id ->
-    every added line naming it) are GENUINE passengers, given the matching
-    `removed_lines` from the same diff.
+) -> tuple[frozenset[str], frozenset[str]]:
+    """The T-2082/T-4474 discriminator: which ids in `added_lines` (ticket
+    id -> every added line naming it) are GENUINE passengers, given the
+    matching `removed_lines` from the same diff -- returns `(new_ids,
+    moved_ids)`.
 
     An id whose `+`-occurrence count strictly EXCEEDS its `-`-occurrence
-    count is unambiguously a passenger (its count increased) -- this is
-    exactly the 2026-08-05 WAIVE004 incident's shape: T-1579's code was
-    physically ADDED with no matching removal, so old and new logic agree
-    it must refuse. An id with EQUAL counts is exempted only when the
-    exact MULTISET of added lines equals the exact multiset of removed
-    lines (full text, whitespace included) -- i.e. the directive moved
-    VERBATIM. A relocation that also edits the directive line itself in
-    the same motion (folds it into another comment, reworks the line it
-    sits on) keeps the same count but fails this verbatim check and is
-    still reported: T-2082 deliberately errs toward refusing whenever the
-    two sides are not an exact textual match, since a false refusal costs
-    one `--allow-cross-ticket` flag and a false pass costs an incident.
-    Do NOT weaken this to bare count equality."""
-    passengers: set[str] = set()
-    for directive_id, adds in added_lines.items():
-        removes = removed_lines.get(directive_id, [])
-        # frob:waive PERF004 reason="adds/removes are this directive_id's own small \
-        # distinct per-id line list (typically 1-2 entries), not a shared collection \
-        # re-sorted identically across iterations -- same posture as every other \
-        # per-key-distinct-set PERF004 waiver in this codebase"
-        if len(adds) > len(removes) or sorted(adds) != sorted(removes):
-            passengers.add(directive_id)
-        # else: equal counts AND identical line text on both sides -- a
-        # pure relocation of a pre-existing directive. Not a passenger.
-    return frozenset(passengers)
+    count is unambiguously new (`new_ids`) -- this is exactly the
+    2026-08-05 WAIVE004 incident's shape: T-1579's code was physically
+    ADDED with no matching removal, so old and new logic agree it must
+    refuse. An id with equal counts is exempted into `moved_ids` when its
+    added and removed lines share the same NORMALIZED directive identity
+    as a multiset (`_land_passenger_identity.classify_directive_ids`,
+    T-4474) -- normalization erases whitespace/indentation/wrap-width
+    differences (a relocation, a re-wrap, an ARCH001-style symbol
+    extraction) but never erases an actual wording change, so a
+    relocation that ALSO edits the directive line's own words (folds it
+    into another comment, reworks the line it sits on) still lands in
+    `new_ids`: T-2082's original posture -- err toward refusing whenever
+    the two sides are not the SAME directive, since a false refusal costs
+    one `--allow-cross-ticket` flag and a false pass costs an incident --
+    is preserved, only the identity comparison widened from exact text to
+    normalized text (T-4474: raw-text comparison alone false-refused 5
+    lands in one day on pure re-wraps/relocations)."""
+    return classify_directive_ids(added_lines, removed_lines)
 
 
 _HUNK_HEADER_RE = re.compile(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
@@ -6325,12 +6243,19 @@ def _bucket_directive_lines(
 # frob:ticket T-1618
 # frob:ticket T-2082
 # frob:ticket T-2183
+# frob:ticket T-4474
 # frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
-def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[str]:
-    """Every ticket id named by a `frob:ticket <id>` directive that is a
-    GENUINE passenger of `worktree`'s full committed diff against
-    `base_ref` (T-1618, discriminator fixed T-2082 -- see
-    `_passenger_ids_from_line_buckets` for the exact rule) -- `git diff
+def _directive_ticket_ids_in_diff(
+    worktree: Path, base_ref: str
+) -> tuple[frozenset[str], frozenset[str]]:
+    """`(new_ids, moved_ids)`: every ticket id named by a `frob:ticket
+    <id>` directive addition in `worktree`'s full committed diff against
+    `base_ref`, split by whether that same directive (by NORMALIZED
+    identity, T-4474) already existed anywhere in the base tree
+    (`moved_ids`, exempt) or did not (`new_ids`, a GENUINE passenger --
+    T-1618, discriminator fixed T-2082, widened to identity comparison
+    T-4474; see `_passenger_ids_from_line_buckets` for the exact rule) --
+    `git diff
     base_ref...HEAD`, the three-dot merge-base diff, NOT `--name-only`
     like `_branch_changed_files` (T-1355) uses: this needs the actual
     hunk CONTENT, since a `frob:ticket` directive is a source line, not a
@@ -6372,7 +6297,7 @@ def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[st
     for it if the git call itself cannot run at all."""
     diffed = run_argv(["git", "-C", str(worktree), "diff", f"{base_ref}...HEAD"])
     if diffed.is_err or diffed.danger_ok.returncode != 0:
-        return frozenset()
+        return frozenset(), frozenset()
     added_lines, removed_lines = _bucket_directive_lines(
         diffed.danger_ok.stdout, worktree, base_ref
     )
@@ -6382,17 +6307,13 @@ def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[st
 # frob:ticket T-1618
 # frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 # frob:tests \
-# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_refuses_and_l\
-# ists_every_passenger_by_id
+# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_refuses_and_lists_every_passenger_by_id  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_allow_cross_t\
-# icket_logs_and_proceeds
+# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_allow_cross_ticket_logs_and_proceeds  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_no_op_when_on\
-# ly_the_landing_tickets_own_directives_are_present
+# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_no_op_when_only_the_landing_tickets_own_directives_are_present  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_a_dropped_sib\
-# lings_still_present_code_is_still_reported
+# tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_a_dropped_siblings_still_present_code_is_still_reported  # noqa: E501
 def _check_passenger_tickets(
     worktree: Path, ticket: Ticket, base_ref: str, *, allow_cross_ticket: bool = False
 ) -> Result[None, LandError]:
@@ -6415,8 +6336,26 @@ def _check_passenger_tickets(
     acknowledges the passengers" path the ticket's own acceptance
     criterion describes; the two checks share one flag rather than
     stacking a second, differently-named override a caller would have to
-    learn."""
-    passengers = _directive_ticket_ids_in_diff(worktree, base_ref) - {ticket.id}
+    learn.
+
+    T-4474: `_directive_ticket_ids_in_diff` now returns `(new_ids,
+    moved_ids)` -- only `new_ids` (minus `ticket.id`) ever refuses or
+    counts toward `--allow-cross-ticket`'s acknowledgment; `moved_ids`
+    (minus `ticket.id`) is logged alongside at INFO for auditability
+    (a relocated/re-wrapped directive is not a passenger, but an operator
+    reading the land log should still see which ids were exempted and
+    why) but never blocks a land on its own."""
+    new_ids, moved_ids = _directive_ticket_ids_in_diff(worktree, base_ref)
+    passengers = new_ids - {ticket.id}
+    moved = moved_ids - {ticket.id}
+    if moved:
+        _log.info(
+            "land: %s -- %d directive(s) exempted as MOVED (pre-existing "
+            "in the base tree, only relocated/re-wrapped): %s (T-4474)",
+            ticket.id,
+            len(moved),
+            sorted(moved),
+        )
     if not passengers:
         return Ok(None)
     sorted_passengers = sorted(passengers)
@@ -6431,16 +6370,18 @@ def _check_passenger_tickets(
         return Ok(None)
     _log.error(
         "land: %s refused -- this branch's diff carries frob:ticket "
-        "directive addition(s) naming %d OTHER ticket id(s): %s -- these "
-        "are about to ride onto main as UNDISCLOSED passengers of %s's "
-        "land (T-1618: landing a worktree branch merges everything "
-        "committed on it, not just %s's own commits). If this is "
-        "deliberate (a series worktree meant to land together), re-run "
-        "with --allow-cross-ticket to acknowledge and proceed; otherwise "
-        "land or verify each passenger ticket on its own first",
+        "directive addition(s) naming %d OTHER ticket id(s) as NEW "
+        "(not present anywhere in the base tree): %s%s -- these are "
+        "about to ride onto main as UNDISCLOSED passengers of %s's land "
+        "(T-1618: landing a worktree branch merges everything committed "
+        "on it, not just %s's own commits). If this is deliberate (a "
+        "series worktree meant to land together), re-run with "
+        "--allow-cross-ticket to acknowledge and proceed; otherwise land "
+        "or verify each passenger ticket on its own first",
         ticket.id,
         len(sorted_passengers),
         sorted_passengers,
+        f" (also {len(moved)} MOVED and exempted: {sorted(moved)})" if moved else "",
         ticket.id,
         ticket.id,
     )
@@ -6452,17 +6393,13 @@ def _check_passenger_tickets(
 # frob:ticket T-1950
 # frob:ticket T-2737
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_sole_rapid_de\
-# bt_dirt_reads_as_clean
+# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_sole_rapid_debt_dirt_reads_as_clean  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_rapid_debt_pl\
-# us_another_file_still_reads_dirty
+# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_rapid_debt_plus_another_file_still_reads_dirty  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_a_different_l\
-# one_dirty_file_still_reads_dirty
+# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_a_different_lone_dirty_file_still_reads_dirty  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_clean_worktre\
-# e_reads_as_clean
+# tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_clean_worktree_reads_as_clean  # noqa: E501
 def _dirty_ignoring_rapid_debt(worktree: Path) -> Result[bool, LandError]:
     """`_check_already_landed`'s own dirty-worktree gate (T-2737): same
     contract as `_porcelain_dirty`, EXCEPT an uncommitted `rapid-
@@ -6508,36 +6445,25 @@ def _dirty_ignoring_rapid_debt(worktree: Path) -> Result[bool, LandError]:
 # frob:doc \
 # docs/modules/tickets-landing.md#already-landed-on-main-first-class-outcome-t-1618
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_d\
-# iagnostic_message_when_scope_diff_is_empty
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_t\
-# icket_has_real_changes_in_its_own_scope
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_has_real_changes_in_its_own_scope  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_t\
-# icket_declares_no_scope_at_all
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_declares_no_scope_at_all  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_for_a_docs\
-# _only_ticket_whose_scope_diff_is_empty_but_not_yet_landed
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_s\
-# ibling_carried_this_tickets_content_before_it_ever_landed
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_sibling_carried_this_tickets_content_before_it_ever_landed  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_no_fr\
-# ob_ticket_directive_for_this_id_exists_on_main
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_s\
-# hared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical\
-# _content
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_b\
-# ranch_committed_real_unlanded_content_differing_from_base_ref
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt.test_stal\
-# e_rapid_debt_dirt_does_not_block_already_landed_detection
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt.test_stale_rapid_debt_dirt_does_not_block_already_landed_detection  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt.test_genu\
-# ine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt
+# tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt.test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt  # noqa: E501
 def _check_already_landed(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
@@ -6665,8 +6591,7 @@ def _refuse_already_landed(
 # frob:ticket T-1639
 # frob:ticket T-1855
 # frob:doc \
-# docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-s\
-# ibling-t-1639
+# docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t-1639  # noqa: E501
 # frob:ticket T-2121
 #: Paths `_check_cross_ticket_leakage` must never treat as "claimed" by
 #: any ticket's declared (or live-lease) scope, because no ticket's own
@@ -6892,14 +6817,11 @@ def _cross_ticket_leakage_violations(
 # frob:doc docs/modules/gates.md#cross-ticket-leakage-crossticket001-t-3466
 # frob:enforces CHK-GATE-CROSSTICKET001
 # frob:tests \
-# tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_leaked_\
-# sibling_scope_fires
+# tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_leaked_sibling_scope_fires  # noqa: E501
 # frob:tests \
-# tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_tick\
-# et_id_is_quiet
+# tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_ticket_id_is_quiet  # noqa: E501
 # frob:tests \
-# tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_leak\
-# ed_tickets_is_quiet
+# tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_leaked_tickets_is_quiet  # noqa: E501
 def cross_ticket_leakage_gate(
     root: Path, ticket_id: str | None
 ) -> tuple[Violation, ...]:
@@ -6950,11 +6872,9 @@ def cross_ticket_leakage_gate(
 # frob:ticket T-1931
 # frob:doc docs/modules/tickets-landing.md#post-mutation-reverification-t-1932
 # frob:tests \
-# tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test\
-# _guard_refusal_survives_an_uncommitted_reintroduction
+# tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_guard_refusal_survives_an_uncommitted_reintroduction  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test\
-# _clean_land_is_unaffected
+# tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_clean_land_is_unaffected  # noqa: E501
 def _reverify_cross_ticket_leakage_post_mutation(
     root: Path,
     worktree: Path,
@@ -7301,8 +7221,7 @@ def _check_orphaned_evidence_deletion(
 
 # frob:ticket T-2066
 # frob:tests \
-# tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindi\
-# ngsNodeGranularity.test_dropped_tickets_evidence_never_orphans_a_land
+# tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity.test_dropped_tickets_evidence_never_orphans_a_land  # noqa: E501
 def _dropped_evidence_is_never_orphaned(other: Ticket) -> bool:
     """Whether `other` is DROPPED (T-2066): `dropped` means "the work as
     specified should NOT be done" (its own state-machine meaning,
@@ -7815,8 +7734,7 @@ def _land_precheck_remaining_checks(
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
 # frob:tests \
-# tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory.test_disjoi\
-# nt_v2_tickets_land_with_no_custom_merge
+# tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
 # (T-1136/T-1258) is a deliberate design doc walking through this exact private \
 # v2-mode merge counterpart's own contract -- same T-0524/T-0529 per-function \
@@ -7949,11 +7867,9 @@ def _timed_load_all(worktree: Path) -> dict[str, Ticket]:
 # frob:ticket T-1914
 # frob:ticket T-4435
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_\
-# fix_shape_would_have_silently_reverted_sibling
+# tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_fix_shape_would_have_silently_reverted_sibling  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_load_is\
-# _reused_by_both_helpers
+# tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_load_is_reused_by_both_helpers  # noqa: E501
 def _sibling_ticket_states(
     worktree: Path,
     landing_id: str,
@@ -7980,11 +7896,9 @@ def _sibling_ticket_states(
 
 # frob:ticket T-4287
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_new_reopen_l\
-# og_entry_is_the_signature
+# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_new_reopen_log_entry_is_the_signature  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_no_reopen_lo\
-# g_returns_empty
+# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_no_reopen_log_returns_empty  # noqa: E501
 def _reopen_log_entries(body: str) -> tuple[str, ...]:
     """Every dated line (`"- YYYY-MM-DD: ..."`) under `body`'s
     `REOPEN_LOG_HEADING` ("## Reopen log") section (T-4287) -- the exact
@@ -8082,17 +7996,13 @@ def _regression_is_audited_reopen(
 # frob:ticket T-1914
 # frob:ticket T-4287
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_regr\
-# essed_sibling_is_detected_by_rank_comparison
+# tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_regressed_sibling_is_detected_by_rank_comparison  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_no_r\
-# egression_when_sibling_state_only_improves_or_holds
+# tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_no_regression_when_sibling_state_only_improves_or_holds  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_audited_reop\
-# en_is_not_flagged_as_regression
+# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_audited_reopen_is_not_flagged_as_regression  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_hand_resurre\
-# ction_without_reopen_log_is_still_refused
+# tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_hand_resurrection_without_reopen_log_is_still_refused  # noqa: E501
 def _assert_no_sibling_state_regression(
     worktree: Path,
     landing_id: str,

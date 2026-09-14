@@ -423,8 +423,7 @@ class TestCrossTicketLeakage:
         assert not (repo / "src" / "held.py").exists()
 
     # frob:tests \
-    # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_queued_\
-    # sibling_scope_overlap_does_not_block
+    # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_queued_sibling_scope_overlap_does_not_block  # noqa: E501
     # frob:ticket T-1639
     def test_queued_sibling_scope_overlap_does_not_block(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
@@ -466,8 +465,7 @@ class TestCrossTicketLeakage:
 
     # frob:ticket T-1639
     # frob:tests \
-    # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_planned\
-    # _sibling_scope_overlap_does_not_block
+    # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_planned_sibling_scope_overlap_does_not_block  # noqa: E501
     # frob:ticket T-1639
     def test_planned_sibling_scope_overlap_does_not_block(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
@@ -757,8 +755,7 @@ class TestCrossTicketLeakage:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sib\
-        # ling_disjoint_frob_lock_ack_entries_do_not_block
+        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_disjoint_frob_lock_ack_entries_do_not_block  # noqa: E501
         """T-4271 must-fire: `held_id` (an unrelated, IN_PROGRESS sibling)
         declares `frob.lock` in its own scope and genuinely commits an ack
         entry to it -- but for a DIFFERENT symref than the landing
@@ -809,8 +806,7 @@ class TestCrossTicketLeakage:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sib\
-        # ling_colliding_frob_lock_ack_entry_still_refuses
+        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_colliding_frob_lock_ack_entry_still_refuses  # noqa: E501
         """T-4271 must-still-refuse: the mirror of the disjoint-ack case
         directly above -- `held_id` and the landing ticket both ack the
         SAME symref at a DIFFERENT digest, a genuine collision on one
@@ -1181,3 +1177,126 @@ class TestPassengerTickets:
         assert result.is_err
         assert result.danger_err == LandError.PassengerTickets
         assert not (repo / "src" / "fix.py").exists()
+
+    # frob:ticket T-4474
+    def test_moved_and_rewrapped_directive_does_not_refuse(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
+        # T-4474's measured 2026-09-13 false-refusal shape: a pre-existing
+        # `frob:ticket <id>` directive is relocated to a DIFFERENT file
+        # AND re-wrapped to a different indentation/column width in the
+        # same motion (an ARCH001-style symbol extraction). T-2082's
+        # exact-text multiset rule refuses this (the whitespace differs);
+        # T-4474's normalized-identity rule must not.
+        prior = new_ticket(repo, _spec("Prior work", scope=("src/original3.py",)))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+        (repo / "src" / "original3.py").write_text(
+            f"#   frob:ticket    {prior_id}\n"
+            "def helper():\n    pass\n\n\ndef other():\n    pass\n"
+        )
+        _commit_all(repo, f"{prior_id}: original location, loosely spaced")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-rewrap", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Split and rewrap", scope=("src/",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "original3.py").write_text("def other():\n    pass\n")
+        (wt / "src" / "extracted3.py").write_text(
+            f"    # frob:ticket {prior_id}\ndef helper():\n    pass\n"
+        )
+        _commit_all(wt, f"{landing_id}: extract helper() and re-wrap the directive")
+
+        with caplog.at_level("INFO"):
+            result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "extracted3.py").exists()
+        assert (repo / "src" / "original3.py").exists()
+        assert prior_id in caplog.text
+        assert "MOVED" in caplog.text
+
+    # frob:ticket T-4474
+    def test_refusal_message_distinguishes_new_from_moved_ids(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
+        # One land carrying BOTH a moved (exempt) directive and a
+        # brand-new (genuine passenger) directive: the refusal must still
+        # fire (on the new id), and the log must name each id's status.
+        prior = new_ticket(repo, _spec("Prior work", scope=("src/original4.py",)))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+        (repo / "src" / "original4.py").write_text(
+            f"# frob:ticket {prior_id}\ndef helper():\n    pass\n\n\n"
+            "def other():\n    pass\n"
+        )
+        _commit_all(repo, f"{prior_id}: original location")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-mixed", str(wt)], repo)
+
+        passenger = new_ticket(
+            wt, _spec("Passenger work", scope=("src/passenger2.py",))
+        )
+        assert passenger.is_ok
+        passenger_id = passenger.danger_ok.id
+        (wt / "src" / "passenger2.py").write_text(f"# frob:ticket {passenger_id}\n")
+        _commit_all(wt, f"{passenger_id}: passenger's own work")
+
+        landing = new_ticket(wt, _spec("Relocate and add", scope=("src/",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "original4.py").write_text("def other():\n    pass\n")
+        (wt / "src" / "extracted4.py").write_text(
+            f"# frob:ticket {prior_id}\ndef helper():\n    pass\n"
+        )
+        _commit_all(wt, f"{landing_id}: relocate prior directive, ride passenger")
+
+        with caplog.at_level("INFO"):
+            result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.PassengerTickets
+        assert not (repo / "src" / "extracted4.py").exists()
+        assert passenger_id in caplog.text
+        assert "NEW" in caplog.text
+        assert prior_id in caplog.text
+        assert "MOVED" in caplog.text
+
+    # frob:ticket T-4474
+    def test_brand_new_directive_still_refuses(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
+        # Control case for T-4474's widened identity rule: a directive
+        # with NO prior occurrence anywhere in the base tree must still
+        # refuse -- normalization must never manufacture a false match
+        # out of thin air.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-brand-new", str(wt)], repo)
+
+        passenger = new_ticket(
+            wt, _spec("Passenger work", scope=("src/passenger3.py",))
+        )
+        assert passenger.is_ok
+        passenger_id = passenger.danger_ok.id
+        (wt / "src" / "passenger3.py").write_text(f"# frob:ticket {passenger_id}\n")
+        _commit_all(wt, f"{passenger_id}: passenger's own work")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix2.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix2.py").write_text("# independent fix\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.PassengerTickets
+        assert not (repo / "src" / "fix2.py").exists()
+        assert not (repo / "src" / "passenger3.py").exists()
