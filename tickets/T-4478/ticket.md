@@ -2,7 +2,7 @@
 id: T-4478
 title: 'post-land sweep regression from T-4474: 1 new (rule, file) identit(ies), 1
   finding(s) (PERF004)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-14'

@@ -6785,31 +6785,40 @@ def _cross_ticket_leakage_violations(
     `Violation` per `(other_ticket_id, leaked_path)` pair `_cross_ticket_
     leakage_findings` returns, annotated with `_scope_claim_reason` the
     same way `_report_leaked_tickets`'s own land-time refusal message
-    is."""
+    is.
+
+    T-4478 (PERF004): the original shape sorted `leaked.items()` once
+    and then `paths` again PER other_id -- one small sort call per
+    outer-loop iteration. Flattening to `(other_id, path)` pairs FIRST
+    and sorting that single flat list ONCE, below, produces the
+    identical `(other_id, path)` iteration order (Python tuple
+    comparison orders by `other_id` first, `path` second, matching the
+    nested sort's own precedence) in exactly one sort pass instead of
+    `1 + len(leaked)`."""
     from frob.gates._models import Severity, Violation
 
+    pairs = [(other_id, p) for other_id, paths in leaked.items() for p in paths]
     violations: list[Violation] = []
-    for other_id, paths in sorted(leaked.items()):
+    for other_id, p in sorted(pairs):
         other = worktree_tickets.get(other_id)
-        for p in sorted(paths):
-            reason = _scope_claim_reason(p, other) if other is not None else "unknown"
-            violations.append(
-                Violation(
-                    rule="CROSSTICKET001",
-                    severity=Severity.ERROR,
-                    file=p,
-                    line=0,
-                    message=(
-                        f"CROSSTICKET001: {p} is covered by {other_id}'s own "
-                        f"scope ({reason}), and {other_id} is still "
-                        f"IN_PROGRESS (T-1355) -- landing {ticket_id} would "
-                        f"carry {other_id}'s unfinished work onto main; "
-                        f"land/park {other_id} first, or `frob ticket land "
-                        f"--allow-cross-ticket` if this is a genuinely "
-                        f"intentional joint land"
-                    ),
-                )
+        reason = _scope_claim_reason(p, other) if other is not None else "unknown"
+        violations.append(
+            Violation(
+                rule="CROSSTICKET001",
+                severity=Severity.ERROR,
+                file=p,
+                line=0,
+                message=(
+                    f"CROSSTICKET001: {p} is covered by {other_id}'s own "
+                    f"scope ({reason}), and {other_id} is still "
+                    f"IN_PROGRESS (T-1355) -- landing {ticket_id} would "
+                    f"carry {other_id}'s unfinished work onto main; "
+                    f"land/park {other_id} first, or `frob ticket land "
+                    f"--allow-cross-ticket` if this is a genuinely "
+                    f"intentional joint land"
+                ),
             )
+        )
     return tuple(violations)
 
 
