@@ -2,7 +2,7 @@
 id: T-4480
 title: FMT001 test and gate must accept the T-4475 noqa-suffixed over-limit directive
   line
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-14'
