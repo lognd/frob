@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_archive.py
 - tests/unit/test_leases_staleness_perf.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,14 @@ scope_changes:
   reason: new tests/unit/test_leases_staleness_perf.py real-git-fixture test needs
     exec/fs.write capability declarations in the testsuite node's may-via lists (SELFAUDIT001/SYS100),
     same shape every other real-git-fixture test file already has
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: adding tests/unit/test_leases_staleness_perf.py to the testsuite exec/fs.write
+    via-lists (SELFAUDIT001) grows both capability-ratchet site counts by 1; the committed
+    lock ceiling must move with it (SYS111), same T-2001 shape every prior via-list-adding
+    ticket already re-baselines
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
