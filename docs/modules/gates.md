@@ -275,7 +275,7 @@ declaration).
 | VET009 | vet | (error) a GitHub Actions `uses: owner/action@ref` pins to a mutable ref (branch/tag) rather than a full commit SHA (`frob.vet._supplychain`) |
 | VET010 | vet | (error) a tracked binary blob (.whl/.so/.node/.wasm and similar) is committed to the repo tree (`frob.vet._supplychain`) |
 | VET011 | vet | (error/warn by cooldown window) a dependency was newly published within the configured quarantine cooldown window (error) or is otherwise unverified against the NVD feed (warn) -- publish-cooldown quarantine (`frob.vet._scan_violations`, `frob.vet._nvd`) |
-| VERSION001 | gates | (error, T-3011) frob's own version, its `frob-core`/`strata-core` extra pins, and `frob-core/pyproject.toml`'s/`strata-core/pyproject.toml`'s own `version` fields disagree, or an extra pin is not an exact `==` pin -- three separately published artifacts drifting apart (`frob.gates._version_coupling`) |
+| VERSION001 | gates | (error, T-3011) frob's own version, its `frob-core`/`frob-strata` extra pins, and `frob-core/pyproject.toml`'s/`strata-core/pyproject.toml`'s own `version` fields disagree, or an extra pin is not an exact `==` pin -- three separately published artifacts drifting apart (`frob.gates._version_coupling`) |
 | VMOD001 | gates | (opt-in, T-3042) a `.strata` design file's declared `vmodel_node`/`vmodel_edge` requirement/spec/design/test graph fails `strata-core::graph::vmodel`'s structural closure check; silent when no design dir or zero vmodel declarations exist (`frob.gates._vmodel`) |
 | WAIVE006 | (always on) | (error) a `frob:waive`/`waive` site binds to a CLOSED ticket (DONE/DROPPED) -- a waiver justified by a pending ticket must not outlive it; re-justify with a new ticket or fix the underlying issue (`frob.gates._waive_comments`) |
 | WAIVE007 | (always on) | (warn) a `frob:waive`/`waive` site's bound ticket ref does not resolve to any ticket (active or archived) -- dangling waiver justification (`frob.gates._waive_comments`) |
@@ -2729,7 +2729,7 @@ docs/modules/gates.md#ffi001-ffi002-t-0690) supplies both, per
 the parent ticket's three-tier FFI mandate:
 
 - **FFI001** (pyo3 cross-check drift, tier 1 -- our own pyo3 crates,
-  `strata-core`/`frob-core`): every `.pyi` stub whose module docstring
+  `frob-strata`/`frob-core`): every `.pyi` stub whose module docstring
   carries a `frob:describes <path>.rs` pragma is paired with that Rust
   source file; `frob.arch._ffi.scan_pyo3_raises` computes each
   `#[pyfunction]`'s OBSERVED raised-type set (explicit `Py<X>Error::
@@ -3686,7 +3686,7 @@ reference (frob invoking its own `python -m frob` CLI, or maintainer-
 facing diagnostic message text naming a real file for a human reader --
 the same class PORT001-IDENT's own advisory tier already exists for) and
 1 (`src/frob/graph/cache.py`'s `_NON_LANGUAGE_FINGERPRINT_PACKAGES =
-("frob", "strata-core")`) is a genuine candidate, filed separately
+("frob", "frob-strata")`) is a genuine candidate, filed separately
 (T-3275 Done report names the ticket) rather than fixed inside this
 widening, per this ticket's own "report, do not fix here" instruction.
 Also disclosed: NEITHER of PORT001's two AST shapes

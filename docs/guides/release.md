@@ -1,11 +1,11 @@
-# Release: publishing `frob`, `frob-core`, and `strata-core` (T-3011)
+# Release: publishing `frob`, `frob-core`, and `frob-strata` (T-3011)
 
 frob ships three separately-published artifacts:
 
 - `frob` -- pure Python, setuptools-built, `uv build --wheel`.
 - `frob-core` -- PyO3/`abi3-py311` extension (frob.dup R3+ clone-detection
   kernels), maturin-built.
-- `strata-core` -- PyO3/`abi3-py311` extension (frob.strata closure/
+- `frob-strata` -- PyO3/`abi3-py311` extension (frob.strata closure/
   staleness/demand kernels), maturin-built.
 
 `abi3-py311` collapses the Python-version axis to ONE wheel per platform
@@ -104,7 +104,7 @@ for every later dispatch.
 
 1. **`build`** (+ `build-sdists`) -- runs on every manual dispatch
    (`workflow_dispatch`), no approval needed. A `maturin-action`-based
-   matrix builds `frob-core` and `strata-core` wheels for all five targets
+   matrix builds `frob-core` and `frob-strata` wheels for all five targets
    plus their sdists, and a plain `uv build` step builds the pure-Python
    `frob` wheel + sdist. Everything is uploaded as a CI artifact
    (`actions/upload-artifact`) and retained -- this is the "prove it
@@ -113,7 +113,7 @@ for every later dispatch.
    approval needed either; see [below](#verify-ci-status) for what it
    checks and why it exists as a fourth gate alongside the three T-3011
    gates, not a replacement for any of them.
-3. **`upload-frob-core`**, **`upload-strata-core`**, **`upload-frob`**
+3. **`upload-frob-core`**, **`upload-frob-strata`**, **`upload-frob`**
    (T-4263) -- one job per published distribution, each `needs: [build,
    build-sdists, verify-ci-status, artifact-smoke]`, `upload-frob`
    additionally `needs:` both kernel jobs (the ordering contract below).
@@ -124,14 +124,14 @@ for every later dispatch.
    identical tuple -- the first registration succeeded and PyPI refused
    the second as a duplicate. Splitting into one job per distribution,
    each with its own GitHub Environment (`pypi-frob-core`,
-   `pypi-strata-core`, `pypi`), gives each distribution a distinct tuple
+   `pypi-frob-strata`, `pypi`), gives each distribution a distinct tuple
    to register. Only `upload-frob`'s environment (`pypi`, the
    pre-existing protected environment) has a required reviewer
    configured in the repo's environment protection rules -- GitHub will
    not start that job until a human with reviewer access clicks Approve
    on that specific run, the approval recorded on the run itself, not
    merely a runbook convention. The two kernel jobs' environments
-   (`pypi-frob-core`, `pypi-strata-core`) deliberately have no required
+   (`pypi-frob-core`, `pypi-frob-strata`) deliberately have no required
    reviewer: a kernel publish already passes the same four upstream gates
    (green CI, real built wheels, a passing artifact-smoke, and manual
    dispatch) and is a strict prerequisite `upload-frob` cannot proceed
@@ -184,12 +184,12 @@ its `needs: build` dependency.
 <a id="version-coupling-t-3011"></a>
 ## Decision 1: version coupling (`==`, all three, cut together)
 
-`frob`, `frob-core`, and `strata-core` are pinned to the exact same
+`frob`, `frob-core`, and `frob-strata` are pinned to the exact same
 version string, always. `frob`'s own `pyproject.toml` declares:
 
 ```toml
 [project.optional-dependencies]
-native = ["frob-core==<X.Y.Z>", "strata-core==<X.Y.Z>"]
+native = ["frob-core==<X.Y.Z>", "frob-strata==<X.Y.Z>"]
 ```
 
 and `frob-core/pyproject.toml` / `strata-core/pyproject.toml` each declare
@@ -233,7 +233,7 @@ carries other tickets' scope) and is filed as a follow-up.
 <a id="native-acceleration-degrade-doctrine-t-3011"></a>
 ## Decision 2: no wheel matches -> degrade loudly, never build from source
 
-An sdist fallback would make `pip install frob-core`/`strata-core` build
+An sdist fallback would make `pip install frob-core`/`frob-strata` build
 from source when no prebuilt wheel matches the install target, requiring a
 Rust toolchain on a machine that almost certainly does not have one -- a
 miserable first run for exactly the adopter this whole effort exists to
@@ -282,7 +282,7 @@ registrations collide as duplicates of the first. Register:
 | PyPI project | Environment name to register |
 | --- | --- |
 | `frob-core` | `pypi-frob-core` |
-| `strata-core` | `pypi-strata-core` |
+| `frob-strata` | `pypi-frob-strata` |
 | `frob` | `pypi` |
 
 All three name this same repo and `release.yml` as the workflow file --
@@ -432,7 +432,7 @@ later tag both refer back to it):
    them identical (no tool currently writes an arbitrary target version
    across all three -- see the gap above): `pyproject.toml`'s
    `[project].version`, the `native` extra's two pins
-   (`frob-core==<X.Y.Z>`, `strata-core==<X.Y.Z>`), `frob-core/
+   (`frob-core==<X.Y.Z>`, `frob-strata==<X.Y.Z>`), `frob-core/
    pyproject.toml`'s `version`, and `strata-core/pyproject.toml`'s
    `version`.
 5. **Stamp**, against the now-bumped `pyproject.toml` and the frozen
@@ -476,7 +476,7 @@ later tag both refer back to it):
    fails on any target, none of the `upload-*` jobs can start (see
    [Decision 6](#artifact-smoke-stage-t-3884)) -- check that job's logs
    before assuming a stalled release is only waiting on approval.
-10. **Owner approval.** `upload-frob-core` and `upload-strata-core` need
+10. **Owner approval.** `upload-frob-core` and `upload-frob-strata` need
     no approval and run automatically once `build`, `build-sdists`,
     `verify-ci-status`, and `artifact-smoke` have all passed, publishing
     those two kernels via OIDC trusted publishing (no stored token). The
@@ -609,7 +609,7 @@ installing the artifact can.
    reads.
 
 **Local dist vs index resolution -- local wheel, REAL index for
-everything else, deliberately not TestPyPI.** `frob-core`/`strata-core`
+everything else, deliberately not TestPyPI.** `frob-core`/`frob-strata`
 are default dependencies of `frob` itself now (T-3845), pinned exact to
 frob's own version, so the smoke stage's `uv pip install <local-wheel>`
 resolves those two from a `--find-links` directory of the just-built
@@ -652,7 +652,7 @@ with an opaque uv "requirements are unsatisfiable" trace: the
 `actions/cache` entry backing <!-- frob:waive DOC006 reason="build-output directory, gitignored -- never a tracked source file, illustrative of a CI-runner-local path" -->`frob-core/target`/`strata-core/target` is
 keyed on the two `Cargo.lock` files, which a version-only bump (no
 dependency change) leaves byte-identical, so the cache restored the
-PRIOR version's `frob_core-0.530.0`/`strata_core-0.530.0` wheels
+PRIOR version's `frob_core-0.530.0`/`frob_strata-0.530.0` wheels
 verbatim while the smoke stage was about to install
 `frob-core==0.531.0`. Three layers, no single one trusted alone: (1) the
 cache key (`.github/workflows/ci.yml`) now also hashes both kernels'
@@ -662,7 +662,7 @@ target `ci.yml` calls after `make core`) unconditionally removes and
 rebuilds each crate's `target/wheels/*.whl` every run, so even a cache
 hit cannot leave a stale wheel there; (3) `main` reads the
 wheel-about-to-install's own `Requires-Dist: frob-core==X`/
-`strata-core==X` pins straight out of its METADATA (`_read_core_pins`)
+`frob-strata==X` pins straight out of its METADATA (`_read_core_pins`)
 and `_require_core_wheels` (via `_classify_core_wheels`) rejects any
 candidate wheel whose filename version does not match, naming the stale
 version found and the version needed -- so even if (1) and (2) were both

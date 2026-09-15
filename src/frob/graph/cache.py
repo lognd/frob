@@ -117,7 +117,7 @@ _SCHEMA_VERSION = 4
 # T-0243 malmberg pilot incident (2830 vs 3007 symbols from a stale cache
 # after a frob upgrade).
 # frob:ticket T-0402
-# G6: "strata-core" was missing here -- a strata-core native-extension
+# G6: "frob-strata" was missing here -- a frob-strata native-extension
 # upgrade that changed `.strata` parse output would NOT invalidate the
 # cache, exactly the T-0243 incident this mechanism exists to prevent,
 # reintroduced for `.strata`.
@@ -125,7 +125,7 @@ _SCHEMA_VERSION = 4
 # G6 (full fix): the tree-sitter grammar packages are now DERIVED from
 # `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` -- the module that actually owns
 # grammar loading -- instead of hand-copied here. "frob" (this
-# distribution's own extraction/digest logic) and "strata-core" (the one
+# distribution's own extraction/digest logic) and "frob-strata" (the one
 # non-tree-sitter grammar) are not `frob.lang` grammar packages, so they
 # stay listed here explicitly; every tree-sitter-loaded language's
 # fingerprint surface now updates automatically if `frob.lang` ever adds or
@@ -136,7 +136,7 @@ _SCHEMA_VERSION = 4
 # whatever repo it happens to be scanning. The fingerprint's job is "would
 # a version bump of a package that determines parse OUTPUT silently make
 # this cache stale" -- and the packages that determine THIS cache's parse
-# output are always frob's own extraction/digest code and strata-core's
+# output are always frob's own extraction/digest code and frob-strata's
 # native `.strata` grammar, regardless of which repo is under analysis. A
 # consumer repo's own dependencies play no part in how frob.graph parses
 # that repo's source, so there is nothing to "resolve from the scanned
@@ -144,7 +144,7 @@ _SCHEMA_VERSION = 4
 # pass/false-fire class, retargeting this to be config-driven would not
 # fix a real cross-repo bug, only replace two names that are correct for
 # every host repo with a lookup that could return the wrong ones.
-_NON_LANGUAGE_FINGERPRINT_PACKAGES = ("frob", "strata-core")
+_NON_LANGUAGE_FINGERPRINT_PACKAGES = ("frob", "frob-strata")
 _FINGERPRINT_PACKAGES = (
     *_NON_LANGUAGE_FINGERPRINT_PACKAGES,
     *sorted(GRAMMAR_FINGERPRINT_PACKAGES),
@@ -228,8 +228,7 @@ _LOCK_BACKOFF_CAP_SECONDS = _LOCK_POLL_SECONDS
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_never_exceeds_remaining_\
-# budget
+# tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_never_exceeds_remaining_budget  # noqa: E501
 def _lock_backoff_seconds(attempt: int, *, remaining: float) -> float:
     """The delay (seconds) before lock-retry attempt number `attempt`
     (0-indexed) -- exponential backoff starting at
@@ -278,8 +277,7 @@ _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS = 2.0
 # frob:raises OSError
 # frob:ticket T-4456
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_\
-# absent_during_recreate
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501
 def _publish_by_overwrite_win32(tmp_path: Path, path: Path, *, what: str) -> bool:
     """Windows-only last-resort publish for `_replace_with_retry`: write
     `tmp_path`'s bytes into `path` IN PLACE instead of retargeting
@@ -426,17 +424,13 @@ def _replace_with_retry(tmp_path: Path, path: Path, *, what: str) -> None:
 # frob:ticket T-4411
 # frob:doc docs/modules/graph.md#cache
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_seeds_from_an_ex\
-# isting_primary_cache
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_seeds_from_an_existing_primary_cache  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_no_primary_cache\
-# _is_a_quiet_no_op
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_no_primary_cache_is_a_quiet_no_op  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_primary_journal_\
-# present_skips_seeding
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_primary_journal_present_skips_seeding  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_empty_primary_jo\
-# urnal_does_not_block_seeding
+# tests/unit/test_graph_cache.py::TestSeedDisposableWorktreeCache.test_empty_primary_journal_does_not_block_seeding  # noqa: E501
 def seed_disposable_worktree_cache(primary_root: Path, worktree_root: Path) -> bool:
     """T-4411: copy `primary_root`'s `.frob/cache.db` into a freshly-cut
     disposable land worktree, so the synchronous check's `load_graph`
@@ -522,11 +516,9 @@ def seed_disposable_worktree_cache(primary_root: Path, worktree_root: Path) -> b
 
 # frob:ticket T-3644
 # frob:tests \
-# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never\
-# _commit_to_the_same_cache_concurrently
+# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
 # frob:tests \
-# tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not\
-# _retried
+# tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
 def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
     """True iff `exc` is contention this module's lock-retry loops should
     poll past rather than let escape (T-3644).
@@ -554,8 +546,7 @@ def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
 
 # frob:ticket T-3669
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestHandleIdentity.test_readonly_database_is_classifi\
-# ed_as_a_handle_fault
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_readonly_database_is_classified_as_a_handle_fault  # noqa: E501
 def _is_readonly_handle_error(exc: sqlite3.Error) -> bool:
     """True iff `exc` is sqlite's `attempt to write a readonly database`
     (T-3669) -- the shape a WRITE through a handle bound to a replaced-away
@@ -638,11 +629,9 @@ def _scan_proc_fd_pids(target: str) -> tuple[int, ...]:
 
 # frob:ticket T-4282
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
-# ds_linux_finds_a_real_open_fd
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pids_linux_finds_a_real_open_fd  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pi\
-# ds_excludes_self
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_lock_holder_pids_excludes_self  # noqa: E501
 def _lock_holder_pids_linux(path: Path) -> tuple[int, ...]:
     """PIDs with an open file descriptor on `path`, found by walking
     `/proc/*/fd` symlinks (T-4282: obligation [2], naming a `CacheLocked`
@@ -781,14 +770,11 @@ def _holder_cmdline(pid: int) -> str | None:
 
 # frob:ticket T-4282
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_\
-# holders_reports_pid_and_command
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_holders_reports_pid_and_command  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_\
-# holders_degrades_without_a_path
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_holders_degrades_without_a_path  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_\
-# holders_degrades_with_no_pid_found
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_describe_lock_holders_degrades_with_no_pid_found  # noqa: E501
 def _describe_lock_holders(path: Path | None) -> str:
     """A human-readable clause naming the process(es) holding `path` open,
     for `CacheLocked` messages (T-4282, obligation [2]).
@@ -822,11 +808,9 @@ def _describe_lock_holders(path: Path | None) -> str:
 # frob:ticket T-1423
 # frob:doc docs/modules/graph.md#lock-contention-t-1423
 # frob:tests \
-# tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exh\
-# austed
+# tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exhausted  # noqa: E501
 # frob:tests \
-# tests/test_graph_lock.py::TestCacheLockRetry.test_build_graph_reports_err_instead_of_\
-# crashing_on_cache_locked
+# tests/test_graph_lock.py::TestCacheLockRetry.test_build_graph_reports_err_instead_of_crashing_on_cache_locked  # noqa: E501
 class CacheLocked(sqlite3.OperationalError):
     """A cache operation could not acquire the sqlite lock within the retry
     budget (T-1423). Distinct from a bare `sqlite3.OperationalError` so a
@@ -838,17 +822,13 @@ class CacheLocked(sqlite3.OperationalError):
 
 # frob:ticket T-1423
 # frob:tests \
-# tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transi\
-# ent_lock
+# tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transient_lock  # noqa: E501
 # frob:tests \
-# tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not\
-# _retried
+# tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
 # frob:tests \
-# tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held\
-# _exclusive_lock
+# tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held_exclusive_lock  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_with_lock_retr\
-# y_names_holder_in_cache_locked_message
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_with_lock_retry_names_holder_in_cache_locked_message  # noqa: E501
 # frob:raises CacheLocked
 # frob:ticket T-3669
 # frob:ticket T-4282
@@ -867,8 +847,7 @@ def _should_retry_lock_error(exc: sqlite3.OperationalError, extra_transient) -> 
 
 # frob:ticket T-4454
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_rea\
-# der_survives_concurrent_recreate
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_reader_survives_concurrent_recreate  # noqa: E501
 def _with_lock_retry(  # noqa: ANN201
     op,  # noqa: ANN001
     *,
@@ -944,8 +923,7 @@ def _with_lock_retry(  # noqa: ANN201
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap
 # frob:tests \
-# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_connect_with_b\
-# ackoff_raises_cache_locked_naming_holder
+# tests/unit/test_graph_lock_holder_naming.py::TestLockHolderNaming.test_connect_with_backoff_raises_cache_locked_naming_holder  # noqa: E501
 # frob:raises CacheLocked
 def _connect_with_backoff(path: Path) -> sqlite3.Connection:
     """`sqlite3.connect(path)`, retrying a transient lock with exponential
@@ -1029,8 +1007,7 @@ _CONN_IDENTITY_MAX_ENTRIES = 512
 
 # frob:ticket T-3669
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestHandleIdentity.test_identity_changes_after_os_rep\
-# lace
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_identity_changes_after_os_replace  # noqa: E501
 def _file_identity(path: Path) -> tuple[int, int] | None:
     """The `(st_dev, st_ino)` pair naming the file currently at `path`, or
     `None` if it does not exist (T-3669) -- the value a cache connection's
@@ -1058,8 +1035,7 @@ def _close_conn(conn: sqlite3.Connection) -> None:
 
 # frob:ticket T-3669
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestHandleIdentity.test_store_file_data_after_a_repla\
-# ce_lands_on_the_live_file
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_store_file_data_after_a_replace_lands_on_the_live_file  # noqa: E501
 def _reopen_without_closing(
     conn: sqlite3.Connection, path: Path
 ) -> sqlite3.Connection | None:
@@ -1091,8 +1067,7 @@ def _reopen_without_closing(
 
 # frob:ticket T-3669
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestHandleIdentity.test_replaced_away_handle_is_reope\
-# ned_before_the_next_read
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_replaced_away_handle_is_reopened_before_the_next_read  # noqa: E501
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestHandleIdentity.test_live_handle_is_not_reopened
 def _reopen_if_replaced(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
@@ -1212,11 +1187,9 @@ def _open(path: Path) -> sqlite3.Connection:
 # frob:ticket T-0141
 # frob:ticket T-4412
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_cla\
-# ssified_as_unreadable
+# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_classified_as_unreadable  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malformed_db\
-# _still_rebuilds
+# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malformed_db_still_rebuilds  # noqa: E501
 def _read_schema_version(
     conn: sqlite3.Connection, path: Path
 ) -> tuple[sqlite3.Connection, int | None]:
@@ -1572,11 +1545,9 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
 
 # frob:ticket T-4454
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_\
-# absent_during_recreate
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarantined\
-# _sidecars_are_renamed_not_unlinked
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarantined_sidecars_are_renamed_not_unlinked  # noqa: E501
 def _quarantine_sidecars(path: Path) -> None:
     """Rename `path`'s `-wal`/`-shm` sidecars aside to a quarantined
     sibling name (T-3607), best-effort -- shared by `_recreate` so the
@@ -1617,8 +1588,7 @@ def _quarantine_sidecars(path: Path) -> None:
 
 # frob:ticket T-4454
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_\
-# absent_during_recreate
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501
 def _quarantine_main_db(path: Path) -> None:
     """Preserve the CURRENT `path` under a quarantined sibling name via a
     hard LINK (not a rename), best-effort, before the caller's
@@ -1771,8 +1741,7 @@ _GENUINE_CORRUPTION_ERROR_SHAPES = (
 
 # frob:ticket T-4159
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconne\
-# ct_rebuilds_and_completes_on_corruption kind="unit"
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
 def _is_genuine_corruption_shape(exc: sqlite3.Error) -> bool:
     """`True` iff `exc`'s message names one of `_GENUINE_CORRUPTION_ERROR_
     SHAPES` -- a shape a fresh connection to the SAME path cannot recover
@@ -1784,8 +1753,7 @@ def _is_genuine_corruption_shape(exc: sqlite3.Error) -> bool:
 
 # frob:ticket T-4159
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_report\
-# s_corrupt kind="unit"
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_reports_corrupt kind="unit"  # noqa: E501
 def _cache_integrity_ok(path: Path) -> bool:
     """`True` only if sqlite's own `PRAGMA integrity_check` reports the
     single row `"ok"` for the database at `path` (T-4159's detection
@@ -1818,8 +1786,7 @@ def _cache_integrity_ok(path: Path) -> bool:
 
 # frob:ticket T-4159
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_hea\
-# ls kind="unit"
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_heals kind="unit"  # noqa: E501
 def _rebuild_because_corrupt(path: Path, *, what: str) -> sqlite3.Connection:
     """T-4159's repair half: `path`'s own `PRAGMA integrity_check` has
     already reported it corrupt (never called speculatively -- always
@@ -1952,11 +1919,9 @@ def _reconnect_delay_for(
 # frob:ticket T-4159
 # frob:ticket T-4402
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconne\
-# ct_rebuilds_and_completes_on_corruption kind="unit"
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_closes_t\
-# he_callers_stale_connection_first
+# tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_closes_the_callers_stale_connection_first  # noqa: E501
 def _rebuild_if_genuinely_corrupt(
     active: sqlite3.Connection,
     path: Path | None,
@@ -2131,8 +2096,7 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
 # frob:ticket T-3669
 # frob:ticket T-3700
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_\
-# processes_connecting_concurrently_never_see_no_such_table_meta
+# tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_processes_connecting_concurrently_never_see_no_such_table_meta  # noqa: E501
 def _check_fingerprint_with_recovery(
     conn: sqlite3.Connection, path: Path
 ) -> sqlite3.Connection:
@@ -2353,11 +2317,9 @@ _INPROCESS_WRITE_LOCKS_GUARD = threading.Lock()
 
 # frob:ticket T-3644
 # frob:tests \
-# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never\
-# _commit_to_the_same_cache_concurrently
+# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_\
-# after_forced_schema_rebuild_returns_a_fresh_live_connection
+# tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection  # noqa: E501
 def _inprocess_write_lock(path: Path) -> threading.RLock:
     """The per-resolved-path lock serializing `connect()` calls WITHIN this
     process (T-3644).
@@ -2398,14 +2360,11 @@ def _inprocess_write_lock(path: Path) -> threading.RLock:
 # frob:ticket T-4412
 # frob:doc docs/modules/graph.md#cache
 # frob:tests \
-# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never\
-# _commit_to_the_same_cache_concurrently
+# tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
 # frob:tests \
-# tests/test_graph.py::TestConcurrentCache.test_connect_on_current_schema_does_not_bloc\
-# k_on_a_held_write_lock
+# tests/test_graph.py::TestConcurrentCache.test_connect_on_current_schema_does_not_block_on_a_held_write_lock  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_cla\
-# ssified_as_unreadable
+# tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_classified_as_unreadable  # noqa: E501
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.
 
@@ -2508,11 +2467,9 @@ def connect(path: Path) -> sqlite3.Connection:
 # frob:ticket T-4454
 # frob:doc docs/modules/graph.md#cache
 # frob:tests \
-# tests/test_graph.py::TestCacheModule.test_connect_readonly_rejects_writes_no_lock_con\
-# tention
+# tests/test_graph.py::TestCacheModule.test_connect_readonly_rejects_writes_no_lock_contention  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_rea\
-# der_survives_concurrent_recreate
+# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_reader_survives_concurrent_recreate  # noqa: E501
 def connect_readonly(path: Path) -> sqlite3.Connection:
     """A connection that can never take sqlite's write lock -- for callers
     (`load_graph`, and any gate that only reads the snapshot) that must
@@ -2603,8 +2560,7 @@ def _read_root(conn: sqlite3.Connection) -> str | None:
 # excludes module-alias dotted calls -- new-in-diff only because T-3700 rewrapped the \
 # body" follow_up="T-3703"
 # frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_\
-# processes_connecting_concurrently_never_see_no_such_table_meta
+# tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_processes_connecting_concurrently_never_see_no_such_table_meta  # noqa: E501
 def get_root(conn: sqlite3.Connection) -> str | None:
     """The stored repo root, if any snapshot has ever been saved.
 

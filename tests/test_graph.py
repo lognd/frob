@@ -435,8 +435,7 @@ def foo() -> None:
         assert edges[0].src == f"{pf.path}::foo"
 
     # frob:tests \
-    # tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_no\
-    # t_silent
+    # tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_not_silent  # noqa: E501
     # frob:ticket T-0269
     def test_invalid_kind_in_module_docstring_is_surfaced_not_silent(
         self, tmp_path: Path
@@ -703,7 +702,7 @@ class TestParseFailures:
     def test_native_parser_unavailable_is_not_a_parse_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """The expected T-0133 degrade path (no strata-core native install)
+        """The expected T-0133 degrade path (no frob-strata native install)
         must NOT be reported as a `ParseFailure` -- it is a known,
         environment-level skip, not a file frob.lang genuinely could not
         parse."""
@@ -847,7 +846,7 @@ class TestBuildIncremental:
 
         assert GRAMMAR_FINGERPRINT_PACKAGES <= set(graph_cache._FINGERPRINT_PACKAGES)
         assert "frob" in graph_cache._FINGERPRINT_PACKAGES
-        assert "strata-core" in graph_cache._FINGERPRINT_PACKAGES
+        assert "frob-strata" in graph_cache._FINGERPRINT_PACKAGES
 
     def test_stored_hash_matches_bytes_actually_parsed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -86,7 +86,7 @@ def _run(
 # module's own docstring is the authoritative description, see T-3935's Done report"
 _REQUIRED_CORE_WHEEL_GLOBS = {
     "frob-core": "frob_core-*.whl",
-    "strata-core": "strata_core-*.whl",
+    "frob-strata": "frob_strata-*.whl",
 }
 
 # T-3980: maps sys.platform to the wheel platform-tag prefixes a wheel
@@ -198,7 +198,7 @@ def _read_core_pins(wheel_path: Path) -> dict[str, str]:
             text = zf.read(metadata_name).decode("utf-8", errors="replace")
     except (OSError, zipfile.BadZipFile):
         return pins
-    for dist in ("frob-core", "strata-core"):
+    for dist in ("frob-core", "frob-strata"):
         match = re.search(
             rf"^Requires-Dist:\s*{re.escape(dist)}\s*==\s*([^\s;]+)",
             text,
@@ -307,7 +307,7 @@ def _classify_core_wheels(
 def _require_core_wheels(
     core_wheels_dir: Path, pins: dict[str, str] | None = None
 ) -> None:
-    """T-3935: `frob-core`/`strata-core` are hard `==`-pinned DEFAULT
+    """T-3935: `frob-core`/`frob-strata` are hard `==`-pinned DEFAULT
     dependencies of `frob` (T-3845) that are not published to any
     registry, so `--find-links core_wheels_dir` is the ONLY way an
     install of the built wheel can ever resolve them. Without this
@@ -334,7 +334,7 @@ def _require_core_wheels(
     version while the pin moved on; uv then failed with an opaque
     "requirements are unsatisfiable" trace instead of naming the stale
     wheel). `pins` maps the required dist name ("frob-core"/
-    "strata-core") to the exact version this install is about to
+    "frob-strata") to the exact version this install is about to
     attempt -- `main` reads it from the frob wheel's own METADATA via
     `_read_core_pins`. `None`, or a name missing from `pins`, skips the
     version check for that dist (the pre-T-4465 permissive behavior).
@@ -366,7 +366,7 @@ def _require_core_wheels(
             "T-4465 cached-target-dir shape (a stale actions/cache "
             "restore of target/wheels from before a crate version bump), "
             "not a missing core or a wrong platform -- rebuild frob-core/"
-            "strata-core (`make core-wheels`) so target/wheels holds the "
+            "frob-strata (`make core-wheels`) so target/wheels holds the "
             "current version.",
         )
     if wrong_platform:
@@ -405,7 +405,7 @@ def _pip_install(python: Path, spec: str, *, find_links: Path | None = None) -> 
     catch (an extra's pin failing to resolve against a REAL index, not a
     frozen local one). `find_links` adds a local wheel directory to the
     search path ALONGSIDE the index, for `frob[native]`'s exact-pinned
-    `frob-core`/`strata-core` wheels, which do not exist on the index yet
+    `frob-core`/`frob-strata` wheels, which do not exist on the index yet
     at smoke-test time (this stage runs BEFORE publish)."""
     argv = ["uv", "pip", "install", "--python", str(python), spec]
     if find_links is not None:
@@ -477,7 +477,7 @@ def check_base_install(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) 
     doctor` (T-3884's own acceptance -- it exists precisely to report
     native-extension and environment health, so it exercises the
     dependency surface, not just the CLI parser). `core_wheels_dir` is
-    required even here (T-3845: `frob-core`/`strata-core` are now plain
+    required even here (T-3845: `frob-core`/`frob-strata` are now plain
     DEFAULT dependencies of `frob` itself, not only of the `native`
     extra, so even a bare install needs them resolvable and the index
     does not have this release's cores yet at smoke-test time).
@@ -542,7 +542,7 @@ def check_serve_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -
 # accepted"
 def check_native_extra(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -> None:
     """`frob[native]` must install into a clean venv (resolving
-    `frob-core`/`strata-core`'s exact pins against `core_wheels_dir` --
+    `frob-core`/`frob-strata`'s exact pins against `core_wheels_dir` --
     the just-built platform wheels, since the smoke stage runs BEFORE
     publish and the index does not have this release's cores yet) and
     the natives must import through FROB'S OWN code path

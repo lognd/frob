@@ -58,7 +58,7 @@ def _host_platform_tag() -> str:
 
 def _touch_core_wheels(core_dir: Path) -> None:
     """T-3935: `main`'s `_require_core_wheels` preflight checks the real
-    filesystem for `frob_core-*.whl`/`strata_core-*.whl` (it runs before
+    filesystem for `frob_core-*.whl`/`frob_strata-*.whl` (it runs before
     any mocked `_run` call), so every `main`-level test that mocks
     installs green must still drop matching placeholder files here or
     the preflight itself fails the test before the mocked checks run.
@@ -69,7 +69,7 @@ def _touch_core_wheels(core_dir: Path) -> None:
     core_dir.mkdir(exist_ok=True)
     tag = _host_platform_tag()
     (core_dir / f"frob_core-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
-    (core_dir / f"strata_core-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+    (core_dir / f"frob_strata-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
 
 
 class TestCheckBaseInstall:
@@ -250,10 +250,10 @@ class TestRequireCoreWheels:
         with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
             artifact_smoke._require_core_wheels(core_dir)
         assert "frob-core" in str(exc_info.value)
-        assert "strata-core" in str(exc_info.value)
+        assert "frob-strata" in str(exc_info.value)
 
     def test_one_core_absent_names_only_that_one(self, tmp_path: Path) -> None:
-        """Only `strata-core`'s wheel is missing -> the error names
+        """Only `frob-strata`'s wheel is missing -> the error names
         exactly that one, not `frob-core` (which IS present)."""
         core_dir = tmp_path / "cores"
         core_dir.mkdir()
@@ -261,10 +261,10 @@ class TestRequireCoreWheels:
         (core_dir / f"frob_core-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
         with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
             artifact_smoke._require_core_wheels(core_dir)
-        # the missing-list clause names exactly strata-core, not frob-core
+        # the missing-list clause names exactly frob-strata, not frob-core
         # (which IS present) -- the boilerplate sentence after it mentions
         # frob-core by name regardless, so check the specific clause.
-        assert "wheel for: strata-core." in str(exc_info.value)
+        assert "wheel for: frob-strata." in str(exc_info.value)
 
     def test_both_cores_present_does_not_raise(self, tmp_path: Path) -> None:
         """Both wheels present -> no exception."""
@@ -274,7 +274,7 @@ class TestRequireCoreWheels:
 
     def test_wrong_platform_wheel_names_the_mismatch(self, tmp_path: Path) -> None:
         """T-3980 MUST-FIRE fixture: a wheel that glob-matches
-        `frob_core-*.whl`/`strata_core-*.whl` but was built for a
+        `frob_core-*.whl`/`frob_strata-*.whl` but was built for a
         DIFFERENT platform than this host must fail with a message
         naming it as a platform mismatch, not silently pass the preflight
         (only to surface as an opaque resolver trace downstream, or --
@@ -285,14 +285,14 @@ class TestRequireCoreWheels:
         # not macosx/win/manylinux-or-linux at all.
         wrong_tag = "some_other_os_never_a_real_host_9999"
         (core_dir / f"frob_core-0.1.0-cp311-abi3-{wrong_tag}.whl").write_bytes(b"")
-        (core_dir / f"strata_core-0.1.0-cp311-abi3-{wrong_tag}.whl").write_bytes(b"")
+        (core_dir / f"frob_strata-0.1.0-cp311-abi3-{wrong_tag}.whl").write_bytes(b"")
 
         with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
             artifact_smoke._require_core_wheels(core_dir)
         message = str(exc_info.value)
         assert "different platform" in message
         assert "frob-core" in message
-        assert "strata-core" in message
+        assert "frob-strata" in message
 
     def test_matching_platform_wheel_does_not_raise(self, tmp_path: Path) -> None:
         """T-3980 MUST-STAY-QUIET fixture: a wheel tagged for THIS host
@@ -311,15 +311,15 @@ class TestRequireCoreWheels:
         core_dir.mkdir()
         tag = _host_platform_tag()
         (core_dir / f"frob_core-0.530.0-cp311-abi3-{tag}.whl").write_bytes(b"")
-        (core_dir / f"strata_core-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
-        pins = {"frob-core": "0.531.0", "strata-core": "0.531.0"}
+        (core_dir / f"frob_strata-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+        pins = {"frob-core": "0.531.0", "frob-strata": "0.531.0"}
         with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
             artifact_smoke._require_core_wheels(core_dir, pins)
         message = str(exc_info.value)
         assert "frob-core" in message
         assert "0.530.0" in message
         assert "0.531.0" in message
-        assert "strata-core" not in message.split("frob-core", 1)[0]
+        assert "frob-strata" not in message.split("frob-core", 1)[0]
 
     def test_matching_version_wheel_does_not_raise(self, tmp_path: Path) -> None:
         """T-4465 MUST-STAY-QUIET fixture: both wheels at exactly the
@@ -328,8 +328,8 @@ class TestRequireCoreWheels:
         core_dir.mkdir()
         tag = _host_platform_tag()
         (core_dir / f"frob_core-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
-        (core_dir / f"strata_core-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
-        pins = {"frob-core": "0.531.0", "strata-core": "0.531.0"}
+        (core_dir / f"frob_strata-0.531.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+        pins = {"frob-core": "0.531.0", "frob-strata": "0.531.0"}
         artifact_smoke._require_core_wheels(core_dir, pins)  # must not raise
 
     def test_no_pins_skips_version_check(self, tmp_path: Path) -> None:
@@ -343,8 +343,8 @@ class TestRequireCoreWheels:
     def test_wheel_matches_host_platform_rejects_foreign_tag(self) -> None:
         """`_wheel_matches_host_platform` directly: a wheel tagged for a
         foreign os+arch is rejected regardless of this test's own host."""
-        foreign = Path("strata_core-0.1.0-cp311-abi3-macosx_11_0_arm64.whl")
-        other_foreign = Path("strata_core-0.1.0-cp311-abi3-manylinux_2_39_x86_64.whl")
+        foreign = Path("frob_strata-0.1.0-cp311-abi3-macosx_11_0_arm64.whl")
+        other_foreign = Path("frob_strata-0.1.0-cp311-abi3-manylinux_2_39_x86_64.whl")
         # exactly one of these is a genuine match for the current host (or
         # neither, on an untaught host) -- never both, since darwin/arm64
         # and linux/x86_64 are mutually exclusive tags.
@@ -390,7 +390,7 @@ def _build_fake_wheel(path: Path, requires: list[str]) -> None:
 
 
 class TestReadCorePins:
-    """T-4465: `_read_core_pins` parses the exact frob-core/strata-core
+    """T-4465: `_read_core_pins` parses the exact frob-core/frob-strata
     version pins a wheel is about to install, straight from its own
     METADATA -- the value `_require_core_wheels` checks a candidate
     wheel's filename version against."""
@@ -401,10 +401,10 @@ class TestReadCorePins:
         wheel = tmp_path / "frob-0.531.0-py3-none-any.whl"
         _build_fake_wheel(
             wheel,
-            ["frob-core==0.531.0", "strata-core==0.531.0", "pydantic>=2"],
+            ["frob-core==0.531.0", "frob-strata==0.531.0", "pydantic>=2"],
         )
         pins = artifact_smoke._read_core_pins(wheel)
-        assert pins == {"frob-core": "0.531.0", "strata-core": "0.531.0"}
+        assert pins == {"frob-core": "0.531.0", "frob-strata": "0.531.0"}
 
     def test_unreadable_wheel_returns_empty(self, tmp_path: Path) -> None:
         """A placeholder/non-wheel file (this script's own `main`-level

@@ -59,7 +59,7 @@ all native extensions available
 ```
 
 `frob doctor` is a good first command: it confirms the install and reports
-whether the two native acceleration extensions (`frob-core`, `strata-core`)
+whether the two native acceleration extensions (`frob-core`, `frob-strata`)
 are present. Both are default dependencies of a plain install; if either is
 absent frob still runs, in pure-Python mode, and says so loudly rather than
 degrading silently -- see docs/guides/install.md.

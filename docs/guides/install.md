@@ -2,13 +2,13 @@
 
 frob ships as one pure-Python package (`frob`) plus two Rust/PyO3 native
 extensions built with maturin: `frob-core` (smart-dup's R3+ rungs --
-tree-edit-distance and beyond) and `strata-core` (the real parser for
+tree-edit-distance and beyond) and `frob-strata` (the real parser for
 `.strata` design files, used by `frob.lang`, `frob.graph`, `frob check`,
 `frob outline`, `frob xref`, and friends). As of T-3845, both are published
 to PyPI (`.github/workflows/release.yml` builds each as an abi3-py311 wheel
 across five platform targets and publishes them ahead of `frob` itself) and
 are DEFAULT `[project]` dependencies of `frob`, hard-pinned to frob's own
-version (`frob-core==<v>`, `strata-core==<v>` -- see the T-3845 comment on
+version (`frob-core==<v>`, `frob-strata==<v>` -- see the T-3845 comment on
 `pyproject.toml`'s `dependencies` for why an exact pin is safe given the
 release workflow's real publish-order/abort behavior). A plain install now
 gets both:
@@ -39,7 +39,7 @@ uv tool install frob
 
 Gets you the full CLI, tickets, gates, doc-drift checking, xref, outline,
 graph build, Python/TypeScript/Rust/C/C++ parsing, the accelerated
-`frob-core` dup rungs (R3+), and full `.strata` parsing via `strata-core` --
+`frob-core` dup rungs (R3+), and full `.strata` parsing via `frob-strata` --
 no separate step. `ruff` and `ty` (the tools `frob check`'s Python-language
 stage shells out to) are also real `[project]` dependencies (T-0142), so a
 bare install is fully functional for Python repos out of the box. Should any
@@ -51,7 +51,7 @@ loud, visible failure in the `frob check` summary, never a silent skip.
 
 ## Degrading without the natives
 
-If your platform has no published wheel for `frob-core`/`strata-core` (pip
+If your platform has no published wheel for `frob-core`/`frob-strata` (pip
 then falls back to each crate's sdist and needs a Rust toolchain to build
 it, or the build fails outright), or your environment deliberately strips
 the compiled extensions after install, frob keeps working: `.strata` files
@@ -84,7 +84,7 @@ extensions in place with `cargo` on `PATH`:
 
 ```bash
 pip install -e .        # or: make install
-make core                # builds+installs frob-core and strata-core in-place
+make core                # builds+installs frob-core and frob-strata in-place
 ```
 
 `make core` is best-effort: it skips (with a warning, not a failure) when
@@ -100,7 +100,7 @@ them and silently REMOVED both natives whenever it ran -- `uv lock`, `uv
 sync`, a `uv build` triggered by a version-bump stamp, and some `uv run`
 invocations after a `pyproject.toml` edit all triggered this.
 
-T-3845 makes `frob-core`/`strata-core` real default dependencies (see
+T-3845 makes `frob-core`/`frob-strata` real default dependencies (see
 `pyproject.toml`'s `[tool.uv.sources]`, which points this checkout's own
 resolution at the local `frob-core/`/`strata-core/` path crates rather than
 the published index versions). Verified 2026-09-05: a plain `uv sync` in
@@ -176,14 +176,14 @@ core`, timed with `time`):
 | scenario | wall time |
 |---|---|
 | fresh worktree, empty shared cache (from-scratch cargo build of every dependency crate plus both path crates) | 30.4s |
-| fresh worktree, shared cache already warm from a sibling worktree (only `frob-core`/`strata-core` themselves recompile against their own worktree-local absolute path; every dependency crate is reused unchanged from the cache) | 11.4s |
+| fresh worktree, shared cache already warm from a sibling worktree (only `frob-core`/`frob-strata` themselves recompile against their own worktree-local absolute path; every dependency crate is reused unchanged from the cache) | 11.4s |
 | same worktree, second `make core` invocation with nothing changed (steady-state re-run, T-0340's existing no-op case) | 1.1s |
 
 The from-scratch case drops from ~30s to ~11s for every worktree after the
 first (a ~2.7x cut, matching the reduction in what actually has to
 compile: only the two path crates themselves, not their dependency trees).
 It does not reach the sub-10s target for a genuinely fresh worktree,
-because `frob-core`/`strata-core` are built at each worktree's own
+because `frob-core`/`frob-strata` are built at each worktree's own
 absolute path (e.g. `/path/to/worktree/frob-core`) -- cargo keys build
 artifacts by absolute source path, so the two path crates themselves
 cannot be shared across worktrees the way their dependency trees are; only
@@ -203,9 +203,9 @@ work (a leasing/refresh daemon, not a Makefile variable) than the shared-
 cache mechanism above; see the ticket filed in T-0732's Done report
 (`tickets.md`) for the tracked scope.
 
-## History: why `frob-core`/`strata-core` were not a plain extra (resolved, T-3845)
+## History: why `frob-core`/`frob-strata` were not a plain extra (resolved, T-3845)
 
-Before T-3845, `frob-core`/`strata-core` had no published wheels, so they
+Before T-3845, `frob-core`/`frob-strata` had no published wheels, so they
 could not be a normal `[project.optional-dependencies]` extra: an extra
 resolves through the same index `pip`/`uv` install `frob` from, and a local
 relative path (`frob-core @ file://./frob-core`) only resolves when
@@ -218,7 +218,7 @@ whatever checkout the installer has on disk).
 `.github/workflows/release.yml` now builds and publishes both crates as
 real abi3-py311 wheels ahead of `frob` itself, so as of T-3845 they are
 plain default `[project]` dependencies, hard-pinned (`frob-core==<v>`,
-`strata-core==<v>`) -- see the top of this document and the T-3845 comment
+`frob-strata==<v>`) -- see the top of this document and the T-3845 comment
 on `pyproject.toml`. The `native` extra also still exists, listing the same
 two pins, purely so `pip install "frob[native]"` keeps resolving for any
 script or doc that already names it, and so
@@ -281,7 +281,7 @@ out, regressing to the bare-install posture with no warning at install
 time. This is the exact failure mode the T-0316 FROBLEMS report describes
 ("bit mid-campaign when a reinstall wiped the manually-added wheel").
 
-T-3845 removes the underlying cause: `frob-core`/`strata-core` are now
+T-3845 removes the underlying cause: `frob-core`/`frob-strata` are now
 plain default `[project]` dependencies (real published wheels, hard-pinned
 to frob's version), so `uv tool upgrade frob` / `uv tool install --force
 --reinstall frob` resolves and reinstalls them like any other dependency of

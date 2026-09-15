@@ -1,5 +1,5 @@
 """Tests for VERSION001 (T-3011): frob's own version, its `frob[native]`
-extra's exact pins on `frob-core`/`strata-core`, and those two crates' own
+extra's exact pins on `frob-core`/`frob-strata`, and those two crates' own
 `pyproject.toml` versions must all agree -- see
 `frob.gates._version_coupling`'s module docstring for the full incident
 reasoning (T-2884's git-SHA-check-because-versions-were-not-enough
@@ -30,7 +30,7 @@ def _write_repo(
     can plant a pin in a site other than the one the gate used to check by
     name."""
     if native_extra is None:
-        native_extra = [f"frob-core=={core_version}", f"strata-core=={strata_version}"]
+        native_extra = [f"frob-core=={core_version}", f"frob-strata=={strata_version}"]
     extra_lines = ", ".join(f'"{spec}"' for spec in native_extra)
     deps_line = ""
     if dependencies is not None:
@@ -59,7 +59,7 @@ version = "{frob_version}"
     strata_dir = tmp_path / "strata-core"
     strata_dir.mkdir()
     (strata_dir / "pyproject.toml").write_text(
-        f'[project]\nname = "strata-core"\nversion = "{strata_version}"\n',
+        f'[project]\nname = "frob-strata"\nversion = "{strata_version}"\n',
         encoding="utf-8",
     )
     return tmp_path
@@ -88,7 +88,7 @@ class TestVersionCouplingGate:
         a loose pin on an ABI-coupled native extension is rejected
         outright, not merely discouraged."""
         root = _write_repo(
-            tmp_path, native_extra=["frob-core>=1.2.3", "strata-core==1.2.3"]
+            tmp_path, native_extra=["frob-core>=1.2.3", "frob-strata==1.2.3"]
         )
         violations = version_coupling_gate(root)
         assert any(
@@ -109,7 +109,7 @@ class TestVersionCouplingGate:
         the extra pin did not) fires -- this is the "cut together" half
         of the policy, independent of the crate's own pyproject version."""
         root = _write_repo(
-            tmp_path, native_extra=["frob-core==1.2.2", "strata-core==1.2.3"]
+            tmp_path, native_extra=["frob-core==1.2.2", "frob-strata==1.2.3"]
         )
         violations = version_coupling_gate(root)
         assert any(
@@ -123,7 +123,7 @@ class TestVersionCouplingGate:
         `native` extra. This is the exact gap the ticket closes: matching
         by package name across the whole document, not by table name."""
         root = _write_repo(
-            tmp_path, dependencies=["frob-core==1.2.2", "strata-core==1.2.3"]
+            tmp_path, dependencies=["frob-core==1.2.2", "frob-strata==1.2.3"]
         )
         violations = version_coupling_gate(root)
         assert any(

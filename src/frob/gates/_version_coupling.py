@@ -1,5 +1,5 @@
 """VERSION001: `frob`'s own version, EVERY pin naming `frob-core`/
-`strata-core` anywhere in root `pyproject.toml` (`[project].dependencies`,
+`frob-strata` anywhere in root `pyproject.toml` (`[project].dependencies`,
 every extra under `[project.optional-dependencies]`, and any
 `[dependency-groups]` table -- not just the `native` extra), plus
 `frob-core/pyproject.toml`'s and `strata-core/pyproject.toml`'s own
@@ -7,7 +7,7 @@ every extra under `[project.optional-dependencies]`, and any
 must be exact (`==`), never `>=`/`~=`/unpinned (T-3011, widened T-3903).
 
 T-3903: this gate originally read the `native` extra BY NAME. T-3845 added
-a second pin site -- `frob-core`/`strata-core` also landed in `[project].
+a second pin site -- `frob-core`/`frob-strata` also landed in `[project].
 dependencies` -- and the by-name gate did not see it: a version bump could
 have shipped frob 0.531.0 hard-depending on frob-core==0.530.0, a package
 that cannot resolve, with every gate green. Enumerating pin sites by name
@@ -15,11 +15,11 @@ is exactly the mistake that produced the gap, so this gate now enumerates
 by TABLE SHAPE (any list of dependency-specifier strings reachable from
 `[project].dependencies`, `[project.optional-dependencies].*`, or
 `[dependency-groups].*`) and matches entries by PACKAGE NAME
-(`frob-core`/`strata-core`) wherever they appear, so the next new pin site
+(`frob-core`/`frob-strata`) wherever they appear, so the next new pin site
 is covered automatically instead of needing another hardcoded line.
 
 Root cause this closes: three separately published artifacts (`frob`,
-`frob-core`, `strata-core`) is three chances to skew, and this repo already
+`frob-core`, `frob-strata`) is three chances to skew, and this repo already
 has the problem in miniature -- T-2884 had to add a git-SHA check to a
 daemon BECAUSE VERSION STRINGS ALONE WERE NOT SUFFICIENT to detect skew
 between two things that are supposed to move together. A native PyO3/abi3
@@ -233,17 +233,14 @@ def _crate_violations(
 # frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_missing_extra_fires  # noqa: E501
 # frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_mismatched_extra_pin_fires  # noqa: E501
 # frob:tests \
-# tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_skewed_defaul\
-# t_dependency_pin_fires
+# tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_skewed_default_dependency_pin_fires  # noqa: E501
 # frob:tests \
-# tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_loose_default\
-# _dependency_pin_fires
+# tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_loose_default_dependency_pin_fires  # noqa: E501
 # frob:tests \
-# tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_pin_in_new_ex\
-# tra_fires
+# tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_pin_in_new_extra_fires  # noqa: E501
 def version_coupling_gate(root: Path) -> tuple[Violation, ...]:
     """VERSION001: frob's own version, EVERY pin naming `frob-core`/
-    `strata-core` anywhere in root `pyproject.toml` (T-3903: `[project].
+    `frob-strata` anywhere in root `pyproject.toml` (T-3903: `[project].
     dependencies`, every `[project.optional-dependencies]` extra, and any
     `[dependency-groups]` group -- not just the `native` extra), and those
     two crates' own `pyproject.toml` `version` fields must all match
@@ -264,7 +261,7 @@ def version_coupling_gate(root: Path) -> tuple[Violation, ...]:
     violations: list[Violation] = []
     for dep_name, crate_pyproject in (
         ("frob-core", _FROB_CORE_PYPROJECT),
-        ("strata-core", _STRATA_CORE_PYPROJECT),
+        ("frob-strata", _STRATA_CORE_PYPROJECT),
     ):
         violations.extend(
             _crate_violations(root, root_doc, frob_version, dep_name, crate_pyproject)

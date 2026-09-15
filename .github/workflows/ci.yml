@@ -126,7 +126,7 @@ jobs:
       # pure version bump (no dependency change) leaves byte-identical,
       # so a cache HIT after a version bump restored the PRIOR version's
       # `target/wheels/*.whl` verbatim. `scripts/artifact_smoke.py`
-      # globs `frob_core-*.whl`/`strata_core-*.whl` version-blind, so
+      # globs `frob_core-*.whl`/`frob_strata-*.whl` version-blind, so
       # that stale wheel then failed `uv pip install`'s exact-pin
       # resolve with an opaque "requirements are unsatisfiable" trace
       # (CI run 34768157963) instead of ever being rebuilt. Adding the
@@ -1031,7 +1031,7 @@ jobs:
           "
 
   # Locks the T-0133 degrade contract: a bare `pip install`/`uv tool
-  # install` of the frob wheel (NO frob-core, NO strata-core -- exactly what
+  # install` of the frob wheel (NO frob-core, NO frob-strata -- exactly what
   # `uv tool install frob` gets before `make install-tool`) must never
   # crash. This is a separate job (no Rust toolchain, no `make core`) so a
   # regression like T-0077/T-0133's original module-level `import
@@ -1077,7 +1077,7 @@ jobs:
           working-directory: frob-core
           args: --release --out dist
           maturin-version: ${{ env.MATURIN_VERSION }}
-      - name: Build strata-core wheel (abi3-py311, local find-links only)
+      - name: Build frob-strata wheel (abi3-py311, local find-links only)
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: strata-core
@@ -1115,7 +1115,7 @@ jobs:
           # Exit code is not asserted: a real repo can legitimately fail
           # gates (missing tickets, coverage stamp, ...). What this step
           # locks down is that the process itself does not crash with an
-          # unhandled exception/traceback when strata-core and frob-core
+          # unhandled exception/traceback when frob-strata and frob-core
           # are both absent -- grep the output for the traceback marker
           # Python always emits on an uncaught exception.
           output="$(/tmp/frob-standalone-venv/bin/frob check 2>&1)" || true

@@ -3,7 +3,7 @@ requires = ["maturin>=1.7,<2"]
 build-backend = "maturin"
 
 [project]
-name = "strata-core"
+name = "frob-strata"
 # T-3011: pinned to frob's own version -- see docs/guides/release.md's
 # version-coupling section for why an ABI-coupled native extension is
 # cut in lockstep with the pure-Python package, enforced by

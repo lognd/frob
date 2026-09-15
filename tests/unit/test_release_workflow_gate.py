@@ -93,12 +93,12 @@ class TestReleaseWorkflowNoAutomaticTrigger:
 # frob:ticket T-4263
 class TestUploadJobConsentGate:
     """T-4263: the single `upload` job was split into one job per
-    distribution (`upload-frob-core`, `upload-strata-core`,
+    distribution (`upload-frob-core`, `upload-frob-strata`,
     `upload-frob`) so each can register its own pending trusted
     publisher -- see the split's own comment block in release.yml. Every
     upload-* job must still depend on `build` having actually run."""
 
-    _UPLOAD_JOBS = ("upload-frob-core", "upload-strata-core", "upload-frob")
+    _UPLOAD_JOBS = ("upload-frob-core", "upload-frob-strata", "upload-frob")
 
     def test_upload_job_no_longer_exists_as_a_single_job(self) -> None:
         """MUST-STAY-QUIET: guards against a regression back to the
@@ -196,7 +196,7 @@ class TestUploadSplitPerDistribution:
         doc = _load(_RELEASE_WORKFLOW)
         needs = doc["jobs"]["upload-frob"]["needs"]
         needs_set = {needs} if isinstance(needs, str) else set(needs)
-        assert {"upload-frob-core", "upload-strata-core"} <= needs_set, (
+        assert {"upload-frob-core", "upload-frob-strata"} <= needs_set, (
             f"upload-frob must depend on both kernel upload jobs to "
             f"preserve the ordering contract, got needs={needs_set!r}"
         )
@@ -206,7 +206,7 @@ class TestUploadSplitPerDistribution:
         job must never need the application job, or the ordering
         contract (kernels before application) would be reversed/cyclic."""
         doc = _load(_RELEASE_WORKFLOW)
-        for name in ("upload-frob-core", "upload-strata-core"):
+        for name in ("upload-frob-core", "upload-frob-strata"):
             needs = doc["jobs"][name].get("needs")
             needs_set = {needs} if isinstance(needs, str) else set(needs or ())
             assert "upload-frob" not in needs_set
@@ -247,7 +247,7 @@ class TestApprovalGateDecisionIsRecorded:
         cannot already carry that protection."""
         doc = _load(_RELEASE_WORKFLOW)
         assert doc["jobs"]["upload-frob"]["environment"] == "pypi"
-        for name in ("upload-frob-core", "upload-strata-core"):
+        for name in ("upload-frob-core", "upload-frob-strata"):
             env = doc["jobs"][name]["environment"]
             assert env != "pypi", (
                 f"{name} must not reuse the 'pypi' environment name -- "
@@ -295,7 +295,7 @@ class TestCiStatusGate:
         TestUploadSplitPerDistribution.test_application_upload_needs_both_kernel_uploads)."""
         doc = _load(_RELEASE_WORKFLOW)
         base_needs = {"build", "build-sdists", "verify-ci-status", "artifact-smoke"}
-        for name in ("upload-frob-core", "upload-strata-core"):
+        for name in ("upload-frob-core", "upload-frob-strata"):
             needs = doc["jobs"][name]["needs"]
             needs_set = {needs} if isinstance(needs, str) else set(needs)
             assert needs_set == base_needs, f"{name}: needs={needs_set!r}"

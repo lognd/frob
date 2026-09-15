@@ -2,7 +2,7 @@
 id: T-4485
 title: rename the strata kernel distribution strata-core -> frob-strata (PyPI name
   taken); keep crate dir and strata_core import
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-14'
@@ -45,6 +45,10 @@ scope_changes:
     its unit fixtures must create wheels by the new name
   actor: logan
   at: '2026-09-14'
+evidence:
+- tests/unit/test_artifact_smoke_script.py::TestReadCorePins::test_reads_both_pins_from_metadata
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_matched_versions_clean
+- tests/unit/test_release_workflow_gate.py::TestUploadSplitPerDistribution::test_application_upload_needs_both_kernel_uploads
 designated_repro_test: null
 threat: null
 component: release

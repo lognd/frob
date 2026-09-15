@@ -20,7 +20,7 @@ looks true. A tree-only importability check cannot catch that class of
 defect by construction; only a real build-install-import round trip can.
 
 WHY THIS BUILDS REAL WHEELS RATHER THAN SKIPPING TO A TREE CHECK: frob's
-default dependencies pin `frob-core==<version>`/`strata-core==<version>`
+default dependencies pin `frob-core==<version>`/`frob-strata==<version>`
 (T-3845) with no published registry release of either, so a bare `uv
 build --wheel` for frob alone is not installable -- installing it needs
 local wheels for both native crates too, exactly the shape
@@ -161,7 +161,7 @@ def _build_wheel(cwd: Path, out_dir: Path, *, extra_args: tuple[str, ...] = ()) 
 @pytest.mark.timeout(420)
 # frob:ticket T-4150
 def test_advertised_public_api_imports_from_a_built_wheel(tmp_path: Path) -> None:
-    """MUST-FIRE (T-4150): build frob-core, strata-core, and frob itself
+    """MUST-FIRE (T-4150): build frob-core, frob-strata, and frob itself
     into real wheels, install ONLY those three wheels into a clean venv
     (no editable install, no source tree on `sys.path`), and import every
     name `discover_public_api` collected from the real `__all__` lists --

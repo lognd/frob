@@ -144,7 +144,7 @@ jobs:
           target: ${{ matrix.maturin_target }}
           manylinux: ${{ matrix.manylinux }}
           args: --release --out dist
-      - name: Build strata-core wheel (abi3-py311)
+      - name: Build frob-strata wheel (abi3-py311)
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: strata-core
@@ -207,7 +207,7 @@ jobs:
           name: frob-core-${{ matrix.target }}
           path: frob-core/dist/*.whl
           retention-days: 90
-      - name: Upload strata-core wheel
+      - name: Upload frob-strata wheel
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: strata-core-${{ matrix.target }}
@@ -228,7 +228,7 @@ jobs:
           working-directory: frob-core
           command: sdist
           args: --out dist
-      - name: strata-core sdist
+      - name: frob-strata sdist
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: strata-core
@@ -349,7 +349,7 @@ jobs:
   # (`upload-frob`) carries a required-reviewer environment (`pypi`, the
   # pre-existing protected environment -- unchanged from before this
   # split). The two kernel environments (`pypi-frob-core`,
-  # `pypi-strata-core`) are deliberately left WITHOUT a required
+  # `pypi-frob-strata`) are deliberately left WITHOUT a required
   # reviewer in this repo's Settings > Environments. Reasoning: a kernel
   # publish is gated by the exact same four upstream jobs the application
   # is (green CI, real built wheels, a passing artifact smoke test, and
@@ -394,20 +394,20 @@ jobs:
         with:
           packages-dir: dist-staging/frob-core
 
-  upload-strata-core:
+  upload-frob-strata:
     needs: [build, build-sdists, verify-ci-status, artifact-smoke]
     runs-on: ubuntu-latest
-    environment: pypi-strata-core
+    environment: pypi-frob-strata
     permissions:
       id-token: write
     steps:
-      - name: Download strata-core artifacts (wheels + sdist)
+      - name: Download frob-strata artifacts (wheels + sdist)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: strata-core-*
           path: dist-staging/strata-core
           merge-multiple: true
-      - name: Publish strata-core to PyPI
+      - name: Publish frob-strata to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist-staging/strata-core
@@ -418,7 +418,7 @@ jobs:
   # kernel jobs to `needs:` (the ordering contract above) without
   # weakening any of the four pre-existing entries.
   upload-frob:
-    needs: [build, build-sdists, verify-ci-status, artifact-smoke, upload-frob-core, upload-strata-core]
+    needs: [build, build-sdists, verify-ci-status, artifact-smoke, upload-frob-core, upload-frob-strata]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

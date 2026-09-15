@@ -85,14 +85,14 @@ class TestArtifactSmokeMustFire:
         core_core = _REPO_ROOT / "frob-core" / "target" / "wheels"
         core_strata = _REPO_ROOT / "strata-core" / "target" / "wheels"
         if not list(core_core.glob("frob_core-*.whl")) or not list(
-            core_strata.glob("strata_core-*.whl")
+            core_strata.glob("frob_strata-*.whl")
         ):
             pytest.skip("frob-core/strata-core not built locally")
         core_wheels_dir = tmp_path / "core-wheels"
         core_wheels_dir.mkdir()
         for whl in (
             list(core_core.glob("frob_core-*.whl"))[:1]
-            + list(core_strata.glob("strata_core-*.whl"))[:1]
+            + list(core_strata.glob("frob_strata-*.whl"))[:1]
         ):
             shutil.copy2(whl, core_wheels_dir)
 
@@ -167,7 +167,7 @@ class TestArtifactSmokeAbsentCores:
         )
         combined = result.stdout + result.stderr
         assert "frob-core" in combined
-        assert "strata-core" in combined
+        assert "frob-strata" in combined
         assert "not found in the package registry" not in combined, (
             "the raw resolver trace leaked through -- the preflight should "
             "have caught this before any pip install was attempted:\n" + combined
@@ -204,14 +204,14 @@ class TestArtifactSmokeMustStayQuiet:
         core_core = _REPO_ROOT / "frob-core" / "target" / "wheels"
         core_strata = _REPO_ROOT / "strata-core" / "target" / "wheels"
         if not list(core_core.glob("frob_core-*.whl")) or not list(
-            core_strata.glob("strata_core-*.whl")
+            core_strata.glob("frob_strata-*.whl")
         ):
             pytest.skip("frob-core/strata-core not built locally")
         core_wheels_dir = tmp_path / "core-wheels"
         core_wheels_dir.mkdir()
         for whl in (
             list(core_core.glob("frob_core-*.whl"))[:1]
-            + list(core_strata.glob("strata_core-*.whl"))[:1]
+            + list(core_strata.glob("frob_strata-*.whl"))[:1]
         ):
             shutil.copy2(whl, core_wheels_dir)
 
