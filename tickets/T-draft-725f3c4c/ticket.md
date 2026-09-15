@@ -2,7 +2,7 @@
 id: T-draft-725f3c4c
 title: 'Lease staleness probe re-parses the whole ticket archive (3391 YAML files)
   once per lease record: read_all_leases costs minutes and lands sit silent CPU-bound'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -18,10 +18,19 @@ scope:
 - src/frob/tickets/_leases.py
 - src/frob/tickets/_archive.py
 - tests/unit/test_leases_staleness_perf.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: new tests/unit/test_leases_staleness_perf.py real-git-fixture test needs
+    exec/fs.write capability declarations in the testsuite node's may-via lists (SELFAUDIT001/SYS100),
+    same shape every other real-git-fixture test file already has
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 acceptance:
 - text: GIVEN N live lease records WHEN _live_leases_pruning_stale runs THEN the ticket
