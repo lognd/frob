@@ -2,7 +2,7 @@
 id: T-4485
 title: rename the strata kernel distribution strata-core -> frob-strata (PyPI name
   taken); keep crate dir and strata_core import
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-14'
@@ -33,10 +33,18 @@ scope:
 - docs/modules/gates.md
 - README.md
 - Makefile
+- tests/unit/test_artifact_smoke_script.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_artifact_smoke_script.py
+  reason: the smoke script's required-wheel glob renamed to frob_strata-*.whl, so
+    its unit fixtures must create wheels by the new name
+  actor: logan
+  at: '2026-09-14'
 designated_repro_test: null
 threat: null
 component: release
