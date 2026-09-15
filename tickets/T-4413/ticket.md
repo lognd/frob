@@ -41,3 +41,6 @@ anchor_reason: null
 land_commit: null
 ---
 Owner design decision (2026-09-11): CI is the single source of full-suite/full-gate truth; land must prove only the diff. Currently rapid still runs the T-1463 baseline-capture thread -- a full in-process frob check -- feeding the post-land sweep (src/frob/app/ticket_runner/_land_cmd.py around line 5570, citing T-1575's deferred baseline-thread-free rapid path). With ~4200 tickets/~1400 files this takes 25-45 minutes per land (T-4408: 50+ min). Replace the unscoped baseline with a scoped sweep.
+
+## Failure log
+- 2026-09-15 attempt 1: Scope defect: genuine compute-level scoping requires editing src/frob/gates or src/frob/app/check_runner.py, outside declared scope (_land_cmd.py + src/frob/verify only). T-1684 already removed the T-1463 baseline thread under rapid. Remaining unscoped cost is check_gates/check_gate_findings shared spawn (frob check --ticket, via src/frob/app/ticket_runner/_verify.py, not in scope): measured 465s wall-clock for a 1-file ticket on this repo with a warm T-4411-seeded cache -- exceeds the 3min budget. --ticket/--delta only filter reported findings, never computation (see docstring at _verify.py:1044-1049). Needs scope expansion or re-plan; filing follow-up recommended.
