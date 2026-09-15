@@ -6,7 +6,7 @@ state: queued
 kind: ux
 origin: human
 created: '2026-08-31'
-priority: high
+priority: medium
 parent: T-3611
 tier: ticket
 sprint: null
@@ -18,6 +18,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: medium
+  reason: 'T-4483 follow-up: TICK004 escalated to error on 2026-09-15 (15d queued
+    > 2x the 7d high threshold) and reds every CI leg; these are T-3611 latency-epic
+    children, sprint v0.532.0 work behind the v0.531.0 alpha cut, not alpha-path work,
+    so medium is the honest priority'
+  actor: logan
+  at: '2026-09-14'
 body_changes:
 - mode: append
   reason: consumer corroboration F-099 plus four first-hand refusals today; records
