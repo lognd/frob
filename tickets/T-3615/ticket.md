@@ -14,10 +14,24 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .claude/hooks
+- tests/unit/test_hooks_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks
+  reason: hook fixes live in the repo copies of the hooks
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: tests/unit/test_hooks_guard.py
+  reason: hook fixes live in the repo copies of the hooks
+  actor: logan
+  at: '2026-09-15'
 triage_changes:
 - field: priority
   old_value: high
