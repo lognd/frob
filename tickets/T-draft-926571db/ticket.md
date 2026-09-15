@@ -2,7 +2,7 @@
 id: T-draft-926571db
 title: 'Post-alpha dev-branch workflow: land onto dev, CI on dev, re-enable dev version
   bump'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-15'
@@ -18,10 +18,17 @@ scope:
 - pyproject.toml
 - .github/workflows/ci.yml
 - docs/guides/release.md
+- tests/unit/test_dev_branch_workflow.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_dev_branch_workflow.py
+  reason: evidence test asserting the dev-branch config and CI trigger shape
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 acceptance:
 - text: GIVEN the root checkout on dev WHEN frob ticket land runs without --onto THEN
