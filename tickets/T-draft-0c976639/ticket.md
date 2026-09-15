@@ -42,6 +42,7 @@ evidence:
 - tests/unit/test_lifecycle_work_base.py::TestWorkBranchesFromRootsCurrentBranch::test_worktree_head_contains_devs_own_tip_commit
 - tests/unit/test_lifecycle_work_base.py::TestWorktreeSweepCountsAgainstResolvedTarget::test_counts_commits_ahead_of_dev_not_ahead_of_main
 - tests/unit/test_lifecycle_work_base.py::TestWorkBranchesFromRootsCurrentBranch::test_byte_for_byte_historical_when_root_is_on_main_no_config
+- tests/unit/test_land_leaked_tickets_lease_hoist.py::TestFindLeakedTicketsHoistsReadAllLeases::test_read_all_leases_called_at_most_once_across_many_candidates
 designated_repro_test: tests/unit/test_lifecycle_work_base.py::TestWorkBranchesFromRootsCurrentBranch::test_worktree_head_contains_devs_own_tip_commit
 acceptance:
 - text: GIVEN the root checkout on branch dev with ticket_land_branch = dev WHEN frob
