@@ -18,10 +18,32 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/verify
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/check_runner.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'agent measured: the unscoped compute lives in the shared check spawn and
+    check_runner, not in _land_cmd.py'
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: 'agent measured: the unscoped compute lives in the shared check spawn and
+    check_runner, not in _land_cmd.py'
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'agent measured: the unscoped compute lives in the shared check spawn and
+    check_runner, not in _land_cmd.py'
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a rapid land WHEN the synchronous pre-land check runs THEN it replaces
