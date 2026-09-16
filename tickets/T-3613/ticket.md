@@ -22,6 +22,7 @@ scope:
 - tests/unit/test_land_queue.py
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,11 @@ scope_changes:
 - op: add
   glob: docs/design/registry/capability-via-ratchet.lock.json
   reason: queue/drain default land path + docs/tests
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: land default path doc update
   actor: logan
   at: '2026-09-16'
 triage_changes:
