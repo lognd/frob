@@ -55,6 +55,10 @@ acceptance:
     checker runs, THEN it flags the missing docblock the same way it flags a missing
     Python docstring.
   evidence: []
+- text: GIVEN a C# 'using' statement that _csharp_using_violations (T-2906) is meant
+    to police, WHEN the checker runs on the fixture, THEN the expected violation fires
+    with zero false positives on clean code.
+  evidence: []
 threat: null
 component: null
 anchor: false
