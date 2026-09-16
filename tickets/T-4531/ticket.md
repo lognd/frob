@@ -2,7 +2,7 @@
 id: T-4531
 title: 'post-land sweep regression from T-4515: 11 new (rule, file) identit(ies) (AFFECT001,
   COV001, COV002, COV007)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -20,7 +20,6 @@ scope:
 - src/frob/excludes.py
 - src/frob/lang/_project_detect.py
 - tests/test_excludes.py
-- tests/unit/test_ci_self_gate_unscoped.py
 - tests/unit/test_lang_project_detect.py
 findings:
 - - AFFECT001
@@ -49,6 +48,24 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/test_ci_self_gate_unscoped.py
+  reason: collides with T-4534's in-progress lease on this file; T-4534 already covers/fixes
+    its COV002 finding (same underlying work as my just-landed T-draft-357dade2/T-4532)
+  actor: logan
+  at: '2026-09-16'
+body_changes:
+- mode: append
+  reason: 'BUG002 structurally untestable via pytest: gate/doc-metadata state, not
+    application code'
+  actor: logan
+  at: '2026-09-16'
+  old_length: 3631
+  new_length: 4351
+evidence:
+- tests/unit/test_lang_project_detect.py::test_detects_unity_project
+- tests/test_excludes.py::TestUnityExcludeGlobs::test_unity_project_adds_globs
 designated_repro_test: null
 threat: null
 component: null
@@ -89,3 +106,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK010  /home/logan/projects/frob/.git/frob-leases/T-4493.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:waive BUG002 reason="post-land sweep residue: the defect is frob check GATE state (AFFECT001/COV001/COV002/COV007/DOC002/DUP002 on already-landed T-4515 commits with no open scope owner), not application behavior a pytest repro can exercise at the parent commit. Fix is doc paragraphs (docs/modules/lang.md#unity-project-detection, previously dangling), one frob:doc anchor, and removing a redundant private-symbol frob:doc directive -- none of which pytest observes. Repro is the frob check invocation: frob check --only coverage --only drift --only affect_drift --only clones --ticket T-4531 --base dev --files <the scoped files> reported these rules as errors before this change and 0 after (see Done report)."
