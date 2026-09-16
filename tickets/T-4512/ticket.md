@@ -18,6 +18,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_unity_asmdef.py
 - tests/unit/strata/test_unity_asmdef.py
+- tests/fixtures/unity_sample_asmdef/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,11 @@ scope_changes:
 - op: add
   glob: tests/unit/strata/test_unity_asmdef.py
   reason: unit tests for the asmdef->strata component mapping
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/unity_sample_asmdef/**
+  reason: static fixture asmdef project for tests
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
