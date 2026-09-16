@@ -1,7 +1,7 @@
 ---
 id: T-4510
 title: C# dup/docblock facet fixture (verify _CSHARP_LANGS bucket end to end)
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -16,10 +16,29 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/fixtures/csharp_dup_docblock/**
 - tests/unit/test_support_csharp.py
+- src/frob/dup/_legacy.py
+- src/frob/dup/_legacy_cs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/dup/_legacy.py
+  reason: 'T-4510 finding: frob.dup._legacy._scan_tree never dispatched .cs at all
+    (only _PY_EXTS/_CPP_EXTS), so csharp''s dup facet had zero real fixture coverage;
+    wire a minimal _legacy_cs.py scanner mirroring _legacy_py.py/_legacy_cpp.py rather
+    than weaken the ticket''s own fixture assertion'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/dup/_legacy_cs.py
+  reason: 'T-4510 finding: frob.dup._legacy._scan_tree never dispatched .cs at all
+    (only _PY_EXTS/_CPP_EXTS), so csharp''s dup facet had zero real fixture coverage;
+    wire a minimal _legacy_cs.py scanner mirroring _legacy_py.py/_legacy_cpp.py rather
+    than weaken the ticket''s own fixture assertion'
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
