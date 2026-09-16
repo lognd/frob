@@ -47,6 +47,10 @@ scope_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: GIVEN two near-duplicate C# methods in a fixture file, WHEN the dup detector
+    runs, THEN it reports the duplicate pair using the _CSHARP_LANGS facet path.
+  evidence: []
 threat: null
 component: null
 anchor: false
