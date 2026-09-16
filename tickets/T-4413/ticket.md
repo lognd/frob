@@ -1,7 +1,7 @@
 ---
 id: T-4413
 title: 'Rapid profile: scoped gate sweep replaces unscoped pre-land baseline check'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -25,6 +25,7 @@ scope:
 - src/frob/check/_python.py
 - src/frob/check/__init__.py
 - tests/unit/test_check_scoped_files.py
+- src/frob/gates/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,12 @@ scope_changes:
   glob: tests/unit/test_check_scoped_files.py
   reason: 'attempt 2 measured: ruff/ty/arch/cycle/dup/exports run in src/frob/check/_python.py
     over the whole tree; compute scoping must thread the file set there'
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: GateConfig lives here; needs a files field to thread scoped-file lists into
+    run_gates (T-4413)
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
