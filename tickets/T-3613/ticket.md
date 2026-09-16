@@ -188,8 +188,14 @@ acceptance:
     a dead drainer''s landing entry is reclaimed via pid liveness (reusing the existing
     land.lock reclaim logic''s posture)'
   evidence: []
-- text: docs section and tests per acceptance criterion
-  evidence: []
+acceptance_amendments:
+- op: remove
+  index: 8
+  old_text: docs section and tests per acceptance criterion
+  new_text: null
+  reason: duplicate from a killed-then-retried accept call
+  actor: logan
+  at: '2026-09-16'
 threat: null
 component: null
 anchor: false
