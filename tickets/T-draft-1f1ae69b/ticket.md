@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_ticket_land.py
 - src/frob/app/config.py
+- tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/config.py
   reason: root cause fix location
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+  reason: new unit test file covering the _pyproject_file_for_args fix
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
