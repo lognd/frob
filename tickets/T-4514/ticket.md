@@ -2,7 +2,7 @@
 id: T-4514
 title: Unity API capability map (UnityEngine, Editor-only APIs, MonoBehaviour/coroutine
   roots)
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-16'
