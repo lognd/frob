@@ -18,7 +18,6 @@ scope:
 - src/frob/gates/_suppress.py
 - tests/unit/test_suppress_worktree_path.py
 - tests/test_gates_suppress.py
-- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +35,12 @@ scope_changes:
   reason: 'SELFAUDIT001/SYS100: new test file tests/unit/test_suppress_worktree_path.py
     writes real files via write_text under tmp_path, a genuine new fs.write capability
     site that must be declared in testsuite node''s via-list'
+  actor: logan
+  at: '2026-09-15'
+- op: remove
+  glob: design/frob.strata
+  reason: 'no longer needed: rerouted the new test''s fs.write through an existing
+    declared helper instead of adding a new capability site'
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
