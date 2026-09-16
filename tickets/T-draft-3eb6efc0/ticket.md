@@ -2,7 +2,7 @@
 id: T-draft-3eb6efc0
 title: 'testing: LANGUAGE_COLLECTORS keys vitest as ''ts'' but [[test.runner]] language
   is ''typescript'', so vitest evidence is never verified'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-16'
@@ -25,3 +25,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Drop reason
+- 2026-09-16: refiling with a full body via --body-file
