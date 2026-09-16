@@ -2,7 +2,7 @@
 id: T-4493
 title: SUPPRESS001 ty diagnostic correlation doubles the worktree path (root/.claude/worktrees/x/.claude/worktrees/x/...)
   and cannot read any file
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -43,12 +43,15 @@ scope_changes:
     declared helper instead of adding a new capability site'
   actor: logan
   at: '2026-09-15'
-designated_repro_test: null
+evidence:
+- tests/unit/test_suppress_worktree_path.py::TestRelativizeUnderNestedWorktreeRoot::test_correlate_reads_the_real_file_under_nested_root
+designated_repro_test: tests/unit/test_suppress_worktree_path.py::TestRelativizeUnderNestedWorktreeRoot::test_correlate_reads_the_real_file_under_nested_root
 acceptance:
 - text: GIVEN frob check runs against a worktree under <root>/.claude/worktrees/<x>
     WHEN SUPPRESS001 correlates ty diagnostics THEN it resolves each diagnostic path
     once, relative to the worktree, and reads the file
-  evidence: []
+  evidence:
+  - tests/unit/test_suppress_worktree_path.py::TestRelativizeUnderNestedWorktreeRoot::test_correlate_reads_the_real_file_under_nested_root
 threat: null
 component: null
 anchor: false

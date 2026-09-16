@@ -101,9 +101,39 @@ class TestRelativize:
         target = tmp_path / "src" / "mod.py"
         assert _relativize(str(target), tmp_path) == "src/mod.py"
 
-    def test_already_relative_path_passes_through(self, tmp_path: Path) -> None:
-        """An already-relative path is returned unchanged (as posix)."""
+    def test_already_relative_path_passes_through(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An already-relative path still resolves to itself when `root`
+        and the process cwd coincide (the ordinary, non-worktree case).
+
+        T-4493: `_relativize` now resolves a relative path against
+        `Path.cwd()` (the CHECKER PROCESS'S OWN cwd -- `ty`/`mypy` run
+        without a `cwd=` override) before relativizing to `root`, rather
+        than returning it unchanged; `monkeypatch.chdir(tmp_path)` keeps
+        this test's premise (cwd == root) true so the passthrough this
+        node id's name promises still holds. The regression case where
+        `root` is nested UNDER cwd (a worktree checked from its outer
+        repo's cwd) is covered by `test_suppress_worktree_path.py`."""
+        monkeypatch.chdir(tmp_path)
         assert _relativize("src/mod.py", tmp_path) == "src/mod.py"
+
+    def test_relative_path_under_nested_root_is_not_doubled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-4493 regression: when `root` is a worktree nested under the
+        checker process's real cwd (`tmp_path`), a checker-reported path
+        already relative to `tmp_path` (e.g.
+        `.claude/worktrees/x/tests/mod.py`) must resolve to the file
+        relative to `root` (`tests/mod.py`) -- NOT get `root` joined onto
+        it a second time (the old bug: `root/.claude/worktrees/x/.claude/
+        worktrees/x/tests/mod.py`, which cannot exist)."""
+        monkeypatch.chdir(tmp_path)
+        nested_root = tmp_path / ".claude" / "worktrees" / "x"
+        (nested_root / "tests").mkdir(parents=True)
+        (nested_root / "tests" / "mod.py").write_text("x = 1\n", encoding="utf-8")
+        cwd_relative = ".claude/worktrees/x/tests/mod.py"
+        assert _relativize(cwd_relative, nested_root) == "tests/mod.py"
 
     def test_path_outside_root_is_none(self, tmp_path: Path) -> None:
         """A path resolving outside `root` entirely cannot be sited

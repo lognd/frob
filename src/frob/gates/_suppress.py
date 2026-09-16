@@ -122,8 +122,7 @@ class SuppressionDialect(BaseModel):
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests \
-# tests/test_gates_suppress.py::TestSuppressionDialects.test_available_reflects_path_no\
-# t_project_config
+# tests/test_gates_suppress.py::TestSuppressionDialects.test_available_reflects_path_not_project_config  # noqa: E501
 def suppression_dialects() -> dict[str, SuppressionDialect]:
     """The registry of every Python `SuppressionDialect` SUPPRESS001
     knows about (`ty`, `mypy`, `ruff`/noqa), each stamped with whether an
@@ -170,25 +169,40 @@ def _line_suppressions(
 
 
 def _relativize(file: str | None, root: Path) -> str | None:
-    """`file` (as reported by a checker, absolute or already root-relative)
-    as a root-relative posix path, or `None` if it resolves outside
-    `root` entirely (a diagnostic this gate cannot site against any
-    tracked source line)."""
+    """`file` (as reported by a checker: absolute, or relative to the
+    CHECKER PROCESS'S OWN cwd -- `ty`/`mypy` are invoked without a `cwd=`
+    override (`_run_ty_one`/`_mypy_diagnostics`), so a relative path is
+    relative to whatever directory the frob process itself is running
+    from, NOT necessarily to `root`; when `root` names a nested worktree
+    (`.claude/worktrees/<x>`) checked from the outer repo's cwd, those
+    two differ) resolved to a `root`-relative posix path, or `None` if it
+    resolves outside `root` entirely (a diagnostic this gate cannot site
+    against any tracked source line).
+
+    T-4493: resolving each path exactly once here -- absolute paths as
+    themselves, relative paths joined against `Path.cwd()` -- before the
+    single `relative_to` call is what stops the old worktree-under-
+    worktree double-join: the caller used to receive an already-cwd-
+    relative string like `.claude/worktrees/t-x/tests/...` verbatim and
+    then re-join it onto `root` (itself `.../.claude/worktrees/t-x`),
+    producing the doubled, unreadable path this ticket's title names."""
     if not file:
         return None
     path = Path(file)
     if not path.is_absolute():
-        return path.as_posix()
+        path = Path.cwd() / path
     try:
-        return path.resolve().relative_to(root.resolve()).as_posix()
+        rel = path.resolve().relative_to(root.resolve())
     except ValueError:
         return None
     except Exception:
         # `.resolve()` can fail on a genuinely broken cwd/permission
-        # (EXHAUST001, T-1371) -- an unresolvable root is exactly the
+        # (EXHAUST001, T-1371) -- an unresolvable path is exactly the
         # "cannot site this diagnostic" case this function already
-        # documents for the ValueError branch.
+        # documents for the ValueError branch above.
         return None
+    _log.debug("_relativize: resolved %r to %s (root=%s)", file, rel, root)
+    return rel.as_posix()
 
 
 def _ty_diagnostics(root: Path) -> list[tuple[str, int, str]]:
@@ -390,17 +404,13 @@ def _suppress001_correlate(
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests \
-# tests/test_gates_suppress.py::TestSuppress001Gate.test_mypy_suppressed_ty_unsuppresse\
-# d_fires
+# tests/test_gates_suppress.py::TestSuppress001Gate.test_mypy_suppressed_ty_unsuppressed_fires  # noqa: E501
 # frob:tests \
-# tests/test_gates_suppress.py::TestSuppress001Gate.test_ty_suppressed_mypy_unsuppresse\
-# d_fires
+# tests/test_gates_suppress.py::TestSuppress001Gate.test_ty_suppressed_mypy_unsuppressed_fires  # noqa: E501
 # frob:tests \
-# tests/test_gates_suppress.py::TestSuppress001Gate.test_both_dialects_present_reports_\
-# nothing
+# tests/test_gates_suppress.py::TestSuppress001Gate.test_both_dialects_present_reports_nothing  # noqa: E501
 # frob:tests \
-# tests/test_gates_suppress.py::TestSuppress001Gate.test_no_available_oracle_reports_no\
-# thing
+# tests/test_gates_suppress.py::TestSuppress001Gate.test_no_available_oracle_reports_nothing  # noqa: E501
 # frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001RepoWideLock.test_repo_is_currently_clean
 # frob:ticket T-1342
