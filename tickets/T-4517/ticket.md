@@ -64,6 +64,17 @@ scope_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: GIVEN a C# test class with a [Test] method, WHEN collection runs, THEN it
+    emits a stable node id an frob:tests directive can bind to.
+  evidence: []
+- text: GIVEN a [TestCase(1, 2)] parameterized NUnit test, WHEN collection runs, THEN
+    each case is represented (or the parameterized method is represented once with
+    a documented id scheme) without erroring.
+  evidence: []
+- text: GIVEN a MonoBehaviour test class using [UnityTest] (a coroutine-based test),
+    WHEN collection runs, THEN it is collected distinctly from a plain [Test] method.
+  evidence: []
 threat: null
 component: null
 anchor: false
