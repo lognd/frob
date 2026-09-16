@@ -5,8 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.excludes import (
+    UNITY_EXCLUDE_GLOBS,
     _is_nested_worktree,
     _should_prune_dir,
+    _unity_exclude_globs,
     is_excluded,
     is_skipped_dir,
     is_test_file,
@@ -392,3 +394,76 @@ class TestWalkPrunedHonorsIgnoreFile:
 
         assert ".claude/hooks/a_hook.py" in found
         assert ".claude/scratch/notes.txt" not in found
+
+
+def _make_unity_project(root: Path) -> None:
+    """Write the minimal marker files `detect_unity_project` requires,
+    plus a populated `Library/` cache and a stray `.meta` file, so a
+    walk over `root` has something real to prune."""
+    (root / "Assets").mkdir()
+    (root / "Assets" / "Script.cs").write_text("class Script {}\n")
+    (root / "Assets" / "Script.cs.meta").write_text("guid: abc123\n")
+    settings = root / "ProjectSettings"
+    settings.mkdir()
+    (settings / "ProjectVersion.txt").write_text("m_EditorVersion: 2022.3.5f1\n")
+    library = root / "Library"
+    library.mkdir()
+    (library / "ScriptAssemblies").mkdir()
+    (library / "ScriptAssemblies" / "Assembly-CSharp.dll").write_text("bin\n")
+
+
+# frob:ticket T-4515
+class TestUnityExcludeGlobs:
+    """T-4515: a detected Unity project's generated output
+    (`Library/`, `Temp/`, `Logs/`, `obj/`, `*.meta`) is pruned from every
+    walk without needing a `[graph] exclude` entry or a `.gitignore`."""
+
+    def test_unity_project_adds_globs(self, tmp_path: Path):
+        """MUST-FIRE: `_unity_exclude_globs` returns `UNITY_EXCLUDE_GLOBS`
+        for a detected Unity project root."""
+        # frob:tests src/frob/excludes.py::_unity_exclude_globs kind="unit"
+        _make_unity_project(tmp_path)
+        assert _unity_exclude_globs(tmp_path) == UNITY_EXCLUDE_GLOBS
+
+    def test_non_unity_project_adds_nothing(self, tmp_path: Path):
+        """MUST-NOT-FIRE: a plain (non-Unity) root, e.g. an ordinary C#
+        repo with no `Assets/` directory, adds no extra globs."""
+        # frob:tests src/frob/excludes.py::_unity_exclude_globs kind="unit"
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "Program.cs").write_text("class Program {}\n")
+        assert _unity_exclude_globs(tmp_path) == ()
+
+    def test_walk_pruned_excludes_unity_dirs(self, tmp_path: Path):
+        """MUST-FIRE: `walk_pruned` never descends into `Library/` for a
+        detected Unity project (T-0239-style pre-descent pruning, not a
+        post-hoc filter)."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        _make_unity_project(tmp_path)
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+        assert not any(p.startswith("Library/") for p in found)
+        assert "Assets/Script.cs" in found
+
+    def test_walk_pruned_skips_meta_files(self, tmp_path: Path):
+        """MUST-FIRE: a `.meta` sidecar file is never yielded as a source
+        file for a detected Unity project."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        _make_unity_project(tmp_path)
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+        assert "Assets/Script.cs.meta" not in found
+        assert "Assets/Script.cs" in found
+
+    def test_non_unity_tree_keeps_dirs_named_obj_or_temp_untouched_if_unity_absent(
+        self, tmp_path: Path
+    ):
+        """MUST-NOT-FIRE: a non-Unity root's own `obj/` build directory is
+        NOT pruned by the Unity glob machinery when no Unity markers are
+        present (only `_should_prune_dir`'s ordinary glob matching, if
+        any, would apply) -- confirms `_unity_exclude_globs` is gated on
+        detection, not unconditionally merged."""
+        # frob:tests src/frob/excludes.py::walk_pruned kind="unit"
+        (tmp_path / "obj").mkdir()
+        (tmp_path / "obj" / "Debug.dll").write_text("bin\n")
+        (tmp_path / "main.py").write_text("x = 1\n")
+        found = {p.relative_to(tmp_path).as_posix() for p in walk_pruned(tmp_path)}
+        assert "obj/Debug.dll" in found
+        assert "main.py" in found

@@ -1,12 +1,12 @@
 ---
 id: T-4515
 title: Detect Unity projects and exclude Library/Temp/Logs/obj/*.meta from the walker
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
 priority: medium
-parent: T-4518
+parent: T-draft-e7dd275c
 tier: ticket
 sprint: v0.533.0
 runs_last: false
@@ -16,11 +16,39 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/excludes.py
 - src/frob/lang/_project_detect.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: wire testsuite fs.write via-list for new tmp_path-writing test file (Unity
+    project detect)
+  actor: logan
+  at: '2026-09-16'
+evidence:
+- tests/unit/test_lang_project_detect.py::test_detects_unity_project
+- tests/test_excludes.py::TestUnityExcludeGlobs::test_walk_pruned_excludes_unity_dirs
+- tests/test_excludes.py::TestUnityExcludeGlobs::test_walk_pruned_skips_meta_files
+- tests/unit/test_lang_project_detect.py::test_not_unity_project_without_markers
 designated_repro_test: null
+acceptance:
+- text: GIVEN a directory with Assets/, Packages/manifest.json, and ProjectSettings/ProjectVersion.txt,
+    WHEN frob's project detection runs, THEN it identifies the root as a Unity project.
+  evidence:
+  - tests/unit/test_lang_project_detect.py::test_detects_unity_project
+- text: GIVEN a Unity project with a populated Library/ directory (Unity's build cache),
+    WHEN frob walks the tree, THEN Library/, Temp/, Logs/, obj/ are excluded and no
+    .meta file is treated as a source file.
+  evidence:
+  - tests/test_excludes.py::TestUnityExcludeGlobs::test_walk_pruned_excludes_unity_dirs
+  - tests/test_excludes.py::TestUnityExcludeGlobs::test_walk_pruned_skips_meta_files
+- text: GIVEN a plain (non-Unity) C# repo with no Assets/ directory, WHEN detection
+    runs, THEN it is NOT misidentified as a Unity project.
+  evidence:
+  - tests/unit/test_lang_project_detect.py::test_not_unity_project_without_markers
 threat: null
 component: null
 anchor: false

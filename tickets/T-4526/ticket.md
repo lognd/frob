@@ -1,5 +1,5 @@
 ---
-id: T-draft-7e030cb3
+id: T-4526
 title: Detect Unity projects and exclude Library/Temp/Logs/obj/*.meta from the walker
 state: dropped
 kind: feature

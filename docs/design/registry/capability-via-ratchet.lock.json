@@ -131,9 +131,9 @@
       "ticket": "T-1628"
     },
     "graphlang::fs.read": {
-      "accepted_count": 10,
-      "reason": "T-4282: adds src/frob/graph/cache.py to the fs.read via-list -- _holder_cmdline reads /proc/<pid>/cmdline to name a CacheLocked lock holder's command line, bumping the ceiling 9 -> 10, one real new site.",
-      "ticket": "T-4282"
+      "accepted_count": 11,
+      "reason": "T-4515: adds src/frob/lang/_project_detect.py to graphlang's fs.read via-list -- reads ProjectSettings/ProjectVersion.txt to parse the Unity editor version. Bumping the ceiling 10 -> 11, one new site.",
+      "ticket": "T-4515"
     },
     "graphlang::fs.write": {
       "accepted_count": 7,
@@ -251,9 +251,9 @@
       "ticket": "T-4415"
     },
     "testsuite::fs.write": {
-      "accepted_count": 523,
-      "reason": "T-4414: adds tests/unit/rapid_sweep_suite/test_window.py to the fs.write via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 522 -> 523, 1 new site(s).",
-      "ticket": "T-4414"
+      "accepted_count": 525,
+      "reason": "T-4515: tests/unit/test_lang_project_detect.py joins the fs.write via-list alongside T-4414's tests/unit/rapid_sweep_suite/test_window.py already on dev; measured 525 sites at land time. Ceiling 524 -> 525.",
+      "ticket": "T-4515"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

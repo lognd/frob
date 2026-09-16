@@ -21,9 +21,27 @@ from pathlib import Path, PurePosixPath
 import pathspec
 
 from frob.gitio import run_argv
+from frob.lang._project_detect import detect_unity_project
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+# frob:ticket T-4515
+# Unity's own generated/build output, additive to `BUILTIN_SKIP_DIRS`/
+# `[graph] exclude` -- ONLY added when `detect_unity_project` confirms
+# `root` is a Unity project (see `_unity_exclude_globs`). `Library/` is
+# Unity's asset/import cache (can be tens of GB), `Temp/`/`Logs/` are
+# per-editor-session scratch, `obj/` is the per-.csproj MSBuild
+# intermediate directory Unity's generated C# projects write into, and
+# `*.meta` is Unity's one-sidecar-per-asset metadata file (thousands of
+# them in any real project, never a source file itself).
+UNITY_EXCLUDE_GLOBS: tuple[str, ...] = (
+    "Library/**",
+    "Temp/**",
+    "Logs/**",
+    "obj/**",
+    "*.meta",
+)
 
 # Always-pruned directory names, additive to the frob.toml globs.
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
@@ -118,6 +136,30 @@ def _load_repo_ignore_globs(root: Path) -> tuple[str, ...]:
     )
 
 
+# frob:ticket T-4515
+# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_unity_project_adds_globs
+# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_non_unity_project_adds_nothing  # noqa: E501
+def _unity_exclude_globs(root: Path) -> tuple[str, ...]:
+    """`UNITY_EXCLUDE_GLOBS` if `root` is a detected Unity project, else
+    `()`.
+
+    A plain (non-Unity) root is the overwhelming common case for every
+    walk, so `detect_unity_project`'s `Err(NotUnityProject)` is expected,
+    quiet, and not logged here (it already declines to log that case
+    itself, see its docstring) -- only the positive detection is worth a
+    log line, and `detect_unity_project` already emits that one at INFO.
+    """
+    detected = detect_unity_project(root)
+    if detected.is_err:
+        return ()
+    _log.info(
+        "excludes: Unity project detected at %s, adding %d generated-output glob(s)",
+        root,
+        len(UNITY_EXCLUDE_GLOBS),
+    )
+    return UNITY_EXCLUDE_GLOBS
+
+
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
 def load_exclude_globs(root: Path) -> tuple[str, ...]:
     """Read `[graph] exclude = [...]` from frob.toml; absent config is `()`.
@@ -144,8 +186,7 @@ def load_exclude_globs(root: Path) -> tuple[str, ...]:
 
 # frob:ticket T-4102
 # frob:tests \
-# tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechan\
-# ism
+# tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism  # noqa: E501
 @lru_cache(maxsize=None)
 def _compiled_globs(exclude_globs: tuple[str, ...]) -> pathspec.PathSpec:
     """Compile `exclude_globs` under gitwildmatch semantics (cached per tuple).
@@ -170,8 +211,7 @@ def _compiled_globs(exclude_globs: tuple[str, ...]) -> pathspec.PathSpec:
 # already describes the contract, not the matcher, and stays accurate unchanged"
 # frob:ticket T-4155
 # frob:tests \
-# tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechan\
-# ism
+# tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism  # noqa: E501
 def is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool:
     """True if `rel_path` matches any glob, identically on every platform.
 
@@ -257,8 +297,7 @@ def _has_negated_descendant(rel: str, exclude_globs: tuple[str, ...]) -> bool:
 # frob:ticket T-0239
 # frob:tests tests/test_excludes.py::test_should_prune_dir_covers_all_three_signals
 # frob:tests \
-# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_negated_reinclusion_not_p\
-# runed_wholesale
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_negated_reinclusion_not_pruned_wholesale  # noqa: E501
 def _should_prune_dir(
     dir_path: Path, root: Path, exclude_globs: tuple[str, ...] = ()
 ) -> bool:
@@ -325,17 +364,16 @@ def is_test_file(path: str) -> bool:
 # frob:ticket T-4178
 # frob:tests tests/test_excludes.py::test_walk_pruned_does_not_descend_venv_or_git
 # frob:tests \
-# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignored_directory_absent_\
-# from_hardcoded_set_is_not_yielded
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignored_directory_absent_from_hardcoded_set_is_not_yielded  # noqa: E501
 # frob:tests \
-# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_tracked_file_matching_no_\
-# ignore_rule_still_yielded
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_tracked_file_matching_no_ignore_rule_still_yielded  # noqa: E501
 # frob:tests \
-# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_no_ignore_file_behaves_ex\
-# actly_as_before
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_no_ignore_file_behaves_exactly_as_before  # noqa: E501
 # frob:tests \
-# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignore_file_naming_the_se\
-# crets_file_hides_it_from_every_walk
+# tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignore_file_naming_the_secrets_file_hides_it_from_every_walk  # noqa: E501
+# frob:ticket T-4515
+# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_walk_pruned_excludes_unity_dirs  # noqa: E501
+# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_walk_pruned_skips_meta_files  # noqa: E501
 def walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[Path]:
     """Yield every file under `root`, pruning `_should_prune_dir` directories
     IN PLACE before `os.walk` descends into them, and skipping any
@@ -365,10 +403,21 @@ def walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[
     `exclude_globs` already did, and additionally skip a matching
     individual FILE that survives directory pruning (an ignore-file entry
     naming a single file, not a directory, previously had no effect on
-    this walk at all)."""
+    this walk at all).
+
+    T-4515: a THIRD source, `_unity_exclude_globs(root)`, is
+    merged in the same unconditional way when `root` is a detected Unity
+    project -- `UNITY_EXCLUDE_GLOBS` (`Library/`, `Temp/`, `Logs/`,
+    `obj/`, `*.meta`), Unity's own generated output, which a Unity repo's
+    `.gitignore` usually already lists but which this walk must not
+    depend on that to get right (a non-git root, or one with no
+    `.gitignore` at all, still must not choke on a multi-gigabyte
+    `Library/` cache)."""
     if not exclude_globs:
         exclude_globs = load_exclude_globs(root)
-    combined_globs = exclude_globs + _load_repo_ignore_globs(root)
+    combined_globs = (
+        exclude_globs + _load_repo_ignore_globs(root) + _unity_exclude_globs(root)
+    )
     for dirpath, dirnames, filenames in os.walk(root):
         current = Path(dirpath)
         dirnames[:] = [
@@ -426,6 +475,7 @@ def iter_files(root: Path, *, suffix: str | None = None) -> tuple[Path, ...]:
 
 __all__ = [
     "BUILTIN_SKIP_DIRS",
+    "UNITY_EXCLUDE_GLOBS",
     "is_excluded",
     "is_skipped_dir",
     "is_test_file",
