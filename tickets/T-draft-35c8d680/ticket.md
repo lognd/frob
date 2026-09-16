@@ -21,6 +21,7 @@ scope:
 - tests/vet_suite/test_capability_scan_csharp.py
 - tests/fixtures/lang/csharp/plain_using_fs_write.cs
 - tests/fixtures/lang/csharp/alias_using_fs_write.cs
+- tests/fixtures/lang/csharp/static_using_console.cs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,13 @@ scope_changes:
   at: '2026-09-16'
 - op: add
   glob: tests/fixtures/lang/csharp/alias_using_fs_write.cs
+  reason: static fixture file for the csharp resolver's own test suite -- checked-in,
+    no fs.write inside the test itself, avoiding a design/frob.strata via-list edit
+    (that file's ticket lease is held elsewhere right now)
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/lang/csharp/static_using_console.cs
   reason: static fixture file for the csharp resolver's own test suite -- checked-in,
     no fs.write inside the test itself, avoiding a design/frob.strata via-list edit
     (that file's ticket lease is held elsewhere right now)
