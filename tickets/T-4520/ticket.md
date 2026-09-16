@@ -1,5 +1,5 @@
 ---
-id: T-draft-54c4ee2b
+id: T-4520
 title: generate the explore/quality/design/ops group parsers from the flat parsers
   so they cannot diverge (design sys mirrors 4 of sys's 9 subverbs today)
 state: queued

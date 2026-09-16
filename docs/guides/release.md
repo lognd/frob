@@ -100,6 +100,25 @@ an unschedulable label fails that job after a bounded wait instead of
 sitting queued and holding the `release` concurrency group open forever
 for every later dispatch.
 
+## Land proves the diff, CI proves the repo (T-4415)
+
+Three gates in this pipeline answer three different questions, and none
+of them substitutes for another:
+
+- **`frob ticket land`** (T-4413) proves the DIFF -- a `--ticket`-scoped
+  check bounded to what one land could plausibly have broken, fast enough
+  for an implementer agent to wait on inline.
+- **`.github/workflows/ci.yml`'s self-gate job** proves the REPO -- a
+  bare, unscoped `uv run frob check` on every push to `main`/`dev`, no
+  truncation, and the repo's declared full-sweep source of truth. A red
+  finding there on an unscoped rule gets filed as a ticket, attributed to
+  the batch of commits since the last green run, and pushed back to the
+  branch -- see docs/modules/tickets-landing.md's "Land proves the diff,
+  CI proves the repo" section for the mechanics.
+- **`release.yml`'s `verify-ci-status`** (Decision 4 below) proves the
+  CUT -- that the exact commit being released had a green CI run, not
+  merely a recent one.
+
 ## Workflow structure (`.github/workflows/release.yml`)
 
 1. **`build`** (+ `build-sdists`) -- runs on every manual dispatch

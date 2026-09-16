@@ -1,5 +1,5 @@
 ---
-id: T-draft-fa76a292
+id: T-4524
 title: 'frob check: replace the 20 --skip-<stage> flags with one repeatable --skip
   STAGE[,STAGE] mirroring --only'
 state: queued

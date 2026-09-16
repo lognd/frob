@@ -46,6 +46,20 @@ on:
     branches: [main, dev]
   pull_request:
 
+# T-4415: "land proves the diff, CI proves the repo" (docs/guides/
+# release.md, docs/modules/tickets-landing.md) needs this job's own
+# self-gate-regression filing step (below, `build` job) to push a filed
+# ticket commit back onto the branch that failed. `contents: write` is
+# the narrowest permission that allows a `git push`; nothing else in this
+# workflow needs write access (the self-gate step itself only reads the
+# tree it checks out). A `pull_request` run's GITHUB_TOKEN never carries
+# write access to the base repo regardless of this declaration (GitHub's
+# own fork-PR restriction, unrelated to frob), and the filing step below
+# is additionally gated to `github.event_name == 'push'` so a PR run
+# never attempts the push at all.
+permissions:
+  contents: write
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -797,6 +811,19 @@ jobs:
       # exactly as before. `shell: bash` explicit (T-3531/T-4450
       # precedent): the job's default shell is pwsh on windows-latest,
       # which has neither `tee` nor `set -o pipefail`.
+      #
+      # T-4415: THIS is the declared, unscoped, full-sweep source of truth
+      # for the whole repo (docs/guides/release.md, docs/modules/
+      # tickets-landing.md's "land proves the diff, CI proves the repo"
+      # split) -- bare `uv run frob check`, no `--ticket`/`--delta`/
+      # `--budget`, so nothing here truncates which gates run or which
+      # files they run against. `frob ticket land`'s own synchronous
+      # check (T-4413) scopes to the diff plus its dependents on purpose,
+      # for land latency; this step is the one place a repo-wide,
+      # untruncated pass runs on every push, and its exit code (via
+      # `pipefail` above) is a real job failure, not advisory. See the
+      # "File ticket for self-gate regression" step below for what
+      # happens when this step is red.
       - name: frob check (self-gate)
         if: ${{ !cancelled() && (success() || matrix.os == 'windows-latest') }}
         shell: bash
@@ -889,6 +916,84 @@ jobs:
           with open(summary_path, "a", encoding="utf-8") as f:
               f.write("\n".join(lines) + "\n")
           PY
+      # T-4415: "land proves the diff, CI proves the repo" (docs/guides/
+      # release.md, docs/modules/tickets-landing.md): the "frob check
+      # (self-gate)" step above is THE declared, unscoped, full-sweep
+      # source of truth for this repo -- it runs bare `uv run frob check`
+      # with no --ticket/--delta/--budget truncation, so a red finding
+      # there is a repo-wide regression no single land's --ticket-scoped
+      # `frob check` could have seen (T-4413's diff-scoped land check is a
+      # DIFFERENT, narrower gate -- see that ticket and the docs above for
+      # the split). This step turns that red into an accounted-for ticket
+      # rather than a log line a human has to notice: it reuses the T-1690
+      # attribution engine's OWN filing path (`frob ticket new --finding
+      # RULE:FILE`, `frob.tickets._models`) rather than building a second
+      # "file a ticket" implementation here -- `--finding` already refuses
+      # a duplicate filing for a (rule, file) pair some OTHER open ticket
+      # already declares, which is this step's entire idempotency
+      # guarantee: a red run that repeats an already-filed regression
+      # files nothing new. `ubuntu-latest` ONLY (T-3747 precedent): one
+      # ticket per red batch, not one per matrix leg reporting the same
+      # regression. `github.event_name == 'push'` ONLY: a fork PR's
+      # GITHUB_TOKEN cannot push regardless (GitHub's own restriction),
+      # and a PR run is not yet "the repo" in the T-4415 sense -- only a
+      # push to main/dev is. The commit-range attributed here is bounded
+      # by the GitHub API's own last-successful-run lookup (`gh api
+      # .../runs?status=success`), falling back to `HEAD~1` on a cold
+      # start (first-ever run, or the API call itself failing) rather than
+      # attributing against an unbounded or fabricated range.
+      - name: File ticket for self-gate regression (T-4415)
+        if: ${{ matrix.os == 'ubuntu-latest' && github.event_name == 'push' && failure() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          SINCE_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?branch=${GITHUB_REF_NAME}&status=success&per_page=1" \
+            --jq '.workflow_runs[0].head_sha' 2>/dev/null || true)"
+          if [ -z "$SINCE_SHA" ] || [ "$SINCE_SHA" = "null" ]; then
+            SINCE_SHA="$(git rev-parse HEAD~1 2>/dev/null || echo "$HEAD_SHA")"
+          fi
+          echo "self-gate regression: attributing to ${SINCE_SHA}..${HEAD_SHA}"
+          FINDINGS="$(uv run python - <<'PY'
+          import json
+          import os
+
+          path = os.path.join(os.environ["RUNNER_TEMP"], "frob-check.json")
+          try:
+              data = json.load(open(path, encoding="utf-8"))
+          except Exception:
+              data = {}
+          seen: list[str] = []
+          for result in data.get("results", []):
+              for d in result.get("diagnostics", []):
+                  if d.get("severity") != "error":
+                      continue
+                  key = f"{d.get('code', '?')}:{d.get('file', '?')}"
+                  if key not in seen:
+                      seen.append(key)
+          print("\n".join(seen[:25]))
+          PY
+          )"
+          if [ -z "$FINDINGS" ]; then
+            echo "self-gate step failed but no error-severity findings parsed from frob-check.json -- an earlier step failed the job, not an unscoped-rule regression; not filing"
+            exit 0
+          fi
+          ARGS=(--title "CI self-gate red on unscoped rules since ${SINCE_SHA:0:12} (HEAD ${HEAD_SHA:0:12})"
+                --kind bug --priority high --origin auditor
+                --scope "**/*"
+                --scope-breadth-ack
+                --scope-breadth-ack-reason "CI-filed self-gate regression ticket (T-4415): the affected files are unknown until the self-gate names them at run time, so scope cannot be narrowed ahead of filing"
+                --body "Filed automatically by ci.yml's self-gate job (T-4415, reusing the T-1690 attribution engine's --finding filing path). frob check found error-severity findings on the UNSCOPED, full-repo run (no --ticket/--delta/--budget) that a per-land scoped check could not have seen. Attributed batch: ${SINCE_SHA}..${HEAD_SHA}. See this run's job summary (T-4460) for the full finding list.")
+          while IFS= read -r line; do
+            [ -n "$line" ] && ARGS+=(--finding "$line")
+          done <<< "$FINDINGS"
+          if uv run frob ticket new "${ARGS[@]}"; then
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "frob ticket new refused (likely an existing open ticket already names one of these findings) -- nothing to push"
+          fi
       # T-1265: `.frob/coverage-stamp` and `.frob/baseline` are gitignored
       # (.gitignore:21,:72) and never restored in a fresh CI checkout, so
       # TEST005/006 (per-symbol/per-module coverage floors) are

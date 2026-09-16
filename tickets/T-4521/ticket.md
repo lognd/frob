@@ -1,5 +1,5 @@
 ---
-id: T-draft-55a6b6d0
+id: T-4521
 title: 'ticket verb family: hide internal callbacks (merge-driver, sweep-async), drop
   migrate and the debt/deprecated aliases, fold runs-last-parallel-safe into a flag,
   move renumber/restore/reconcile under ticket admin'

@@ -1,5 +1,5 @@
 ---
-id: T-draft-fa633472
+id: T-4523
 title: 'scaffold pool warm/lease/status have zero references anywhere: confirm dead
   or document, then delete or document'
 state: queued

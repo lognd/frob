@@ -1,5 +1,5 @@
 ---
-id: T-draft-5af5584a
+id: T-4522
 title: 'flatten single-child verb groups: agent env, claude sync, natives build, narrative
   move, worktree sweep'
 state: queued

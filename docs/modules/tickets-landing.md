@@ -2839,6 +2839,46 @@ by `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRe
 alongside the false-positive regression test
 `.test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse`).
 
+## Land proves the diff, CI proves the repo (T-4415)
+
+<!-- frob:describes .github/workflows/ci.yml -->
+
+The owner's standing design decision (2026-09-11): `frob ticket land`'s
+synchronous check and `.github/workflows/ci.yml`'s self-gate job answer
+two DIFFERENT questions, and neither one is a cheaper substitute for the
+other.
+
+**Land proves the diff.** `land`'s own synchronous check (T-4413) scopes
+to the ticket's `--ticket` touched-set plus its dependents -- it exists
+to answer "does THIS change regress anything it could plausibly have
+broken", bounded so a land finishes in the couple of minutes an
+implementer agent can wait inline for. It deliberately does not re-walk
+every gate against every file on every land; that cost is paid once, in
+CI, not once per land.
+
+**CI proves the repo.** `ci.yml`'s "frob check (self-gate)" step (`build`
+job, every push to `main`/`dev`) runs bare `uv run frob check` -- no
+`--ticket`, `--delta`, or `--budget` truncation of any kind. It is the
+one place in the whole pipeline where every gate runs against every file,
+unscoped, and its exit code is a real job failure (piped through `tee`
+under `set -o pipefail`, not swallowed). This is the repo's declared,
+documented full-sweep source of truth: a change that lands clean under
+its own scoped check can still leave the self-gate red (the exact residue
+class the next section's post-land sweep exists to catch faster, and
+this step exists to catch AT ALL if that sweep is ever skipped, budget-
+truncated, or simply has not run yet).
+
+When the self-gate IS red on an unscoped rule, the "File ticket for
+self-gate regression" step immediately after it (same job, `ubuntu-latest`
+leg only) files a ticket attributed to the batch of commits since the
+last green run of this workflow on this branch (`gh api .../runs?
+status=success` for the range, `frob ticket new --finding RULE:FILE` to
+reuse the T-1690 attribution engine's own filing path rather than a
+second one) and pushes that ticket commit back onto the branch. A red run
+that repeats an already-attributed regression files nothing new --
+`--finding`'s own duplicate-pair refusal (T-2760) is this step's whole
+idempotency guarantee, not a hand-rolled check here.
+
 ## Post-land unscoped error sweep (T-1456)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_unscoped_error_findings -->

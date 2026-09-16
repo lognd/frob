@@ -246,9 +246,9 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 228,
-      "reason": "T-4479: adds tests/test_ci_workflow_core_wheels.py to the fs.read via-list -- read_text on this repo's own tracked Makefile, same posture as the pre-existing tests/test_ci_workflow_matrix.py/tests/test_ci_workflow_job_summary.py entries already on this via-list. Bumping the ceiling 227 -> 228, one new site.",
-      "ticket": "T-4479"
+      "accepted_count": 229,
+      "reason": "T-4415: adds tests/unit/test_ci_self_gate_unscoped.py to the fs.read via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 228 -> 229, 1 new site(s).",
+      "ticket": "T-4415"
     },
     "testsuite::fs.write": {
       "accepted_count": 523,
