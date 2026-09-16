@@ -41,6 +41,27 @@ scope_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor assemblies),
+    WHEN strata elaborates the project, THEN it creates two distinct component nodes,
+    one per asmdef.
+  evidence: []
+- text: GIVEN an asmdef's 'references' array naming another assembly, WHEN strata
+    builds the dependency graph, THEN an edge is created between the two asmdef-derived
+    nodes matching that reference.
+  evidence: []
+- text: GIVEN a .cs file not covered by any .asmdef (implicitly in Unity's default
+    assembly), WHEN strata elaborates, THEN it is assigned to a default/implicit assembly
+    node rather than dropped or erroring.
+  evidence: []
+- text: GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor assemblies),
+    WHEN strata elaborates the project, THEN it creates two distinct component nodes,
+    one per asmdef.
+  evidence: []
+- text: GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor assemblies),
+    WHEN strata elaborates the project, THEN it creates two distinct component nodes,
+    one per asmdef.
+  evidence: []
 threat: null
 component: null
 anchor: false
