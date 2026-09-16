@@ -51,6 +51,10 @@ acceptance:
 - text: GIVEN two near-duplicate C# methods in a fixture file, WHEN the dup detector
     runs, THEN it reports the duplicate pair using the _CSHARP_LANGS facet path.
   evidence: []
+- text: GIVEN a public C# method missing an XML doc comment (///), WHEN the docblock
+    checker runs, THEN it flags the missing docblock the same way it flags a missing
+    Python docstring.
+  evidence: []
 threat: null
 component: null
 anchor: false
