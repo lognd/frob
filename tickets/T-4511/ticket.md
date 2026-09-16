@@ -59,6 +59,19 @@ scope_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: GIVEN a .cs call to File.Open or StreamWriter, WHEN scanned, THEN it maps
+    to fs.read or fs.write per the registry, not a generic uncategorized finding.
+  evidence: []
+- text: GIVEN a .cs call to HttpClient.GetAsync or a raw Socket, WHEN scanned, THEN
+    it maps to net/fetch_url.
+  evidence: []
+- text: GIVEN a [DllImport] attribute on an extern method, WHEN scanned, THEN it maps
+    to ffi.
+  evidence: []
+- text: GIVEN Assembly.Load or a call through System.Reflection, WHEN scanned, THEN
+    it maps to eval/ffi, distinct from a plain method call finding.
+  evidence: []
 threat: null
 component: null
 anchor: false
