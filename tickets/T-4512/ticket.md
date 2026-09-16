@@ -58,10 +58,16 @@ acceptance:
     WHEN strata elaborates the project, THEN it creates two distinct component nodes,
     one per asmdef.
   evidence: []
-- text: GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor assemblies),
-    WHEN strata elaborates the project, THEN it creates two distinct component nodes,
-    one per asmdef.
-  evidence: []
+acceptance_amendments:
+- op: remove
+  index: 5
+  old_text: GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor
+    assemblies), WHEN strata elaborates the project, THEN it creates two distinct
+    component nodes, one per asmdef.
+  new_text: null
+  reason: duplicate criterion from a LandInProgress retry loop
+  actor: logan
+  at: '2026-09-16'
 threat: null
 component: null
 anchor: false
