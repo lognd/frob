@@ -176,22 +176,39 @@ acceptance:
   evidence: []
 - text: docs section and tests per acceptance criterion
   evidence: []
-- text: frob ticket land <id> under FROB_AGENT (or [tool.frob] land_default="queue")
-    ENQUEUES and returns in seconds with the intent recorded, and one drainer process
-    does the serial work
-  evidence: []
-- text: a per-intent completion record file under .frob/land-queue/<ticket>.json (state
-    queued/landing/landed/failed, refusal text verbatim, commit sha) that agents poll
-    cheaply, plus frob ticket land --status <id> printing it
-  evidence: []
-- text: 'drainer crash recovery: the queue file survives, the next --drain picks up,
-    a dead drainer''s landing entry is reclaimed via pid liveness (reusing the existing
-    land.lock reclaim logic''s posture)'
+- text: placeholder-resync-trigger
   evidence: []
 acceptance_amendments:
 - op: remove
   index: 8
   old_text: docs section and tests per acceptance criterion
+  new_text: null
+  reason: duplicate from a killed-then-retried accept call
+  actor: logan
+  at: '2026-09-16'
+- op: remove
+  index: 7
+  old_text: 'drainer crash recovery: the queue file survives, the next --drain picks
+    up, a dead drainer''s landing entry is reclaimed via pid liveness (reusing the
+    existing land.lock reclaim logic''s posture)'
+  new_text: null
+  reason: duplicate from a killed-then-retried accept call
+  actor: logan
+  at: '2026-09-16'
+- op: remove
+  index: 6
+  old_text: a per-intent completion record file under .frob/land-queue/<ticket>.json
+    (state queued/landing/landed/failed, refusal text verbatim, commit sha) that agents
+    poll cheaply, plus frob ticket land --status <id> printing it
+  new_text: null
+  reason: duplicate from a killed-then-retried accept call
+  actor: logan
+  at: '2026-09-16'
+- op: remove
+  index: 5
+  old_text: frob ticket land <id> under FROB_AGENT (or [tool.frob] land_default="queue")
+    ENQUEUES and returns in seconds with the intent recorded, and one drainer process
+    does the serial work
   new_text: null
   reason: duplicate from a killed-then-retried accept call
   actor: logan
