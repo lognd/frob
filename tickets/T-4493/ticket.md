@@ -2,7 +2,7 @@
 id: T-4493
 title: SUPPRESS001 ty diagnostic correlation doubles the worktree path (root/.claude/worktrees/x/.claude/worktrees/x/...)
   and cannot read any file
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -17,10 +17,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_suppress.py
 - tests/unit/test_suppress_worktree_path.py
+- tests/test_gates_suppress.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_suppress.py
+  reason: existing TestRelativize.test_already_relative_path_passes_through encodes
+    the exact wrong assumption (relative path is root-relative) this fix corrects;
+    must update to cwd-relative semantics
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check runs against a worktree under <root>/.claude/worktrees/<x>
