@@ -9,7 +9,7 @@ created: '2026-09-04'
 priority: medium
 parent: null
 tier: ticket
-sprint: v0.532.0
+sprint: backlog
 runs_last: false
 milestone: v0.532.0
 runs_last_parallel_safe: false
@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: tracking/decision ticket, not implemented in this pass;
   interim pin filed as separate ticket
+triage_changes:
+- field: sprint
+  old_value: v0.532.0
+  new_value: backlog
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-15'
 body_changes:
 - mode: set
   reason: record investigation of unwired DEPR baseline producer
