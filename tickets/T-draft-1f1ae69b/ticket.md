@@ -2,7 +2,7 @@
 id: T-draft-1f1ae69b
 title: 'Regression on dev CI: tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
   fails on all three legs after the T-4491..T-4414 lands'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -19,6 +19,7 @@ scope:
 - src/frob/app/config.py
 - tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
 - src/frob/__main__.py
+- changelog.d/T-4515.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,11 +50,20 @@ scope_changes:
     resolution'
   actor: logan
   at: '2026-09-16'
-designated_repro_test: null
+- op: add
+  glob: changelog.d/T-4515.md
+  reason: hand-merge of dev left this land-written fragment out (the commit hook refuses
+    adding fragments); the land's own merge restores it
+  actor: logan
+  at: '2026-09-16'
+evidence:
+- tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
+designated_repro_test: tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 acceptance:
 - text: GIVEN the dev branch at d6cfcaf99 WHEN tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
     runs THEN it passes on ubuntu, macOS and Windows
-  evidence: []
+  evidence:
+  - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 threat: null
 component: null
 anchor: false
