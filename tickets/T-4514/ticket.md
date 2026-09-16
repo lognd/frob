@@ -7,8 +7,6 @@ kind: feature
 origin: agent
 created: '2026-09-16'
 priority: medium
-blocked_by:
-- T-4505
 parent: T-4513
 tier: story
 sprint: v0.533.0
@@ -38,3 +36,6 @@ GIVEN a MonoBehaviour with Start/Update/OnEnable/etc. and no visible caller in t
 GIVEN a method using 'yield return' (a coroutine) started via StartCoroutine, WHEN scanned, THEN the coroutine method is treated as reachable from its StartCoroutine call site, not orphaned.
 GIVEN a call to UnityEngine.Networking.UnityWebRequest.Get, WHEN scanned, THEN it maps to the net capability.
 GIVEN a call to UnityEditor.AssetDatabase from a file under an Editor/ folder or Editor-only asmdef, WHEN scanned, THEN the finding is tagged editor-only, distinguishing it from an identical runtime-code finding.
+
+## Unblock log
+- 2026-09-16: unblocked by T-4505 -- blocker landed as T-4536 (duplicate id T-4505 dropped)
