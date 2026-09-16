@@ -728,6 +728,16 @@ def _apply_list_fields(args: argparse.Namespace, d: dict) -> None:
         if val:
             d[field] = val
 
+    # frob:ticket T-4413
+    # `check_files` is `tuple[str, ...] | None` on AppConfig (not `list[str]
+    # = []` like the rest of _LIST_FIELDS) so an unset `--files` stays a
+    # genuine None -- distinguishing "no scoping requested" from "scoped to
+    # an empty set" -- rather than collapsing to the same `[]` default the
+    # shared loop above would otherwise apply.
+    check_files = getattr(args, "check_files", None)
+    if check_files:
+        d["check_files"] = tuple(check_files)
+
 
 def _apply_scalar_overrides(args: argparse.Namespace, d: dict) -> None:
     """Copy `ticket_body`/`fleet_body`, the two free-text fields that are
@@ -783,6 +793,8 @@ _AD_HOC_FORWARDED_FIELDS = frozenset(
         "ticket_body",
         "fleet_body",
         "exports_exclude",
+        # frob:ticket T-4413
+        "check_files",
     }
 )
 

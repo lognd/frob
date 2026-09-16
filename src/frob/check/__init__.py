@@ -56,6 +56,7 @@ from frob.check._native import (
     _run_ctest,
 )
 from frob.check._python import (
+    _REPO_WIDE_STAGES,
     _run_arch,
     _run_bind,
     _run_cycle,
@@ -172,11 +173,9 @@ def _timing_debug_enabled() -> bool:
 # frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_mark_is_silent_when_disabled
 # frob:tests \
-# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_prints_breadcrumb_when_\
-# enabled
+# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_prints_breadcrumb_when_enabled  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_elapsed_grows_with_proc\
-# ess_start_offset
+# tests/unit/test_check_admission.py::TestTimingDebug.test_mark_elapsed_grows_with_process_start_offset  # noqa: E501
 def _timing_mark(label: str) -> None:
     """Print a `FROB-CHECK-TIMING:` breadcrumb naming `label` and the
     elapsed seconds since `_TIMING_PROCESS_START`, when `_timing_debug_
@@ -231,14 +230,11 @@ def _timing_atexit() -> None:
 
 # frob:ticket T-3713
 # frob:tests \
-# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_silent_when\
-# _disabled
+# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_silent_when_disabled  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_lists_every\
-# _live_thread
+# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_lists_every_live_thread  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_dumps_stack\
-# _for_non_daemon_alive_thread
+# tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_dumps_stack_for_non_daemon_alive_thread  # noqa: E501
 def _timing_dump_thread_inventory() -> None:
     """Round 24 of the win32 ~120s atexit-hang investigation (T-3686/
     T-3707/T-3708): a no-op unless `_timing_debug_enabled()`, called from
@@ -536,8 +532,7 @@ def _available_memory_mb() -> int | None:
 
 # frob:ticket T-3686
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistry.test_pid_alive_delegates_to\
-# _shared_process_liveness_probe kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistry.test_pid_alive_delegates_to_shared_process_liveness_probe kind="unit"  # noqa: E501
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` is a live process, best-effort (T-3256), delegating
     to `frob.process._pid_liveness.pid_alive` (T-3018/T-3003/T-3191)
@@ -571,17 +566,13 @@ def _pid_alive(pid: int) -> bool:
 
 # frob:ticket T-3287
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_non_git_root_fal\
-# ls_back_to_itself kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_non_git_root_falls_back_to_itself kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_primary_checkout\
-# _anchors_to_itself kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_primary_checkout_anchors_to_itself kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_of\
-# _one_repo_share_one_anchor kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_of_one_repo_share_one_anchor kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_unrelated_re\
-# pos_do_not_throttle_each_other kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_unrelated_repos_do_not_throttle_each_other kind="unit"  # noqa: E501
 def _admission_registry_anchor(root: Path) -> Path:
     """T-3287: the REPOSITORY-wide anchor for the admission registry --
     `git rev-parse --git-common-dir`'s PARENT directory (`frob.gitio.
@@ -631,11 +622,9 @@ def _admission_registry_anchor(root: Path) -> Path:
 
 # frob:ticket T-3287
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_se\
-# e_each_others_markers kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_see_each_others_markers kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_stale_marker_fro\
-# m_dead_pid_does_not_permanently_deflate_shared_budget kind="unit"
+# tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget kind="unit"  # noqa: E501
 def _admission_dir(root: Path) -> Path:
     """`<repo-root>/.frob/check-admission/` (T-3287: `<repo-root>` is
     `_admission_registry_anchor(root)` -- the git common dir's parent,
@@ -836,11 +825,9 @@ def _admission_budget(root: Path) -> Iterator[int]:
 
 # frob:ticket T-2764
 # frob:tests \
-# tests/unit/test_check.py::TestNativeStalenessResult.test_stale_native_fails_closed_wh\
-# en_rebuild_cannot_fix_it
+# tests/unit/test_check.py::TestNativeStalenessResult.test_stale_native_fails_closed_when_rebuild_cannot_fix_it  # noqa: E501
 # frob:tests \
-# tests/unit/test_check.py::TestNativeStalenessResult.test_fresh_native_is_not_a_violat\
-# ion
+# tests/unit/test_check.py::TestNativeStalenessResult.test_fresh_native_is_not_a_violation  # noqa: E501
 def _native_staleness_result(root: Path) -> ToolResult | None:
     """T-2764: `uv run frob check` used to have NO equivalent of `make
     check`'s separate `check_native_staleness_or_exit` pre-step (T-0248) --
@@ -895,11 +882,9 @@ def _native_staleness_result(root: Path) -> ToolResult | None:
 
 # frob:ticket T-3526
 # frob:tests \
-# tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_jou\
-# rnal_fails_check_loudly kind="unit"
+# tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_journal_fails_check_loudly kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is\
-# _not_a_violation kind="unit"
+# tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is_not_a_violation kind="unit"  # noqa: E501
 # frob:enforces CHK-GATE-AUTOFIX001
 def _abandoned_autofix_result(root: Path) -> ToolResult | None:
     """`None` if `frob.gates._fix_engine_shared.
@@ -960,11 +945,9 @@ def _abandoned_autofix_result(root: Path) -> ToolResult | None:
 
 # frob:ticket T-0603
 # frob:tests \
-# tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_c\
-# losed_before_any_stage_runs
+# tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
 # frob:tests \
-# tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a\
-# _violation
+# tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
 # frob:ticket T-0603
 # frob:enforces CHK-GATE-DERIVED001
 def _derived_state_integrity_result(root: Path) -> ToolResult | None:
@@ -1157,14 +1140,11 @@ class CheckResult(BaseModel):
     # frob:waive AFFECT001 reason="T-4309: see the identical waiver on CheckResult \
     # above"
     # frob:tests \
-    # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every\
-    # _result_measured
+    # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every_result_measured  # noqa: E501
     # frob:tests \
-    # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_\
-    # measured_result
+    # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_measured_result  # noqa: E501
     # frob:tests \
-    # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_unmeas\
-    # ured_results
+    # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_unmeasured_results  # noqa: E501
     @property
     def unmeasured_results(self) -> list[ToolResult]:
         """Every `results` entry whose `measurement` is not `"measured"`
@@ -1273,8 +1253,7 @@ class CheckResult(BaseModel):
 
     # frob:ticket T-0588
     # frob:tests \
-    # tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json\
-    # _and_errors_exit_1
+    # tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json_and_errors_exit_1  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/commands/check.md#public-api
         """The full structured result as JSON (`--json` CLI output)."""
@@ -1400,8 +1379,7 @@ def __getattr__(name: str) -> Any:
 # frob:ticket T-0627
 # frob:doc docs/commands/check.md#public-api
 # frob:tests \
-# tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_ever\
-# y_gate_and_tool
+# tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool  # noqa: E501
 def available_stages() -> list[str]:
     """Sorted `_STAGE_GROUPS` alias names `frob check --only list` prints (T-0627)."""
     return sorted(_stage_groups())
@@ -1490,6 +1468,93 @@ def _python_skip_flags(
 _NamedTask = tuple[str, Callable[[], "ToolResult | list[ToolResult] | None"]]
 
 
+def _timed_stage(
+    label: str, fn: Callable[[], "ToolResult | list[ToolResult] | None"]
+) -> Callable[[], "ToolResult | list[ToolResult] | None"]:
+    """Wrap `fn` to log `label`'s elapsed seconds at INFO once it returns
+    (T-4413: makes each check stage's real cost, scoped or not, visible
+    in a plain `frob check` run rather than only under a profiler).
+    Split out of `_python_tasks` under ARCH001."""
+
+    def _run() -> "ToolResult | list[ToolResult] | None":
+        start = time.monotonic()
+        try:
+            return fn()
+        finally:
+            _log.info(
+                "check stage %r finished in %.2fs", label, time.monotonic() - start
+            )
+
+    return _run
+
+
+def _log_repo_wide_scoped(stage: str, files: tuple[str, ...] | None) -> None:
+    """Log one INFO line naming `stage` as running unscoped despite
+    `--files` (T-4413: `_REPO_WIDE_STAGES` cannot be narrowed to a file
+    subset). No-op when `files` is falsy. Split out of `_python_tasks`
+    under ARCH001."""
+    if files:
+        _log.info(
+            "check stage %r is repo-wide (_REPO_WIDE_STAGES) -- "
+            "running unscoped despite --files",
+            stage,
+        )
+
+
+def _stage_specs(
+    root: Path,
+    *,
+    ruff_args: list[str] | None,
+    ticket: str | None,
+    base: str | None,
+    gate_only: frozenset[str],
+    skips: dict[str, bool],
+    delta: bool,
+    no_cache: bool,
+    files: tuple[str, ...] | None,
+) -> list[tuple[str, bool, Callable[[], "ToolResult | list[ToolResult] | None"]]]:
+    """Every Python check stage as (name, enabled-by-skips, thunk), in run
+    order -- the data `_python_tasks` filters by `--only` (T-4413 split
+    under ARCH001; the T-2320 ruff comment moved here with the table)."""
+    # T-2320: the "ruff" --only/stage name still selects the combined job
+    # (both sub-invocations run in the SAME task/thread) -- only the skip
+    # decision is independent per half via `_run_ruff`'s own
+    # `skip_check`/`skip_format` params, never via `--only`.
+    ruff_enabled = not skips["ruff_check"] or not skips["ruff_format"]
+    return [
+        (
+            "ruff",
+            ruff_enabled,
+            lambda: _run_ruff(
+                root,
+                ruff_args,
+                skip_check=skips["ruff_check"],
+                skip_format=skips["ruff_format"],
+                files=files,
+            ),
+        ),
+        ("ty", not skips["ty"], lambda: _run_ty(root, files=files)),
+        ("cycle", not skips["cycle"], lambda: _run_cycle(root)),
+        ("dup", not skips["dup"], lambda: _run_dup(root)),
+        ("arch", not skips["arch"], lambda: _run_arch(root)),
+        ("bind", not skips["bind"], lambda: _run_bind(root)),
+        ("exports", not skips["exports"], lambda: _run_exports(root)),
+        (
+            "gates",
+            not skips["gates"],
+            lambda: _run_gates(
+                root,
+                ticket=ticket,
+                base=base,
+                gates=gate_only,
+                delta=delta,
+                no_cache=no_cache,
+                files=files,
+            ),
+        ),
+    ]
+
+
 def _python_tasks(
     root: Path,
     *,
@@ -1501,62 +1566,43 @@ def _python_tasks(
     skips: dict[str, bool],
     delta: bool = False,
     no_cache: bool = False,
+    files: tuple[str, ...] | None = None,
 ) -> list[_NamedTask]:
     """The enabled per-tool jobs for a Python check run, each paired with
     its progress-line label (T-2978).
 
     T-1346: `no_cache` reaches `_run_gates` unchanged -- see its own
     docstring for the default-on gate-cache behavior this threads through.
-    """
+
+    T-4413: `files`, when given, is forwarded to `_run_ruff`/`_run_ty`/
+    `_run_gates` so those three stages compute over the scoped path set
+    instead of the whole tree. `arch`/`cycle`/`dup`/`exports`
+    (`_REPO_WIDE_STAGES`) always run unscoped -- each logs one INFO line
+    naming itself as skipped-from-scoping when `files` is set, so a
+    scoped run's real footprint (which stages actually narrowed) is
+    visible without reading source. Every task is also wrapped to log its
+    own elapsed seconds at INFO on completion."""
 
     def wanted(name: str) -> bool:
         return only is None or name in only
 
     tasks: list[_NamedTask] = []
-    # T-2320: the "ruff" --only/stage name still selects the combined job
-    # (both sub-invocations run in the SAME task/thread, same as before
-    # T-2320) -- only the skip decision is now independent per half, via
-    # `_run_ruff`'s own `skip_check`/`skip_format` params. A caller that
-    # wants JUST one half still skips the other through
-    # `--skip-ruff-check`/`--skip-ruff-format`, not via `--only`.
-    if (not skips["ruff_check"] or not skips["ruff_format"]) and wanted("ruff"):
-        tasks.append(
-            (
-                "ruff",
-                lambda: _run_ruff(
-                    root,
-                    ruff_args,
-                    skip_check=skips["ruff_check"],
-                    skip_format=skips["ruff_format"],
-                ),
-            )
-        )
-    if not skips["ty"] and wanted("ty"):
-        tasks.append(("ty", lambda: _run_ty(root)))
-    if not skips["cycle"] and wanted("cycle"):
-        tasks.append(("cycle", lambda: _run_cycle(root)))
-    if not skips["dup"] and wanted("dup"):
-        tasks.append(("dup", lambda: _run_dup(root)))
-    if not skips["arch"] and wanted("arch"):
-        tasks.append(("arch", lambda: _run_arch(root)))
-    if not skips["bind"] and wanted("bind"):
-        tasks.append(("bind", lambda: _run_bind(root)))
-    if not skips["exports"] and wanted("exports"):
-        tasks.append(("exports", lambda: _run_exports(root)))
-    if not skips["gates"] and wanted("gates"):
-        tasks.append(
-            (
-                "gates",
-                lambda: _run_gates(
-                    root,
-                    ticket=ticket,
-                    base=base,
-                    gates=gate_only,
-                    delta=delta,
-                    no_cache=no_cache,
-                ),
-            )
-        )
+    for name, enabled, fn in _stage_specs(
+        root,
+        ruff_args=ruff_args,
+        ticket=ticket,
+        base=base,
+        gate_only=gate_only,
+        skips=skips,
+        delta=delta,
+        no_cache=no_cache,
+        files=files,
+    ):
+        if not enabled or not wanted(name):
+            continue
+        if name in _REPO_WIDE_STAGES:
+            _log_repo_wide_scoped(name, files)
+        tasks.append((name, _timed_stage(name, fn)))
     return tasks
 
 
@@ -1715,6 +1761,7 @@ def run_check(
     delta: bool = False,
     no_cache: bool = False,
     on_task_done: Callable[[str, int, int], None] | None = None,
+    files: tuple[str, ...] | None = None,
 ) -> CheckResult:
     """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc.
 
@@ -1736,6 +1783,12 @@ def run_check(
     dup/arch/bind/exports/gates actually finishes -- see
     `_run_tasks_concurrently`'s own docstring. Every existing caller
     (every one before this ticket) passes nothing and is unaffected.
+
+    T-4413: `files`, when given, scopes ruff/ty/gates compute to that path
+    set instead of the whole tree; `arch`/`cycle`/`dup`/`exports` (`frob.
+    check._python._REPO_WIDE_STAGES`) always run unscoped regardless --
+    see `_python_tasks`'s docstring for why. `None` (default) is
+    unscoped, today's behavior byte-for-byte.
     """
     skips = _python_skip_flags(
         skip_ruff=skip_ruff,
@@ -1759,6 +1812,7 @@ def run_check(
         delta=delta,
         no_cache=no_cache,
         on_task_done=on_task_done,
+        files=files,
     )
 
 
@@ -1782,6 +1836,7 @@ def _run_check_with_skips(
     delta: bool,
     no_cache: bool = False,
     on_task_done: Callable[[str, int, int], None] | None = None,
+    files: tuple[str, ...] | None = None,
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`. `on_task_done`
@@ -1884,6 +1939,12 @@ def _run_check_with_skips(
         # outside it (CLI runners, tests exercising real incremental
         # rebuilds) is unaffected.
         with run_memo_scope():
+            if files:
+                # T-4413: visible even off -v -- the whole point of
+                # `--files` is to make a scoped run's actual footprint
+                # legible, not something an agent has to infer from wall
+                # clock alone.
+                _log.info("run_check: scoped to %d file(s) via --files", len(files))
             tasks = _python_tasks(
                 root,
                 only=only,
@@ -1894,6 +1955,7 @@ def _run_check_with_skips(
                 skips=skips,
                 delta=delta,
                 no_cache=no_cache,
+                files=files,
             )
             # T-3675: stop point "tasks" -- see _stop_before_result's docstring.
             stop_result = _stop_before_result(

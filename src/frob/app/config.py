@@ -325,6 +325,15 @@ class AppConfig(BaseModel):
     check_ticket: str | None = None
     check_base: str | None = None
     check_only: list[str] = []
+    # frob:ticket T-4413
+    #: `frob check --files PATH...`: scope check compute (ruff/ty argv,
+    #: gate file iteration) to this file set instead of the whole tree.
+    #: `None` (default) is unscoped -- today's behavior, byte-for-byte.
+    #: Stages/gates listed in `REPO_WIDE_STAGES`/`REPO_WIDE_GATES` (arch,
+    #: cycle, dup, exports; ledger, milestone, release, cross-ticket
+    #: leakage, sys/selfaudit) ignore this and always run unscoped -- their
+    #: findings depend on repo-wide state a file subset cannot represent.
+    check_files: tuple[str, ...] | None = None
     check_stamp_coverage: bool = False
     check_stamp_baseline: bool = False
     # frob:ticket T-1535

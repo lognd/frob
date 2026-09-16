@@ -146,6 +146,22 @@ def _add_check_selection_args(check_p) -> None:
         default=[],
         help="run only these stages (repeatable); includes 'gates'",
     )
+    # frob:ticket T-4413
+    check_p.add_argument(
+        "--files",
+        dest="check_files",
+        metavar="PATH",
+        action="append",
+        default=None,
+        help=(
+            "scope check compute to these files/dirs (repeatable) instead "
+            "of the whole tree -- ruff/ty receive this list directly; "
+            "arch/cycle/dup/exports and repo-wide gates (ledger, milestone, "
+            "release, cross-ticket leakage, sys/selfaudit) still run "
+            "unscoped (T-4413's REPO_WIDE_STAGES/REPO_WIDE_GATES). Omit "
+            "(default None) for today's unscoped behavior, byte-for-byte."
+        ),
+    )
     check_p.add_argument(
         "--stamp-coverage",
         dest="check_stamp_coverage",

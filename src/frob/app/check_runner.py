@@ -325,7 +325,12 @@ def _dispatch_check_python(
 ):
     """Run `run_check` with `cfg`'s Python-toolchain skip flags and gate
     selectors. `progress` (T-2978, a no-op off a TTY) is wired to
-    `run_check`'s `on_task_done` -- see `_task_progress_callback`."""
+    `run_check`'s `on_task_done` -- see `_task_progress_callback`.
+
+    T-4413: `cfg.check_files` (`frob check --files ...`) is forwarded as
+    `run_check`'s `files` -- see that field's own docstring on
+    `AppConfig` for which stages/gates it scopes and which stay
+    repo-wide."""
     return run_check(
         root,
         skip_ruff=cfg.check_skip_ruff,
@@ -344,16 +349,15 @@ def _dispatch_check_python(
         delta=cfg.check_delta,
         no_cache=cfg.check_no_cache,
         on_task_done=_task_progress_callback(progress, "python"),
+        files=cfg.check_files,
     )
 
 
 # frob:ticket T-2978
 # frob:tests \
-# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_progress_re\
-# turns_none
+# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_progress_returns_none  # noqa: E501
 # frob:tests \
-# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_progress\
-# _with_language_qualified_label
+# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_progress_with_language_qualified_label  # noqa: E501
 def _task_progress_callback(
     progress: Progress | None, project_type: str
 ) -> Callable[[str, int, int], None] | None:
@@ -506,16 +510,13 @@ def _opt_in_deploy_stage_result(
 # frob:ticket T-1809
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
 # frob:tests \
-# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_home_c\
-# laude_present_but_file_differs
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_home_claude_present_but_file_differs  # noqa: E501
 # frob:tests \
-# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_home_\
-# claude_root_absent
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_home_claude_root_absent  # noqa: E501
 # frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
 # frob:tests \
-# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no\
-# _managed_config
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no_managed_config  # noqa: E501
 # frob:enforces CHK-GATE-CLAUDE001
 def _claude_config_drift_result(root: Path) -> ToolResult | None:
     """CLAUDE001 (T-1809, T-1719 item 2): fails `frob check` when a

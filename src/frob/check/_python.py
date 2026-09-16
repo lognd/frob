@@ -90,6 +90,18 @@ def _subject_count_probes() -> dict[str, tuple[Callable[[Path], int], _GateSever
 # frob:ticket T-2585
 _log = get_logger(__name__)
 
+# frob:ticket T-4413
+#: Python check stages that always run unscoped even when `frob check
+#: --files ...` narrows the run, because each one's finding depends on
+#: whole-tree state a file subset cannot represent: `arch`/`cycle` compute
+#: repo-wide structural clusters (god modules, import cycles) that a
+#: narrowed callee/caller set cannot see; `dup` needs the WHOLE corpus to
+#: find a duplicate's other half, which may sit outside the scoped set
+#: entirely; `exports` reports package-level export surfaces, not a
+#: per-file property. Consulted by `_python_tasks`, which logs an INFO
+#: line naming each skipped-from-scoping stage whenever `--files` is set.
+_REPO_WIDE_STAGES: frozenset[str] = frozenset({"arch", "cycle", "dup", "exports"})
+
 
 # frob:ticket T-0142
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
@@ -114,6 +126,7 @@ def _run_ruff(
     *,
     skip_check: bool = False,
     skip_format: bool = False,
+    files: tuple[str, ...] | None = None,
 ) -> list[ToolResult]:
     """ruff lint + ruff format --check, as up to two ToolResults. A missing
     `ruff` binary (T-0142: bare-wheel installs may lack it) is a typed
@@ -144,34 +157,45 @@ def _run_ruff(
     UNMEASURED rather than the T-4308 hard ERROR reserved for a `ruff`
     that ran and produced unparseable output. `_ruff_format_result`
     below needs no equivalent change -- it never calls
-    `parse_ruff_json`."""
-    from frob.process.parsers import parse_ruff_json
+    `parse_ruff_json`.
 
+    T-4413: `files`, when given, replaces the single `str(root)` target
+    argv entry with one entry per path in `files` -- ruff lints/formats
+    only that file set instead of walking the whole tree. `None`
+    (default) keeps today's unscoped `str(root)` argv unchanged."""
+    targets = list(files) if files else [str(root)]
     out: list[ToolResult] = []
     if not skip_check:
-        try:
-            run_result = guarded_subprocess_run(
-                project_tool_argv(
-                    root, "ruff", "check", "--output-format", "json", str(root)
-                ),
-                capture_output=True,
-                text=True,
-            )
-        except FileNotFoundError:
-            out.append(tool_unavailable_result("ruff-check", "ruff"))
-        else:
-            if run_result.is_err:
-                out.append(_guard_err_result(run_result, "ruff-check", "ruff"))
-            else:
-                proc = run_result.danger_ok
-                r = parse_ruff_json(
-                    proc.stdout, exit_code=proc.returncode, stderr=proc.stderr
-                )
-                r.tool = "ruff-check"
-                out.append(r)
+        out.append(_run_ruff_check(root, targets))
     if not skip_format:
-        out.append(_ruff_format_result(root))
+        out.append(_ruff_format_result(root, files=files))
     return out
+
+
+def _run_ruff_check(root: Path, targets: list[str]) -> ToolResult:
+    """The `ruff check --output-format json` stage of `_run_ruff`, split
+    out under ARCH001 (T-4413): a missing `ruff` binary or a guard error
+    yields the same typed failing `ToolResult` `_run_ruff` always
+    returned; on success, `proc.stderr` still feeds `parse_ruff_json` so
+    T-4354's `tool_absent_from_project` detection is unchanged."""
+    from frob.process.parsers import parse_ruff_json
+
+    try:
+        run_result = guarded_subprocess_run(
+            project_tool_argv(
+                root, "ruff", "check", "--output-format", "json", *targets
+            ),
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return tool_unavailable_result("ruff-check", "ruff")
+    if run_result.is_err:
+        return _guard_err_result(run_result, "ruff-check", "ruff")
+    proc = run_result.danger_ok
+    r = parse_ruff_json(proc.stdout, exit_code=proc.returncode, stderr=proc.stderr)
+    r.tool = "ruff-check"
+    return r
 
 
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
@@ -179,7 +203,9 @@ def _run_ruff(
 # (the demoted case). T-1062: leaked Unknown traces to _reformat_diagnostics, a plain \
 # str-splitting helper the resolver cannot follow through the module-local call \
 # boundary; the only fallible step (the guarded subprocess call) is caught below"
-def _ruff_format_result(root: Path) -> ToolResult:
+def _ruff_format_result(
+    root: Path, *, files: tuple[str, ...] | None = None
+) -> ToolResult:
     """The `ruff format --check` outcome as one ToolResult, or a typed
     failure (T-0142) if `ruff` is not on PATH.
 
@@ -187,10 +213,14 @@ def _ruff_format_result(root: Path) -> ToolResult:
     <root> ruff ...`), matching `_run_ruff`'s own updated reasoning above
     -- both sub-invocations must agree on which `ruff` they are running,
     and it must be the CHECKED PROJECT's own pinned version, not
-    whatever a bare name resolves to on PATH."""
+    whatever a bare name resolves to on PATH.
+
+    T-4413: `files`, when given, formats only that path set instead of
+    `str(root)`; see `_run_ruff`'s own docstring."""
+    targets = list(files) if files else [str(root)]
     try:
         run_result = guarded_subprocess_run(
-            project_tool_argv(root, "ruff", "format", "--check", str(root)),
+            project_tool_argv(root, "ruff", "format", "--check", *targets),
             capture_output=True,
             text=True,
         )
@@ -241,8 +271,7 @@ def _guard_err_result(run_result, tool: str, binary: str) -> ToolResult:  # noqa
 
 # frob:ticket T-2320
 # frob:tests \
-# tests/unit/test_check.py::TestRunRuffAutofix.test_success_runs_fix_then_format_via_pr\
-# oject_tool_argv
+# tests/unit/test_check.py::TestRunRuffAutofix.test_success_runs_fix_then_format_via_project_tool_argv  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_missing_binary_yields_two_typed_results  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_kill_switch_disabled_yields_two_typed_results  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_check_fix_nonzero_exit_still_runs_format  # noqa: E501
@@ -332,22 +361,22 @@ _DEFAULT_TY_TARGET_PLATFORMS: tuple[str, ...] = ("linux", "win32", "darwin")
 # frob:tests \
 # tests/unit/test_check.py::TestRunTyMultiPlatform.test_default_platforms_all_run
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform.test_windows_only_diagnostic_is_repo\
-# rted_from_linux_host
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_windows_only_diagnostic_is_reported_from_linux_host  # noqa: E501
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform.test_ordinary_cross_platform_code_st\
-# ays_quiet
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_ordinary_cross_platform_code_stays_quiet  # noqa: E501
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform.test_configured_target_platforms_ove\
-# rride_default
-def _run_ty(root: Path) -> ToolResult:
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_configured_target_platforms_override_default  # noqa: E501
+def _run_ty(root: Path, *, files: tuple[str, ...] | None = None) -> ToolResult:
     """ty type-check, honouring a local ty.toml's extra-paths (T-0996), run
     ONCE PER TARGET PLATFORM (T-3191, see module docstring / docs/commands/
     check.md's "Multi-platform typecheck" section for the full rationale)
     and reported as the union, each diagnostic labelled `[platform=<name>]`.
     A missing `ty` binary (T-0142) is a typed failing ToolResult, never a
-    silent skip -- the previous `None` return vanished the stage entirely."""
-    base_cmd, scan = _ty_base_cmd(root)
+    silent skip -- the previous `None` return vanished the stage entirely.
+
+    T-4413: `files`, when given, replaces the single `str(root)` check
+    target with that path set -- see `_ty_base_cmd`'s own docstring."""
+    base_cmd, scan = _ty_base_cmd(root, files=files)
     platforms = _resolve_ty_target_platforms(scan)
     results = [
         _run_ty_one([*base_cmd, "--python-platform", platform], platform)
@@ -387,7 +416,9 @@ def _nested_worktree_ty_excludes(scan: Path) -> list[str]:
 
 # frob:ticket T-0996
 # frob:ticket T-3191
-def _ty_base_cmd(root: Path) -> tuple[list[str], Path]:
+def _ty_base_cmd(
+    root: Path, *, files: tuple[str, ...] | None = None
+) -> tuple[list[str], Path]:
     """The `ty check <root>` argv shared by every `--python-platform`
     invocation `_run_ty` makes, plus the `scan` dir (`root` itself, or its
     parent if `root` names a file) that dir-relative lookups below resolve
@@ -408,9 +439,13 @@ def _ty_base_cmd(root: Path) -> tuple[list[str], Path]:
     a src-layout exists) and `--python <root>/.venv` (when a project-local
     venv exists) makes first-party and third-party resolution hermetic to
     `root` regardless of what ancestor directories contain, independent of
-    a `ty.toml`."""
+    a `ty.toml`.
+
+    T-4413: `files`, when given, checks that path set instead of the
+    single `str(root)` target -- the caller's scoped file list."""
     scan = root if root.is_dir() else root.parent
-    cmd = project_tool_argv(scan, "ty", "check", str(root))
+    targets = list(files) if files else [str(root)]
+    cmd = project_tool_argv(scan, "ty", "check", *targets)
     for pattern in _nested_worktree_ty_excludes(scan):
         cmd += ["--exclude", pattern]
     src_dir = scan / "src"
@@ -1184,6 +1219,7 @@ def _run_gates(
     gates: frozenset[str] = frozenset(),
     delta: bool = False,
     no_cache: bool = False,
+    files: tuple[str, ...] | None = None,
 ) -> ToolResult | list[ToolResult]:
     """Run frob.gates.run_gates as a check stage. Most load failures (git repo
     / tickets dir not guaranteed to exist for every `frob check` caller) are a
@@ -1223,11 +1259,19 @@ def _run_gates(
     `gates` line; a load failure still reports as the single `gates`
     `ToolResult` `_gates_error_result` already built (nothing to split,
     there is no report to group by family).
+
+    T-4413: `files`, when given, is forwarded onto `GateConfig.files` --
+    file-iterating gates then walk only that path set; gates in
+    `frob.gates.REPO_WIDE_GATES` always run unscoped regardless (their
+    findings depend on repo-wide state a file subset cannot represent).
+    Whole-run replay is skipped when `files` is set: the stored replay's
+    fingerprint has no notion of a scoped subset, so a scoped run always
+    recomputes rather than risk reprinting an unscoped verdict.
     """
     from frob.gates import GateConfig, GateError, run_gates
     from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
 
-    cache_on = _gate_cache_enabled(no_cache)
+    cache_on = _gate_cache_enabled(no_cache) and not files
     # T-2585: whole-run replay, ABOVE both the T-0602/T-1445 per-gate
     # caches `run_gates` itself consults below. Gated on the exact same
     # `cache_on` flag those caches use -- `no_cache=True`/
@@ -1248,7 +1292,9 @@ def _run_gates(
                 replay.partial,
             )
             return _label_replay(list(replay.results), age_s=replay.age_s)
-    cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
+    cfg = GateConfig(
+        root=str(root), base=base or "main", ticket=ticket, gates=gates, files=files
+    )
     result = run_gates(cfg, use_cache=cache_on)
     if result.is_err:
         return _gates_error_result(result.danger_err, GateError)
@@ -1299,11 +1345,9 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
 # frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_dummy_sentinel_still_a_defensive_fallback  # noqa: E501
 # frob:tests \
-# tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_config_malformed_is_a_h\
-# ard_error_not_a_pass
+# tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_config_malformed_is_a_hard_error_not_a_pass  # noqa: E501
 # frob:tests \
-# tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_graph_unavailable_is_a_\
-# hard_error_not_a_pass
+# tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_graph_unavailable_is_a_hard_error_not_a_pass  # noqa: E501
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
     ticket queue itself failed to load, else a soft skip.

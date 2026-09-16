@@ -1,7 +1,7 @@
 ---
 id: T-4413
 title: 'Rapid profile: scoped gate sweep replaces unscoped pre-land baseline check'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -73,18 +73,29 @@ scope_changes:
     run_gates (T-4413)
   actor: logan
   at: '2026-09-15'
+evidence:
+- tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_shared_check_spawn_fn_appends_files_argv
+- tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_rapid_check_scope_files_includes_touched_and_dependents
+- tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_shared_check_spawn_fn_no_files_omits_flag
+- tests/unit/test_check_scoped_files.py::TestPythonTasksScoping::test_no_files_is_unscoped
+- tests/unit/test_check_scoped_files.py::TestRunRuffFilesArgv::test_ruff_check_uses_files_not_root
 designated_repro_test: null
 acceptance:
 - text: GIVEN a rapid land WHEN the synchronous pre-land check runs THEN it replaces
     the T-1463 unscoped full in-process frob check with a scoped gate sweep over diff-touched
     files plus their direct dependents (via frob affects / callgraph)
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_shared_check_spawn_fn_appends_files_argv
+  - tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_rapid_check_scope_files_includes_touched_and_dependents
 - text: GIVEN a rapid land WHEN the scoped sweep runs THEN touched-set tests and bound
     evidence collection are preserved unchanged from today
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_shared_check_spawn_fn_no_files_omits_flag
+  - tests/unit/test_check_scoped_files.py::TestPythonTasksScoping::test_no_files_is_unscoped
 - text: GIVEN a rapid land of a one-file change on this repo WHEN measured THEN the
     synchronous phase completes in under 3 minutes
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestRunRuffFilesArgv::test_ruff_check_uses_files_not_root
 threat: null
 component: null
 anchor: false

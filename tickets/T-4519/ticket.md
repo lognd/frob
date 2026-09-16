@@ -1,0 +1,38 @@
+---
+id: T-4519
+title: docs/xref/perf coverage for csharp (post T-3232/T-3234 generic fix)
+state: queued
+kind: bug
+origin: agent
+created: '2026-09-16'
+priority: medium
+blocked_by:
+- T-3232
+- T-3234
+parent: T-4506
+tier: ticket
+sprint: v0.533.0
+runs_last: false
+milestone: v0.533.0
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/docs/__init__.py
+- src/frob/xref/__init__.py
+- src/frob/perf/_collectors.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+After T-3232 (frob.docs/frob.xref language filters) and T-3234 (frob.perf hot-graph collector) land their generic fixes, add csharp-specific test fixtures proving the three packages now cover csharp end to end. This ticket adds proof coverage, it does not re-implement T-3232/T-3234's generic fix. blocked_by both.
+
+GIVEN a .cs file with an XML doc comment (///), WHEN frob.docs extracts docstrings, THEN the csharp docstring is extracted (not silently skipped as non-python).
+GIVEN a .cs file, WHEN frob xref --lang csharp is run, THEN it is accepted as a valid --lang filter value and returns csharp symbols.
+GIVEN a .cs file with a hot call path, WHEN frob.perf's hot-graph collector runs, THEN csharp appears in its adapter-extension coverage alongside python/typescript/rust/kotlin.

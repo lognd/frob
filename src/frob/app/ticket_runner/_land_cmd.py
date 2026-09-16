@@ -276,6 +276,58 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
     return frozenset(hunk.file for hunk in diff_result.danger_ok.hunks)
 
 
+# frob:ticket T-4413
+def _rapid_check_scope_files(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> tuple[str, ...] | None:
+    """The `--files` set rapid's synchronous pre-land check spawn is scoped
+    to (T-4413): `touched_paths` (T-1404's own diff-derived set, reused --
+    see `_land_touched_paths`) plus every file containing a DIRECT
+    dependent of a symbol defined in one of those files, via
+    `frob.graph.affects.affects` (`max_depth=1`) over a fresh `build_graph`
+    snapshot -- the same "uses-contract" reverse-edge walk `frob affects`
+    itself runs, one hop only: a diff-touched file's own contract change
+    can invalidate a direct caller's correctness, but this is a synchronous
+    land-blocking check, not a full transitive-closure impact analysis (the
+    deferred post-land sweep still covers the whole tree unscoped).
+
+    Returns `None` -- unscoped, today's rapid behavior byte-for-byte --
+    when `touched_paths` itself is `None` (diff unmeasurable) or the graph
+    fails to build (a broken/stale worktree must not silently narrow what
+    the land's own gate check verifies)."""
+    if not touched_paths:
+        return None
+    from frob.graph import build_graph
+    from frob.graph.affects import affects
+
+    snapshot_result = build_graph(worktree, worktree / ".frob" / "cache.db")
+    if snapshot_result.is_err:
+        _log.warning(
+            "ticket land: %s rapid --files scoping could not build the "
+            "graph (%s) -- falling back to an unscoped check",
+            ticket_id,
+            snapshot_result.danger_err,
+        )
+        return None
+    snapshot = snapshot_result.danger_ok
+    scoped: set[str] = set(touched_paths)
+    for symref in snapshot.symbols:
+        file = symref.split("::", 1)[0]
+        if file not in touched_paths:
+            continue
+        for dep_symref in affects(snapshot, symref, max_depth=1).dependents:
+            scoped.add(dep_symref.split("::", 1)[0])
+    _log.info(
+        "ticket land: %s rapid --files scoped to %d file(s) (%d touched + "
+        "%d direct-dependent)",
+        ticket_id,
+        len(scoped),
+        len(touched_paths),
+        len(scoped) - len(touched_paths),
+    )
+    return tuple(sorted(scoped))
+
+
 # frob:ticket T-1175
 # frob:ticket T-1404
 # frob:ticket T-1903
@@ -6404,8 +6456,25 @@ def _land_core_invoke(
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
     # frob:ticket T-4105
+    # frob:ticket T-4413
+    # T-4413: under rapid ONLY, scope this spawn's `--files` to the diff-
+    # touched set plus direct dependents (`_rapid_check_scope_files`) --
+    # the T-1463/T-2053-measured whole-tree floor this ticket exists to
+    # close. Standard is unaffected: `rapid_scope_files` stays `None`,
+    # so `_shared_check_spawn_fn`'s own `files=None` default keeps its
+    # argv byte-for-byte unchanged.
+    rapid_scope_files = (
+        _rapid_check_scope_files(
+            worktree, cfg.ticket_id, _land_touched_paths(worktree, cfg.ticket_id)
+        )
+        if rapid_land
+        else None
+    )
     _shared_spawn = _shared_check_spawn_fn(
-        worktree, cfg.ticket_id, base=cfg.ticket_land_branch
+        worktree,
+        cfg.ticket_id,
+        base=cfg.ticket_land_branch,
+        files=rapid_scope_files,
     )
     return land(
         root,

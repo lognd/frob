@@ -109,6 +109,13 @@ class GateConfig(BaseModel):
     base: str = "main"
     ticket: str | None = None
     gates: frozenset[str] = frozenset()
+    # frob:ticket T-4413
+    #: scope file-iterating gates to this path set instead of walking
+    #: `root` in full; `None` (default) is unscoped, today's behavior
+    #: byte-for-byte. Repo-wide gates (ledger/tickets, milestone, release,
+    #: cross-ticket leakage, sys/selfaudit -- `REPO_WIDE_GATES` in
+    #: `frob.gates`) ignore this and always run unscoped.
+    files: tuple[str, ...] | None = None
 
 
 # frob:doc docs/modules/gates.md#data-models

@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 308,
-      "reason": "T-4492: adds tests/unit/test_lifecycle_work_base.py to the exec via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 307 -> 308, 1 new site(s).",
-      "ticket": "T-4492"
+      "accepted_count": 309,
+      "reason": "T-4413: adds tests/unit/test_check_scoped_files.py to the exec via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 308 -> 309, 1 new site(s).",
+      "ticket": "T-4413"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

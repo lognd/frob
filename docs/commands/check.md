@@ -299,7 +299,22 @@ frob check --only static               # cycle/dup/arch/bind/exports (~18s)
 frob check --only gates-fast           # every thread-pool gate (~37s)
 frob check --only gates-native         # archgate/clones/perf/exhaustive_handling (~15s)
 frob check --only gates-security       # sys/pii_structural/secrets/dead_symbols/protocol_summary/opaque (~13s)
+frob check --files src/a.py --files src/b.py  # T-4413: scope ruff/ty/gates compute to these files
 ```
+
+### File-scoped compute (`--files`, T-4413)
+
+`--files PATH` (repeatable) narrows the ruff/ty/gates compute floor to the
+given path set instead of walking the whole tree -- `frob ticket land`'s
+rapid profile passes its own diff-touched files plus direct dependents
+(the `frob.graph.affects` dependents walk) here for its synchronous pre-land check, so that check's
+wall-clock scales with the ticket's own diff rather than the whole repo.
+`arch`/`cycle`/`dup`/`exports` (`frob.check._python._REPO_WIDE_STAGES`) and
+`tickets`/`milestone`/`release`/`cross_ticket_leakage`/`sys`
+(`frob.gates.REPO_WIDE_GATES`) always run unscoped regardless -- each
+finding depends on repo-wide state a file subset cannot represent. Omitting
+`--files` (the default) is unscoped, byte-for-byte identical to every
+pre-T-4413 `frob check` invocation.
 
 `--only` accepts any stage name (`ruff`, `ty`, `cycle`, `dup`, `arch`, `bind`,
 `exports`, `gates`), any individual gate name (`frob.gates._ALL_GATES`,

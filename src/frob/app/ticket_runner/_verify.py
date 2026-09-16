@@ -951,7 +951,12 @@ def _extract_lock_holder(combined: str) -> str | None:
 # frob:ticket T-0919
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
 # kind="unit"
-def _shared_check_spawn_fn(root: Path, ticket_id: str, base: str | None = None):  # noqa: ANN201
+def _shared_check_spawn_fn(  # noqa: ANN201
+    root: Path,
+    ticket_id: str,
+    base: str | None = None,
+    files: tuple[str, ...] | None = None,
+):
     """T-0919: build a zero-arg closure that spawns `frob check --ticket
     <id>` in `root` AT MOST ONCE, caching the resulting
     `subprocess.CompletedProcess`-shaped object (or `None` on a refused/
@@ -1085,7 +1090,18 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str, base: str | None = None):
     spawn against `worktree` (not `root`) for the acceptance-criteria
     gate-claim check -- a second, independent cost this investigation
     did not attempt to quantify or fix, since it lives outside this
-    file too."""
+    file too.
+
+    T-4413: implements exactly the (2) speedup this docstring's own prior
+    investigation named as needing land's diff. `files` (default `None`,
+    every non-rapid caller and every caller that predates this ticket),
+    when given, is appended as `--files <path>...` argv -- `_land_cmd.py`'s
+    rapid profile passes the diff-touched set plus direct dependents
+    (`frob affects`) here, so this spawn's own `check/_python.py` tool
+    layer (the ~150s warm-cache floor named above) and its file-iterating
+    gates run over that scoped set instead of the whole tree. The
+    standard profile passes nothing, so its spawn is byte-for-byte
+    unchanged."""
     cache: dict[str, subprocess.CompletedProcess | None] = {}
 
     def spawn() -> subprocess.CompletedProcess | None:
@@ -1133,6 +1149,10 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str, base: str | None = None):
         # frob:ticket T-4105
         if base is not None:
             argv += ["--base", base]
+        # frob:ticket T-4413
+        if files:
+            for f in files:
+                argv += ["--files", f]
         guarded = _ticket_runner.guarded_subprocess_run(
             argv,
             cwd=root,
@@ -1328,14 +1348,11 @@ def _find_tool_result(results: list, tool_name: str) -> dict | None:  # noqa: AN
 
 # frob:ticket T-2793
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_n\
-# ative_staleness_abort_yields_none_not_the_abort_findings
+# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_native_staleness_abort_yields_none_not_the_abort_findings  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_o\
-# ther_pre_gate_abort_also_yields_none_not_only_native001
+# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_other_pre_gate_abort_also_yields_none_not_only_native001  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_t\
-# y_and_gate_error_both_appear_in_parsed_set
+# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_ty_and_gate_error_both_appear_in_parsed_set  # noqa: E501
 def _gates_stage_ran(results: list) -> bool:  # noqa: ANN001
     """T-2793's positive completeness signal: `True` only when `results`
     contains a `"gate-summary"` `ToolResult` -- i.e. the gates stage
@@ -1402,14 +1419,11 @@ def _budget_deferred_stage_groups(results: list) -> list[str]:  # noqa: ANN001
 
 # frob:ticket T-2456
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.te\
-# st_extracts_deferred_groups_from_json_stdout
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_extracts_deferred_groups_from_json_stdout  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.te\
-# st_empty_for_non_json_stdout
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_for_non_json_stdout  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.te\
-# st_empty_when_no_deferral_present
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_when_no_deferral_present  # noqa: E501
 def _budget_deferred_groups_from_stdout(stdout: str) -> tuple[str, ...]:
     """Recover the `BUDGET001`-deferred stage-group names straight from a
     captured `frob check --json --budget ...` spawn's `stdout`, or `()`
@@ -1453,11 +1467,9 @@ def _budget_deferred_groups_from_stdout(stdout: str) -> tuple[str, ...]:
 
 # frob:ticket T-2713
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.te\
-# st_reads_top_level_skipped_groups
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_reads_top_level_skipped_groups  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.te\
-# st_empty_when_complete_or_absent
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_empty_when_complete_or_absent  # noqa: E501
 def _budget_skipped_groups_from_payload(data: dict) -> tuple[str, ...]:
     """The T-2235 top-level `data["budget"]["skipped_groups"]` field --
     every stage group `available_stages()` names that this ONE invocation
