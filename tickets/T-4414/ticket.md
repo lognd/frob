@@ -1,7 +1,7 @@
 ---
 id: T-4414
 title: 'Post-land sweep: detached, batched, rate-limited'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -14,44 +14,41 @@ milestone: v0.532.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
+- src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/verify
 - tests/unit/rapid_sweep_suite
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
-- op: remove
-  glob: src/frob/app/ticket_runner/_land_cmd.py
-  reason: T-4413 leases _land_cmd.py and verify concurrently; the batching lives in
-    _rapid_sweep.py
-  actor: logan
-  at: '2026-09-15'
-- op: remove
-  glob: src/frob/verify
-  reason: T-4413 leases _land_cmd.py and verify concurrently; the batching lives in
-    _rapid_sweep.py
-  actor: logan
-  at: '2026-09-15'
 - op: add
   glob: tests/unit/rapid_sweep_suite
-  reason: T-4413 leases _land_cmd.py and verify concurrently; the batching lives in
-    _rapid_sweep.py
+  reason: ticket's own declared scope; test files for the new window-batching logic
+    in _rapid_sweep.py
   actor: logan
   at: '2026-09-15'
+evidence:
+- tests/unit/rapid_sweep_suite/test_window.py::TestSpawnDeferredPostLandSweepBatches::test_two_lands_in_one_window_spawn_exactly_one_worker
+- tests/unit/rapid_sweep_suite/test_window.py::TestRunOneSweepBatch::test_anchors_on_the_batchs_own_last_land
+- tests/unit/rapid_sweep_suite/test_window.py::TestSpawnDeferredPostLandSweepBatches::test_land_while_sweep_running_never_spawns_a_second_worker
 designated_repro_test: null
 acceptance:
 - text: GIVEN two lands complete within one rate-limit window WHEN the post-land sweep
     is triggered THEN exactly one detached sweep process is spawned covering both
     lands, not one per land
-  evidence: []
+  evidence:
+  - tests/unit/rapid_sweep_suite/test_window.py::TestSpawnDeferredPostLandSweepBatches::test_two_lands_in_one_window_spawn_exactly_one_worker
 - text: GIVEN a repo-wide finding surfaces in a batched sweep WHEN it fires THEN a
     ticket is still filed for it, attributed to the batch rather than a single land
-  evidence: []
+  evidence:
+  - tests/unit/rapid_sweep_suite/test_window.py::TestRunOneSweepBatch::test_anchors_on_the_batchs_own_last_land
 - text: GIVEN the sweep is running WHEN a new land completes THEN it does not spawn
     a second concurrent sweep; it either joins the pending batch window or is deferred
     to the next window
-  evidence: []
+  evidence:
+  - tests/unit/rapid_sweep_suite/test_window.py::TestSpawnDeferredPostLandSweepBatches::test_land_while_sweep_running_never_spawns_a_second_worker
 threat: null
 component: null
 anchor: false

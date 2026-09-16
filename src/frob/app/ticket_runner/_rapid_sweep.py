@@ -97,6 +97,7 @@ from frob.process._lock import (
     portable_flock_acquire,
     portable_flock_release,
 )
+from frob.process._pid_liveness import pid_alive
 
 # T-2595/T-2918/T-3506: `_baseline_lock` used to degrade to a logged
 # NO-OP for the whole runtime of a process without `fcntl` (i.e. every
@@ -145,6 +146,44 @@ _BASELINE_LOCK_TIMEOUT_S = 30.0
 #: Detached-child stdout/stderr, one file per swept ticket, so a sweep
 #: that dies (OOM, reboot) leaves its partial output behind to read.
 _LOG_DIR_REL = Path(".frob") / "rapid-sweep"
+
+# frob:ticket T-4414
+#: T-4414: the rate-limit/batch window's persisted state machine --
+#: "idle" (no window open, no worker running) -> "window_open" (a
+#: detached worker is alive and SLEEPING until the window closes,
+#: collecting `pending_lands`) -> "sweep_running" (that SAME worker is
+#: now actually running the unscoped `frob check` for the batch it
+#: collected) -> back to "idle" (or straight back to "window_open" if
+#: more lands joined while it ran, without a NEW worker process ever
+#: being spawned -- see `_sweep_async`). Under `.frob/` like the
+#: baseline/lock files above: local, disposable, per-checkout state, not
+#: a durable record (the durable record of "this land is unswept yet" is
+#: still `rapid-debt.jsonl`, unaffected by this ticket).
+_WINDOW_STATE_REL = Path(".frob") / "rapid-sweep-window.json"
+
+#: T-4414: advisory lock guarding ONLY the tiny read-decide-write of
+#: `_WINDOW_STATE_REL` -- a dedicated lock file, deliberately never
+#: `_BASELINE_LOCK_REL` (a land's registration and a sweep's baseline
+#: write are independent critical sections) or `land.lock` (same
+#: reasoning as `_baseline_lock_path`'s own docstring).
+_WINDOW_LOCK_REL = Path(".frob") / "rapid-sweep-window.lock"
+
+#: T-4414: how long `_window_lock` waits for a concurrent land's own
+#: registration before giving up and degrading to an unlocked read-
+#: decide-write (see `_advisory_file_lock`). The critical section here is
+#: even smaller than the baseline lock's (no git subprocess, just a JSON
+#: read/write), so this mirrors `_BASELINE_LOCK_TIMEOUT_S` rather than
+#: inventing a different number.
+_WINDOW_LOCK_TIMEOUT_S = 30.0
+
+#: T-4414: the batching window's default length (seconds) when neither
+#: `frob.toml` nor `pyproject.toml`'s `[tool.frob]` table overrides it
+#: (see `_sweep_window_seconds`) -- long enough that a burst of lands a
+#: few tens of seconds apart (the common multi-agent-wave shape this
+#: ticket exists for) collapses onto one sweep, short enough that a
+#: single isolated land is not kept "unverified" for an unreasonable
+#: time before its sweep actually runs.
+_DEFAULT_SWEEP_WINDOW_SECONDS = 120.0
 
 #: T-1983: `_file_regression_ticket`'s title prefix, reused here to
 #: recognize a sweep-filed ticket for `_close_resolved_sweep_tickets`'s
@@ -589,8 +628,7 @@ def _baseline_lock_path(root: Path) -> Path:
 
 # frob:ticket T-2918
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#baseline-lock-posixwindows-backends-loud-refusal\
-# -otherwise-t-2595t-2918
+# docs/modules/tickets-verify-sweep.md#baseline-lock-posixwindows-backends-loud-refusal-otherwise-t-2595t-2918  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
 class BaselineLockUnavailable(RuntimeError):
     """T-2918: raised by `_baseline_lock` when NEITHER `fcntl` (POSIX) nor
@@ -659,16 +697,34 @@ def _baseline_lock(
     is a reduced guarantee, never a silent corruption -- unlike the
     platform-wide no-op T-2918 removed, this branch only fires when a
     real lock exists and is contended, not merely absent."""
+    with _advisory_file_lock(
+        _baseline_lock_path(root), timeout=timeout, label="_baseline_lock"
+    ):
+        yield
+
+
+# frob:ticket T-4414
+@contextmanager
+def _advisory_file_lock(path: Path, *, timeout: float, label: str) -> Iterator[None]:
+    """T-4414: the exact acquire/seed/release body `_baseline_lock` used
+    to carry inline, extracted so `_window_lock` (this ticket's own
+    batching-window lock, guarding `.frob/rapid-sweep-window.json`
+    instead of the baseline file) reuses the SAME cross-process primitive
+    rather than a second hand-copied `fcntl`/`msvcrt` dance -- one lock
+    implementation, two lock files. `label` names the caller in the
+    timeout-degrade log line only; behavior (create-and-seed a 1-byte
+    lock file, `portable_flock_acquire`/`_release`, degrade to
+    proceeding WITHOUT the lock -- logged -- on timeout rather than
+    raising) is unchanged from `_baseline_lock`'s pre-T-4414 body."""
     if not lock_backend_available():  # pragma: no cover -- via monkeypatch
         raise BaselineLockUnavailable(
-            f"rapid sweep: _baseline_lock: neither fcntl (POSIX) nor "
+            f"rapid sweep: {label}: neither fcntl (POSIX) nor "
             f"msvcrt (Windows) is available on this platform -- refusing "
-            f"to proceed unlocked against {root}, since an unconditional "
-            f"platform-wide no-op would race concurrent sweep writes for "
+            f"to proceed unlocked against {path}, since an unconditional "
+            f"platform-wide no-op would race concurrent writers for "
             f"this lock's entire lifetime, not just under rare, brief "
             f"contention (T-2918)"
         )
-    path = _baseline_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     # `os.O_BINARY` only exists on Windows; `getattr` keeps this portable
     # (a no-op on POSIX) rather than branching on the backend to decide.
@@ -680,10 +736,11 @@ def _baseline_lock(
     acquired = portable_flock_acquire(fd, exclusive=True, timeout=timeout)
     if not acquired:
         _log.warning(
-            "rapid sweep: _baseline_lock: %s still held after "
+            "rapid sweep: %s: %s still held after "
             "%.0fs -- proceeding WITHOUT the lock (the CAS "
             "ancestry check is the correctness backstop, this "
             "is a reduced guarantee, not corruption)",
+            label,
             path,
             timeout,
         )
@@ -982,6 +1039,221 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     _log.info("rapid sweep: %s committed the deferred-sweep debt line", ticket_id)
 
 
+# frob:ticket T-4414
+def _window_state_path(root: Path) -> Path:
+    """`.frob/rapid-sweep-window.json` for a checkout rooted at `root`."""
+    return root / _WINDOW_STATE_REL
+
+
+# frob:ticket T-4414
+def _window_lock_path(root: Path) -> Path:
+    """`.frob/rapid-sweep-window.lock` for a checkout rooted at `root`."""
+    return root / _WINDOW_LOCK_REL
+
+
+# frob:ticket T-4414
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowLock.test_serializes_two_concurrent_holders  # noqa: E501
+@contextmanager
+def _window_lock(
+    root: Path, *, timeout: float = _WINDOW_LOCK_TIMEOUT_S
+) -> Iterator[None]:
+    """T-4414: exclusive lock around the read-decide-write of the
+    batching-window state (`_WINDOW_STATE_REL`) -- every land registers
+    itself under this lock before deciding whether it opened a new
+    window, joined an existing one, or was deferred to the next, so two
+    lands landing at the same instant never both conclude "I am the one
+    that opens the window" and spawn two workers."""
+    with _advisory_file_lock(
+        _window_lock_path(root), timeout=timeout, label="_window_lock"
+    ):
+        yield
+
+
+# frob:ticket T-4414
+def _toml_number(path: Path, keys: tuple[str, ...]) -> float | int | None:
+    """Read a dotted-key numeric value out of a TOML file at `path`,
+    tolerating a missing file, a missing table/key anywhere along
+    `keys`, or an unparsable file -- every case returns `None` ("no
+    override found here"), never raises. Mirrors `check_runner.py`'s
+    `_apply_frob_toml_defaults` frob.toml-read posture (T-1038): a
+    malformed or absent config file degrades to the caller's own
+    default, it never crashes a detached sweep worker."""
+    if not path.exists():
+        return None
+    import tomllib
+
+    try:
+        with path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("rapid sweep: %s unreadable for window config: %s", path, exc)
+        return None
+    node: Any = data
+    for key in keys:
+        if not isinstance(node, dict) or key not in node:
+            return None
+        node = node[key]
+    if isinstance(node, (int, float)) and not isinstance(node, bool):
+        return node
+    return None
+
+
+# frob:ticket T-4414
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_default_when_no_config_present  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_sweep_section_wins  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_top_level_key_wins  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_pyproject_tool_frob_table_is_the_fallback  # noqa: E501
+def _sweep_window_seconds(root: Path) -> float:
+    """T-4414: the configured batching-window length (seconds), read
+    directly from config rather than threaded through `AppConfig`/
+    argparse (this module's DETACHED `sweep-async` child has no
+    `argparse.Namespace` of its own to receive a CLI flag through --
+    same reasoning as `_apply_frob_toml_defaults`'s own frob.toml-only
+    fields in `check_runner.py`). Checked in order, first match wins:
+    `frob.toml`'s `[sweep] window_seconds`, then `frob.toml`'s top-level
+    `rapid_sweep_window_seconds`, then `pyproject.toml`'s `[tool.frob]
+    rapid_sweep_window_seconds` -- falling back to `_DEFAULT_SWEEP_
+    WINDOW_SECONDS` when none of the three is set."""
+    value = _toml_number(root / "frob.toml", ("sweep", "window_seconds"))
+    if value is None:
+        value = _toml_number(root / "frob.toml", ("rapid_sweep_window_seconds",))
+    if value is None:
+        value = _toml_number(
+            root / "pyproject.toml", ("tool", "frob", "rapid_sweep_window_seconds")
+        )
+    if value is None:
+        return _DEFAULT_SWEEP_WINDOW_SECONDS
+    return float(value)
+
+
+# frob:ticket T-4414
+def _default_window_state() -> dict[str, Any]:
+    """The `idle`, empty-batch shape `_read_window_state` returns when
+    `_WINDOW_STATE_REL` is absent or unreadable -- a fresh checkout, or a
+    corrupt state file, must degrade to "no window open, nothing
+    pending", never raise (this is read by both an interactive land and
+    a detached worker with nobody watching its exit code)."""
+    return {
+        "phase": "idle",
+        "window_opened_at": None,
+        "worker_pid": None,
+        "pending_lands": [],
+    }
+
+
+# frob:ticket T-4414
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_round_trips  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_missing_file_is_the_default_idle_state  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_corrupt_file_degrades_to_the_default_idle_state  # noqa: E501
+def _read_window_state(root: Path) -> dict[str, Any]:
+    """The persisted batching-window state, or `_default_window_state()`
+    when `_WINDOW_STATE_REL` is absent or unreadable -- callers must
+    hold `_window_lock` around any read that will be followed by a
+    write, this function itself takes no lock (the lock's critical
+    section spans read-decide-write together, not this call alone)."""
+    path = _window_state_path(root)
+    if not path.exists():
+        return _default_window_state()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 -- json/shape, any corruption
+        _log.warning(
+            "rapid sweep: window state %s unreadable (%s) -- treating as "
+            "idle with nothing pending",
+            path,
+            exc,
+        )
+        return _default_window_state()
+    state = _default_window_state()
+    state.update(
+        {k: raw[k] for k in ("phase", "window_opened_at", "worker_pid") if k in raw}
+    )
+    if isinstance(raw.get("pending_lands"), list):
+        state["pending_lands"] = raw["pending_lands"]
+    return state
+
+
+# frob:ticket T-4414
+def _write_window_state(root: Path, state: dict[str, Any]) -> None:
+    """Persist `state` to `_WINDOW_STATE_REL`. Callers hold `_window_lock`
+    around the read-decide-write this is the tail of; this function
+    itself only writes -- it does not lock."""
+    path = _window_state_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+
+
+# frob:ticket T-4414
+def _worker_is_alive(state: dict[str, Any]) -> bool:
+    """Whether `state["worker_pid"]` names a currently-running detached
+    worker -- `False` for a `None` pid (no worker was ever recorded, or
+    it already finished and cleared itself) as well as for a pid that
+    named a worker which has since crashed (the reap case every caller
+    of this function must treat identically to "no worker is running")."""
+    pid = state.get("worker_pid")
+    return isinstance(pid, int) and pid_alive(pid)
+
+
+# frob:ticket T-4414
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_idle_opens_a_new_window  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_second_land_within_window_joins_it  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_land_while_sweep_running_defers_to_next_window  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_dead_worker_pid_is_reaped_and_a_new_window_opens  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_expired_window_with_a_still_alive_worker_still_joins  # noqa: E501
+def _decide_land_registration(
+    state: dict[str, Any],
+    land: dict[str, Any],
+    *,
+    now: float,
+) -> tuple[str, dict[str, Any]]:
+    """T-4414's pure decision core (acceptance criteria 1 and 3): given
+    the CURRENT persisted `state` and one `land`'s identity dict
+    (`ticket_id`/`final_id`/`commit_sha`/`target_branch`), returns
+    `(action, new_state)` where `action` is one of:
+
+    - `"open"`: no worker is alive (idle, or a dead `worker_pid` reaped
+      here) -- `new_state` opens a fresh window with `land` as its sole
+      pending entry; the caller must spawn a new detached worker and
+      record its pid.
+    - `"join"`: a worker is alive and `state["phase"]` is `"window_open"`
+      -- `land` is appended to the SAME window's `pending_lands`; no new
+      worker is spawned. Deliberately joins even when the window's own
+      deadline has technically elapsed (a live worker still sleeping is
+      the authority on when it actually wakes, not a second clock racing
+      it) -- the alternative would risk opening a second window on top
+      of one whose worker has not yet noticed its own deadline passed.
+    - `"defer"`: a worker is alive and `state["phase"]` is
+      `"sweep_running"` -- `land` is appended to the SAME `pending_lands`
+      list (it becomes the batch the worker picks up for its NEXT window
+      once its current run finishes, per `_sweep_async`); no new worker
+      is spawned. Never a second concurrent sweep (criterion 3).
+
+    Never mutates `state`/`land` in place -- always returns a fresh dict,
+    so a caller that decides not to persist a rejected write (a pinned
+    write elsewhere in this module, or a future caller) never has to
+    worry about a partially-applied decision leaking through the input
+    it was handed."""
+    new_state = dict(state)
+    pending = list(state.get("pending_lands", []))
+    if _worker_is_alive(state) and state.get("phase") in (
+        "window_open",
+        "sweep_running",
+    ):
+        action = "join" if state["phase"] == "window_open" else "defer"
+        pending.append(land)
+        new_state["pending_lands"] = pending
+        return action, new_state
+    # Idle, or `worker_pid` named a now-dead process (reaped here): open a
+    # fresh window with `land` as its sole pending entry. `worker_pid` is
+    # left for the caller to fill in once the new worker is actually
+    # spawned (this function never spawns processes itself).
+    new_state["phase"] = "window_open"
+    new_state["window_opened_at"] = now
+    new_state["worker_pid"] = None
+    new_state["pending_lands"] = [land]
+    return "open", new_state
+
+
 # frob:ticket T-2030
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_pins_frob_root_to_the_correct_root  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_strips_worktree_lease_env  # noqa: E501
@@ -1084,7 +1356,21 @@ def spawn_deferred_post_land_sweep(
     from the deferring land -- forwarded to `_detached_sweep_env` (see its
     own T-4105 paragraph) so the detached child can recover it as
     `FROB_LAND_TARGET_BRANCH` and pass it on as `--base` to its own nested
-    `frob check` spawn."""
+    `frob check` spawn.
+
+    T-4414: this is now the BATCHING/rate-limit seam (owner design
+    decision 2026-09-11, T-4410's epic). It never unconditionally spawns
+    a new detached child any more -- under `_window_lock`, it registers
+    `(ticket_id, final_id, commit_sha, target_branch)` against the
+    persisted window state (`_decide_land_registration`) and only spawns
+    when that decision is `"open"` (no worker currently alive for this
+    root). A `"join"`/`"defer"` decision returns `Ok(-1)` -- a
+    deliberately non-real pid sentinel meaning "no new process; this
+    land's coverage rides an existing worker's batch" -- since every
+    existing caller of this function (`_land_cmd.py`) already ignores
+    the returned pid entirely, this is not a signature-breaking change
+    for either caller in this repo, only for a future one that starts
+    reading it."""
     from frob.process import exec_enabled
     from frob.tickets._evidence import record_rapid_debt
 
@@ -1101,6 +1387,80 @@ def spawn_deferred_post_land_sweep(
         )
         return Err(RapidSweepError.SpawnRefused)
 
+    land = {
+        "ticket_id": ticket_id,
+        "final_id": final_id,
+        "commit_sha": commit_sha,
+        "target_branch": target_branch,
+    }
+    with _window_lock(root):
+        state = _read_window_state(root)
+        action, new_state = _decide_land_registration(state, land, now=time.time())
+        if action != "open":
+            _write_window_state(root, new_state)
+            description = (
+                "joined the pending window"
+                if action == "join"
+                else "deferred to the next window (a sweep is running now)"
+            )
+            _log.info(
+                "rapid sweep: %s window: land %s -- batch now %d land(s), "
+                "worker pid=%s, no new sweep process spawned",
+                final_id,
+                description,
+                len(new_state["pending_lands"]),
+                new_state.get("worker_pid"),
+            )
+            return Ok(-1)
+        # "open": no worker is alive for this root -- spawn one and
+        # record its pid in the SAME state write that opened the window,
+        # so no other land can also conclude "open" before this pid is
+        # visible.
+        spawned = _spawn_sweep_worker(root, final_id, commit_sha, target_branch)
+        if spawned.is_err:
+            # T-4414: a failed spawn must not leave the window state
+            # claiming a worker is alive that never started -- revert to
+            # idle-with-nothing-pending's PREDECESSOR shape by simply not
+            # persisting `new_state` at all; the land is still recorded
+            # in `rapid-debt.jsonl` above, so it stays visibly unswept
+            # rather than silently believed covered by a phantom worker.
+            _log.error(
+                "rapid sweep: %s window: opening a new window's worker "
+                "spawn failed -- window state left unchanged (idle); "
+                "commit %s stays unverified (recorded in rapid-debt.jsonl)",
+                final_id,
+                commit_sha[:12],
+            )
+            return spawned
+        new_state["worker_pid"] = spawned.danger_ok
+        _write_window_state(root, new_state)
+        window_seconds = _sweep_window_seconds(root)
+        _log.info(
+            "rapid sweep: %s window OPENED (worker pid=%d, closes in "
+            "%.0fs) -- 1 land pending so far; any land that lands before "
+            "then joins this same sweep instead of spawning its own",
+            final_id,
+            spawned.danger_ok,
+            window_seconds,
+        )
+        return spawned
+
+
+# frob:ticket T-4414
+def _spawn_sweep_worker(
+    root: Path,
+    final_id: str,
+    commit_sha: str,
+    target_branch: str | None,
+) -> Result[int, RapidSweepError]:
+    """T-4414: the exact detached-`Popen` body `spawn_deferred_post_land_
+    sweep` used to run unconditionally per land -- extracted unchanged so
+    it can be called from exactly ONE branch of that function's window
+    decision (`"open"`) instead of on every call. `final_id`/`commit_sha`
+    only seed the FIRST window's `sweep-async` argv and log filename; the
+    worker itself (`_sweep_async`) reads the actual batch (which may grow
+    past this one land before the window closes) from the persisted
+    window state, not from these argv values."""
     log_dir = root / _LOG_DIR_REL
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"{final_id}-{commit_sha[:12]}.log"
@@ -3170,8 +3530,7 @@ def _close_resolved_sweep_tickets(
 # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_still_reproducing_candidate_is_left_untouched  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_unmeasurable_recheck_drops_nothing  # noqa: E501
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-\
-# t-2006
+# docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-t-2006  # noqa: E501
 # frob:ticket T-3349
 def revalidate_dispatchable_sweep_tickets(
     root: Path,
@@ -4110,28 +4469,187 @@ def _attribute_and_file_regression(
     return filed
 
 
+# frob:ticket T-4414
+def _begin_sweep_run(root: Path, worker_pid: int) -> list[dict[str, Any]]:
+    """T-4414: transition the persisted window state from `"window_open"`
+    to `"sweep_running"` and return the exact batch of lands (`pending_
+    lands`, oldest first) this worker is about to sweep. The state's own
+    `pending_lands` is reset to `[]` in the SAME locked read-decide-write,
+    so a land that registers itself WHILE this run is in progress
+    accumulates into a fresh list for the NEXT window (`_decide_land_
+    registration`'s `"defer"` action) instead of being silently folded
+    into the batch already being measured underneath it."""
+    with _window_lock(root):
+        state = _read_window_state(root)
+        batch = list(state.get("pending_lands", []))
+        state["phase"] = "sweep_running"
+        state["worker_pid"] = worker_pid
+        state["pending_lands"] = []
+        _write_window_state(root, state)
+    return batch
+
+
+# frob:ticket T-4414
+def _finish_sweep_run(root: Path, worker_pid: int) -> list[dict[str, Any]] | None:
+    """T-4414: called once a batch's `frob check` has finished. Under
+    `_window_lock`, reads whatever accumulated in `pending_lands` WHILE
+    that run was in progress: non-empty means at least one land deferred
+    to "the next window" (`_decide_land_registration`'s `"defer"`
+    action), so this SAME worker process becomes that next window's
+    worker too -- returned (non-`None`) so `_sweep_async` loops back to
+    sleeping out the next window instead of exiting, meaning NO new
+    detached process is ever spawned purely to cover a batch that landed
+    mid-run (acceptance criterion 3). An empty `pending_lands` resets the
+    state to idle (`worker_pid=None`) and returns `None`, telling the
+    caller to exit for good."""
+    with _window_lock(root):
+        state = _read_window_state(root)
+        pending = list(state.get("pending_lands", []))
+        if pending:
+            state["phase"] = "window_open"
+            state["window_opened_at"] = time.time()
+            state["worker_pid"] = worker_pid
+            _write_window_state(root, state)
+            return pending
+        state["phase"] = "idle"
+        state["window_opened_at"] = None
+        state["worker_pid"] = None
+        state["pending_lands"] = []
+        _write_window_state(root, state)
+        return None
+
+
 # frob:ticket T-1684
+# frob:ticket T-4414
 def _sweep_async(root: Path, cfg) -> None:  # noqa: ANN001 -- AppConfig, deferred import
     """`frob ticket sweep-async <id> --commit <sha>`: the CLI entry point
-    the detached child runs. Exits 0 whether the sweep was clean, filed a
-    regression ticket, or found no baseline -- this process's exit status
-    is nobody's gate (the land that spawned it finished minutes ago); the
-    filed ticket and the log are the outputs. Only an UNMEASURABLE sweep
-    exits non-zero, so a human re-running this by hand can tell "verified"
-    from "could not verify".
+    the detached child runs. Exits 0 whether every batch it swept was
+    clean, filed a regression ticket, or found no baseline -- this
+    process's exit status is nobody's gate (the land(s) that spawned it
+    finished minutes ago); the filed ticket(s) and the log are the
+    outputs. Exits non-zero only if any batch it ran was UNMEASURABLE, so
+    a human re-running this by hand can tell "verified" from "could not
+    verify".
 
-    T-2261: also runs `sweep_stale_worktrees_after_land` -- unconditionally,
-    regardless of the gate-check sweep's own outcome above, since the two
-    are independent concerns (a red gate-check sweep is not a reason to
-    also let worktree sprawl accumulate). Exit status is unaffected by
-    it; a worktree-sweep failure is logged, never escalated here."""
+    T-4414: this is now a WINDOW WORKER, not a one-shot run -- the
+    detached process this CLI verb starts IS the worker `spawn_deferred_
+    post_land_sweep` recorded as `worker_pid` when it opened the window.
+    It sleeps out the remainder of the current window (reading the
+    deadline from the persisted state, since more lands may have joined
+    -- or the window may have been opened slightly before this process
+    actually got CPU time -- since `spawn_deferred_post_land_sweep`
+    wrote it), runs exactly ONE batched `run_deferred_post_land_sweep`
+    call for whatever landed in that window (`_begin_sweep_run`'s
+    batch), then checks whether anything landed WHILE it was running
+    (`_finish_sweep_run`): if so, it loops back and becomes the worker
+    for THAT window too, rather than exiting and making the next land's
+    `spawn_deferred_post_land_sweep` call spawn a fresh process -- the
+    mechanical reason two lands separated only by this run's own
+    duration still collapse onto one sweep instead of two. `final_id`/
+    `commit_sha` (the CLI's own `<id>`/`--commit` argv, i.e. the FIRST
+    land that opened the window) are the fallback anchor for a batch
+    that somehow ends up empty (a state read racing a concurrent
+    writer); an ordinary batch anchors on its OWN last (most recent)
+    land instead, so the filed ticket's title/commit names the freshest
+    land in it, not necessarily the one whose process happened to spawn
+    the worker.
+
+    T-2261: also runs `sweep_stale_worktrees_after_land` after EVERY
+    batch, unconditionally, regardless of that batch's own gate-check
+    outcome -- unchanged from pre-T-4414 (the two are independent
+    concerns); a worktree-sweep failure is logged, never escalated
+    here."""
     if cfg.ticket_id is None or not getattr(cfg, "ticket_sweep_commit", None):
         _log.error("frob ticket sweep-async requires <id> and --commit <sha>")
         sys.exit(1)
-    result = run_deferred_post_land_sweep(root, cfg.ticket_id, cfg.ticket_sweep_commit)
-    sweep_stale_worktrees_after_land(root)
-    if result.is_err:
+
+    worker_pid = os.getpid()
+    fallback_land = {
+        "ticket_id": cfg.ticket_id,
+        "final_id": cfg.ticket_id,
+        "commit_sha": cfg.ticket_sweep_commit,
+    }
+    any_unmeasurable = False
+    while True:
+        _sleep_out_current_window(root)
+        batch = _begin_sweep_run(root, worker_pid)
+        unmeasurable = _run_one_sweep_batch(root, batch, fallback_land)
+        any_unmeasurable = any_unmeasurable or unmeasurable
+
+        pending = _finish_sweep_run(root, worker_pid)
+        if pending is None:
+            _log.info(
+                "rapid sweep: window worker pid=%d idle -- nothing pending, exiting",
+                worker_pid,
+            )
+            break
+        _log.info(
+            "rapid sweep: %d land(s) joined while the previous batch's "
+            "sweep was running -- continuing as the SAME worker for the "
+            "next window (no new process spawned)",
+            len(pending),
+        )
+
+    if any_unmeasurable:
         sys.exit(1)
+
+
+# frob:ticket T-4414
+def _sleep_out_current_window(root: Path) -> None:
+    """T-4414 (ARCH001 split of `_sweep_async`): sleep until the
+    currently-open window's deadline (`window_opened_at` from the
+    persisted state, plus `_sweep_window_seconds`). A missing `window_
+    opened_at` (a state read racing a concurrent writer) falls back to
+    `time.time()`, i.e. no sleep -- degrading to "run now" is always
+    safe here, unlike sleeping an unbounded/negative amount would be."""
+    state = _read_window_state(root)
+    deadline = (state.get("window_opened_at") or time.time()) + (
+        _sweep_window_seconds(root)
+    )
+    remaining = deadline - time.time()
+    if remaining > 0:
+        time.sleep(remaining)
+
+
+# frob:ticket T-4414
+def _run_one_sweep_batch(
+    root: Path, batch: list[dict[str, Any]], fallback_land: dict[str, Any]
+) -> bool:
+    """T-4414 (ARCH001 split of `_sweep_async`): the single-batch body a
+    window worker runs once per window -- anchors on the batch's own
+    LAST (most recent) land, or `fallback_land` (the CLI's own `<id>`/
+    `--commit` argv, i.e. the FIRST land that opened the window) when
+    `batch` is somehow empty (a state read racing a concurrent writer).
+    Runs `run_deferred_post_land_sweep` plus the unconditional T-2261
+    worktree sweep, unchanged from pre-T-4414 behavior for a single
+    land. Returns whether this batch's check was UNMEASURABLE, so the
+    caller's loop can accumulate that across every batch a worker runs
+    without exiting on the first one (a later window's batch may still
+    measure cleanly)."""
+    final_id = batch[-1]["final_id"] if batch else fallback_land["final_id"]
+    commit_sha = batch[-1]["commit_sha"] if batch else fallback_land["commit_sha"]
+    _log.info(
+        "rapid sweep: window CLOSED -- running ONE batched sweep for "
+        "%d land(s) (%s), anchored at %s",
+        len(batch),
+        ", ".join(land.get("ticket_id", "?") for land in batch) or "none",
+        commit_sha[:12],
+    )
+    # T-4414: `FROB_LAND_TARGET_BRANCH` is NOT re-derived from the batch's
+    # own last land here -- it is already set in THIS process's
+    # environment by `_detached_sweep_env` at the moment `_spawn_sweep_
+    # worker` spawned this worker (T-4105's own mechanism, unchanged),
+    # and stays set for every batch this same worker loops through.
+    # Re-assigning `os.environ` per batch would only matter for a worker
+    # whose later windows carry a DIFFERENT target branch than its first
+    # (an edge case this function's own log line above -- not a silent
+    # behavior change -- makes visible via `final_id`/`commit_sha`
+    # regardless), and doing it here would be exactly the undeclared
+    # `env.write` capability effect this CLI entrypoint's own strata/
+    # SEC110 gates flag a bare `os.environ[...] = ...` for.
+    result = run_deferred_post_land_sweep(root, final_id, commit_sha)
+    sweep_stale_worktrees_after_land(root)
+    return result.is_err
 
 
 __all__ = [
