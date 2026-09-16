@@ -18,6 +18,7 @@ scope:
 - tests/unit/test_support_csharp.py
 - src/frob/dup/_legacy.py
 - src/frob/dup/_legacy_cs.py
+- docs/modules/dup.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,12 @@ scope_changes:
     (only _PY_EXTS/_CPP_EXTS), so csharp''s dup facet had zero real fixture coverage;
     wire a minimal _legacy_cs.py scanner mirroring _legacy_py.py/_legacy_cpp.py rather
     than weaken the ticket''s own fixture assertion'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/modules/dup.md
+  reason: document the new csharp _scan_cs_file/_CS_EXTS coverage (T-4510) alongside
+    the existing python/cpp scanner docs
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
