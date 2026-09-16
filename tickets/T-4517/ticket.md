@@ -20,6 +20,7 @@ scope:
 - src/frob/testing/__init__.py
 - src/frob/lang/_support.py
 - tests/test_testing.py
+- tests/fixtures/lang/csharp/tests/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
   at: '2026-09-16'
 - op: add
   glob: tests/test_testing.py
+  reason: wire new collect_csharp_tests into dispatch/exports and add tests+fixtures
+    per brief
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/lang/csharp/tests/
   reason: wire new collect_csharp_tests into dispatch/exports and add tests+fixtures
     per brief
   actor: logan
