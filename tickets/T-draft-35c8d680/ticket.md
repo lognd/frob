@@ -24,6 +24,7 @@ scope:
 - tests/fixtures/lang/csharp/static_using_console.cs
 - tests/fixtures/lang/csharp/var_local_httpclient.cs
 - tests/fixtures/lang/csharp/no_dangerous_apis.cs
+- tests/fixtures/lang/csharp/combined_static_and_namespace.cs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -81,6 +82,12 @@ scope_changes:
   reason: static fixture file for the csharp resolver's own test suite -- checked-in,
     no fs.write inside the test itself, avoiding a design/frob.strata via-list edit
     (that file's ticket lease is held elsewhere right now)
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/lang/csharp/combined_static_and_namespace.cs
+  reason: 'regression fixture: using static + using System.IO together must not let
+    the static-using fallback hijack a member-access base'
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
