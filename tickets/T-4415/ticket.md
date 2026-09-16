@@ -1,7 +1,7 @@
 ---
 id: T-4415
 title: CI as the declared unscoped-authority full sweep
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-11'
@@ -18,10 +18,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
 - docs
+- tests/unit/test_ci_self_gate_unscoped.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ci_self_gate_unscoped.py
+  reason: AC1/AC2 workflow-shape tests, matching test_release_workflow_gate.py's pattern
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 acceptance:
 - text: GIVEN ci.yml's self-gate job WHEN it runs THEN it is the declared, documented
