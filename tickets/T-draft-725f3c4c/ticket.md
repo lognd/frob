@@ -40,19 +40,26 @@ scope_changes:
     ticket already re-baselines
   actor: logan
   at: '2026-09-15'
-designated_repro_test: null
+evidence:
+- tests/unit/test_leases_staleness_perf.py::TestLiveLeasesPruningStaleSingleLoad::test_load_queue_called_at_most_once_for_n_records
+- tests/unit/test_leases_staleness_perf.py::TestTicketLedgerStalenessShapeArchiveFastPath::test_archived_ticket_id_is_terminal_without_parsing_the_archive
+- tests/unit/test_leases_staleness_perf.py::TestReadAllLeasesStaysFast::test_many_archived_ticket_leases_stay_fast
+designated_repro_test: tests/unit/test_leases_staleness_perf.py::TestLiveLeasesPruningStaleSingleLoad::test_load_queue_called_at_most_once_for_n_records
 acceptance:
 - text: GIVEN N live lease records WHEN _live_leases_pruning_stale runs THEN the ticket
     ledger is loaded at most once per call (counted via a monkeypatched load_queue),
     not once per record
-  evidence: []
+  evidence:
+  - tests/unit/test_leases_staleness_perf.py::TestLiveLeasesPruningStaleSingleLoad::test_load_queue_called_at_most_once_for_n_records
 - text: GIVEN a ticket id present under tickets/archive WHEN the staleness shape is
     computed THEN it answers ticket-terminal without YAML-parsing the archive
-  evidence: []
+  evidence:
+  - tests/unit/test_leases_staleness_perf.py::TestTicketLedgerStalenessShapeArchiveFastPath::test_archived_ticket_id_is_terminal_without_parsing_the_archive
 - text: GIVEN this repo (899 active, 3391 archived tickets) WHEN read_all_leases is
     timed with the current worktree set THEN it completes in under 5 seconds (record
     before and after in the Done report)
-  evidence: []
+  evidence:
+  - tests/unit/test_leases_staleness_perf.py::TestReadAllLeasesStaysFast::test_many_archived_ticket_leases_stay_fast
 threat: null
 component: null
 anchor: false
