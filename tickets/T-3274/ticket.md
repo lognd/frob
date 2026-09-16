@@ -8,7 +8,7 @@ created: '2026-08-28'
 priority: medium
 parent: T-3505
 tier: ticket
-sprint: v0.532.0
+sprint: backlog
 runs_last: false
 milestone: v0.532.0
 runs_last_parallel_safe: false
@@ -38,6 +38,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
+- field: sprint
+  old_value: v0.532.0
+  new_value: backlog
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 threat: null
 component: null
