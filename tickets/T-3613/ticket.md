@@ -161,6 +161,35 @@ triage_changes:
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
+acceptance:
+- text: frob ticket land <id> under FROB_AGENT (or [tool.frob] land_default="queue")
+    ENQUEUES and returns in seconds with the intent recorded, and one drainer process
+    does the serial work
+  evidence: []
+- text: a per-intent completion record file under .frob/land-queue/<ticket>.json (state
+    queued/landing/landed/failed, refusal text verbatim, commit sha) that agents poll
+    cheaply, plus frob ticket land --status <id> printing it
+  evidence: []
+- text: 'drainer crash recovery: the queue file survives, the next --drain picks up,
+    a dead drainer''s landing entry is reclaimed via pid liveness (reusing the existing
+    land.lock reclaim logic''s posture)'
+  evidence: []
+- text: docs section and tests per acceptance criterion
+  evidence: []
+- text: frob ticket land <id> under FROB_AGENT (or [tool.frob] land_default="queue")
+    ENQUEUES and returns in seconds with the intent recorded, and one drainer process
+    does the serial work
+  evidence: []
+- text: a per-intent completion record file under .frob/land-queue/<ticket>.json (state
+    queued/landing/landed/failed, refusal text verbatim, commit sha) that agents poll
+    cheaply, plus frob ticket land --status <id> printing it
+  evidence: []
+- text: 'drainer crash recovery: the queue file survives, the next --drain picks up,
+    a dead drainer''s landing entry is reclaimed via pid liveness (reusing the existing
+    land.lock reclaim logic''s posture)'
+  evidence: []
+- text: docs section and tests per acceptance criterion
+  evidence: []
 threat: null
 component: null
 anchor: false
