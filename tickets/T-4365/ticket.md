@@ -31,9 +31,9 @@ scope_changes:
   at: '2026-09-09'
 - op: add
   glob: tickets/T-4371/**
-  reason: T-4371's ticket file was created and committed in this worktree
-    while filing the out-of-scope WIRE001 finding; scope it so SCOPE001 does not flag
-    T-4365's own commit
+  reason: T-4371's ticket file was created and committed in this worktree while filing
+    the out-of-scope WIRE001 finding; scope it so SCOPE001 does not flag T-4365's
+    own commit
   actor: logan
   at: '2026-09-09'
 body_changes:

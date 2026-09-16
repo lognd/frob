@@ -2841,7 +2841,14 @@ alongside the false-positive regression test
 
 ## Land proves the diff, CI proves the repo (T-4415)
 
-<!-- frob:describes .github/workflows/ci.yml -->
+<!-- T-4534: dropped the `frob:describes .github/workflows/ci.yml`
+     edge DRIFT002 flagged as a dangling reference -- a bare non-python
+     file has no graph symbol, so `frob.graph._resolve.resolve` can never
+     resolve it and the edge could never be acked either (T-4533
+     filed to make ack itself handle a file-level describes target). Doc
+     paragraph below re-verified by hand against ci.yml's current build
+     job (frob check (self-gate) step, File ticket for self-gate
+     regression step) -- still accurate; no behaviour change. -->
 
 The owner's standing design decision (2026-09-11): `frob ticket land`'s
 synchronous check and `.github/workflows/ci.yml`'s self-gate job answer

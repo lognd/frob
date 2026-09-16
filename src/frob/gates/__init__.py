@@ -6406,6 +6406,7 @@ def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[Parse
 
 _CACHE_REL = Path(".frob") / "cache.db"
 
+# frob:doc docs/commands/check.md#file-scoped-compute---files-t-4413
 # frob:ticket T-4413
 #: Gates whose finding depends on repo-wide state that a `GateConfig.files`
 #: subset cannot represent -- `_run_gates_bounded` always runs these
