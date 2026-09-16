@@ -1,7 +1,7 @@
 ---
 id: T-4511
 title: .NET BCL standard-library capability map
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -15,10 +15,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/vet/_capability_registry/_dotnet_bcl.py
+- src/frob/vet/_capability_registry/_matrix.py
+- tests/vet_suite/test_capability_scan_dotnet_bcl.py
+- tests/fixtures/lang/csharp/*.cs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_registry/_matrix.py
+  reason: wire _dotnet_bcl.py's table into DANGEROUS_OPERATIONS aggregation and add
+    one test-per-family with static .cs fixtures asserting via the real scan entry
+    point, per T-4511 acceptance criteria
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/vet_suite/test_capability_scan_dotnet_bcl.py
+  reason: wire _dotnet_bcl.py's table into DANGEROUS_OPERATIONS aggregation and add
+    one test-per-family with static .cs fixtures asserting via the real scan entry
+    point, per T-4511 acceptance criteria
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/lang/csharp/*.cs
+  reason: wire _dotnet_bcl.py's table into DANGEROUS_OPERATIONS aggregation and add
+    one test-per-family with static .cs fixtures asserting via the real scan entry
+    point, per T-4511 acceptance criteria
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
