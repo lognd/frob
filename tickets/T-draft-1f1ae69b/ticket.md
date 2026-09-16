@@ -18,6 +18,7 @@ scope:
 - tests/system/test_cli_ticket_land.py
 - src/frob/app/config.py
 - tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+- src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,14 @@ scope_changes:
 - op: add
   glob: tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
   reason: new unit test file covering the _pyproject_file_for_args fix
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'actual dispatch entrypoint: _dispatch_default hardcodes pyproject=Path(pyproject.toml)
+    and never used AppConfig.from_args, so the from_args-level fix in config.py never
+    runs for a real frob invocation; fix _dispatch_default to use the same root-aware
+    resolution'
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
