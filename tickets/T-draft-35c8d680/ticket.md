@@ -18,6 +18,7 @@ scope:
 - src/frob/vet/_capability_scan.py
 - src/frob/vet/_capability.py
 - src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
+- tests/vet_suite/test_capability_scan_csharp.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
   glob: src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
   reason: extend the csharp needle table -- File.WriteAllText/AppendAllText/WriteAllBytes
     was missing from fs-write entirely, needed for the resolver's own acceptance criterion
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/vet_suite/test_capability_scan_csharp.py
+  reason: new test file, mirrors tests/vet_suite/test_capability_scan_kotlin.py's
+    shape, one per language
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
