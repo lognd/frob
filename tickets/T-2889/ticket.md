@@ -34,6 +34,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+- field: sprint
+  old_value: backlog
+  new_value: backlog
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-15'
 designated_repro_test: null
 threat: null
 component: null
