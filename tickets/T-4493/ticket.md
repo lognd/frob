@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_suppress.py
 - tests/unit/test_suppress_worktree_path.py
 - tests/test_gates_suppress.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,13 @@ scope_changes:
   reason: existing TestRelativize.test_already_relative_path_passes_through encodes
     the exact wrong assumption (relative path is root-relative) this fix corrects;
     must update to cwd-relative semantics
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001/SYS100: new test file tests/unit/test_suppress_worktree_path.py
+    writes real files via write_text under tmp_path, a genuine new fs.write capability
+    site that must be declared in testsuite node''s via-list'
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
