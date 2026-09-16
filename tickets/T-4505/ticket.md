@@ -1,7 +1,7 @@
 ---
 id: T-4505
 title: Wire a C# capability resolver into _capability_scan.py
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -33,3 +33,6 @@ GIVEN a .cs file with 'using System.IO;' and a File.WriteAllText call, WHEN frob
 GIVEN 'using IO = System.IO;' (an alias) and a call through the alias, WHEN scanned, THEN the resolver follows the alias to the same capability.
 GIVEN 'using static System.Console;' and a bare WriteLine call, WHEN scanned, THEN the static-using resolves to the correct fully-qualified symbol.
 GIVEN a .cs file with no dangerous APIs, WHEN scanned, THEN zero findings (no false positives from the wired resolver).
+
+## Drop reason
+- 2026-09-16: duplicate promoted copy of the C# resolver draft; the work landed as T-4536
