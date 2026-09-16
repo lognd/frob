@@ -22,6 +22,9 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/check_runner.py
 - src/frob/gates/__init__.py
+- src/frob/check/_python.py
+- src/frob/check/__init__.py
+- tests/unit/test_check_scoped_files.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +46,24 @@ scope_changes:
   glob: src/frob/gates/__init__.py
   reason: 'agent measured: the unscoped compute lives in the shared check spawn and
     check_runner, not in _land_cmd.py'
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'attempt 2 measured: ruff/ty/arch/cycle/dup/exports run in src/frob/check/_python.py
+    over the whole tree; compute scoping must thread the file set there'
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'attempt 2 measured: ruff/ty/arch/cycle/dup/exports run in src/frob/check/_python.py
+    over the whole tree; compute scoping must thread the file set there'
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: tests/unit/test_check_scoped_files.py
+  reason: 'attempt 2 measured: ruff/ty/arch/cycle/dup/exports run in src/frob/check/_python.py
+    over the whole tree; compute scoping must thread the file set there'
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
