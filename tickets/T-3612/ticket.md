@@ -9,7 +9,7 @@ created: '2026-08-31'
 priority: medium
 parent: T-3611
 tier: ticket
-sprint: null
+sprint: v0.532.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -28,6 +28,12 @@ triage_changes:
     so medium is the honest priority'
   actor: logan
   at: '2026-09-14'
+- field: sprint
+  old_value: null
+  new_value: v0.532.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-15'
 body_changes:
 - mode: append
   reason: consumer corroboration F-099 plus four first-hand refusals today; records
