@@ -11,9 +11,9 @@
       "ticket": "T-1628"
     },
     "cli::env.read": {
-      "accepted_count": 15,
-      "reason": "T-4502: adds src/frob/app/config.py to cli's env.read via-list -- _pyproject_file_for_args reads FROB_ROOT to resolve [tool.frob] against the ticket verb's own root instead of the cwd. Bumping the ceiling 14 -> 15, one new site.",
-      "ticket": "T-4502"
+      "accepted_count": 16,
+      "reason": "T-4501: adds src/frob/doctor.py to cli's env.read via-list -- reads UNITY_PATH/UNITY_EDITOR to locate an optional Unity editor. Bumping the ceiling 15 -> 16, one new site.",
+      "ticket": "T-4501"
     },
     "cli::env.write": {
       "accepted_count": 1,

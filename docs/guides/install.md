@@ -766,3 +766,43 @@ named: a missing REQUIRED tool's message names the tool and the install
 command. A fully-present environment produces no new output and no
 measurable slowdown beyond the cheap presence probes themselves (the
 MUST-STAY-QUIET fixture).
+
+## Unity toolchain detection (T-4501)
+
+<!-- frob:describes src/frob/doctor.py::UnityEditorStatus -->
+<!-- frob:describes src/frob/doctor.py::_locate_unity_editor -->
+<!-- frob:describes src/frob/doctor.py::_diagnose_unity_toolchain -->
+
+`frob doctor` also reports on the Unity C# toolchain, but ONLY when
+`root` is a detected Unity project (`frob.lang._project_detect.
+detect_unity_project`, T-4515) -- a non-Unity repo never attempts Unity
+detection at all, so it never sees a spurious "Unity not found" line.
+When `root` IS a Unity project, `DoctorReport.unity_project` reports the
+project root and the editor version it was authored against (parsed
+from `ProjectSettings/ProjectVersion.txt` <!-- frob:waive DOC006 reason="a path inside the CONSUMER Unity project, not a file of this repo" -->), and `DoctorReport.
+unity_editor` reports whether a Unity Editor binary was located on this
+machine.
+
+Locating the Unity Editor binary itself needs more than a single
+`shutil.which(name)` lookup (unlike every `_EXTERNAL_TOOLS` entry above):
+Unity Hub installs each editor version into its own versioned directory,
+so there is no one stable PATH-discoverable binary name across OSes and
+install methods. `_locate_unity_editor` searches, in precedence order:
+
+1. The `UNITY_PATH` or `UNITY_EDITOR` environment variable -- an explicit
+   path to the editor binary, so a pinned CI/dev override always wins.
+2. Unity Hub's own default per-OS install root (`%PROGRAMFILES%\Unity\
+   Hub\Editor` on Windows, `/Applications/Unity/Hub/Editor` on macOS,
+   `~/Unity/Hub/Editor` on Linux) -- the newest installed version (by
+   directory name, sorted descending) is reported when more than one is
+   installed.
+3. A plain PATH lookup for `Unity`/`unity` -- some manual/tarball
+   installs put it there.
+
+Absence is always `ToolCategory.OPTIONAL`-equivalent: `unity_editor.
+present=False` is reported for visibility but never makes `frob doctor`
+report `healthy=False`, matching the story's own stated rule (absence is
+informational, never a failure). `dotnet` (the .NET SDK a Unity/C#
+project's own build may need, distinct from the Unity editor binary
+itself) is a plain `_EXTERNAL_TOOLS` entry (`ToolCategory.OPTIONAL`),
+probed the same unconditional way as `cargo`/`npm`/`ctest`.

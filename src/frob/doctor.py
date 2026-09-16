@@ -78,6 +78,8 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
+import platform
 import shutil
 from enum import StrEnum
 from importlib.metadata import version
@@ -87,6 +89,11 @@ from pydantic import BaseModel
 
 import frob as _frob_pkg
 from frob.derived_state import DerivedArtifactStatus, verify_derived_state
+from frob.lang._project_detect import (
+    UnityProjectDetectError,
+    UnityProjectInfo,
+    detect_unity_project,
+)
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
 from frob.process._guard import guarded_subprocess_run
@@ -805,9 +812,14 @@ class ExternalToolStatus(BaseModel):
 # REQUIRED for the gates that spawn them (T-0142 already gives these a
 # loud typed failure on absence; listed here so the inventory is
 # complete, not duplicating that fix). Per-language toolchains
-# (`cargo`/`npm`/`ctest`) are OPTIONAL: genuinely per-language, silent
-# when the repo does not use that language (LANG003 already reports
-# per-language gaps separately from tool presence).
+# (`cargo`/`npm`/`ctest`/`dotnet`) are OPTIONAL: genuinely per-language,
+# silent when the repo does not use that language (LANG003 already
+# reports per-language gaps separately from tool presence). `dotnet`
+# (T-4501) is the .NET SDK a Unity/C# project's own `.csproj`/`.sln`
+# build (as opposed to the Unity *editor* binary itself, which is not a
+# PATH-discoverable single-name binary -- see `_locate_unity_editor`)
+# may need on the machine; absence is silent for the same reason
+# `cargo`/`npm`/`ctest` absence is.
 _EXTERNAL_TOOLS: tuple[tuple[str, str, ToolCategory, str], ...] = (
     ("python", "binary", ToolCategory.REQUIRED, "install a Python 3.11+ interpreter"),
     ("git", "binary", ToolCategory.REQUIRED, "install git (https://git-scm.com)"),
@@ -844,6 +856,12 @@ _EXTERNAL_TOOLS: tuple[tuple[str, str, ToolCategory, str], ...] = (
     ("cargo", "binary", ToolCategory.OPTIONAL, "install rustup (https://rustup.rs)"),
     ("npm", "binary", ToolCategory.OPTIONAL, "install Node.js (https://nodejs.org)"),
     ("ctest", "binary", ToolCategory.OPTIONAL, "install CMake (https://cmake.org)"),
+    (
+        "dotnet",
+        "binary",
+        ToolCategory.OPTIONAL,
+        "install the .NET SDK (https://dotnet.microsoft.com/download)",
+    ),
 )
 
 
@@ -939,14 +957,11 @@ def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | Non
 # frob:ticket T-4459
 # frob:doc docs/modules/agent-worktree.md#pythonpath-import-source-t-4459
 # frob:tests \
-# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_matching_worktree_repo\
-# rts_clean
+# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_matching_worktree_reports_clean  # noqa: E501
 # frob:tests \
-# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_mismatched_worktree_re\
-# ports_loudly
+# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_mismatched_worktree_reports_loudly  # noqa: E501
 # frob:tests \
-# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_no_worktree_src_never_\
-# mismatches
+# tests/test_worktree_pythonpath.py::TestImportSourceStatus.test_no_worktree_src_never_mismatches  # noqa: E501
 class ImportSourceStatus(BaseModel):
     """Where `import frob` actually resolved from vs. where `resolved_root`'s
     own checkout would put it (T-4459). A worktree test run using the
@@ -1001,6 +1016,173 @@ def _import_source_status(resolved_root: Path) -> ImportSourceStatus:
     )
 
 
+# frob:doc docs/guides/install.md#unity-toolchain-detection-t-4501
+# frob:ticket T-4501
+# frob:tests tests/unit/test_doctor.py::TestUnityEditorStatus.test_present_via_env_reports_version  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestUnityEditorStatus.test_absent_reports_not_found  # noqa: E501
+class UnityEditorStatus(BaseModel):
+    """Whether a Unity Editor binary was located on this machine (T-4501),
+    plus its version and the path it was found at. Distinct from
+    `_EXTERNAL_TOOLS`/`ExternalToolStatus`'s simple `shutil.which(name)`
+    check -- the Unity Editor has no single stable PATH-discoverable
+    binary name across OSes and install methods (Unity Hub installs each
+    editor version into its own versioned directory), so locating it
+    needs the multi-source search `_locate_unity_editor` performs. Always
+    OPTIONAL (`ToolCategory.OPTIONAL`'s rule): absence is reported here
+    for visibility when the caller is already inside a detected Unity
+    project (see `_collect_doctor_scans`'s Unity-project gating), never a
+    `frob doctor` health failure."""
+
+    model_config = {}
+
+    present: bool
+    path: str | None = None
+    version: str | None = None
+
+
+# frob:doc docs/guides/install.md#unity-toolchain-detection-t-4501
+# frob:ticket T-4501
+def _unity_hub_default_roots() -> tuple[Path, ...]:
+    """The default Unity Hub editor-install root(s) for the current OS
+    (T-4501): each editor version Unity Hub installs lives in its own
+    subdirectory under one of these roots (e.g. `<root>/2022.3.5f1/`),
+    which is what makes a plain `shutil.which("unity")` insufficient --
+    there is no single binary on PATH by default, only a per-version
+    install tree a Hub user never adds to PATH themselves. Returns
+    whichever root(s) apply to `platform.system()`; a root that does not
+    exist on this machine is filtered out by the caller
+    (`_locate_unity_editor`), not here -- this function only states the
+    convention, never touches the filesystem."""
+    system = platform.system()
+    if system == "Windows":
+        # frob:waive SEC110 reason="PROGRAMFILES is a well-known filesystem-location \
+        # env var, not a secret"
+        # frob:waive SELFAUDIT001 reason="env.read on this Unity-toolchain lookup \
+        # could not be added to design/frob.strata's cli-node via-list because that \
+        # file was LIVE-leased by T-3613 for T-4501's whole work window; same \
+        # T-3020/T-3014 precedent as src/frob/gates/_narrative_blocks.py" \
+        # follow_up="T-4537"
+        program_files = os.environ.get("PROGRAMFILES", r"C:\Program Files")
+        return (Path(program_files) / "Unity" / "Hub" / "Editor",)
+    if system == "Darwin":
+        return (Path("/Applications/Unity/Hub/Editor"),)
+    return (Path.home() / "Unity" / "Hub" / "Editor",)
+
+
+def _unity_editor_binary_for_version_dir(version_dir: Path) -> Path:
+    """The Unity Editor executable path inside one Unity Hub versioned
+    install directory (T-4501), per-OS layout: Windows nests
+    `Editor/Unity.exe`, macOS nests `Unity.app/Contents/MacOS/Unity`, and
+    Linux nests `Editor/Unity` directly under the version directory."""
+    system = platform.system()
+    if system == "Windows":
+        return version_dir / "Editor" / "Unity.exe"
+    if system == "Darwin":
+        return version_dir / "Unity.app" / "Contents" / "MacOS" / "Unity"
+    return version_dir / "Editor" / "Unity"
+
+
+# frob:doc docs/guides/install.md#unity-toolchain-detection-t-4501
+# frob:ticket T-4501
+# frob:tests tests/unit/test_doctor.py::TestUnityEditorStatus.test_present_via_env_reports_version  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestUnityEditorStatus.test_present_via_hub_default_root  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestUnityEditorStatus.test_present_via_path  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestUnityEditorStatus.test_absent_reports_not_found  # noqa: E501
+def _locate_unity_editor() -> UnityEditorStatus:
+    """Locate a Unity Editor binary (T-4501), in precedence order: the
+    `UNITY_PATH`/`UNITY_EDITOR` environment variables (an explicit path
+    to the editor binary, checked first so a pinned CI/dev override always
+    wins), Unity Hub's own default per-OS install root
+    (`_unity_hub_default_roots`, one subdirectory per installed editor
+    version -- the newest version directory by name is reported when
+    more than one is installed), then a plain PATH lookup for `Unity`
+    (Linux tarball installs and some manual installs put it there,
+    unlike the Hub layout). Never raises and never logs above DEBUG on
+    absence -- this is an OPTIONAL tool (`ToolCategory.OPTIONAL`'s rule:
+    absence is informational, never a `frob doctor` health failure) that
+    is only even consulted when the caller has already confirmed it is
+    inside a Unity project (see `_collect_doctor_scans`)."""
+    # frob:waive SEC110 reason="UNITY_PATH/UNITY_EDITOR are filesystem-path overrides \
+    # for the editor binary location, not secrets"
+    # frob:waive SELFAUDIT001 reason="env.read on this Unity-toolchain lookup could \
+    # not be added to design/frob.strata's cli-node via-list because that file was \
+    # LIVE-leased by T-3613 for T-4501's whole work window; same T-3020/T-3014 \
+    # precedent as src/frob/gates/_narrative_blocks.py" follow_up="T-4537"
+    for env_name in ("UNITY_PATH", "UNITY_EDITOR"):
+        env_path = os.environ.get(env_name)
+        if env_path and Path(env_path).is_file():
+            _log.info("doctor: Unity editor located via $%s at %s", env_name, env_path)
+            return UnityEditorStatus(present=True, path=env_path, version=None)
+
+    for hub_root in _unity_hub_default_roots():
+        if not hub_root.is_dir():
+            continue
+        version_dirs = sorted(
+            (d for d in hub_root.iterdir() if d.is_dir()),
+            key=lambda d: d.name,
+            reverse=True,
+        )
+        for version_dir in version_dirs:
+            binary = _unity_editor_binary_for_version_dir(version_dir)
+            if binary.is_file():
+                _log.info(
+                    "doctor: Unity editor located via Unity Hub at %s (version %s)",
+                    binary,
+                    version_dir.name,
+                )
+                return UnityEditorStatus(
+                    present=True, path=str(binary), version=version_dir.name
+                )
+
+    which = shutil.which("Unity") or shutil.which("unity")
+    if which is not None:
+        _log.info("doctor: Unity editor located on PATH at %s", which)
+        return UnityEditorStatus(present=True, path=which, version=None)
+
+    _log.debug("doctor: no Unity editor located (env/Hub-default-roots/PATH)")
+    return UnityEditorStatus(present=False)
+
+
+# frob:doc docs/guides/install.md#unity-toolchain-detection-t-4501
+# frob:ticket T-4501
+# frob:tests tests/unit/test_doctor.py::TestUnityProjectDiagnosis.test_unity_project_reports_editor_status  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestUnityProjectDiagnosis.test_non_unity_project_skips_unity_detection  # noqa: E501
+def _diagnose_unity_toolchain(
+    resolved_root: Path,
+) -> tuple[UnityProjectInfo | None, UnityEditorStatus | None]:
+    """Report the Unity project and installed editor (T-4501) -- but ONLY
+    when `resolved_root` is a Unity project (`detect_unity_project`);
+    outside a Unity project this returns `(None, None)` and does NOT call
+    `_locate_unity_editor` at all, deliberately: a non-Unity repo must
+    never see a spurious 'Unity not found' line (the story's own third
+    acceptance criterion), and every other project on this machine using
+    `frob doctor` should not pay a Unity Hub filesystem probe it has no
+    use for. `_project_detect.detect_unity_project`'s own `Err
+    (NotUnityProject)` case is deliberately quiet (not logged) for the
+    same reason its docstring states -- this is the common case for
+    every non-Unity root. A detected Unity project with no editor located
+    is reported (`UnityEditorStatus(present=False)`), never a `frob
+    doctor` failure -- see `UnityEditorStatus`'s own docstring."""
+    detected = detect_unity_project(resolved_root)
+    if detected.is_err:
+        if detected.danger_err != UnityProjectDetectError.NotUnityProject:
+            _log.warning(
+                "doctor: Unity project detection at %s failed: %s",
+                resolved_root,
+                detected.danger_err,
+            )
+        return None, None
+    project = detected.danger_ok
+    editor = _locate_unity_editor()
+    _log.info(
+        "doctor: Unity project detected at %s (editor %s); Unity editor %s",
+        resolved_root,
+        project.editor_version,
+        f"found at {editor.path}" if editor.present else "not found",
+    )
+    return project, editor
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:ticket T-1501
 # frob:ticket T-1515
@@ -1050,7 +1232,13 @@ class DoctorReport(BaseModel):
     missing OPTIONAL entry is silent by design, and a missing
     OPTIONAL_FOR_GATE entry is the affected gate's own UNMEASURED concern,
     never a `frob doctor` health failure (`ToolCategory`'s own docstring
-    states the rule)."""
+    states the rule). `unity_project`/`unity_editor` (T-4501) are `None`
+    unless `resolved_root` is a detected Unity project
+    (`_diagnose_unity_toolchain`) -- a non-Unity repo never populates
+    either field, matching the story's own "no spurious noise" acceptance
+    criterion. Neither ever makes `healthy` False: a Unity project with
+    no editor located is reported via `unity_editor.present=False`,
+    informational only, per `UnityEditorStatus`'s own docstring."""
 
     model_config = {}
 
@@ -1068,6 +1256,8 @@ class DoctorReport(BaseModel):
     global_binary: GlobalBinarySkew | None = None
     live_land_process: LiveLandProcess | None = None
     import_source: ImportSourceStatus | None = None
+    unity_project: UnityProjectInfo | None = None
+    unity_editor: UnityEditorStatus | None = None
     healthy: bool
     remediation: str | None = None
 
@@ -1379,6 +1569,8 @@ def _assemble_doctor_report(
     global_binary=None,
     external_tools: list[ExternalToolStatus] | None = None,
     import_source: ImportSourceStatus | None = None,
+    unity_project: UnityProjectInfo | None = None,
+    unity_editor: UnityEditorStatus | None = None,
 ) -> DoctorReport:
     """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
@@ -1403,7 +1595,9 @@ def _assemble_doctor_report(
     (`alive is True`) was already, and remains, informational, not
     unhealthy. `external_tools` (T-3276) only affects `healthy` via a
     missing `ToolCategory.REQUIRED` entry -- see `ToolCategory`'s own
-    docstring for why OPTIONAL/OPTIONAL_FOR_GATE absences never do."""
+    docstring for why OPTIONAL/OPTIONAL_FOR_GATE absences never do.
+    `unity_project`/`unity_editor` (T-4501) never affect `healthy` --
+    see `DoctorReport`'s own docstring for why."""
     tools = external_tools or []
     missing_required_tools = [
         t for t in tools if t.category == ToolCategory.REQUIRED and not t.present
@@ -1437,6 +1631,8 @@ def _assemble_doctor_report(
         global_binary=global_binary,
         live_land_process=live_land_process,
         import_source=import_source,
+        unity_project=unity_project,
+        unity_editor=unity_editor,
         healthy=healthy,
         remediation=_combined_remediation(
             natives_healthy,
@@ -1497,6 +1693,12 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     line into `_log_doctor_diagnosis`; T-1501 further split the report
     assembly into `_assemble_doctor_report` -- this function is now just
     their composition.
+
+    T-4501: also reports the Unity project and its editor version when
+    `resolved_root` is a detected Unity project, plus whether a Unity
+    Editor binary and `dotnet` were located on this machine -- see
+    `_diagnose_unity_toolchain`'s own docstring for the project-detection
+    gating (a non-Unity repo never attempts Unity detection at all).
     """
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
@@ -1516,6 +1718,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     global_binary = global_binary_skew(f"frob {_frob_version()}")
     external_tools = scan_external_tools()
     import_source = _import_source_status(resolved_root)
+    unity_project, unity_editor = _diagnose_unity_toolchain(resolved_root)
 
     report = _assemble_doctor_report(
         resolved_root,
@@ -1535,6 +1738,8 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         global_binary,
         external_tools,
         import_source,
+        unity_project,
+        unity_editor,
     )
     _log_doctor_diagnosis(
         report.healthy,

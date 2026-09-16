@@ -3284,6 +3284,24 @@
       "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
       "reason": "T-4483: body digest moved because T-4459 added the import_source computation (_import_source_status) and threaded it through _assemble_doctor_report; re-verified docs/guides/install.md's doctor section still describes the same native-extension/derived-state contract, and the new import-source field is documented in docs/modules/agent-worktree.md#pythonpath-import-source-t-4459",
       "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-16",
+      "facet": "body",
+      "new_digest": "333b00cdb0d7d85123855f01fba107d5965c42c9fa70c31780f0190cd6421adf",
+      "old_digest": "5a9c69ae7facaef67265d3ae70fb6d07aaca78e711f692a23fdcd65ce63d20bc",
+      "reason": "T-4501: run_diagnosis now also calls _diagnose_unity_toolchain to report the Unity project/editor status; every dependent's own claim about run_diagnosis's behavior is unaffected (the new fields are additive and default to None outside a Unity project).",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-16",
+      "facet": "sig",
+      "new_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "reason": "T-4501: run_diagnosis now also calls _diagnose_unity_toolchain to report the Unity project/editor status; every dependent's own claim about run_diagnosis's behavior is unaffected (the new fields are additive and default to None outside a Unity project).",
+      "ref": "src/frob/doctor.py::run_diagnosis"
     }
   ],
   "entries": [
@@ -3543,7 +3561,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "5a9c69ae7facaef67265d3ae70fb6d07aaca78e711f692a23fdcd65ce63d20bc",
+      "digest": "333b00cdb0d7d85123855f01fba107d5965c42c9fa70c31780f0190cd6421adf",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },

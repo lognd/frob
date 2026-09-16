@@ -16,7 +16,10 @@ from frob.doctor import (
     ExternalToolStatus,
     NativeExtensionStatus,
     ToolCategory,
+    UnityEditorStatus,
+    _diagnose_unity_toolchain,
     _external_tools_remediation,
+    _locate_unity_editor,
     native_degrade_warning,
     scan_external_tools,
 )
@@ -211,3 +214,115 @@ class TestExternalToolsRemediation:
             ),
         ]
         assert _external_tools_remediation(statuses) is None
+
+
+class TestUnityEditorStatus:
+    """T-4501: `_locate_unity_editor` searches env vars, then Unity Hub's
+    default per-OS install root, then PATH, in that precedence order, and
+    never raises regardless of what is present or absent."""
+
+    def test_present_via_env_reports_version(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """`UNITY_PATH` pointing at an existing file wins over every other
+        source -- an explicit pinned override always wins."""
+        binary = tmp_path / "Unity"
+        binary.write_text("", encoding="utf-8")
+        monkeypatch.setenv("UNITY_PATH", str(binary))
+        monkeypatch.delenv("UNITY_EDITOR", raising=False)
+        status = _locate_unity_editor()
+        assert status.present is True
+        assert status.path == str(binary)
+
+    def test_present_via_hub_default_root(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """No env override: a Unity Hub default install root with a
+        versioned editor directory is found, and the newest version (by
+        name, sorted descending) is reported when more than one exists."""
+        monkeypatch.delenv("UNITY_PATH", raising=False)
+        monkeypatch.delenv("UNITY_EDITOR", raising=False)
+        monkeypatch.setattr(doctor.shutil, "which", lambda name: None)
+        hub_root = tmp_path / "Hub" / "Editor"
+        for v in ("2021.3.1f1", "2022.3.5f1"):
+            edir = hub_root / v / "Editor"
+            edir.mkdir(parents=True)
+            (edir / "Unity").write_text("", encoding="utf-8")
+        monkeypatch.setattr(doctor, "_unity_hub_default_roots", lambda: (hub_root,))
+        status = _locate_unity_editor()
+        assert status.present is True
+        assert status.version == "2022.3.5f1"
+
+    def test_present_via_path(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """No env override and no Hub default root present: falls back to
+        a plain PATH lookup for the `Unity`/`unity` binary."""
+        monkeypatch.delenv("UNITY_PATH", raising=False)
+        monkeypatch.delenv("UNITY_EDITOR", raising=False)
+        monkeypatch.setattr(doctor, "_unity_hub_default_roots", lambda: ())
+        monkeypatch.setattr(doctor.shutil, "which", lambda name: "/usr/local/bin/Unity")
+        status = _locate_unity_editor()
+        assert status.present is True
+        assert status.path == "/usr/local/bin/Unity"
+
+    def test_absent_reports_not_found(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """No env override, no Hub default root, nothing on PATH: reports
+        `present=False` -- never raises, never a `frob doctor` failure
+        (OPTIONAL category)."""
+        monkeypatch.delenv("UNITY_PATH", raising=False)
+        monkeypatch.delenv("UNITY_EDITOR", raising=False)
+        monkeypatch.setattr(doctor, "_unity_hub_default_roots", lambda: ())
+        monkeypatch.setattr(doctor.shutil, "which", lambda name: None)
+        status = _locate_unity_editor()
+        assert status.present is False
+        assert status.path is None
+
+
+class TestUnityProjectDiagnosis:
+    """T-4501: `_diagnose_unity_toolchain` gates Unity editor detection on
+    `detect_unity_project` -- a non-Unity root must never attempt Unity
+    detection at all (the story's own third acceptance criterion)."""
+
+    def test_unity_project_reports_editor_status(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """A genuine Unity project root (Assets/ + ProjectVersion.txt)
+        reports both the project info (with its editor version) and the
+        located editor status."""
+        (tmp_path / "Assets").mkdir()
+        settings = tmp_path / "ProjectSettings"
+        settings.mkdir()
+        (settings / "ProjectVersion.txt").write_text(
+            "m_EditorVersion: 2022.3.5f1\n", encoding="utf-8"
+        )
+        monkeypatch.setattr(
+            doctor,
+            "_locate_unity_editor",
+            lambda: UnityEditorStatus(present=False),
+        )
+        project, editor = _diagnose_unity_toolchain(tmp_path)
+        assert project is not None
+        assert project.editor_version == "2022.3.5f1"
+        assert editor is not None
+        assert editor.present is False
+
+    def test_non_unity_project_skips_unity_detection(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """A plain, non-Unity root never even calls `_locate_unity_editor`
+        -- no spurious 'Unity not found' noise for unrelated projects."""
+        called = False
+
+        def _fail_if_called() -> UnityEditorStatus:
+            nonlocal called
+            called = True
+            return UnityEditorStatus(present=False)
+
+        monkeypatch.setattr(doctor, "_locate_unity_editor", _fail_if_called)
+        project, editor = _diagnose_unity_toolchain(tmp_path)
+        assert project is None
+        assert editor is None
+        assert called is False
