@@ -2,7 +2,7 @@
 id: T-3613
 title: make land --queue/--drain (T-1444) the default agent path with pollable completion
   records
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-31'
@@ -23,6 +23,10 @@ scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
 - docs/modules/tickets-landing.md
+- src/frob/_cli_parsers/_ticket/_progress.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +70,61 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: land default path doc update
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: actual home of --queue/--drain flags, need --status
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/config.py
+  reason: land_default config field
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: export read_intent_record alongside existing queue exports
   actor: logan
   at: '2026-09-16'
 triage_changes:
