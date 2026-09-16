@@ -1,5 +1,5 @@
 ---
-id: T-draft-0c976639
+id: T-4492
 title: 'ticket work and worktree sweep hardcode main: worktrees branch from and merge
   main instead of the land target (dev)'
 state: in-progress
@@ -34,7 +34,7 @@ scope_changes:
   at: '2026-09-15'
 - op: add
   glob: tests/unit/test_land_leaked_tickets_lease_hoist.py
-  reason: 'T-draft-0c976639 second defect (coordinator directive): unit test for the
+  reason: 'T-4492 second defect (coordinator directive): unit test for the
     read_all_leases hoist in _find_leaked_tickets'
   actor: logan
   at: '2026-09-15'
@@ -64,4 +64,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Measured 2026-09-15 right after switching the root to dev: frob ticket work T-draft-926571db created its worktree from main (b10d67a0f) although the root was on dev one commit ahead (c58d4d423, the ticket's own filing commit), so frob ticket start inside the worktree failed with 'no ticket'. Sites: src/frob/app/ticket_runner/_lifecycle.py (worktree add -b <branch> main; git merge main in _ensure_worktree_fresh) and src/frob/tickets/_worktree_sweep.py (rev-list --count main..branch, three-dot main...branch diff). T-3787 made land itself branch-aware via ticket_land_branch / root's current branch; work and sweep must resolve the same target through one shared helper (root's current branch, falling back to ticket_land_branch, then main), never a literal.
+Measured 2026-09-15 right after switching the root to dev: frob ticket work T-4496 created its worktree from main (b10d67a0f) although the root was on dev one commit ahead (c58d4d423, the ticket's own filing commit), so frob ticket start inside the worktree failed with 'no ticket'. Sites: src/frob/app/ticket_runner/_lifecycle.py (worktree add -b <branch> main; git merge main in _ensure_worktree_fresh) and src/frob/tickets/_worktree_sweep.py (rev-list --count main..branch, three-dot main...branch diff). T-3787 made land itself branch-aware via ticket_land_branch / root's current branch; work and sweep must resolve the same target through one shared helper (root's current branch, falling back to ticket_land_branch, then main), never a literal.

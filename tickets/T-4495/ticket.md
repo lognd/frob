@@ -1,5 +1,5 @@
 ---
-id: T-draft-53741e41
+id: T-4495
 title: 'SYS100 testsuite via-lists enumerate every exec/fs.write test file by name:
   each new test file costs a land refusal plus a hand edit to design/frob.strata'
 state: queued
@@ -38,4 +38,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Measured 2026-09-15: two READY tickets (T-draft-0c976639, T-4414) were refused at land with 'SELFAUDIT001: self-audit family SYS100 node=testsuite: capability exec/fs.write observed at tests/unit/<new_test>.py:N but not declared'. design/frob.strata line ~1693 lists ~330 test files by name under may exec via ..., and a second list under fs.write. T-2666 chose the enumerated list because T-2224 makes via-less exec ERROR on nodes over 20 files. Owner doctrine (automatic over commands): a declaration every ticket must repeat by hand is friction to systematize. Options: a via glob (tests/**) accepted for the testsuite node only; or derive the via list from the frob:tests binding at check time. Keep fail-closed behaviour for non-test nodes.
+Measured 2026-09-15: two READY tickets (T-4492, T-4414) were refused at land with 'SELFAUDIT001: self-audit family SYS100 node=testsuite: capability exec/fs.write observed at tests/unit/<new_test>.py:N but not declared'. design/frob.strata line ~1693 lists ~330 test files by name under may exec via ..., and a second list under fs.write. T-2666 chose the enumerated list because T-2224 makes via-less exec ERROR on nodes over 20 files. Owner doctrine (automatic over commands): a declaration every ticket must repeat by hand is friction to systematize. Options: a via glob (tests/**) accepted for the testsuite node only; or derive the via list from the frob:tests binding at check time. Keep fail-closed behaviour for non-test nodes.

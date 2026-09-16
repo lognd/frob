@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 306,
-      "reason": "T-4475: adds tests/test_gates_fmt_directives.py to the exec via-list -- TestUnbreakableTokenGetsNoqaE501T4475.test_ruff_check_e501_is_clean_on_the_result spawns a real `ruff check --select E501` subprocess (skipif ruff missing) to prove the canonicalizer's auto-appended noqa suppression actually satisfies ruff, not just this repo's own regex. One file, same via-list-is-per-file shape every other entry here already carries. Bumping the ceiling 305 -> 306, one new site.",
-      "ticket": "T-4475"
+      "accepted_count": 307,
+      "reason": "T-4491: adds tests/unit/test_leases_staleness_perf.py to the exec via-list -- real git subprocess spawns (init/worktree add/commit) building the real-repo fixtures for the lease-staleness ledger-load-count fix. Bumping the ceiling 306 -> 307, one new site.",
+      "ticket": "T-4491"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-4479"
     },
     "testsuite::fs.write": {
-      "accepted_count": 520,
-      "reason": "T-4179: adds tests/test_ticket_land_dry_run.py to the fs.write via-list -- write_text on a real git-fixture repo's tracked .py file (a non-canonical frob: directive fixture), same shape tests/test_ticket_work_and_land_finish.py's own entry already carries. Bumping the ceiling 519 -> 520, one new site.",
-      "ticket": "T-4179"
+      "accepted_count": 521,
+      "reason": "T-4491: adds tests/unit/test_leases_staleness_perf.py to the fs.write via-list -- writes real lease JSON files directly (matching tests/test_ticket_leases.py's own _write_lease shape) to build fixtures for the lease-staleness ledger-load-count fix. Bumping the ceiling 520 -> 521, one new site.",
+      "ticket": "T-4491"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

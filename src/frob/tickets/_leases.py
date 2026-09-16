@@ -3,21 +3,7 @@
 # frob.tickets._worktree_sweep in T-2833, per this module's own docstring, leaving \
 # only the cross-worktree lease side-channel (T-0473) itself: lease record \
 # CRUD/staleness \
-# (record_lease/release_lease/force_release_lease/rename_lease/resolve_lease/read_all_l\
-# eases/orphaned_leases), land-lock probing during a transition \
-# (refuse_if_land_in_progress/scan_for_live_worktree_process/_scan_for_live_land_proces\
-# s), the ledger-commit that makes a transition's git write atomic \
-# (commit_ticket_ledger_change/commit_full_ledger_change/_add_and_commit_tickets_md), \
-# and the crash-recovery repair markers for an interrupted commit (T-2714's \
-# _ledger_commit_repair family). These are stages of ONE pipeline -- safely \
-# transitioning a ticket's state across worktrees sharing one git common dir -- not \
-# independent rule-id families: splitting the ledger-commit half out would separate it \
-# from the lease-transition callers that need its atomicity guarantee, the same \
-# coupling this module's own docstring already names when it calls this the \
-# lease-CRUD/ledger-commit machinery. 3182 lines reflects how many distinct failure \
-# modes cross-worktree git coordination has (staleness, land races, crash mid-commit, \
-# force-release audit trail), not an uncohered file; a further line-count-driven split \
-# here would be strictly worse than the warning per the T-1651 bar."
+# (record_lease/release_lease/force_release_lease/rename_lease/resolve_lease/read_all_leases/orphaned_leases), land-lock probing during a transition (refuse_if_land_in_progress/scan_for_live_worktree_process/_scan_for_live_land_process), the ledger-commit that makes a transition's git write atomic (commit_ticket_ledger_change/commit_full_ledger_change/_add_and_commit_tickets_md), and the crash-recovery repair markers for an interrupted commit (T-2714's _ledger_commit_repair family). These are stages of ONE pipeline -- safely transitioning a ticket's state across worktrees sharing one git common dir -- not independent rule-id families: splitting the ledger-commit half out would separate it from the lease-transition callers that need its atomicity guarantee, the same coupling this module's own docstring already names when it calls this the lease-CRUD/ledger-commit machinery. 3182 lines reflects how many distinct failure modes cross-worktree git coordination has (staleness, land races, crash mid-commit, force-release audit trail), not an uncohered file; a further line-count-driven split here would be strictly worse than the warning per the T-1651 bar."  # noqa: E501
 """Cross-worktree scope-lease side-channel under the git COMMON dir (T-0473).
 
 `frob ticket start`'s in-progress scope-lease (T-0453) lives entirely in
@@ -78,7 +64,7 @@ from frob.process._lock import (
     portable_flock_acquire,
     portable_flock_release,
 )
-from frob.tickets._models import TicketError
+from frob.tickets._models import TicketError, TicketQueue
 
 # frob:ticket T-1619
 # frob:ticket T-3506
@@ -328,6 +314,28 @@ _cache_lock = threading.Lock()
 _lease_file_cache: dict[
     Path, dict[Path, tuple[tuple[int, int], _LeaseRecord | None]]
 ] = {}
+# frob:ticket T-4491
+# T-4491: memoizes `load_active`'s parsed active-ledger map
+# (NOT the archive, NOT lease files) for the lifetime of a signature
+# match, so `_live_leases_pruning_stale`'s per-record loop (`read_all_
+# leases` -> `_live_leases_pruning_stale` -> `_ticket_ledger_staleness_
+# shape` once per lease record) pays for ONE active-ledger read per call
+# instead of one per record, and repeated `read_all_leases` calls within
+# one process (a `frob check`/land run that calls it more than once) pay
+# for one read total for as long as the ledger's own on-disk signature
+# (see `_active_ledger_cache_signature`) stays unchanged. Guarded by the
+# SAME `_cache_lock` as `_lease_file_cache` above -- an earlier revision
+# gave this its own lock and `frob check`'s own lock-order-cycle
+# detector immediately caught the hazard: `orphaned_leases` reaches
+# `_cache_lock` (lease-file cache) before `lease_staleness_reason`
+# reaches this cache, while `_live_leases_pruning_stale` reaches this
+# cache before its own later `_unlink_terminal_ticket_lease` call
+# reaches `_cache_lock` -- two call paths taking two locks in opposite
+# orders is a real deadlock shape even though neither path happens to
+# nest them today. One lock, never held across file IO/YAML parsing
+# (same discipline as `_lease_file_cache`'s own uses), removes the
+# ordering question entirely.
+_active_ledger_cache: dict[Path, tuple[object, Result[TicketQueue, TicketError]]] = {}
 _stale_lease_logged: set[tuple[Path, str]] = set()
 # frob:ticket T-0780
 # Which lease files this process has already logged a shape-rejection
@@ -952,9 +960,79 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     return None
 
 
+# frob:ticket T-4491
+def _active_ledger_cache_signature(root: Path) -> object:
+    """A cheap (no YAML parse, no archive walk) fingerprint of `root`'s
+    ACTIVE ledger, for `_load_active_ledger_cached`'s hit/miss decision.
+
+    T-4491: `load_active`'s own on-disk cache (`.frob/tickets-
+    index.json`, v2 mode) or the plain `tickets.md` file (single mode)
+    is rewritten by `_write_index_cache`/`write_all` on every active-
+    ledger content change and left untouched otherwise, so that file's
+    own `(mtime_ns, size)` is already an authoritative "has anything in
+    the active ledger changed" signal -- reusing it here means this
+    in-process cache is invalidated by ANY ledger write without this
+    module needing its own write-hook into `_store.py`'s writers. Legacy
+    'dir' mode has no such single file to fingerprint; that branch
+    returns a constant so the caller always treats it as a miss (no
+    memoization, but also no incorrect one) rather than risk serving a
+    stale read for a backend this ticket's measured incident does not
+    touch."""
+    from frob.tickets._store import _index_path, _store_mode, ledger_path
+
+    mode = _store_mode(root)
+    if mode == "v2":
+        path = _index_path(root)
+    elif mode == "single":
+        path = ledger_path(root)
+    else:
+        return ("dir-mode-uncacheable", root)
+    try:
+        st = path.stat()
+    except OSError:
+        return (str(path), None, None)
+    return (str(path), st.st_mtime_ns, st.st_size)
+
+
+# frob:ticket T-4491
+def _load_active_ledger_cached(root: Path) -> Result[TicketQueue, TicketError]:
+    """`load_active(root)`, memoized in-process by `_active_ledger_cache_
+    signature` (T-4491): a signature match returns the
+    previously parsed `Result` with no re-parse at all; a mismatch (first
+    call, or the active ledger genuinely changed since the last call)
+    reloads via `load_active` and stores the fresh result under the new
+    signature. This is the ONLY ledger read `_ticket_ledger_staleness_
+    shape`/`_live_leases_pruning_stale` need for the common case (a
+    lease's ticket is almost always still active, not archived) -- the
+    expensive full `load_queue` merge (which walks and YAML-parses every
+    archived ticket) is reserved for the rare case where the ticket is
+    NOT in the active ledger at all, and even then only long enough to
+    decide gone-vs-archived (see `_ticket_ledger_staleness_shape`)."""
+    from frob.tickets._archive import load_active
+
+    signature = _active_ledger_cache_signature(root)
+    with _cache_lock:
+        cached = _active_ledger_cache.get(root)
+    if cached is not None and cached[0] == signature:
+        _log.debug("tickets: active-ledger cache hit for %s", root)
+        return cached[1]
+    _log.debug("tickets: active-ledger cache miss for %s", root)
+    result = load_active(root)
+    with _cache_lock:
+        _active_ledger_cache[root] = (signature, result)
+    return result
+
+
 # frob:ticket T-4172
+# frob:ticket T-4491
 # frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
-def _ticket_ledger_staleness_shape(root: Path, ticket_id: str) -> str | None:
+# frob:tests tests/unit/test_leases_staleness_perf.py::TestTicketLedgerStalenessShapeArchiveFastPath.test_archived_ticket_id_is_terminal_without_parsing_the_archive kind="unit"  # noqa: E501
+def _ticket_ledger_staleness_shape(
+    root: Path,
+    ticket_id: str,
+    *,
+    active_queue: Result[TicketQueue, TicketError] | None = None,
+) -> str | None:
     """The ledger half of `lease_staleness_reason`, split out (T-4172) so
     `read_all_leases`'s own liveness pruning can reuse the EXACT same
     "does this lease's ticket say it should still be held" question
@@ -965,9 +1043,47 @@ def _ticket_ledger_staleness_shape(root: Path, ticket_id: str) -> str | None:
     shape -- a finished ticket can never resume holding a lease), or
     `None` if the ledger is unreadable/malformed (degrades to "cannot
     confirm", never a false-positive release/prune) or the ticket is
-    present and non-terminal."""
-    from frob.tickets._archive import load_queue
+    present and non-terminal.
+
+    T-4491: this used to call `load_queue`, the FULL active+
+    archive merge, on every single call -- with ~4200 tickets (899
+    active, 3391 archived) that YAML-parses every archived ticket file
+    (v2 mode: one `_parse_ticket_file` per `tickets/archive/T-####/
+    ticket.md`, ~25s measured) EVERY TIME, even though the overwhelming
+    common case is a lease whose ticket is still active. Now the check
+    is active-ledger-first: `active_queue` (an in-process-cached `load_
+    active` result the caller may pass down, e.g. `_live_leases_pruning_
+    stale` sharing ONE load across its whole per-record loop; `None`
+    falls back to this module's own `_load_active_ledger_cached`) is
+    consulted first, and only a ticket ABSENT from the active ledger
+    falls through to the archive question -- answered by a plain
+    `Path.is_dir()`/`Path.is_file()` existence check on `tickets/archive/
+    <ticket_id>/ticket.md` (v2 mode) rather than a full archive walk+
+    parse: an archived ticket is, by construction, always `done`/
+    `dropped` (`archive()` only ever moves terminal tickets, T-0843's own
+    comment), so its mere presence under `tickets/archive/` answers
+    "ticket-terminal" with no YAML parse at all. Legacy 'single'/'dir'
+    mode has no such directory-per-ticket shape to check for free, so
+    that branch keeps the original full `load_queue` fallback -- this
+    ticket's measured incident is v2-mode-specific (this repo's own
+    layout) and does not touch those backends' cost profile."""
     from frob.tickets._models import TicketState
+    from frob.tickets._store import _store_mode, v2_archive_dir
+
+    if active_queue is None:
+        active_queue = _load_active_ledger_cached(root)
+    if active_queue.is_ok:
+        ticket = active_queue.danger_ok.tickets.get(ticket_id)
+        if ticket is not None:
+            if ticket.state in (TicketState.DONE, TicketState.DROPPED):
+                return "ticket-terminal"
+            return None
+        if _store_mode(root) == "v2":
+            if (v2_archive_dir(root, ticket_id) / "ticket.md").is_file():
+                return "ticket-terminal"
+            return "ticket-gone"
+
+    from frob.tickets._archive import load_queue
 
     queue = load_queue(root)
     if queue.is_ok:
@@ -1092,11 +1208,9 @@ _ORPHAN_DRAFT_ID_PREFIX = "T-draft-"
 # frob:ticket T-4348
 # frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
 # frob:tests \
-# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baselin\
-# e_silent
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baseline_silent  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_rep\
-# orts
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_reports  # noqa: E501
 _ORPHAN_LOCK_BASELINE_CUTOVER = datetime(2026, 9, 9, 3, 10, 0, tzinfo=UTC).timestamp()
 """Unix-epoch mtime cutover for `orphaned_ticket_locks` (T-4348): fixed at
 the moment this ticket measured and confirmed the pre-existing 138-lock
@@ -1120,11 +1234,9 @@ horizon, which is the opposite of what T-4348 asked for."""
 # frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_draft_id_never_reported
 # frob:tests \
-# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baselin\
-# e_silent
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baseline_silent  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_rep\
-# orts
+# tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_reports  # noqa: E501
 def _is_ticket_lock_baseline_excluded(
     ticket_id: str, lock_path: Path, *, lock_mtime: float | None
 ) -> bool:
@@ -1670,20 +1782,15 @@ def _record_lease_force_release_audit(
 # frob:ticket T-2333
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
-# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_exi\
-# sting_lease_file kind="unit"
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_\
-# lease_file_exists kind="unit"
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_incl\
-# uded_in_the_warning_log kind="unit"
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_included_in_the_warning_log kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_pers\
-# isted_to_the_ticket_ledger kind="unit"
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_persisted_to_the_ticket_ledger kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_force\
-# _releases_a_live_looking_lease kind="unit"
+# tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_force_releases_a_live_looking_lease kind="unit"  # noqa: E501
 def force_release_lease(
     root: Path, ticket_id: str, *, reason: str | None = None
 ) -> Result[bool, LeaseError]:
@@ -2562,11 +2669,9 @@ def scan_for_live_worktree_process(
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting_a_diffe\
-# rent_repo_does_not_block_this_one
+# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting_a_different_repo_does_not_block_this_one  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_block_on\
-# _its_own_descendant
+# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_block_on_its_own_descendant  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-landing.md's Land exclusivity lease \
 # (T-1619) section documents several symbols under one section, not just a public \
 # entry point -- the many-symbols- one-section convention this repo already accepted \
@@ -3194,11 +3299,9 @@ def _finish_ledger_commit_marker(
 # frob:ticket T-4273
 # frob:ticket T-4290
 # frob:tests \
-# tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_clears_t\
-# he_marker_without_a_false_alarm
+# tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_clears_the_marker_without_a_false_alarm  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_\
-# the_marker_and_the_dirt_for_a_human
+# tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
 def _handle_finish_marker_retry_failure(
     root: Path,
     marker_path: Path,
@@ -3399,8 +3502,7 @@ def _proc_result_failed(result: Result[ProcResult, GitError]) -> bool:
 
 # frob:ticket T-4273
 # frob:tests \
-# tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_r\
-# eported_as_commit_failed
+# tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_reported_as_commit_failed  # noqa: E501
 _GIT_NOTHING_TO_COMMIT_MARKERS = (
     "nothing to commit",
     "nothing added to commit",
@@ -3513,8 +3615,7 @@ def _add_and_commit_tickets_md(
 
 # frob:ticket T-4273
 # frob:tests \
-# tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_r\
-# eported_as_commit_failed
+# tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_reported_as_commit_failed  # noqa: E501
 def _is_resolved_concurrent_commit_race(
     ticket_id: str,
     pathspecs: tuple[str, ...],
@@ -3736,8 +3837,7 @@ def commit_ticket_ledger_change(
 
 # frob:ticket T-1615
 # frob:doc \
-# docs/modules/tickets-lifecycle.md#every-ledger-writing-verb-auto-commits-uniformly-t-\
-# 1615
+# docs/modules/tickets-lifecycle.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_commits_dirty_whole_ledger kind="unit"  # noqa: E501
 # frob:tests \
 # tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean \
@@ -3894,8 +3994,7 @@ def read_all_leases(
 
 # frob:ticket T-1999
 # frob:doc \
-# docs/modules/tickets-landing.md#shared-land-path-liveness-authority-is_effectively_in\
-# _progress-t-1999
+# docs/modules/tickets-landing.md#shared-land-path-liveness-authority-is_effectively_in_progress-t-1999  # noqa: E501
 # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_live_lease_refuses_even_when_roots_ledger_still_reads_planned kind="unit"  # noqa: E501
 def is_effectively_in_progress(
     root: Path, ticket_id: str, ledger_state: object
@@ -4109,23 +4208,61 @@ def _live_leases_pruning_stale(
     Every OTHER caller (the daemon, `is_effectively_in_progress`, plain
     `doable`/`start` collision checks) passes the default empty set and
     is completely unaffected."""
+    # T-4491: loaded at most once per call, shared below.
     live: list[_LeaseRecord] = []
+    active_queue: Result[TicketQueue, TicketError] | None = None
     for record in parsed:
         liveness = _probe_worktree_liveness(record.worktree)
-        if liveness == "present":
-            if record.ticket_id in exclude_from_reconcile:
-                live.append(record)
-                continue
-            shape = _ticket_ledger_staleness_shape(root, record.ticket_id)
-            if shape == "ticket-terminal":
-                _unlink_terminal_ticket_lease(leases_root, record)
-            else:
-                live.append(record)
-        elif liveness == "ambiguous":
-            _log_ambiguous_lease_liveness_once(leases_root, record)
-        else:
-            _unlink_confirmed_stale_lease(leases_root, record)
+        active_queue = _prune_one_lease_record(
+            root,
+            leases_root,
+            record,
+            liveness,
+            live,
+            active_queue,
+            exclude_from_reconcile=exclude_from_reconcile,
+        )
     return tuple(live)
+
+
+# frob:ticket T-4491
+def _prune_one_lease_record(
+    root: Path,
+    leases_root: Path,
+    record: "_LeaseRecord",
+    liveness: str,
+    live: list["_LeaseRecord"],
+    active_queue: Result[TicketQueue, TicketError] | None,
+    *,
+    exclude_from_reconcile: frozenset[str],
+) -> Result[TicketQueue, TicketError] | None:
+    """`_live_leases_pruning_stale`'s per-record body (already-probed
+    `liveness` passed in, never re-probed), split out (T-4491)
+    for pure line-count relief once that function's ARCH001 threshold
+    was crossed -- no behavior change. Appends `record` to `live` when
+    it stays live, unlinks it when it does not, and returns
+    `active_queue` (loaded via `_load_active_ledger_cached` on first use,
+    then passed back out unchanged) so the caller's loop shares ONE
+    ledger read across every record -- see `_ticket_ledger_staleness_
+    shape`'s docstring for the measured cost this avoids."""
+    if liveness == "present":
+        if record.ticket_id in exclude_from_reconcile:
+            live.append(record)
+            return active_queue
+        if active_queue is None:
+            active_queue = _load_active_ledger_cached(root)
+        shape = _ticket_ledger_staleness_shape(
+            root, record.ticket_id, active_queue=active_queue
+        )
+        if shape == "ticket-terminal":
+            _unlink_terminal_ticket_lease(leases_root, record)
+        else:
+            live.append(record)
+    elif liveness == "ambiguous":
+        _log_ambiguous_lease_liveness_once(leases_root, record)
+    else:
+        _unlink_confirmed_stale_lease(leases_root, record)
+    return active_queue
 
 
 # frob:ticket T-4172

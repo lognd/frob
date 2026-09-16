@@ -1,8 +1,8 @@
 ---
-id: T-draft-725f3c4c
+id: T-4491
 title: 'Lease staleness probe re-parses the whole ticket archive (3391 YAML files)
   once per lease record: read_all_leases costs minutes and lands sit silent CPU-bound'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -66,4 +66,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Measured 2026-09-15 with two SIGUSR1 stack dumps 60 s apart on a live land of T-draft-926571db (pid 75356, 100 percent CPU, no log line for 10+ min): both dumps sit in yaml.load <- _store._parse_ticket_file <- _store.load_archive <- _archive._load_merged <- _archive.load_queue <- _leases._ticket_ledger_staleness_shape (line 972) <- _live_leases_pruning_stale (line 4119) <- read_all_leases (3890) <- _land._effective_leakage_scope <- _find_leaked_tickets <- _check_cross_ticket_leakage <- _land_precheck. _ticket_ledger_staleness_shape calls load_queue(root) per lease record; load_queue merges the archive, YAML-parsing all 3391 archived tickets every time. With ~20 registered worktrees that is ~70k file parses per read_all_leases, and the land calls read_all_leases more than once. This is the unfiled 'land CPU-bound 25+ min after the wip commit with no child process' bug from 2026-09-12 and the reason a first land on a fresh branch takes 20+ minutes. Fix: load the queue once per pruning pass and pass it down; answer archive membership by tickets/archive/<id> existence; consider a per-process ledger cache keyed by directory mtime. Do not change lease semantics.
+Measured 2026-09-15 with two SIGUSR1 stack dumps 60 s apart on a live land of T-4496 (pid 75356, 100 percent CPU, no log line for 10+ min): both dumps sit in yaml.load <- _store._parse_ticket_file <- _store.load_archive <- _archive._load_merged <- _archive.load_queue <- _leases._ticket_ledger_staleness_shape (line 972) <- _live_leases_pruning_stale (line 4119) <- read_all_leases (3890) <- _land._effective_leakage_scope <- _find_leaked_tickets <- _check_cross_ticket_leakage <- _land_precheck. _ticket_ledger_staleness_shape calls load_queue(root) per lease record; load_queue merges the archive, YAML-parsing all 3391 archived tickets every time. With ~20 registered worktrees that is ~70k file parses per read_all_leases, and the land calls read_all_leases more than once. This is the unfiled 'land CPU-bound 25+ min after the wip commit with no child process' bug from 2026-09-12 and the reason a first land on a fresh branch takes 20+ minutes. Fix: load the queue once per pruning pass and pass it down; answer archive membership by tickets/archive/<id> existence; consider a per-process ledger cache keyed by directory mtime. Do not change lease semantics.

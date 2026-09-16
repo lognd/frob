@@ -1,5 +1,5 @@
 ---
-id: T-draft-1af78ba6
+id: T-4493
 title: SUPPRESS001 ty diagnostic correlation doubles the worktree path (root/.claude/worktrees/x/.claude/worktrees/x/...)
   and cannot read any file
 state: queued
@@ -33,4 +33,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Measured 2026-09-15 in the land log of T-draft-926571db: dozens of 'SUPPRESS001: could not read .claude/worktrees/t-draft-926571db/tests/... for ty diagnostic correlation: [Errno 2] .../frob/.claude/worktrees/t-draft-926571db/.claude/worktrees/t-draft-926571db/tests/...'. ty reports paths relative to the repo root while the correlation joins them onto the worktree path again. Every ty diagnostic in a worktree check is therefore uncorrelated: a silent zero for SUPPRESS001 inside worktrees. Find the real file first with git grep SUPPRESS001 -- src/frob/gates; adjust scope if it is not _suppress.py.
+Measured 2026-09-15 in the land log of T-4496: dozens of 'SUPPRESS001: could not read .claude/worktrees/t-draft-926571db/tests/... for ty diagnostic correlation: [Errno 2] .../frob/.claude/worktrees/t-draft-926571db/.claude/worktrees/t-draft-926571db/tests/...'. ty reports paths relative to the repo root while the correlation joins them onto the worktree path again. Every ty diagnostic in a worktree check is therefore uncorrelated: a silent zero for SUPPRESS001 inside worktrees. Find the real file first with git grep SUPPRESS001 -- src/frob/gates; adjust scope if it is not _suppress.py.
