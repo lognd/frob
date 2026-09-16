@@ -21,6 +21,7 @@ scope:
 - src/frob/lang/_support.py
 - tests/test_testing.py
 - tests/fixtures/lang/csharp/tests/
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,12 @@ scope_changes:
   glob: tests/fixtures/lang/csharp/tests/
   reason: wire new collect_csharp_tests into dispatch/exports and add tests+fixtures
     per brief
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/modules/testing.md
+  reason: collect_csharp_tests needs a frob:doc anchor like the other collect_*_tests
+    functions
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
