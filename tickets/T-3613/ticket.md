@@ -21,6 +21,7 @@ scope:
 - docs/modules/tickets-verify-sweep.md
 - tests/unit/test_land_queue.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +54,11 @@ scope_changes:
   at: '2026-09-16'
 - op: add
   glob: design/frob.strata
+  reason: queue/drain default land path + docs/tests
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
   reason: queue/drain default land path + docs/tests
   actor: logan
   at: '2026-09-16'
