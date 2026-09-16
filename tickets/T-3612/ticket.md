@@ -14,10 +14,33 @@ runs_last: false
 milestone: 0.532.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_land.py
+- tests/unit/test_land_in_progress_window.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: LandInProgress probe lives in _leases.py; the splice critical section in
+    _land.py
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: LandInProgress probe lives in _leases.py; the splice critical section in
+    _land.py
+  actor: logan
+  at: '2026-09-15'
+- op: add
+  glob: tests/unit/test_land_in_progress_window.py
+  reason: LandInProgress probe lives in _leases.py; the splice critical section in
+    _land.py
+  actor: logan
+  at: '2026-09-15'
 triage_changes:
 - field: priority
   old_value: high
