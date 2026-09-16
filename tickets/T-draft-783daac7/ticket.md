@@ -7,7 +7,7 @@ origin: agent
 created: '2026-09-16'
 priority: medium
 parent: null
-tier: ticket
+tier: epic
 sprint: v0.533.0
 runs_last: false
 milestone: v0.533.0
@@ -19,6 +19,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: tier
+  old_value: ticket
+  new_value: epic
+  reason: epic for C#/Unity sprint v0.533.0 per owner directive
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
