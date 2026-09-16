@@ -408,6 +408,24 @@ as **T-3337** (out of this ticket's `docs/guides/release.md`-only scope;
 the fix belongs in `src/frob/release/_publish.py`). Until T-3337 closes,
 follow the manual steps below instead of `make upload`.
 
+### Branch flow after the alpha
+
+`main` is frozen at the last released, CI-green commit; nothing lands on
+it between release cuts. All sprint work lands onto `dev`
+(`[tool.frob] ticket_land_branch = "dev"` in `pyproject.toml`; the root
+checkout stays on `dev`, since `frob ticket land` publishes onto and
+resyncs root's own branch -- see docs/modules/tickets-landing.md#landing-
+onto-a-non-main-target-branch-t-3787). `ci.yml` runs the full matrix on
+every push to `dev` as well as `main`, so `dev` carries its own green
+reading. Each sprint is one minor version: when the sprint's ticket set
+is closed and `dev`'s CI run is green, follow the ordered steps below on
+`dev` (freeze, bump, stamp, commit), fast-forward `main` to that commit
+(`git checkout main && git merge --ff-only dev && git push origin main`),
+dispatch `release.yml`, and tag. A `main` that cannot fast-forward means
+something landed on `main` directly -- stop and reconcile before cutting.
+The per-land dev-version bump (`dev_version_bump = true`) stays on
+between cuts and is switched off only in the release-cut commit itself.
+
 ### Ordered steps, main is green -> wheels uploaded
 
 Run every command from the repo root, against the exact commit that will

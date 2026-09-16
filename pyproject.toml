@@ -368,12 +368,14 @@ sigterm = false
 source = ["src/frob", "*/src/frob"]
 
 [tool.frob]
-# T-4184: automatic per-land PEP 440 dev-version bump ([tool.frob]
-# dev_version_bump) -- OFF here because the imminent publish is a plain
-# final release at a bumped version (owner decision), and the toggle
-# exists precisely so a release can turn this off cleanly. Re-enable
-# after that cut lands. See docs/modules/release.md#per-land-dev-version-
-# bump-t-4184 for the major-version-boundary interaction
-# (dev_version_major_ack) this repo will need the first time it crosses
-# a major version with the toggle back on.
-dev_version_bump = false
+# T-4184: automatic per-land PEP 440 dev-version bump. Back ON after the
+# 0.531.0 alpha cut: every land on the dev branch advances the dev
+# counter (0.531.1.devN) so a dev build never shares an identity with the
+# published final. Turn it OFF again as the last step before the next
+# release cut; see docs/modules/release.md#per-land-dev-version-bump-t-4184
+# for the major-version-boundary interaction (dev_version_major_ack).
+dev_version_bump = true
+# T-3787: post-alpha branch flow -- main is frozen at the released green
+# commit and every ticket lands onto dev; dev is merged into main only at
+# a sprint's release cut (docs/guides/release.md#branch-flow-after-the-alpha).
+ticket_land_branch = "dev"

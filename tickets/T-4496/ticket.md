@@ -2,7 +2,7 @@
 id: T-4496
 title: 'Post-alpha dev-branch workflow: land onto dev, CI on dev, re-enable dev version
   bump'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-15'
@@ -29,17 +29,24 @@ scope_changes:
   reason: evidence test asserting the dev-branch config and CI trigger shape
   actor: logan
   at: '2026-09-15'
+evidence:
+- tests/unit/test_dev_branch_workflow.py::test_land_target_is_dev
+- tests/unit/test_dev_branch_workflow.py::test_ci_runs_on_dev_and_main
+- tests/unit/test_dev_branch_workflow.py::test_dev_version_bump_is_on
 designated_repro_test: null
 acceptance:
 - text: GIVEN the root checkout on dev WHEN frob ticket land runs without --onto THEN
     it publishes onto dev (ticket_land_branch = dev in pyproject)
-  evidence: []
+  evidence:
+  - tests/unit/test_dev_branch_workflow.py::test_land_target_is_dev
 - text: GIVEN a push to dev WHEN ci.yml triggers THEN the full CI matrix runs on dev
     as it does on main
-  evidence: []
+  evidence:
+  - tests/unit/test_dev_branch_workflow.py::test_ci_runs_on_dev_and_main
 - text: GIVEN a land on dev WHEN it completes THEN the per-land PEP 440 dev version
     bump is applied again (dev_version_bump = true)
-  evidence: []
+  evidence:
+  - tests/unit/test_dev_branch_workflow.py::test_dev_version_bump_is_on
 threat: null
 component: null
 anchor: false
