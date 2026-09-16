@@ -176,8 +176,6 @@ acceptance:
   evidence: []
 - text: docs section and tests per acceptance criterion
   evidence: []
-- text: placeholder-resync-trigger
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 8
@@ -211,6 +209,13 @@ acceptance_amendments:
     does the serial work
   new_text: null
   reason: duplicate from a killed-then-retried accept call
+  actor: logan
+  at: '2026-09-16'
+- op: remove
+  index: 5
+  old_text: placeholder-resync-trigger
+  new_text: null
+  reason: remove resync-trigger placeholder criterion
   actor: logan
   at: '2026-09-16'
 threat: null
