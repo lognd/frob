@@ -18,6 +18,8 @@ scope:
 - src/frob/vet/_capability_registry/_matrix.py
 - tests/vet_suite/test_capability_scan_dotnet_bcl.py
 - tests/fixtures/lang/csharp/*.cs
+- docs/modules/vet.md
+- tests/test_capability_registry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +44,18 @@ scope_changes:
   reason: wire _dotnet_bcl.py's table into DANGEROUS_OPERATIONS aggregation and add
     one test-per-family with static .cs fixtures asserting via the real scan entry
     point, per T-4511 acceptance criteria
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'matrix.py scope-closure warnings: frob:doc/frob:tests edges on DANGEROUS_OPERATIONS/CAPABILITY_MATRIX_EXCUSES
+    the new table''s concat touches'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: 'matrix.py scope-closure warnings: frob:doc/frob:tests edges on DANGEROUS_OPERATIONS/CAPABILITY_MATRIX_EXCUSES
+    the new table''s concat touches'
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
