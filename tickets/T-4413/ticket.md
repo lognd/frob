@@ -8,6 +8,7 @@ created: '2026-09-11'
 priority: high
 blocked_by:
 - T-4411
+- T-4414
 parent: T-4410
 tier: story
 sprint: v0.532.0
