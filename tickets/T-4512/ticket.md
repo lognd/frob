@@ -1,7 +1,7 @@
 ---
 id: T-4512
 title: Read .asmdef assemblies as strata component boundaries
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -17,10 +17,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_unity_asmdef.py
+- tests/unit/strata/test_unity_asmdef.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_unity_asmdef.py
+  reason: unit tests for the asmdef->strata component mapping
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
