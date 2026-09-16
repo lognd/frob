@@ -27,6 +27,7 @@ scope:
 - src/frob/app/config.py
 - src/frob/app/_config_external.py
 - src/frob/tickets/__init__.py
+- tests/unit/test_land_default_queue.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -130,6 +131,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/_config_external.py
   reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_land_default_queue.py
+  reason: unit tests for auto-queue default + --status cmd
   actor: logan
   at: '2026-09-16'
 triage_changes:
