@@ -6,8 +6,6 @@ kind: feature
 origin: agent
 created: '2026-09-16'
 priority: medium
-blocked_by:
-- T-4505
 parent: T-4513
 tier: story
 sprint: v0.533.0
@@ -37,3 +35,6 @@ GIVEN a .cs call to File.Open or StreamWriter, WHEN scanned, THEN it maps to fs.
 GIVEN a .cs call to HttpClient.GetAsync or a raw Socket, WHEN scanned, THEN it maps to net/fetch_url.
 GIVEN a [DllImport] attribute on an extern method, WHEN scanned, THEN it maps to ffi.
 GIVEN Assembly.Load or a call through System.Reflection, WHEN scanned, THEN it maps to eval/ffi, distinct from a plain method call finding.
+
+## Unblock log
+- 2026-09-16: unblocked by T-4505 -- blocker landed as T-4536 (duplicate id T-4505 dropped)
