@@ -127,6 +127,11 @@ scope_changes:
   reason: export read_intent_record alongside existing queue exports
   actor: logan
   at: '2026-09-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wire land_default through [tool.frob] table
+  actor: logan
+  at: '2026-09-16'
 triage_changes:
 - field: priority
   old_value: high
