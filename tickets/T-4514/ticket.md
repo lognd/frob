@@ -22,6 +22,22 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
+acceptance:
+- text: GIVEN a MonoBehaviour with Start/Update/OnEnable/etc. and no visible caller
+    in the file, WHEN the callgraph/dead-code detectors run, THEN these lifecycle
+    methods are treated as roots, not flagged as dead code.
+  evidence: []
+- text: GIVEN a method using 'yield return' (a coroutine) started via StartCoroutine,
+    WHEN scanned, THEN the coroutine method is treated as reachable from its StartCoroutine
+    call site, not orphaned.
+  evidence: []
+- text: GIVEN a call to UnityEngine.Networking.UnityWebRequest.Get, WHEN scanned,
+    THEN it maps to the net capability.
+  evidence: []
+- text: GIVEN a call to UnityEditor.AssetDatabase from a file under an Editor/ folder
+    or Editor-only asmdef, WHEN scanned, THEN the finding is tagged editor-only, distinguishing
+    it from an identical runtime-code finding.
+  evidence: []
 threat: null
 component: null
 anchor: false
