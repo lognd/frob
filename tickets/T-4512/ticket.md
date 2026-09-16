@@ -19,6 +19,7 @@ scope:
 - src/frob/strata/_unity_asmdef.py
 - tests/unit/strata/test_unity_asmdef.py
 - tests/fixtures/unity_sample_asmdef/**
+- docs/strata/surface.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
 - op: add
   glob: tests/fixtures/unity_sample_asmdef/**
   reason: static fixture asmdef project for tests
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/strata/surface.md
+  reason: doc anchors for new frob:doc directives in _unity_asmdef.py
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
