@@ -76,7 +76,11 @@ from frob._cli_parsers._root import (
 )
 from frob.app import App, AppConfig
 from frob.app._version_guard import binary_fingerprint_warning
-from frob.app.config import stale_binary_warning, stale_install_warning
+from frob.app.config import (
+    _pyproject_file_for_args,
+    stale_binary_warning,
+    stale_install_warning,
+)
 from frob.doctor import native_degrade_warning
 from frob.logging import get_logger
 
@@ -392,7 +396,15 @@ def _dispatch_default(argv: list[str]) -> None:
         _report_concurrent_check_advisory_best_effort(
             force_stderr=getattr(args, "check_json", False)
         )
-    cfg = AppConfig.from_external(args, pyproject)
+    # T-4502: `[tool.frob]` config (e.g. `ticket_land_branch`)
+    # must come from the TARGET root a `frob ticket <verb> --path
+    # <ROOT>`/`FROB_ROOT` invocation names, never this process's own CWD
+    # `pyproject.toml` -- see `_pyproject_file_for_args`'s own docstring
+    # for the incident (a `dev`-branch default set in THIS repo's own
+    # pyproject.toml silently leaking into an unrelated `--path` target
+    # whenever frob is invoked with this repo as CWD, which is every
+    # system test and every real dev/CI invocation).
+    cfg = AppConfig.from_external(args, _pyproject_file_for_args(args))
     App(cfg)()
 
 

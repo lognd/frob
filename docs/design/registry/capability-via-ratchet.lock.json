@@ -11,9 +11,9 @@
       "ticket": "T-1628"
     },
     "cli::env.read": {
-      "accepted_count": 14,
-      "reason": "T-4459: adds src/frob/app/agent_runner.py to the env.read via-list -- _run_env reads os.environ.get(PYTHONPATH) to extend (not clobber) the exported PYTHONPATH the T-4459 worktree-import-source fix adds, same posture as this node's other FROB_WORKTREE_ENV-style path-list env reads. Bumping the ceiling 13 -> 14, one new site.",
-      "ticket": "T-4459"
+      "accepted_count": 15,
+      "reason": "T-4502: adds src/frob/app/config.py to cli's env.read via-list -- _pyproject_file_for_args reads FROB_ROOT to resolve [tool.frob] against the ticket verb's own root instead of the cwd. Bumping the ceiling 14 -> 15, one new site.",
+      "ticket": "T-4502"
     },
     "cli::env.write": {
       "accepted_count": 1,
@@ -251,9 +251,9 @@
       "ticket": "T-4415"
     },
     "testsuite::fs.write": {
-      "accepted_count": 525,
-      "reason": "T-4515: tests/unit/test_lang_project_detect.py joins the fs.write via-list alongside T-4414's tests/unit/rapid_sweep_suite/test_window.py already on dev; measured 525 sites at land time. Ceiling 524 -> 525.",
-      "ticket": "T-4515"
+      "accepted_count": 526,
+      "reason": "T-4502: adds tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py to the fs.write via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 525 -> 526, 1 new site(s).",
+      "ticket": "T-4502"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

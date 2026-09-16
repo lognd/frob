@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import enum
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -45,6 +46,49 @@ from frob.tickets._models import (
 )
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-4502
+# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_explicit_ticket_path_wins_over_cwd kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_frob_root_env_wins_over_cwd_when_no_explicit_path kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_bare_dot_ticket_path_falls_back_to_cwd kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_non_ticket_subcommand_is_unaffected kind="unit"  # noqa: E501
+def _pyproject_file_for_args(args: argparse.Namespace) -> Path:
+    """Resolve the `pyproject.toml` `AppConfig.from_args` reads `[tool.
+    frob]` defaults from against the SAME root a `frob ticket <verb>`
+    invocation itself resolves (T-4502): `--path`/`ticket_path`
+    when explicitly given, else `FROB_ROOT`, else the historical bare
+    `Path("pyproject.toml")` (process-cwd-relative) default.
+
+    Root cause of T-4502: this used to be an unconditional
+    `Path("pyproject.toml")` (CWD-relative), so `frob ticket land --path
+    <ROOT>` read the INVOKING process's own CWD pyproject.toml, never
+    `<ROOT>`'s -- harmless while this repo's own `[tool.frob]` table set
+    no `ticket_land_branch`, but T-4496 added `ticket_land_branch = "dev"`
+    to THIS repo's pyproject.toml, so any `frob ticket land --path
+    <unrelated-tmp-root>` run with this repo as CWD (every system test,
+    and every real dev/CI invocation) silently inherited `"dev"` as the
+    unrelated target root's land branch and refused with
+    `TargetBranchInvalid` the moment that root had no `dev` branch of its
+    own (`tests/system/test_cli_ticket_land.py::TestLandCLI::
+    test_dry_run_reports_clean`, failing on all three CI legs at
+    d6cfcaf99). Mirrors `frob.app.ticket_runner._resolve_ticket_root`'s
+    own explicit-path-then-FROB_ROOT-then-cwd precedence (T-1674) exactly,
+    but runs here (during `AppConfig` construction, before any ticket
+    handler exists) off the raw, not-yet-validated `args.ticket_path` --
+    the CLI's own default for that dest is the literal string `"."`
+    (never `None`), so a bare `"."` is treated as "not explicitly given"
+    the same way `_resolve_ticket_root` treats it. `getattr` (not direct
+    attribute access) because `args.ticket_path` only exists at all for
+    the `ticket` subcommand's own sub-parser -- every other subcommand's
+    `Namespace` has no such attribute, and must fall through unchanged."""
+    ticket_path = getattr(args, "ticket_path", None)
+    if ticket_path is not None and str(ticket_path) != ".":
+        return Path(ticket_path) / "pyproject.toml"
+    env_root = os.environ.get("FROB_ROOT")
+    if env_root:
+        return Path(env_root) / "pyproject.toml"
+    return Path("pyproject.toml")
 
 
 # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501
@@ -1379,6 +1423,10 @@ class AppConfig(BaseModel):
 
     @classmethod
     # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromArgs.test_delegates_to_from_external_with_pyproject_default kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_explicit_ticket_path_wins_over_cwd kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_frob_root_env_wins_over_cwd_when_no_explicit_path kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_bare_dot_ticket_path_falls_back_to_cwd kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_non_ticket_subcommand_is_unaffected kind="unit"  # noqa: E501
     def from_args(cls, args: argparse.Namespace) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
-        return cls.from_external(args, Path("pyproject.toml"))
+        return cls.from_external(args, _pyproject_file_for_args(args))

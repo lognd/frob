@@ -2,7 +2,7 @@
 id: T-4502
 title: 'Regression on dev CI: tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
   fails on all three legs after the T-4491..T-4414 lands'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -16,15 +16,54 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_ticket_land.py
+- src/frob/app/config.py
+- tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+- src/frob/__main__.py
+- changelog.d/T-4515.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'root cause: AppConfig.from_args reads pyproject.toml relative to process
+    CWD not the ticket verbs own --path/FROB_ROOT root, so ticket_land_branch leaks
+    from whichever repo frob is invoked from into an unrelated --path target repo'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/config.py
+  reason: root cause fix location
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+  reason: new unit test file covering the _pyproject_file_for_args fix
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'actual dispatch entrypoint: _dispatch_default hardcodes pyproject=Path(pyproject.toml)
+    and never used AppConfig.from_args, so the from_args-level fix in config.py never
+    runs for a real frob invocation; fix _dispatch_default to use the same root-aware
+    resolution'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: changelog.d/T-4515.md
+  reason: hand-merge of dev left this land-written fragment out (the commit hook refuses
+    adding fragments); the land's own merge restores it
+  actor: logan
+  at: '2026-09-16'
+evidence:
+- tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
+designated_repro_test: tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 acceptance:
 - text: GIVEN the dev branch at d6cfcaf99 WHEN tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
     runs THEN it passes on ubuntu, macOS and Windows
-  evidence: []
+  evidence:
+  - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 threat: null
 component: null
 anchor: false
