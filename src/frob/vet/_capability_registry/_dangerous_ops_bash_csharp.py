@@ -178,6 +178,23 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("Directory.Delete(", "File.Delete("),
         ("CWE-732",),
     ),
+    # T-4536: File.WriteAllText/AppendAllText/WriteAllBytes were
+    # missing from this table entirely -- the csharp resolver's own
+    # taxonomy row (`using System.IO; File.WriteAllText(...)`) needs a
+    # real fs-write needle to resolve against, not just File.Delete's.
+    _op(
+        "csharp",
+        "System.IO",
+        "File.WriteAllText / File.AppendAllText / File.WriteAllBytes",
+        "fs-write",
+        "writes or appends a file's full contents, overwriting an "
+        "attacker-influenceable path",
+        "validate/normalize the path against an allow-listed base "
+        "directory and avoid unbounded overwrite of caller-supplied paths",
+        "high",
+        ("File.WriteAllText(", "File.AppendAllText(", "File.WriteAllBytes("),
+        ("CWE-73",),
+    ),
     _op(
         "csharp",
         "System.IO",

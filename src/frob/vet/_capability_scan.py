@@ -50,6 +50,7 @@ from ._capability_core import (
     _non_executable_byte_spans,
     language_for,
 )
+from ._capability_csharp import _cs_binding_capabilities
 from ._capability_kotlin import _kt_binding_capabilities
 from ._capability_python import (
     _python_binding_capabilities,
@@ -396,8 +397,7 @@ def _fingerprint_refinement_confirms(
 
 # frob:ticket T-0153
 # frob:tests \
-# tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution.test_python_ali\
-# ased_pickle_loads_still_matches
+# tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_still_matches  # noqa: E501
 def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
     `path`'s raw text, OR whose needle(s) match a binding-resolved
@@ -602,6 +602,15 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
         # `import ... as`-aliased or `::`-referenced dangerous call the
         # raw-text needle scan structurally cannot.
         found |= _kt_binding_capabilities(path, table, comment_spans)
+    elif language == "csharp":
+        # T-4536: csharp sibling of the binding passes above --
+        # catches a `using`-aliased namespace/type, a `using static`
+        # bare call, or a fully-qualified navigation the raw-text needle
+        # scan structurally cannot (it still matches a plain-text needle
+        # substring regardless of qualification, but a renamed alias like
+        # `using F = System.IO.File; F.WriteAllText(x)` has no such
+        # substring at all).
+        found |= _cs_binding_capabilities(path, table, comment_spans)
     if found:
         _log.info("vet: %s: capabilities observed: %s", path, sorted(found))
     return frozenset(found)

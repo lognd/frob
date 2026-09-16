@@ -151,6 +151,7 @@ from ._capability_core import (
     _operation_entry_matches,
     language_for,
 )
+from ._capability_csharp import _extra_cs_binding_operations
 from ._capability_kotlin import _extra_kt_binding_operations
 from ._capability_python import _python_binding_operations
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
@@ -236,7 +237,7 @@ def non_executable_line_numbers(path: Path) -> frozenset[int]:
 
 # frob:ticket T-0158
 # frob:ticket T-0565
-# frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match, T-0662/T-0663/T-0664 per-language binding branches); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="70"  # noqa: E501
+# frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match, T-0662/T-0663/T-0664/T-4536 per-language binding branches); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="80"  # noqa: E501
 # frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_scan_file_operations_names_registry_entry  # noqa: E501
 def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
     """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
@@ -305,6 +306,13 @@ def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
         # finding can still cite library/rationale/safer_alternative for an
         # aliased/`::`-referenced call the raw-text needle scan misses.
         matched.extend(_extra_kt_binding_operations(path, comment_spans, matched))
+    elif language == "csharp":
+        # T-4536: same using/alias-aware resolution as
+        # `scan_file_capabilities`'s csharp branch, named-entry-granular
+        # so an audit finding can still cite library/rationale/safer_
+        # alternative for a `using`-aliased/`static`-imported call the
+        # raw-text needle scan misses.
+        matched.extend(_extra_cs_binding_operations(path, comment_spans, matched))
     return tuple(matched)
 
 

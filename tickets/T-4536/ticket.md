@@ -1,7 +1,7 @@
 ---
-id: T-draft-35c8d680
+id: T-4536
 title: Wire a C# capability resolver into _capability_scan.py
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -90,7 +90,30 @@ scope_changes:
     the static-using fallback hijack a member-access base'
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_plain_using_namespace_resolves_fs_write
+- tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_using_alias_follows_to_the_same_capability
+- tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_using_static_resolves_bare_call_to_fully_qualified_symbol
+- tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_no_dangerous_apis_reports_zero_findings
 designated_repro_test: null
+acceptance:
+- text: GIVEN a .cs file with 'using System.IO;' and a File.WriteAllText call, WHEN
+    frob vet scans it, THEN it reports fs.write with the resolved binding, not just
+    a raw needle match.
+  evidence:
+  - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_plain_using_namespace_resolves_fs_write
+- text: GIVEN 'using IO = System.IO;' (an alias) and a call through the alias, WHEN
+    scanned, THEN the resolver follows the alias to the same capability.
+  evidence:
+  - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_using_alias_follows_to_the_same_capability
+- text: GIVEN 'using static System.Console;' and a bare WriteLine call, WHEN scanned,
+    THEN the static-using resolves to the correct fully-qualified symbol.
+  evidence:
+  - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_using_static_resolves_bare_call_to_fully_qualified_symbol
+- text: GIVEN a .cs file with no dangerous APIs, WHEN scanned, THEN zero findings
+    (no false positives from the wired resolver).
+  evidence:
+  - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_no_dangerous_apis_reports_zero_findings
 threat: null
 component: null
 anchor: false
