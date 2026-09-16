@@ -3,7 +3,7 @@ id: T-draft-db13b6bc
 title: 'frob ticket done-report spawns a full unscoped frob check per call: under
   3+ agents it exceeds every timeout, the retry loops multiply the load, and no Done
   report gets written'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-16'
