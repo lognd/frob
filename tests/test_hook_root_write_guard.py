@@ -946,3 +946,92 @@ def test_bash_heredoc_appending_into_checkout_still_refused_with_delimiter_subst
     )
     result = _run_bash_hook(cwd=primary, command=command, env=_env())
     assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_bash_land_help_from_root_is_allowed(tmp_path):
+    """T-3615 measured FP: `frob ticket land <id> --help` run from the
+    primary checkout, with no `--worktree`/`--path` and no markers, was
+    refused exactly like a real land -- this guard had no read-only-
+    invocation exemption at all. A `--help` invocation never merges
+    anything, so it must never need `FROB_COORDINATOR`/`--path`/a
+    resolvable `--worktree` to pass."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="uv run frob ticket land T-0001 --help",
+        env=_env(),
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_bash_land_version_from_root_is_allowed(tmp_path):
+    """The same exemption for `--version`, the other read-only flag T-3615
+    names."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="uv run frob ticket land T-0001 --version",
+        env=_env(),
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_bash_real_land_from_root_still_refused_alongside_help_fix(tmp_path):
+    """MUST-STILL-FIRE: the T-3615 `--help` exemption above does not widen
+    to a real `land` invocation with no flag at all -- the exact
+    incident shape `test_bash_ticket_verb_with_no_cd_no_path_no_marker_
+    is_refused` already covers, re-asserted here as the positive control
+    paired with the two `--help`/`--version` exemption tests just added."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="uv run frob ticket land T-0001",
+        env=_env(),
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_bash_compound_mkdir_touch_then_help_land_is_allowed(tmp_path):
+    """T-3615 measured FP: a compound command whose FIRST part is the
+    documented `mkdir -p .frob && touch .frob/coordinator-mode` recovery
+    recipe, chained (in the SAME line) with a trailing read-only `land
+    --help`, is never refused as a whole -- the `--help` exemption
+    applies regardless of what precedes it in the same command string."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=(
+            "mkdir -p .frob && touch .frob/coordinator-mode && "
+            "uv run frob ticket land T-0001 --help"
+        ),
+        env=_env(),
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_bash_compound_mkdir_touch_then_real_land_still_refused(tmp_path):
+    """MUST-STILL-FIRE: the identical compound prefix, but the trailing
+    segment is a REAL `land` (no `--help`, no `--path`, no resolvable
+    `--worktree`) -- still refused. Proves the harmless `mkdir`/`touch`
+    prefix in T-3615's measured FP never masks a genuine mutating `land`
+    chained after it."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=(
+            "mkdir -p .frob && touch .frob/coordinator-mode; "
+            "uv run frob ticket land T-0001"
+        ),
+        env=_env(),
+    )
+    assert _denial_reason(result) is not None

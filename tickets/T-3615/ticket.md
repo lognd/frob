@@ -2,7 +2,7 @@
 id: T-3615
 title: 'guard hooks: pass --help/--version and read-only verbs, never lexically match
   command content'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-08-31'
@@ -42,6 +42,18 @@ triage_changes:
     so medium is the honest priority'
   actor: logan
   at: '2026-09-14'
+evidence:
+- tests/test_hook_root_write_guard.py::test_bash_land_help_from_root_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_land_version_from_root_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_real_land_from_root_still_refused_alongside_help_fix
+- tests/test_hook_root_write_guard.py::test_bash_compound_mkdir_touch_then_help_land_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_compound_mkdir_touch_then_real_land_still_refused
+- tests/test_hook_frob_timeout_guard.py::test_setsid_nohup_detached_land_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_naked_backgrounded_land_still_blocks
+- tests/test_hook_frob_timeout_guard.py::test_backgrounded_check_still_blocks_despite_detach_exemption
+- tests/test_hook_frob_timeout_guard.py::test_detached_land_with_sufficient_timeout_still_passes
+- tests/test_hook_frob_suggest.py::test_hand_rename_sed_stays_quiet_when_import_is_only_elsewhere_in_line
+- tests/test_hook_frob_suggest.py::test_hand_rename_sed_still_fires_when_import_is_in_the_script_itself
 designated_repro_test: null
 threat: null
 component: null

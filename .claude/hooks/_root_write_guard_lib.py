@@ -89,6 +89,20 @@ _TICKET_VERB_RE = re.compile(
     + r")\b"
 )
 
+# frob:ticket T-3615
+#: T-3615: `--help`/`-h`/`--version`/`--dry-run` anywhere in the command
+#: (word-boundary, so `-h` never matches inside a longer flag/word) makes
+#: a `frob ticket land` invocation read-only/inert -- it prints help or
+#: exits before doing any real merge, so it can never actually write the
+#: root the way a genuine `land` can. Mirrors `frob-timeout-guard.py`'s
+#: identical `_HELP_OR_DRY_RUN_RE` (T-3695); duplicated rather than
+#: imported for the same cross-hook-file reason `_SEGMENT_CONNECTORS`'s
+#: comment gives for not importing `_shellscan.POS` here. Measured FP
+#: (T-3615): `uv run frob ticket land <id> --help`, run from the primary
+#: checkout with no `--worktree`/`--path`, was refused exactly like a real
+#: land -- this hook had no read-only-invocation exemption at all.
+_HELP_OR_DRY_RUN_RE = re.compile(r"(?:^|\s)(?:--help|-h|--version|--dry-run)\b")
+
 # frob:ticket T-2481
 #: T-2481: a leading `cd <dir>` segment (chained with `&&`/`;`), captured so
 #: an effective cwd can be computed without a real shell parser. Kept as the
@@ -614,10 +628,16 @@ def _bash_ticket_verb_targets_root(
     so a `frob ticket land` appearing only inside a quoted string or a
     heredoc body (e.g. `grep "frob ticket land"`, or a ticket body
     describing this very check) is never mistaken for a real
-    invocation."""
+    invocation. T-3615: `--help`/`-h`/`--version`/`--dry-run` anywhere in
+    the (quote-stripped) command exempts unconditionally -- a read-only
+    invocation of `land` never merges anything, so it can never actually
+    write the root the way this shape polices."""
     if "--path" in command:
         return False
-    match = _TICKET_VERB_RE.search(_strip_prose(command))
+    stripped = _strip_prose(command)
+    if _HELP_OR_DRY_RUN_RE.search(stripped):
+        return False
+    match = _TICKET_VERB_RE.search(stripped)
     if not match:
         return False
     if match.group(1) != "land":

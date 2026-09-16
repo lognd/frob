@@ -519,10 +519,45 @@ def _record_attempt(command: str) -> int:
 #: quotes even when their SCRIPT argument is.
 _SED_PERL_INPLACE = re.compile(_POS + r"(?:sed|perl)\s+-\w*i\w*\b", re.M)
 
+# frob:ticket T-3615
+#: T-3615: the sed/perl -i invocation's OWN quoted script argument,
+#: captured directly off RAW (never `command`, which has already blanked
+#: it) -- matched against `raw` (never `command`), because this is the
+#: one span whose CONTENT (not merely whether it runs) the rule below
+#: needs to read. Deliberately narrower than `_SED_PERL_INPLACE`: it
+#: requires the invocation's very next token to be a single- or
+#: double-quoted string, so an unquoted or otherwise-shaped script
+#: argument (rare, and not the T-3069 shape this rule targets) yields no
+#: match rather than a guess.
+_SED_PERL_INPLACE_SCRIPT_RE = re.compile(
+    _POS + r"(?:sed|perl)\s+-\w*i\w*\b"
+    r"(?:\s+-\S+)*\s*"  # perl's `-pi -e '...'`: skip any flag tokens in between
+    r"(?:'([^']*)'|\"((?:[^\"\\]|\\.)*)\")",
+    re.M,
+)
+
 #: Already running `frob refactor` in the same command is the fix itself --
 #: never nudge that (T-3069 acceptance: "any call already running
 #: `frob refactor`").
 _FROB_REFACTOR = re.compile(r"frob\s+refactor")
+
+
+def _sed_perl_script(raw: str) -> str | None:
+    """The sed/perl -i invocation's own quoted script text in `raw`, or
+    `None` when none is found -- T-3615's fix for `hand-rename-sed`
+    scanning the WHOLE raw command line for the word `import`, which
+    false-fired on a scratch-file rewrite whose script had nothing to do
+    with imports but shared a line with unrelated text that happened to
+    contain the word. Restricting the scan to just this captured span is
+    the "tokenize the command position, never scan content outside it"
+    fix: `import` must appear IN THE SCRIPT BEING RUN, not merely
+    somewhere in the same command string. No match (script not
+    confidently isolated) means the caller does not flag at all -- when
+    in doubt, allow, same posture as every other rule in this module."""
+    match = _SED_PERL_INPLACE_SCRIPT_RE.search(raw)
+    if not match:
+        return None
+    return match.group(1) if match.group(1) is not None else match.group(2)
 
 
 def _match(raw: str, root: Path) -> tuple[str, str] | None:
@@ -549,10 +584,17 @@ def _match(raw: str, root: Path) -> tuple[str, str] | None:
     # `_strip_quoted` removes for every other rule. `frob refactor` is
     # checked against RAW too, so a combined `frob refactor ...; sed -i
     # ...` command stays quiet regardless of where in the command the
-    # invocation sits.
+    # invocation sits. T-3615: `import` is checked only within the sed/
+    # perl script's OWN captured argument (`_sed_perl_script`), never the
+    # whole raw line -- the pre-fix `re.search(r"\bimport\b", raw)`
+    # false-fired on a scratch-file `sed -i` whose script rewrote
+    # unrelated text, tripped only because the word "import" appeared
+    # elsewhere in the same command.
+    sed_script = _sed_perl_script(raw)
     if (
         _SED_PERL_INPLACE.search(command)
-        and re.search(r"\bimport\b", raw)
+        and sed_script is not None
+        and re.search(r"\bimport\b", sed_script)
         and not _FROB_REFACTOR.search(raw)
     ):
         return (

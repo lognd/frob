@@ -291,3 +291,57 @@ def test_quoted_help_flag_does_not_exempt_a_real_invocation():
     command = 'echo "pass --help to see options" && uv run frob ticket land T-2248'
     result = _run_hook(command)
     assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_setsid_nohup_detached_land_is_not_blocked():
+    """T-3615 measured FP: the documented detached-land recipe (`setsid
+    nohup uv run frob ticket land ... > logfile 2>&1 &`) is the FIX for
+    the 120s-cap stall, not an instance of it -- it returns to the caller
+    in milliseconds, so it must never need `timeout: 600000`. Pre-fix,
+    this guard blocked it with the ordinary "never background it"
+    reason meant for a naked `&`."""
+    command = (
+        "setsid nohup uv run frob ticket land T-2248 --worktree /x/wt "
+        "> /tmp/land.log 2>&1 &"
+    )
+    result = _run_hook(command, timeout_ms=60000)
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_naked_backgrounded_land_still_blocks():
+    """MUST-STILL-FIRE (T-3615): a bare `frob ticket land ... &` with NO
+    `setsid`/`nohup` and no output redirect -- the real stall pattern
+    this guard exists to catch -- still requires the large timeout. The
+    detached-land exemption above must not widen to this shape."""
+    result = _run_hook("uv run frob ticket land T-2248 &", timeout_ms=60000)
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_backgrounded_check_still_blocks_despite_detach_exemption():
+    """MUST-STILL-FIRE (T-3615): the detached-land exemption is scoped to
+    `ticket land` alone (`_is_detached_land`'s `verb != "land"` check) --
+    a `setsid`/`nohup`-wrapped, redirected, backgrounded `frob check`
+    still requires the large timeout."""
+    command = "setsid nohup uv run frob check > /tmp/check.log 2>&1 &"
+    result = _run_hook(command, timeout_ms=60000)
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3615
+def test_detached_land_with_sufficient_timeout_still_passes():
+    """The detached form also passes when a large timeout IS supplied --
+    the exemption is an additional way to pass, never a way to fail a
+    command that would otherwise be fine."""
+    command = (
+        "setsid nohup uv run frob ticket land T-2248 --worktree /x/wt "
+        "> /tmp/land.log 2>&1 &"
+    )
+    result = _run_hook(command, timeout_ms=600000)
+    assert result.stdout.strip() == ""

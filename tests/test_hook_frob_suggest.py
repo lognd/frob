@@ -824,6 +824,53 @@ def test_hand_rename_sed_stays_quiet_inside_frob_refactor_invocation(tmp_path: P
     assert result.stdout.strip() == ""
 
 
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-3615
+def test_hand_rename_sed_stays_quiet_when_import_is_only_elsewhere_in_line(
+    tmp_path: Path,
+):
+    """T-3615 measured FP: a scratch-script `sed -i` rewriting unrelated
+    text (no import statement in its OWN script) was blocked as
+    `hand-rename-sed` purely because the word "import" happened to
+    appear elsewhere in the same command line (e.g. a trailing comment).
+    The rule must scan only the sed/perl invocation's OWN script
+    argument for `import`, never the whole raw command string."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "sed -i 's|uv run frob ticket land|uv run frob ticket land "
+        "--worktree wt|' scratch.sh  # see python import docs",
+        home=home,
+        cwd=root,
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-3615
+def test_hand_rename_sed_still_fires_when_import_is_in_the_script_itself(
+    tmp_path: Path,
+):
+    """MUST-STILL-FIRE (T-3615): the T-3069 positive control, re-asserted
+    alongside the FP fix above -- a real import rewrite still trips
+    `hand-rename-sed`, even with an unrelated trailing comment in the
+    same line (the narrowed `import` scan reads the sed script's own
+    argument, which still genuinely contains "import" here)."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "sed -i 's/from pkg.old import thing/from pkg.new import thing/' "
+        "src/pkg/caller.py  # unrelated trailing note",
+        home=home,
+        cwd=root,
+    )
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob refactor" in reason
+
+
 class TestHandRenameEditMultifile:
     """T-3069's second high-precision signal: the SECOND-and-later Edit in
     a session that rewrites an existing import of the SAME module in a
