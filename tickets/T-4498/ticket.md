@@ -1,5 +1,5 @@
 ---
-id: T-draft-8a8ab413
+id: T-4498
 title: land's merge-dev step resolves a conflicting design/frob.strata and ratchet
   lock toward the target branch, silently dropping the worktree's capability declarations
 state: queued

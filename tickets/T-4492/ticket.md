@@ -2,7 +2,7 @@
 id: T-4492
 title: 'ticket work and worktree sweep hardcode main: worktrees branch from and merge
   main instead of the land target (dev)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -34,8 +34,8 @@ scope_changes:
   at: '2026-09-15'
 - op: add
   glob: tests/unit/test_land_leaked_tickets_lease_hoist.py
-  reason: 'T-4492 second defect (coordinator directive): unit test for the
-    read_all_leases hoist in _find_leaked_tickets'
+  reason: 'T-4492 second defect (coordinator directive): unit test for the read_all_leases
+    hoist in _find_leaked_tickets'
   actor: logan
   at: '2026-09-15'
 evidence:

@@ -333,21 +333,33 @@ def _run_git_or_exit(argv: list[str], *, ticket_id: str, error_template: str) ->
 
 
 # frob:ticket T-1175
-def _worktree_add_or_reuse(root: Path, worktree: Path, ticket_id: str) -> None:
+# frob:ticket T-4492
+def _worktree_add_or_reuse(
+    root: Path, worktree: Path, ticket_id: str, ticket_land_branch: str | None = None
+) -> None:
     """`frob ticket work`'s worktree half (T-1175, playbook section 0 step
     1): if `worktree` does not exist on disk yet, `git worktree add` it on
-    a fresh branch cut from `root`'s CURRENT local `main` tip (plain `git
-    worktree add ... main`, never touching `origin` -- the exact form
-    section 1's T-1030 root-cause note already documents as immune to the
-    stale-origin-tip bug a dispatch-harness worktree tool can otherwise
-    hit). If it already exists, this is a no-op here -- freshness is
-    `_ensure_worktree_fresh`'s job, run unconditionally right after this
-    either way, so a REUSED worktree gets the exact same freshness
-    guarantee a FRESH one already has by construction."""
+    a fresh branch cut from `root`'s CURRENT local tip of the land target
+    branch (plain `git worktree add ... <branch>`, never touching `origin`
+    -- the exact form section 1's T-1030 root-cause note already documents
+    as immune to the stale-origin-tip bug a dispatch-harness worktree tool
+    can otherwise hit). The base branch is `root`'s own current branch,
+    falling back to the `ticket_land_branch` config default and finally
+    `"main"` (T-4492's `_resolve_default_ticket_branch`, mirroring
+    T-3787's land-target resolution) -- NOT a hardcoded `"main"`, so a repo
+    whose root is checked out on a dev-branch land target (e.g. post-alpha
+    `dev`) gets a worktree that actually carries that branch's tip, ticket
+    filing commits included. If it already exists, this is a no-op here --
+    freshness is `_ensure_worktree_fresh`'s job, run unconditionally right
+    after this either way, so a REUSED worktree gets the exact same
+    freshness guarantee a FRESH one already has by construction."""
     if worktree.exists():
         return
+    from frob.tickets._land import _resolve_default_ticket_branch
+
     worktree.parent.mkdir(parents=True, exist_ok=True)
     branch = ticket_id.lower()
+    base_branch = _resolve_default_ticket_branch(root, ticket_land_branch)
     _run_git_or_exit(
         [
             "git",
@@ -358,13 +370,17 @@ def _worktree_add_or_reuse(root: Path, worktree: Path, ticket_id: str) -> None:
             str(worktree),
             "-b",
             branch,
-            "main",
+            base_branch,
         ],
         ticket_id=ticket_id,
         error_template="ticket work: %s could not create worktree: %s",
     )
     _log.info(
-        "ticket work: %s created worktree %s (branch %s)", ticket_id, worktree, branch
+        "ticket work: %s created worktree %s (branch %s, base %s)",
+        ticket_id,
+        worktree,
+        branch,
+        base_branch,
     )
 
 
@@ -432,22 +448,33 @@ def _print_agent_env_hint(worktree: Path, label: str) -> None:
 
 
 # frob:ticket T-1175
-def _ensure_worktree_fresh(worktree: Path, ticket_id: str) -> None:
+def _ensure_worktree_fresh(
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    ticket_land_branch: str | None = None,
+) -> None:
     """`frob ticket work`'s freshness half (T-1175, playbook section 0 step
-    1 / section 1's `git merge main` + tip-verification warm-up): merge
-    `worktree`'s local `main` into HEAD -- a no-op ("Already up to date")
-    for a worktree this call just created fresh off `main`'s own tip, and
-    the real fix for a REUSED worktree that has gone stale since its last
-    session. A merge conflict here is refused loudly rather than resolved
-    silently -- `frob ticket work` is not the ledger-splice recovery path
+    1 / section 1's `git merge main` + tip-verification warm-up): merge the
+    land target branch (T-4492's `_resolve_default_ticket_branch`
+    against `root` -- `root`'s own current branch, else `ticket_land_branch`
+    config, else `"main"`, NEVER a hardcoded `"main"`) into `worktree`'s
+    HEAD -- a no-op ("Already up to date") for a worktree this call just
+    created fresh off that same tip, and the real fix for a REUSED worktree
+    that has gone stale since its last session. A merge conflict here is
+    refused loudly rather than resolved silently -- `frob ticket work` is
+    not the ledger-splice recovery path
     (docs/guides/agent-playbook.md#10-ledger-conflict-splice-guidance)."""
+    from frob.tickets._land import _resolve_default_ticket_branch
+
+    base_branch = _resolve_default_ticket_branch(root, ticket_land_branch)
     _run_git_or_exit(
-        ["git", "-C", str(worktree), "merge", "main", "--no-edit"],
+        ["git", "-C", str(worktree), "merge", base_branch, "--no-edit"],
         ticket_id=ticket_id,
         error_template=(
-            "ticket work: %s could not merge main: %s -- resolve by hand "
-            "(see docs/guides/agent-playbook.md#10-ledger-conflict-splice-"
-            "guidance for tickets.md conflicts specifically)"
+            "ticket work: %s could not merge " + base_branch + ": %s -- "
+            "resolve by hand (see docs/guides/agent-playbook.md#10-ledger-"
+            "conflict-splice-guidance for tickets.md conflicts specifically)"
         ),
     )
 
@@ -697,8 +724,8 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
     worktree = (
         cfg.ticket_worktree or _default_cluster_worktree(root, cluster_id)
     ).resolve()
-    _worktree_add_or_reuse(root, worktree, cluster_id)
-    _ensure_worktree_fresh(worktree, cluster_id)
+    _worktree_add_or_reuse(root, worktree, cluster_id, cfg.ticket_land_branch)
+    _ensure_worktree_fresh(root, worktree, cluster_id, cfg.ticket_land_branch)
     _sync_venv_for_work(worktree, cluster_id)
     _build_natives_for_work(worktree, cluster_id)
     _print_agent_env_hint(worktree, f"--cluster {cluster_id}")
@@ -768,8 +795,8 @@ def _work(root: Path, cfg: AppConfig) -> None:
     worktree = (
         cfg.ticket_worktree or _default_work_worktree(root, cfg.ticket_id)
     ).resolve()
-    _worktree_add_or_reuse(root, worktree, cfg.ticket_id)
-    _ensure_worktree_fresh(worktree, cfg.ticket_id)
+    _worktree_add_or_reuse(root, worktree, cfg.ticket_id, cfg.ticket_land_branch)
+    _ensure_worktree_fresh(root, worktree, cfg.ticket_id, cfg.ticket_land_branch)
     _sync_venv_for_work(worktree, cfg.ticket_id)
     _build_natives_for_work(worktree, cfg.ticket_id)
     _print_agent_env_hint(worktree, cfg.ticket_id)

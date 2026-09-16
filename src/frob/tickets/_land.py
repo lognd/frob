@@ -74,6 +74,9 @@ if TYPE_CHECKING:
     # frob:ticket T-1979
     from frob.testing._models import CollectedTests
 
+    # frob:ticket T-4492
+    from frob.tickets._leases import _LeaseRecord
+
 from frob.gitio import current_branch, excerpt, run_argv
 from frob.logging import get_logger
 
@@ -5226,7 +5229,10 @@ def _explicitly_used_wiring_path(other: Ticket, path: str) -> bool:
 # frob:ticket T-2111
 # frob:ticket T-2547
 def _effective_leakage_scope(
-    root: Path, other_id: str, other: Ticket
+    root: Path,
+    other_id: str,
+    other: Ticket,
+    leases: "Sequence[_LeaseRecord] | None" = None,
 ) -> tuple[str, ...]:
     """T-2111: the scope `_leaked_hits_for_candidate` should test against
     for sibling `other_id` -- `other`'s DECLARED scope, unless a LIVE
@@ -5271,10 +5277,20 @@ def _effective_leakage_scope(
     file to T-2374 solely because the lease had never been re-recorded
     down to the empty set. An empty declared scope means "claims
     nothing" here, full stop -- it is never treated as a catch-all for
-    whatever a stale lease still happens to list."""
+    whatever a stale lease still happens to list.
+
+    T-4492: `leases`, when given, is used instead of a fresh
+    `read_all_leases(root)` call -- `_find_leaked_tickets` measured
+    `read_all_leases` costing minutes on this repo and calling this
+    function (and its own `_leaked_hits_for_candidate` sibling call)
+    once per candidate sibling, ~800 times in one land precheck, so a
+    fresh read per call meant no land ever finished. `None` (every
+    caller outside `_find_leaked_tickets`'s own hoisted-read path) falls
+    back to a fresh `read_all_leases(root)` call, unchanged from before
+    this ticket."""
     if not other.scope:
         return ()
-    for lease in read_all_leases(root):
+    for lease in leases if leases is not None else read_all_leases(root):
         if lease.ticket_id == other_id:
             return lease.scope
     return other.scope
@@ -5518,6 +5534,7 @@ def _leaked_hits_for_candidate(
     other: Ticket,
     changed_paths: frozenset[str],
     base_ref: str,
+    leases: "Sequence[_LeaseRecord] | None" = None,
 ) -> list[str] | None:
     """The sorted hit-path list for ONE candidate sibling `other_id`, or
     `None` if it is not actually leaked (T-1390: split out of `_find_
@@ -5564,7 +5581,7 @@ def _leaked_hits_for_candidate(
     from frob.tickets._models import scope_matches
 
     # frob:ticket T-2111
-    effective_scope = _effective_leakage_scope(root, other_id, other)
+    effective_scope = _effective_leakage_scope(root, other_id, other, leases)
     hits = [
         path
         for path in changed_paths
@@ -5619,8 +5636,16 @@ def _leaked_hits_for_candidate(
 # frob:ticket T-1390
 # frob:ticket T-1639
 # frob:ticket T-1967
+# frob:ticket T-4492
 # frob:doc \
 # docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t-1639  # noqa: E501
+# frob:waive AFFECT001 reason="T-4492's change here is a pure read_all_leases-hoist \
+# performance fix -- no change to WHICH siblings refuse a land or why (the documented \
+# T-1639 IN_PROGRESS-only-refuses contract is untouched); \
+# docs/modules/tickets-landing.md is already accurate and is the same \
+# disproportionate-closure shared doc T-4335's own AFFECT001/DRIFT001 waivers on this \
+# file cite (frob.lock lease conflict during the fleet drive this ticket's own \
+# worktree-workflow bug was found under)"
 def _find_leaked_tickets(
     root: Path,
     worktree: Path,
@@ -5713,6 +5738,15 @@ def _find_leaked_tickets(
     from frob.tickets._leases import is_effectively_in_progress
     from frob.tickets._models import TicketState
 
+    # frob:ticket T-4492
+    # Hoisted OUT of the per-candidate loop below: `read_all_leases`
+    # measured minutes on this repo, and this loop runs once per OTHER
+    # open ticket (~800 in one land precheck) -- a fresh read per
+    # candidate, let alone the two per-candidate calls this loop used to
+    # make (this short-circuit plus `_leaked_hits_for_candidate`'s own),
+    # meant no land ever finished its precheck. One read, reused by
+    # every `_effective_leakage_scope` call this function makes.
+    leases = read_all_leases(root)
     leaked: dict[str, list[str]] = {}
     for other_id, other in worktree_tickets.items():
         if other_id == landing_id:
@@ -5723,10 +5757,17 @@ def _find_leaked_tickets(
         if ledger_state in (TicketState.DONE, TicketState.DROPPED):
             continue
         # frob:ticket T-2111
-        if not _effective_leakage_scope(root, other_id, other):
+        if not _effective_leakage_scope(root, other_id, other, leases):
             continue
         hits = _leaked_hits_for_candidate(
-            root, worktree, landing_id, other_id, other, changed_paths, base_ref
+            root,
+            worktree,
+            landing_id,
+            other_id,
+            other,
+            changed_paths,
+            base_ref,
+            leases,
         )
         if not hits:
             continue
@@ -7550,6 +7591,52 @@ def _resolve_land_target_branch(
         )
         return Err(LandError.TargetBranchInvalid)
     return Ok(target_branch)
+
+
+# frob:ticket T-4492
+def _resolve_default_ticket_branch(root: Path, ticket_land_branch: str | None) -> str:
+    """Resolve the branch every non-land ticket verb that used to
+    hardcode the literal `"main"` should treat as the land target
+    (T-4492): `root`'s own current branch (the same T-3787
+    invariant `_resolve_land_target_branch` above enforces for `frob
+    ticket land` itself -- landing, and everything upstream of it,
+    operates on root's own checkout), falling back to the
+    `ticket_land_branch` pyproject.toml default when `root`'s branch is
+    unresolvable (e.g. detached HEAD), and finally the literal `"main"`
+    when neither is available -- this LAST fallback is what keeps a repo
+    with no `ticket_land_branch` config and root checked out on `main`
+    byte-for-byte identical to the pre-T-4492 behavior.
+
+    Never raises: unlike `_resolve_land_target_branch` (which refuses a
+    land outright on an unresolvable branch), `frob ticket work`/the
+    worktree sweep/`evidence --base-ref`/`done-report --base-ref` have no
+    natural refusal point for "root's branch could not be read" -- they
+    degrade to the same `"main"` literal they always used instead.
+    Logs the resolved branch and which of the three sources produced it
+    at INFO, once per call, so a wrong resolution is diagnosable from
+    plain log output rather than requiring a debugger."""
+    current = current_branch(root)
+    if current.is_ok:
+        _log.info(
+            "tickets: resolved target branch %r from root's current branch",
+            current.danger_ok,
+        )
+        return current.danger_ok
+    if ticket_land_branch:
+        _log.info(
+            "tickets: resolved target branch %r from ticket_land_branch "
+            "config (root's current branch was unresolvable: %s)",
+            ticket_land_branch,
+            current.danger_err,
+        )
+        return ticket_land_branch
+    _log.info(
+        "tickets: resolved target branch 'main' (default) -- root's "
+        "current branch was unresolvable (%s) and no ticket_land_branch "
+        "config is set",
+        current.danger_err,
+    )
+    return "main"
 
 
 def _resolve_main_branch_for_land(

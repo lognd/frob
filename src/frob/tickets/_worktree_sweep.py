@@ -371,16 +371,25 @@ def _kept_live_verdict_if_process_present(candidate: Path) -> "_WorktreeVerdict 
 
 
 # frob:ticket T-4448
+# frob:ticket T-4492
 def _branch_ahead_of_main_count(root: Path, branch: str) -> int | None:
-    """Count of commits `branch` carries that are not reachable from
-    `main` (`git rev-list --count main..<branch>`), or `None` if
-    unresolvable (branch missing on `root`, or a `git` failure) -- a
+    """Count of commits `branch` carries that are not reachable from the
+    land target branch (`git rev-list --count <target>..<branch>`,
+    `<target>` resolved via T-4492's `_resolve_default_ticket_
+    branch` against `root` -- its own current branch, else the
+    `ticket_land_branch` config default, else `"main"`, NEVER a hardcoded
+    `main..` literal -- a repo landing onto a dev branch must count
+    unlanded commits against THAT branch, not a frozen `main`), or `None`
+    if unresolvable (branch missing on `root`, or a `git` failure) -- a
     caller MUST treat `None` the same as "commits are present" (fail
     closed), the same posture every other gate in this module already
     takes for its own unresolvable case (`_worktree_is_clean`,
     `_worktree_head_age_seconds`)."""
+    from frob.tickets._land import _resolve_default_ticket_branch
+
+    target = _resolve_default_ticket_branch(root, None)
     spawned = gitio.run_argv(
-        ("git", "-C", str(root), "rev-list", "--count", f"main..{branch}")
+        ("git", "-C", str(root), "rev-list", "--count", f"{target}..{branch}")
     )
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         return None

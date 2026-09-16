@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 307,
-      "reason": "T-4491: adds tests/unit/test_leases_staleness_perf.py to the exec via-list -- real git subprocess spawns (init/worktree add/commit) building the real-repo fixtures for the lease-staleness ledger-load-count fix. Bumping the ceiling 306 -> 307, one new site.",
-      "ticket": "T-4491"
+      "accepted_count": 308,
+      "reason": "T-4492: adds tests/unit/test_lifecycle_work_base.py to the exec via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 307 -> 308, 1 new site(s).",
+      "ticket": "T-4492"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-4479"
     },
     "testsuite::fs.write": {
-      "accepted_count": 521,
-      "reason": "T-4491: adds tests/unit/test_leases_staleness_perf.py to the fs.write via-list -- writes real lease JSON files directly (matching tests/test_ticket_leases.py's own _write_lease shape) to build fixtures for the lease-staleness ledger-load-count fix. Bumping the ceiling 520 -> 521, one new site.",
-      "ticket": "T-4491"
+      "accepted_count": 522,
+      "reason": "T-4492: adds tests/unit/test_lifecycle_work_base.py to the fs.write via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 521 -> 522, 1 new site(s).",
+      "ticket": "T-4492"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
