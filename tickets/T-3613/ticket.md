@@ -19,6 +19,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - docs/modules/tickets-verify-sweep.md
+- tests/unit/test_land_queue.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,11 @@ scope_changes:
   at: '2026-09-16'
 - op: add
   glob: docs/modules/tickets-verify-sweep.md
+  reason: queue/drain default land path + docs/tests
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_land_queue.py
   reason: queue/drain default land path + docs/tests
   actor: logan
   at: '2026-09-16'
