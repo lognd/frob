@@ -10,7 +10,7 @@ parent: T-3611
 tier: ticket
 sprint: v0.532.0
 runs_last: false
-milestone: null
+milestone: 0.532.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -31,6 +31,12 @@ triage_changes:
   old_value: null
   new_value: v0.532.0
   reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-15'
+- field: milestone
+  old_value: null
+  new_value: 0.532.0
+  reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
