@@ -26,6 +26,9 @@ acceptance:
 - text: 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition,
     not just methods/classes'
   evidence: []
+- text: 'xref: a class nested inside another class (csharp: Container.Inner) resolves
+    as an xref definition by its own bare name, same as a top-level class'
+  evidence: []
 acceptance_amendments:
 - op: remove
   index: 3
