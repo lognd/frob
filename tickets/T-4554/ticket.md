@@ -15,13 +15,19 @@ milestone: v0.533.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/strata/_effects.py
 - src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
 - tests/unit/strata/test_effects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/strata/_effects.py
+  reason: fix confined to _dangerous_ops_bash_csharp.py and test_effects.py; _effects.py
+    leased by T-draft-d56bad34
+  actor: logan
+  at: '2026-09-17'
 designated_repro_test: null
 acceptance:
 - text: GIVEN dev WHEN tests/unit/strata/test_effects.py runs THEN TestExtendedKindsDriftLock
