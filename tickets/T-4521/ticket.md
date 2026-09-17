@@ -96,12 +96,19 @@ acceptance:
 - text: GIVEN frob ticket migrate, ticket debt, ticket deprecated WHEN invoked THEN
     each prints a one-line removal notice naming the replacement and exits 2
   evidence: []
-- text: GIVEN frob ticket runs-last --parallel-safe WHEN run THEN it records what
-    runs-last-parallel-safe recorded, and the old verb is gone
-  evidence: []
 - text: GIVEN frob ticket admin renumber|restore|reconcile WHEN run THEN behaviour
     is byte-for-byte the old top-level ticket verbs
   evidence: []
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: GIVEN frob ticket runs-last --parallel-safe WHEN run THEN it records what
+    runs-last-parallel-safe recorded, and the old verb is gone
+  new_text: null
+  reason: runs-last --parallel-safe deferred into T-3614 by coordinator decision (config.py
+    lease)
+  actor: logan
+  at: '2026-09-17'
 threat: null
 component: null
 anchor: false
