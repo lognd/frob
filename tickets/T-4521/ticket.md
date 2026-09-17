@@ -16,7 +16,6 @@ milestone: v0.534.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/_cli_parsers/_ticket
 - src/frob/app/ticket_runner/__init__.py
 - tests/unit/test_ticket_cli_surface.py
 - docs/commands/ticket.md
@@ -24,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket
+  reason: avoid lease collision with T-draft-db13b6bc on _closeout_evidence.py; re-scoping
+    to individual files
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket --help WHEN rendered THEN merge-driver and sweep-async are
