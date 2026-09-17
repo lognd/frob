@@ -6,6 +6,8 @@ kind: ux
 origin: human
 created: '2026-08-31'
 priority: medium
+blocked_by:
+- T-draft-0b42af92
 parent: T-3611
 tier: ticket
 sprint: v0.532.0
