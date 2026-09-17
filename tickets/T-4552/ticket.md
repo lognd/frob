@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - .git/frob-leases/T-4550.json
 - src/frob/tickets/_land_git_ops.py
+- tests/unit/test_land_merge_conflict_drop.py
 findings:
 - - TICK010
   - /home/logan/projects/frob/.git/frob-leases/T-4550.json
@@ -28,6 +29,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land_git_ops.py
   reason: 'COV002: T-4498 helpers need frob:ticket/frob:tests edges'
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/unit/test_land_merge_conflict_drop.py
+  reason: 'DUP001: extract shared helper for near-identical test blocks'
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
