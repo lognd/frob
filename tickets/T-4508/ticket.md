@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_dotnet_runner.py
 - tests/unit/test_unity_batchmode.py
 - docs/modules/testing.md
+- docs/guides/unity.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,11 @@ scope_changes:
 - op: add
   glob: docs/modules/testing.md
   reason: frob:doc target for run_dotnet_tests public api
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: docs/guides/unity.md
+  reason: unity batchmode CLI + config doc, T-4508/T-4509 shared home
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
