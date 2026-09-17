@@ -29,6 +29,10 @@ acceptance:
 - text: 'xref: a class nested inside another class (csharp: Container.Inner) resolves
     as an xref definition by its own bare name, same as a top-level class'
   evidence: []
+- text: 'xref: csharp event_declaration members are NOT YET resolvable (frob.lang._walk_csharp
+    has no event_declaration case, out of T-4519''s scope) -- pinned by test_csharp_event_declaration_is_not_yet_a_symbol;
+    follow-up filed as T-draft-df7ce2e1'
+  evidence: []
 acceptance_amendments:
 - op: remove
   index: 3
