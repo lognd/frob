@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
+- tests/fixtures/dsl_todo_notes/*
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
   glob: tests/unit/graph/test_dsl.py
   reason: regression tests for todo free-text note routing, hash-tail fix, docstring
     silent-drop fix
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/dsl_todo_notes/*
+  reason: 'static per-language fixtures: one frob:todo free-text note per language'
   actor: logan
   at: '2026-09-16'
 triage_changes:
