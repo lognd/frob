@@ -16,11 +16,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/docs/**
 - src/frob/xref/**
-- tests/fixtures/lang/csharp/no_dangerous_apis.cs
 - docs/modules/app.md
 - docs/commands/xref.md
 - tests/unit/test_docs_module.py
 - tests/unit/test_xref.py
+- tests/fixtures/lang/sample.cs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +49,18 @@ scope_changes:
 - op: add
   glob: tests/unit/test_xref.py
   reason: update docs edges + add language-parity tests for T-3232
+  actor: logan
+  at: '2026-09-16'
+- op: remove
+  glob: tests/fixtures/lang/csharp/no_dangerous_apis.cs
+  reason: use existing namespaced csharp fixture (class+doc comment+method call) for
+    docs/xref parity tests
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/fixtures/lang/sample.cs
+  reason: use existing namespaced csharp fixture (class+doc comment+method call) for
+    docs/xref parity tests
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
