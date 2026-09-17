@@ -52,6 +52,15 @@ scope_changes:
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
+acceptance:
+- text: GIVEN a plain C# test project (no Unity), WHEN the evidence channel runs,
+    THEN it invokes 'dotnet test' and maps pass/fail results back to the collected
+    node ids.
+  evidence: []
+- text: GIVEN a Unity batchmode XML results file (NUnit3 XML format), WHEN the parser
+    runs on it, THEN it extracts per-test pass/fail/skip status keyed to the same
+    node ids [UnityTest]/[Test] collection produced.
+  evidence: []
 threat: null
 component: null
 anchor: false
