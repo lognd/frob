@@ -18,6 +18,7 @@ scope:
 - src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
 - tests/unit/strata/test_effects.py
 - src/frob/vet/_capability_registry/_unity_api.py
+- tests/vet_suite/test_capability_registry_unity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,13 @@ scope_changes:
   reason: 'TestExtendedKindsDriftLock fails: T-4514''s UnityWebRequest/WWW/NetworkManager/Application.OpenURL
     entries use the bare retired capability_kind=net; recategorize to net-connect,
     consistent with the rest of the registry'
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/vet_suite/test_capability_registry_unity.py
+  reason: recategorizing _unity_api.py's 4 bare-net entries to net-connect breaks
+    this file's own 4 existing assertions asserting kind==net; update them to net-connect,
+    same behavior, no test rename/delete
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
