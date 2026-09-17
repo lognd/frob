@@ -128,7 +128,6 @@ RUN_IN_BACKGROUND_REASON = (
 )
 
 
-# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 def _deny(reason: str) -> None:
     """Emit the PreToolUse deny decision for `reason` (shared by both
     refusal paths; split out of `main` under ARCH001)."""
@@ -177,6 +176,7 @@ def _needs_large_timeout(command: str, timeout_ms: int) -> bool:
     return bool(match) and timeout_ms < MIN_TIMEOUT_MS
 
 
+# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 def main() -> None:
     try:
         payload = json.load(sys.stdin)
