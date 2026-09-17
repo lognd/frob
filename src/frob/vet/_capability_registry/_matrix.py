@@ -24,6 +24,7 @@ from frob.vet._capability_registry._dangerous_ops_cuda import _CUDA_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_java import _JAVA_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_other import _OTHER_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_python import _PYTHON_OPERATIONS
+from frob.vet._capability_registry._dotnet_bcl import _DOTNET_BCL_OPERATIONS
 from frob.vet._capability_registry._kinds import CAPABILITY_KINDS, LANGUAGES
 from frob.vet._capability_registry._schemas import _DangerousOperation, _MatrixExcuse
 
@@ -41,6 +42,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     + _BASH_CSHARP_OPERATIONS
     + _JAVA_OPERATIONS
     + _CUDA_OPERATIONS
+    + _DOTNET_BCL_OPERATIONS
 )
 
 # frob:doc docs/modules/vet.md#public-api
@@ -774,11 +776,10 @@ _NEW_ADAPTER_SUBSTANTIVE_EXCUSES: tuple[_MatrixExcuse, ...] = (
         reason="no ASP.NET Razor/HttpUtility.HtmlEncode-equivalent "
         "HTML-render idiom has been surveyed yet",
     ),
-    _MatrixExcuse(
-        capability_kind="sql",
-        language="csharp",
-        reason="no ADO.NET/Entity Framework raw-SQL idiom has been surveyed yet",
-    ),
+    # T-4511: sql/csharp excuse removed -- `_dotnet_bcl.py` now patterns
+    # ADO.NET's SqlCommand/DbCommand family (a stale excuse alongside a
+    # real pattern is a `TestMatrixExhaustiveness.
+    # test_no_cell_is_both_patterned_and_excused` drift bug).
     _MatrixExcuse(
         capability_kind="client_storage",
         language="csharp",

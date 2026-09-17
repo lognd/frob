@@ -1,7 +1,7 @@
 ---
 id: T-4511
 title: .NET BCL standard-library capability map
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -58,20 +58,31 @@ scope_changes:
     the new table''s concat touches'
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/vet_suite/test_capability_scan_dotnet_bcl.py::TestCapabilityScanDotnetBclFamilyMap::test_streamwriter_family_resolves_fs_write
+- tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_var_local_type_carries_into_a_later_instance_call
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_capabilities[144-csharp-System.Runtime.InteropServices-DllImport
+  / Marshal]
+- tests/vet_suite/test_capability_scan_dotnet_bcl.py::TestCapabilityScanDotnetBclFamilyMap::test_assembly_load_family_resolves_eval_not_plain_call
 designated_repro_test: null
 acceptance:
 - text: GIVEN a .cs call to File.Open or StreamWriter, WHEN scanned, THEN it maps
     to fs.read or fs.write per the registry, not a generic uncategorized finding.
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_capability_scan_dotnet_bcl.py::TestCapabilityScanDotnetBclFamilyMap::test_streamwriter_family_resolves_fs_write
 - text: GIVEN a .cs call to HttpClient.GetAsync or a raw Socket, WHEN scanned, THEN
     it maps to net/fetch_url.
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_var_local_type_carries_into_a_later_instance_call
 - text: GIVEN a [DllImport] attribute on an extern method, WHEN scanned, THEN it maps
     to ffi.
-  evidence: []
+  evidence:
+  - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_capabilities[144-csharp-System.Runtime.InteropServices-DllImport
+    / Marshal]
 - text: GIVEN Assembly.Load or a call through System.Reflection, WHEN scanned, THEN
     it maps to eval/ffi, distinct from a plain method call finding.
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_capability_scan_dotnet_bcl.py::TestCapabilityScanDotnetBclFamilyMap::test_assembly_load_family_resolves_eval_not_plain_call
 threat: null
 component: null
 anchor: false
