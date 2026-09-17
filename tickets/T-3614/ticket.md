@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/unit/test_ticket_verbs_wait.py
 - src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,11 @@ scope_changes:
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_new.py
   reason: new verb --wait flag
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: body/scope/accept/scope-ack --wait flag
   actor: logan
   at: '2026-09-16'
 triage_changes:
