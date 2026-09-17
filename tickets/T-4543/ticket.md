@@ -2,7 +2,7 @@
 id: T-4543
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3613):
   2 new (rule, file) identit(ies), 12 finding(s) (COV002, TICK010)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - .git/frob-leases/T-4511.json
 - src/frob/dup/_legacy_cs.py
+- tests/unit/test_ticket_runner_land_cmd_flags.py
 findings:
 - - COV002
   - src/frob/dup/_legacy_cs.py
@@ -26,6 +27,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_land_cmd_flags.py
+  reason: fix ty invalid-argument-type per T-4543 finding
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
