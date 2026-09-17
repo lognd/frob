@@ -33,14 +33,26 @@ scope_changes:
   reason: fix ty invalid-argument-type per T-4543 finding
   actor: logan
   at: '2026-09-16'
+body_changes:
+- mode: append
+  reason: BUG002 waiver for gate-metadata residue (coordinator)
+  actor: logan
+  at: '2026-09-17'
+  old_length: 1897
+  new_length: 2167
+evidence:
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_ticket_id
+- tests/unit/test_support_csharp.py::TestCsharpDupFacetFires::test_find_duplicates_reports_near_duplicate_methods
 designated_repro_test: null
 acceptance:
 - text: ty invalid-argument-type in tests/unit/test_ticket_runner_land_cmd_flags.py
     is fixed (dict typed dict[str, Any], model built via QueueEntry.model_validate)
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_ticket_id
 - text: COV002 on src/frob/dup/_legacy_cs.py is resolved by adding frob:ticket T-4543
     edges to every changed public symbol
-  evidence: []
+  evidence:
+  - tests/unit/test_support_csharp.py::TestCsharpDupFacetFires::test_find_duplicates_reports_near_duplicate_methods
 threat: null
 component: null
 anchor: false
@@ -63,3 +75,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - invalid-argument-type  tests/unit/test_ticket_runner_land_cmd_flags.py  -> attributed to T-3613 (commit 42bbe4c2bf47, already closed/dropped -- filed below) via tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain.test_two_entries_call_land_core_per_entry_with_its_own_ticket_id -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_apply_land_default_queue
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:waive BUG002 reason="post-land sweep residue: the defect is frob check GATE state (a ty invalid-argument-type on a test helper and COV002 directive coverage on src/frob/dup/_legacy_cs.py), not application behaviour a pytest repro can fail on at the parent commit"
