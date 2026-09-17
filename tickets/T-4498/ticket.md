@@ -2,7 +2,7 @@
 id: T-4498
 title: land's merge-dev step resolves a conflicting design/frob.strata and ratchet
   lock toward the target branch, silently dropping the worktree's capability declarations
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -18,10 +18,18 @@ scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land.py
 - tests/unit/test_land_merge_conflict_drop.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'T-4498 amendment(c): new test file execs git subprocesses and writes/reads
+    fixture files, needs testsuite via-list entry'
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree whose design/frob.strata edit conflicts textually with the
