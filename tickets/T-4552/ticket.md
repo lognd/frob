@@ -52,6 +52,9 @@ acceptance:
     edges retargeted to T-4552 (T-4498 is done) and frob:tests edges added for _land_ticket_for_commit_touching,
     _resolve_one_out_of_scope_conflict, _log_capability_ratchet_refusal'
   evidence: []
+- text: 'DUP001 on tests/unit/test_land_merge_conflict_drop.py resolved: shared _seed_widget_worktree
+    helper extracted from the two near-identical test bodies'
+  evidence: []
 threat: null
 component: null
 anchor: false
