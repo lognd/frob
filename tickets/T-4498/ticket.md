@@ -2,7 +2,7 @@
 id: T-4498
 title: land's merge-dev step resolves a conflicting design/frob.strata and ratchet
   lock toward the target branch, silently dropping the worktree's capability declarations
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -36,13 +36,16 @@ scope_changes:
   reason: 'T-4498 amendment(c): bump accepted_count alongside the new via-list entry'
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused::test_conflicting_strata_via_list_refuses_instead_of_dropping
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree whose design/frob.strata edit conflicts textually with the
     target branch's newer edit of the same via-list line WHEN the land merges the
     target branch into the worktree THEN it refuses with a named conflict (file, both
     tickets) instead of silently keeping the target branch's side
-  evidence: []
+  evidence:
+  - tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused::test_conflicting_strata_via_list_refuses_instead_of_dropping
 threat: null
 component: null
 anchor: false

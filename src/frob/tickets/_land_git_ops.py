@@ -912,6 +912,49 @@ def _commit_rapid_debt_only_drift(root: Path) -> bool:
 _COVERAGE_LOCK_PATH = "frob-coverage.lock.json"
 
 
+# frob:ticket T-4498
+# T-4498: the capability-declaration pair a via-list edit always touches
+# together -- `design/frob.strata` (the via-list source) and its ratchet
+# lock (`docs/design/registry/capability-via-ratchet.lock.json`, the
+# accepted-count derived from it). Neither is a ticket-ledger file (only
+# `tickets.md`/`tickets-archive.md` get a real ledger splice), so before
+# this ticket a conflict on either one fell straight into the ordinary
+# out-of-scope path below and was blindly resolved by `git checkout
+# --theirs` -- the exact T-4492 incident this ticket measured. Named here,
+# not merged like `_COVERAGE_LOCK_PATH`: unlike a coverage percentage,
+# there is no safe elementwise combination of two independently-declared
+# via-list edits, so the only correct move is to refuse and name both
+# sides, never guess.
+_CAPABILITY_RATCHET_PATHS = frozenset(
+    {
+        "design/frob.strata",
+        "docs/design/registry/capability-via-ratchet.lock.json",
+    }
+)
+
+
+# frob:ticket T-4498
+_LAND_COMMIT_SUBJECT_TICKET_RE = re.compile(r"\bland (T-\S+)\b")
+
+
+# frob:ticket T-4498
+def _land_ticket_for_commit_touching(cwd: Path, ref: str, path: str) -> str | None:
+    """The ticket id named in the most recent `<type>(tickets): land <id>
+    ...` commit subject (`_commit_message`'s exact shape, `frob.tickets.
+    _land_merge`) touching `path` at `ref`, or `None` if no such commit or
+    subject match exists. Used only to name BOTH sides of a refused
+    `_CAPABILITY_RATCHET_PATHS` conflict (T-4498) -- never load-bearing for
+    the refusal itself, which fires regardless of whether either side's
+    id can be identified."""
+    spawned = run_argv(
+        ["git", "-C", str(cwd), "log", "-1", "--format=%s", ref, "--", path]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    match = _LAND_COMMIT_SUBJECT_TICKET_RE.search(spawned.danger_ok.stdout)
+    return match.group(1) if match else None
+
+
 # frob:ticket T-1434
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to dict.items() \
 # iteration and dict.get chained twice, plain dict operations the resolver cannot \
@@ -1580,7 +1623,13 @@ def _auto_resolve_out_of_scope_conflicts(
     `ticket.scope` -- a zone file is very often IN scope for the ticket that
     is landing (e.g. a ticket editing `frob.toml`'s `[gates.severity]`
     block), so the ordinary in-scope-stays-conflicted rule below would never
-    even get a chance to auto-resolve it otherwise."""
+    even get a chance to auto-resolve it otherwise.
+
+    T-4498: `_CAPABILITY_RATCHET_PATHS` (`design/frob.strata` and its
+    ratchet lock) is excluded from the blind-checkout branch the same way
+    -- a conflict there stays conflicted (refused, naming both sides) no
+    matter which side `keep` would otherwise take, since neither side of a
+    genuinely divergent via-list edit is safe to discard."""
     conflicted = _conflicted_files(cwd) - {"tickets.md", "tickets-archive.md"}
     if not conflicted:
         return Ok(frozenset())
@@ -1595,44 +1644,75 @@ def _auto_resolve_out_of_scope_conflicts(
         return Ok(frozenset())
     still_conflicted = {f for f in conflicted if scope_matches(f, ticket.scope)}
     for path in sorted(conflicted - still_conflicted):
-        # T-1434: frob-coverage.lock.json is a coverage-ratchet artifact,
-        # not an ordinary source file -- blindly keeping one side of a
-        # real conflict here silently discards the other side's freshly
-        # stamped data (confirmed root cause of the "reverted to an
-        # older committed value" incident T-1270's agent observed). Try
-        # the elementwise-max merge FIRST; only fall through to the
-        # ordinary blind-checkout behavior if that merge itself declines
-        # (a malformed side, a git failure) -- never worse than before
-        # T-1434, only better when it succeeds.
-        if path == _COVERAGE_LOCK_PATH and _merge_coverage_lock_conflict(cwd, path):
-            _log.info(
-                "land: %s auto-resolved out-of-scope conflict in %s via "
-                "the T-1434 coverage-lock merge (not in scope %s)",
-                ticket.id,
-                path,
-                list(ticket.scope),
-            )
-            continue
-        resolved = _checkout_and_stage(cwd, keep, path)
-        if resolved.is_err:
-            _log.warning(
-                "land: %s auto-resolve of out-of-scope conflict %s (keep=%s) "
-                "failed -- leaving it conflicted for manual resolution",
-                ticket.id,
-                path,
-                keep,
-            )
+        if not _resolve_one_out_of_scope_conflict(cwd, ticket, keep, path):
             still_conflicted.add(path)
-            continue
+    return Ok(frozenset(still_conflicted))
+
+
+# frob:ticket T-4498
+def _resolve_one_out_of_scope_conflict(
+    cwd: Path, ticket: Ticket, keep: str, path: str
+) -> bool:
+    """ARCH001 split of `_auto_resolve_out_of_scope_conflicts`'s per-path
+    body: tries the T-1434 coverage-lock merge, then the T-4498 capability-
+    ratchet refusal, then falls back to the ordinary blind `git checkout
+    --<keep>`; returns whether `path` ended up resolved (`True`) or must
+    stay in the caller's `still_conflicted` set (`False`)."""
+    if path == _COVERAGE_LOCK_PATH and _merge_coverage_lock_conflict(cwd, path):
         _log.info(
-            "land: %s auto-resolved out-of-scope conflict in %s by keeping "
-            "%s's side (not in scope %s)",
+            "land: %s auto-resolved out-of-scope conflict in %s via "
+            "the T-1434 coverage-lock merge (not in scope %s)",
+            ticket.id,
+            path,
+            list(ticket.scope),
+        )
+        return True
+    if path in _CAPABILITY_RATCHET_PATHS:
+        _log_capability_ratchet_refusal(cwd, ticket, path)
+        return False
+    resolved = _checkout_and_stage(cwd, keep, path)
+    if resolved.is_err:
+        _log.warning(
+            "land: %s auto-resolve of out-of-scope conflict %s (keep=%s) "
+            "failed -- leaving it conflicted for manual resolution",
             ticket.id,
             path,
             keep,
-            list(ticket.scope),
         )
-    return Ok(frozenset(still_conflicted))
+        return False
+    _log.info(
+        "land: %s auto-resolved out-of-scope conflict in %s by keeping "
+        "%s's side (not in scope %s)",
+        ticket.id,
+        path,
+        keep,
+        list(ticket.scope),
+    )
+    return True
+
+
+# frob:ticket T-4498
+def _log_capability_ratchet_refusal(cwd: Path, ticket: Ticket, path: str) -> None:
+    """Never blind-checkout a capability-ratchet declaration (`design/
+    frob.strata`, its ratchet lock) -- log the refusal naming `path` and
+    (best-effort) both sides' landing ticket ids, so the caller can leave
+    it genuinely conflicted instead of silently dropping either side's
+    declaration (T-4498)."""
+    ours_ticket = _land_ticket_for_commit_touching(cwd, "HEAD", path) or ticket.id
+    theirs_ticket = _land_ticket_for_commit_touching(cwd, "MERGE_HEAD", path)
+    _log.error(
+        "land: %s refusing to auto-resolve out-of-scope conflict in "
+        "capability-ratchet file %s -- both %s (worktree side) and "
+        "%s (target-branch side) declared conflicting via-list/lock "
+        "state here; only tickets.md/tickets-archive.md are ever "
+        "auto-resolved toward one side, so this is left conflicted "
+        "for manual resolution instead of silently dropping either "
+        "side's declaration (T-4498)",
+        ticket.id,
+        path,
+        ours_ticket,
+        theirs_ticket if theirs_ticket is not None else "<unknown ticket>",
+    )
 
 
 def _checkout_and_stage(cwd: Path, keep: str, path: str) -> Result[None, LandError]:
