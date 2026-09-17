@@ -383,11 +383,14 @@ def _archived_ids_for_merge_driver(root: Path) -> frozenset[str]:
 
 
 # frob:ticket T-1404
+# frob:ticket T-4547
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
-def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None:
+def _land_touched_paths(
+    worktree: Path, ticket_id: str, *, target_branch: str = "main"
+) -> frozenset[str] | None:
     """The landing ticket's touched-file set, root-relative -- `working_
-    diff(worktree, "main")`'s own hunk files, the same diff-scoped
+    diff(worktree, target_branch)`'s own hunk files, the same diff-scoped
     touched-set source FMT001's own gate (`_fmt001_touched_lines`,
     `frob.gates._todo_fmt`) already uses to decide which lines are "this
     ticket's own", rather than the ticket's declared `scope` globs
@@ -395,13 +398,22 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
     both over- and under-match against what actually changed). `None`
     when the diff cannot be computed (no merge-base, detached HEAD, a
     `git` spawn failure) -- the caller degrades to the pre-T-1404 whole-
-    tree behaviour rather than guess at a touched set it cannot verify."""
-    diff_result = working_diff(worktree, "main")
+    tree behaviour rather than guess at a touched set it cannot verify.
+
+    T-4547: `target_branch` (default `"main"`, matching every pre-T-4547
+    caller byte-for-byte) is the branch this diff is measured against --
+    callers landing onto a `dev`-style target that has diverged from
+    `main` by 200+ unrelated commits MUST pass the resolved land target
+    (`_resolve_land_target_branch`/`cfg.ticket_land_branch`), or every
+    commit since the stale `main` merge-base reads as "touched"."""
+    diff_result = working_diff(worktree, target_branch)
     if diff_result.is_err:
         _log.warning(
             "ticket land: %s could not compute touched-file set for the "
-            "pre-land FMT001 fix (%s) -- falling back to a whole-tree pass",
+            "pre-land FMT001 fix against target_branch=%r (%s) -- falling "
+            "back to a whole-tree pass",
             ticket_id,
+            target_branch,
             diff_result.danger_err,
         )
         return None
@@ -409,8 +421,13 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
 
 
 # frob:ticket T-4413
+# frob:ticket T-4547
 def _rapid_check_scope_files(
-    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+    worktree: Path,
+    ticket_id: str,
+    touched_paths: frozenset[str] | None,
+    *,
+    target_branch: str = "main",
 ) -> tuple[str, ...] | None:
     """The `--files` set rapid's synchronous pre-land check spawn is scoped
     to (T-4413): `touched_paths` (T-1404's own diff-derived set, reused --
@@ -422,6 +439,13 @@ def _rapid_check_scope_files(
     can invalidate a direct caller's correctness, but this is a synchronous
     land-blocking check, not a full transitive-closure impact analysis (the
     deferred post-land sweep still covers the whole tree unscoped).
+
+    `target_branch` (T-4547, default `"main"` byte-for-byte) is logged
+    only here -- `touched_paths` must already have been computed against
+    it by the caller (`_land_touched_paths(..., target_branch=...)`); this
+    function does not itself diff, it only reports which base produced the
+    set it is about to walk, so a mis-scoped result is diagnosable from
+    the log line alone.
 
     Returns `None` -- unscoped, today's rapid behavior byte-for-byte --
     when `touched_paths` itself is `None` (diff unmeasurable) or the graph
@@ -449,14 +473,27 @@ def _rapid_check_scope_files(
             continue
         for dep_symref in affects(snapshot, symref, max_depth=1).dependents:
             scoped.add(dep_symref.split("::", 1)[0])
+    direct_dependent_count = len(scoped) - len(touched_paths)
     _log.info(
-        "ticket land: %s rapid --files scoped to %d file(s) (%d touched + "
-        "%d direct-dependent)",
+        "ticket land: %s rapid --files scoped to %d file(s) against "
+        "target_branch=%r (%d touched + %d direct-dependent)",
         ticket_id,
         len(scoped),
+        target_branch,
         len(touched_paths),
-        len(scoped) - len(touched_paths),
+        direct_dependent_count,
     )
+    if direct_dependent_count == 0:
+        _log.info(
+            "ticket land: %s rapid --files found 0 direct-dependent files -- "
+            "this is expected, not a broken walk: affects()/_dependents_of() "
+            "only follows explicit `frob:uses-contract` directive edges, not "
+            "a general call graph, so it is 0 whenever none of the %d "
+            "touched file(s)' symbols is the target of a `frob:uses-contract` "
+            "directive anywhere else in the tree",
+            ticket_id,
+            len(touched_paths),
+        )
     return tuple(sorted(scoped))
 
 
@@ -6709,6 +6746,7 @@ def _land_core_invoke(
     pre-commit sweep, etc.) exactly as before -- pure extraction of the
     original `land(...)` call, unchanged."""
     from frob.tickets import land
+    from frob.tickets._land import _resolve_land_target_branch
 
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
@@ -6716,15 +6754,40 @@ def _land_core_invoke(
     # below instead of each running its own full `frob check --ticket`.
     # frob:ticket T-4105
     # frob:ticket T-4413
+    # frob:ticket T-4547
     # T-4413: under rapid ONLY, scope this spawn's `--files` to the diff-
     # touched set plus direct dependents (`_rapid_check_scope_files`) --
     # the T-1463/T-2053-measured whole-tree floor this ticket exists to
     # close. Standard is unaffected: `rapid_scope_files` stays `None`,
     # so `_shared_check_spawn_fn`'s own `files=None` default keeps its
     # argv byte-for-byte unchanged.
+    #
+    # T-4547: the diff base for that touched set must be the RESOLVED
+    # land target (T-3787's own `_resolve_land_target_branch`, the same
+    # resolution `land()` below applies to itself), not a hardcoded
+    # `"main"` -- on a repo where `dev` (not `main`) is the land target
+    # and has diverged from `main` by 200+ commits, every prior sibling
+    # ticket's own already-landed commit reads as "touched" against the
+    # stale `main` merge-base, silently unscoping this check (measured:
+    # 252 files for a 6-file diff in the T-4511 land log). A resolution
+    # failure (e.g. `target_branch` invalid) degrades to `"main"` here --
+    # `land()` itself, called below, is the one place that actually
+    # refuses the land on an invalid target; this scoping step must not
+    # duplicate that refusal, only degrade to its historical behaviour.
+    _resolved_target = _resolve_land_target_branch(
+        root, cfg.ticket_id, cfg.ticket_land_branch
+    )
+    target_branch_for_scope = (
+        _resolved_target.danger_ok if _resolved_target.is_ok else "main"
+    )
     rapid_scope_files = (
         _rapid_check_scope_files(
-            worktree, cfg.ticket_id, _land_touched_paths(worktree, cfg.ticket_id)
+            worktree,
+            cfg.ticket_id,
+            _land_touched_paths(
+                worktree, cfg.ticket_id, target_branch=target_branch_for_scope
+            ),
+            target_branch=target_branch_for_scope,
         )
         if rapid_land
         else None

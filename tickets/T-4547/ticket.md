@@ -2,7 +2,7 @@
 id: T-4547
 title: rapid land --files scope counts every commit since the MAIN merge-base as touched
   (252 files for a 6-file ticket), so the scoped check is not scoped on dev
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -21,16 +21,21 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_land_touched_paths_against_main_includes_unrelated_dev_commit
+- tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_rapid_check_scope_files_includes_touched_and_dependents
+designated_repro_test: tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_land_touched_paths_against_main_includes_unrelated_dev_commit
 acceptance:
 - text: GIVEN a worktree branched from dev with a 6-file diff WHEN the rapid land
     computes its --files scope THEN the touched set is the diff against the land TARGET
     branch (LandReport.target_branch / ticket_land_branch), i.e. 6 files plus direct
     dependents, never the diff against main
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_land_touched_paths_against_main_includes_unrelated_dev_commit
 - text: GIVEN the target branch is main WHEN computed THEN behaviour is byte-for-byte
     today's
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestRapidLandFilesWiring::test_rapid_check_scope_files_includes_touched_and_dependents
 threat: null
 component: null
 anchor: false

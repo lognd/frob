@@ -356,6 +356,59 @@ class TestRapidLandFilesWiring:
         assert result is not None
         assert set(result) == {"a.py", "b.py"}
 
+    def test_land_touched_paths_against_main_includes_unrelated_dev_commit(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths \
+        # kind="unit"
+        # frob:ticket T-4547
+        """Repro (T-4547, designated BUG002 repro): a worktree branched
+        from `dev` after `dev` has diverged from `main` by an unrelated
+        commit. Diffing against the hardcoded/default `target_branch=
+        "main"` (today's pre-fix behaviour, still the function's default)
+        picks up `dev`'s unrelated commit too, since `merge-base(worktree,
+        main)` sits BEFORE that commit -- this is the exact 252-vs-6-file
+        defect measured in the T-4511 land log."""
+        import subprocess
+
+        from frob.app.ticket_runner._land_cmd import _land_touched_paths
+        from tests.conftest import _git_init, _write
+
+        _git_init(tmp_path)
+        subprocess.run(["git", "checkout", "-q", "-b", "dev"], cwd=tmp_path, check=True)
+        _write(tmp_path, "unrelated.py", "x = 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "unrelated dev commit"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "t-0001", "dev"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "own.py", "y = 2\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "own ticket commit"],
+            cwd=tmp_path,
+            check=True,
+        )
+
+        against_main = _land_touched_paths(tmp_path, "T-0001")
+        assert against_main is not None
+        assert "unrelated.py" in against_main, (
+            "pre-fix behaviour: main-relative diff picks up dev's own unrelated commit"
+        )
+        assert "own.py" in against_main
+
+        against_dev = _land_touched_paths(tmp_path, "T-0001", target_branch="dev")
+        assert against_dev is not None
+        assert "unrelated.py" not in against_dev, (
+            "T-4547 fix: diffing against the resolved land target (dev) "
+            "excludes dev's own prior, unrelated commit"
+        )
+        assert "own.py" in against_dev
+
     def test_shared_check_spawn_fn_appends_files_argv(
         self, tmp_path: Path, monkeypatch
     ) -> None:
