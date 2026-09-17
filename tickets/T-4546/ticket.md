@@ -1,5 +1,5 @@
 ---
-id: T-draft-92967ef6
+id: T-4546
 title: 'flatten the remaining single-child verb groups: agent env, worktree sweep
   (in _core.py) and narrative move (frob/narrative/_cli.py + _root.py)'
 state: queued

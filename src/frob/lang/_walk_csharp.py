@@ -94,6 +94,49 @@ _CONTAINER_DECLS = frozenset(
     {"class_declaration", "struct_declaration", "interface_declaration"}
 )
 
+# frob:ticket T-4514
+# Unity's own reflection-based dispatch (T-4514, epic T-4513): MonoBehaviour
+# lifecycle methods (Awake/Start/Update/... and the OnCollision*/OnTrigger*
+# physics-callback families) have NO visible call site anywhere in user
+# code -- the Unity engine invokes them by name through its own component
+# message system every frame/physics-step/enable-disable transition. A
+# private (or even a totally unmodified, C#-default-private) lifecycle
+# method is therefore syntactically indistinguishable from genuinely dead
+# code to any caller-graph-based detector, unless something marks it
+# reachable independent of any in-repo call token.
+_CS_UNITY_LIFECYCLE_METHODS = frozenset(
+    {
+        "Awake",
+        "Start",
+        "Update",
+        "FixedUpdate",
+        "LateUpdate",
+        "OnEnable",
+        "OnDisable",
+        "OnDestroy",
+        "OnCollisionEnter",
+        "OnCollisionEnter2D",
+        "OnCollisionExit",
+        "OnCollisionExit2D",
+        "OnCollisionStay",
+        "OnCollisionStay2D",
+        "OnTriggerEnter",
+        "OnTriggerEnter2D",
+        "OnTriggerExit",
+        "OnTriggerExit2D",
+        "OnTriggerStay",
+        "OnTriggerStay2D",
+    }
+)
+
+#: attribute NAMES (the `attribute`'s own `name` field, module docstring
+#: sibling note) that make Unity's editor tooling invoke a static method
+#: through its own reflection scan rather than a visible call site --
+#: `[MenuItem]` (Editor menu dispatch) and `[InitializeOnLoad]` (loaded on
+#: editor startup/domain reload, applied to either the declaring class or,
+#: for the static-constructor idiom, the method itself).
+_CS_UNITY_ENTRY_ATTRIBUTES = frozenset({"MenuItem", "InitializeOnLoad"})
+
 
 def _cs_has_modifier(node: Node, keyword: str) -> bool:
     """True if `node` carries a literal `keyword` modifier."""
@@ -127,6 +170,55 @@ def _cs_public(node: Node, *, implicit_public: bool = False) -> bool:
     return not has_any_access_modifier
 
 
+# frob:ticket T-4514
+def _cs_attribute_names(node: Node) -> frozenset[str]:
+    """Every attribute NAME (`[Foo(...)]` -> `"Foo"`) attached to `node`
+    (T-4514) -- C#'s grammar hangs an `attribute_list` as a plain
+    positional child of the declaration it decorates (no field name, the
+    module's own `_cs_dispatch` exploration confirmed), each holding one
+    or more `attribute` children whose own `name` field is the identifier
+    tree-sitter labels. Returns the empty set for an undecorated node
+    (the common case), never `None` -- callers always get a `frozenset`
+    they can test membership against directly."""
+    names: set[str] = set()
+    for c in node.children:
+        if c.type != "attribute_list":
+            continue
+        for attr in c.children:
+            if attr.type != "attribute":
+                continue
+            name_node = attr.child_by_field_name("name")
+            if name_node is not None:
+                names.add(_child_text(name_node))
+    return frozenset(names)
+
+
+# frob:ticket T-4514
+def _cs_is_unity_entry_point(node: Node, name: str) -> bool:
+    """True if `node` (a `method_declaration`) is one of Unity's own
+    reflection-dispatched entry shapes (T-4514, module-level docstring):
+    a MonoBehaviour lifecycle method by NAME (`_CS_UNITY_LIFECYCLE_
+    METHODS` -- Unity calls these through its component message system,
+    never a visible in-repo call token, regardless of the method's own
+    declared access modifier), a coroutine (its `returns` field is the
+    literal identifier `IEnumerator` -- every coroutine becomes reachable
+    the moment ANY `StartCoroutine(...)` call site names it, which this
+    single-file walker cannot itself trace back to; marking every
+    `IEnumerator`-returning method reachable is the same fail-open
+    direction `_cs_public`'s own interface carve-out already takes,
+    trading a small over-approximation for never flagging a live
+    coroutine as dead), or carries a `[MenuItem]`/`[InitializeOnLoad]`
+    attribute (`_CS_UNITY_ENTRY_ATTRIBUTES` -- the Unity Editor's own
+    menu/domain-reload dispatch, likewise invoked with no visible call
+    site)."""
+    if name in _CS_UNITY_LIFECYCLE_METHODS:
+        return True
+    returns_node = node.child_by_field_name("returns")
+    if returns_node is not None and _child_text(returns_node) == "IEnumerator":
+        return True
+    return bool(_cs_attribute_names(node) & _CS_UNITY_ENTRY_ATTRIBUTES)
+
+
 def _cs_class_symbol(
     node: Node, stack: tuple[str, ...], doc: str
 ) -> tuple[RawSymbol, Node, str] | None:
@@ -137,10 +229,15 @@ def _cs_class_symbol(
     if name_node is None or body is None:
         return None
     name = _child_text(name_node)
+    # T-4514: a class-level [InitializeOnLoad] is Unity Editor's own
+    # domain-reload dispatch (its static constructor runs with no visible
+    # in-repo call site) -- same fail-open direction as the method-level
+    # carve-out `_cs_is_unity_entry_point` applies below.
+    is_unity_entry = "InitializeOnLoad" in _cs_attribute_names(node)
     symbol = RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.CLASS,
-        public=_cs_public(node),
+        public=_cs_public(node) or is_unity_entry,
         span=_span_of(node),
         sig_tokens=_leaf_tokens(node, COMMENT_TYPES, _body_skip(body)),
         body_tokens=(),
@@ -160,10 +257,20 @@ def _cs_method_symbol(
     name = _child_text(name_node)
     body = node.child_by_field_name("body")
     skip = _body_skip(body)
+    # T-4514: a MonoBehaviour lifecycle method, coroutine, or Editor
+    # [MenuItem]/[InitializeOnLoad] target is reachable through Unity's own
+    # reflection dispatch regardless of its declared access modifier --
+    # `public` is this walker's ONE existing "externally reachable"
+    # channel (no bespoke entry-point field exists on `RawSymbol`), so a
+    # Unity entry point is marked public here the same way an implicit
+    # interface member already is above.
+    public = _cs_public(node, implicit_public=in_interface) or _cs_is_unity_entry_point(
+        node, name
+    )
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD,
-        public=_cs_public(node, implicit_public=in_interface),
+        public=public,
         span=_span_of(node),
         sig_tokens=_leaf_tokens(node, COMMENT_TYPES, skip),
         body_tokens=_leaf_tokens(body, COMMENT_TYPES) if body else (),

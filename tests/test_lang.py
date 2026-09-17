@@ -900,6 +900,96 @@ class TestCSharp:
         assert COMMENT_TYPES == frozenset({"comment"})
 
 
+# frob:ticket T-4514
+class TestCSharpUnityEntryPoints:
+    """C# walker (`frob.lang._walk_csharp`) -- Unity's own reflection-
+    dispatched entry points (MonoBehaviour lifecycle methods, coroutines,
+    [MenuItem]/[InitializeOnLoad]) marked `public=True` regardless of
+    their declared access modifier, the walker's one existing "externally
+    reachable" channel (T-4514)."""
+
+    _UNITY_FIXTURES = _FIXTURES / "csharp" / "unity"
+
+    # frob:ticket T-4514
+    def test_private_lifecycle_method_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        pf = parse_file(self._UNITY_FIXTURES / "lifecycle_methods.cs").danger_ok
+        update = _symbol(pf, "Frob.Sample.Unity.Player.Update")
+        assert update.public is True
+
+    # frob:ticket T-4514
+    def test_private_awake_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        pf = parse_file(self._UNITY_FIXTURES / "lifecycle_methods.cs").danger_ok
+        awake = _symbol(pf, "Frob.Sample.Unity.Player.Awake")
+        assert awake.public is True
+
+    # frob:ticket T-4514
+    def test_physics_callback_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        pf = parse_file(self._UNITY_FIXTURES / "lifecycle_methods.cs").danger_ok
+        cb = _symbol(pf, "Frob.Sample.Unity.Player.OnTriggerEnter2D")
+        assert cb.public is True
+
+    # frob:ticket T-4514
+    def test_unrelated_private_method_stays_non_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        # Negative case: a private helper with no lifecycle name, no
+        # IEnumerator return, and no entry attribute is NOT rescued --
+        # this walker only marks REAL Unity entry shapes, never every
+        # private method in a MonoBehaviour.
+        pf = parse_file(self._UNITY_FIXTURES / "lifecycle_methods.cs").danger_ok
+        helper = _symbol(pf, "Frob.Sample.Unity.Player.DoNothing")
+        assert helper.public is False
+
+    # frob:ticket T-4514
+    def test_private_coroutine_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        pf = parse_file(self._UNITY_FIXTURES / "coroutine.cs").danger_ok
+        coro = _symbol(pf, "Frob.Sample.Unity.Spawner.SpawnLoop")
+        assert coro.public is True
+
+    # frob:ticket T-4514
+    def test_non_ienumerator_private_method_stays_non_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        pf = parse_file(self._UNITY_FIXTURES / "coroutine.cs").danger_ok
+        plain = _symbol(pf, "Frob.Sample.Unity.Spawner.NotACoroutine")
+        assert plain.public is False
+
+    # frob:ticket T-4514
+    def test_menu_item_method_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_is_unity_entry_point
+        pf = parse_file(self._UNITY_FIXTURES / "menu_item.cs").danger_ok
+        do_thing = _symbol(pf, "Frob.Sample.Unity.Editor.Tools.DoThing")
+        assert do_thing.public is True
+
+    # frob:ticket T-4514
+    def test_initialize_on_load_class_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_class_symbol
+        pf = parse_file(self._UNITY_FIXTURES / "menu_item.cs").danger_ok
+        auto_init = _symbol(pf, "Frob.Sample.Unity.Editor.AutoInit")
+        assert auto_init.public is True
+
+    # frob:ticket T-4514
+    def test_attribute_names_reads_menu_item(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_attribute_names
+        from frob.lang import raw_tree
+        from frob.lang._walk_csharp import _cs_attribute_names
+
+        tree, _source, _lang = raw_tree(self._UNITY_FIXTURES / "menu_item.cs").danger_ok
+
+        found: list[frozenset[str]] = []
+
+        def _collect(node) -> None:  # noqa: ANN001
+            if node.type == "method_declaration":
+                found.append(_cs_attribute_names(node))
+            for c in node.children:
+                _collect(c)
+
+        _collect(tree.root_node)
+        assert frozenset({"MenuItem"}) in found
+
+
 # frob:ticket T-1601
 class TestJava:
     """Java walker (`frob.lang._walk_java`) -- publicness (package-private

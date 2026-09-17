@@ -27,6 +27,7 @@ from frob.vet._capability_registry._dangerous_ops_python import _PYTHON_OPERATIO
 from frob.vet._capability_registry._dotnet_bcl import _DOTNET_BCL_OPERATIONS
 from frob.vet._capability_registry._kinds import CAPABILITY_KINDS, LANGUAGES
 from frob.vet._capability_registry._schemas import _DangerousOperation, _MatrixExcuse
+from frob.vet._capability_registry._unity_api import _UNITY_OPERATIONS
 
 _log = get_logger(__name__)
 
@@ -43,6 +44,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     + _JAVA_OPERATIONS
     + _CUDA_OPERATIONS
     + _DOTNET_BCL_OPERATIONS
+    + _UNITY_OPERATIONS
 )
 
 # frob:doc docs/modules/vet.md#public-api

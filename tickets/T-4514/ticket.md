@@ -2,7 +2,7 @@
 id: T-4514
 title: Unity API capability map (UnityEngine, Editor-only APIs, MonoBehaviour/coroutine
   roots)
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -21,23 +21,32 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_lang.py::TestCSharpUnityEntryPoints::test_private_lifecycle_method_is_public
+- tests/test_lang.py::TestCSharpUnityEntryPoints::test_private_coroutine_is_public
+- tests/vet_suite/test_capability_registry_unity.py::TestUnityApiRegistry::test_unity_web_request_maps_to_net
+- tests/vet_suite/test_capability_registry_unity.py::TestUnityApiRegistry::test_unity_editor_namespace_usage_flagged_as_eval_with_clear_name
 designated_repro_test: null
 acceptance:
 - text: GIVEN a MonoBehaviour with Start/Update/OnEnable/etc. and no visible caller
     in the file, WHEN the callgraph/dead-code detectors run, THEN these lifecycle
     methods are treated as roots, not flagged as dead code.
-  evidence: []
+  evidence:
+  - tests/test_lang.py::TestCSharpUnityEntryPoints::test_private_lifecycle_method_is_public
 - text: GIVEN a method using 'yield return' (a coroutine) started via StartCoroutine,
     WHEN scanned, THEN the coroutine method is treated as reachable from its StartCoroutine
     call site, not orphaned.
-  evidence: []
+  evidence:
+  - tests/test_lang.py::TestCSharpUnityEntryPoints::test_private_coroutine_is_public
 - text: GIVEN a call to UnityEngine.Networking.UnityWebRequest.Get, WHEN scanned,
     THEN it maps to the net capability.
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_capability_registry_unity.py::TestUnityApiRegistry::test_unity_web_request_maps_to_net
 - text: GIVEN a call to UnityEditor.AssetDatabase from a file under an Editor/ folder
     or Editor-only asmdef, WHEN scanned, THEN the finding is tagged editor-only, distinguishing
     it from an identical runtime-code finding.
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_capability_registry_unity.py::TestUnityApiRegistry::test_unity_editor_namespace_usage_flagged_as_eval_with_clear_name
 threat: null
 component: null
 anchor: false
