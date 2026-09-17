@@ -1,7 +1,7 @@
 ---
 id: T-3232
 title: frob.docs/frob.xref narrower per-language coverage than frob.lang
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -77,18 +77,25 @@ scope_changes:
   reason: iter_identifiers doc anchor; document the csharp _IDENTIFIER_TYPES addition
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/unit/test_xref.py::test_csharp_finds_definition_and_usage_with_explicit_lang
+- tests/unit/test_xref.py::test_csharp_finds_definition_and_usage
+- tests/unit/test_docs_module.py::test_extract_docstrings_csharp_class_and_method
 designated_repro_test: null
 acceptance:
 - text: frob.docs.extract_docstrings and frob.xref's --lang/parsed-search dispatch
     on frob.lang's supported language set via a single shared table (frob.lang.supported_extensions/language_for_extension/tree_sitter_extensions),
     no second hand-maintained language list
-  evidence: []
+  evidence:
+  - tests/unit/test_xref.py::test_csharp_finds_definition_and_usage_with_explicit_lang
 - text: frob explore xref <symbol> finds the definition and every reference for a
     public C# method across a static csharp fixture (tests/fixtures/lang/sample.cs)
-  evidence: []
+  evidence:
+  - tests/unit/test_xref.py::test_csharp_finds_definition_and_usage
 - text: a public C# class's XML doc comment resolves through frob.docs.extract_docstrings
     (the docs facet), not just python docstrings
-  evidence: []
+  evidence:
+  - tests/unit/test_docs_module.py::test_extract_docstrings_csharp_class_and_method
 acceptance_amendments:
 - op: remove
   index: 4

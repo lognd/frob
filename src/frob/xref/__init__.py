@@ -11,8 +11,10 @@ from frob.lang import (
     RawSymbol,
     SymbolKind,
     iter_identifiers,
+    language_for_extension,
     parse_file,
     supported_extensions,
+    tree_sitter_extensions,
 )
 
 
@@ -77,23 +79,47 @@ class XrefResult(BaseModel):
         return self.model_dump_json(indent=2)
 
 
-_PY_EXTS = {".py"}
-_CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
-_STRATA_EXTS = {".strata"}
+# T-3232: `.c++`/`.hxx`/`.h++` predate `frob.lang`'s grammar table (T-0129)
+# and are not registered there (frob.lang.language_for_extension returns
+# None for them) -- kept as an explicit supplement rather than dropped, so
+# this narrowing to frob.lang's registry does not regress existing cpp
+# cross-file lookups.
+_EXTRA_CPP_EXTS = frozenset({".c++", ".hxx", ".h++"})
+_STRATA_EXTS = frozenset({".strata"})
+
 # Extensions `iter_identifiers` can parse (tree-sitter-backed) -- files with
 # these go through `_search_parsed`; everything else `_collect_source_files`
 # gathers (e.g. `.strata`, which has no `iter_identifiers` support, T-0077's
-# docstring) falls back to plain-text search (T-0129). `_PY_EXTS`/`_CPP_EXTS`
-# predate T-0129 and carry a couple of cpp extensions (.c++/.hxx/.h++)
-# frob.lang's grammar table does not, so they are kept as explicit local
-# buckets rather than narrowed to `tree_sitter_extensions()`.
-_SOURCE_EXTS = frozenset(_PY_EXTS) | frozenset(_CPP_EXTS)
-_LANG_EXTS = {
-    "python": _PY_EXTS,
-    "c": _CPP_EXTS,
-    "cpp": _CPP_EXTS,
-    "strata": _STRATA_EXTS,
-}
+# docstring) falls back to plain-text search (T-0129). T-3232: this is now
+# `frob.lang.tree_sitter_extensions()` (every grammar frob.lang registers,
+# csharp/java/kotlin/bash/cuda/zig/typescript/rust included) plus
+# `_EXTRA_CPP_EXTS` above, instead of a hand-maintained python+cpp-only set
+# that left every other language on the cruder text-search fallback.
+_SOURCE_EXTS = tree_sitter_extensions() | _EXTRA_CPP_EXTS
+
+
+def _build_lang_exts() -> dict[str, frozenset[str]]:
+    """The `--lang` filter's extension buckets, derived from `frob.lang`'s
+    own extension-to-language table (T-3232) instead of a second,
+    hand-maintained copy of the language list -- any grammar `frob.lang`
+    gains is reachable through `--lang` here with no edit to this file.
+    `_EXTRA_CPP_EXTS` is folded into "cpp" so the pre-T-0129 extensions
+    stay filterable too; `.strata` is added explicitly since
+    `supported_extensions()` includes it but `language_for_extension`
+    handles it as a special case rather than through the grammar table.
+    """
+    buckets: dict[str, set[str]] = {}
+    for ext in supported_extensions():
+        lang = language_for_extension(ext)
+        if lang is not None:
+            buckets.setdefault(lang, set()).add(ext)
+    buckets.setdefault("cpp", set()).update(_EXTRA_CPP_EXTS)
+    buckets.setdefault("strata", set()).update(_STRATA_EXTS)
+    return {lang: frozenset(exts) for lang, exts in buckets.items()}
+
+
+_LANG_EXTS = _build_lang_exts()
+
 # Every extension xref will collect and search by default -- the canonical
 # `frob.lang` registry (T-0129), so any grammar frob.lang gains reaches
 # xref automatically (parsed if tree-sitter-backed, text-searched otherwise).

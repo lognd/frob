@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from frob.docs import extract_docstrings, find_docs_dir, overview, search
+
+# T-3232: shared static csharp fixture (also used by tests/test_lang.py's
+# TestCSharp) -- a namespaced public class with XML `<summary>` doc
+# comments on both the class and a method, plus a same-class method call,
+# reused here instead of a second hand-authored csharp source.
+_FIXTURES = Path(__file__).parent.parent / "fixtures" / "lang"
 
 
 def test_extract_docstrings(tmp_path):
@@ -46,10 +54,33 @@ def test_search(tmp_path):
 
 
 def test_extract_docstrings_non_python_file_returns_empty(tmp_path):
+    """C# is now a supported language (see
+    test_extract_docstrings_csharp_class_and_method below), so this
+    fixture moved to a genuinely unsupported extension -- what still
+    returns [] is a language frob.lang has no grammar for at all, not
+    "non-python" (T-3232 removed that narrower contract; T-1286 binds
+    evidence to this exact test name, so the name is kept)."""
     # frob:tests src/frob/docs/__init__.py::extract_docstrings kind="unit"
-    src = tmp_path / "mod.rs"
-    src.write_text("/// A rust doc comment.\nfn foo() {}\n")
+    src = tmp_path / "mod.frobnotalang"
+    src.write_text("/// A doc comment for a language that does not exist.\n")
     assert extract_docstrings(src) == []
+
+
+def test_extract_docstrings_csharp_class_and_method(tmp_path):
+    # frob:tests src/frob/docs/__init__.py::extract_docstrings kind="unit"
+    # T-3232: frob.docs dispatches on every frob.lang-supported language,
+    # not python only -- csharp's XML `<summary>` doc comments already
+    # bind to RawSymbol.doc_text (frob.lang._walk_csharp), so a public
+    # class's and a public method's doc comments resolve through the same
+    # extract_docstrings path python docstrings do.
+    src = _FIXTURES / "sample.cs"
+    docs = extract_docstrings(src)
+    by_symbol = {d.symbol: d for d in docs}
+    assert "Frob.Sample.Widget" in by_symbol
+    assert by_symbol["Frob.Sample.Widget"].kind == "class"
+    assert "Adds two numbers" in by_symbol["Frob.Sample.Widget"].text
+    assert "Frob.Sample.Widget.Render" in by_symbol
+    assert "Renders the widget" in by_symbol["Frob.Sample.Widget.Render"].text
 
 
 def test_extract_docstrings_parse_failure_returns_empty(tmp_path):

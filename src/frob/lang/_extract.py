@@ -672,6 +672,19 @@ _IDENTIFIER_TYPES: dict[str, frozenset[str]] = {
     # access) -- all three are identifier-like occurrences frob.xref needs,
     # mirroring the c/cpp pair's own type_identifier inclusion above.
     "rust": frozenset({"identifier", "type_identifier", "field_identifier"}),
+    # T-3232: tree-sitter-c-sharp's leaf-level identifier node is just
+    # "identifier" (measured against tests/fixtures/lang/sample.cs's
+    # parse tree) -- frob.xref's `_LANG_EXTS`/`_SOURCE_EXTS` narrowing to
+    # frob.lang's registry (same ticket) routes csharp files through
+    # `_search_parsed`/`iter_identifiers` for the first time, and without
+    # an entry here `iter_identifiers` silently returned `()` for every
+    # csharp file (the `types is None` early-return above), so xref found
+    # a definition but zero usages. java/cuda/kotlin/bash/zig/typescript
+    # are the same `frob.lang.supported_languages()` members still
+    # missing an entry here -- filed as a follow-up (T-3232's Done report
+    # names the ticket) rather than guessed at without fixtures/tests for
+    # each grammar's own leaf-node naming.
+    "csharp": frozenset({"identifier"}),
 }
 
 

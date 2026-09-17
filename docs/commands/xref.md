@@ -8,7 +8,7 @@ Find where a symbol is defined and every file that references it.
 ## Usage
 
 ```
-frob xref <symbol> [path] [--lang python|cpp|c] [--cross-file] [--json]
+frob xref <symbol> [path] [--lang <language>] [--cross-file] [--json]
 ```
 
 `path` defaults to the current directory. `<symbol>` can be a function name,
@@ -51,7 +51,7 @@ of context, ready for impact analysis.
 
 | Flag | Description |
 |------|-------------|
-| `--lang` | Force language (python or cpp); auto-detected by default |
+| `--lang` | Force a language (any `frob.lang.supported_languages()` member, e.g. python, cpp, csharp, java, rust, kotlin, bash, cuda, zig, strata, T-3232); auto-detected by default |
 | `--cross-file` | Also show files that the defining file calls into |
 | `--json` | Output structured `XrefResult` as JSON |
 

@@ -216,9 +216,8 @@
       "ticket": "T-3591"
     },
     "testsuite::env.read": {
-      "accepted_count": 25,
-      "reason": "T-4455: adds tests/helpers/bash.py to the env.read via-list -- resolve_bash() reads ProgramFiles from os.environ to locate Git for Windows' bash.exe, avoiding the WSL System32 stub. Bumping the ceiling 24 -> 25, one new site.",
-      "ticket": "T-4455"
+      "accepted_count": 49,
+      "reason": "testsuite glob growth"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
@@ -251,9 +250,8 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 529,
-      "reason": "T-4494: adds tests/unit/test_land_stackdump.py to the fs.write via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 528 -> 529, 1 new site(s).",
-      "ticket": "T-4494"
+      "accepted_count": 532,
+      "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

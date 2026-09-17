@@ -215,3 +215,43 @@ def test_collect_source_files_skips_hidden_directory(tmp_path):
     xr = xref("helper", tmp_path).danger_ok
     assert xr.definition is None
     assert xr.usages == []
+
+
+# ---------------------------------------------------------------------------
+# C# xref (T-3232: frob.xref now routes every frob.lang tree-sitter
+# language, csharp included, through the same parsed-symbol resolver
+# python and cpp already used -- previously csharp fell through to the
+# cruder plain-text fallback since `_SOURCE_EXTS`/`_LANG_EXTS` only knew
+# about python/c/cpp/strata.)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def csharp_file():
+    """Static, checked-in fixture (T-3232): a namespaced public class
+    (`Frob.Sample.Widget`) whose `Render` method calls its own `Add`
+    method -- gives xref a same-file definition-plus-usage pair without
+    a hand-authored fixture."""
+    from pathlib import Path
+
+    return Path(__file__).parent.parent / "fixtures" / "lang" / "sample.cs"
+
+
+def test_csharp_finds_definition_and_usage(csharp_file):
+    result = xref("Add", csharp_file)
+    assert result.is_ok
+    xr = result.danger_ok
+    assert xr.definition is not None
+    assert xr.definition.file.endswith("sample.cs")
+    assert xr.usages, "expected the Render() call site to surface as a usage"
+    assert any("Add(label)" in u.context for u in xr.usages)
+
+
+def test_csharp_finds_definition_and_usage_with_explicit_lang(csharp_file):
+    # T-3232: `--lang csharp` (frob.xref's `_LANG_EXTS`) previously had no
+    # csharp entry at all, so this filtered to zero files.
+    result = xref("Add", csharp_file, lang="csharp")
+    assert result.is_ok
+    xr = result.danger_ok
+    assert xr.definition is not None
+    assert xr.usages

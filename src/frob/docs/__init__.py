@@ -66,7 +66,26 @@ def _method_docstring(sym: RawSymbol, filters: _SymbolFilters) -> Docstring | No
     )
 
 
-def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring | None:
+def _class_qualnames(symbols: tuple[RawSymbol, ...]) -> frozenset[str]:
+    """Every class-kind symbol's qualname in `symbols` (T-3232).
+
+    Used by `_docstring_for_symbol` to tell a namespace-qualified
+    top-level class (csharp/java/kotlin: `Frob.Sample.Widget`, whose
+    qualname is dotted but whose owner is a namespace, not another
+    class) apart from a genuinely nested class (`Outer.Inner`, whose
+    owner IS another class in this same set) -- a plain `"." not in
+    qualname` check (python has no namespace prefix, so this distinction
+    never mattered there) misclassified every namespaced language's
+    top-level classes as nested and silently dropped their docstrings.
+    """
+    from frob.lang import SymbolKind
+
+    return frozenset(s.qualname for s in symbols if s.kind == SymbolKind.CLASS)
+
+
+def _docstring_for_symbol(
+    sym: RawSymbol, filters: _SymbolFilters, class_qualnames: frozenset[str]
+) -> Docstring | None:
     """The `Docstring` for one parsed symbol under `filters`, or None if filtered."""
     from frob.lang import SymbolKind
 
@@ -80,7 +99,11 @@ def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring 
         return Docstring(
             symbol=sym.qualname, kind="function", line=sym.span[0], text=sym.doc_text
         )
-    if sym.kind == SymbolKind.CLASS and "." not in sym.qualname:
+    if sym.kind == SymbolKind.CLASS:
+        owner, _, _ = sym.qualname.rpartition(".")
+        nested = owner in class_qualnames
+        if nested:
+            return None
         if filters.class_filter is not None and sym.qualname != filters.class_filter:
             return None
         if filters.method_filter is None:
@@ -100,10 +123,9 @@ def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring 
 # frob:tests \
 # tests/unit/test_docs_module.py::test_extract_docstrings_parse_failure_returns_empty
 # frob:tests \
-# tests/unit/test_docs_module.py::test_extract_docstrings_symbol_filter_narrows_to_one_\
-# method
+# tests/unit/test_docs_module.py::test_extract_docstrings_symbol_filter_narrows_to_one_method  # noqa: E501
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
-    """Every python docstring in `path` (module, class, function, method).
+    """Every doc comment in `path` (module, class, function, method).
 
     Rebuilt on top of `frob.lang.parse_file`'s `RawSymbol.doc_text` -- that
     field is already whitespace-collapsed (`_common._collapse_ws`), so the
@@ -111,6 +133,16 @@ def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]
     tree-sitter walker's multi-line, quote-stripped one. `frob.docs` only
     ever displays or greps this text, never round-trips it, so the shape
     change is invisible to callers.
+
+    T-3232: dispatches on every language `frob.lang.parse_file` can parse
+    (python, typescript, rust, c/cpp, kotlin, bash, csharp, java, cuda,
+    zig, strata), not just python -- each walker already attaches
+    `RawSymbol.doc_text` from that language's own doc-comment convention
+    (docstrings, `///`, XML `<summary>`, javadoc, etc), so no per-language
+    branch is needed here. The one python-specific piece is the
+    module-level docstring row (`_module_entries` below), which has no
+    tree-sitter-visible analogue in `RawSymbol`/`RawComment` and is
+    skipped for every other language.
     """
     from frob.lang import parse_file
 
@@ -118,21 +150,26 @@ def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]
     if result.is_err:
         return []
     parsed = result.danger_ok
-    if parsed.language != "python":
-        return []
 
     filters = _symbol_filters(symbol)
-    results: list[Docstring] = _module_entries(path, symbol)
+    class_qualnames = _class_qualnames(parsed.symbols)
+    results: list[Docstring] = _module_entries(path, symbol, parsed.language)
     for sym in parsed.symbols:
-        doc = _docstring_for_symbol(sym, filters)
+        doc = _docstring_for_symbol(sym, filters, class_qualnames)
         if doc is not None:
             results.append(doc)
     return results
 
 
-def _module_entries(path: Path, symbol: str | None) -> list[Docstring]:
-    """The module-level docstring row for `path`, unless a `symbol` filter is set."""
-    if symbol is not None:
+def _module_entries(path: Path, symbol: str | None, language: str) -> list[Docstring]:
+    """The module-level docstring row for `path`, unless a `symbol` filter is set.
+
+    Python-only (T-3232): `_module_docstring` uses python's own `ast`
+    module, which cannot parse any other language's source -- every other
+    language's module-level doc (if any) surfaces through
+    `RawSymbol.doc_text` on that module's top-level symbols instead.
+    """
+    if symbol is not None or language != "python":
         return []
     module_doc = _module_docstring(path)
     if module_doc is None:
@@ -208,8 +245,7 @@ def _md_headings_and_summaries(md_path: Path) -> list[tuple[int, str, str]]:
 # frob:doc docs/modules/app.md#frobdocs-library
 # frob:tests tests/unit/test_docs_module.py::test_overview
 # frob:tests \
-# tests/unit/test_docs_module.py::test_overview_no_keyword_match_falls_back_to_all_entr\
-# ies
+# tests/unit/test_docs_module.py::test_overview_no_keyword_match_falls_back_to_all_entries  # noqa: E501
 # frob:tests tests/unit/test_docs_module.py::test_overview_symbol_keyword_narrows_match  # noqa: E501
 def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     docs_dir = find_docs_dir(path)

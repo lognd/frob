@@ -790,6 +790,14 @@ escape code.
 The `frob docs` subcommand is backed by `frob.docs`, a small doc-search
 library used to answer "what documentation exists / matches this symbol".
 
+T-3232: `extract_docstrings` dispatches on every language
+`frob.lang.parse_file` can parse (python, typescript, rust, c/cpp, kotlin,
+bash, csharp, java, cuda, zig, strata), not python only -- each language's
+walker already attaches its own doc-comment convention (docstrings, `///`,
+XML `<summary>`, javadoc, ...) to `RawSymbol.doc_text`. The module-level
+docstring row is still python-only (it uses python's `ast` module, which
+has no cross-language analogue).
+
 <!-- frob:describes src/frob/docs/__init__.py::Docstring -->
 <!-- frob:describes src/frob/docs/__init__.py::DocEntry -->
 <!-- frob:describes src/frob/docs/__init__.py::DocMatch -->
