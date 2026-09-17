@@ -1,7 +1,7 @@
 ---
 id: T-3232
 title: frob.docs/frob.xref narrower per-language coverage than frob.lang
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
