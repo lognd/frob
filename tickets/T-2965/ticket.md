@@ -2,7 +2,7 @@
 id: T-2965
 title: frob ticket set-parent needs a --clear path to detach a mis-parented ticket
   to root
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
