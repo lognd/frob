@@ -147,6 +147,114 @@ def _open_land_lock_fd_for_probe(path: Path) -> int | None:
         return None
 
 
+# frob:ticket T-3612
+# The single-writer ledger lock's advisory-lock path (T-0458, canonically
+# `frob.tickets._store._LOCK_REL`/`_lock_path` -- T-0601 documents that
+# path as deliberately PRIVATE, "no consumer outside this module and its
+# own test"). T-3612's narrowed splice-window probe (`_ledger_splice_
+# flock_probe` below) needs this SAME path from outside `_store`, for the
+# identical reason `LAND_LOCK_REL` below already crosses from `_land.py`
+# into this module: both sides of an exclusivity check must agree on
+# exactly ONE file, never a second, independently-defined path that could
+# silently drift apart. Properly exporting `_lock_path` from `_store`
+# would touch `src/frob/tickets/_store.py`, which is outside this
+# ticket's declared scope -- filed as a follow-up (see this ticket's Done
+# report) rather than silently widening scope here. The literal value
+# MUST stay byte-for-byte identical to `_store._LOCK_REL`.
+TICKETS_LEDGER_LOCK_REL = Path(".frob") / "tickets.lock"
+
+
+# frob:ticket T-3612
+def _refuse_for_held_ledger_splice_lock(
+    root: Path, path: Path, *, quiet: bool = False
+) -> Result[None, LeaseError]:
+    """The refusal `_ledger_splice_flock_probe` returns when `root`'s
+    single-writer ledger lock (`.frob/tickets.lock`, `frob.tickets.
+    _store.ledger_lock`) is held by a live writer (T-3612).
+
+    Unlike `_refuse_for_held_land_lock`, `ledger_lock` writes no holder
+    metadata -- it is a bare advisory `flock`, never a JSON marker like
+    `land.lock`'s -- so this cannot name WHICH write holds it directly.
+    Best-effort: if `root`'s `land.lock` ALSO happens to be held right
+    now, its holder metadata (pid/ticket_id) is logged alongside as the
+    most likely explanation -- a correlation, not a proof, since a
+    non-land ledger write can hold `tickets.lock` too, but it is the
+    common case (a land's splice) and gives an operator a pid to check
+    rather than none. `quiet=True` mirrors `_refuse_for_held_land_lock`'s
+    own intermediate-poll-tick suppression inside `refuse_if_land_in_
+    progress`'s bounded wait."""
+    if not quiet:
+        holder = _read_land_lock_holder_json(root / LAND_LOCK_REL)
+        _log.warning(
+            "tickets: %s refused -- the ledger lock (tickets.lock) is "
+            "currently held by another writer -- retry shortly "
+            "(likely holder, if a land's splice: %s)",
+            root,
+            holder if holder is not None else "no land.lock held, or unreadable",
+        )
+    return Err(LeaseError.LandInProgress)
+
+
+# frob:ticket T-3612
+def _ledger_splice_flock_probe(
+    root: Path, *, quiet: bool = False
+) -> Result[None, LeaseError]:
+    """T-3612's narrowed replacement for the `_land_flock_probe` +
+    `_scan_for_live_land_process` pair inside `refuse_if_land_in_
+    progress`: probes `root`'s single-writer ledger lock
+    (`TICKETS_LEDGER_LOCK_REL`, `.frob/tickets.lock`) instead of the
+    land's own `land.lock`.
+
+    Root cause this closes: `land.lock` is held for a land's ENTIRE
+    multi-minute duration (precheck through gates through squash-commit),
+    but the only write this repo's OTHER ledger-writing verbs -- new/
+    drop/body/scope/fail/evidence/done-report/accept, every one of them
+    dispatched through this same `refuse_if_land_in_progress` choke
+    point -- can actually race against is the land's ledger SPLICE: a
+    short critical section (each `write_ticket`/`write_all`/
+    `write_archive` call inside `_land_finalize.py`/`_land_ledger_merge.
+    py` already runs under its OWN brief `ledger_lock` span, per T-0889)
+    that is already mutually exclusive with every filing verb's own
+    write, which acquires the identical lock. Probing THAT lock instead
+    of `land.lock` means a filing verb is refused only for the seconds
+    the splice itself takes (measured <2s p95), never for the land's
+    whole wall-clock duration.
+
+    Same shape and same degrade-to-`Ok(None)` contract as `_land_flock_
+    probe`: no lock backend on this platform, no lock file yet (a fresh
+    checkout that has never written to its ledger), an unopenable file,
+    or a lock this probe itself acquires -- all mean "no splice in
+    progress right now", and none of which may block an ordinary `frob
+    ticket new`. The acquire is a PROBE and is released immediately.
+
+    Deliberately drops `_land_flock_probe`'s `exclude_pid` parameter:
+    `ledger_lock` writes no holder metadata (unlike `land.lock`'s JSON
+    marker), so there is no pid to compare a holder against -- and the
+    splice window this now probes is short enough that `frob.verify.
+    _drain`'s T-2406 self-exclusion need (invented for a lock held the
+    land's ENTIRE duration) does not recur here: a drain spawned by a
+    land whose splice has already finished simply observes `Ok(None)`.
+    `_probe_land_once` (T-3612) accepts and discards `exclude_pid` so
+    `refuse_if_land_in_progress`'s public signature -- and its one
+    caller passing that argument, `frob.verify._drain` -- needs no
+    change."""
+    if not lock_backend_available():
+        return Ok(None)
+    path = root / TICKETS_LEDGER_LOCK_REL
+    if not path.exists():
+        return Ok(None)
+    fd = _open_land_lock_fd_for_probe(path)
+    if fd is None:
+        return Ok(None)
+    # frob:ticket T-3612
+    if not portable_flock_acquire(fd, exclusive=True, blocking=False):
+        os.close(fd)
+        return _refuse_for_held_ledger_splice_lock(root, path, quiet=quiet)
+    portable_flock_release(fd)
+    os.close(fd)
+    return Ok(None)
+
+
 # frob:ticket T-1680
 # frob:ticket T-1961
 def _land_flock_probe(
@@ -2774,12 +2882,52 @@ def _resolve_land_wait_budget(
     return resolved_timeout, max(0.0, resolved_timeout - already_elapsed)
 
 
+# frob:ticket T-4342
+def _scan_orphaned_ticket_locks_best_effort(root: Path) -> None:
+    """`refuse_if_land_in_progress`'s T-4342 piggyback: best-effort scan
+    for orphaned per-ticket locks under `root`, swallowing (and logging)
+    any exception rather than letting it fail an otherwise-successful
+    land-lock check -- see `warn_orphaned_ticket_locks` for the scan
+    itself and why THIS choke point is its deliberate call site."""
+    try:
+        warn_orphaned_ticket_locks(root)
+    except Exception:
+        _log.warning(
+            "tickets: orphaned-ticket-lock scan failed under %s (non-fatal, "
+            "continuing)",
+            root,
+            exc_info=True,
+        )
+
+
+# frob:ticket T-3612
+def _log_allowed_write_during_land(root: Path) -> None:
+    """T-3612 observability: logs, at INFO, a write the narrowed splice
+    check just allowed despite a land being in progress (`land.lock`
+    held, `tickets.lock` free) -- best-effort holder correlation, silent
+    when no `land.lock` holder record exists."""
+    land_holder = _read_land_lock_holder_json(root / LAND_LOCK_REL)
+    if land_holder is not None:
+        _log.info(
+            "tickets: %s write allowed during in-progress land "
+            "(pid %s, ticket %s) -- tickets.lock free, T-3612 "
+            "splice-scoped check",
+            root,
+            land_holder.get("pid"),
+            land_holder.get("ticket_id"),
+        )
+
+
 # frob:ticket T-1619
+# frob:ticket T-3612
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_ledger_lock_held  # noqa: E501
 # frob:tests \
 # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_tickets_lock_held_refuses_naming_the_correlated_land_holder  # noqa: E501
 def refuse_if_land_in_progress(
     root: Path,
     *,
@@ -2790,56 +2938,26 @@ def refuse_if_land_in_progress(
     now_wall: Callable[[], datetime] = lambda: datetime.now(UTC),
     exclude_pid: int | None = None,
 ) -> Result[None, LeaseError]:
-    """`Err(LeaseError.LandInProgress)` iff `root` currently has a LIVE
-    `frob ticket land` holding its `LAND_LOCK_REL` advisory `flock`
-    (T-0577/T-1619) -- the exclusive repository lease every OTHER ledger-
-    committing verb (`new`/`close`/`drop`/`fail`/`requeue`/`block`/
-    `start`/`evidence`/`done-report`) must check before writing a commit
-    onto `root`'s branch. `Ok(None)` otherwise. See `_land_flock_probe`
-    for why a non-blocking `flock` acquire attempt is already a
-    structurally trustworthy liveness probe, and `_scan_for_live_land_
-    process` for the `/proc`-based belt-and-braces backstop that also
-    runs on every attempt (both T-1619).
+    """`Err(LeaseError.LandInProgress)` iff `root`'s single-writer ledger
+    lock (`.frob/tickets.lock`) is currently held by a live writer --
+    the exclusive splice window every OTHER ledger-committing verb
+    (`new`/`close`/`drop`/`fail`/`requeue`/`block`/`start`/`evidence`/
+    `done-report`) must check before writing a commit onto `root`'s
+    branch. `Ok(None)` otherwise, after waiting up to a bounded budget
+    (T-1961/T-2023, `_resolve_land_wait_budget`).
 
-    T-1961: on a busy probe this waits, bounded, rather than refusing on
-    the first try -- log ONE "waiting for in-flight land..." message and
-    poll every `poll_interval_s` (`_probe_land_once`, quiet after the
-    first) until either the lock frees (`Ok(None)`) or the wait budget
-    elapses, at which point it refuses loudly exactly as before (still
-    `Err(LandInProgress)`, still logged, never an unbounded hang).
+    T-3612: narrowed from probing `land.lock` (held for a `land()`'s
+    ENTIRE duration) to `tickets.lock` (the short splice critical
+    section that is the only step actually racing a filing verb's own
+    write) -- see `_ledger_splice_flock_probe` and `_log_allowed_write_
+    during_land` for the mechanism and its observability, and
+    `docs/modules/tickets-landing.md` for the full incident/rationale.
+    `land()` itself never called this function and is unaffected.
 
-    T-2023: see `_resolve_land_wait_budget` for how the wait budget
-    itself is resolved (config-or-default timeout) and scaled against
-    the in-flight land's OWN recorded start time rather than this call's
-    -- the constants block above (`_LAND_WAIT_TIMEOUT_S`) documents the
-    measured land-duration distribution the default is calibrated
-    against, and that function's own docstring documents why the budget
-    is spent relative to the land's start.
-
-    T-2406: `exclude_pid`, when given, is threaded to every `_probe_land_
-    once` call in the poll loop -- see `_refuse_for_held_land_lock`'s
-    docstring for the exact single-pid exclusion rule. `frob.verify.
-    _drain.run_drain_async` is this parameter's one caller: it waits out
-    (rather than immediately discarding) a GENUINELY different concurrent
-    land using this same bounded poll, while never treating its own
-    originating land as one."""
-    # frob:ticket T-4342
-    # T-4342: piggybacks the orphaned-ticket-lock scan onto this choke
-    # point -- see `warn_orphaned_ticket_locks`'s own docstring for why
-    # THIS call site (every ledger-mutating verb, not the unscoped `frob
-    # check` gate) is the deliberate answer to "where does this surface".
-    # Best-effort: this scan must never turn an otherwise-successful land-
-    # lock check into a failure, so any exception it raises is logged and
-    # swallowed rather than propagated.
-    try:
-        warn_orphaned_ticket_locks(root)
-    except Exception:
-        _log.warning(
-            "tickets: orphaned-ticket-lock scan failed under %s (non-fatal, "
-            "continuing)",
-            root,
-            exc_info=True,
-        )
+    T-2406: `exclude_pid`, when given, is threaded to every `_probe_
+    land_once` call -- see `_refuse_for_held_land_lock`'s docstring for
+    the exact single-pid exclusion rule `frob.verify._drain` relies on."""
+    _scan_orphaned_ticket_locks_best_effort(root)
     resolved_timeout, remaining_budget = _resolve_land_wait_budget(
         root, wait_timeout_s, now_wall
     )
@@ -2848,6 +2966,7 @@ def refuse_if_land_in_progress(
     while True:
         result = _probe_land_once(root, quiet=warned, exclude_pid=exclude_pid)
         if result.is_ok:
+            _log_allowed_write_during_land(root)
             return result
         now = monotonic()
         if now >= deadline:
@@ -2884,37 +3003,27 @@ def _warn_wait_budget_exhausted(
 
 
 # frob:ticket T-1961
+# frob:ticket T-3612
 def _probe_land_once(
     root: Path, *, quiet: bool, exclude_pid: int | None = None
 ) -> Result[None, LeaseError]:
-    """One flock-probe-plus-process-scan attempt, `refuse_if_land_in_
-    progress`'s per-iteration body split out to keep that function under
-    the ARCH001 threshold -- `quiet` silences BOTH refusal paths' warning
-    logs (an intermediate poll tick inside the wait loop), matching
-    `_land_flock_probe`'s own `quiet` contract.
+    """`refuse_if_land_in_progress`'s per-iteration body, split out to
+    keep that function under the ARCH001 threshold.
 
-    T-2406: `exclude_pid` is threaded to both the flock probe and the
-    process scan -- see `_refuse_for_held_land_lock`'s docstring for the
-    exact single-pid exclusion rule this implements."""
-    probed = _land_flock_probe(root, quiet=quiet, exclude_pid=exclude_pid)
-    if probed.is_err:
-        return probed
-    found = _scan_for_live_land_process(root, exclude_pid=exclude_pid)
-    if found is None:
-        return Ok(None)
-    pid, landing_ticket = found
-    if not quiet:
-        _log.warning(
-            "tickets: %s refused -- a `frob ticket land` process "
-            "(pid %s) is running against this repository for %s, "
-            "even though its land.lock is not currently held "
-            "(T-1619 belt-and-braces process scan) -- retry after "
-            "it completes",
-            root,
-            pid,
-            landing_ticket if landing_ticket else "an unknown ticket",
-        )
-    return Err(LeaseError.LandInProgress)
+    T-3612: narrowed to a single `_ledger_splice_flock_probe` call --
+    see that function's docstring for why testing `tickets.lock` (the
+    splice critical section every OTHER ledger-writing verb already
+    writes through) replaces the old `_land_flock_probe` (`land.lock`)
+    plus `_scan_for_live_land_process` (T-1619 belt-and-braces process
+    scan) pair, which together refused for a land's ENTIRE wall-clock
+    duration rather than only its short splice. `exclude_pid` is
+    accepted and discarded (T-2406's pid exclusion applied to the OLD,
+    land.lock-based check; `ledger_lock` carries no holder pid to
+    compare against) purely so this function's own signature -- and
+    `refuse_if_land_in_progress`'s, and `frob.verify._drain`'s one call
+    passing that argument -- needs no change."""
+    del exclude_pid  # T-3612: no holder pid on the bare ledger flock
+    return _ledger_splice_flock_probe(root, quiet=quiet)
 
 
 # frob:ticket T-1715

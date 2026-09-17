@@ -769,13 +769,22 @@ def _land_lock_holder_metadata(ticket_id: str | None = None) -> dict:
     SESSION_ID` read), not `net`.
 
     T-1619: `ticket_id` (the ticket THIS `land()` call is landing, when
-    known) is also recorded so a REFUSED sibling ledger-writing verb
-    (`frob.tickets._leases.refuse_if_land_in_progress`) can name it in its
-    own refusal message ("a land is in progress for T-####") instead of
-    only pointing at an opaque pid. `None` (the pre-T-1619 shape, e.g. a
-    caller that only wants a bare probe) omits the field from the dict
-    entirely rather than writing a `null` a reader would have to special-
-    case."""
+    known) is also recorded so a REFUSED sibling ledger-writing verb can
+    name it in its own refusal message ("a land is in progress for
+    T-####") instead of only pointing at an opaque pid. `None` (the
+    pre-T-1619 shape, e.g. a caller that only wants a bare probe) omits
+    the field from the dict entirely rather than writing a `null` a
+    reader would have to special-case.
+
+    T-3612: `frob.tickets._leases.refuse_if_land_in_progress` no longer
+    probes THIS lock (`land.lock`) at all -- it probes `tickets.lock`,
+    the splice critical section, instead -- so a sibling verb's refusal
+    can no longer read `ticket_id` straight off the lock it was blocked
+    on. It still reads this SAME record (`_read_land_lock_holder_json`,
+    `_leases.py`'s own copy of `_read_land_lock_holder`) best-effort,
+    purely as a likely-holder correlation for its log line, since a
+    land's splice is the common reason `tickets.lock` would be held at
+    all."""
     from datetime import datetime, timezone
 
     pid = os.getpid()

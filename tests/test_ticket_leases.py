@@ -676,8 +676,7 @@ class TestSweepWorktreesUnlandedWork:
         self, sweep_repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_clean_worktr\
-        # ee_with_unlanded_work_is_kept_not_removed
+        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_clean_worktree_with_unlanded_work_is_kept_not_removed  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
         _write_finished_ticket(wt, "T-8001")
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
@@ -693,8 +692,7 @@ class TestSweepWorktreesUnlandedWork:
     def test_dry_run_reports_kept_not_removed(self, sweep_repo: Path) -> None:
         """T-1934 acceptance 4."""
         # frob:tests \
-        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_dry_run_repo\
-        # rts_kept_not_removed
+        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_dry_run_reports_kept_not_removed  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
         _write_finished_ticket(wt, "T-8002")
 
@@ -712,8 +710,7 @@ class TestSweepWorktreesUnlandedWork:
         longer `kept:unlanded` -- an ordinary clean, unleased worktree goes
         back to being removable."""
         # frob:tests \
-        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_landed_ticke\
-        # t_is_not_kept_for_unlanded_reasons
+        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_landed_ticket_is_not_kept_for_unlanded_reasons  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
         _write_finished_ticket(wt, "T-8003", state="done")
 
@@ -1191,14 +1188,16 @@ class TestCommitTicketLedgerChange:
         assert not any("DirtyMain-block" in w for w in warnings)
 
     # frob:ticket T-2937
+    # frob:ticket T-3612
     def test_rollback_on_land_in_progress_leaves_root_clean(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_rollback_on_land_in_progress_leaves_root_clean  # noqa: E501
         """`rollback_on_land_in_progress=True` paired with a short
-        `wait_timeout_s`: when a land holds `land.lock` for the whole
-        (short) wait, the just-written, still-uncommitted ledger change
-        is undone before `Err(LandInProgress)` returns -- `root` ends up
-        exactly as clean as before the call, never stranded dirty the
-        way an unqualified timeout leaves it today."""
+        `wait_timeout_s`: when the ledger lock (`tickets.lock`, T-3612's
+        narrowed splice-window resource) is held for the whole (short)
+        wait, the just-written, still-uncommitted ledger change is undone
+        before `Err(LandInProgress)` returns -- `root` ends up exactly as
+        clean as before the call, never stranded dirty the way an
+        unqualified timeout leaves it today."""
         if sys.platform == "win32":
             pytest.skip("POSIX-only: fcntl.flock (T-3244)")
         import fcntl
@@ -1206,7 +1205,7 @@ class TestCommitTicketLedgerChange:
 
         from frob.tickets import transition
         from frob.tickets._leases import (
-            LAND_LOCK_REL,
+            TICKETS_LEDGER_LOCK_REL,
             LeaseError,
             commit_ticket_ledger_change,
         )
@@ -1217,7 +1216,7 @@ class TestCommitTicketLedgerChange:
         ).stdout.strip()
         assert dirty_before != ""
 
-        lock_path = repo / LAND_LOCK_REL
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1726,18 +1725,20 @@ class TestRefuseIfLandInProgress:
         result = refuse_if_land_in_progress(repo)
         assert result.is_ok
 
+    # frob:ticket T-3612
     def test_refuses_while_land_lock_held(self, repo: Path, caplog) -> None:
+        """T-3612: contract changed -- `land.lock` held for a land's
+        whole slow phase (gates/precheck), with `tickets.lock` untouched,
+        is the EXACT starvation window this ticket closes:
+        `refuse_if_land_in_progress` now probes `tickets.lock` only, so
+        a live `land.lock` holder no longer refuses anything by itself
+        (this test used to assert the opposite, pre-T-3612)."""
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
-        # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
         import fcntl
         import json
 
-        from frob.tickets._leases import (
-            LAND_LOCK_REL,
-            LeaseError,
-            refuse_if_land_in_progress,
-        )
+        from frob.tickets._leases import LAND_LOCK_REL, refuse_if_land_in_progress
 
         lock_path = repo / LAND_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1747,6 +1748,42 @@ class TestRefuseIfLandInProgress:
             holder_fd,
             (json.dumps({"pid": os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
         )
+        try:
+            result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
+            assert result.is_ok
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+    # frob:ticket T-3612
+    def test_refuses_while_ledger_lock_held(self, repo: Path, caplog) -> None:
+        """T-3612: the narrowed replacement for the old land.lock-based
+        assertion above -- `tickets.lock` held (the land's actual splice,
+        or any other ledger write) DOES still refuse, and still names
+        the correlated `land.lock` holder (best-effort) in its log line
+        when one happens to be recorded too."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
+        import fcntl
+        import json
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            TICKETS_LEDGER_LOCK_REL,
+            LeaseError,
+            refuse_if_land_in_progress,
+        )
+
+        land_lock_path = repo / LAND_LOCK_REL
+        land_lock_path.parent.mkdir(parents=True, exist_ok=True)
+        land_lock_path.write_text(
+            json.dumps({"pid": os.getpid(), "ticket_id": "T-9999"}) + "\n"
+        )
+
+        ledger_lock_path = repo / TICKETS_LEDGER_LOCK_REL
+        ledger_lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(ledger_lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         try:
             with caplog.at_level("WARNING"):
                 # T-1961: wait_timeout_s=0 -- the lock is held for the
@@ -1761,6 +1798,7 @@ class TestRefuseIfLandInProgress:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
 
+    # frob:ticket T-3612
     def test_allows_after_a_killed_lands_lock_is_os_released(self, repo: Path) -> None:
         if sys.platform == "win32":
             # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
@@ -1770,14 +1808,19 @@ class TestRefuseIfLandInProgress:
                 "SIGKILL guarantee this test relies on have no win32 equivalent"
             )
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
-        # Crash-safety without a timeout or a second liveness mechanism
-        # (T-1619's explicit requirement): a subprocess holds the flock,
-        # gets SIGKILLed, and the very next probe must see it as free --
-        # the kernel releases the lock the instant the holder dies, no
-        # polling/TTL/pid-liveness of our own needed.
-        from frob.tickets._leases import LAND_LOCK_REL, refuse_if_land_in_progress
+        # T-3612: retargeted to `tickets.lock` -- crash-safety without a
+        # timeout or a second liveness mechanism (T-1619's original
+        # requirement, still true of the narrowed splice-window probe): a
+        # subprocess holds the flock, gets SIGKILLed, and the very next
+        # probe must see it as free -- the kernel releases the lock the
+        # instant the holder dies, no polling/TTL/pid-liveness of our own
+        # needed.
+        from frob.tickets._leases import (
+            TICKETS_LEDGER_LOCK_REL,
+            refuse_if_land_in_progress,
+        )
 
-        lock_path = repo / LAND_LOCK_REL
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder = subprocess.Popen(
             [
@@ -1826,8 +1869,7 @@ class TestRefuseIfLandInProgress:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_stale_holder_bod\
-        # y_naming_a_dead_pid_never_held_is_not_reported_in_progress
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_stale_holder_body_naming_a_dead_pid_never_held_is_not_reported_in_progress  # noqa: E501
         # T-4314: this is the exact incident shape -- a `land.lock` file
         # whose JSON body names a pid, session id, and ticket id, but the
         # lock itself was NEVER held by this test (no process ever
@@ -1860,23 +1902,27 @@ class TestRefuseIfLandInProgress:
         assert result.is_ok
 
     # frob:ticket T-1961
+    # frob:ticket T-3612
     def test_waits_then_succeeds_once_the_lock_frees(self, repo: Path, caplog) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_waits_then_succe\
-        # eds_once_the_lock_frees
-        # T-1961 acceptance: hold the land lock, invoke the refusal check
-        # with a bounded wait, release the lock from a fake `sleep`
-        # callback (simulating the in-flight land finishing mid-wait), and
-        # assert it succeeds rather than exiting non-zero -- this is the
-        # FAIL-THEN-PASS proof (asserted Err before the fix existed, now
-        # asserts Ok).
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_waits_then_succeeds_once_the_lock_frees  # noqa: E501
+        # T-1961 acceptance, retargeted by T-3612 to `tickets.lock` (the
+        # narrowed splice-window resource): hold the ledger lock, invoke
+        # the refusal check with a bounded wait, release the lock from a
+        # fake `sleep` callback (simulating the in-flight splice finishing
+        # mid-wait), and assert it succeeds rather than exiting non-zero
+        # -- this is the FAIL-THEN-PASS proof (asserted Err before the
+        # T-1961 fix existed, now asserts Ok).
         import fcntl
 
-        from frob.tickets._leases import LAND_LOCK_REL, refuse_if_land_in_progress
+        from frob.tickets._leases import (
+            TICKETS_LEDGER_LOCK_REL,
+            refuse_if_land_in_progress,
+        )
 
-        lock_path = repo / LAND_LOCK_REL
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1909,31 +1955,38 @@ class TestRefuseIfLandInProgress:
         assert "waiting for in-flight land" in caplog.text
 
     # frob:ticket T-1961
+    # frob:ticket T-3612
     def test_wait_times_out_and_still_refuses_loudly(self, repo: Path, caplog) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_times_out_a\
-        # nd_still_refuses_loudly
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_times_out_and_still_refuses_loudly  # noqa: E501
         # A lock held PAST the timeout must still fail loudly -- no
         # unbounded hang, exactly the second half of T-1961's acceptance.
+        # T-3612: the contended lock is now `tickets.lock`; `land.lock`'s
+        # own holder JSON (written separately, unheld -- matching the
+        # real shape where a land holds BOTH at once during its splice)
+        # supplies the "T-8888" correlation this test still asserts on.
         import fcntl
         import json
 
         from frob.tickets._leases import (
             LAND_LOCK_REL,
+            TICKETS_LEDGER_LOCK_REL,
             LeaseError,
             refuse_if_land_in_progress,
         )
 
-        lock_path = repo / LAND_LOCK_REL
+        land_lock_path = repo / LAND_LOCK_REL
+        land_lock_path.parent.mkdir(parents=True, exist_ok=True)
+        land_lock_path.write_text(
+            json.dumps({"pid": os.getpid(), "ticket_id": "T-8888"}) + "\n"
+        )
+
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        os.write(
-            holder_fd,
-            (json.dumps({"pid": os.getpid(), "ticket_id": "T-8888"}) + "\n").encode(),
-        )
 
         # A clock that stays under the deadline for one poll (so the loop
         # logs its "waiting..." message and sleeps once, no real time
@@ -1969,8 +2022,7 @@ class TestRefuseIfLandInProgress:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_budget_coun\
-        # ts_from_the_lands_own_start_not_this_calls_start
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_budget_counts_from_the_lands_own_start_not_this_calls_start  # noqa: E501
         # T-2023 acceptance: FAILS before the fix. T-1961's wait deadline
         # was computed from THIS CALL's own start (`monotonic() +
         # wait_timeout_s`), ignoring how long the land it is waiting on had
@@ -1981,33 +2033,40 @@ class TestRefuseIfLandInProgress:
         # started 50s ago, with only a 60s total budget -- the fix must
         # treat only the REMAINING ~10s as this call's wait, not the full
         # 60s counted fresh from now.
+        #
+        # T-3612: the actually-contended resource is now `tickets.lock`
+        # (held here, never released -- this test asserts WHEN the loop
+        # gives up); `land.lock`'s `started_at` (written separately,
+        # unheld) still drives `_resolve_land_wait_budget`'s scaling,
+        # which this ticket left untouched.
         import fcntl
         import json
 
         from frob.tickets._leases import (
             LAND_LOCK_REL,
+            TICKETS_LEDGER_LOCK_REL,
             LeaseError,
             refuse_if_land_in_progress,
         )
 
-        lock_path = repo / LAND_LOCK_REL
+        started_at = datetime.now(UTC) - timedelta(seconds=50)
+        land_lock_path = repo / LAND_LOCK_REL
+        land_lock_path.parent.mkdir(parents=True, exist_ok=True)
+        land_lock_path.write_text(
+            json.dumps(
+                {
+                    "pid": os.getpid(),
+                    "ticket_id": "T-7777",
+                    "started_at": started_at.isoformat(),
+                }
+            )
+            + "\n"
+        )
+
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        started_at = datetime.now(UTC) - timedelta(seconds=50)
-        os.write(
-            holder_fd,
-            (
-                json.dumps(
-                    {
-                        "pid": os.getpid(),
-                        "ticket_id": "T-7777",
-                        "started_at": started_at.isoformat(),
-                    }
-                )
-                + "\n"
-            ).encode(),
-        )
 
         clock = {"t": 0.0}
 
@@ -2050,6 +2109,7 @@ class TestRefuseIfLandInProgress:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
 
+    # frob:ticket T-3612
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
     )
@@ -2057,13 +2117,21 @@ class TestRefuseIfLandInProgress:
         self, repo: Path, caplog
     ) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
-        # T-1619, repo owner's explicit second requirement: refuse even
-        # when NO land.lock is held at all, as long as a real `frob ticket
-        # land`-shaped process is alive with `root` as its cwd -- catches
-        # the race window before a land has acquired its flock, and the
-        # fcntl-unavailable-platform case, neither of which the flock probe
-        # alone can see.
-        from frob.tickets._leases import LeaseError, refuse_if_land_in_progress
+        """T-3612: contract changed -- T-1619's original requirement
+        (refuse even with NO land.lock held, as long as a real `frob
+        ticket land`-shaped process is alive with `root` as its cwd)
+        applied to a check that refused for a land's WHOLE duration.
+        T-3612 deliberately removes this belt-and-braces process scan
+        from `refuse_if_land_in_progress` specifically: the resource
+        that check now probes is `tickets.lock` itself, which a live
+        land process that has not yet reached its splice does not hold,
+        so a filing verb must NOT be refused here just because a land
+        process exists somewhere (this test used to assert the
+        opposite, pre-T-3612). `_scan_for_live_land_process` itself is
+        untouched and still backs `_land_in_progress_for_ticket`'s own,
+        separate lease-staleness use -- only THIS choke point stopped
+        consulting it."""
+        from frob.tickets._leases import refuse_if_land_in_progress
 
         assert not (repo / ".frob" / "land.lock").exists()
         holder = subprocess.Popen(
@@ -2086,13 +2154,8 @@ class TestRefuseIfLandInProgress:
                     break
                 time.sleep(0.1)
 
-            with caplog.at_level("WARNING"):
-                # T-1961: wait_timeout_s=0 -- this holder process runs for
-                # 30s and this assertion wants the immediate refusal.
-                result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
-            assert result.is_err
-            assert result.danger_err == LeaseError.LandInProgress
-            assert "T-4242" in caplog.text
+            result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
+            assert result.is_ok
         finally:
             holder.kill()
             holder.wait(timeout=5)
@@ -2104,8 +2167,7 @@ class TestRefuseIfLandInProgress:
         self, repo: Path, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting\
-        # _a_different_repo_does_not_block_this_one
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting_a_different_repo_does_not_block_this_one  # noqa: E501
         """T-3885: a live, `frob ticket land`-shaped process whose cwd is a
         DIFFERENT repository root must not be treated as a competing land
         for `repo`. `_scan_for_live_land_process` already matches on exact
@@ -2154,8 +2216,7 @@ class TestRefuseIfLandInProgress:
     )
     def test_a_land_does_not_block_on_its_own_descendant(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_\
-        # block_on_its_own_descendant
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_block_on_its_own_descendant  # noqa: E501
         """T-3885 (F-098): a `frob ticket land`-shaped process that is an
         ANCESTOR of the CALLING process must not be treated as a competing
         land, even though it shares `repo` as its cwd and matches the
@@ -2209,39 +2270,48 @@ class TestRefuseIfLandInProgress:
             f"refuse_if_land_in_progress, got stdout={stdout!r}"
         )
 
+    # frob:ticket T-3612
     def test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger(
         self, repo: Path
     ) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger  # noqa: E501
-        # The end-to-end proof: a `land()` call holds `_land_lock` for its
-        # duration (simulated here directly, without running the full merge
-        # machinery, since this test's job is to prove the EXCLUSIVITY
-        # primitive, not re-test `land()` itself elsewhere) while a
-        # concurrent `frob ticket new` runs against the SAME root. Before
-        # T-1619, `commit_ticket_ledger_change` would happily commit onto
-        # `root`'s branch mid-land, moving its tip out from under the land
-        # in progress. After T-1619, the ledger write must be refused
-        # outright -- `root`'s tip must be UNCHANGED by the attempt, and no
-        # new commit may exist naming the ticket the concurrent `new` tried
-        # to file.
-        from frob.tickets._land import _land_lock
+        # The end-to-end proof: a land's SPLICE holds `ledger_lock`
+        # (`tickets.lock`) for its duration (simulated here directly,
+        # without running the full merge machinery, since this test's job
+        # is to prove the EXCLUSIVITY primitive, not re-test `land()`
+        # itself elsewhere) while a concurrent `frob ticket new` runs
+        # against the SAME root. Before T-1619, `commit_ticket_ledger_
+        # change` would happily commit onto `root`'s branch mid-splice,
+        # moving its tip out from under the land in progress. The ledger
+        # write must be refused outright -- `root`'s tip must be UNCHANGED
+        # by the attempt, and no new commit may exist naming the ticket
+        # the concurrent `new` tried to file.
+        #
+        # T-3612: retargeted from `_land_lock` (`land.lock`, held for a
+        # land's WHOLE duration) to `ledger_lock` (`tickets.lock`, held
+        # only for the splice this ticket narrows the refusal to) --
+        # holding ONLY `_land_lock`, as this test used to, no longer
+        # reproduces a real race under the narrowed contract: a land's
+        # slow phase (which is all `_land_lock` alone represents) is
+        # exactly the window T-3612 makes safe to file into.
+        from frob.tickets._store import ledger_lock
 
         pre_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
-        # T-2093: `_land_lock` holds the flock IN-PROCESS for the whole
+        # T-2093: `ledger_lock` holds the flock IN-PROCESS for the whole
         # `with` block below -- `refuse_if_land_in_progress`'s exit
         # condition (the lock coming free) can therefore never fire
         # before this call itself returns, so without a short per-repo
         # wait budget it blocks for the full production default (~330s,
         # `_LAND_WAIT_TIMEOUT_S`) every time. Give this repo a short
         # `land_wait_timeout_s` (the same override mechanism
-        # `test_refuses_while_land_lock_held` already uses directly) so
+        # `test_refuses_while_ledger_lock_held` already uses directly) so
         # the guard's own correct "wait, then refuse" behavior completes
         # quickly instead of relying on `_run_with_bound`'s external
         # bound alone.
         (repo / "frob.toml").write_text("[tickets]\nland_wait_timeout_s = 1\n")
 
-        with _land_lock(repo, "T-0001"):
+        with ledger_lock(repo):
             _run_with_bound(
                 lambda: _expect_system_exit(
                     lambda: ticket_run(
@@ -2276,18 +2346,23 @@ class TestDispatchLandGuard:
     working tree). This guard runs BEFORE `handler(root, cfg)` for every
     verb except the read-only allowlist and land's own exempt set."""
 
+    # frob:ticket T-3612
     def test_refuses_mutating_verb_while_land_in_progress(
         self, repo: Path, caplog
     ) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
+        # T-3612: retargeted from `land.lock` to `tickets.lock` -- the
+        # dispatch guard's refusal decision now comes from the narrowed
+        # `refuse_if_land_in_progress`, which no longer refuses on
+        # `land.lock` alone.
         import fcntl
 
         from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
-        from frob.tickets._leases import LAND_LOCK_REL
+        from frob.tickets._leases import TICKETS_LEDGER_LOCK_REL
 
-        lock_path = repo / LAND_LOCK_REL
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -2375,6 +2450,7 @@ class TestDispatchLandGuard:
             "never invoked (or invoked too late) before dispatch"
         )
 
+    # frob:ticket T-3612
     def test_refused_verb_never_writes_the_ticket_file_at_all(self, repo: Path) -> None:
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
         # Incident 6 (T-1779 follow-up, observed live): the OLD
@@ -2386,14 +2462,18 @@ class TestDispatchLandGuard:
         # This proves the pre-dispatch guard closes that specific gap: the
         # ticket's on-disk `runs_last` field must be UNCHANGED (never even
         # written) when the guard refuses, not merely uncommitted.
+        #
+        # T-3612: retargeted from `_land_lock` (`land.lock`) to
+        # `ledger_lock` (`tickets.lock`) -- the resource the narrowed
+        # `refuse_if_land_in_progress` now actually probes.
         from frob.tickets import load_all
-        from frob.tickets._land import _land_lock
+        from frob.tickets._store import ledger_lock
 
         before = load_all(repo)
         assert before.is_ok
         assert before.danger_ok["T-0001"].runs_last is False
 
-        # T-2093: `_land_lock` holds the flock IN-PROCESS for the whole
+        # T-2093: `ledger_lock` holds the flock IN-PROCESS for the whole
         # `with` block below -- `refuse_if_land_in_progress`'s exit
         # condition can never fire before this call returns, so without a
         # short per-repo wait budget it blocks for the full production
@@ -2401,7 +2481,7 @@ class TestDispatchLandGuard:
         # repo-level fixes above.
         (repo / "frob.toml").write_text("[tickets]\nland_wait_timeout_s = 1\n")
 
-        with _land_lock(repo, "T-9999"):
+        with ledger_lock(repo):
             _run_with_bound(
                 lambda: _expect_system_exit(
                     lambda: ticket_run(
@@ -3125,8 +3205,7 @@ class TestLeaseStalenessReason:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_stale_holder_body_\
-        # never_held_does_not_shield_holder_dead
+        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_stale_holder_body_never_held_does_not_shield_holder_dead  # noqa: E501
         # T-4314: `land.lock` names THIS lease's own ticket_id, but the
         # lock was never actually held (a dead pid, never acquired here) --
         # the same residue shape `test_land_shields_lease` exercises with a
@@ -3165,8 +3244,7 @@ class TestLeaseStalenessReason:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_other_land_no_shie\
-        # ld
+        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_other_land_no_shield  # noqa: E501
         """A live land.lock held for a DIFFERENT ticket must not shield
         THIS ticket's holder-dead lease -- `_land_in_progress_for_ticket`
         must match on `ticket_id`, never treat any held lock as covering
@@ -4514,8 +4592,7 @@ class TestRootLeaseUnreclaimable:
     # frob:ticket T-2007
     def test_root_lease_skipped_when_agent_worktrees_exist(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_root_lease_skipp\
-        # ed_when_agent_worktrees_exist
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_root_lease_skipped_when_agent_worktrees_exist  # noqa: E501
         # T-2007 acceptance 1 (adapted -- the chosen fix is prevention,
         # not a new staleness rule): before this fix, record_lease wrote
         # the lease unconditionally, producing exactly the un-reclaimable
@@ -4536,8 +4613,7 @@ class TestRootLeaseUnreclaimable:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_root_lease_still\
-        # _recorded_with_no_sibling_worktrees
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_root_lease_still_recorded_with_no_sibling_worktrees  # noqa: E501
         # The ordinary, single-checkout case (no dispatched agent
         # worktrees at all) must be unaffected -- root IS the only place
         # work happens there, so the guard must never engage.
@@ -4550,8 +4626,7 @@ class TestRootLeaseUnreclaimable:
     # frob:ticket T-2007
     def test_non_root_worktree_still_records_its_own_lease(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_non_root_worktre\
-        # e_still_records_its_own_lease
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_non_root_worktree_still_records_its_own_lease  # noqa: E501
         # Acceptance 2: a genuinely-live LEASE (this one, recorded from a
         # real dispatched worktree, not root) must never be false-
         # reclaimed/skipped by this guard -- it only ever engages for
@@ -4569,8 +4644,7 @@ class TestRootLeaseUnreclaimable:
     # frob:ticket T-2007
     def test_pre_existing_root_lease_staleness_is_unchanged(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_pre_existing_roo\
-        # t_lease_staleness_is_unchanged
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_pre_existing_root_lease_staleness_is_unchanged  # noqa: E501
         # Acceptance 2's other half: this fix only touches record-TIME
         # behavior -- lease_staleness_reason itself (and any lease
         # already on disk from before this fix, or written by a hand-

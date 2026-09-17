@@ -2,7 +2,7 @@
 id: T-3612
 title: narrow LandInProgress to the ledger-splice critical section for tickets-dir
   writers
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-08-31'
@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_leases.py
 - src/frob/tickets/_land.py
 - tests/unit/test_land_in_progress_window.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,90 @@ scope_changes:
     _land.py
   actor: logan
   at: '2026-09-15'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 narrows refuse_if_land_in_progress from a land.lock/process-scan
+    probe (whole-land duration) to a tickets.lock probe (splice window only) -- 10
+    tests in TestRefuseIfLandInProgress/TestDispatchLandGuard/TestCommitTicketLedgerChange
+    assert the exact OLD contract this ticket deliberately changes and must be updated
+    to match, or they falsely fail forever
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-3612 mirror retry
+  actor: logan
+  at: '2026-09-17'
 triage_changes:
 - field: priority
   old_value: high
@@ -72,7 +157,35 @@ body_changes:
   at: '2026-09-05'
   old_length: 1004
   new_length: 3401
+evidence:
+- tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_land_lock_held_but_tickets_lock_free_allows_the_write
+- tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_tickets_lock_held_refuses_naming_the_correlated_land_holder
+- tests/unit/test_land_in_progress_window.py::TestSecondLandStillRefused::test_second_land_lock_acquire_times_out_while_the_first_holds_it
 designated_repro_test: null
+acceptance:
+- text: A filing/dropping ledger verb (new/drop/body/scope/fail/evidence/done-report/accept)
+    succeeds while a land is running but its ledger splice (tickets.lock) is not currently
+    held -- land.lock held alone no longer refuses
+  evidence:
+  - tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_land_lock_held_but_tickets_lock_free_allows_the_write
+- text: A filing/dropping ledger verb (new/drop/body/scope/fail/evidence/done-report/accept)
+    succeeds while a land is running but its ledger splice (tickets.lock) is not currently
+    held -- land.lock held alone no longer refuses
+  evidence:
+  - tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_land_lock_held_but_tickets_lock_free_allows_the_write
+- text: A ledger write attempted while tickets.lock is genuinely held (a land splice,
+    or any concurrent ledger write) is refused with LeaseError.LandInProgress, naming
+    the correlated land.lock holder when one exists
+  evidence:
+  - tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_tickets_lock_held_refuses_naming_the_correlated_land_holder
+- text: A second frob ticket land is still refused (via _land_lock's own flock, unaffected
+    by this narrowing) while a first land holds land.lock
+  evidence:
+  - tests/unit/test_land_in_progress_window.py::TestSecondLandStillRefused::test_second_land_lock_acquire_times_out_while_the_first_holds_it
+- text: Every refusal (WARNING) and every write allowed during an in-progress land
+    (INFO) is logged, naming the holder's pid where known
+  evidence:
+  - tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_land_lock_held_but_tickets_lock_free_allows_the_write
 threat: null
 component: null
 anchor: false
