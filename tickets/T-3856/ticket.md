@@ -9,15 +9,24 @@ created: '2026-09-05'
 priority: high
 parent: null
 tier: ticket
-sprint: v0.533.0
+sprint: backlog
 runs_last: false
-milestone: 0.533.0
+milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: 'DSL001 fix site: todo free-text note routing, hash-tail attr guard, docstring
+    directive silent-drop'
+  actor: logan
+  at: '2026-09-16'
 triage_changes:
 - field: sprint
   old_value: v0.532.0
@@ -31,18 +40,6 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
-- field: sprint
-  old_value: backlog
-  new_value: v0.533.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-16'
-- field: milestone
-  old_value: 1.0.0
-  new_value: 0.533.0
-  reason: milestone set via `frob ticket milestone`
-  actor: logan
-  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
