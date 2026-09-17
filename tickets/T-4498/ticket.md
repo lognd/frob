@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_land.py
 - tests/unit/test_land_merge_conflict_drop.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,11 @@ scope_changes:
   glob: design/frob.strata
   reason: 'T-4498 amendment(c): new test file execs git subprocesses and writes/reads
     fixture files, needs testsuite via-list entry'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-4498 amendment(c): bump accepted_count alongside the new via-list entry'
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
