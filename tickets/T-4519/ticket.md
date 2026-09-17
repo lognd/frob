@@ -8,7 +8,6 @@ created: '2026-09-16'
 priority: medium
 blocked_by:
 - T-3232
-- T-3234
 parent: T-4506
 tier: ticket
 sprint: v0.533.0
@@ -36,3 +35,6 @@ After T-3232 (frob.docs/frob.xref language filters) and T-3234 (frob.perf hot-gr
 GIVEN a .cs file with an XML doc comment (///), WHEN frob.docs extracts docstrings, THEN the csharp docstring is extracted (not silently skipped as non-python).
 GIVEN a .cs file, WHEN frob xref --lang csharp is run, THEN it is accepted as a valid --lang filter value and returns csharp symbols.
 GIVEN a .cs file with a hot call path, WHEN frob.perf's hot-graph collector runs, THEN csharp appears in its adapter-extension coverage alongside python/typescript/rust/kotlin.
+
+## Unblock log
+- 2026-09-16: unblocked by T-3234 -- frob.perf hot-graph coverage for csharp is deferred to v1.1.0 with T-3234; T-4519 delivers docs/xref only
