@@ -18,6 +18,12 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/cli_doctor*
 - src/frob/app/cli_init*
+- src/frob/doctor.py
+- src/frob/app/doctor_runner.py
+- src/frob/app/scaffold_runner.py
+- tests/unit/test_doctor.py
+- tests/unit/test_doctor_runner_t1276.py
+- tests/system/test_cli_scaffold_apply.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +33,48 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_land_cmd.py
   reason: not edited; deliverables are docs/doctor/init only, avoids T-3613 lease
     collision
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/doctor.py
+  reason: 'T-4416: real modules -- brief notes scope globs cli_doctor*/cli_init* do
+    not exist; actual doctor/scaffold live in src/frob/doctor.py, src/frob/app/doctor_runner.py,
+    src/frob/app/scaffold_runner.py'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: 'T-4416: real modules -- brief notes scope globs cli_doctor*/cli_init* do
+    not exist; actual doctor/scaffold live in src/frob/doctor.py, src/frob/app/doctor_runner.py,
+    src/frob/app/scaffold_runner.py'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/app/scaffold_runner.py
+  reason: 'T-4416: real modules -- brief notes scope globs cli_doctor*/cli_init* do
+    not exist; actual doctor/scaffold live in src/frob/doctor.py, src/frob/app/doctor_runner.py,
+    src/frob/app/scaffold_runner.py'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_doctor.py
+  reason: 'T-4416: real modules -- brief notes scope globs cli_doctor*/cli_init* do
+    not exist; actual doctor/scaffold live in src/frob/doctor.py, src/frob/app/doctor_runner.py,
+    src/frob/app/scaffold_runner.py'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_doctor_runner_t1276.py
+  reason: 'T-4416: real modules -- brief notes scope globs cli_doctor*/cli_init* do
+    not exist; actual doctor/scaffold live in src/frob/doctor.py, src/frob/app/doctor_runner.py,
+    src/frob/app/scaffold_runner.py'
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/system/test_cli_scaffold_apply.py
+  reason: 'T-4416: real modules -- brief notes scope globs cli_doctor*/cli_init* do
+    not exist; actual doctor/scaffold live in src/frob/doctor.py, src/frob/app/doctor_runner.py,
+    src/frob/app/scaffold_runner.py'
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
