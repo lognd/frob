@@ -16,13 +16,19 @@ milestone: v0.532.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/cli_doctor*
 - src/frob/app/cli_init*
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: not edited; deliverables are docs/doctor/init only, avoids T-3613 lease
+    collision
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN the rapid and standard land profiles WHEN documented THEN rapid is described
