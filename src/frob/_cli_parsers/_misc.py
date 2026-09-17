@@ -582,19 +582,43 @@ def _add_format_parser(sub) -> None:
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_claude_parser(sub) -> None:
-    """Register the `frob claude sync [--check]` subcommand (T-1808):
-    materialize this repo's git-tracked `.claude/hooks/sync-claude-
-    config.py`-managed files out to `~/.claude/`, or (`--check`) report
-    drift without writing."""
+    """Register the `frob claude [sync] [--check]` subcommand (T-1808,
+    flattened T-4522): materialize this repo's git-tracked `.claude/hooks/
+    sync-claude-config.py`-managed files out to `~/.claude/`, or (`--check`)
+    report drift without writing. `claude` has exactly one child (`sync`),
+    so bare `frob claude` now dispatches straight to it; the two-word
+    `frob claude sync` spelling is kept working as a documented alias for
+    one release (T-4522)."""
     # -- claude --------------------------------------------------------
     claude_p = sub.add_parser(
         "claude",
-        help="sync this repo's tracked Claude config to ~/.claude/ (T-1808)",
+        help="sync this repo's tracked Claude config to ~/.claude/ (T-1808) "
+        "-- 'sync' is implied: bare `frob claude` runs it (T-4522); the "
+        "two-word `frob claude sync` spelling still works as an alias",
+        description="sync this repo's tracked Claude config to ~/.claude/ "
+        "(T-1808). 'sync' is implied (T-4522): bare `frob claude` runs it; "
+        "the two-word `frob claude sync` spelling is kept working as a "
+        "documented alias for one release.",
     )
     claude_sub = claude_p.add_subparsers(dest="claude_command")
+    # frob:ticket T-4522
+    # T-4522: `claude` wraps exactly one child (`sync`) -- default the
+    # dispatch dest to it so bare `frob claude` runs what `frob claude sync`
+    # ran, without requiring the subparser to be invoked explicitly.
+    claude_p.set_defaults(claude_command="sync")
+    # T-4522: mirror `sync`'s own `--check` onto the group parser too, so
+    # `frob claude --check` (no `sync`) works the same as `frob claude sync
+    # --check` -- flattening the verb must not drop the child's flags.
+    claude_p.add_argument(
+        "--check",
+        dest="claude_check",
+        action="store_true",
+        help="report drift without writing; exit 1 if anything differs",
+    )
     sync_p = claude_sub.add_parser(
         "sync",
-        help="materialize managed files to ~/.claude/, or --check for drift",
+        help="materialize managed files to ~/.claude/, or --check for drift "
+        "(also the default action for bare `frob claude`, T-4522)",
     )
     sync_p.add_argument(
         "--check",
@@ -612,14 +636,30 @@ def _add_claude_parser(sub) -> None:
 def _add_natives_parser(sub) -> None:
     """Register the `frob natives` subcommand and its `build` action
     (T-0864): frob-owned `maturin develop` per declared `[[native]]` rust
-    crate, sharing one git-common-dir-keyed `CARGO_TARGET_DIR`."""
+    crate, sharing one git-common-dir-keyed `CARGO_TARGET_DIR`. `natives`
+    wraps exactly one child (`build`), so bare `frob natives` now dispatches
+    straight to it and `frob natives build` is kept working as a documented
+    alias for one release (T-4522)."""
     # -- natives -----------------------------------------------------------
     natives_p = sub.add_parser(
         "natives",
         help="build declared [[native]] crates (T-0864: frob-owned "
-        "maturin develop, shared CARGO_TARGET_DIR)",
+        "maturin develop, shared CARGO_TARGET_DIR) -- 'build' is implied: "
+        "bare `frob natives` runs it (T-4522); the two-word `frob natives "
+        "build` spelling still works as an alias",
+        description="build declared [[native]] crates (T-0864). 'build' is "
+        "implied (T-4522): bare `frob natives` runs it; the two-word `frob "
+        "natives build` spelling is kept working as a documented alias for "
+        "one release.",
     )
     natives_sub = natives_p.add_subparsers(dest="natives_command")
+    # frob:ticket T-4522
+    # T-4522: default the dispatch dest to `build`, and mirror `build`'s own
+    # `--path` onto the group parser, so `frob natives [--path DIR]` runs
+    # what `frob natives build [--path DIR]` ran without requiring the
+    # subparser to be invoked explicitly.
+    natives_p.set_defaults(natives_command="build")
+    natives_p.add_argument("--path", dest="natives_path", metavar="DIR", default=".")
     _populate_natives_actions(natives_sub)
 
 
