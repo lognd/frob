@@ -29,9 +29,15 @@ acceptance:
 - text: 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition,
     not just methods/classes'
   evidence: []
-- text: 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition,
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition,
     not just methods/classes'
-  evidence: []
+  new_text: null
+  reason: duplicate criterion added by an accidental retry
+  actor: logan
+  at: '2026-09-17'
 threat: null
 component: null
 anchor: false
