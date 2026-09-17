@@ -18,6 +18,7 @@ scope:
 - .git/frob-leases/T-4550.json
 - src/frob/tickets/_land_git_ops.py
 - tests/unit/test_land_merge_conflict_drop.py
+- docs/modules/tickets-landing.md
 findings:
 - - TICK010
   - /home/logan/projects/frob/.git/frob-leases/T-4550.json
@@ -34,6 +35,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_merge_conflict_drop.py
   reason: 'DUP001: extract shared helper for near-identical test blocks'
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'DOC006: pointer does not resolve, fix or waive'
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
