@@ -2,7 +2,7 @@
 id: T-3856
 title: DSL001 rejects frob:todo free-text notes outside Python, and its hash-tail
   guard swallows any leftover beginning with a hash
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -54,6 +54,10 @@ triage_changes:
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
+acceptance:
+- text: GIVEN a frob:todo T-#### free-text note in a comment of any supported language
+    WHEN parsed THEN it yields one todo edge with the note and no MalformedDirective
+  evidence: []
 threat: null
 component: null
 anchor: false
