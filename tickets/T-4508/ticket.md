@@ -6,8 +6,6 @@ kind: feature
 origin: agent
 created: '2026-09-16'
 priority: medium
-blocked_by:
-- T-4517
 parent: T-4516
 tier: ticket
 sprint: v0.533.0
@@ -34,3 +32,6 @@ Add an evidence-running channel that invokes 'dotnet test' for plain C# projects
 GIVEN a plain C# test project (no Unity), WHEN the evidence channel runs, THEN it invokes 'dotnet test' and maps pass/fail results back to the collected node ids.
 GIVEN a Unity batchmode XML results file (NUnit3 XML format), WHEN the parser runs on it, THEN it extracts per-test pass/fail/skip status keyed to the same node ids [UnityTest]/[Test] collection produced.
 GIVEN a Unity batchmode run that exits non-zero (editor crash, license failure), WHEN the evidence channel handles it, THEN it surfaces a clear error distinct from a genuine test failure, not a silent empty-results false pass.
+
+## Unblock log
+- 2026-09-17: unblocked by T-4517 -- landed bcd55a738
