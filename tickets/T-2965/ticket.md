@@ -20,10 +20,17 @@ scope:
 - src/frob/app/_config_external.py
 - docs/modules/tickets.md
 - tests/test_tickets_parent.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: --clear flag
+  actor: logan
+  at: '2026-09-17'
 triage_changes:
 - field: sprint
   old_value: v0.533.0
