@@ -61,6 +61,9 @@ acceptance:
 - text: GIVEN an attribute leftover that begins with a hash WHEN parsed THEN it is
     flagged malformed instead of being swallowed as a noqa tail
   evidence: []
+- text: GIVEN a frob:todo note inside a Python module docstring line starting with
+    a hash WHEN parsed THEN it is recognised, not silently dropped
+  evidence: []
 threat: null
 component: null
 anchor: false
