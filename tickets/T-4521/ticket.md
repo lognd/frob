@@ -19,6 +19,12 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - tests/unit/test_ticket_cli_surface.py
 - docs/commands/ticket.md
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- src/frob/_cli_parsers/_ticket/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +34,42 @@ scope_changes:
   glob: src/frob/_cli_parsers/_ticket
   reason: avoid lease collision with T-draft-db13b6bc on _closeout_evidence.py; re-scoping
     to individual files
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
+    which is leased by T-draft-db13b6bc
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
+    which is leased by T-draft-db13b6bc
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
+    which is leased by T-draft-db13b6bc
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
+    which is leased by T-draft-db13b6bc
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
+    which is leased by T-draft-db13b6bc
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
