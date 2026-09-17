@@ -26,6 +26,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+# frob:doc docs/modules/app.md#shared-exclude-glob-logic
 # frob:ticket T-4515
 # Unity's own generated/build output, additive to `BUILTIN_SKIP_DIRS`/
 # `[graph] exclude` -- ONLY added when `detect_unity_project` confirms

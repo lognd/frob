@@ -79,7 +79,6 @@ _PACKAGES_MANIFEST_REL = Path("Packages") / "manifest.json"
 _EDITOR_VERSION_RE = re.compile(r"^m_EditorVersion:\s*(?P<version>\S+)", re.MULTILINE)
 
 
-# frob:doc docs/modules/lang.md#unity-project-detection
 # frob:tests tests/unit/test_lang_project_detect.py::test_parses_editor_version
 # frob:tests tests/unit/test_lang_project_detect.py::test_missing_editor_version_line_is_malformed  # noqa: E501
 def _parse_editor_version(text: str) -> Result[str, UnityProjectDetectError]:

@@ -519,6 +519,39 @@ consume `declared_source_prefixes` as their own project-identity
 denominator, replacing the pre-T-2389 hardcoded literals each gate used
 to carry independently.
 
+## Unity project detection
+
+<!-- frob:describes src/frob/lang/_project_detect.py::UnityProjectDetectError -->
+<!-- frob:describes src/frob/lang/_project_detect.py::UnityProjectInfo -->
+<!-- frob:describes src/frob/lang/_project_detect.py::detect_unity_project -->
+
+`frob.lang._project_detect` (T-4515) is the one place that knows how to
+recognize a Unity C# project root and read its editor version back out --
+distinct from the plain-C# case, since a Unity root has `Assets/` and
+`ProjectSettings/ProjectVersion.txt` (usually `Packages/manifest.json` <!-- frob:waive DOC006 reason="paths inside the CONSUMER Unity project, not files of this repo" -->
+too) but no root-level `.csproj`/`.sln` a walker can key off of (Unity
+generates those lazily inside `Library/`, and they are gitignored in
+every real-world Unity repo).
+
+`detect_unity_project(root)` returns `Ok(UnityProjectInfo)` when both
+`Assets/` and `ProjectSettings/ProjectVersion.txt` are present (`Packages/ <!-- frob:waive DOC006 reason="paths inside the CONSUMER Unity project, not files of this repo" -->
+manifest.json` is recorded on `UnityProjectInfo.has_packages_manifest`
+but not required for detection -- an older or manually stripped project
+can lack it while still genuinely being a Unity project). It returns
+`Err(UnityProjectDetectError.NotUnityProject)` (quietly, not logged --
+every walk/detect call site probes many roots that are never Unity
+projects) when either required marker is absent, and
+`Err(VersionFileUnreadable)`/`Err(VersionFileMalformed)` (both logged at
+WARNING) when the markers ARE present but `ProjectVersion.txt` cannot be
+read or its `m_EditorVersion` line cannot be found.
+
+`frob.excludes` calls into this detector to decide whether to fold
+`UNITY_EXCLUDE_GLOBS` (`Library/**`, `Temp/**`, `Logs/**`, `obj/**`,
+`*.meta` -- see docs/modules/app.md#shared-exclude-glob-logic) into a
+walk; the sibling scaffold/doctor tickets this module's own docstring
+names are expected to reuse this exact detector rather than re-deriving
+the same three-file check.
+
 ## Error types
 
 <!-- frob:describes src/frob/lang/__init__.py::LangError -->

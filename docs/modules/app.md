@@ -838,6 +838,18 @@ directories once.
 <!-- frob:describes src/frob/excludes.py::BUILTIN_SKIP_DIRS -->
 <!-- frob:describes src/frob/excludes.py::walk_pruned -->
 <!-- frob:describes src/frob/excludes.py::iter_files -->
+<!-- frob:describes src/frob/excludes.py::UNITY_EXCLUDE_GLOBS -->
+
+`UNITY_EXCLUDE_GLOBS` (T-4515) is a third, conditional exclude source:
+`Library/**`, `Temp/**`, `Logs/**`, `obj/**`, `*.meta` -- additive to
+`BUILTIN_SKIP_DIRS`/`[graph] exclude`, and only folded in by
+`_unity_exclude_globs` when `frob.lang._project_detect.detect_unity_project`
+confirms `root` is a Unity project (see
+docs/modules/lang.md#unity-project-detection). `Library/` is Unity's
+asset/import cache (can be tens of GB), `Temp/`/`Logs/` are per-editor-
+session scratch, `obj/` is the per-`.csproj` MSBuild intermediate
+directory Unity's generated C# projects write into, and `*.meta` is
+Unity's one-sidecar-per-asset metadata file.
 
 ```python
 # frob/excludes.py

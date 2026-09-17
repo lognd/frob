@@ -2,7 +2,7 @@
 id: T-4531
 title: 'post-land sweep regression from T-4515: 11 new (rule, file) identit(ies) (AFFECT001,
   COV001, COV002, COV007)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-16'
