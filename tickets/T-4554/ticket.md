@@ -2,7 +2,7 @@
 id: T-4554
 title: 'T-4536 regression: tests/unit/strata/test_effects.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
   fails on dev (_PATTERNS/_KIND_MAP/_EXTENDED_KINDS drift from the C# resolver)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-17'
