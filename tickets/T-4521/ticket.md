@@ -25,6 +25,8 @@ scope:
 - src/frob/_cli_parsers/_ticket/_new.py
 - src/frob/_cli_parsers/_ticket/_progress.py
 - src/frob/_cli_parsers/_ticket/_query.py
+- tests/test_tickets_migration.py
+- tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +72,20 @@ scope_changes:
   glob: src/frob/_cli_parsers/_ticket/_query.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
     which is leased by T-draft-db13b6bc
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: criterion 2 (migrate/debt/deprecated removal) makes these tests' old-behavior
+    assertions stale; updating them is a direct consequence of this ticket's own change,
+    not unrelated scope creep
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: criterion 2 (migrate/debt/deprecated removal) makes these tests' old-behavior
+    assertions stale; updating them is a direct consequence of this ticket's own change,
+    not unrelated scope creep
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
