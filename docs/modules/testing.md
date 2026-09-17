@@ -324,6 +324,21 @@ against exactly this source) refreshes the stamp instead of re-flagging;
 no match (no build attempt recorded for this exact source, e.g. a bare
 touch) still latches exactly as before T-2805.
 
+T-4517: `collect_csharp_tests` (`frob.testing._collect_csharp`) adds a
+fifth per-language collector, alongside `collect_rust_tests`/
+`collect_ts_tests`/`collect_cpp_tests`/`collect_kotlin_tests`: NUnit
+`[Test]`/`[TestCase(...)]`/`[TestCaseSource(...)]` and Unity Test
+Framework `[UnityTest]` methods, found by parsing `.cs` source directly
+with `tree-sitter-language-pack`'s bundled `csharp` grammar rather than
+invoking a `dotnet`/NUnit console runner (mirrors `collect_kotlin_tests`'s
+"no build/run just to collect" restraint -- there is no npm-equivalent
+"list tests without building" command for a C#/.NET project). Node ids
+are `<path>::<Namespace.Class>::<Method>`; a `[TestCase(...)]`-
+parameterized method collapses to exactly one node id (parameter sets not
+enumerated). Registered in `LANGUAGE_COLLECTORS` under `"csharp"` and in
+`frob.lang._support._TEST_DISCOVERY_COLLECTORS`, the same two wiring
+points every other collector above is reachable through.
+
 T-4443: `_native_staleness.py` crossed the 800-line `LARGE001` threshold;
 `seed_worktree_native_source_mtimes`'s digest-comparison and mtime-
 backdating internals (`_tracked_source_digest`,
@@ -355,6 +370,7 @@ every existing caller keeps importing it from there unchanged.
 <!-- frob:describes src/frob/testing/_runners.py::load_runners -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
 <!-- frob:describes src/frob/testing/_collect_rust.py::collect_rust_tests -->
+<!-- frob:describes src/frob/testing/_collect_csharp.py::collect_csharp_tests -->
 <!-- frob:describes src/frob/testing/_collect_python_cache.py::drop_collection_cache -->
 <!-- frob:describes src/frob/testing/_collect_python_cache.py::python_collection_failure_detail -->
 <!-- frob:describes src/frob/testing/_collect_python_cache.py::python_collection_missing_natives -->

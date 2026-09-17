@@ -2,7 +2,7 @@
 id: T-4517
 title: Collect NUnit [Test]/[TestCase] and [UnityTest] methods as frob:tests-bindable
   node ids
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -63,18 +63,24 @@ scope_changes:
     functions
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collects_test_and_unitytest
+- tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collapses_parameterized_test_case
 designated_repro_test: null
 acceptance:
 - text: GIVEN a C# test class with a [Test] method, WHEN collection runs, THEN it
     emits a stable node id an frob:tests directive can bind to.
-  evidence: []
+  evidence:
+  - tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collects_test_and_unitytest
 - text: GIVEN a [TestCase(1, 2)] parameterized NUnit test, WHEN collection runs, THEN
     each case is represented (or the parameterized method is represented once with
     a documented id scheme) without erroring.
-  evidence: []
+  evidence:
+  - tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collapses_parameterized_test_case
 - text: GIVEN a MonoBehaviour test class using [UnityTest] (a coroutine-based test),
     WHEN collection runs, THEN it is collected distinctly from a plain [Test] method.
-  evidence: []
+  evidence:
+  - tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collects_test_and_unitytest
 threat: null
 component: null
 anchor: false

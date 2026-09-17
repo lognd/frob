@@ -56,17 +56,7 @@ _log = get_logger(__name__)
 
 # frob:waive ARCH102 reason="T-2365 added a SECOND, deliberately parallel typed \
 # registration \
-# (ADAPTER_CAPABILITIES/CapabilityStatus/AdapterCapabilitySupport/derive_capability_reg\
-# istry/capability_conformance_violations) alongside the pre-existing one \
-# (FACETS/FacetStatus/LanguageSupport/derive_language_registry/conformance_violations) \
-# -- the clustering heuristic correctly finds two internally-cohesive naming/usage \
-# clusters, one per axis, plus the shared \
-# FacetState/_implemented/_not_applicable/_known_gap primitives both axes reuse on \
-# purpose (this module's own docstring explains why: one axis is subsystem- \
-# INTEGRATION coverage, the other is adapter-CAPABILITY coverage, genuinely different \
-# questions this module answers together because they share the exact same accounting \
-# discipline). Splitting into two files would duplicate that shared discipline instead \
-# of reusing it -- the opposite of what T-2365 was asked to do."
+# (ADAPTER_CAPABILITIES/CapabilityStatus/AdapterCapabilitySupport/derive_capability_registry/capability_conformance_violations) alongside the pre-existing one (FACETS/FacetStatus/LanguageSupport/derive_language_registry/conformance_violations) -- the clustering heuristic correctly finds two internally-cohesive naming/usage clusters, one per axis, plus the shared FacetState/_implemented/_not_applicable/_known_gap primitives both axes reuse on purpose (this module's own docstring explains why: one axis is subsystem- INTEGRATION coverage, the other is adapter-CAPABILITY coverage, genuinely different questions this module answers together because they share the exact same accounting discipline). Splitting into two files would duplicate that shared discipline instead of reusing it -- the opposite of what T-2365 was asked to do."  # noqa: E501
 __all__ = [
     "ADAPTER_CAPABILITIES",
     "CAPABILITY_CALL_GRAPH",
@@ -974,19 +964,18 @@ _TEST_DISCOVERY_COLLECTORS: dict[str, str] = {
     "c": "frob.testing.collect_cpp_tests",
     "cpp": "frob.testing.collect_cpp_tests",
     "kotlin": "frob.testing.collect_kotlin_tests",
+    # T-4517: NUnit/Unity Test Framework static-parse collector.
+    "csharp": "frob.testing.collect_csharp_tests",
 }
 
 
 # frob:ticket T-2499
 # frob:tests \
-# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_kotlin_test_discovery_i\
-# s_implemented
+# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_kotlin_test_discovery_is_implemented  # noqa: E501
 # frob:tests \
-# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_ga\
-# p_tracks_a_language_absent_from_registry
+# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_gap_tracks_a_language_absent_from_registry  # noqa: E501
 # frob:tests \
-# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_ga\
-# p_when_registry_entry_is_stale
+# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_gap_when_registry_entry_is_stale  # noqa: E501
 def _capability_test_discovery_status(language: str) -> CapabilityStatus:
     """IMPLEMENTED iff `language` has a real entry in
     `_TEST_DISCOVERY_COLLECTORS` (T-2499, mirroring

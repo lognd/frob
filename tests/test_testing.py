@@ -634,8 +634,7 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
         assert result.danger_err == TestingError.NativeAuditFailed
 
     # frob:tests \
-    # tests/test_testing.py::TestNativeStrataAudit.test_malformed_repo_benign_config_fa\
-    # ils
+    # tests/test_testing.py::TestNativeStrataAudit.test_malformed_repo_benign_config_fails  # noqa: E501
     def test_malformed_repo_benign_config_fails(self, tmp_path: Path) -> None:
         """A repo `frob.toml` with a `[[strata.benign_capabilities]]` entry
         missing its required `kind` field surfaces as
@@ -2751,6 +2750,109 @@ class TestCollectKotlinTests:
         result = collect_kotlin_tests(tmp_path)
         assert result.is_ok
         assert result.danger_ok.node_ids == frozenset()
+
+
+# frob:ticket T-4517
+class TestCollectCsharpTests:
+    """T-4517: static tree-sitter-parse node id collection for NUnit
+    `[Test]`/`[TestCase(...)]` and Unity Test Framework `[UnityTest]`
+    methods -- uses the checked-in static `.cs` fixtures under
+    `tests/fixtures/lang/csharp/tests/` (per the ticket brief's "static
+    checked-in fixtures" instruction) rather than generating source
+    inline, copied into each test's own `tmp_path` root so collection's
+    own repo-root-relative path math (`_cs_node_id`) is exercised the
+    same way it is against a real worktree."""
+
+    _FIXTURES_DIR = Path(__file__).parent / "fixtures" / "lang" / "csharp" / "tests"
+
+    # frob:ticket T-4517
+    def _copy_fixture(self, tmp_path: Path, name: str, rel: str) -> None:
+        import shutil
+
+        dest = tmp_path / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(self._FIXTURES_DIR / name, dest)
+
+    # frob:ticket T-4517
+    def test_collect_csharp_tests_collects_test_and_unitytest(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_collect_csharp.py::collect_csharp_tests
+        from frob.testing._collect import collect_csharp_tests
+
+        self._copy_fixture(tmp_path, "SampleNunitTests.cs", "tests/SampleNunitTests.cs")
+        self._copy_fixture(tmp_path, "SampleUnityTests.cs", "tests/SampleUnityTests.cs")
+        result = collect_csharp_tests(tmp_path)
+        assert result.is_ok
+        node_ids = result.danger_ok.node_ids
+        assert (
+            "tests/SampleNunitTests.cs::Frob.Fixtures.Csharp.SampleNunitTests"
+            "::AddsTwoNumbers" in node_ids
+        )
+        assert (
+            "tests/SampleUnityTests.cs::Frob.Fixtures.Csharp.SampleUnityTests"
+            "::SpawnsPlayerNextFrame" in node_ids
+        )
+
+    # frob:ticket T-4517
+    def test_collect_csharp_tests_collapses_parameterized_test_case(
+        self, tmp_path: Path
+    ) -> None:
+        # a [TestCase(...)]-parameterized method carries TWO attribute
+        # lists in the fixture (module docstring's "one id per method,
+        # parameter sets collapsed" contract) -- only one node id must
+        # be emitted for it.
+        # frob:tests src/frob/testing/_collect_csharp.py::collect_csharp_tests
+        from frob.testing._collect import collect_csharp_tests
+
+        self._copy_fixture(tmp_path, "SampleNunitTests.cs", "tests/SampleNunitTests.cs")
+        result = collect_csharp_tests(tmp_path)
+        assert result.is_ok
+        node_ids = [n for n in result.danger_ok.node_ids if n.endswith("::AddsPair")]
+        assert node_ids == [
+            "tests/SampleNunitTests.cs::Frob.Fixtures.Csharp.SampleNunitTests::AddsPair"
+        ]
+
+    # frob:ticket T-4517
+    def test_collect_csharp_tests_excludes_setup_teardown(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect_csharp.py::collect_csharp_tests
+        from frob.testing._collect import collect_csharp_tests
+
+        self._copy_fixture(tmp_path, "SampleNunitTests.cs", "tests/SampleNunitTests.cs")
+        result = collect_csharp_tests(tmp_path)
+        assert result.is_ok
+        for node_id in result.danger_ok.node_ids:
+            assert not node_id.endswith("::Setup")
+            assert not node_id.endswith("::Teardown")
+
+    # frob:ticket T-4517
+    def test_collect_csharp_tests_no_cs_files_is_ok_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect_csharp.py::collect_csharp_tests
+        from frob.testing._collect import collect_csharp_tests
+
+        result = collect_csharp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    # frob:ticket T-4517
+    def test_collect_csharp_tests_cache_hit_skips_reparse(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect_csharp.py::collect_csharp_tests
+        from frob.testing import _collect_csharp
+        from frob.testing._collect import collect_csharp_tests
+
+        self._copy_fixture(tmp_path, "SampleNunitTests.cs", "tests/SampleNunitTests.cs")
+        first = collect_csharp_tests(tmp_path)
+        assert first.is_ok
+
+        def _boom(_source: bytes):
+            raise AssertionError("parse_csharp must not be called on a cache hit")
+
+        monkeypatch.setattr(_collect_csharp, "parse_csharp", _boom)
+        second = collect_csharp_tests(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok.node_ids == first.danger_ok.node_ids
 
 
 # frob:ticket T-0587

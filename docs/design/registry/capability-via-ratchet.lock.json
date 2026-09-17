@@ -76,14 +76,14 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 37,
-      "reason": "T-4409: _collect.py's LARGE001 split moved fs.read call sites (test-file-content-hash and native-artifact-digest reads) into the new sibling module _collect_python_cache.py -- same fs.read effect, one new named via-list site rather than a behavior change, growing the ratchet from 36 to 37.",
-      "ticket": "T-4409"
+      "accepted_count": 38,
+      "reason": "T-4517: adds src/frob/testing/_collect_csharp.py to core's fs.read via-list (C# test collector reads .cs sources / writes its cache). One new site.",
+      "ticket": "T-4517"
     },
     "core::fs.write": {
-      "accepted_count": 26,
-      "reason": "T-4409: _collect.py's LARGE001 split moved drop_collection_cache's fs.write (cache-file unlink) into the new sibling module _collect_python_cache.py -- same fs.write effect, one new named via-list site rather than a behavior change, growing the ratchet from 25 to 26.",
-      "ticket": "T-4409"
+      "accepted_count": 27,
+      "reason": "T-4517: adds src/frob/testing/_collect_csharp.py to core's fs.write via-list (C# test collector reads .cs sources / writes its cache). One new site.",
+      "ticket": "T-4517"
     },
     "core::process-control": {
       "accepted_count": 1,

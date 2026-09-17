@@ -13,6 +13,7 @@ from __future__ import annotations
 from frob.testing._collect import (
     LANGUAGE_COLLECTORS,
     collect_cpp_tests,
+    collect_csharp_tests,
     collect_kotlin_tests,
     collect_python_tests,
     collect_rust_tests,
@@ -103,6 +104,7 @@ __all__ = [
     "TestingError",
     "capture_python_outcomes",
     "collect_cpp_tests",
+    "collect_csharp_tests",
     "collect_kotlin_tests",
     "collect_python_tests",
     "collect_rust_tests",

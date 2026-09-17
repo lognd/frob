@@ -1,5 +1,5 @@
 ---
-id: T-draft-07ba524b
+id: T-4560
 title: 'callgraph resolves callers only for PRIVATE callees (T-0841 rule): the rapid
   --files dependents miss every caller of a changed PUBLIC symbol'
 state: queued

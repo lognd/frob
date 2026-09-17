@@ -60,6 +60,16 @@ from frob.testing._collect_cpp import (  # noqa: F401
     _run_ctest_list,
     collect_cpp_tests,
 )
+
+# T-4517: same re-import-for-call-site-stability shape as the T-1074/
+# T-2409 collector splits above, applied to the new C#/NUnit collector.
+from frob.testing._collect_csharp import (  # noqa: F401
+    _cs_node_id,
+    _csharp_content_key,
+    _find_cs_files,
+    collect_csharp_tests,
+    parse_csharp,
+)
 from frob.testing._collect_kotlin import (  # noqa: F401
     _find_junit_report_dirs,
     _find_kotlin_gradle_projects,
@@ -147,14 +157,11 @@ _NO_TESTS_COLLECTED_EXIT = 5
 
 # frob:ticket T-4349
 # frob:tests \
-# tests/test_testing_collect.py::TestCollectorPython.test_prefers_cwds_own_venv_when_py\
-# test_importable
+# tests/test_testing_collect.py::TestCollectorPython.test_prefers_cwds_own_venv_when_pytest_importable  # noqa: E501
 # frob:tests \
-# tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_\
-# with_no_venv
+# tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_with_no_venv  # noqa: E501
 # frob:tests \
-# tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_\
-# when_venv_pytest_unimportable
+# tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_when_venv_pytest_unimportable  # noqa: E501
 def _collector_python(cwd: Path) -> str:
     """T-4349: the interpreter `_run_collect_only` should collect `cwd`
     with -- `cwd`'s own `.venv/bin/python` when it exists AND has `pytest`
@@ -519,6 +526,7 @@ LANGUAGE_COLLECTORS: dict[
     "cpp": collect_cpp_tests,
     "kotlin": collect_kotlin_tests,
     "ts": collect_ts_tests,
+    "csharp": collect_csharp_tests,
 }
 """T-3847: the ONE registry of every language this repo can collect test
 node ids for, keyed by the same language name a `[[test.runner]]` entry's
@@ -549,6 +557,7 @@ T-3921 rather than folded into this ticket."""
 __all__ = [
     "LANGUAGE_COLLECTORS",
     "collect_cpp_tests",
+    "collect_csharp_tests",
     "collect_kotlin_tests",
     "collect_python_tests",
     "collect_rust_tests",
