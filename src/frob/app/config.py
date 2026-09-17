@@ -85,6 +85,7 @@ def _pyproject_file_for_args(args: argparse.Namespace) -> Path:
     ticket_path = getattr(args, "ticket_path", None)
     if ticket_path is not None and str(ticket_path) != ".":
         return Path(ticket_path) / "pyproject.toml"
+    # frob:waive SEC110 reason="FROB_ROOT is a worktree-root path marker (T-4502), never a secret -- same posture as FROB_AGENT/FROB_WORKTREE's existing waivers (src/frob/tickets/_worktree_guard.py)"  # noqa: E501
     env_root = os.environ.get("FROB_ROOT")
     if env_root:
         return Path(env_root) / "pyproject.toml"

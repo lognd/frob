@@ -34,44 +34,44 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/_cli_parsers/_ticket
-  reason: avoid lease collision with T-draft-db13b6bc on _closeout_evidence.py; re-scoping
+  reason: avoid lease collision with T-4550 on _closeout_evidence.py; re-scoping
     to individual files
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/__init__.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-draft-db13b6bc
+    which is leased by T-4550
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_closeout.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-draft-db13b6bc
+    which is leased by T-4550
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_metadata.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-draft-db13b6bc
+    which is leased by T-4550
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_new.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-draft-db13b6bc
+    which is leased by T-4550
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_progress.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-draft-db13b6bc
+    which is leased by T-4550
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_query.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-draft-db13b6bc
+    which is leased by T-4550
   actor: logan
   at: '2026-09-16'
 - op: add
