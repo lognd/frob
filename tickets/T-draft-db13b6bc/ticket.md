@@ -19,10 +19,17 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_verify.py
 - tests/unit/test_done_report_check_scope.py
+- src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+  reason: add --no-check flag to done-report parser
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket done-report on a ticket with a declared scope WHEN it captures
