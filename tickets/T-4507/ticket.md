@@ -6,8 +6,6 @@ kind: feature
 origin: agent
 created: '2026-09-16'
 priority: medium
-blocked_by:
-- T-3856
 parent: T-4506
 tier: ticket
 sprint: v0.533.0
@@ -34,3 +32,6 @@ Verify/extend the directive DSL comment-extraction path so // and /// C# comment
 GIVEN a C# method with '// frob:doc docs/x.md#anchor' above it, WHEN the graph builds, THEN a doc edge is recorded for that symbol identically to a Python # frob:doc edge.
 GIVEN a C# method with '/// frob:todo T-#### some free-text note', WHEN DSL001 parses it, THEN the free-text note is accepted (not rejected as malformed attribute syntax).
 GIVEN a C# class with a frob:waive directive, WHEN frob check runs, THEN the waiver is applied and appears in the waiver ledger the same as a Python-sourced waiver.
+
+## Unblock log
+- 2026-09-17: unblocked by T-3856 -- T-3856 landed 666c3c196
