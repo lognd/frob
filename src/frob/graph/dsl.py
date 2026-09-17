@@ -216,6 +216,19 @@ _CLEANUP_KINDS = frozenset({"always", "on-error", "process-exit-ok"})
 #: edge's `target` becomes the parsed `proto` attribute.
 _ATTR_ONLY_VERBS = frozenset({"transition", "requires"})
 
+#: Verbs whose remainder after the target is an opaque free-text NOTE, not
+#: `key="value"` attributes (T-3856): `frob:todo T-0043 [note]`
+#: (docs/modules/graph.md) documents a bare ticket id optionally followed
+#: by prose describing the deferred work. Routing that prose through
+#: `_parse_attrs`' key=value grammar rejected every non-empty note as
+#: "bad attribute syntax" in EVERY language uniformly (there was no actual
+#: per-language divergence -- the original T-3856 report's only working
+#: example lived in a python docstring, where the note was never being
+#: validated at all, see `parse_directives`' leading-hash strip below).
+#: `_parse_target` skips `_parse_attrs` entirely for these verbs and binds
+#: the trimmed remainder as `attrs["note"]` when non-empty.
+_FREE_TEXT_NOTE_VERBS = frozenset({"todo"})
+
 #: `frob:invariant`'s optional `no_import="pkg[,pkg2,...]"` obligation
 #: attr (T-0757): each comma-separated entry must be a dotted module path
 #: (matches a bare python identifier chain -- no wildcards, no leading/
@@ -803,7 +816,7 @@ def _parse_attrs(
 ) -> dict[str, str] | MalformedDirective:
     """Parse and validate `key="value"` attributes for `verb`, per-verb rules."""
     attrs = dict(_ATTR_RE.findall(attr_text))
-    leftover = _ATTR_RE.sub("", attr_text).strip()
+    unstripped_leftover = _ATTR_RE.sub("", attr_text)
     # T-0309: a directive can legitimately share a physical line with a
     # linter-suppression comment (a ruff `noqa` marker, say) once a repo
     # enforces both frob and a linter's line-length rule. Strip a trailing
@@ -812,7 +825,22 @@ def _parse_attrs(
     # #hashtag"): `_ATTR_RE.sub` above has already consumed any such quoted
     # value in full (the regex's `"[^"]*"` group matches through the closing
     # quote), so a '#' that survives into `leftover` was never inside quotes.
-    leftover = leftover.split("#", 1)[0].strip()
+    #
+    # T-3856: the tail split must require the '#' to be PRECEDED BY
+    # WHITESPACE. The prior `leftover.split("#", 1)[0]` split on the FIRST
+    # '#' anywhere, so a leftover that itself BEGAN with '#' (genuinely
+    # malformed attribute syntax, not a linter tail) split to an empty
+    # string and the whole directive was silently accepted as attribute-
+    # free -- a hash-tail guard meant for a trailing linter-suppression
+    # marker was swallowing "#garbage" too. `(?<=\s)#` only matches a '#' with
+    # whitespace immediately before it, so a leading hash (no preceding
+    # whitespace within the leftover) never matches and falls through to
+    # the malformed-attribute-syntax check below, unchanged from before
+    # this ticket for every other case.
+    tail_match = re.search(r"(?<=\s)#", unstripped_leftover)
+    if tail_match is not None:
+        unstripped_leftover = unstripped_leftover[: tail_match.start()]
+    leftover = unstripped_leftover.strip()
     if leftover:
         if '"' in leftover:
             # T-3893: leftover text that itself contains a raw `"` is
@@ -1039,8 +1067,7 @@ _TESTS_QUOTED_TITLE_LEAD_RE = re.compile(r"^[^\s\"]+\.[^\s\".]+$")
 
 # frob:ticket T-4197
 # frob:tests \
-# tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_quoted\
-# _target_is_malformed_not_a_free_pass
+# tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_quoted_target_is_malformed_not_a_free_pass  # noqa: E501
 def _tests_quoted_title_error(
     target: str, *, path: str, lineno: int
 ) -> MalformedDirective | None:
@@ -1198,7 +1225,17 @@ def _parse_target(
                     "contain spaces or quotes" % verb
                 ),
             )
-    attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
+    if verb in _FREE_TEXT_NOTE_VERBS:
+        note = attr_text.strip()
+        return target, ({"note": note} if note else {})
+    # T-3856: pass `attr_text` UNSTRIPPED -- `_parse_attrs`' whitespace-
+    # preceded-hash tail check needs the space between the last real
+    # attribute and a trailing linter-suppression marker (T-0309) intact; a
+    # `.strip()` here would delete exactly the whitespace that check keys
+    # on, misreading the tail as a leading (malformed) hash instead.
+    # `_parse_attrs` does its own internal stripping once the tail (if any)
+    # has been located.
+    attrs = _parse_attrs(verb, attr_text, path=path, lineno=lineno)
     if isinstance(attrs, MalformedDirective):
         return attrs
     return target, attrs
@@ -1286,8 +1323,7 @@ def _parse_line(
 # frob:tests \
 # tests/unit/graph/test_dsl.py::TestContinuation.test_long_reason_continues_across_lines
 # frob:tests \
-# tests/unit/graph/test_dsl.py::TestContinuation.test_unrelated_directives_on_consecuti\
-# ve_lines_do_not_fold
+# tests/unit/graph/test_dsl.py::TestContinuation.test_unrelated_directives_on_consecutive_lines_do_not_fold  # noqa: E501
 def _fold_continuations(
     lines: list[tuple[int, str, str, int]],
 ) -> list[tuple[str, int, str]]:
@@ -1400,8 +1436,7 @@ def _is_genuine_directive_start(line: str) -> bool:
 # frob:ticket T-0441
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
 # frob:tests \
-# tests/unit/graph/test_dsl.py::TestFoldCommentRuns.test_run_length_matches_consumed_ph\
-# ysical_lines
+# tests/unit/graph/test_dsl.py::TestFoldCommentRuns.test_run_length_matches_consumed_physical_lines  # noqa: E501
 def fold_comment_runs(
     lines: list[tuple[int, str, str, int]],
 ) -> list[tuple[str, int, str, int]]:
@@ -1753,6 +1788,22 @@ def parse_directives(
         )
     for logical_line, lineno, src in _fold_continuations(flat):
         stripped = logical_line.strip()
+        # T-3856: a directive written inside a python docstring (T-0342's
+        # `_walk_python_docstring_comments`) arrives here as RAW docstring
+        # text, never run through `_strip_comment_delims` (there is no
+        # comment marker to strip -- the "#" this repo's own convention
+        # puts in front of such lines, e.g. `src/frob/perf/_dup_spawn.py`,
+        # is literal string content, not a comment delimiter). Before this
+        # fix a "#"-prefixed docstring line failed the bare
+        # `startswith("frob:")` check and was silently skipped -- no Edge,
+        # no MalformedDirective either, making DSL001 vacuous for every
+        # `frob:` directive written this way. Strip one optional leading
+        # '#' (matching every non-docstring extraction path, which already
+        # strips its own language's comment marker) before judging the
+        # prefix, so the docstring convention is validated exactly like a
+        # real comment line instead of silently disappearing.
+        if stripped.startswith("#"):
+            stripped = stripped[1:].strip()
         if not stripped.startswith("frob:"):
             continue
         result = _parse_line(stripped, path=parsed.path, lineno=lineno, src=src)

@@ -2,7 +2,7 @@
 id: T-3856
 title: DSL001 rejects frob:todo free-text notes outside Python, and its hash-tail
   guard swallows any leftover beginning with a hash
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -53,17 +53,24 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+evidence:
+- tests/unit/graph/test_dsl.py::TestTodoFreeTextNote::test_note_parses_per_language
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_leading_hash_bad_attribute_syntax_is_still_flagged
+- tests/unit/graph/test_dsl.py::TestTodoDirectiveInsideDocstring::test_todo_note_inside_docstring_with_hash_prefix_is_parsed
 designated_repro_test: null
 acceptance:
 - text: GIVEN a frob:todo T-#### free-text note in a comment of any supported language
     WHEN parsed THEN it yields one todo edge with the note and no MalformedDirective
-  evidence: []
+  evidence:
+  - tests/unit/graph/test_dsl.py::TestTodoFreeTextNote::test_note_parses_per_language
 - text: GIVEN an attribute leftover that begins with a hash WHEN parsed THEN it is
     flagged malformed instead of being swallowed as a noqa tail
-  evidence: []
+  evidence:
+  - tests/unit/graph/test_dsl.py::TestNoqaTail::test_leading_hash_bad_attribute_syntax_is_still_flagged
 - text: GIVEN a frob:todo note inside a Python module docstring line starting with
     a hash WHEN parsed THEN it is recognised, not silently dropped
-  evidence: []
+  evidence:
+  - tests/unit/graph/test_dsl.py::TestTodoDirectiveInsideDocstring::test_todo_note_inside_docstring_with_hash_prefix_is_parsed
 threat: null
 component: null
 anchor: false

@@ -299,6 +299,34 @@ class TestNoqaTail:
         assert len(edges) == 1
         assert edges[0].attrs["reason"] == "uses #hashtag"
 
+    # frob:ticket T-3856
+    def test_leading_hash_bad_attribute_syntax_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # MUST-FIRE (T-3856 finding 2): the OLD `leftover.split("#", 1)[0]`
+        # tail strip matched the FIRST '#' anywhere, so a leftover that
+        # itself BEGAN with '#' (no preceding whitespace -- genuinely
+        # malformed attribute syntax, not a linter tail) split to an empty
+        # string and the whole directive was silently accepted with no
+        # attributes at all. A leading hash must still be flagged.
+        src = "def foo() -> None:\n    # frob:waive RULE-1 #bad\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        assert len(malformed := parse_directives(pf)[1]) == 1
+        assert "bad attribute syntax" in malformed[0].reason
+
+    # frob:ticket T-3856
+    def test_bad_attribute_syntax_with_no_hash_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # MUST-FIRE (T-3856): unrelated to the hash-tail guard at all --
+        # garbage attribute text with no '#' anywhere must stay flagged.
+        src = "def foo() -> None:\n    # frob:waive RULE-1 not key value syntax\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "bad attribute syntax" in malformed[0].reason
+
 
 class TestBlockBinding:
     """A `frob:doc` (or any) directive found anywhere in a contiguous
@@ -1017,8 +1045,7 @@ class TestQuotedTestsTitleMustNamePath:
 
     # frob:ticket T-4197
     # frob:tests \
-    # tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_qu\
-    # oted_target_is_malformed_not_a_free_pass
+    # tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_quoted_target_is_malformed_not_a_free_pass  # noqa: E501
     def test_pure_prose_quoted_target_is_malformed_not_a_free_pass(
         self, tmp_path: Path
     ) -> None:
@@ -1062,3 +1089,136 @@ class TestQuotedTestsTitleMustNamePath:
         edges, malformed = parse_directives(pf)
         assert not malformed
         assert len(edges) == 1
+
+
+# frob:ticket T-3856
+class TestTodoFreeTextNote:
+    """`frob:todo T-#### [note]` (docs/modules/graph.md) carries an opaque
+    free-text note after the ticket id, not `key="value"` attributes.
+
+    T-3856 found this rejected in EVERY language (no genuine per-language
+    divergence existed -- the original report's only "working" example was
+    a python docstring where the directive was never validated at all, see
+    `TestTodoDirectiveInsideDocstring` below) because the note text was
+    routed through `_parse_attrs`' key=value grammar like every other verb.
+    `_parse_target`'s `_FREE_TEXT_NOTE_VERBS` branch fixes the routing
+    itself -- these tests are a per-language table proving the fix, not a
+    workaround inside `_parse_attrs`.
+    """
+
+    _FIXTURE_DIR = Path(__file__).parents[2] / "fixtures" / "dsl_todo_notes"
+
+    # frob:tests \
+    # tests/unit/graph/test_dsl.py::TestTodoFreeTextNote.test_note_parses_per_language
+    @staticmethod
+    def _fixture_names() -> list[str]:
+        """Every static per-language fixture this test parametrizes over."""
+        return sorted(p.name for p in TestTodoFreeTextNote._FIXTURE_DIR.iterdir())
+
+    def test_note_parses_per_language(self) -> None:
+        # frob:tests \
+        # tests/unit/graph/test_dsl.py::TestTodoFreeTextNote.test_note_parses_per_language  # noqa: E501
+        results: dict[str, tuple[int, int]] = {}
+        for name in self._fixture_names():
+            path = self._FIXTURE_DIR / name
+            pf = parse_file(path).danger_ok
+            edges, malformed = parse_directives(pf)
+            todo_edges = [e for e in edges if e.kind == EdgeKind.TODO]
+            results[name] = (len(todo_edges), len(malformed))
+            assert len(todo_edges) == 1, (
+                f"{name}: expected exactly one frob:todo edge, got "
+                f"{len(todo_edges)} (malformed={malformed})"
+            )
+            assert not malformed, f"{name}: unexpected malformed: {malformed}"
+            edge = todo_edges[0]
+            assert edge.target == "T-0010"
+            assert edge.attrs["note"] == "cache the lookup in a PyOnceLock"
+        # A per-language table (ACCEPTANCE): every fixture, one per
+        # language, accepted with exactly one clean todo edge.
+        assert len(results) >= 10, "expected at least 10 per-language fixtures"
+        assert all(v == (1, 0) for v in results.values()), results
+
+    def test_bare_ticket_id_with_no_note_still_parses(self, tmp_path: Path) -> None:
+        # MUST-STAY-QUIET: no regression for the existing bare-id form.
+        src = "def foo() -> None:\n    # frob:todo T-0010\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "T-0010"
+        assert edges[0].attrs == {}
+
+
+# frob:ticket T-3856
+class TestTodoDirectiveInsideDocstring:
+    """T-3856 finding 2's "measure it" instruction: a `frob:todo` (or any
+    `frob:`) directive written inside a python docstring with the repo's
+    own `#`-prefixed convention (e.g. `src/frob/perf/_dup_spawn.py`) used
+    to reach `parse_directives` STILL carrying its literal `#` -- never
+    stripped, because `_strip_comment_delims` only runs on real comment
+    nodes, not on `_walk_python_docstring_comments`' raw docstring text.
+
+    MEASURED VERDICT: yes, DSL001 was vacuous for this convention -- the
+    line failed `stripped.startswith("frob:")` and was silently dropped,
+    no Edge and no MalformedDirective either (a genuine silent-zero, not
+    merely "accepted" as the original report assumed). `parse_directives`
+    now strips one optional leading '#' before the prefix check, so this
+    convention validates exactly like a real comment line.
+    """
+
+    def test_todo_note_inside_docstring_with_hash_prefix_is_parsed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/graph/test_dsl.py::TestTodoDirectiveInsideDocstring.test_todo_note_inside_docstring_with_hash_prefix_is_parsed  # noqa: E501
+        src = (
+            '"""Module doc.\n'
+            "\n"
+            "# frob:todo T-0010 cache the lookup in a PyOnceLock\n"
+            '"""\n'
+            "\n"
+            "def f() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        todo_edges = [e for e in edges if e.kind == EdgeKind.TODO]
+        assert len(todo_edges) == 1
+        assert todo_edges[0].target == "T-0010"
+        assert todo_edges[0].attrs["note"] == "cache the lookup in a PyOnceLock"
+
+    def test_malformed_directive_inside_docstring_with_hash_prefix_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Same silent-zero, the malformed-directive half: before this fix
+        # a genuinely bad directive inside a docstring was ALSO invisible
+        # (no MalformedDirective), which is worse than being rejected.
+        src = (
+            '"""Module doc.\n'
+            "\n"
+            "# frob:waive RULE-1 not key value syntax\n"
+            '"""\n'
+            "\n"
+            "def f() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "bad attribute syntax" in malformed[0].reason
+
+    def test_regular_comment_todo_note_python_unaffected(self, tmp_path: Path) -> None:
+        # MUST-STAY-QUIET (no regression): a real `#` LINE COMMENT (not a
+        # docstring) already went through `_strip_comment_delims` before
+        # this fix and must keep working identically.
+        src = (
+            "def foo() -> None:\n"
+            "    # frob:todo T-0010 cache the lookup in a PyOnceLock\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].attrs["note"] == "cache the lookup in a PyOnceLock"
