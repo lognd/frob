@@ -34,6 +34,13 @@ scope_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: ty invalid-argument-type in tests/unit/test_ticket_runner_land_cmd_flags.py
+    is fixed (dict typed dict[str, Any], model built via QueueEntry.model_validate)
+  evidence: []
+- text: COV002 on src/frob/dup/_legacy_cs.py is resolved by adding frob:ticket T-4543
+    edges to every changed public symbol
+  evidence: []
 threat: null
 component: null
 anchor: false
