@@ -61,6 +61,10 @@ acceptance:
     runs on it, THEN it extracts per-test pass/fail/skip status keyed to the same
     node ids [UnityTest]/[Test] collection produced.
   evidence: []
+- text: GIVEN a Unity batchmode run that exits non-zero (editor crash, license failure),
+    WHEN the evidence channel handles it, THEN it surfaces a clear error distinct
+    from a genuine test failure, not a silent empty-results false pass.
+  evidence: []
 threat: null
 component: null
 anchor: false
