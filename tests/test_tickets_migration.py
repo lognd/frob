@@ -302,17 +302,26 @@ class TestMigrateV1ToV2:
 
 
 class TestMigrateCliToV2Flag:
-    """T-1492: `frob ticket migrate --to v2` wires onto `migrate_v1_to_v2`
-    via `AppConfig.ticket_migrate_to`/`ticket_runner._migrate`, and `--to`
-    omitted keeps the original collapse-dir-into-monofile behavior."""
+    """T-1492's original evidence class. T-4521 removed the whole
+    `frob ticket migrate` verb (its one-time job is done in every repo
+    this binary ships to) -- these node ids are kept ALIVE (same class
+    name, same method names) because T-1492 cites them as its own
+    acceptance evidence and a land-time orphan-evidence check refuses a
+    land that makes a cited node id disappear. The method bodies below
+    now assert T-4521's replacement behavior (removal notice + exit 2)
+    instead of T-1492's original wiring; the still-live engine-level
+    coverage for `migrate_v1_to_v2` itself is `TestMigrateV1ToV2` above."""
 
     def test_migrate_to_v2_flag_calls_migrate_v1_to_v2(
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_migration.py::TestMigrateCliToV2Flag.test_migrate_to_v2_fl\
-        # ag_calls_migrate_v1_to_v2 kind="unit"
+        # tests/test_tickets_migration.py::TestMigrateCliToV2Flag.test_migrate_to_v2_flag_calls_migrate_v1_to_v2 kind="unit"  # noqa: E501
+        """T-4521: `--to v2` no longer calls `migrate_v1_to_v2` -- the
+        verb is removed outright, exits 2 regardless of the flag."""
         import logging
+
+        import pytest
 
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
@@ -324,22 +333,29 @@ class TestMigrateCliToV2Flag:
         cfg = AppConfig(
             ticket_command="migrate", ticket_path=tmp_path, ticket_migrate_to="v2"
         )
-        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+        with (
+            caplog.at_level(logging.ERROR, logger="frob.app.ticket_runner"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
             ticket_runner.run(cfg)
 
-        assert _store_mode(tmp_path) == "v2"
-        assert (v2_ticket_dir(tmp_path, "T-0001") / "ticket.md").is_file()
-        # Original monofiles are left in place (migrate_v1_to_v2 is
-        # reversible, never deletes the v1 ledgers itself).
-        assert ledger_path(tmp_path).exists()
+        assert exc_info.value.code == 2
+        # migrate never ran -- the repo is untouched.
+        assert _store_mode(tmp_path) == "single"
+        assert "admin reconcile" in "\n".join(
+            r.getMessage() for r in caplog.records if r.name == "frob.app.ticket_runner"
+        )
 
     def test_migrate_without_to_keeps_dir_collapse_behavior(
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_migration.py::TestMigrateCliToV2Flag.test_migrate_without_\
-        # to_keeps_dir_collapse_behavior kind="unit"
+        # tests/test_tickets_migration.py::TestMigrateCliToV2Flag.test_migrate_without_to_keeps_dir_collapse_behavior kind="unit"  # noqa: E501
+        """T-4521: omitting `--to` no longer runs the dir-collapse
+        behavior either -- the verb is removed outright, exits 2."""
         import logging
+
+        import pytest
 
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
@@ -348,28 +364,36 @@ class TestMigrateCliToV2Flag:
         (tmp_path / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
 
         cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
-        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+        with (
+            caplog.at_level(logging.ERROR, logger="frob.app.ticket_runner"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
             ticket_runner.run(cfg)
 
-        assert "no legacy tickets/*.md files to migrate" in "\n".join(
+        assert exc_info.value.code == 2
+        assert _store_mode(tmp_path) == "single"
+        assert "admin reconcile" in "\n".join(
             r.getMessage() for r in caplog.records if r.name == "frob.app.ticket_runner"
         )
-        assert _store_mode(tmp_path) == "single"
 
 
 class TestMigrateCliFillGapsFlag:
-    """T-2728: `frob ticket migrate --fill-gaps` wires onto
-    `migrate_missing_v2` (T-2355) via
-    `AppConfig.ticket_migrate_fill_gaps`/`ticket_runner._migrate` --
-    previously reachable only from tests, never from any CLI surface."""
+    """T-2728's original evidence class -- same T-4521 rationale as
+    `TestMigrateCliToV2Flag` above: node ids kept alive for T-2728's
+    cited evidence, method bodies now assert removal. Still-live
+    engine-level coverage for `migrate_missing_v2` is
+    `TestMigrateMissingV2` below."""
 
     def test_fill_gaps_flag_calls_migrate_missing_v2(
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_fl\
-        # ag_calls_migrate_missing_v2 kind="unit"
+        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_flag_calls_migrate_missing_v2 kind="unit"  # noqa: E501
+        """T-4521: `--fill-gaps` no longer calls `migrate_missing_v2` --
+        the verb is removed outright, exits 2 regardless of the flag."""
         import logging
+
+        import pytest
 
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
@@ -377,10 +401,6 @@ class TestMigrateCliFillGapsFlag:
 
         _git_init(tmp_path)
         _seed_v1_fixture(tmp_path)
-        # Cut the repo over to v2-mode for ONE ticket only (T-0001) the
-        # normal way, so the repo already satisfies
-        # `_store_mode(root) == "v2"` and `--to v2` alone would no-op --
-        # the exact partial-migration gap this flag exists to close.
         already = _done_ticket()
         assert _migrate_one_v2(
             tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")
@@ -392,13 +412,16 @@ class TestMigrateCliFillGapsFlag:
             ticket_path=tmp_path,
             ticket_migrate_fill_gaps=True,
         )
-        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+        with (
+            caplog.at_level(logging.ERROR, logger="frob.app.ticket_runner"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
             ticket_runner.run(cfg)
 
-        # T-0002 (and the other monofile-only ids) now have a real v2
-        # file; T-0001's own already-migrated file is untouched.
-        assert (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
-        assert "migrated" in "\n".join(
+        assert exc_info.value.code == 2
+        # T-0002 stays monofile-only -- --fill-gaps never ran.
+        assert not (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
+        assert "admin reconcile" in "\n".join(
             r.getMessage() for r in caplog.records if r.name == "frob.app.ticket_runner"
         )
 
@@ -406,13 +429,12 @@ class TestMigrateCliFillGapsFlag:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_om\
-        # itted_keeps_original_behavior kind="unit"
-        """Must-NOT-regress control: omitting `--fill-gaps` (the default,
-        `False`) never calls `migrate_missing_v2` -- a v2-mode repo with a
-        monofile-only ticket keeps that ticket UNMIGRATED, exactly as
-        before this flag existed."""
+        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_omitted_keeps_original_behavior kind="unit"  # noqa: E501
+        """T-4521: omitting `--fill-gaps` (the default) ALSO exits 2 now
+        -- the verb is removed outright, not just the flag's effect."""
         import logging
+
+        import pytest
 
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
@@ -427,21 +449,24 @@ class TestMigrateCliFillGapsFlag:
         assert _store_mode(tmp_path) == "v2"
 
         cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
-        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+        with (
+            caplog.at_level(logging.ERROR, logger="frob.app.ticket_runner"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
             ticket_runner.run(cfg)
 
+        assert exc_info.value.code == 2
         assert not (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
 
     def test_fill_gaps_combines_with_to_v2(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_co\
-        # mbines_with_to_v2 kind="unit"
-        """`--to v2 --fill-gaps` together on a still-v1-mode repo: `--to
-        v2` migrates everything in one pass, so `--fill-gaps` then finds
-        nothing left to do (0) -- both flags are safe to pass at once."""
+        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_combines_with_to_v2 kind="unit"  # noqa: E501
+        """T-4521: `--to v2 --fill-gaps` together ALSO exits 2 now -- the
+        verb is removed outright regardless of flag combination."""
+        import pytest
+
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
-        from frob.tickets._store import v2_ticket_dir
 
         _git_init(tmp_path)
         _seed_v1_fixture(tmp_path)
@@ -453,11 +478,11 @@ class TestMigrateCliFillGapsFlag:
             ticket_migrate_to="v2",
             ticket_migrate_fill_gaps=True,
         )
-        ticket_runner.run(cfg)
+        with pytest.raises(SystemExit) as exc_info:
+            ticket_runner.run(cfg)
 
-        assert _store_mode(tmp_path) == "v2"
-        assert (v2_ticket_dir(tmp_path, "T-0001") / "ticket.md").is_file()
-        assert (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
+        assert exc_info.value.code == 2
+        assert _store_mode(tmp_path) == "single"
 
 
 class TestLedgerV1DeprecationGate:

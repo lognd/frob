@@ -1,13 +1,42 @@
 """CLI parser builders for the ticket state-transition/plumbing subcommands:
-plan/requeue/start/work/sweep/reconcile/migrate/renumber/land/merge-driver.
+plan/requeue/start/work/sweep/reconcile/migrate/admin(renumber/reconcile)/
+land/merge-driver.
 
 Split out of `_cli_parsers/_ticket.py` (T-1270) -- no behavior change, same
-argparse tree.
+argparse tree. T-4521: `admin` groups the disaster-recovery-only verbs
+(renumber/restore/reconcile) under one help heading; `renumber`/
+`reconcile` keep their old top-level spellings as SUPPRESS-hidden
+aliases for one release (`_suppress_subparser_alias`), and `merge-driver`
+is hidden outright (a git callback, not a verb a developer types).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+
+
+def _suppress_subparser_alias(ticket_sub, name: str) -> None:
+    """Hide subcommand `name` from `frob ticket --help`'s listing while
+    leaving it fully dispatchable (T-4521).
+
+    Measured against cpython's `argparse.HelpFormatter._format_action`
+    (3.10-3.12): setting a `_ChoicesPseudoAction`'s `.help` to
+    `argparse.SUPPRESS` does NOT hide it -- `_format_action` only checks
+    `action.help is SUPPRESS` on the top-level `{choices}` group action
+    (in `HelpFormatter.add_argument`), then recurses into every
+    subaction's `_format_action` UNCONDITIONALLY, printing the literal
+    `"==SUPPRESS=="` sentinel string as that subcommand's help text --
+    worse than not suppressing at all. The actual hiding mechanism is
+    removing the pseudo-action from `_choices_actions` entirely (the
+    list `_SubParsersAction._get_subactions` -- and so
+    `_iter_indented_subactions` -- iterates); `_name_parser_map` (what
+    dispatch actually reads) is untouched, so the subcommand keeps
+    working."""
+    ticket_sub._choices_actions[:] = [
+        action
+        for action in getattr(ticket_sub, "_choices_actions", [])
+        if action.dest != name
+    ]
 
 
 def _add_ticket_progress_parsers(ticket_sub) -> list:
@@ -121,35 +150,8 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     )
     ticket_sweep_p.add_argument("ticket_id", metavar="id")
 
-    ticket_reconcile_p = ticket_sub.add_parser(
-        "reconcile",
-        help="heal ticket<->worktree binding drift (T-0476): stale "
-        "in-progress holds with no live lease, and orphan live worktrees "
-        "with no lease at all",
-    )
-    ticket_reconcile_p.add_argument(
-        "--apply",
-        dest="ticket_reconcile_apply",
-        action="store_true",
-        help="actually requeue stale holds (default: dry-run report only)",
-    )
-    ticket_reconcile_p.add_argument(
-        "--remove-orphans",
-        dest="ticket_reconcile_remove_orphans",
-        action="store_true",
-        help="with --apply, also `git worktree remove` orphan worktrees "
-        "(a strictly more destructive action, gated separately)",
-    )
-    # frob:ticket T-1936
-    ticket_reconcile_p.add_argument(
-        "--no-commit",
-        dest="ticket_no_commit",
-        action="store_true",
-        help="skip T-1936's auto-commit of the ledger rows --apply changed "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit); WARNS "
-        "that the ledger is left dirty and will DirtyMain-block a "
-        "concurrent `frob ticket land`",
-    )
+    ticket_reconcile_p = _add_ticket_reconcile_parser(ticket_sub)
+    _suppress_subparser_alias(ticket_sub, "reconcile")
 
     ticket_migrate_p = ticket_sub.add_parser(
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
@@ -174,6 +176,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "combined with --to v2 or used on its own",
     )
     ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
+    _suppress_subparser_alias(ticket_sub, "renumber")
     ticket_promote_p = _add_ticket_promote_parser(ticket_sub)
     ticket_land_p = _add_ticket_land_parser(ticket_sub)
     ticket_merge_driver_p = _add_ticket_merge_driver_parser(ticket_sub)
@@ -206,7 +209,70 @@ def _add_ticket_merge_driver_parser(ticket_sub):
     ticket_merge_driver_p.add_argument("ticket_merge_base", metavar="%O")
     ticket_merge_driver_p.add_argument("ticket_merge_ours", metavar="%A")
     ticket_merge_driver_p.add_argument("ticket_merge_theirs", metavar="%B")
+    # T-4521: hidden -- a git merge-driver callback (git invokes it via
+    # .gitattributes), not a verb a developer normally types.
+    _suppress_subparser_alias(ticket_sub, "merge-driver")
     return ticket_merge_driver_p
+
+
+def _add_ticket_reconcile_parser(ticket_sub):
+    """Register `frob ticket reconcile` and return its subparser (T-0476,
+    factored out of `_add_ticket_progress_parsers` by T-4521 so the SAME
+    builder can register it both at its hidden top-level alias and under
+    `admin`)."""
+    ticket_reconcile_p = ticket_sub.add_parser(
+        "reconcile",
+        help="heal ticket<->worktree binding drift (T-0476): stale "
+        "in-progress holds with no live lease, and orphan live worktrees "
+        "with no lease at all",
+    )
+    ticket_reconcile_p.add_argument(
+        "--apply",
+        dest="ticket_reconcile_apply",
+        action="store_true",
+        help="actually requeue stale holds (default: dry-run report only)",
+    )
+    ticket_reconcile_p.add_argument(
+        "--remove-orphans",
+        dest="ticket_reconcile_remove_orphans",
+        action="store_true",
+        help="with --apply, also `git worktree remove` orphan worktrees "
+        "(a strictly more destructive action, gated separately)",
+    )
+    # frob:ticket T-1936
+    ticket_reconcile_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1936's auto-commit of the ledger rows --apply changed "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit); WARNS "
+        "that the ledger is left dirty and will DirtyMain-block a "
+        "concurrent `frob ticket land`",
+    )
+    return ticket_reconcile_p
+
+
+def _add_ticket_admin_parser(ticket_sub):
+    """Register `frob ticket admin`, the T-4521 home for disaster-
+    recovery/maintenance-only ticket verbs (renumber/restore/reconcile)
+    that used to be flat top-level verbs competing for space with the
+    everyday queue commands. Registers `renumber` and `reconcile` here
+    directly (same builder functions used for their hidden top-level
+    aliases, byte-for-byte identical argument specs); `restore` lives in
+    `_closeout_evidence.py` (under a concurrent lease this ticket cannot
+    edit) so the caller (`_ticket/__init__.py`, which already builds that
+    parser once for its own top-level registration) attaches it into the
+    returned `admin_sub` afterward. Returns `(admin_sub, [renumber_p,
+    reconcile_p])` so the caller can also add `--path` to the leaves."""
+    ticket_admin_p = ticket_sub.add_parser(
+        "admin",
+        help="disaster-recovery / maintenance ticket verbs (T-4521) -- "
+        "see `frob ticket admin --help` for the full list",
+    )
+    admin_sub = ticket_admin_p.add_subparsers(dest="ticket_command")
+    admin_renumber_p = _add_ticket_renumber_parser(admin_sub)
+    admin_reconcile_p = _add_ticket_reconcile_parser(admin_sub)
+    return admin_sub, [admin_renumber_p, admin_reconcile_p]
 
 
 def _add_ticket_renumber_parser(ticket_sub):

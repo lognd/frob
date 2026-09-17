@@ -7,7 +7,11 @@ pushed `_closeout.py` back over the same threshold) purely to keep every
 file below the large-file gate threshold -- no behavior change, same
 argparse tree. This package's public surface (every name importable via
 `from frob._cli_parsers._ticket import ...`) is unchanged from the
-pre-split single-file module.
+pre-split single-file module. T-4521: `merge-driver`/`sweep-async` are
+now hidden (SUPPRESS) internal callbacks; `migrate`/`debt`/`deprecated`
+print a removal notice and exit 2; `runs-last-parallel-safe` folded into
+`runs-last --parallel-safe`; `renumber`/`restore`/`reconcile` moved
+under a new `admin` group with hidden top-level aliases for one release.
 """
 
 from __future__ import annotations
@@ -52,14 +56,17 @@ from ._new import (
     _add_ticket_new_parser,
 )
 from ._progress import (
+    _add_ticket_admin_parser,
     _add_ticket_land_parser,
     _add_ticket_merge_driver_parser,
     _add_ticket_progress_parsers,
     _add_ticket_renumber_parser,
+    _suppress_subparser_alias,
 )
 from ._query import _add_ticket_query_parsers
 
 __all__ = [
+    "_add_ticket_admin_parser",
     "_add_ticket_anchor_parser",
     "_add_ticket_attach_and_lifecycle_end_parsers",
     "_add_ticket_body_parser",
@@ -92,6 +99,7 @@ __all__ = [
     "_add_ticket_set_parent_parser",
     "_add_ticket_sprint_parser",
     "_add_ticket_tier_parser",
+    "_suppress_subparser_alias",
 ]
 
 
@@ -99,15 +107,23 @@ __all__ = [
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/
     reverify/fail/evidence/done-report/scope/priority/kind/component/
-    label/accept/review/sprint/tier/runs-last/milestone."""
+    label/accept/review/sprint/tier/runs-last/milestone.
+
+    T-4521: `sweep-async` (`land`'s detached post-land sweep child) is
+    registered exactly as before, then hidden from `--help` via
+    `_suppress_subparser_alias` -- its file (`_closeout_evidence.py`) is
+    under a concurrent ticket's lease this ticket cannot edit, so the
+    hiding happens here, post-hoc, in a file that IS in scope."""
+    # frob:ticket T-1684
+    ticket_sweep_async_p = _add_ticket_sweep_async_parser(ticket_sub)
+    _suppress_subparser_alias(ticket_sub, "sweep-async")
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
         + [
             # frob:ticket T-1005
             _add_ticket_reverify_parser(ticket_sub),
-            # frob:ticket T-1684
-            _add_ticket_sweep_async_parser(ticket_sub),
+            ticket_sweep_async_p,
             # frob:ticket T-2467
             _add_ticket_waive_audit_parser(ticket_sub),
             _add_ticket_done_report_parser(ticket_sub),
@@ -172,6 +188,37 @@ def _add_ticket_parser(sub) -> None:
     _add_ticket_new_parser(ticket_sub)
     path_parsers = _add_ticket_query_parsers(ticket_sub)
     path_parsers += _add_ticket_lifecycle_parsers(ticket_sub)
+
+    # T-4521: `admin` groups the disaster-recovery-only verbs (renumber/
+    # restore/reconcile) under one help heading. `renumber`/`reconcile`
+    # are registered fresh here via the same builders their now-hidden
+    # top-level aliases use (`_add_ticket_lifecycle_parsers`, above,
+    # already built and SUPPRESS-hid those). `restore` cannot be
+    # rebuilt the same way -- its builder lives in
+    # `_closeout_evidence.py`, under a concurrent ticket's file lease --
+    # so the ALREADY-BUILT top-level `restore` parser object (registered
+    # by `_add_ticket_lifecycle_parsers` above, via
+    # `_add_ticket_fail_evidence_archive_parsers`) is reused verbatim
+    # under `admin` too: the same `ArgumentParser` instance is shared
+    # between both subparsers registries, which is safe (argparse
+    # actions carry no back-reference to their owning subparsers
+    # action), and byte-for-byte identical to the old top-level verb by
+    # construction, not by re-implementation.
+    admin_sub, admin_leaf_parsers = _add_ticket_admin_parser(ticket_sub)
+    ticket_restore_p = ticket_sub.choices.get("restore")
+    if ticket_restore_p is not None:
+        admin_sub._name_parser_map["restore"] = ticket_restore_p
+        admin_sub._choices_actions.append(
+            admin_sub._ChoicesPseudoAction(
+                "restore",
+                (),
+                "move a ticket OUT of tickets/archive/ back "
+                "into the active store (T-2954)",
+            )
+        )
+        _suppress_subparser_alias(ticket_sub, "restore")
+    path_parsers += admin_leaf_parsers
+
     for _tp in path_parsers:
         _tp.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
 

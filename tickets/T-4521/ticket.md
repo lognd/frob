@@ -3,7 +3,7 @@ id: T-4521
 title: 'ticket verb family: hide internal callbacks (merge-driver, sweep-async), drop
   migrate and the debt/deprecated aliases, fold runs-last-parallel-safe into a flag,
   move renumber/restore/reconcile under ticket admin'
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-09-16'
@@ -34,44 +34,44 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/_cli_parsers/_ticket
-  reason: avoid lease collision with T-4550 on _closeout_evidence.py; re-scoping
+  reason: avoid lease collision with T-draft-db13b6bc on _closeout_evidence.py; re-scoping
     to individual files
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/__init__.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-4550
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_closeout.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-4550
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_metadata.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-4550
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_new.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-4550
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_progress.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-4550
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_query.py
   reason: re-add individual _ticket parser files, excluding _closeout_evidence.py
-    which is leased by T-4550
+    which is leased by T-draft-db13b6bc
   actor: logan
   at: '2026-09-16'
 - op: add
@@ -88,17 +88,24 @@ scope_changes:
     not unrelated scope creep
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/unit/test_ticket_cli_surface.py::TestHiddenInternalCallbacks::test_merge_driver_still_dispatches
+- tests/unit/test_ticket_cli_surface.py::TestRemovedVerbsExitTwo::test_migrate_removed_notice_names_replacement
+- tests/unit/test_ticket_cli_surface.py::TestAdminGroup::test_admin_renumber_matches_hidden_top_level_alias
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket --help WHEN rendered THEN merge-driver and sweep-async are
     absent from the listing but still dispatch when invoked by git and by land
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_cli_surface.py::TestHiddenInternalCallbacks::test_merge_driver_still_dispatches
 - text: GIVEN frob ticket migrate, ticket debt, ticket deprecated WHEN invoked THEN
     each prints a one-line removal notice naming the replacement and exits 2
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_cli_surface.py::TestRemovedVerbsExitTwo::test_migrate_removed_notice_names_replacement
 - text: GIVEN frob ticket admin renumber|restore|reconcile WHEN run THEN behaviour
     is byte-for-byte the old top-level ticket verbs
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_cli_surface.py::TestAdminGroup::test_admin_renumber_matches_hidden_top_level_alias
 acceptance_amendments:
 - op: remove
   index: 3

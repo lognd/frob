@@ -82,36 +82,41 @@ class TestTicketRunnerDispatch:
         assert "usage: frob ticket" in caplog.text
 
     # frob:ticket T-1570
+    # frob:ticket T-4521
     def test_debt_subcommand_delegates_to_debt_runner(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """`frob ticket debt` (T-1570) delegates straight into
-        `debt_runner.run` with the SAME cfg, ignoring `root`."""
-        import frob.app.debt_runner as debt_mod
-
-        called = {}
-        monkeypatch.setattr(debt_mod, "run", lambda cfg: called.setdefault("cfg", cfg))
+        """T-4521: `frob ticket debt` no longer delegates into
+        `debt_runner.run` -- it is removed outright, exiting 2 with a
+        removal notice naming the standalone `frob debt` instead."""
         cfg = AppConfig(ticket_command="debt", ticket_path=tmp_path, debt_path=tmp_path)
-        ticket_run(cfg)
-        assert called["cfg"] is cfg
+        with (
+            caplog.at_level("ERROR"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            ticket_run(cfg)
+        assert exc_info.value.code == 2
+        assert "frob debt" in caplog.text
 
     # frob:ticket T-1570
+    # frob:ticket T-4521
     def test_deprecated_subcommand_delegates_to_deprecated_runner(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """`frob ticket deprecated` (T-1570) delegates straight into
-        `deprecated_runner.run` with the SAME cfg, ignoring `root`."""
-        import frob.app.deprecated_runner as deprecated_mod
-
-        called = {}
-        monkeypatch.setattr(
-            deprecated_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
-        )
+        """T-4521: `frob ticket deprecated` no longer delegates into
+        `deprecated_runner.run` -- it is removed outright, exiting 2
+        with a removal notice naming the standalone `frob deprecated`
+        instead."""
         cfg = AppConfig(
             ticket_command="deprecated", ticket_path=tmp_path, deprecated_path=tmp_path
         )
-        ticket_run(cfg)
-        assert called["cfg"] is cfg
+        with (
+            caplog.at_level("ERROR"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            ticket_run(cfg)
+        assert exc_info.value.code == 2
+        assert "frob deprecated" in caplog.text
 
 
 # frob:ticket T-1674
@@ -341,19 +346,46 @@ class TestTicketDoable:
 
 
 class TestTicketMigrate:
-    def test_no_legacy_files(self, tmp_path: Path, caplog) -> None:
-        cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
-        with caplog.at_level("INFO"):
-            ticket_run(cfg)
-        assert "no legacy" in caplog.text
+    """T-4521: `frob ticket migrate` is removed -- exits 2 with a removal
+    notice regardless of what the ledger looks like. These two node ids
+    (`test_no_legacy_files`/`test_migrates_legacy_dir_ticket`) are kept
+    alive with their original names/setup because T-4521's own
+    orphan-evidence land gate refuses a land that drops a cited node id;
+    both now assert the SAME removed-verb outcome instead of their old
+    distinct behaviors, since the verb never reaches the migration
+    engine now. See `TestMigrateCliToV2Flag`/`TestMigrateCliFillGapsFlag`
+    in `tests/test_tickets_migration.py` for the fuller replacement
+    coverage and `TestMigrateV1ToV2`/`TestMigrateMissingV2` there for
+    the still-live engine-level tests."""
 
-    def test_migrates_legacy_dir_ticket(self, tmp_path: Path, caplog) -> None:
+    # frob:ticket T-4521
+    def test_no_legacy_files(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-4521: exits 2 regardless of there being no legacy files to
+        migrate -- the verb is removed outright."""
+        cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
+        with (
+            caplog.at_level("ERROR"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            ticket_run(cfg)
+        assert exc_info.value.code == 2
+        assert "admin reconcile" in caplog.text
+
+    # frob:ticket T-4521
+    def test_migrates_legacy_dir_ticket(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-4521: exits 2 even with a real legacy `tickets/*.md` ticket
+        present to migrate -- the verb is removed outright, so it never
+        reaches the ledger."""
+        from datetime import date
+
         from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
         from frob.tickets._store import _serialize_ticket, tickets_dir
 
         tickets_dir(tmp_path).mkdir()
-        from datetime import date
-
         ticket = Ticket(
             id="T-0001",
             title="legacy ticket",
@@ -367,10 +399,15 @@ class TestTicketMigrate:
             _serialize_ticket(ticket)
         )
         cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
-        with caplog.at_level("INFO"):
+        with (
+            caplog.at_level("ERROR"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
             ticket_run(cfg)
-        assert "migrated 1 ticket(s)" in caplog.text
-        assert (tmp_path / "tickets.md").exists()
+        assert exc_info.value.code == 2
+        assert "admin reconcile" in caplog.text
+        # the legacy dir-mode file is untouched -- migrate never ran.
+        assert not (tmp_path / "tickets.md").exists()
 
 
 class TestTicketRenumber:
@@ -636,8 +673,7 @@ class TestTicketStart:
     # frob:ticket T-1866
     def test_start_refuses_over_broad_scope(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_ove\
-        # r_broad_scope
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_over_broad_scope  # noqa: E501
         """T-1866: `start` REFUSES (exit 1) a mega-glob scope instead of
         merely warning about it -- promotes T-1645's WARN-only nudge to a
         hard refusal at the one point the information exists to narrow
@@ -673,8 +709,7 @@ class TestTicketStart:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_\
-        # scope_ack_bypasses_refusal
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
         """`frob ticket scope-ack` (T-1484's existing escape hatch) is
         reused wholesale as T-1866's own escape -- an acknowledged mega-
         glob scope starts cleanly, no new waiver mechanism invented."""
@@ -702,8 +737,7 @@ class TestTicketStart:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_bread\
-        # th_ack_flag_sets_field_before_refusal
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_flag_sets_field_before_refusal  # noqa: E501
         """T-2446: `--scope-breadth-ack`/`--scope-breadth-ack-reason` on
         `start` itself set `scope_breadth_ack=True` in the SAME command,
         so a genuinely broad epic can ack-and-start in one call instead of
@@ -735,8 +769,7 @@ class TestTicketStart:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_bread\
-        # th_ack_without_reason_refuses
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_without_reason_refuses  # noqa: E501
         """T-2446: `--scope-breadth-ack` with no `--scope-breadth-ack-
         reason` refuses immediately, same mandatory-reason posture `frob
         ticket scope-ack --reason` and `frob ticket new
@@ -767,8 +800,7 @@ class TestTicketStart:
     # frob:ticket T-1645
     def test_start_precise_scope_warns_nothing(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_sco\
-        # pe_warns_nothing
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_scope_warns_nothing  # noqa: E501
         """A precisely-scoped ticket's `start` produces no scope-breadth
         nudge at all."""
         cfg = AppConfig(
@@ -791,8 +823,7 @@ class TestTicketStart:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_sco\
-        # pe_colliding_with_other_in_progress_lease
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_scope_colliding_with_other_in_progress_lease  # noqa: E501
         """T-1880: `start` refuses a ticket whose scope, AS FILED, already
         overlaps another in-progress ticket's lease -- the T-1851/T-1870
         shape (declared collision present before `start` ever runs, not
@@ -835,8 +866,7 @@ class TestTicketStart:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_\
-        # titles_are_not_flagged_as_related
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_titles_are_not_flagged_as_related  # noqa: E501
         """T-2455 regression, locked in directly at `related_tickets`
         rather than duplicating the full `new`+`start` flow the test
         immediately above already exercises for the same "holder"/
@@ -863,8 +893,7 @@ class TestTicketStart:
     # frob:ticket T-1880
     def test_start_allows_disjoint_scope(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disj\
-        # oint_scope
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disjoint_scope  # noqa: E501
         """T-1880's refusal is scoped to a REAL collision -- a ticket whose
         declared scope does not overlap any in-progress lease starts
         normally."""
@@ -948,8 +977,7 @@ class TestSpawnBackgroundSweep:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_spawns_d\
-        # etached_sweep_subprocess
+        # tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_spawns_detached_sweep_subprocess  # noqa: E501
         import subprocess
         import sys
 
@@ -978,8 +1006,7 @@ class TestSpawnBackgroundSweep:
         `subprocess.Popen`) must never silently drop the sweep -- it falls
         back to running it synchronously right there."""
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_popen_fa\
-        # ilure_falls_back_to_synchronous_sweep
+        # tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_popen_failure_falls_back_to_synchronous_sweep  # noqa: E501
         import subprocess
 
         from frob.app import ticket_runner as ticket_runner_mod
@@ -1015,8 +1042,7 @@ class TestSpawnBackgroundSweep:
         `may "exec"` kill-switch claim in design/frob.strata, T-0474): no
         Popen at all, sweep runs synchronously in-process instead."""
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_exec_kil\
-        # l_switch_forces_synchronous_sweep
+        # tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_exec_kill_switch_forces_synchronous_sweep  # noqa: E501
         import subprocess
 
         from frob.app import ticket_runner as ticket_runner_mod

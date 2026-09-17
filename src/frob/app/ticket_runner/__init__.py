@@ -145,7 +145,6 @@ from ._query import (
     _doable_row,
     _filter_by_state,
     _list,
-    _migrate,
     _order_dispatchable_with_alarms,
     _promote,
     _render_acceptance,
@@ -257,7 +256,7 @@ __all__ = [
     "_log_evidence_result",
     "_maybe_attach_clipboard_image",
     "_merge_driver",
-    "_migrate",
+    "_migrate_removed",
     "_milestone",
     "_new",
     "_order_dispatchable_with_alarms",
@@ -337,28 +336,45 @@ def _stdout_color() -> bool:
     return should_color(sys.stdout)
 
 
+# frob:ticket T-4521
+def _removed_verb_notice(old: str, replacement: str) -> None:
+    """Print a one-line removal notice naming `replacement` and exit 2
+    (T-4521): the uniform reaction for a dropped ticket subverb that is
+    still wired into the CLI parser (so a caller still typing the old
+    spelling gets a loud, actionable failure instead of `no such
+    command`)."""
+    _log.error("frob ticket %s: removed -- use `%s` instead", old, replacement)
+    sys.exit(2)
+
+
 # frob:ticket T-1570
+# frob:ticket T-4521
 def _debt(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket debt` (T-1570): delegates straight into
-    `debt_runner.run`, the same code the standalone `frob debt` runs --
-    `root` is unused (the standalone runner reads `cfg.debt_path`
-    directly), accepted only to match this table's uniform `(root, cfg)`
-    handler shape."""
-    from frob.app.debt_runner import run as debt_run
-
-    debt_run(cfg)
+    """`frob ticket debt` is removed (T-4521): it was a pure alias of the
+    standalone `frob debt`, which stays the one supported spelling
+    (docs/design/cli-regrouping.md) -- `root`/`cfg` accepted only to
+    match this table's uniform `(root, cfg)` handler shape."""
+    _removed_verb_notice("debt", "frob debt")
 
 
 # frob:ticket T-1570
+# frob:ticket T-4521
 def _deprecated(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket deprecated` (T-1570): delegates straight into
-    `deprecated_runner.run`, the same code the standalone `frob
-    deprecated` runs -- `root` is unused (the standalone runner reads
-    `cfg.deprecated_path` directly), accepted only to match this table's
-    uniform `(root, cfg)` handler shape."""
-    from frob.app.deprecated_runner import run as deprecated_run
+    """`frob ticket deprecated` is removed (T-4521): it was a pure alias
+    of the standalone `frob deprecated`, which stays the one supported
+    spelling (docs/design/cli-regrouping.md) -- `root`/`cfg` accepted
+    only to match this table's uniform `(root, cfg)` handler shape."""
+    _removed_verb_notice("deprecated", "frob deprecated")
 
-    deprecated_run(cfg)
+
+# frob:ticket T-4521
+def _migrate_removed(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket migrate` is removed (T-4521): the one-time v1->v2
+    ledger migration it ran has already been applied to every repo this
+    binary ships to; `frob ticket admin reconcile` is the repair verb
+    for a hand-edited/drifted ledger now -- `root`/`cfg` accepted only
+    to match this table's uniform `(root, cfg)` handler shape."""
+    _removed_verb_notice("migrate", "frob ticket admin reconcile")
 
 
 def _ticket_dispatch_table() -> dict:
@@ -380,9 +396,8 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-1684
         "sweep-async": _sweep_async,
         "reconcile": _reconcile_cmd,
-        "migrate": lambda root, cfg: _migrate(
-            root, to=cfg.ticket_migrate_to, fill_gaps=cfg.ticket_migrate_fill_gaps
-        ),
+        # frob:ticket T-4521
+        "migrate": _migrate_removed,
         "renumber": _renumber,
         # frob:ticket T-1637
         "promote": _promote,
@@ -534,16 +549,13 @@ _LAND_LOCK_EXEMPT_VERBS = frozenset({"land", "merge-driver", "sweep-async"})
 # frob:ticket T-1779
 # frob:ticket T-1779
 # frob:tests \
-# tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_l\
-# and_in_progress
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_land_in_progress  # noqa: E501
 # frob:tests \
-# tests/test_ticket_leases.py::TestDispatchLandGuard.test_read_only_verb_runs_while_lan\
-# d_in_progress
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_read_only_verb_runs_while_land_in_progress  # noqa: E501
 # frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_land_verb_itself_is_exempt
 # frob:tests \
-# tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the\
-# _ticket_file_at_all
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the_ticket_file_at_all  # noqa: E501
 def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) -> None:
     """`run()`'s pre-dispatch closing of T-1779's gap 1: the EXISTING
     `refuse_if_land_in_progress` guard (T-1619) only ran inside
@@ -800,8 +812,7 @@ def _looks_like_a_frob_repo(root: Path) -> bool:
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 # frob:doc docs/modules/tickets-lifecycle.md#structured-review-channel-t-0571
 # frob:doc \
-# docs/modules/tickets-lifecycle.md#every-ledger-writing-verb-auto-commits-uniformly-t-\
-# 1615
+# docs/modules/tickets-lifecycle.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
 # frob:doc docs/modules/tickets-landing.md#root-checkout-write-guard-t-1779
 # frob:ticket T-0588
 # frob:ticket T-1029
@@ -815,28 +826,21 @@ def _looks_like_a_frob_repo(root: Path) -> bool:
 # docs/modules/app.md#runners and #config (the docs this change IS actually about) \
 # were updated in the same diff"
 # frob:tests \
-# tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_\
-# exits_1
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 # frob:ticket T-1674
 # frob:tests \
-# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_\
-# env_used_when_path_not_explicit
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_env_used_when_path_not_explicit  # noqa: E501
 # frob:tests \
-# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_p\
-# ath_wins_over_frob_root
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_path_wins_over_frob_root  # noqa: E501
 # frob:tests \
-# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_r\
-# oot_is_logged_for_a_mutating_verb
+# tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_root_is_logged_for_a_mutating_verb  # noqa: E501
 # frob:ticket T-4085
 # frob:tests \
-# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_\
-# ambient_cwd_with_no_frob_toml_or_git_is_refused
+# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_ambient_cwd_with_no_frob_toml_or_git_is_refused  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_\
-# ambient_cwd_inside_a_real_frob_repo_still_works
+# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_ambient_cwd_inside_a_real_frob_repo_still_works  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_\
-# explicit_path_to_a_bare_directory_is_still_trusted
+# tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_explicit_path_to_a_bare_directory_is_still_trusted  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`.
 

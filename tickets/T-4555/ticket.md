@@ -1,5 +1,5 @@
 ---
-id: T-draft-65c60c97
+id: T-4555
 title: Export tickets.lock path publicly from frob.tickets._store for cross-module
   probes
 state: queued
