@@ -14,7 +14,7 @@ blocked_by:
 - T-4422
 parent: T-2994
 tier: ticket
-sprint: v0.533.0
+sprint: v0.534.0
 runs_last: false
 milestone: 0.533.0
 runs_last_parallel_safe: false
@@ -23,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: sprint
+  old_value: v0.533.0
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 acceptance:
 - text: Given all five debloat stories closed with zero denominators, when frob.toml
