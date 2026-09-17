@@ -16,10 +16,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/docs/**
 - src/frob/xref/**
+- tests/fixtures/lang/csharp/no_dangerous_apis.cs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/fixtures/lang/csharp/no_dangerous_apis.cs
+  reason: reuse static csharp fixture for docs/xref language-parity tests
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 threat: null
 component: null
