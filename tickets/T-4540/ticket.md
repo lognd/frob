@@ -3,7 +3,7 @@ id: T-4540
 title: 'REL002 fires on every land while dev_version_bump is on: the release stamp
   cannot match a .devN version between cuts, raising quarantine and forcing synchronous
   verification'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-16'
