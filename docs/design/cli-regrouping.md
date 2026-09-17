@@ -167,6 +167,76 @@ new verb group) -- it renders in the "also available directly" section
 alongside every other still-supported flat command, no
 `_GroupedHelpFormatter`/`_VERB_GROUP_NAMES` change needed.
 
+## Generation rule -- groups are DERIVED, never hand-mirrored (T-4520)
+
+OWNER DECISION 2026-09-16: the four verb groups (`explore`/`quality`/
+`design`/`ops`) stay -- they are the approachable surface this whole
+doc exists to design -- but a group's subcommand list must never again
+be a second, hand-typed enumeration of its flat twin's subcommands.
+Measured 2026-09-16 (full CLI surface audit): flat `sys` had 9 subverbs,
+`design sys` mirrored 4 of them -- `_add_design_parser` (`_design.py`)
+wired only two of the seven `_add_sys_*_parser` helpers `_add_sys_parser`
+(the flat builder, `_misc.py`) itself calls, because nothing forced the
+two lists to move together. 30 group leaves were separate
+`ArgumentParser` objects from their flat twins repo-wide; 19 had zero
+references anywhere (dead surface presented as implemented).
+
+Rejected: deleting the groups (option a) -- the July 2026 directive this
+doc opens with is still live, and the groups are the more approachable
+surface for a new user/agent even though the flat forms carry the
+overwhelming majority of real usage (measured: `sys audit` 266 doc / 28
+commit references vs `design sys audit` 0/0; `natives build` 121/4 vs
+`ops natives build` 0/0).
+
+Chosen: option b, generate every group leaf from the flat verb's own
+definition, by one of two mechanisms depending on how the flat verb
+itself is built (T-4520 applied both, across `_design.py`/`_ops.py`/
+`_explore.py`):
+
+1. **Call the same `_populate_*`/`_add_*_sub_parser` helper(s) the flat
+   builder calls, in the same order** -- the right mechanism whenever the
+   flat verb is itself composed from already-factored helper functions
+   (e.g. `_add_sys_parser`'s seven `_add_sys_*_parser` calls, `_misc.py`).
+   `design sys` (T-4520) now calls all seven, matching `_add_sys_parser`
+   call-for-call; `tests/unit/test_cli_group_parity.py` is the guard that
+   turns a future missed helper back into a caught regression instead of
+   a silent one. This does not make ADDING an eighth helper to the flat
+   side fully automatic (the group module still needs its own matching
+   call added, since the helper list itself is out of a generic
+   registry's reach without owning the flat builder's file too) -- but it
+   collapses the divergence to one line per helper instead of a
+   full flag-by-flag re-declaration, and the parity test makes a missed
+   line loud rather than silent.
+2. **Reuse the flat twin's already-built `ArgumentParser` object outright**
+   -- the mechanism for a flat verb whose flags are declared inline
+   (`map`/`outline`/`xref`, `_core.py`'s `_add_map_parser`/
+   `_add_outline_parser`/`_add_xref_parser`, which have no `_populate_*`
+   split to call a second time) and for the two verbs that used to be
+   group-only (`ops process reap`, `explore docs-search` -- both now have
+   flat twins, `_add_process_parser` in `_ops.py` and
+   `_add_docs_search_parser` in `_explore.py`, making the mapping total).
+   `_explore._mirror_subparser` writes the flat parser instance directly
+   into the group's own `_SubParsersAction.choices`/`_choices_actions`
+   bookkeeping, so the group leaf IS the flat parser -- option strings,
+   help text, and dispatch dest by construction, with zero risk of
+   divergence ever, at the cost of `_root._build_parser` having to
+   register every flat leaf a group mirrors BEFORE building that group
+   (see `_root._add_analysis_subparsers`'s ordering comment).
+
+`frob design docs` stays the one deliberate, documented exception to
+"identical to the flat twin": it omits `--search` on purpose (stays
+exclusive to `frob explore docs-search`, matching this doc's own bucket
+split above) -- `_populate_docs_args(docs_p, include_search=False)`
+(`_core.py`, out of T-4520's scope to restructure) rather than either
+generation mechanism, and
+`TestDesignGroupParity.test_docs_deliberately_omits_search` asserts the
+subset relationship explicitly instead of silently excluding `docs` from
+the parity sweep.
+
+`frob --help`'s top-level listing (the `_GroupedHelpFormatter` section
+above) is unchanged by T-4520 -- the generation rule is about how each
+group's SUBCOMMANDS are built, not the root `--help` grouping itself.
+
 ## Ticket breakdown
 
 - T-1238 (this epic) -- design doc (this file) + `frob explore` group,
@@ -175,3 +245,6 @@ alongside every other still-supported flat command, no
   `ops`, the `tickets`/`ticket` naming question) and for the help-surface
   rework: see the epic's Done report for the exact ids filed alongside
   this doc.
+- T-4520 -- generation rule above: `design sys`'s missing subverbs, flat
+  twins for `ops process reap`/`explore docs-search`, and
+  `tests/unit/test_cli_group_parity.py` as the standing regression guard.

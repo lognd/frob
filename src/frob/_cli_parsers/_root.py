@@ -67,6 +67,13 @@ from frob._cli_parsers import (
     _add_worktree_parser,
     _add_xref_parser,
 )
+
+# T-4520: imported directly from their owning submodules rather than the
+# `frob._cli_parsers` package re-export (`__init__.py`) -- that file is
+# owned by a concurrent ticket's scope for the duration of this one, and
+# these two flat twins (`docs-search`/`process`) are new with T-4520.
+from frob._cli_parsers._explore import _add_docs_search_parser
+from frob._cli_parsers._ops import _add_process_parser
 from frob.logging import get_logger
 from frob.narrative._cli import add_narrative_parser
 from frob.refactor._cli import add_refactor_parser
@@ -431,13 +438,19 @@ def _add_analysis_subparsers(sub) -> None:
     """
     _add_scaffold_parser(sub)
     _add_cycle_parser(sub)
+    # T-4520: `_add_explore_parser` mirrors these four's already-built
+    # `ArgumentParser` objects (`_explore._mirror_subparser`) rather than
+    # redeclaring their flags, so they must be registered onto `sub`
+    # BEFORE it runs -- moved up from below `_add_ops_parser` for exactly
+    # that reason; do not reorder them back below the group calls.
+    _add_outline_parser(sub)
+    _add_map_parser(sub)
+    _add_xref_parser(sub)
+    _add_docs_search_parser(sub)
     _add_explore_parser(sub)
     _add_quality_parser(sub)
     _add_design_parser(sub)
     _add_ops_parser(sub)
-    _add_outline_parser(sub)
-    _add_map_parser(sub)
-    _add_xref_parser(sub)
     _add_parse_parser(sub)
     _add_dup_parser(sub)
     _add_arch_parser(sub)
@@ -481,6 +494,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_stats_parser(sub)
     _add_serve_parser(sub)
     _add_sys_parser(sub)
+    _add_process_parser(sub)
     _add_deploy_parser(sub)
     _add_fleet_parser(sub)
     _add_doctor_parser(sub)

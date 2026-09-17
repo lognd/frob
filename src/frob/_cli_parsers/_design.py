@@ -8,7 +8,13 @@ form keeps working unchanged -- this is a second entry point onto the
 same argument dests (reusing each member's own `_populate_*`/`_add_*_sub_
 parser` helper so the flag list is declared exactly once), not a
 replacement. `frob design docs` omits `--search` (stays exclusive to
-`frob explore docs-search`), matching the design doc's own bucket split."""
+`frob explore docs-search`), matching the design doc's own bucket split.
+T-4520: `sys` calls every one of `_add_sys_parser`'s (the flat twin,
+_misc.py) seven `_add_sys_*_parser` helpers, in the same order, so
+`frob design sys` can never again silently fall behind `frob sys` the
+way it did before T-4520 (measured 2026-09-16: 4 of 9 counted
+subverbs) -- see docs/design/cli-regrouping.md's derivation rule and
+tests/unit/test_cli_group_parity.py."""
 
 from __future__ import annotations
 
@@ -20,8 +26,13 @@ from frob._cli_parsers._core import (
 )
 from frob._cli_parsers._misc import (
     _SYS_EPILOG,
+    _add_sys_capacity_parser,
     _add_sys_doc_and_audit_parsers,
+    _add_sys_init_parser,
     _add_sys_plan_and_export_parsers,
+    _add_sys_shrink_parser,
+    _add_sys_threats_parser,
+    _add_sys_trace_parser,
 )
 from frob._cli_parsers._reporting import (
     _populate_graph_actions,
@@ -54,8 +65,19 @@ def _add_design_parser(sub) -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sys_sub = sys_p.add_subparsers(dest="sys_command")
+    # T-4520: call every `_add_sys_*_parser` helper `_add_sys_parser` (the flat
+    # `frob sys` twin, _misc.py) calls, in the same order -- this list is the
+    # single point of divergence risk the parity test
+    # (tests/unit/test_cli_group_parity.py) exists to catch: adding an eighth
+    # helper to the flat builder without adding the matching call here is
+    # exactly the drift docs/design/cli-regrouping.md's derivation rule bars.
     _add_sys_plan_and_export_parsers(sys_sub)
     _add_sys_doc_and_audit_parsers(sys_sub)
+    _add_sys_trace_parser(sys_sub)
+    _add_sys_threats_parser(sys_sub)
+    _add_sys_capacity_parser(sys_sub)
+    _add_sys_shrink_parser(sys_sub)
+    _add_sys_init_parser(sys_sub)
 
     registry_p = design_sub.add_parser(
         "registry", help="unified design-knowledge registry (T-0407)"

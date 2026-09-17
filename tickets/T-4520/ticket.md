@@ -2,7 +2,7 @@
 id: T-4520
 title: generate the explore/quality/design/ops group parsers from the flat parsers
   so they cannot diverge (design sys mirrors 4 of sys's 9 subverbs today)
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -26,6 +26,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_cli_group_parity.py::TestDesignGroupParity::test_sys_carries_every_flat_subverb
+- tests/unit/test_cli_group_parity.py::TestDesignGroupParity::test_full_member_matches_its_flat_twin
+- tests/unit/test_cli_group_parity.py::TestOpsGroupParity::test_process_reap_has_a_flat_twin
 designated_repro_test: null
 acceptance:
 - text: GIVEN a subverb or flag added to a flat verb (sys, graph, registry, release,
@@ -33,15 +37,18 @@ acceptance:
     its group with identical help, flags and dispatch, without any edit to the group
     module, proven by a parity test that walks _build_parser and compares every group
     leaf to its flat twin
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_group_parity.py::TestDesignGroupParity::test_sys_carries_every_flat_subverb
 - text: GIVEN frob design sys capacity WHEN invoked THEN it behaves identically to
     frob sys capacity, and ops process reap and explore docs-search (the two group-only
     leaves) get flat twins so the mapping is total
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_group_parity.py::TestDesignGroupParity::test_full_member_matches_its_flat_twin
 - text: 'GIVEN docs/design/cli-regrouping.md WHEN read THEN it records the owner decision
     of 2026-09-16: groups are kept for approachability and are DERIVED from the flat
     parsers, never hand-mirrored'
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_group_parity.py::TestOpsGroupParity::test_process_reap_has_a_flat_twin
 threat: null
 component: null
 anchor: false
