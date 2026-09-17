@@ -22,6 +22,7 @@ scope:
 - tests/unit/test_xref.py
 - tests/fixtures/lang/sample.cs
 - src/frob/lang/_extract.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -69,6 +70,11 @@ scope_changes:
   reason: iter_identifiers' _IDENTIFIER_TYPES table is the direct blocker for xref
     csharp usage lookups (T-3232's proven case); needs a csharp entry to reach the
     deliverable
+  actor: logan
+  at: '2026-09-16'
+- op: add
+  glob: docs/modules/lang.md
+  reason: iter_identifiers doc anchor; document the csharp _IDENTIFIER_TYPES addition
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
