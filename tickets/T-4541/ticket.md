@@ -1,5 +1,5 @@
 ---
-id: T-draft-a943b888
+id: T-4541
 title: 'testing: LANGUAGE_COLLECTORS keys vitest as ''ts'' but [[test.runner]] language
   is ''typescript'', so vitest evidence is never verified'
 state: queued

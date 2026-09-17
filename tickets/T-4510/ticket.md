@@ -1,7 +1,7 @@
 ---
 id: T-4510
 title: C# dup/docblock facet fixture (verify _CSHARP_LANGS bucket end to end)
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -46,19 +46,28 @@ scope_changes:
     the existing python/cpp scanner docs
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/unit/test_support_csharp.py::TestCsharpDupFacetFires::test_find_duplicates_reports_near_duplicate_methods
+- tests/unit/test_support_csharp.py::TestCsharpDocblockFacetFires::test_unanchored_project_using_fires_unbound
+- tests/unit/test_support_csharp.py::TestCsharpDocblockFacetFires::test_bcl_using_is_zero_false_positives
+- tests/unit/test_support_csharp.py::TestCsharpDocblockFacetFires::test_anchored_project_using_has_zero_violations
 designated_repro_test: null
 acceptance:
 - text: GIVEN two near-duplicate C# methods in a fixture file, WHEN the dup detector
     runs, THEN it reports the duplicate pair using the _CSHARP_LANGS facet path.
-  evidence: []
+  evidence:
+  - tests/unit/test_support_csharp.py::TestCsharpDupFacetFires::test_find_duplicates_reports_near_duplicate_methods
 - text: GIVEN a public C# method missing an XML doc comment (///), WHEN the docblock
     checker runs, THEN it flags the missing docblock the same way it flags a missing
     Python docstring.
-  evidence: []
+  evidence:
+  - tests/unit/test_support_csharp.py::TestCsharpDocblockFacetFires::test_unanchored_project_using_fires_unbound
 - text: GIVEN a C# 'using' statement that _csharp_using_violations (T-2906) is meant
     to police, WHEN the checker runs on the fixture, THEN the expected violation fires
     with zero false positives on clean code.
-  evidence: []
+  evidence:
+  - tests/unit/test_support_csharp.py::TestCsharpDocblockFacetFires::test_bcl_using_is_zero_false_positives
+  - tests/unit/test_support_csharp.py::TestCsharpDocblockFacetFires::test_anchored_project_using_has_zero_violations
 threat: null
 component: null
 anchor: false

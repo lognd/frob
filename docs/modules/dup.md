@@ -1078,6 +1078,18 @@ verbatim in behavior and re-exported as `frob.dup.find_duplicates` for
 retirement" above for what changed under the hood (parsing now goes
 through `frob.lang.raw_tree`, not the deleted `frob.ast` package).
 
+`_scan_tree`'s per-extension dispatch covers `_PY_EXTS` (`.py`, via
+`_legacy_py`), `_CPP_EXTS` (`.cpp`/`.cc`/`.cxx`/`.h`/`.hpp`, via
+`_legacy_cpp`), and `_CS_EXTS` (`.cs`, via `_legacy_cs` -- T-4510: added
+after finding csharp had no real fixture proving this scanner reached it
+at all, despite csharp already being a real `LANGUAGES` entry in
+`frob.dup._exhaustiveness` and a real `_CSHARP_LANGS`-routed facet in
+`frob.lang._support`; `tests/fixtures/csharp_dup_docblock/` and
+`tests/unit/test_support_csharp.py` are the fixture/test pair proving the
+gap is closed). `_legacy_cs`'s method/locals/serialization walk mirrors
+`_legacy_py` at a deliberately narrower scope -- see its own module
+docstring for exactly which C# local-binding shapes it recognizes.
+
 <a id="tests-directory-floor-t-2970"></a>
 <!-- frob:describes src/frob/dup/_legacy.py::_MIN_LINES_OVERRIDES -->
 <!-- frob:describes src/frob/dup/_legacy.py::_effective_min_lines -->

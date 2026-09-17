@@ -1,5 +1,5 @@
 ---
-id: T-draft-3eb6efc0
+id: T-4539
 title: 'testing: LANGUAGE_COLLECTORS keys vitest as ''ts'' but [[test.runner]] language
   is ''typescript'', so vitest evidence is never verified'
 state: dropped

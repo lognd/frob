@@ -8,9 +8,15 @@ compatibility shim that keeps the existing entry point working.
 
 Parses through `frob.lang.raw_tree` (one grammar-loading mechanism, per
 docs/modules/lang.md). The per-language fingerprinting/iteration helpers live in the
-cohesive `_legacy_py`/`_legacy_cpp` submodules (with shared node/hash
-helpers in `_legacy_common`); this module owns the models, the file
-scanners, and the clone-grouping entry point.
+cohesive `_legacy_py`/`_legacy_cpp`/`_legacy_cs` submodules (with shared
+node/hash helpers in `_legacy_common`); this module owns the models, the
+file scanners, and the clone-grouping entry point.
+
+T-4510: `_CS_EXTS`/`_scan_cs_file` close a real gap found while proving
+the csharp dup facet fires end to end -- `.cs` files were never dispatched
+here at all (only `_PY_EXTS`/`_CPP_EXTS` were), so csharp's "implemented"
+dup-facet claim (`frob.lang._support`, `frob.dup._exhaustiveness.
+LANGUAGES`) had no fixture actually exercising this scanner.
 """
 
 from __future__ import annotations
@@ -32,6 +38,11 @@ from frob.dup._legacy_cpp import (
     _iter_functions_cpp,
     _serialize_cpp_body,
 )
+from frob.dup._legacy_cs import (
+    _collect_locals_cs,
+    _iter_functions_cs,
+    _serialize_cs_body,
+)
 from frob.dup._legacy_py import (
     _collect_locals_py,
     _iter_functions_py,
@@ -44,6 +55,9 @@ _log = get_logger(__name__)
 
 _PY_EXTS = {".py"}
 _CPP_EXTS = {".cpp", ".cc", ".cxx", ".h", ".hpp"}
+#: T-4510: csharp's own extension bucket, dispatched to `_scan_cs_file`
+#: the same way `_PY_EXTS`/`_CPP_EXTS` dispatch to their own scanners.
+_CS_EXTS = {".cs"}
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +298,42 @@ def _scan_cpp_file(
         )
 
 
+# frob:ticket T-4510
+def _scan_cs_file(
+    path: Path,
+    root: Path,
+    min_lines: int,
+    exact_map: dict[str, list[CodeFragment]],
+    renamed_map: dict[str, list[CodeFragment]],
+    min_lines_overrides: tuple[tuple[str, int], ...] = (),
+) -> None:
+    """Fingerprint every `method_declaration` in a `.cs` file into
+    `exact_map`/`renamed_map`, mirroring `_scan_py_file`/`_scan_cpp_file`
+    (T-4510: closes the dup facet's real csharp gap -- see this module's
+    docstring)."""
+    from frob.lang import raw_tree
+
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        _log.warning("parse failed for %s: %s", path, parsed.err)
+        return
+    tree, src, _language = parsed.danger_ok
+    rel = _posix_rel(path, root)
+    for func_node, symbol in _iter_functions_cs(tree.root_node):
+        _index_function(
+            func_node,
+            symbol,
+            rel,
+            src,
+            min_lines,
+            exact_map,
+            renamed_map,
+            _collect_locals_cs,
+            _serialize_cs_body,
+            min_lines_overrides,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Grouping and main entry point
 # ---------------------------------------------------------------------------
@@ -305,6 +355,10 @@ def _scan_tree(
             )
         elif ext in _CPP_EXTS:
             _scan_cpp_file(
+                path, root, min_lines, exact_map, renamed_map, min_lines_overrides
+            )
+        elif ext in _CS_EXTS:
+            _scan_cs_file(
                 path, root, min_lines, exact_map, renamed_map, min_lines_overrides
             )
 
