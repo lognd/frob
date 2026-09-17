@@ -78,6 +78,28 @@ scope_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: frob.docs.extract_docstrings and frob.xref's --lang/parsed-search dispatch
+    on frob.lang's supported language set via a single shared table (frob.lang.supported_extensions/language_for_extension/tree_sitter_extensions),
+    no second hand-maintained language list
+  evidence: []
+- text: frob explore xref <symbol> finds the definition and every reference for a
+    public C# method across a static csharp fixture (tests/fixtures/lang/sample.cs)
+  evidence: []
+- text: a public C# class's XML doc comment resolves through frob.docs.extract_docstrings
+    (the docs facet), not just python docstrings
+  evidence: []
+acceptance_amendments:
+- op: remove
+  index: 4
+  old_text: frob.docs.extract_docstrings and frob.xref's --lang/parsed-search dispatch
+    on frob.lang's supported language set via a single shared table (frob.lang.supported_extensions/language_for_extension/tree_sitter_extensions),
+    no second hand-maintained language list
+  new_text: null
+  reason: duplicate created by a redundant accept retry while a stale land pid caused
+    a false LandInProgress refusal
+  actor: logan
+  at: '2026-09-16'
 threat: null
 component: null
 anchor: false
