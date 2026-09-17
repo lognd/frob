@@ -2,7 +2,7 @@
 id: T-4552
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-4548):
   1 new (rule, file) identit(ies), 1 finding(s) (TICK010)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-17'
@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .git/frob-leases/T-4550.json
+- src/frob/tickets/_land_git_ops.py
 findings:
 - - TICK010
   - /home/logan/projects/frob/.git/frob-leases/T-4550.json
@@ -23,6 +24,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'COV002: T-4498 helpers need frob:ticket/frob:tests edges'
+  actor: logan
+  at: '2026-09-17'
 designated_repro_test: null
 threat: null
 component: null
