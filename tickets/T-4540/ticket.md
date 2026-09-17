@@ -19,10 +19,18 @@ scope:
 - src/frob/gates/_release.py
 - src/frob/release
 - tests/unit/test_rel002_dev_suffix.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: REL002 emitter (_rel002_coherence_violations) actually lives here, not in
+    a nonexistent gates/_release.py
+  actor: logan
+  at: '2026-09-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN pyproject version 0.531.1.devN with dev_version_bump = true and a release
