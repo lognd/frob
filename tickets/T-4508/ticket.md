@@ -18,6 +18,7 @@ scope:
 - src/frob/testing/_unity_batchmode.py
 - tests/unit/test_dotnet_runner.py
 - tests/unit/test_unity_batchmode.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_unity_batchmode.py
   reason: unit tests for unity batchmode parser/runner
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: docs/modules/testing.md
+  reason: frob:doc target for run_dotnet_tests public api
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
