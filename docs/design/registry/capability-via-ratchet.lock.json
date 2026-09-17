@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 311,
-      "reason": "T-4498: adds tests/unit/test_land_merge_conflict_drop.py to the exec via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 310 -> 311, 1 new site(s).",
-      "ticket": "T-4498"
+      "accepted_count": 312,
+      "reason": "T-4494: adds tests/unit/test_land_stackdump.py to the exec via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 311 -> 312, 1 new site(s).",
+      "ticket": "T-4494"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 231,
-      "reason": "T-4498: adds tests/unit/test_land_merge_conflict_drop.py to the fs.read via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 230 -> 231, 1 new site(s).",
-      "ticket": "T-4498"
+      "accepted_count": 232,
+      "reason": "T-4494: adds tests/unit/test_land_stackdump.py to the fs.read via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 231 -> 232, 1 new site(s).",
+      "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 528,
-      "reason": "T-4498: adds tests/unit/test_land_merge_conflict_drop.py to the fs.write via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 527 -> 528, 1 new site(s).",
-      "ticket": "T-4498"
+      "accepted_count": 529,
+      "reason": "T-4494: adds tests/unit/test_land_stackdump.py to the fs.write via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 528 -> 529, 1 new site(s).",
+      "ticket": "T-4494"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

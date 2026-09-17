@@ -3912,3 +3912,52 @@ this file is covered uniformly, present and future, with no change to
 any of those call sites' own code. Log lines from OTHER commands
 sharing the same logger name (`ticket new`, `ticket close`, ...) are
 left completely unmodified -- the prefix match is the only gate.
+
+## Silent-phase self-dump watchdog (T-4494)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_dump_threshold_s -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_start_land_silent_phase_watchdog -->
+
+Measured 2026-09-15 landing T-4496 onto dev: after the T-4417 phase
+line `[+0.3s] ticket land: profile=rapid -- skipping the T-1463
+pre-land baseline snapshot check`, the process ran 21 minutes at 109%
+CPU in the land python process itself (no child) with no further log
+line. `py-spy` needs root on this box, and `frob.testing._stackdump.
+install_stackdump_handler` was installed only by `frob serve`'s daemon
+-- `kill -USR1` on the wedged land terminated it with exit 138 and
+nothing landed, because no `SIGUSR1` handler was ever registered in
+that process.
+
+Two independent fixes, both near-zero-cost until triggered:
+
+**Unconditional handler install.** `_land` calls `install_stackdump_
+handler(force=True)` (T-4494's addition to `frob.testing._stackdump`)
+at its own very top -- before `_dispatch_land_mode`, so even a fast
+`--plan`/`--queue`/`--status`/`--drain` call has the handler in place
+for as long as that process lives. `force=True` bypasses `STACKDUMP_
+ENV` entirely: unlike every other caller (pytest, `frob serve`), a land
+is exactly the process class this ticket's own incident showed needs
+the handler ON by default, not behind an opt-in an operator would have
+had to already set before the land that turns out to wedge.
+
+**Silent-phase watchdog.** `_start_land_silent_phase_watchdog` starts a
+daemon thread right before `_land_core` (not before -- a `--finish`/
+`--retire-on-proof` early return above it is itself fast and never
+silent, so it does not pay for the thread) that polls every 5 seconds
+and self-dumps (`frob.testing._stackdump.write_stack_dump`, WARNING-
+logging the file it wrote) the moment no `[+Ns] ticket land: ...` phase
+line has fired for `_land_silent_phase_dump_threshold_s`'s threshold --
+`[tool.frob] land_silent_phase_dump_s` in `pyproject.toml`, defaulting
+to 600 (10 minutes) when absent/unparsable. `_land_silent_phase_
+watchdog` dumps at most once per silence EPISODE (a fresh phase line
+resets the "already dumped" flag), so a land that recovers and later
+goes silent again dumps again instead of staying silenced by its first
+dump; `_land`'s `finally` stops the thread (`stop_event.set()`) the
+moment `_land_core` returns, so the watchdog never outlives the land
+it is diagnosing.
+
+Together: the NEXT silent phase either self-dumps on its own (naming
+its own stuck function in the WARNING line, no `kill -USR1` needed at
+all) or, if an operator sends `SIGUSR1` by hand first, the land
+survives it and keeps running instead of dying with exit 138.

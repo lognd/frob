@@ -41,6 +41,30 @@ from pathlib import Path
 STACKDUMP_ENV = "FROB_COVERAGE_STACKDUMP"
 
 
+# frob:ticket T-4494
+# frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
+# frob:tests tests/unit/test_land_stackdump.py::TestWriteStackDump.test_writes_and_returns_dump_path  # noqa: E501
+def write_stack_dump(header: str) -> Path:
+    """Write every live thread's stack in THIS process to `.frob/
+    stackdumps/pid-<pid>.txt`, prefixed with `header` (T-4494: extracted
+    from `dump_all_thread_stacks` so a non-signal caller -- `frob ticket
+    land`'s silent-phase watchdog -- can trigger the identical dump
+    without going through `os.kill`/a signal handler's `(signum, frame)`
+    shape). Appends (`"a"`) rather than truncates -- a wedge investigated
+    more than once (a `SIGUSR1` probe, a watchdog firing repeatedly, or
+    both) keeps every dump, timestamped by the surrounding `faulthandler.
+    dump_traceback` call's own thread-id/frame text, not just the last
+    one. Returns the dump file's path so a caller can name it in its own
+    log line."""
+    dump_dir = Path(".frob") / "stackdumps"
+    dump_dir.mkdir(parents=True, exist_ok=True)
+    dump_path = dump_dir / f"pid-{os.getpid()}.txt"
+    with dump_path.open("a", encoding="utf-8") as fh:
+        fh.write(f"\n--- {header}, pid={os.getpid()} ---\n")
+        faulthandler.dump_traceback(file=fh, all_threads=True)
+    return dump_path
+
+
 # frob:ticket T-1433
 # frob:ticket T-1466
 # frob:ticket T-1823
@@ -51,40 +75,42 @@ def dump_all_thread_stacks(_signum: int, _frame: object) -> None:
     thread's stack in THIS process to a per-pid file under
     `.frob/stackdumps/` so a wedge self-diagnoses instead of leaving only
     a bare `wchan=futex_wait_queue` with no indication of which lock, in
-    which function, on which process. Appends (`"a"`) rather than
-    truncates -- a wedge investigated by sending `SIGUSR1` more than once
-    (e.g. once per suspect-narrowing probe) keeps every dump, timestamped
-    by the surrounding `faulthandler.dump_traceback` call's own
-    thread-id/frame text, not just the last one."""
-    dump_dir = Path(".frob") / "stackdumps"
-    dump_dir.mkdir(parents=True, exist_ok=True)
-    dump_path = dump_dir / f"pid-{os.getpid()}.txt"
-    with dump_path.open("a", encoding="utf-8") as fh:
-        fh.write(f"\n--- SIGUSR1 stack dump, pid={os.getpid()} ---\n")
-        faulthandler.dump_traceback(file=fh, all_threads=True)
+    which function, on which process (T-4494: now a thin wrapper over
+    `write_stack_dump`, shared with the non-signal watchdog caller)."""
+    write_stack_dump("SIGUSR1 stack dump")
 
 
 # frob:ticket T-1433
 # frob:ticket T-1466
 # frob:ticket T-1823
+# frob:ticket T-4494
 # frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
 # frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
-def install_stackdump_handler() -> None:
+# frob:tests tests/unit/test_land_stackdump.py::TestInstallStackdumpHandlerForce.test_force_installs_regardless_of_env  # noqa: E501
+def install_stackdump_handler(*, force: bool = False) -> None:
     """Install `dump_all_thread_stacks` as the `SIGUSR1` handler for THIS
     process, gated on `STACKDUMP_ENV` (T-1433, generalized beyond pytest
-    by T-1466). Safe to call from ANY frob process -- pytest's
-    controller/worker, `frob serve`'s daemon, a `frob check` subprocess
-    pool member -- the wedge this exists to diagnose can live in any of
-    them, and only sending the signal to the actually-stuck process
-    produces a useful dump. `SIGUSR1` is POSIX-only (absent on Windows,
-    where `signal.SIGUSR1` does not exist); silently a no-op there."""
+    by T-1466) unless `force=True` (T-4494). Safe to call from ANY frob
+    process -- pytest's controller/worker, `frob serve`'s daemon, a
+    `frob check` subprocess pool member, `frob ticket land` -- the wedge
+    this exists to diagnose can live in any of them, and only sending the
+    signal to the actually-stuck process produces a useful dump.
+    `SIGUSR1` is POSIX-only (absent on Windows, where `signal.SIGUSR1`
+    does not exist); silently a no-op there.
+
+    T-4494: `force=True` bypasses `STACKDUMP_ENV` entirely -- `frob ticket
+    land` installs unconditionally (near-zero cost until a `SIGUSR1`
+    actually arrives) rather than requiring an operator to have already
+    set the opt-in env var on a land that turns out to wedge silently;
+    every other caller keeps the opt-in-only default."""
     # frob:waive SEC110 reason="FROB_COVERAGE_STACKDUMP is a boolean opt-in feature \
     # flag (same shape as the existing FROB_AGENT/FROB_NO_TELEMETRY precedent), gating \
     # whether a SIGUSR1 stack-dump handler is installed; it carries no \
     # secret/confidential value"
-    value = os.environ.get(STACKDUMP_ENV, "")
-    if value.strip().lower() in ("", "0", "false"):
-        return
+    if not force:
+        value = os.environ.get(STACKDUMP_ENV, "")
+        if value.strip().lower() in ("", "0", "false"):
+            return
     sigusr1 = getattr(signal, "SIGUSR1", None)
     if sigusr1 is None:  # pragma: no cover - POSIX-only, not exercised on Windows CI
         return

@@ -38,7 +38,9 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
+import tomllib
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
@@ -58,6 +60,7 @@ from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError, guarded_subprocess_run
 from frob.process._project_tool import project_tool_argv, resolve_project_tool
+from frob.testing._stackdump import install_stackdump_handler, write_stack_dump
 from frob.tickets._land_git_ops import _describe_git_failure, _land_internal_git_env
 from frob.tickets._leases import refuse_if_worktree_in_use
 
@@ -122,6 +125,18 @@ _LAND_PHASE_LOG_PREFIX = "ticket land:"
 #: it once, centrally, off the log record stream itself.
 _land_phase_timer_start: float | None = None
 
+# frob:ticket T-4494
+#: `time.perf_counter()` of the most recent "ticket land: ..." phase line
+#: this process has logged, `None` before any has fired -- distinct from
+#: `_land_phase_timer_start` (which is set ONCE, at the FIRST phase line,
+#: and never moves again): `_land_silent_phase_watchdog` diffs against
+#: THIS one to detect "no phase line for N seconds", the exact silent-CPU-
+#: bound-phase symptom this ticket exists to diagnose. Written only by
+#: `_LandPhaseElapsedFilter.filter`, read only by the watchdog thread --
+#: both single-process, no lock needed (same posture `_land_phase_timer_
+#: start` already takes).
+_land_last_phase_log_at: float | None = None
+
 
 # frob:ticket T-4417
 # frob:tests \
@@ -175,15 +190,131 @@ class _LandPhaseElapsedFilter(logging.Filter):
         """Rewrite `record.msg` in place with an elapsed-seconds prefix
         when it is a land phase-transition line; always returns True
         (never drops a record -- this filter only decorates)."""
+        global _land_last_phase_log_at
         msg = record.msg
         if isinstance(msg, str) and msg.startswith(_LAND_PHASE_LOG_PREFIX):
             elapsed = _land_phase_elapsed_seconds()
             record.msg = f"[+{elapsed:.1f}s] {msg}"
+            # frob:ticket T-4494
+            _land_last_phase_log_at = time.perf_counter()
         return True
 
 
 if not any(isinstance(f, _LandPhaseElapsedFilter) for f in _log.filters):
     _log.addFilter(_LandPhaseElapsedFilter())
+
+
+# frob:ticket T-4494
+_LAND_SILENT_PHASE_DUMP_S_KEY = "land_silent_phase_dump_s"
+_LAND_SILENT_PHASE_DUMP_S_DEFAULT = 600.0
+_LAND_SILENT_PHASE_WATCHDOG_POLL_S = 5.0
+
+
+# frob:ticket T-4494
+# frob:doc docs/modules/tickets-landing.md#silent-phase-self-dump-watchdog-t-4494
+# frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseDumpThreshold.test_default_when_key_absent  # noqa: E501
+# frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseDumpThreshold.test_reads_configured_value  # noqa: E501
+def _land_silent_phase_dump_threshold_s(root: Path) -> float:
+    """`[tool.frob] land_silent_phase_dump_s` from `root/pyproject.toml`
+    (T-4494), defaulting to 600.0 when the file, the `[tool.frob]` table,
+    or the key itself is absent/unparseable -- read directly via
+    `tomllib` rather than through `AppConfig` (this module does not
+    declare a new `AppConfig` field for it) since a land-only watchdog
+    threshold has exactly one caller and does not need a CLI flag or a
+    second config surface."""
+    pyproject = root / "pyproject.toml"
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return _LAND_SILENT_PHASE_DUMP_S_DEFAULT
+    value = data.get("tool", {}).get("frob", {}).get(_LAND_SILENT_PHASE_DUMP_S_KEY)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return _LAND_SILENT_PHASE_DUMP_S_DEFAULT
+    return float(value)
+
+
+# frob:ticket T-4494
+# frob:doc docs/modules/tickets-landing.md#silent-phase-self-dump-watchdog-t-4494
+# frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseWatchdog.test_fires_once_after_threshold_then_waits_for_next_episode  # noqa: E501
+# frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseWatchdog.test_never_fires_while_phase_lines_keep_arriving  # noqa: E501
+def _land_silent_phase_watchdog(
+    threshold_s: float, stop_event: threading.Event
+) -> None:
+    """Background loop (T-4494): while `stop_event` is unset, wake every
+    `_LAND_SILENT_PHASE_WATCHDOG_POLL_S` and self-dump (`write_stack_
+    dump`, WARNING-logging the file it wrote) the moment no "ticket
+    land: ..." phase line (`_land_last_phase_log_at`) has fired for
+    `threshold_s` -- the T-4408/T-4494 symptom of a phase silently
+    CPU-bound with no external py-spy access (root-only on this box).
+    Dumps at most once per silence EPISODE: `dumped_this_episode` is
+    reset the instant a new phase line arrives (`_land_last_phase_log_at`
+    moves forward past the moment this function last checked it), so a
+    land that keeps emitting phase lines never dumps, and a land that
+    goes silent again after recovering dumps again rather than staying
+    silenced by its first dump. Runs as a daemon thread `_land` starts
+    unconditionally at its own top and stops (`stop_event.set()`) in a
+    `finally` once `_land_core` returns -- never blocks land's own exit,
+    and this function returns as soon as `stop_event` wakes it (bounded
+    by `_LAND_SILENT_PHASE_WATCHDOG_POLL_S`, never the full interval)."""
+    dumped_this_episode = False
+    last_seen_phase_log_at: float | None = None
+    while not stop_event.wait(_LAND_SILENT_PHASE_WATCHDOG_POLL_S):
+        last_phase_log_at = _land_last_phase_log_at
+        if last_phase_log_at != last_seen_phase_log_at:
+            last_seen_phase_log_at = last_phase_log_at
+            dumped_this_episode = False
+        since = (
+            last_phase_log_at
+            if last_phase_log_at is not None
+            else (_land_phase_timer_start)
+        )
+        if since is None or dumped_this_episode:
+            continue
+        elapsed = time.perf_counter() - since
+        if elapsed < threshold_s:
+            continue
+        dump_path = write_stack_dump("silent-phase watchdog self-dump")
+        # T-4494: deliberately does NOT start with _LAND_PHASE_LOG_PREFIX
+        # ("ticket land:") -- this shares `_log`, so a message that DID
+        # match would be caught by `_LandPhaseElapsedFilter` itself and
+        # treated as a fresh phase line, updating `_land_last_phase_log_
+        # at` and resetting `dumped_this_episode` right back to `False`
+        # on the very next poll tick -- a self-inflicted feedback loop
+        # that dumped every `threshold_s` forever instead of once
+        # (caught by this ticket's own test).
+        _log.warning(
+            "silent-phase watchdog: no land phase log line for %.0fs -- "
+            "self-dump written to %s",
+            elapsed,
+            dump_path,
+        )
+        dumped_this_episode = True
+
+
+# frob:ticket T-4494
+def _start_land_silent_phase_watchdog(
+    root: Path,
+) -> tuple[threading.Thread, threading.Event]:
+    """Start `_land_silent_phase_watchdog` as a daemon thread (T-4494),
+    reading its threshold from `root`'s `pyproject.toml` once at start --
+    a land's target root does not change mid-invocation, so re-reading it
+    on every poll would be pure waste. Returns `(thread, stop_event)`;
+    the caller (`_land`) is responsible for `stop_event.set()` once the
+    land itself is done, in a `finally` so a raised exception still stops
+    the watchdog instead of leaking a thread past this process's own
+    useful work (it would die with the process either way -- `daemon=
+    True` -- but stopping it explicitly keeps a test harness that calls
+    `_land` more than once in-process from accumulating threads)."""
+    threshold_s = _land_silent_phase_dump_threshold_s(root)
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        target=_land_silent_phase_watchdog,
+        args=(threshold_s, stop_event),
+        name="frob-land-silent-phase-watchdog",
+        daemon=True,
+    )
+    thread.start()
+    return thread, stop_event
 
 
 # frob:ticket T-1437
@@ -4234,6 +4365,16 @@ def _land(root: Path, cfg: AppConfig) -> None:
     real commit (`_verified_reset_root` on a staged-but-uncommitted tree),
     unlike the post-land sweep's own post-commit `git reset --hard`
     below, which stays wired in unchanged as a cheap final assertion."""
+    # frob:ticket T-4494
+    # Unconditional, near-zero-cost-until-triggered (T-1466's own
+    # posture): installed BEFORE _dispatch_land_mode, so even a fast
+    # --plan/--queue/--status/--drain call (which returns immediately,
+    # never reaching the watchdog below) still has a SIGUSR1 handler in
+    # place for the whole life of this process. The T-4408/T-4494
+    # incident's own kill -USR1 terminated a land with exit 138 because
+    # this was never installed at all outside `frob serve`'s daemon.
+    install_stackdump_handler(force=True)
+
     cfg = _apply_land_default_queue(cfg)
     if _dispatch_land_mode(root, cfg):
         return
@@ -4255,7 +4396,19 @@ def _land(root: Path, cfg: AppConfig) -> None:
         if _finish_only_if_already_landed(root, worktree, cfg):
             return
 
-    result = _land_core(root, cfg)
+    # frob:ticket T-4494
+    # Started only past this point: a --finish/--retire-on-proof early
+    # return above is itself fast and never silent, so it does not need
+    # the watchdog's own overhead (one extra daemon thread + its poll
+    # loop) for the rest of this process's life. The ordinary
+    # merge-check-splice-close-commit chain below is exactly the part
+    # that can go silent for many minutes (T-4408's 21-minute measured
+    # incident).
+    _watchdog_thread, _watchdog_stop = _start_land_silent_phase_watchdog(root)
+    try:
+        result = _land_core(root, cfg)
+    finally:
+        _watchdog_stop.set()
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)
         sys.exit(1)
