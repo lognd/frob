@@ -55,6 +55,10 @@ acceptance:
 - text: 'DUP001 on tests/unit/test_land_merge_conflict_drop.py resolved: shared _seed_widget_worktree
     helper extracted from the two near-identical test bodies'
   evidence: []
+- text: 'DOC006 on docs/modules/tickets-landing.md resolved: the split frob:waive-DOC006-comment/backtick-span
+    around ''frob sys sync-interface'' repaired so the pointer resolves as a single
+    recognized inline-code span'
+  evidence: []
 threat: null
 component: null
 anchor: false
