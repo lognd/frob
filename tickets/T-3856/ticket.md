@@ -58,6 +58,9 @@ acceptance:
 - text: GIVEN a frob:todo T-#### free-text note in a comment of any supported language
     WHEN parsed THEN it yields one todo edge with the note and no MalformedDirective
   evidence: []
+- text: GIVEN an attribute leftover that begins with a hash WHEN parsed THEN it is
+    flagged malformed instead of being swallowed as a noqa tail
+  evidence: []
 threat: null
 component: null
 anchor: false
