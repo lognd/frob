@@ -9,7 +9,6 @@ created: '2026-09-16'
 priority: medium
 blocked_by:
 - T-3232
-- T-3234
 - T-3856
 parent: T-4513
 tier: story
@@ -36,3 +35,6 @@ Story: bring C# to the same adapter contract as python/rust/typescript/kotlin/c 
 GIVEN a repo with .cs files using capability-relevant APIs, WHEN frob vet runs, THEN it reports the same capability findings a resolver-backed language reports (not just raw needle matches).
 GIVEN a .cs file with // frob:doc, // frob:tests, and // frob:todo T-#### directives, WHEN the graph DSL parser runs, THEN each directive is accepted and produces the same obligation-graph edges Python's # directives produce.
 GIVEN the frob.docs/frob.xref/frob.perf gaps fixed by T-3232/T-3234/T-3856, WHEN a csharp file is docstring-extracted, xref --lang filtered, or perf hot-graph collected, THEN csharp participates identically to python.
+
+## Unblock log
+- 2026-09-16: unblocked by T-3234 -- same: perf coverage deferred with T-3234
