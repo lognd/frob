@@ -100,6 +100,10 @@ _STRING_FIELDS = (
     "ticket_id",
     # frob:ticket T-3787
     "ticket_land_branch",
+    # frob:ticket T-3613
+    "ticket_land_default",
+    # frob:ticket T-3613
+    "ticket_land_status",
     # frob:ticket T-1243
     "ticket_cluster",
     "ticket_title",

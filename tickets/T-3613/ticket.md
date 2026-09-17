@@ -2,7 +2,7 @@
 id: T-3613
 title: make land --queue/--drain (T-1444) the default agent path with pollable completion
   records
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-08-31'
@@ -160,22 +160,37 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+evidence:
+- tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue::test_frob_agent_env_promotes_to_queue
+- tests/unit/test_land_default_queue.py::TestLandStatusCmd::test_status_prints_queued_record
+- tests/unit/test_land_queue.py::TestIntentRecord::test_enqueue_writes_a_readable_intent_record
+- tests/unit/test_land_queue.py::TestDrainNext::test_dead_drainer_landing_entry_is_reclaimed_and_redrained
+- tests/unit/test_land_queue.py::TestDrainNext::test_live_drainer_landing_entry_is_not_reclaimed
+- tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue::test_neither_signal_keeps_synchronous_default
+- tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_returns_queued_entry
 designated_repro_test: null
 acceptance:
 - text: frob ticket land <id> under FROB_AGENT (or [tool.frob] land_default="queue")
     ENQUEUES and returns in seconds with the intent recorded, and one drainer process
     does the serial work
-  evidence: []
+  evidence:
+  - tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue::test_frob_agent_env_promotes_to_queue
 - text: a per-intent completion record file under .frob/land-queue/<ticket>.json (state
     queued/landing/landed/failed, refusal text verbatim, commit sha) that agents poll
     cheaply, plus frob ticket land --status <id> printing it
-  evidence: []
+  evidence:
+  - tests/unit/test_land_default_queue.py::TestLandStatusCmd::test_status_prints_queued_record
+  - tests/unit/test_land_queue.py::TestIntentRecord::test_enqueue_writes_a_readable_intent_record
 - text: 'drainer crash recovery: the queue file survives, the next --drain picks up,
     a dead drainer''s landing entry is reclaimed via pid liveness (reusing the existing
     land.lock reclaim logic''s posture)'
-  evidence: []
+  evidence:
+  - tests/unit/test_land_queue.py::TestDrainNext::test_dead_drainer_landing_entry_is_reclaimed_and_redrained
+  - tests/unit/test_land_queue.py::TestDrainNext::test_live_drainer_landing_entry_is_not_reclaimed
 - text: docs section and tests per acceptance criterion
-  evidence: []
+  evidence:
+  - tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue::test_neither_signal_keeps_synchronous_default
+  - tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_returns_queued_entry
 acceptance_amendments:
 - op: remove
   index: 8

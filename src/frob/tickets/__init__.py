@@ -94,6 +94,7 @@ from frob.tickets._land_queue import (
     drain_next,
     enqueue,
     queue_status,
+    read_intent_record,
 )
 from frob.tickets._leases import (
     LeaseError,
@@ -725,6 +726,7 @@ __all__ = [
     "mutate_labels",
     "mutate_scope",
     "queue_status",
+    "read_intent_record",
     "remove_acceptance",
     "set_body",
     "set_component",

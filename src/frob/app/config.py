@@ -977,6 +977,28 @@ class AppConfig(BaseModel):
     # set, a land while root is checked out on the WRONG branch refuses
     # (LandError.TargetBranchInvalid) rather than silently hitting main.
     ticket_land_branch: str | None = None
+    # frob:ticket T-3613
+    # `[tool.frob] land_default = "queue"` in pyproject.toml (or plain
+    # `frob ticket land <id>` under `FROB_AGENT=1` in the environment,
+    # which behaves as if this were set to "queue" for that one call
+    # without needing the config key at all -- see `_land`'s own
+    # dispatch for the exact precedence): makes ENQUEUE, not an
+    # immediate synchronous land, the default outcome of a bare
+    # `frob ticket land <id> --worktree PATH` call with no explicit
+    # `--queue`/`--drain`/`--plan`/`--status` flag -- an implementer's
+    # land call returns in seconds (the intent recorded in the queue)
+    # instead of blocking foreground for the full merge-check-splice-
+    # close-commit-sweep chain. `None` (the default) keeps the
+    # historical synchronous behavior; any explicit `--queue`/`--drain`/
+    # `--plan`/`--status` flag on the CLI always wins over this key,
+    # never overridden by it.
+    ticket_land_default: str | None = None
+    # frob:ticket T-3613
+    # `frob ticket land --status <id>`: print <id>'s current per-intent
+    # completion record (`frob.tickets._land_queue.read_intent_record`)
+    # and exit -- the cheap poll target an agent's shell loop uses
+    # instead of re-probing `.frob/land.lock`'s holder.
+    ticket_land_status: str | None = None
     ticket_worktree: Path | None = None
     # frob:ticket T-1243
     # `frob ticket brief --cluster <id>` / `frob ticket work --cluster <id>`
@@ -1427,6 +1449,7 @@ class AppConfig(BaseModel):
     # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_frob_root_env_wins_over_cwd_when_no_explicit_path kind="unit"  # noqa: E501
     # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_bare_dot_ticket_path_falls_back_to_cwd kind="unit"  # noqa: E501
     # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_non_ticket_subcommand_is_unaffected kind="unit"  # noqa: E501
+    # frob:ticket T-3613
     def from_args(cls, args: argparse.Namespace) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         return cls.from_external(args, _pyproject_file_for_args(args))

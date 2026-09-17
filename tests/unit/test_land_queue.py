@@ -14,6 +14,7 @@ from frob.tickets._land_queue import (
     enqueue,
     file_lock,
     queue_status,
+    read_intent_record,
 )
 from frob.tickets._models import LandError, LandReport
 
@@ -170,6 +171,66 @@ class TestDrainNext:
         assert entry.ticket_id == "T-0002"
         assert entry.status == "landed"
 
+    # frob:ticket T-3613
+    def test_dead_drainer_landing_entry_is_reclaimed_and_redrained(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::drain_next kind="unit"
+        # T-3613 drainer crash recovery: a "landing" entry left behind by a
+        # KILLED drainer (recorded pid confirmed dead) must be reset to
+        # "queued" and picked up by the NEXT drain_next call, not left
+        # stuck forever.
+        import frob.tickets._land_queue as _lq
+
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        # Simulate a drainer that died mid-land: pop to "landing" with a
+        # pid that will never be alive, then bail out (as a crash would)
+        # instead of completing the land_fn call.
+        with _lq._queue_lock(tmp_path):
+            entries = _lq._load_queue(tmp_path).danger_ok
+            stuck = entries[0].model_copy(
+                update={"status": "landing", "pid": 999999999}
+            )
+            _lq._save_queue(tmp_path, (stuck,))
+
+        monkeypatch.setattr(_lq, "pid_alive_tristate", lambda pid: False)  # noqa: ARG005
+        seen: list[str] = []
+
+        def _land_fn(entry):  # noqa: ANN001, ANN202
+            seen.append(entry.ticket_id)
+            return Ok(_report(entry.ticket_id))
+
+        result = drain_next(tmp_path, _land_fn)
+        assert result.is_ok
+        assert seen == ["T-0001"]
+        entry = result.danger_ok
+        assert entry is not None
+        assert entry.status == "landed"
+
+    # frob:ticket T-3613
+    def test_live_drainer_landing_entry_is_not_reclaimed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::drain_next kind="unit"
+        # A "landing" entry whose recorded pid is STILL ALIVE (or whose
+        # liveness cannot be determined) must never be reclaimed -- doing
+        # so would race the still-running drainer's own final write.
+        import frob.tickets._land_queue as _lq
+
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        with _lq._queue_lock(tmp_path):
+            entries = _lq._load_queue(tmp_path).danger_ok
+            stuck = entries[0].model_copy(update={"status": "landing", "pid": 4242})
+            _lq._save_queue(tmp_path, (stuck,))
+
+        monkeypatch.setattr(_lq, "pid_alive_tristate", lambda pid: True)  # noqa: ARG005
+        result = drain_next(tmp_path, lambda e: Ok(_report(e.ticket_id)))
+        assert result.is_ok
+        # Nothing "queued" to pop -- the still-"landing" entry is left alone.
+        assert result.danger_ok is None
+        remaining = queue_status(tmp_path).danger_ok
+        assert remaining[0].status == "landing"
+
 
 class TestStoreCorrupt:
     """T-1345: a corrupt queue file fails loudly rather than silently
@@ -241,3 +302,56 @@ class TestWriteJsonRecords:
         parsed = json.loads(path.read_text(encoding="utf-8"))
         assert isinstance(parsed, list)
         assert parsed[0]["ticket_id"] == "T-0001"
+
+
+class TestIntentRecord:
+    """T-3613: `.frob/land-queue/<ticket_id>.json` -- the per-ticket,
+    cheap-to-poll completion record `read_intent_record` reads."""
+
+    def test_missing_record_reports_not_found(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
+        result = read_intent_record(tmp_path, "T-9999")
+        assert result.is_err
+        assert result.danger_err is QueueError.NotFound
+
+    def test_enqueue_writes_a_readable_intent_record(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
+        # frob:tests src/frob/tickets/_land_queue.py::enqueue kind="unit"
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        result = read_intent_record(tmp_path, "T-0001")
+        assert result.is_ok
+        assert result.danger_ok.status == "queued"
+        assert result.danger_ok.ticket_id == "T-0001"
+
+    def test_record_tracks_transitions_through_landed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
+        # frob:tests src/frob/tickets/_land_queue.py::drain_next kind="unit"
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        drain_next(tmp_path, lambda e: Ok(_report(e.ticket_id, "cafebabe")))
+        result = read_intent_record(tmp_path, "T-0001")
+        assert result.is_ok
+        assert result.danger_ok.status == "landed"
+        assert result.danger_ok.commit_sha == "cafebabe"
+
+    def test_record_captures_refusal_text_verbatim_on_failure(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        drain_next(
+            tmp_path,
+            lambda e: Err(LandError.MergeConflict),  # noqa: ARG005
+        )
+        result = read_intent_record(tmp_path, "T-0001")
+        assert result.is_ok
+        assert result.danger_ok.status == "failed"
+        assert result.danger_ok.error == LandError.MergeConflict.value
+
+    def test_corrupt_intent_record_errors(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
+        record_dir = tmp_path / ".frob" / "land-queue"
+        record_dir.mkdir(parents=True)
+        (record_dir / "T-0001.json").write_text("not json")
+        result = read_intent_record(tmp_path, "T-0001")
+        assert result.is_err
+        assert result.danger_err is QueueError.StoreCorrupt

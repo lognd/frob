@@ -973,6 +973,92 @@ check` invocation; this rule spawns real bounded subprocesses per ticket,
 which would violate the "must not slow the default `frob check` path for
 tickets that never opt in" guard if it ran unconditionally there.
 
+### Merge queue as the default agent path, with pollable completion records (T-3613)
+
+<!-- frob:describes src/frob/tickets/_land_queue.py::enqueue -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::drain_next -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::read_intent_record -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_apply_land_default_queue -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_status_cmd -->
+
+T-1444 shipped the merge queue's mechanics (`enqueue`/`drain_next`,
+`--queue`/`--drain` CLI flags) as OPT-IN: an agent still had to know to
+pass `--queue` instead of calling `frob ticket land <id>` the ordinary
+way, so in practice most agents kept calling `land()` synchronously and
+parking in a hand-rolled 60s sleep retry loop re-probing
+`.frob/land.lock`'s holder whenever `LandInProgress` refused them.
+T-3613 closes that gap: it makes ENQUEUE the actual default an agent
+hits, without changing a single call site that already passes an
+explicit flag.
+
+- **Default switch.** `_apply_land_default_queue` runs before
+  `_land`'s mode dispatch and promotes a bare `frob ticket land <id>
+  --worktree PATH` call (no `--plan`/`--queue`/`--drain`/`--status`/
+  `--run-mutation-sweep` flag already present, and not a `--dry-run`
+  call) to `--queue` whenever either:
+  - `FROB_AGENT` is set in the environment -- the SAME env var
+    `frob.app.check_runner`/`frob.app.ticket_runner._verify` already
+    treat as "this shell is a dispatched agent worktree" (T-0574/
+    T-0627 precedent; no new env var invented here), or
+  - `[tool.frob] land_default = "queue"` is set in `pyproject.toml`
+    (`AppConfig.ticket_land_default`, read through the same CLI/
+    pyproject merge `_config_external.py` already uses for every other
+    `[tool.frob]` key).
+
+  Any explicit mode flag on the CLI always wins -- checked first, never
+  overridden. A dispatched agent worktree's `frob ticket land <id>` call
+  therefore now returns in seconds (the intent recorded in the queue)
+  instead of blocking foreground for the whole merge-check-splice-
+  close-commit-sweep chain; a single drainer process (`frob ticket land
+  --drain`, run by the coordinator/a scheduler) does the serial work
+  the fleet already required anyway.
+
+- **Pollable completion records.** Every queue-state transition
+  (`enqueue`'s initial `queued` write, `drain_next`'s pop-to-`landing`
+  step, and its final `landed`/`failed` outcome write) now ALSO mirrors
+  that one ticket's `QueueEntry` to its own small file,
+  `.frob/land-queue/<ticket_id>.json` (`_write_intent_record`) --
+  deliberately separate from the shared, lock-guarded
+  `.frob/land-queue.json`: an agent polling "is MY land done yet" reads
+  ONE small file instead of loading and scanning the whole shared
+  queue, which is the actual "a file, not a lock probe" shape this
+  ticket's own body asks for (replacing the old `.frob/land.lock`-
+  holder-probing retry loop with a poll target that costs a single
+  small `stat`+`read`). `frob ticket land --status <id>`
+  (`_land_status_cmd`, `read_intent_record`) prints that record as one
+  JSON blob and exits nonzero if the ticket was never enqueued -- the
+  refusal text on a `failed` entry is the verbatim `LandError` value
+  `drain_next` recorded, and a `landed` entry carries the real commit
+  sha.
+
+- **Drainer crash recovery.** A drainer killed mid-`land_fn` call
+  leaves its popped entry stuck in `status="landing"` -- before this
+  fix, no later `drain_next` call would ever pick it back up, since
+  `drain_next` only ever looks for `status="queued"`. Every `"landing"`
+  entry now also records the drainer's own `pid`
+  (`os.getpid()` at the pop-to-`landing` step); the NEXT `drain_next`
+  call (`_reclaim_dead_landing_entries`, run under `_queue_lock` before
+  it looks for the next entry to pop) resets any `"landing"` entry back
+  to `"queued"` if -- and only if -- `pid_alive_tristate(pid) is
+  False`, i.e. the recorded pid is CONFIRMED dead. This mirrors
+  `frob.tickets._land`'s own `land.lock` reclaim posture exactly (same
+  `pid_alive_tristate` primitive, same "only a CONFIRMED-dead holder is
+  ever safe to reclaim" rule): a `None` (unknown liveness -- e.g. no pid
+  was ever recorded) or `True` (still alive) never gets reclaimed, since
+  reclaiming a still-running drainer's entry out from under it would
+  race its own final write. The shared queue FILE itself needed no
+  change to survive a crash -- `_save_queue`'s already-established
+  "write the whole file in one call, corrupt-detected on the next read,
+  never torn" contract (T-1345) already covers that half.
+
+- **What did not change.** The queue's own FIFO/never-auto-retry policy
+  (T-1345), `--drain`'s "one process, one invocation, not a daemon"
+  shape (T-1444), and the batch mutation-evidence sweep cadence riding
+  along `--drain` (T-1518, below) are all unchanged -- this ticket is
+  additive: a default-path switch, a cheap poll surface, and a crash-
+  recovery fix, layered onto the existing queue rather than a redesign
+  of it.
+
 ### Batch mutation-evidence sweep (TEST016, T-1518)
 
 <!-- frob:describes src/frob/tickets/_mutation_sweep_queue.py::enqueue_pending_sweep -->

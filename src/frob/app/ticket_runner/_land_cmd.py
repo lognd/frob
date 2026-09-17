@@ -35,6 +35,7 @@ import ast
 import itertools
 import json
 import logging
+import os
 import re
 import sys
 import time
@@ -4178,6 +4179,7 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
 # frob:ticket T-1444
 # frob:ticket T-1518
 # frob:ticket T-1884
+# frob:ticket T-3613
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_cli_land_invoked_with_root_equal_to_worktree_still_verifies  # noqa: E501
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
@@ -4232,6 +4234,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
     real commit (`_verified_reset_root` on a staged-but-uncommitted tree),
     unlike the post-land sweep's own post-commit `git reset --hard`
     below, which stays wired in unchanged as a cheap final assertion."""
+    cfg = _apply_land_default_queue(cfg)
     if _dispatch_land_mode(root, cfg):
         return
 
@@ -4267,16 +4270,23 @@ def _land(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2322
+# frob:ticket T-3613
 def _dispatch_land_mode(root: Path, cfg: AppConfig) -> bool:
     """`True` iff `cfg` requested one of `_land`'s non-default modes
-    (`--plan`/`--queue`/`--drain`/`--run-mutation-sweep`) and this
-    already ran and returned it -- `_land` returns immediately when this
-    is `True` (T-2322 ARCH001 split, zero behavior change: identical
+    (`--plan`/`--queue`/`--drain`/`--status`/`--run-mutation-sweep`) and
+    this already ran and returned it -- `_land` returns immediately when
+    this is `True` (T-2322 ARCH001 split, zero behavior change: identical
     branch order/bodies, just pulled out of `_land`'s own body). `False`
     means none fired and `_land` should proceed with its ordinary
-    merge-check-splice-close-commit path."""
+    merge-check-splice-close-commit path. Callers pass `cfg` AFTER
+    `_apply_land_default_queue` (T-3613) has already had its chance to
+    promote a bare call to `--queue`, so `cfg.ticket_land_queue` here may
+    be `True` even though no `--queue` flag was ever typed."""
     if cfg.ticket_land_plan:
         _land_plan_cmd(root, cfg)
+        return True
+    if cfg.ticket_land_status:
+        _land_status_cmd(root, cfg)
         return True
     if cfg.ticket_land_queue:
         _land_enqueue(root, cfg)
@@ -4288,6 +4298,102 @@ def _dispatch_land_mode(root: Path, cfg: AppConfig) -> bool:
         _run_batch_mutation_sweep(root)
         return True
     return False
+
+
+# frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
+# frob:ticket T-3613
+# frob:tests tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue.test_explicit_flag_wins_over_agent_env  # noqa: E501
+# frob:tests tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue.test_frob_agent_env_promotes_to_queue  # noqa: E501
+# frob:tests tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue.test_land_default_config_promotes_to_queue  # noqa: E501
+# frob:tests tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue.test_neither_signal_keeps_synchronous_default  # noqa: E501
+# frob:tests tests/unit/test_land_default_queue.py::TestApplyLandDefaultQueue.test_dry_run_is_never_promoted  # noqa: E501
+def _apply_land_default_queue(cfg: AppConfig) -> AppConfig:
+    """T-3613's default-agent-path switch: promote a bare `frob ticket
+    land <id> --worktree PATH` call (no explicit `--plan`/`--queue`/
+    `--drain`/`--status`/`--run-mutation-sweep` flag) to `--queue` when
+    either `FROB_AGENT` is set in the environment (the SAME env var
+    `frob.app.check_runner`/`frob.app.ticket_runner._verify` already
+    treat as "this shell is a dispatched agent worktree", T-0574/T-0627
+    precedent -- no new env var invented here) or `[tool.frob]
+    land_default = "queue"` is configured (`cfg.ticket_land_default`,
+    T-3613's own `config.py` field) -- making ENQUEUE, not an immediate
+    synchronous land, this ticket's acceptance criterion 1 default for an
+    agent's land call: it returns in seconds (the intent recorded) while
+    the single drainer does the serial work, instead of every agent
+    parking in a foreground `land()` call (or worse, a hand-rolled 60s
+    sleep retry loop re-probing `.frob/land.lock`).
+
+    Any EXPLICIT mode flag on `cfg` always wins and is checked FIRST --
+    this function only ever flips `ticket_land_queue` from `False` to
+    `True`, never the reverse, and never touches a `cfg` that already
+    named a mode (including a bare `--status` poll, which needs neither
+    id nor worktree and must never be redirected into an enqueue). A
+    `--dry-run` call is likewise never promoted: a dry run's whole point
+    is to preview what a land WOULD do without doing it, and silently
+    turning that into a real queue mutation would defeat it. Returns a
+    (possibly) updated `cfg`; `AppConfig` is frozen/immutable so this
+    never mutates its argument in place."""
+    if (
+        cfg.ticket_land_plan
+        or cfg.ticket_land_queue
+        or cfg.ticket_land_drain
+        or cfg.ticket_land_status
+        or cfg.ticket_land_run_mutation_sweep
+    ):
+        return cfg
+    if cfg.ticket_id is None or cfg.ticket_worktree is None:
+        # No ticket_id/worktree means this call was never going to be an
+        # ordinary single-ticket land in the first place (it will fail
+        # _require_land_args's own check below exactly as before) --
+        # nothing here to promote.
+        return cfg
+    if cfg.ticket_dry_run:
+        return cfg
+    # frob:waive SEC110 reason="worktree-agent detection flag, not a secret (same \
+    # posture as frob.app.check_runner's own FROB_AGENT waiver)"
+    under_agent_env = bool(os.environ.get("FROB_AGENT"))
+    wants_queue_default = cfg.ticket_land_default == "queue"
+    if not (under_agent_env or wants_queue_default):
+        return cfg
+    _log.info(
+        "ticket land: %s auto-enqueuing instead of landing synchronously "
+        "(%s) -- run `frob ticket land --drain` to process the queue, or "
+        "`frob ticket land --status %s` to poll this intent",
+        cfg.ticket_id,
+        "FROB_AGENT set" if under_agent_env else "land_default=queue configured",
+        cfg.ticket_id,
+    )
+    return cfg.model_copy(update={"ticket_land_queue": True})
+
+
+# frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
+# frob:ticket T-3613
+# frob:tests tests/unit/test_land_default_queue.py::TestLandStatusCmd.test_status_prints_queued_record  # noqa: E501
+# frob:tests tests/unit/test_land_default_queue.py::TestLandStatusCmd.test_status_missing_record_exits_nonzero  # noqa: E501
+def _land_status_cmd(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket land --status <id>`: print <id>'s current per-intent
+    completion record (`frob.tickets._land_queue.read_intent_record`,
+    T-3613) as one JSON line and exit -- the cheap poll target an agent
+    loop should use instead of re-probing `.frob/land.lock`'s holder.
+    Exits 1 with a logged error (never a traceback) when <id> has no
+    record (never enqueued) or the record file is corrupt. Routed through
+    `frob.render.Renderer` (INV-RENDER-SOLE-STDOUT, docs/modules/
+    render.md#renderer) rather than a bare `print`, matching this
+    repo's other single-blob CLI output sites (e.g. `frob ack --list`)."""
+    from frob.render import Renderer
+    from frob.tickets import read_intent_record
+
+    assert cfg.ticket_land_status is not None
+    ticket_id = cfg.ticket_land_status
+    result = read_intent_record(root, ticket_id)
+    if result.is_err:
+        _log.error("ticket land --status: %s: %s", ticket_id, result.danger_err)
+        sys.exit(1)
+    entry = result.danger_ok
+    Renderer.for_stream(sys.stdout).line(
+        json.dumps(entry.model_dump(mode="json"), indent=2)
+    )
+    _log.info("ticket land --status: %s is %s", ticket_id, entry.status)
 
 
 # frob:ticket T-1444

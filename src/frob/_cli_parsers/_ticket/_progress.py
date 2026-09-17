@@ -400,6 +400,22 @@ def _add_ticket_land_parser(ticket_sub):
             "--plan/--queue."
         ),
     )
+    # frob:ticket T-3613
+    ticket_land_p.add_argument(
+        "--status",
+        dest="ticket_land_status",
+        metavar="ID",
+        default=None,
+        help=(
+            "T-3613: print ID's current per-intent completion record "
+            "(.frob/land-queue/<id>.json -- queued/landing/landed/failed, "
+            "the refusal text verbatim on failure, the commit sha on "
+            "success) and exit -- the cheap poll target an agent's shell "
+            "loop should use instead of re-probing .frob/land.lock's "
+            "holder. Needs no --worktree. Mutually exclusive with "
+            "--plan/--queue/--drain."
+        ),
+    )
     # frob:ticket T-1518
     ticket_land_p.add_argument(
         "--run-mutation-sweep",

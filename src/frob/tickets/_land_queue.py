@@ -82,6 +82,7 @@ from frob.process._lock import (
     portable_flock_acquire,
     portable_flock_release,
 )
+from frob.process._pid_liveness import pid_alive_tristate
 from frob.tickets._models import LandError, LandReport
 
 _log = get_logger(__name__)
@@ -106,6 +107,82 @@ _log = get_logger(__name__)
 _QUEUE_REL = Path(".frob") / "land-queue.json"
 _QUEUE_LOCK_REL = Path(".frob") / "land-queue.lock"
 
+#: `.frob/land-queue/<ticket_id>.json` -- T-3613's per-intent completion
+#: record: one small file per ticket, mirroring that ticket's current
+#: `QueueEntry` on every queue-state transition (`queued` -> `landing` ->
+#: `landed`/`failed`). Deliberately separate from `_QUEUE_REL` (the whole-
+#: queue file): an agent polling "is MY land done yet" only needs to stat/
+#: read ONE small file, not parse the shared queue and scan for its own
+#: `ticket_id` -- the exact "a file, not a lock probe" shape T-3613's own
+#: ticket body asks for, and cheaper than repeatedly re-probing
+#: `.frob/land.lock`'s holder the way agents were forced to before this.
+_INTENT_DIR_REL = Path(".frob") / "land-queue"
+
+
+def _intent_record_path(root: Path, ticket_id: str) -> Path:
+    """Where `ticket_id`'s per-intent completion record lives under
+    `root` (T-3613) -- the file `frob ticket land --status <id>` and any
+    agent polling loop reads, cheaper than loading the whole shared queue."""
+    return root / _INTENT_DIR_REL / f"{ticket_id}.json"
+
+
+def _write_intent_record(root: Path, entry: QueueEntry) -> None:
+    """Mirror `entry` to its own `.frob/land-queue/<ticket_id>.json` file
+    (T-3613) -- called at every queue-state transition (`enqueue`, the
+    pop-and-mark-landing step, the record-outcome step) so a poller never
+    has to touch the shared, lock-guarded `_QUEUE_REL` file at all. Best-
+    effort: a write failure here is logged and swallowed, never raised --
+    the shared queue file (already written under `_queue_lock` by every
+    caller of this function) remains the source of truth; this file is a
+    cheap-to-poll MIRROR of it, not a second ledger."""
+    path = _intent_record_path(root, entry.ticket_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(entry.model_dump(mode="json"), indent=2), encoding="utf-8"
+        )
+        _log.info(
+            "land_queue: intent record: %s -> %s (%s)",
+            entry.ticket_id,
+            entry.status,
+            path,
+        )
+    except OSError as exc:  # pragma: no cover -- defensive, mirror is best-effort
+        _log.warning(
+            "land_queue: intent record: failed to write %s for %s: %s",
+            path,
+            entry.ticket_id,
+            exc,
+        )
+
+
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
+# frob:tests tests/unit/test_land_queue.py::TestIntentRecord.test_missing_record_reports_not_found  # noqa: E501
+# frob:tests tests/unit/test_land_queue.py::TestIntentRecord.test_enqueue_writes_a_readable_intent_record  # noqa: E501
+def read_intent_record(root: Path, ticket_id: str) -> Result[QueueEntry, QueueError]:
+    """`ticket_id`'s current per-intent completion record (T-3613) --
+    cheap poll target for `frob ticket land --status <id>` and any agent
+    loop: reads exactly ONE small file, never the shared queue. Returns
+    `Err(QueueError.NotFound)` if `ticket_id` has never been enqueued (or
+    its record was never written), `Err(QueueError.StoreCorrupt)` if the
+    file exists but fails to parse/validate."""
+    path = _intent_record_path(root, ticket_id)
+    if not path.exists():
+        return Err(QueueError.NotFound)
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        _log.error("land_queue: read_intent_record: %s failed to parse: %s", path, exc)
+        return Err(QueueError.StoreCorrupt)
+    try:
+        return Ok(QueueEntry.model_validate(raw))
+    except Exception as exc:  # noqa: BLE001 -- pydantic ValidationError, any shape
+        _log.error(
+            "land_queue: read_intent_record: %s failed to validate: %s", path, exc
+        )
+        return Err(QueueError.StoreCorrupt)
+
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 class QueueError(ErrorSet):
@@ -119,6 +196,10 @@ class QueueError(ErrorSet):
         "this ticket already has a queued or landing entry in the merge queue"
     )
     StoreCorrupt = "the merge-queue file exists but failed to parse"
+    #: T-3613: `read_intent_record` found no per-intent record file for the
+    #: requested ticket_id -- it was never enqueued, or its record predates
+    #: this feature.
+    NotFound = "no completion record for this ticket -- it was never enqueued"
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
@@ -145,6 +226,17 @@ class QueueEntry(BaseModel):
     #: failure -- never both.
     commit_sha: str | None = None
     error: str | None = None
+    #: T-3613: the drainer process's own pid, recorded when `status`
+    #: transitions to "landing" -- enables crash recovery: the NEXT
+    #: `drain_next` call reclaims a "landing" entry whose recorded pid is
+    #: CONFIRMED dead (`pid_alive_tristate` returns `False`, never on
+    #: `None`/unknown-liveness, mirroring `frob.tickets._land`'s own
+    #: `land.lock` reclaim posture) by resetting it to "queued" instead of
+    #: leaving it stuck forever. `None` for any entry never marked
+    #: "landing" (still "queued", or landed/failed without ever having
+    #: gone through this module's own drainer -- should not happen but the
+    #: field tolerates it).
+    pid: int | None = None
 
 
 def _queue_path(root: Path) -> Path:
@@ -296,6 +388,7 @@ def queue_status(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_returns_queued_entry  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_persists_across_calls  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_duplicate_enqueue_refused  # noqa: E501
@@ -337,16 +430,59 @@ def enqueue(
             branch,
             sum(1 for e in entries if e.status == "queued") + 1,
         )
+        _write_intent_record(root, entry)
         return Ok(entry)
 
 
+def _reclaim_dead_landing_entries(
+    entries: tuple[QueueEntry, ...],
+) -> tuple[QueueEntry, ...]:
+    """T-3613 drainer crash recovery: reset every `"landing"` entry whose
+    recorded `pid` is CONFIRMED dead (`pid_alive_tristate(pid) is False`)
+    back to `"queued"` -- a crashed drainer (killed mid-`land_fn`, before
+    it could record the outcome) otherwise leaves that entry stuck in
+    `"landing"` forever, since `drain_next` only ever picks up `"queued"`
+    entries. Mirrors `frob.tickets._land`'s own `land.lock` reclaim
+    posture exactly: only a CONFIRMED-dead pid (`is False`) is reclaimed,
+    never on `None` (unknown liveness -- e.g. `pid_alive_tristate` cannot
+    tell, or `pid` was never recorded) or `True` (still alive) -- an
+    unsafe reclaim would race the still-running drainer's own final
+    write. Pure function, called by `drain_next` before it looks for the
+    next entry to pop; caller must already hold `_queue_lock`."""
+    reclaimed = []
+    changed = False
+    for e in entries:
+        if e.status == "landing" and e.pid is not None:
+            if pid_alive_tristate(e.pid) is False:
+                _log.warning(
+                    "land_queue: drain_next: reclaiming %s -- prior drainer "
+                    "pid %d is confirmed dead, resetting landing -> queued",
+                    e.ticket_id,
+                    e.pid,
+                )
+                reclaimed.append(e.model_copy(update={"status": "queued", "pid": None}))
+                changed = True
+                continue
+        reclaimed.append(e)
+    return tuple(reclaimed) if changed else entries
+
+
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_empty_queue_returns_none  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_drains_fifo_order  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_successful_land_marks_entry_landed  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_failed_land_rejected_back_not_retried  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_failed_entry_is_not_redrained  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_second_entry_still_drains_after_first_failure  # noqa: E501
+# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_dead_drainer_landing_entry_is_reclaimed_and_redrained  # noqa: E501
+# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_live_drainer_landing_entry_is_not_reclaimed  # noqa: E501
+# frob:waive ARCH001 reason="T-3613 added the reclaim-dead-landing-entries lock window \
+# plus a pid= field write at the pop-to-landing step and two _write_intent_record \
+# calls at the outcome-recording step -- each addition is one or two lines threaded \
+# into the SAME three-phase sequence (pop, run land_fn, record outcome) this function \
+# already was; a split would cut across that single linear flow rather than separate \
+# two real concerns."
 def drain_next(
     root: Path,
     land_fn: Callable[[QueueEntry], Result[LandReport, LandError]],
@@ -366,18 +502,24 @@ def drain_next(
         loaded = _load_queue(root)
         if loaded.is_err:
             return Err(loaded.danger_err)
-        entries = loaded.danger_ok
+        entries = _reclaim_dead_landing_entries(loaded.danger_ok)
         idx = next((i for i, e in enumerate(entries) if e.status == "queued"), None)
         if idx is None:
+            if entries != loaded.danger_ok:
+                _save_queue(root, entries)
             return Ok(None)
-        landing = entries[idx].model_copy(update={"status": "landing"})
+        landing = entries[idx].model_copy(
+            update={"status": "landing", "pid": os.getpid()}
+        )
         entries = (*entries[:idx], landing, *entries[idx + 1 :])
         _save_queue(root, entries)
+        _write_intent_record(root, landing)
 
     _log.info(
-        "land_queue: drain_next: landing %s (branch=%s)",
+        "land_queue: drain_next: landing %s (branch=%s, pid=%d)",
         landing.ticket_id,
         landing.branch,
+        landing.pid,
     )
     result = land_fn(landing)
 
@@ -408,6 +550,7 @@ def drain_next(
                     else {"status": "failed", "error": result.danger_err.value}
                 )
             )
+            _write_intent_record(root, outcome)
             return Ok(outcome)
         if result.is_ok:
             report = result.danger_ok
@@ -432,6 +575,7 @@ def drain_next(
             )
         entries = (*entries[:idx], updated, *entries[idx + 1 :])
         _save_queue(root, entries)
+        _write_intent_record(root, updated)
         return Ok(updated)
 
 
@@ -442,5 +586,6 @@ __all__ = [
     "enqueue",
     "file_lock",
     "queue_status",
+    "read_intent_record",
     "write_json_records",
 ]
