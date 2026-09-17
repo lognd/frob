@@ -2,7 +2,7 @@
 id: T-4534
 title: 'Post-land residue from the v0.532.0 lands (T-4413/T-4414/T-4415): 8 uncovered-symbol,
   affect and dup findings'
-state: in-progress
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -64,3 +64,6 @@ land_commit: null
 Quarantine raised by the post-land sweep on batch (d6cfcaf99, a5be90df4, aa3cb6304) 2026-09-16: AFFECT001 src/frob/gates/_models.py; COV001 src/frob/gates/__init__.py; COV002 on src/frob/app/check_runner.py, src/frob/app/ticket_runner/_rapid_sweep.py, src/frob/check/__init__.py, src/frob/check/_python.py, src/frob/gates/__init__.py; DUP001 tests/unit/test_ci_self_gate_unscoped.py; DRIFT002 docs/modules/tickets-landing.md. The landing tickets were closed by the land before the sweep read the tree, so the changed symbols have no open scope owner. Fix: bind frob:doc / frob:tests / frob:waive edges and re-ack the drifted doc anchor; no behaviour change.
 
 frob:waive BUG002 reason="post-land residue: the defect is a `frob check` GATE finding (AFFECT001/COV001/COV002/DUP001/DRIFT002 firing on already-landed commits with no open scope owner), not application behavior a pytest repro can exercise at the parent commit -- the fix is comment/doc directives (frob:doc, frob:tests, prose) plus one new ticket (T-4533) for a real gap found in frob.graph._resolve.resolve, none of which pytest observes. Repro is the frob check invocation itself: `frob check --only coverage --only drift --only affect_drift --only clones --ticket T-4532 --base dev --files <the 8 scoped files>` reported these 5 rules as errors before this change and reports 0 for them after (see Done report for the exact before/after)."
+
+## Drop reason
+- 2026-09-16: duplicate promoted copy of the residue draft T-draft-357dade2, which landed as T-4532; its in-progress lease on src/frob/gates/__init__.py was blocking T-4540
