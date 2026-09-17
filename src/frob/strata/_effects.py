@@ -80,8 +80,8 @@ from frob.vet._capability_modes import (
     resolve_capability_kind,
 )
 
-from ._code_binding import FOREIGN, CodeBinding
-from ._models import KernelModel, Node
+from ._code_binding import FOREIGN, CodeBinding, bind_code
+from ._models import KernelModel, MayGrant, Node
 
 if TYPE_CHECKING:
     # T-1627: `frob.lang` is imported lazily at runtime (module-load-cycle
@@ -321,8 +321,7 @@ def _via_matches_site(rel: str, symbol: str | None, via: tuple[str, ...]) -> boo
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1440
 # frob:tests \
-# tests/unit/strata/test_effects.py::TestScopedMayViaConformance.test_observation_outsi\
-# de_via_surface_is_a_violation kind="unit"
+# tests/unit/strata/test_effects.py::TestScopedMayViaConformance.test_observation_outside_via_surface_is_a_violation kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
 # (T-1440) names this exact private per-file join function BY NAME \
 # ('_effects.py::_declared_kinds_for_file') in its own prose -- same T-0524/T-0529 \
@@ -467,8 +466,7 @@ _NODE_HEADER_RE = re.compile(r"^\s*(?:node|store)\s+(?P<node>[A-Za-z_][\w.]*)\s*
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:tests \
-# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is\
-# _flagged kind="unit"
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is_flagged kind="unit"  # noqa: E501
 class AmbientCapabilityReasonViolation(BaseModel):
     """One ambient (via-less) `may` capability atom declared with no
     `// because: "..."` justification (T-2503, GUARD 1): an unexplained
@@ -491,14 +489,11 @@ class AmbientCapabilityReasonViolation(BaseModel):
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:tests \
-# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is\
-# _flagged kind="unit"
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is_flagged kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_reason_present_is\
-# _silent kind="unit"
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_reason_present_is_silent kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_enumerated_grant_\
-# needs_no_reason kind="unit"
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_enumerated_grant_needs_no_reason kind="unit"  # noqa: E501
 def check_ambient_capability_reasons(
     paths: tuple[Path, ...],
 ) -> tuple[AmbientCapabilityReasonViolation, ...]:
@@ -934,8 +929,7 @@ class StaleViaSymbolViolation(BaseModel):
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1627
 # frob:tests \
-# tests/unit/strata/test_effects.py::TestStaleViaSymbol.test_unresolvable_symbol_is_fla\
-# gged kind="unit"
+# tests/unit/strata/test_effects.py::TestStaleViaSymbol.test_unresolvable_symbol_is_flagged kind="unit"  # noqa: E501
 def check_stale_via_symbols(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> tuple[StaleViaSymbolViolation, ...]:
@@ -1024,14 +1018,43 @@ def check_stale_via_symbols(
 # under a new key is also not detected -- a genuinely new (node, atom) pair
 # reads as a fresh, unratcheted baseline, same as any other first sighting.
 # Both are real residual gaps, named here rather than assumed covered.
+#
+# T-4495 TESTSUITE-GLOB CARVE-OUT: the `testsuite` node's `via` lists used to
+# enumerate every exercising test file by name (300-500 entries per atom),
+# which made `len(grant.via)` a faithful site count but cost every new test
+# file a hand edit to `design/frob.strata` plus a lock-file bump. `testsuite`
+# may now declare `exec`/`fs.write`/`fs.read`/`env.read` with a single bare
+# glob entry (`via "tests/**"`) instead -- `_via_matches`/`_via_matches_site`
+# already match a glob generically (T-1627), so conformance needs no change.
+# The ratchet DOES need one: `len(grant.via)` would collapse to 1 for a
+# glob-form grant, silently defeating the ratchet (a 400-file jump inside one
+# glob entry would never register as growth). `capability_via_site_counts`
+# instead counts the number of DISTINCT files under `testsuite`'s own code
+# binding that both match the glob and carry a REAL observed effect of that
+# atom's kind (`_glob_via_observed_site_count`, an `extract_effects`-shaped
+# scan), so the ratchet still tracks the true total. `capability_ratchet_
+# violations` then auto-accepts (writes a fresh lock entry with reason
+# "testsuite glob growth" instead of raising a violation) growth on a
+# `testsuite`-node, glob-only-via `(node, atom)` pair ONLY -- this is the ONE
+# narrow, disclosed exception to "never auto-written by any code path here"
+# below: a glob-form via has no enumerable per-file diff for a human to
+# review line-by-line the way a hand-edited via-list addition does, so
+# requiring a hand lock-edit for every ordinary new test file would just
+# reintroduce the exact friction this carve-out exists to remove. Every
+# OTHER node/atom, and a non-glob (enumerated) via-list on `testsuite`
+# itself, keeps the original fail-closed, hand-edited-only ratchet
+# unchanged.
 # ---------------------------------------------------------------------------
 
 # frob:doc docs/strata/surface.md#may-scope
 #: Repo-relative path to the committed ratchet ceiling: `{"entries":
 #: {"<node_id>::<atom>": {"accepted_count": N, "reason": "...", "ticket":
-#: "T-####"}}}`. Committed, hand-edited (never auto-written by any code
-#: path here -- widening it IS the "explicit, recorded justification" act
-#: the module-level docstring above describes), read fresh on every check.
+#: "T-####"}}}`. Committed, hand-edited (widening it IS the "explicit,
+#: recorded justification" act the module-level docstring above
+#: describes), read fresh on every check -- EXCEPT the T-4495
+#: testsuite-glob carve-out (module docstring), the one narrow shape a
+#: code path here (`capability_ratchet_violations`) does write on its
+#: own, since a glob-form via has no per-file diff for a human to review.
 CAPABILITY_RATCHET_LOCK_REL = "docs/design/registry/capability-via-ratchet.lock.json"
 
 
@@ -1056,25 +1079,181 @@ class CapabilityRatchetViolation(BaseModel):
     detail: str
 
 
+# frob:ticket T-4495
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_new_test_file_matching_glob_via_needs_no_strata_edit  # noqa: E501
+def _via_is_bare_glob_only(via: tuple[str, ...]) -> bool:
+    """`True` when every entry in `via` (T-4495) is a bare glob: no `::`
+    symbol qualifier (`_via_glob_and_symbol`) and at least one wildcard
+    character (`*`, `?`, or `[`). This is the shape `capability_via_site_
+    counts`/`capability_ratchet_violations` require, together with
+    `node.id == "testsuite"`, before treating a grant's via-list length as
+    unrepresentative of its real site count -- an ENUMERATED via-list
+    (every entry a literal path, no wildcard) still counts by `len(via)`
+    exactly as before, on every node including `testsuite` itself."""
+    if not via:
+        return False
+    for entry in via:
+        glob, symbol = _via_glob_and_symbol(entry)
+        if symbol is not None:
+            return False
+        if not any(ch in glob for ch in "*?["):
+            return False
+    return True
+
+
+# frob:ticket T-4495
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
+def _glob_via_observed_site_count(
+    node: Node, grant: MayGrant, binding: CodeBinding, root: Path
+) -> int:
+    """T-4495: the number of DISTINCT files `node` owns (per `binding`)
+    that both match `grant.via`'s glob(s) (`_via_matches`) and carry at
+    least one REAL observed effect (`_line_effects`) of `grant.atom`'s
+    capability kind -- the actual measured quantity a testsuite-glob-form
+    grant ratchets by, since `len(grant.via)` would collapse to 1 for a
+    single `via "tests/**"` entry (module docstring's T-4495 section).
+    Restricted to files this SAME node owns (never a full-repo scan) so a
+    glob shared in spirit with another node's code binding never double-
+    counts sites that belong to that other node."""
+    kinds = expand_declared_kind(canonical_declared_kind(_may_kind(grant.atom)))
+    count = 0
+    for rel, owner in binding.owner.items():
+        if owner != node.id or not _via_matches(rel, grant.via):
+            continue
+        if any(effect.kind in kinds for effect in _line_effects(root / rel, root)):
+            count += 1
+    return count
+
+
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1628
+# frob:ticket T-4495
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
 # frob:tests \
 # tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_is_silent
-def capability_via_site_counts(model: KernelModel) -> dict[str, int]:
-    """`{"<node_id>::<atom>": total scoped via-entry count}` across every
+def capability_via_site_counts(
+    model: KernelModel, root: Path | None = None
+) -> dict[str, int]:
+    """`{"<node_id>::<atom>": total scoped site count}` across every
     `MayGrant` in `model` -- the ratchet's own measured quantity (module
     docstring's T-1628 section). A grant with an EMPTY `via` (the unscoped,
     whole-node form) contributes nothing: only scoped grants have an
-    enumerable site count to ratchet."""
+    enumerable site count to ratchet.
+
+    T-4495: for a `testsuite`-node grant whose `via` is bare-glob-only
+    (`_via_is_bare_glob_only`), the count is the REAL observed site count
+    (`_glob_via_observed_site_count`) instead of `len(grant.via)` (which
+    would read as 1 for a single `via "tests/**"` entry) -- this needs
+    `root` to scan real files, so it activates only when `root` is given;
+    every OTHER grant, and every grant when `root` is `None` (the
+    pre-T-4495 call shape every existing caller/test still uses), counts
+    by `len(grant.via)` exactly as before. `root`'s own `bind_code` is
+    computed at most once per call, shared across every glob-form grant;
+    a `bind_code` failure is logged and this call falls back to `len(via)`
+    for every grant rather than raising, matching this module's existing
+    best-effort-on-binding-failure posture elsewhere."""
+    binding: CodeBinding | None = None
+    if root is not None:
+        bound = bind_code(model, root)
+        if bound.is_err:
+            _log.warning(
+                "strata effects: capability via-site count: bind_code failed "
+                "(%s) -- falling back to via-list length for every grant",
+                bound.danger_err,
+            )
+        else:
+            binding = bound.danger_ok
     counts: dict[str, int] = {}
     for node in model.nodes:
         for grant in node.may_grants:
             if not grant.via:
                 continue
             key = f"{node.id}::{grant.atom}"
-            counts[key] = counts.get(key, 0) + len(grant.via)
+            if (
+                binding is not None
+                and node.id == "testsuite"
+                and _via_is_bare_glob_only(grant.via)
+            ):
+                assert root is not None
+                count = _glob_via_observed_site_count(node, grant, binding, root)
+            else:
+                count = len(grant.via)
+            counts[key] = counts.get(key, 0) + count
     return counts
+
+
+# frob:ticket T-4495
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_non_testsuite_bare_glob_via_is_not_auto_accepted  # noqa: E501
+def _testsuite_glob_ratcheted_keys(model: KernelModel) -> frozenset[str]:
+    """`{"<node_id>::<atom>"}` for every `testsuite`-node `MayGrant` whose
+    `via` is bare-glob-only (T-4495) -- the ONLY keys `capability_ratchet_
+    violations` may auto-accept growth for instead of raising a
+    violation. Deliberately narrower than `_via_is_bare_glob_only` alone:
+    a bare-glob `via` on any node OTHER than `testsuite` still ratchets
+    the ordinary, fail-closed, hand-edited-lock way (module docstring's
+    T-4495 section: the carve-out is `testsuite`-specific by design, not
+    a blanket "glob-form vias auto-accept" rule)."""
+    return frozenset(
+        f"{node.id}::{grant.atom}"
+        for node in model.nodes
+        if node.id == "testsuite"
+        for grant in node.may_grants
+        if grant.via and _via_is_bare_glob_only(grant.via)
+    )
+
+
+# frob:ticket T-4495
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
+def _write_capability_ratchet_lock_entry(
+    root: Path, key: str, accepted_count: int, reason: str
+) -> None:
+    """T-4495: writes/updates exactly one entry of the committed ratchet
+    lock (`CAPABILITY_RATCHET_LOCK_REL`) -- the ONE narrow, disclosed
+    exception to this module's "committed, hand-edited, never auto-
+    written" lock discipline (module docstring's T-4495 section): a
+    `testsuite`-node glob-form via has no enumerable per-file diff for a
+    human to review line-by-line, so ordinary growth (a new matching test
+    file) is recorded here mechanically instead of demanding a hand lock
+    edit every time. Preserves every OTHER field already in the document
+    (`generated_by`, `schema_version`, every other entry) -- only `key`'s
+    own entry is replaced. Best-effort: any read/parse/write failure is
+    logged and swallowed, never raised -- a failed write here must not
+    turn a passing check into a crashing one; the growth simply reappears
+    as a live `CapabilityRatchetViolation` on the next run if this write
+    did not actually land."""
+    path = root / CAPABILITY_RATCHET_LOCK_REL
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    except (OSError, ValueError) as exc:
+        _log.warning(
+            "strata effects: capability ratchet: could not read %s for the "
+            "T-4495 testsuite-glob auto-accept write: %s",
+            path,
+            exc,
+        )
+        return
+    if not isinstance(raw, dict):
+        raw = {}
+    entries = raw.get("entries")
+    if not isinstance(entries, dict):
+        entries = {}
+    entries[key] = {"accepted_count": accepted_count, "reason": reason}
+    raw["entries"] = dict(sorted(entries.items()))
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        _log.warning(
+            "strata effects: capability ratchet: could not write %s: %s", path, exc
+        )
+        return
+    _log.info(
+        "strata effects: capability ratchet: auto-accepted %s -> accepted_count=%d "
+        "(%s)",
+        key,
+        accepted_count,
+        reason,
+    )
 
 
 def _load_capability_ratchet_lock(root: Path) -> dict:
@@ -1093,8 +1272,51 @@ def _load_capability_ratchet_lock(root: Path) -> dict:
     return entries if isinstance(entries, dict) else {}
 
 
+# frob:ticket T-4495
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_non_testsuite_bare_glob_via_is_not_auto_accepted  # noqa: E501
+def _capability_ratchet_growth_finding(
+    root: Path,
+    key: str,
+    node_id: str,
+    atom: str,
+    count: int,
+    accepted: int,
+    glob_ratcheted: frozenset[str],
+) -> CapabilityRatchetViolation | None:
+    """T-4495: one GROWN `(node, atom)` pair's outcome, split out of
+    `capability_ratchet_violations` to keep it under ARCH001's line
+    threshold -- `None` (auto-accepted, lock rewritten in place) when
+    `key` is testsuite-glob-ratcheted, else a real `CapabilityRatchet
+    Violation` (the original, unchanged fail-closed behavior)."""
+    if key in glob_ratcheted:
+        _write_capability_ratchet_lock_entry(root, key, count, "testsuite glob growth")
+        return None
+    _log.warning(
+        "strata effects: capability ratchet: %s %s grew to %d "
+        "site(s), above the committed ceiling of %d",
+        node_id,
+        atom,
+        count,
+        accepted,
+    )
+    return CapabilityRatchetViolation(
+        node=node_id,
+        atom=atom,
+        observed_count=count,
+        accepted_count=accepted,
+        detail=(
+            f"{atom} via-list on {node_id} grew to {count} site(s), "
+            f"above the committed ratchet ceiling of {accepted} -- "
+            f"edit {CAPABILITY_RATCHET_LOCK_REL} to raise "
+            "accepted_count with a non-empty reason, in the same diff"
+        ),
+    )
+
+
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1628
+# frob:ticket T-4495
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_beyond_justified_ceiling_fails_even_after_a_prior_shrink  # noqa: E501
 # frob:tests \
@@ -1119,8 +1341,21 @@ def capability_ratchet_violations(
     the observed count is at or below the accepted ceiling, regardless of
     how it got there -- shrinking, holding steady, or re-growing back up to
     (never past) a previously justified high-water mark are all ordinary,
-    unremarkable movement."""
-    observed = capability_via_site_counts(model)
+    unremarkable movement.
+
+    T-4495: growth on a `testsuite`-node, glob-only-via `(node, atom)` pair
+    (`_testsuite_glob_ratcheted_keys`) is the ONE exception -- instead of
+    raising a violation, it is auto-accepted: the lock is rewritten in
+    place (`_write_capability_ratchet_lock_entry`) with the new observed
+    count and reason `"testsuite glob growth"`, and no violation is
+    returned for that pair on this call (module docstring's T-4495
+    section explains why: a glob has no per-file diff for a human to
+    review, so demanding a hand lock-edit for ordinary test-suite growth
+    would defeat the whole point of switching to a glob). Every other
+    `(node, atom)` pair, including `testsuite` itself for a non-glob atom,
+    keeps the original fail-closed behavior unchanged."""
+    observed = capability_via_site_counts(model, root)
+    glob_ratcheted = _testsuite_glob_ratcheted_keys(model)
     lock = _load_capability_ratchet_lock(root)
     found: list[CapabilityRatchetViolation] = []
     for key, count in sorted(observed.items()):
@@ -1129,28 +1364,11 @@ def capability_ratchet_violations(
         accepted_raw = entry.get("accepted_count") if isinstance(entry, dict) else None
         accepted = accepted_raw if isinstance(accepted_raw, int) else 0
         if count > accepted:
-            _log.warning(
-                "strata effects: capability ratchet: %s %s grew to %d "
-                "site(s), above the committed ceiling of %d",
-                node_id,
-                atom,
-                count,
-                accepted,
+            growth = _capability_ratchet_growth_finding(
+                root, key, node_id, atom, count, accepted, glob_ratcheted
             )
-            found.append(
-                CapabilityRatchetViolation(
-                    node=node_id,
-                    atom=atom,
-                    observed_count=count,
-                    accepted_count=accepted,
-                    detail=(
-                        f"{atom} via-list on {node_id} grew to {count} site(s), "
-                        f"above the committed ratchet ceiling of {accepted} -- "
-                        f"edit {CAPABILITY_RATCHET_LOCK_REL} to raise "
-                        "accepted_count with a non-empty reason, in the same diff"
-                    ),
-                )
-            )
+            if growth is not None:
+                found.append(growth)
             continue
         reason = entry.get("reason") if isinstance(entry, dict) else None
         if entry is not None and not (isinstance(reason, str) and reason.strip()):

@@ -196,9 +196,9 @@
       "ticket": "T-4443"
     },
     "stratamod::fs.write": {
-      "accepted_count": 5,
-      "reason": "T-2910: src/frob/strata/_bootstrap.py declares this grant (write_bootstrap_model's real fs.write site, Path.write_text -- frob sys init's one-time model write); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
-      "ticket": "T-2910"
+      "accepted_count": 6,
+      "reason": "T-4495: adds src/frob/strata/_effects.py to stratamod's fs.write via-list -- _write_capability_ratchet_lock_entry's real fs.write site (the testsuite-glob-ratchet auto-accept write). Bumping the ceiling 5 -> 6, one new site.",
+      "ticket": "T-4495"
     },
     "stratamod::net.connect": {
       "accepted_count": 1,

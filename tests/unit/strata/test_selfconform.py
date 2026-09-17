@@ -1631,8 +1631,7 @@ class TestUndeclaredIntendedSurface:
     requirement)."""
 
     # frob:tests \
-    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_viola\
-    # tions kind="unit"
+    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_violations kind="unit"  # noqa: E501
     def test_real_symbol_outside_declared_set_fires(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -1660,8 +1659,7 @@ class TestUndeclaredIntendedSurface:
         assert hits[0].capability == "undeclared_fn"
 
     # frob:tests \
-    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_viola\
-    # tions kind="unit"
+    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_violations kind="unit"  # noqa: E501
     def test_declared_superset_is_silent(self, tmp_path: Path) -> None:
         """Declaring MORE than the real surface (an aspirational/future
         entry) is not itself a SYS110 finding -- only the reverse
@@ -1688,8 +1686,7 @@ class TestUndeclaredIntendedSurface:
         )
 
     # frob:tests \
-    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_viola\
-    # tions kind="unit"
+    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_violations kind="unit"  # noqa: E501
     def test_node_with_no_interface_attrs_is_skipped(self, tmp_path: Path) -> None:
         """A node with ZERO `interface=` attrs has not opted into
         hand-declared intent yet -- the phased-migration design point,
@@ -2125,3 +2122,148 @@ class TestConformanceWaiverStaleness:
             for v in result.danger_ok.violations
         )
         assert any(v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.waived)
+
+
+class TestTestsuiteViaGlobRatchet:
+    """T-4495: `testsuite`'s `exec`/`fs.write`/`fs.read`/`env.read` `via`
+    lists are now a single bare glob (`design/frob.strata`'s `via
+    "tests/**"`) instead of one enumerated file name per test -- a new
+    test file exercising one of these capabilities needs no hand edit to
+    `design/frob.strata` (acceptance clause 0) and the capability ratchet
+    (`capability_ratchet_violations`) still tracks the real total instead
+    of collapsing to `len(via) == 1` (module docstring's T-4495 section on
+    `_glob_via_observed_site_count`). A non-test node's enumerated/via-less
+    surface is untouched (acceptance clause 1)."""
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_new_test_file_matching_glob_via_needs_no_strata_edit(self, tmp_path: Path):
+        """A brand-new `tests/**.py` file that spawns a subprocess (exec)
+        and writes under a tmp dir (fs.write) is fully covered by a
+        `testsuite` node whose ONLY `via` declaration is a bare
+        `"tests/**"` glob -- no per-file entry for this new file is
+        needed, since `_via_matches`/`_via_matches_site` already match a
+        glob generically (T-1627)."""
+        _write(
+            tmp_path,
+            "tests/test_new_thing.py",
+            "import subprocess\n"
+            "def test_it(tmp_path):\n"
+            "    subprocess.run(['true'])\n"
+            "    (tmp_path / 'out.txt').write_text('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="testsuite",
+                    trust="trusted",
+                    attrs=("code=tests/**",),
+                    may_grants=(
+                        MayGrant(atom="exec", via=("tests/**",)),
+                        MayGrant(atom="fs.write", via=("tests/**",)),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNDECLARED_INTERFACE for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_non_test_node_exec_still_fails_closed(self, tmp_path: Path):
+        """A NON-test node's brand-new exec site with no `may "exec"`
+        declaration at all still fires SYS100/undeclared-interface exactly
+        as before -- the T-4495 glob carve-out is `testsuite`-specific and
+        never loosens any other node's fail-closed posture (acceptance
+        clause 1)."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_shell.py",
+            "import subprocess\nsubprocess.run(['true'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [
+            v for v in result.danger_ok.violations if v.rule == SYS_UNDECLARED_INTERFACE
+        ]
+        assert any(v.node == "widget" and "exec" in v.detail for v in hit)
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_testsuite_glob_growth_auto_accepts_and_writes_lock(self, tmp_path: Path):
+        """T-4495: a `testsuite` node whose `exec` grant is a bare
+        `"tests/**"` glob, with NO existing ratchet lock entry (ceiling
+        0-by-absence), grows to a real observed count of 1 (one file, one
+        exec site) without producing a `CapabilityRatchetViolation` -- the
+        growth is auto-accepted, and the lock file is written in place
+        with `reason="testsuite glob growth"` (module docstring's T-4495
+        section) instead of demanding a hand lock edit for an ordinary new
+        test file."""
+        from frob.strata._effects import (
+            CAPABILITY_RATCHET_LOCK_REL,
+            capability_ratchet_violations,
+        )
+
+        _write(
+            tmp_path,
+            "tests/test_new_thing.py",
+            "import subprocess\ndef test_it():\n    subprocess.run(['true'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="testsuite",
+                    trust="trusted",
+                    attrs=("code=tests/**",),
+                    may_grants=(MayGrant(atom="exec", via=("tests/**",)),),
+                ),
+            )
+        )
+        found = capability_ratchet_violations(model, tmp_path)
+        assert found == ()
+        lock_path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
+        assert lock_path.is_file()
+        import json
+
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        entry = lock["entries"]["testsuite::exec"]
+        assert entry["accepted_count"] == 1
+        assert entry["reason"] == "testsuite glob growth"
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_non_testsuite_bare_glob_via_is_not_auto_accepted(self, tmp_path: Path):
+        """The T-4495 auto-accept carve-out is `testsuite`-specific: a
+        DIFFERENT node declaring a bare-glob `via` still ratchets the
+        ordinary, fail-closed, hand-edited-lock way -- growth past the
+        (absent, so 0) ceiling is a real `CapabilityRatchetViolation`, and
+        no lock entry is written."""
+        from frob.strata._effects import (
+            CAPABILITY_RATCHET_LOCK_REL,
+            capability_ratchet_violations,
+        )
+
+        _write(
+            tmp_path,
+            "src/frob/widget/_shell.py",
+            "import subprocess\nsubprocess.run(['true'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may_grants=(MayGrant(atom="exec", via=("src/frob/widget/**",)),),
+                ),
+            )
+        )
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert found[0].node == "widget"
+        assert found[0].atom == "exec"
+        assert not (tmp_path / CAPABILITY_RATCHET_LOCK_REL).is_file()
