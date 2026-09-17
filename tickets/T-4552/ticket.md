@@ -48,6 +48,10 @@ acceptance:
     worktree holder is dead and the lease is for a different, unrelated ticket) --
     no code fix required, documented as such
   evidence: []
+- text: 'COV002 on _land_git_ops.py''s T-4498 merge-conflict helpers resolved: frob:ticket
+    edges retargeted to T-4552 (T-4498 is done) and frob:tests edges added for _land_ticket_for_commit_touching,
+    _resolve_one_out_of_scope_conflict, _log_capability_ratchet_refusal'
+  evidence: []
 threat: null
 component: null
 anchor: false
