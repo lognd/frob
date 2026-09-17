@@ -43,6 +43,11 @@ scope_changes:
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
+acceptance:
+- text: TICK010 finding on .git/frob-leases/T-4550.json is confirmed stale (T-4550's
+    worktree holder is dead and the lease is for a different, unrelated ticket) --
+    no code fix required, documented as such
+  evidence: []
 threat: null
 component: null
 anchor: false
