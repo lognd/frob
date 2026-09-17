@@ -51,6 +51,21 @@ frob scaffold new python-tool demo --output /path/to/parent/  # -> /path/to/pare
 frob scaffold new pyo3-library demo --force  # overwrite existing files
 ```
 
+<!-- frob:describes src/frob/app/scaffold_runner.py::_run_pool -->
+`frob scaffold pool` (T-0877): a warm pool of pre-built worktrees, backed
+by `frob.scaffold._pool` (`warm_pool`/`lease_worktree`/`pool_status`, see
+`docs/guides/worktree-pool.md` for the full manifest-file API). This is
+the same three operations the Makefile's `pool-warm`/`pool-lease`/
+`pool-status` inline-python shims used to provide, now wired as real CLI
+subcommands:
+
+<!-- frob:describes src/frob/app/scaffold_runner.py::_run_pool -->
+```bash
+frob scaffold pool warm [N]   # fill the pool to N ready slots (default N=4)
+frob scaffold pool lease      # lease one ready slot, print its path, refill in background
+frob scaffold pool status     # print the current manifest
+```
+
 ## Project types
 
 | Type | Stack | Contents |

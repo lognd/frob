@@ -2,7 +2,7 @@
 id: T-4523
 title: 'scaffold pool warm/lease/status have zero references anywhere: confirm dead
   or document, then delete or document'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-09-16'
@@ -22,12 +22,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip
 designated_repro_test: null
 acceptance:
 - text: GIVEN the three leaves WHEN traced to callers (git grep, docs, hooks, CI)
     THEN each is either deleted with its runner or documented with one usage example
     in docs/commands/scaffold.md
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip
 threat: null
 component: null
 anchor: false
