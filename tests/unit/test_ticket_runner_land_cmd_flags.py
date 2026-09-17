@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -310,7 +311,7 @@ class TestLandDrain:
         no single CLI ticket_id for --drain)."""
         from frob.app.ticket_runner import _land_cmd
 
-        entries = [
+        entries: list[dict[str, Any]] = [
             {
                 "ticket_id": "T-0001",
                 "worktree": str(tmp_path / "wt1"),
@@ -354,7 +355,7 @@ class TestLandDrain:
             if not entries:
                 return Ok(None)
             raw = entries.pop(0)
-            entry = QueueEntry(**{**raw, "status": "queued"})
+            entry = QueueEntry.model_validate({**raw, "status": "queued"})
             outcome = land_fn(entry)
             landed = entry.model_copy(
                 update={

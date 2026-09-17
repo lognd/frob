@@ -2,7 +2,7 @@
 id: T-4543
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3613):
   2 new (rule, file) identit(ies), 12 finding(s) (COV002, TICK010)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-16'

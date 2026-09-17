@@ -32,6 +32,7 @@ from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
 
 
+# frob:ticket T-4543
 # frob:waive WIRE001 reason="passed as a callable argument to _index_function in _legacy.py._scan_cs_file (same indirect-call shape as the pre-existing _collect_locals_cpp/_collect_locals_py siblings, which WIRE001 does not flag only because they are not new in this diff)"  # noqa: E501
 def _collect_locals_cs(func_node: Node) -> set[str]:
     """Collect identifiers local to a C# method (params + declarations)."""
@@ -46,6 +47,7 @@ def _collect_locals_cs(func_node: Node) -> set[str]:
     return locals_
 
 
+# frob:ticket T-4543
 def _harvest_cs_param(node: Node, out: set[str]) -> None:
     """Add the bound name of one C# `parameter` node to `out`."""
     if node.type == "parameter":
@@ -54,6 +56,7 @@ def _harvest_cs_param(node: Node, out: set[str]) -> None:
             out.add(_node_text(name_node))
 
 
+# frob:ticket T-4543
 def _harvest_cs_declarator(node: Node, out: set[str]) -> None:
     """Add the bound name of one `variable_declarator` node to `out`."""
     if node.type != "variable_declarator":
@@ -68,12 +71,14 @@ def _harvest_cs_declarator(node: Node, out: set[str]) -> None:
             return
 
 
+# frob:ticket T-4543
 def _harvest_cs_variable_declaration(node: Node, out: set[str]) -> None:
     """Add every declarator name under one `variable_declaration` node."""
     for declarator in node.named_children:
         _harvest_cs_declarator(declarator, out)
 
 
+# frob:ticket T-4543
 def _collect_assigned_names_cs(node: Node, out: set[str]) -> None:
     """Walk a C# method body and harvest local-declaration/loop binding
     names (parameters are collected separately by `_collect_locals_cs`)."""
@@ -110,6 +115,7 @@ def _collect_assigned_names_cs(node: Node, out: set[str]) -> None:
             _collect_assigned_names_cs(c, out)
 
 
+# frob:ticket T-4543
 _CS_LITERAL_COLLAPSE_TYPES = frozenset(
     {
         "string_literal",
@@ -121,6 +127,7 @@ _CS_LITERAL_COLLAPSE_TYPES = frozenset(
 )
 
 
+# frob:ticket T-4543
 # frob:waive WIRE001 reason="passed as a callable argument to _index_function in _legacy.py._scan_cs_file (same indirect-call shape as the pre-existing _serialize_cpp_body/_serialize_py_body siblings, which WIRE001 does not flag only because they are not new in this diff)"  # noqa: E501
 def _serialize_cs_body(body: Node, locals_: set[str]) -> str:
     """Serialize a C# body node to a normalized token string."""
@@ -143,6 +150,7 @@ def _serialize_cs_body(body: Node, locals_: set[str]) -> str:
     return " ".join(tokens)
 
 
+# frob:ticket T-4543
 def _cs_leaf_token(n: Node, locals_: set[str], mapping: dict[str, str]) -> str:
     """The normalized token for a C# leaf node: renamed local, `_N_`
     numeric-literal placeholder, or the raw text."""
@@ -157,6 +165,7 @@ def _cs_leaf_token(n: Node, locals_: set[str], mapping: dict[str, str]) -> str:
     return raw
 
 
+# frob:ticket T-4543
 def _enclosing_class_cs(func_node: Node) -> str | None:
     """Return the enclosing class/struct/interface name for a C# method,
     or None."""
@@ -176,12 +185,14 @@ def _enclosing_class_cs(func_node: Node) -> str | None:
     return None
 
 
+# frob:ticket T-4543
 def _cs_func_name(node: Node) -> str:
     """Best-effort method name from a C# `method_declaration` node."""
     name_node = node.child_by_field_name("name")
     return _node_text(name_node) if name_node else "<unknown>"
 
 
+# frob:ticket T-4543
 def _iter_functions_cs(root_node: Node) -> Iterator[tuple[Node, str]]:
     """Yield `(func_node, symbol)` for every C# `method_declaration`."""
     if root_node.type == "method_declaration":
