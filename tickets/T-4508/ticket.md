@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_unity_batchmode.py
 - docs/modules/testing.md
 - docs/guides/unity.md
+- tests/fixtures/lang/csharp/tests
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,11 @@ scope_changes:
 - op: add
   glob: docs/guides/unity.md
   reason: unity batchmode CLI + config doc, T-4508/T-4509 shared home
+  actor: logan
+  at: '2026-09-17'
+- op: add
+  glob: tests/fixtures/lang/csharp/tests
+  reason: static TRX/NUnit3 XML fixtures for the dotnet/unity evidence-channel tests
   actor: logan
   at: '2026-09-17'
 designated_repro_test: null
