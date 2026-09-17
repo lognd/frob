@@ -1,7 +1,7 @@
 ---
 id: T-4508
 title: 'Evidence channel: dotnet test runner + Unity batchmode XML results parser'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -16,10 +16,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/_runners.py
 - src/frob/testing/_unity_batchmode.py
+- tests/unit/test_dotnet_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_dotnet_runner.py
+  reason: unit tests for run_dotnet_tests/TRX parsing
+  actor: logan
+  at: '2026-09-17'
 designated_repro_test: null
 threat: null
 component: null
