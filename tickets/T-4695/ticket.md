@@ -52,9 +52,9 @@ acceptance:
     gitlog runs on it, then the expected type/granularity rollup appears -- a no-crash
     assertion does not satisfy this criterion
   evidence: []
-- text: Given the deprecated top-level frob xref before its sunset date, when it runs,
-    then it prints the frob explore xref spelling on stderr and still returns the
-    same results
+- text: Given the deprecated top-level frob gitlog before its sunset date, when it
+    runs, then it prints the frob explore gitlog spelling on stderr and returns output
+    identical to the new spelling; the same holds for stats, debt and deprecated
   evidence: []
 - text: Given frob --help after this ticket, then map, outline, xref, docs-search,
     gitlog and stats are absent from the top-level usage line and present under frob
@@ -72,6 +72,18 @@ acceptance_amendments:
   reason: '2026-09-19 coordinator review: map/outline/xref/docs-search are T-4690
     work now; this ticket moves gitlog, stats, the graph queries, debt and deprecated,
     so the positive control must be one of those'
+  actor: logan
+  at: '2026-09-19'
+- op: replace
+  index: 2
+  old_text: Given the deprecated top-level frob xref before its sunset date, when
+    it runs, then it prints the frob explore xref spelling on stderr and still returns
+    the same results
+  new_text: Given the deprecated top-level frob gitlog before its sunset date, when
+    it runs, then it prints the frob explore gitlog spelling on stderr and returns
+    output identical to the new spelling; the same holds for stats, debt and deprecated
+  reason: '2026-09-19 coordinator review: the shims this ticket owns are gitlog/stats/debt/deprecated,
+    not xref (T-4690 owns that one)'
   actor: logan
   at: '2026-09-19'
 threat: null
