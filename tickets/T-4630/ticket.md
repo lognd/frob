@@ -26,7 +26,6 @@ scope:
 - tests/unit/strata/test_facts.py
 - tests/unit/strata/test_native_staleness.py
 - tests/unit/test_arch_srp.py
-- tests/unit/test_cli_group_parity.py
 - tests/unit/test_conftest_stackdump.py
 - tests/unit/test_dup_legacy_cpp.py
 - tests/unit/test_gitattributes_merge.py
@@ -34,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/test_cli_group_parity.py
+  reason: leased by in-progress T-draft-5658939f (cli-regrouping parity fix); deferred,
+    pick up once that lease releases
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given a scoped frob check on cluster 2 files, when DOCARCH001 is measured,
