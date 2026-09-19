@@ -19,6 +19,7 @@ scope:
 - tests/**/test_sys*.py
 - src/frob/gates/_sys_provenance.py
 - docs/strata/provenance-trust-identity.md
+- tests/test_pii_provenance_trust_identity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,12 @@ scope_changes:
 - op: add
   glob: docs/strata/provenance-trust-identity.md
   reason: 'standalone doc row: docs/modules/gates.md is leased by T-4111'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_pii_provenance_trust_identity.py
+  reason: new tests for derived_from/trust_identity attrs (avoids _pii structural
+    gate test file leased by T-4073)
   actor: logan
   at: '2026-09-19'
 triage_changes:
