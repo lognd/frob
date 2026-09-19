@@ -2,7 +2,7 @@
 id: T-4675
 title: 'SF-07: overdue assumes are documented as gate failures and are not -- wire
   the verdict before the 2026-10-15 cliff'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-19'
