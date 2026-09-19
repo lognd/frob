@@ -7,7 +7,7 @@ kind: docs
 origin: agent
 created: '2026-09-19'
 priority: medium
-parent: null
+parent: T-4421
 tier: ticket
 sprint: null
 runs_last: false
@@ -29,6 +29,13 @@ scope_changes:
 - op: remove
   glob: tests/test_pii_structural_gate.py
   reason: leased by in-progress T-4073, skip to avoid cross-ticket collision
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4421
+  reason: child of T-4421 docarch debloat split
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
