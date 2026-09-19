@@ -42,6 +42,12 @@ triage_changes:
   actor: logan
   at: '2026-09-16'
 designated_repro_test: null
+acceptance:
+- text: GIVEN a raised quarantine is cleared (via clear_quarantine or retire_unidentifiable_findings)
+    WHEN a caller reads .frob/quarantine.status directly THEN it reads 'cleared',
+    never the byte-identical-in-shape stale record misread as live; the marker reads
+    'raised' only while genuinely raised
+  evidence: []
 threat: null
 component: null
 anchor: false
