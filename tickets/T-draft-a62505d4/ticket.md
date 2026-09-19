@@ -23,6 +23,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - docs/modules/tickets.md
 - tests/test_tickets_registry_files.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
     part (a) via frob.tickets._models.scope_matches's existing LEDGER_PATH-style implicit-scope
     mechanism instead (no scope_lease_conflict edit needed since an implicitly-in-scope
     path is never declared via --add)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: implement (a) via scope_matches's existing LEDGER_PATH-style always-implicit-scope
+    mechanism, avoiding the _scope.py whole-file lease held by T-3412
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
