@@ -18,6 +18,7 @@ scope:
 - src/frob/lang/__init__.py
 - src/frob/__init__.py
 - src/frob/testing/__init__.py
+- tests/unit/test_exports.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,16 @@ scope_changes:
 - op: add
   glob: src/frob/testing/__init__.py
   reason: export _collect_csharp.parse_csharp and _stackdump.write_stack_dump
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: tests/unit/test_exports.py
+  reason: evidence test
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: tests/unit/test_exports.py
+  reason: evidence test
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
