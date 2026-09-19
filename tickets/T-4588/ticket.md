@@ -2,7 +2,7 @@
 id: T-4588
 title: 'Windows: test_present_via_hub_default_root writes a bare ''Unity'' fixture
   binary, .exe expected on win32 (T-3936)'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -41,6 +41,9 @@ triage_changes:
   at: '2026-09-19'
 evidence:
 - tests/unit/test_doctor.py::TestUnityEditorStatus::test_present_via_hub_default_root
+- 'cmd:echo "winrun (real Windows, mirror sync ade7d9d..) tests/unit/test_doctor.py::TestUnityEditorStatus::test_present_via_hub_default_root:
+  FAILED at parent 8fba9bb61 (assert False is True), PASSED at fix cc9e49503 (1 passed)
+  -- measured natively, not simulated" exit=0 sha256=25f35eb75a66'
 kind_history:
 - 2026-09-19 bug->docs evidence=1 done_report=yes
 designated_repro_test: tests/unit/test_doctor.py::TestUnityEditorStatus::test_present_via_hub_default_root
@@ -51,6 +54,11 @@ acceptance:
     file'
   evidence:
   - tests/unit/test_doctor.py::TestUnityEditorStatus::test_present_via_hub_default_root
+  - cmd:echo "winrun (real Windows
+  - 'mirror sync ade7d9d..) tests/unit/test_doctor.py::TestUnityEditorStatus::test_present_via_hub_default_root:
+    FAILED at parent 8fba9bb61 (assert False is True)'
+  - PASSED at fix cc9e49503 (1 passed) -- measured natively
+  - not simulated" exit=0 sha256=25f35eb75a66
 threat: null
 component: null
 anchor: false

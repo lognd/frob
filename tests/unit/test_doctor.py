@@ -245,9 +245,10 @@ class TestUnityEditorStatus:
         monkeypatch.setattr(doctor.shutil, "which", lambda name: None)
         hub_root = tmp_path / "Hub" / "Editor"
         for v in ("2021.3.1f1", "2022.3.5f1"):
-            edir = hub_root / v / "Editor"
-            edir.mkdir(parents=True)
-            (edir / "Unity").write_text("", encoding="utf-8")
+            version_dir = hub_root / v
+            binary = doctor._unity_editor_binary_for_version_dir(version_dir)
+            binary.parent.mkdir(parents=True)
+            binary.write_text("", encoding="utf-8")
         monkeypatch.setattr(doctor, "_unity_hub_default_roots", lambda: (hub_root,))
         status = _locate_unity_editor()
         assert status.present is True
