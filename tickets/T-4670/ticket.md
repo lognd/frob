@@ -1,5 +1,5 @@
 ---
-id: T-draft-ce51299a
+id: T-4670
 title: 'SF-05: ratchet drift report -- 45 units of accumulated slack and 3 dead entries
   are invisible to a monotone-only gate'
 state: queued
