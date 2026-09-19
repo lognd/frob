@@ -1,5 +1,5 @@
 ---
-id: T-draft-1db2265b
+id: T-4677
 title: 'DECISION: SF-08 -- 33/33 assumes are one boilerplate shape, one owner, one
   date; how should a weakness class be stated once?'
 state: queued
