@@ -1,5 +1,5 @@
 ---
-id: T-draft-7c1a586a
+id: T-4693
 title: 'DOCARCH002: structural comment lint -- content-blind length cap, T-#### citations
   must be directives, ratcheted (baseline 507 runs/1055 docstrings/2303 citations)'
 state: queued
