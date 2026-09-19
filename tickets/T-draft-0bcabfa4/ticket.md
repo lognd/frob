@@ -60,6 +60,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 5045
   new_length: 5238
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure decision record: the owner ruling is recorded
+    verbatim; the behaviour lands in the grammar, linker and migration leaves'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5238
+  new_length: 5397
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
@@ -167,3 +174,5 @@ frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 (h
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
+
+frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
