@@ -71,6 +71,12 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3842
+- mode: append
+  reason: 'T-4709: preserve env-absent rationale trimmed from _bug_repro.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3841
+  new_length: 4620
 evidence:
 - tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_single_directive_extracted
 - tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_comma_separated_names_extracted_in_order
@@ -159,3 +165,17 @@ ACCEPTANCE
   waiver.
 - Report how many existing waivers in the repo are of this
   "gate could not check this" shape, so the size of the class is known.
+
+
+T-4709 follow-up (condensed from _ENV_ABSENT_RE's docstring in
+src/frob/gates/_bug_repro.py, trimmed for DOCARCH002's 12-line cap):
+T-3075's own five tests hit this class -- BUG002 and TEST016 both had to
+be waived because this repo's own verification sandbox always HAS the
+thing whose absence is the defect (developer git identity, ~/.claude,
+...). T-1321's shape is the concrete example:
+_retry_commit_with_fallback_identity falls back to a throwaway identity
+only when `git commit` reports "Author identity unknown" -- a test that
+only fails when the variable is genuinely gone. No new evidence format or
+ticket field was added; this mirrors T-3156's scope_has_python_surface
+precedent of one predicate wired into the existing checkpoint rather than
+a parallel mechanism.
