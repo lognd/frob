@@ -1,5 +1,5 @@
 ---
-id: T-draft-829b2ba3
+id: T-4652
 title: 'Ledger kernel: ids assigned once at new, draft promotion is a ledger-only
   land operation, one typed store API'
 state: queued
