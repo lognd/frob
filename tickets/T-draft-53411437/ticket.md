@@ -1,0 +1,96 @@
+---
+id: T-draft-53411437
+title: 'Trunk-assigned ticket numbers: a branch never owns a T-#### number; frob ticket
+  sync --base main absorbs, renumbers and rewrites citations'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: critical
+blocked_by:
+- T-4657
+- T-4658
+parent: T-4652
+tier: ticket
+sprint: v0.535.0
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_sync.py
+- src/frob/tickets/_land_ledger_merge.py
+- tests/unit/test_ticket_sync_trunk_numbers.py
+- docs/modules/tickets-merge-driver.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: Given two branches off the same main, when each files one draft ticket and
+    one numbered ticket and then merges main, then both renumber without collision
+    and every citation (frob:ticket, frob:todo, follow_up=, blocked_by, parent, done-report
+    link) still resolves to the right ticket.
+  evidence: []
+- text: 'POSITIVE CONTROL: tests/unit/test_ticket_sync_trunk_numbers.py::test_two_branches_same_number_merge_without_collision
+    builds exactly that two-branch scenario and asserts the merged ledger has no duplicate
+    id and no dangling citation. It FAILS on dev today (both branches own the same
+    T-#### and the merge is a ledger content conflict) and passes after this leaf.'
+  evidence: []
+- text: Given a PR whose ledger carries a numeric id not present on main, or one colliding
+    with main, when the pre-merge check runs, then the PR is REFUSED with a named
+    error telling the author to run the sync. Proven by ::test_branch_numbered_id_is_refused,
+    which also asserts the check reports a nonzero number of ids EXAMINED -- never
+    a bare zero.
+  evidence: []
+- text: Given `git merge main` on a branch with drafts, when the merge driver runs,
+    then sync is applied automatically with no separate verb invoked by the user.
+  evidence: []
+- text: 'Given sync renumbers a ticket, when the rewrite completes, then it is ONE
+    atomic ledger write: no state exists in which the ticket is renamed but its citations
+    are not (this is T-3929''s failure mode).'
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+LEDGER leaf (story T-4652), owner concern raised 2026-09-19. ~3 points.
+
+Owner: "collaborators working on the same frob-enabled repository will overwrite each
+other's tickets: ids carry no information, so we need a way to automatically update them
+when we merge main (if main has tickets, absorb them and renumber branches), and with
+branch protection there is no way to overwrite main's tickets."
+
+The root cause is that a BRANCH currently owns a T-#### number. Two branches off the same
+main both allocate T-4700 and neither is wrong; the collision is only discovered at merge,
+when it is a content conflict in the ledger rather than a numbering question. Under branch
+protection the usual escape (force the ledger onto main) is not available at all.
+
+Target shape -- a branch NEVER owns a number:
+- tickets are created as content-addressed T-draft-<hash> ids; a hash cannot collide across
+  branches, so two collaborators filing simultaneously never conflict
+- a number is assigned ONLY when a ticket reaches the trunk
+- `frob ticket sync --base main` absorbs main's ledger, renumbers the branch's colliding or
+  draft ids, and REWRITES EVERY CITATION: frob:ticket, frob:todo, follow_up=, blocked_by,
+  parent, and done-report links. This subsumes T-3929's dangling-citation problem, which is
+  the same rewrite performed at a different moment.
+- the merge driver runs sync automatically on `git merge main`, building on the merge-driver
+  work in T-draft-7b4d432f, so the common path needs no new verb (owner directive: prefer
+  automatic behaviour to a new verb)
+- a CI/pre-merge check REFUSES a PR whose ledger carries a numeric id not present on main or
+  colliding with main -- so branch protection is never fought, it is satisfied by construction
+
+This is the structural fix that T-4657's store API and T-4658's assign-once rule make
+possible; both must land first.
+
+SCOPE NOTES (planner):
+- docs land in docs/modules/tickets-merge-driver.md, NOT docs/modules/tickets-lifecycle.md:
+  that file is already declared in T-4659's scope (lease lifecycle) and would serialize the
+  two leaves for no reason.
+- the merge-driver module is src/frob/tickets/_land_ledger_merge.py. The CLI half lives in
+  src/frob/app/ticket_runner/_land_cmd.py (7511 lines), deliberately NOT taken here: it is
+  the hottest contended file in the repo and the T-3053 land leaves need it. Wire the CLI
+  through the FEATURE-kind implicit CLI grant, or `scope --add` it only if genuinely needed.
