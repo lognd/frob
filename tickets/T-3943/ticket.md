@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/config.py
+- src/frob/check/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,12 @@ scope_changes:
     done-report''s --base-ref governs only the Changed section)'
   actor: logan
   at: '2026-09-06'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: route bare frob check's diff base through the canonical current-branch/ticket_land_branch
+    resolver instead of a literal main
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: 'F-271 is a second independent instance (a branch 620+ commits behind) and
