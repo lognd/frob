@@ -53,10 +53,6 @@ acceptance:
     when a SYS violation is PLANTED in the fixture, then a test asserts the runner
     reports it -- so a future zero is provably a clean zero.
   evidence: []
-- text: Given there is no 'check --only sys' timing row in 31,459 telemetry rows,
-    when the slice runs, then it records a timing row and the done-report states the
-    measured wall-clock the epic has been missing.
-  evidence: []
 acceptance_amendments:
 - op: replace
   index: 1
@@ -72,6 +68,16 @@ acceptance_amendments:
   reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); this ticket keeps
     only the measurement half, so criterion 1 is amended from ''telemetry names a
     SYS rule id'' to the missing wall-clock'
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  index: 3
+  old_text: Given there is no 'check --only sys' timing row in 31,459 telemetry rows,
+    when the slice runs, then it records a timing row and the done-report states the
+    measured wall-clock the epic has been missing.
+  new_text: null
+  reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); the timing criterion
+    is now criterion 1, so this duplicate timing criterion is removed'
   actor: logan
   at: '2026-09-19'
 threat: null
