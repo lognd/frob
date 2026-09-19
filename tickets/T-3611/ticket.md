@@ -9,7 +9,7 @@ created: '2026-08-31'
 priority: high
 parent: T-4410
 tier: epic
-sprint: v0.532.0
+sprint: v0.535.0
 runs_last: false
 milestone: v0.532.0
 runs_last_parallel_safe: false
@@ -25,6 +25,12 @@ triage_changes:
   reason: landing/verify cost epic T-4410 covers this scope
   actor: logan
   at: '2026-09-11'
+- field: sprint
+  old_value: v0.532.0
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
