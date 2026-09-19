@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/gates_suite/test_tick.py
 - src/frob/tickets/_store.py
+- src/frob/tickets/_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -23,6 +24,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/tickets/_store.py
+  reason: memoize _store_mode / fix per-call re-scan for TICK008 perf fix
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_leases.py
   reason: memoize _store_mode / fix per-call re-scan for TICK008 perf fix
   actor: logan
   at: '2026-09-19'
