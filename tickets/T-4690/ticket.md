@@ -64,6 +64,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 3416
   new_length: 3416
+- mode: set
+  reason: 'DOC006: a planned CLI option must not read as a cli invocation pointer
+    until it exists'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3416
+  new_length: 3436
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
@@ -116,7 +123,7 @@ DELETE, each with a one-minor-version shim:
   - `status` vs `verify status` vs `fleet status`: three spellings, one concept.
     Keep top-level `status` (it is the one the delta-first summary is written
     for); `verify status` and `fleet status` become shims.
-  - `whereis` folded into `doctor` (`frob doctor --whereis` or a section of
+  - `whereis` folded into `doctor` (frob doctor with a whereis option (planned) or a section of
     plain `frob doctor` output). `whereis` (T-4299) answers "which interpreter
     is this frob" -- that is a doctor question.
 
