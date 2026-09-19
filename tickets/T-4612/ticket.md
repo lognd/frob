@@ -16,7 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_pii.py
-- tests/**/test_sys*.py
 - src/frob/gates/_sys_provenance.py
 - docs/strata/provenance-trust-identity.md
 - tests/test_pii_provenance_trust_identity.py
@@ -53,6 +52,18 @@ scope_changes:
     gate test file leased by T-4073)
   actor: logan
   at: '2026-09-19'
+- op: remove
+  glob: tests/**/test_sys*.py
+  reason: 'narrow: glob blocked T-4509 (tests/system/test_unity_e2e.py glob-overlap
+    conflict); this is the only test file this ticket owns'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_pii_provenance_trust_identity.py
+  reason: 'narrow: glob blocked T-4509 (tests/system/test_unity_e2e.py glob-overlap
+    conflict); this is the only test file this ticket owns'
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: parent
   old_value: null
@@ -60,7 +71,43 @@ triage_changes:
   reason: implementation of accepted T-3961 design
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction::test_conflicting_helpers_on_same_tag_fires_pii005
+- tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction::test_single_helper_does_not_fire_pii005
+- tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_undeclared_helper_fires_sys116
+- tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_declared_helper_does_not_fire_sys116
+- tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_non_identifier_category_is_out_of_sys116_scope
+- tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys117
+- tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_with_matching_carries_does_not_fire
+- tests/test_pii_provenance_trust_identity.py::TestEvaluateProvenance::test_evaluate_provenance_merges_both_rules
+- tests/test_pii_provenance_trust_identity.py::TestEvaluateProvenance::test_evaluate_provenance_clean_model_has_no_violations
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_pii_provenance_trust_identity.py::TestSys114UndeclaredProvenance::test_undeclared_helper_fires_sys114
+  new_node: tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_undeclared_helper_fires_sys116
+  reason: rule-id renamed SYS114 -> SYS116 (clash with T-4113)
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_pii_provenance_trust_identity.py::TestSys114UndeclaredProvenance::test_declared_helper_does_not_fire_sys114
+  new_node: tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_declared_helper_does_not_fire_sys116
+  reason: rule-id renamed SYS114 -> SYS116 (clash with T-4113)
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_pii_provenance_trust_identity.py::TestSys114UndeclaredProvenance::test_non_identifier_category_is_out_of_sys114_scope
+  new_node: tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_non_identifier_category_is_out_of_sys116_scope
+  reason: rule-id renamed SYS114 -> SYS116 (clash with T-4113)
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_pii_provenance_trust_identity.py::TestSys115TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys115
+  new_node: tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys117
+  reason: rule-id renamed SYS115 -> SYS117 (clash with T-4113)
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_pii_provenance_trust_identity.py::TestSys115TrustIdentityWithoutCarries::test_trust_identity_with_matching_carries_does_not_fire
+  new_node: tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_with_matching_carries_does_not_fire
+  reason: rule-id renamed SYS115 -> SYS117 (clash with T-4113)
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
