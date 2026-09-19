@@ -1,7 +1,7 @@
 ---
 id: T-3233
 title: frob._cli_parsers --lang choices drifted narrower than frob.lang
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -60,13 +60,24 @@ scope_changes:
   reason: 'close scope-closure warning: _LANG_CHOICES''s frob:doc target'
   actor: logan
   at: '2026-09-18'
+evidence:
+- tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_lang_choices_track_frob_lang_registry
+- tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_cycle_lang_choices_match_registry
+- tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_xref_lang_choices_match_registry
+- tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_exports_lang_choices_match_registry
+- tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_all_three_lang_flags_share_the_identical_choices_object
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob cycle/xref/exports --consumers's --lang flags WHEN frob.lang gains
     or loses a tree-sitter grammar THEN all three flags' choices update automatically
     from one shared, frob.lang-derived source instead of three separately hand-typed
     literals
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_lang_choices_track_frob_lang_registry
+  - tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_cycle_lang_choices_match_registry
+  - tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_xref_lang_choices_match_registry
+  - tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_exports_lang_choices_match_registry
+  - tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_all_three_lang_flags_share_the_identical_choices_object
 threat: null
 component: null
 anchor: false

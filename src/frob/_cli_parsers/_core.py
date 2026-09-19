@@ -7,6 +7,32 @@ large-file gate threshold -- no behavior change, same argparse tree.
 
 from __future__ import annotations
 
+from frob.lang import language_for_extension, tree_sitter_extensions
+
+# frob:doc docs/commands/xref.md#public-api
+# frob:ticket T-3233
+# frob:tests tests/unit/test_cli_lang_choices_drift.py::test_lang_choices_track_frob_lang_registry  # noqa: E501
+_LANG_CHOICES: tuple[str, ...] = tuple(
+    sorted(
+        {
+            lang
+            for ext in tree_sitter_extensions()
+            if (lang := language_for_extension(ext)) is not None
+        }
+    )
+)
+"""Every `--lang` argparse `choices` list in this module routes through
+here (T-3233, T-2996's measurement) instead of each hand-typing its own
+hard-coded `['python', 'cpp', 'c']` copy -- the single source of truth
+is `frob.lang`'s own tree-sitter extension registry, so a new grammar
+`frob.lang` gains (kotlin, csharp, cuda, zig, bash, ... T-1600-1604) is
+selectable here automatically, with no CLI-layer literal to remember to
+update. `tree_sitter_extensions()` (not `supported_languages()`)
+deliberately excludes `.strata`: `--lang` filters `frob cycle`'s
+`extract_import_edges` and `frob xref`/`frob exports --consumers`'s
+tree-sitter-backed lookup, both tree-sitter-only escape hatches with no
+`.strata` analogue (frob.lang's own docstrings)."""
+
 
 def _add_scaffold_parser(sub) -> None:
     """Register the `frob scaffold` subcommand and its arguments."""
@@ -91,7 +117,7 @@ def _populate_cycle_args(cycle_p) -> None:
     standalone top-level parser and `frob quality cycle` (T-1567) so
     neither duplicates the flag list."""
     cycle_p.add_argument("cycle_path", metavar="path")
-    cycle_p.add_argument("--lang", dest="cycle_lang", choices=["python", "cpp", "c"])
+    cycle_p.add_argument("--lang", dest="cycle_lang", choices=_LANG_CHOICES)
     cycle_p.add_argument("--suggest", dest="cycle_suggest", action="store_true")
 
 
@@ -153,7 +179,7 @@ def _add_xref_parser(sub) -> None:
     )
     xref_p.add_argument("xref_symbol", metavar="symbol")
     xref_p.add_argument("xref_path", metavar="path", nargs="?", default=".")
-    xref_p.add_argument("--lang", dest="xref_lang", choices=["python", "cpp", "c"])
+    xref_p.add_argument("--lang", dest="xref_lang", choices=_LANG_CHOICES)
     xref_p.add_argument("--json", dest="xref_json", action="store_true")
     xref_p.add_argument(
         "--cross-file",
@@ -438,10 +464,11 @@ def _populate_exports_args(exports_p) -> None:
         ),
     )
     # frob:ticket T-0876
+    # frob:ticket T-3233
     exports_p.add_argument(
         "--lang",
         dest="exports_lang",
-        choices=["python", "cpp", "c"],
+        choices=_LANG_CHOICES,
         help="language override for --consumers (default: auto-detect)",
     )
 

@@ -1,187 +1,121 @@
 ## Done report
 
-T-4214 -- frob:waive premise-expiry: a waiver whose reason names a
-branch/tree condition must carry a checkable predicate and fail once it
-no longer holds
+T-3233 -- frob._cli_parsers --lang choices drifted narrower than frob.lang
 
-WHAT changed, per file:
+Scope narrowing: the ticket's original scope glob
+`src/frob/_cli_parsers/**` collided with T-4550's live lease on
+`src/frob/_cli_parsers/_ticket/_closeout_evidence.py`. Narrowed scope to
+the two files that actually contain `--lang` choices literals
+(`_check.py` -- which turned out to have no `--lang` flag at all, only
+an unrelated `--type` project-type flag; kept in scope but untouched) and
+`_core.py` (all 3 real drift sites), plus `docs/commands/check.md` and
+`docs/commands/xref.md` (scope-closure doc anchors) and the new test
+file. Recorded via `frob ticket scope T-3233 --remove/--add --reason
+...` (visible in the ticket's own `scope_changes` audit trail).
 
-- src/frob/graph/dsl.py
-  - Added `UNTIL_PREDICATE_RE` (grammar-only, module-level): the closed
-    vocabulary a `frob:waive until="..."` value may take beyond the
-    existing plain `YYYY-MM-DD` date -- `ticket-closed:T-####`,
-    `file-absent:path`, `symbol-absent:path::Sym`.
-  - `_attrs_verb_error_waive` now accepts `until=` when it matches
-    EITHER `_DATE_RE` (existing WAIVE005 form) OR the new
-    `UNTIL_PREDICATE_RE`; anything else is still a MalformedDirective,
-    with an updated message naming both accepted shapes.
-  - This module cannot import `frob.gates` (frob.gates imports
-    frob.graph, not the reverse), so the grammar (what's syntactically
-    acceptable) lives here and the semantics (whether a given predicate
-    still holds) live in frob.gates._waive, per the ticket's "one
-    evaluator with one home" requirement -- dsl.py owns the shape,
-    _waive.py owns the evaluation.
+WHAT changed:
 
-- src/frob/gates/_waive.py
-  - Added `_UNTIL_TICKET_CLOSED_RE` / `_UNTIL_FILE_ABSENT_RE` /
-    `_UNTIL_SYMBOL_ABSENT_RE`: the same three predicate shapes, with
-    capture groups for extracting the ticket id / path / path+symbol.
-  - Added `_until_premise_expired(until, *, root, snapshot, queue)` --
-    the ONE evaluator. Returns True once the named condition NO LONGER
-    HOLDS (cited ticket reached DONE/DROPBED, file now exists, symbol
-    now defined in the graph) -- premise expired, WAIVE012 must fire.
-    Returns False while the condition still holds. Returns None when
-    `until` isn't one of the three forms (a plain date is WAIVE005's
-    own concern; free-form prose is not a predicate). `until` is
-    already the DSL's own parsed attribute value (never re-derived by
-    regexing raw comment text) -- only the predicate's own vocabulary
-    is parsed lexically here, not the directive it lives in, matching
-    the ticket's "parsed from the token grammar not lexically"
-    requirement.
-  - Added `_waive012_violation` / `waive012_violations(snapshot, *,
-    root, queue)`: iterates every `frob:waive` edge with a non-empty
-    `until=`, evaluates it, and emits one WAIVE012 ERROR per expired
-    premise.
-  - Registered `WAIVE012` in `_KNOWN_GATE_RULES` (the frob-zone
-    registry) next to WAIVE011.
-  - Added `frob:ticket`/`frob:doc`/`frob:tests` directives on the new
-    public symbols (`_until_premise_expired`, `waive012_violations`).
-  - Added top-level `from frob.tickets import TicketQueue, TicketState`
-    (safe: `frob.tickets` does not import `frob.gates._waive`; the
-    sibling module `frob.gates._waive_comments` already does the same
-    import at module level).
+- src/frob/_cli_parsers/_core.py
+  Added a module-level `_LANG_CHOICES: tuple[str, ...]` constant, derived
+  from `frob.lang.tree_sitter_extensions()` +
+  `frob.lang.language_for_extension()` at import time (every tree-sitter
+  grammar label frob.lang currently registers -- python, c, cpp, rust,
+  typescript, kotlin, bash, csharp, java, cuda, zig, 11 today). Replaced
+  all 3 separately hand-typed `choices=["python", "cpp", "c"]` literals
+  (`_populate_cycle_args`'s `--lang`, xref's `--lang`, and
+  `_add_exports_parser`'s `--lang`) with `choices=_LANG_CHOICES`.
 
-- src/frob/gates/__init__.py
-  - Imported `waive012_violations` from `frob.gates._waive`.
-  - Wired `*waive012_violations(st.snapshot, root=st.repo_root,
-    queue=st.queue)` into `_assemble_gate_report` immediately after
-    `waive011_violations`, with a comment explaining it needs only the
-    snapshot's own waive edges + repo root + ticket queue (no
-    assembled violation-set dependency), same self-check posture as
-    WAIVE009/010/011.
+- docs/commands/xref.md
+  Added a `frob:describes src/frob/_cli_parsers/_core.py::_LANG_CHOICES`
+  anchor under "Public API" and a paragraph under "Language support"
+  explaining the T-3233 derivation and why it and the doc's existing
+  "any frob.lang.supported_languages() member" claim can no longer drift
+  apart.
 
-- docs/modules/gates.md
-  - Added a WAIVE012 row to the rule catalog table, describing the
-    predicate vocabulary, where the grammar is accepted (dsl.py) and
-    where the evaluator lives (_waive.py).
-  - Added `WAIVE012` to the `frob:enumerates` directive's `members=`
-    list at the top of the file (kept in sync with `_KNOWN_GATE_RULES`).
+- tests/unit/test_cli_lang_choices_drift.py (new)
+  `TestLangChoicesDeriveFromFrobLangRegistry`, 5 tests: the
+  independently-recomputed expected set is non-trivial and includes the
+  original python/cpp/c triple; `frob cycle`/`frob xref`/`frob exports`'s
+  real, registered `--lang` argparse actions (walked through the actual
+  `_build_parser()` tree, not a re-implementation) each match it; and all
+  three actions share the IDENTICAL `_LANG_CHOICES` object (not just
+  equal values), locking out a future edit that reintroduces a separate
+  hard-coded copy at any one of the three call sites.
 
-- tests/test_waive_gate.py
-  - New `TestWaive012PremiseExpiry` class, 11 tests:
-    - `_until_premise_expired` unit tests for all three predicate
-      forms (fires once expired, stays quiet while the condition
-      holds, unresolvable ticket id returns None).
-    - A plain-date `until=` and free-form prose both return None
-      (out of scope for this rule -- WAIVE005 or nothing).
-    - Two end-to-end `waive012_violations` tests building a real
-      `frob:waive ... until="file-absent:..."` comment through
-      `build_graph` and asserting the gate fires/stays quiet.
+WHY: T-2996 measured `frob cycle`/`frob xref`/`frob exports
+--consumers`'s `--lang` choices as 3 separately hand-typed
+`['python', 'cpp', 'c']` literals, narrower than `frob.lang`'s own
+grammar table -- a new grammar frob.lang gained (kotlin, csharp, cuda,
+zig, bash, added across T-1600 through T-1604) was silently unreachable
+through any of these three flags even though the underlying
+implementations (`frob.xref`'s `_LANG_EXTS`, T-3232) already derive their
+OWN extension filtering from frob.lang correctly -- only the CLI layer's
+`choices` list had not caught up. Deriving from a single, computed
+constant means this can never happen again for these three flags: a
+future grammar addition to frob.lang is automatically selectable, with
+no CLI-layer literal to remember to update.
 
-WHY: T-4157, T-4175, and T-4135 each independently hit the same shape
--- a `frob:waive` reason naming a branch/tree condition ("the file is
-absent on this branch", "not yet wired", "the code is on a branch")
-that nothing ever re-checked once the tree changed underneath it. The
-ticket asked for a checkable predicate instead of prose, so the
-condition can actually be re-verified and fail loudly once it no
-longer holds.
+Scoping note on `frob cycle` specifically: `frob.app.cycle_runner`'s own
+`_process_path` only builds import edges for extensions in its private
+`_PY_EXTS`/`_CPP_EXTS` sets (python/cpp/c) regardless of what `--lang`
+value is passed -- widening `--lang`'s CHOICES to the full registry does
+not change that runner's actual capability. Passing e.g. `--lang rust`
+already degrades gracefully to "graph built, no edges found" (the SAME
+"measured nothing" shape passing `--lang cpp` against a python-only tree
+already produces today, unchanged by this ticket) rather than a crash or
+a wrong answer -- `cycle_runner.py` is out of this ticket's declared
+scope (`src/frob/_cli_parsers/**` only), so widening its actual
+per-language edge-extraction coverage is a separate, follow-up-worthy
+piece of work, not silently folded into this CLI-parser fix.
 
-Acceptance criteria (added via `frob ticket accept`, none existed on
-the ticket originally) and how each is proven:
-1. "the until= grammar accepts a closed tree-state predicate
-   vocabulary ... alongside the existing YYYY-MM-DD date form" --
-   proven by dsl.py's `_attrs_verb_error_waive` change plus
-   `test_gate_fires_error_once_named_file_reappears` /
-   `test_ticket_closed_predicate_fires_once_ticket_is_done` /
-   `test_file_absent_predicate_fires_once_file_exists` (each exercises
-   a real `until=` value of the new vocabulary parsing successfully).
-2. "one evaluator (_until_premise_expired) judges each predicate
-   against real tree state ... and returns whether the named condition
-   still holds" -- proven by
-   `test_ticket_closed_predicate_fires_once_ticket_is_done`,
-   `test_file_absent_predicate_fires_once_file_exists`,
-   `test_symbol_absent_predicate_fires_once_symbol_reappears`.
-3. "a WAIVE012 gate error fires once a waiver's until= predicate no
-   longer holds, and stays silent while it still does" -- proven by
-   `test_gate_fires_error_once_named_file_reappears` and
-   `test_gate_stays_quiet_while_named_file_still_absent`.
+How the acceptance criterion is proven:
+[1] "GIVEN frob cycle/xref/exports --consumers's --lang flags WHEN
+    frob.lang gains or loses a tree-sitter grammar THEN all three flags'
+    choices update automatically from one shared, frob.lang-derived
+    source instead of three separately hand-typed literals" -- proven by
+    all 5 tests in tests/unit/test_cli_lang_choices_drift.py::
+    TestLangChoicesDeriveFromFrobLangRegistry (test_lang_choices_track_
+    frob_lang_registry, test_cycle_lang_choices_match_registry,
+    test_xref_lang_choices_match_registry,
+    test_exports_lang_choices_match_registry,
+    test_all_three_lang_flags_share_the_identical_choices_object).
 
-Test node ids (all passing, `pytest -k Waive012` -> 11 passed):
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_stays_quiet_while_open
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_unresolvable_id_is_none
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_stays_quiet_while_absent
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_stays_quiet_while_symbol_missing
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_plain_date_until_is_not_this_vocabulary
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_freeform_prose_is_not_a_predicate
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears (bound as evidence)
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_stays_quiet_while_named_file_still_absent (bound as evidence)
+Test run: PYTHONPATH=<worktree>/src python -m pytest
+tests/unit/test_cli_lang_choices_drift.py
+tests/unit/test_cli_single_child_groups.py tests/unit/test_xref.py -q
+-> SUITE-RESULT: exitstatus=0 collected=31 failed=0
+(tests/unit/test_cli_group_parity.py's own `natives` test was also run
+and found failing both with and without this change -- pre-existing
+repo-wide debt in `_add_natives_parser`, `src/frob/_cli_parsers/_misc.py`,
+entirely unrelated to any file this ticket touched -- not this ticket's
+regression.)
 
-Evidence bound (5 node ids, `frob ticket evidence T-4214 ... --base-ref
-dev`, accepted 1/2/3 as shown above): the two gate end-to-end tests
-(criteria 1+3), plus the three per-predicate unit tests (criteria 1+2).
+ruff check/format: clean on both touched source files.
 
-Also ran the ticket's full "Verify" suite (234 tests, all passing,
-178.59s):
-tests/gates_suite/test_waive.py tests/test_lease_premise_waivers.py
-tests/test_waive_gate.py tests/ticket_land_suite/test_waive_deletion.py
-tests/unit/graph/test_dsl_markdown_waive.py
-tests/unit/strata/test_litmus_waive.py
-tests/unit/strata/test_litmus_waive_store.py tests/unit/strata/test_waive.py
-tests/unit/test_cycle_runner_doc_waiver_t2598.py
-tests/unit/test_cycle_waiver.py tests/unit/test_waive004_perf_guard.py
-tests/unit/test_waive_audit_runner.py tests/unit/test_waive_audit_watermark.py
--> "234 passed in 178.59s"
+Gate check: frob check --only gates --files
+src/frob/_cli_parsers/_core.py,tests/unit/test_cli_lang_choices_drift.py,
+docs/commands/xref.md --base dev -> no findings referencing any of the 3
+touched files anywhere in the output; all FAIL rows in the per-category
+gate summary are pre-existing repo-wide debt with waivers, unrelated to
+this diff.
 
-`ruff check`/`ruff format` clean on all 5 touched files (Markdown
-formatting is out of ruff's scope by design, expected "experimental"
-error on gates.md, not a real failure).
+Evidence: bound (frob ticket accept + 5x frob ticket evidence
+--accepts 1 --base-ref dev), all 5 node ids collected in the rebuilt
+pytest collection cache.
 
-`frob check --only gates --files ...` (unscoped-family run, ~10min):
-gate-summary reported 71 errors / 5307 warnings repo-wide, but ZERO of
-them reference src/frob/gates/_waive.py, src/frob/graph/dsl.py,
-src/frob/gates/__init__.py, or tests/test_waive_gate.py -- confirmed by
-grepping the full output for those paths (no hits) and for
-COV002/TODO001/WAIVE0*/malformed (no hits either). Per the ticket
-playbook's own sec 6c note, `--files` does not scope most gate
-families' counts to the touched set, only the diff-driven checks
-(COV002/TODO001/FMT) are actually scoped -- those came back clean, and
-the unscoped 71/5307 are pre-existing repo baseline, not introduced by
-this change.
+Commits (branch t-3233, no merge needed -- dev had no commits beyond
+this worktree's own base at the time of the check):
+  763030457 fix(cli-parsers): derive --lang choices from frob.lang's registry
+  (plus scope/accept/evidence ticket-ledger commits)
 
-Scope changes (both mirrored via `frob ticket scope --add`, both
-necessary, neither silently expanded):
-- src/frob/graph/dsl.py -- the until= grammar is validated (date-only)
-  at parse time in dsl.py's _attrs_verb_error_waive; WAIVE012's
-  evaluator in _waive.py can never see a non-date until= value at all
-  unless dsl.py's own grammar check is relaxed first. No way to
-  implement the ticket without this.
-- docs/modules/gates.md -- WAIVE012's rule-catalog row and the
-  `frob:enumerates` members= list, matching every sibling WAIVE00*
-  rule's frob:doc target.
+Final HEAD: d938d24738c75d90c45cf735a588b52239a98bee
 
-Filed: none. No out-of-scope defects found during this ticket; the
-pre-existing 71/5307 gate-summary findings are unrelated baseline noise
-outside this ticket's scope (not investigated further -- ticket
-playbook sec 6c explicitly warns against treating an unscoped run as
-this ticket's own clean/dirty signal).
-
-Disclosed cuts: WAIVE010's own wording-based "reads as deferred work"
-heuristic and WAIVE006's ticket-binding-phrase heuristic are unrelated,
-pre-existing mechanisms this ticket does not touch or duplicate --
-`ticket-closed:T-####` is a NEW structured predicate a waiver author
-opts into explicitly via `until=`, distinct from WAIVE006's free-form
-reason-phrase detection. Not every waiver needs this predicate (per the
-ticket's own text); this change only makes the predicate possible and
-enforces it once written, it does not retrofit existing prose-only
-waivers with predicates (that retrofit, if wanted, is a separate
-follow-up over "hundreds of" existing waivers and out of this ticket's
-scope).
-
-Commit: a6e398c85 "feat(gates): add WAIVE012 frob:waive until=
-premise-expiry predicate" (worktree branch t-4214, base dev).
+Filed: none -- no out-of-scope work discovered. (cycle_runner.py's own
+narrower-than-CLI-choices actual language coverage, noted above, is a
+pre-existing, separate concern outside this ticket's declared scope, not
+newly discovered by this ticket's work -- not filed as a new ticket since
+it is not a regression this change causes and the ticket's own scope
+explicitly excludes cycle_runner.py.)
 
 ### Changed
 ```
@@ -190,7 +124,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  .claude/hooks/frob-timeout-guard.py                | 127 ++--
  .frob-release.json                                 |   2 +-
  .github/workflows/ci.yml                           | 107 +++-
- CHANGELOG.md                                       |  45 ++
+ CHANGELOG.md                                       |  46 ++
  changelog.d/T-2965.md                              |   2 +
  changelog.d/T-3020.md                              |   2 +
  changelog.d/T-3232.md                              |   2 +
@@ -198,6 +132,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  changelog.d/T-3613.md                              |   2 +
  changelog.d/T-3615.md                              |   2 +
  changelog.d/T-3856.md                              |   2 +
+ changelog.d/T-4214.md                              |   2 +
  changelog.d/T-4413.md                              |   2 +
  changelog.d/T-4414.md                              |   2 +
  changelog.d/T-4415.md                              |   2 +
@@ -241,9 +176,10 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  docs/commands/narrative.md                         |   8 +
  docs/commands/scaffold.md                          |  15 +
  docs/commands/ticket.md                            |  72 +++
- docs/commands/xref.md                              |   4 +-
+ docs/commands/xref.md                              |  16 +-
  docs/design/cli-regrouping.md                      |  73 +++
  .../registry/capability-via-ratchet.lock.json      |  63 +-
+ docs/design/registry/check-coverage.yaml           |   7 +-
  docs/guides/install.md                             |  40 ++
  docs/guides/release.md                             |  37 ++
  docs/modules/app.md                                |  20 +
@@ -261,6 +197,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/__init__.py                               |   2 +
  src/frob/__main__.py                               |  26 +-
  src/frob/_cli_parsers/_check.py                    |  16 +
+ src/frob/_cli_parsers/_core.py                     |  33 +-
  src/frob/_cli_parsers/_design.py                   |  24 +-
  src/frob/_cli_parsers/_explore.py                  | 102 ++--
  src/frob/_cli_parsers/_misc.py                     |  56 +-
@@ -274,7 +211,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/app/check_runner.py                       |  23 +-
  src/frob/app/config.py                             |  92 ++-
  src/frob/app/ticket_runner/__init__.py             |  88 +--
- src/frob/app/ticket_runner/_land_cmd.py            | 532 ++++++++++++++++-
+ src/frob/app/ticket_runner/_land_cmd.py            | 532 +++++++++++++++-
  src/frob/app/ticket_runner/_lifecycle.py           |  79 ++-
  src/frob/app/ticket_runner/_mutate.py              |  39 +-
  src/frob/app/ticket_runner/_rapid_sweep.py         | 568 +++++++++++++++++-
@@ -291,7 +228,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/gates/_models.py                          |   7 +
  src/frob/gates/_narrative_blocks.py                |  28 +-
  src/frob/gates/_suppress.py                        |  46 +-
- src/frob/gates/_waive.py                           | 155 +++++
+ src/frob/gates/_waive.py                           | 170 +++++-
  src/frob/graph/affects.py                          |  53 ++
  src/frob/graph/dsl.py                              | 101 +++-
  src/frob/lang/__init__.py                          |  17 +-
@@ -388,9 +325,10 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tests/unit/strata/test_unity_asmdef.py             | 160 +++++
  ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 ++
  tests/unit/test_app_runners_batch7.py              | 128 ++--
- tests/unit/test_check_scoped_files.py              | 566 ++++++++++++++++++
+ tests/unit/test_check_scoped_files.py              | 566 +++++++++++++++++
  tests/unit/test_ci_self_gate_unscoped.py           | 189 ++++++
  tests/unit/test_cli_group_parity.py                | 220 +++++++
+ tests/unit/test_cli_lang_choices_drift.py          | 113 ++++
  tests/unit/test_cli_single_child_groups.py         | 106 ++++
  tests/unit/test_dev_branch_workflow.py             |  50 ++
  tests/unit/test_docs_module.py                     |  35 +-
@@ -449,7 +387,8 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-3229/ticket.md                           |  17 +-
  tickets/T-3232/done-report.md                      | 179 ++++++
  tickets/T-3232/ticket.md                           |  88 ++-
- tickets/T-3233/ticket.md                           |  51 +-
+ tickets/T-3233/done-report.md                      | 599 ++++++++++++++++++
+ tickets/T-3233/ticket.md                           |  62 +-
  tickets/T-3241/ticket.md                           |  17 +-
  tickets/T-3259/ticket.md                           |  17 +-
  tickets/T-3262/ticket.md                           |  17 +-
@@ -514,7 +453,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4011/ticket.md                           |  16 +-
  tickets/T-4029/ticket.md                           |  16 +-
  tickets/T-4185/ticket.md                           |   7 +-
- tickets/T-4214/done-report.md                      | 665 +++++++++++++++++++++
+ tickets/T-4214/done-report.md                      | 667 +++++++++++++++++++++
  tickets/T-4214/ticket.md                           |  46 +-
  tickets/T-4230/ticket.md                           |  15 +-
  tickets/T-4240/ticket.md                           |   2 +-
@@ -618,7 +557,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4550/done-report.md                      | 545 +++++++++++++++++
  tickets/T-4550/ticket.md                           |  59 ++
  tickets/T-4552/done-report.md                      | 146 +++++
- tickets/T-4552/ticket.md                           | 100 ++++
+ tickets/T-4552/ticket.md                           | 100 +++
  tickets/T-4553/done-report.md                      | 501 ++++++++++++++++
  tickets/T-4553/ticket.md                           |  55 ++
  tickets/T-4554/done-report.md                      | 541 +++++++++++++++++
@@ -642,25 +581,25 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4575/ticket.md                           |  38 ++
  tickets/T-4579/done-report.md                      | 522 ++++++++++++++++
  tickets/T-4579/ticket.md                           |  68 +++
- tickets/T-4580/ticket.md                           |  46 ++
+ tickets/T-4580/ticket.md                           |  47 ++
  tickets/T-4581/ticket.md                           |  47 ++
  tickets/T-4582/done-report.md                      | 551 +++++++++++++++++
  tickets/T-4582/ticket.md                           |  56 ++
  tickets/T-4583/done-report.md                      | 620 +++++++++++++++++++
  tickets/T-4583/ticket.md                           |  87 +++
+ tickets/T-4588/ticket.md                           |  41 ++
+ tickets/T-4589/ticket.md                           |  53 ++
  tickets/T-4596/ticket.md                 |  38 ++
- tickets/T-4588/ticket.md                 |  41 ++
- tickets/T-4589/ticket.md                 |  53 ++
  uv.lock                                            |   2 +-
- 467 files changed, 32487 insertions(+), 1666 deletions(-)
+ 472 files changed, 33268 insertions(+), 1681 deletions(-)
 ```
 
 ### Evidence
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_stays_quiet_while_named_file_still_absent` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_lang_choices_track_frob_lang_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_cycle_lang_choices_match_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_xref_lang_choices_match_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_exports_lang_choices_match_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry::test_all_three_lang_flags_share_the_identical_choices_object` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

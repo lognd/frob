@@ -70,11 +70,21 @@ of context, ready for impact analysis.
 
 ## Language support
 
-Python (tree-sitter identifier search), C/C++ (tree-sitter identifier search).
+Every `frob.lang` tree-sitter grammar (tree-sitter identifier search).
 Plain text grep fallback for unknown extensions.
+
+T-3233: `--lang`'s CLI `choices` (shared by `frob cycle`, `frob xref`, and
+`frob exports --consumers` -- `_LANG_CHOICES` in
+`frob._cli_parsers._core`) are derived from `frob.lang.tree_sitter_
+extensions()`/`language_for_extension()` at import time, not a separate
+hand-typed list -- so this list and this doc's own "any `frob.lang.
+supported_languages()` member" claim above cannot drift apart from each
+other, or from `frob.lang`'s actual grammar table, the way the pre-T-3233
+`['python', 'cpp', 'c']` literal did (T-2996 measured that gap).
 
 ## Public API
 
+<!-- frob:describes src/frob/_cli_parsers/_core.py::_LANG_CHOICES -->
 <!-- frob:describes src/frob/xref/__init__.py::XrefError -->
 <!-- frob:describes src/frob/xref/__init__.py::Definition -->
 <!-- frob:describes src/frob/xref/__init__.py::Usage -->
