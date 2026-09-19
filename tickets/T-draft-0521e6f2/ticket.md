@@ -1,0 +1,34 @@
+---
+id: T-draft-0521e6f2
+title: 'Gate kernel: one registration interface from which job list, known-rule set,
+  docs and check-coverage are derived'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: critical
+parent: T-4651
+tier: story
+sprint: v0.535.0
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+GATES concern of the kernel-decoupling epic (T-4651).
+
+Today adding one detector means hand-editing at least four places: the job list in src/frob/gates/__init__.py (9658 lines), the `_KNOWN_GATE_RULES` frozenset literal in src/frob/gates/_waive.py (3014 lines), the rule table in docs/modules/gates.md, and docs/design/registry/check-coverage.yaml. Measured consequence: T-4647 (a finished detector, TESTMOCK001, sat unwired), T-3854 (a consumer repo cannot register its own rule at all, because `_KNOWN_GATE_RULES` is a closed frozenset of frob's OWN ids), and every one of those four files is a shared-registry lease hotspot.
+
+Target shape: ONE registration interface -- a decorator or a registry module -- that a detector module declares itself through. The job list, the known-rule set, the docs/modules/gates.md enumeration and check-coverage.yaml are all DERIVED from it (generated or verified-against, never hand-maintained). Adding a detector becomes editing ONE file. Third-party registration is an explicit, supported entry point, not a frozenset edit.
+
+Frozen contract: rule ids, their severities and the `frob:waive` DSL do not change.
