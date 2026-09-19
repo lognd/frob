@@ -38,6 +38,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 1987
   new_length: 1987
+- mode: set
+  reason: '2026-09-19 coordinator review: explore survives; pool/profile/debt/deprecated/parse
+    reclassified out of the check --only fold; exports split check/scaffold; ordering
+    vs hooks story'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1987
+  new_length: 3223
 designated_repro_test: null
 acceptance:
 - text: Given a fixture with one known definition site and two known use sites, when
@@ -66,35 +74,54 @@ scope is a write lease that cannot be shared.
 
 OWNER DECISION: "start removing subverbs and the read-only analysis."
 
-FOLD the read-only analysis surface into ONE verb with these subverbs:
-  map, outline, xref, docs-search, gitlog, stats,
-  and `graph query` / `graph why` / `graph affects`
-Delete the top-level duplicate of each, with a T-4690 shim for one minor
-version.
+AMENDED 2026-09-19 (coordinator review): this ticket no longer creates `explore`
+and no longer moves map/outline/xref/docs-search. T-4690 keeps `explore` as the
+surviving verb and deletes their standalone mirrors, so those four leaves are
+ALREADY under `explore` when this ticket starts. This ticket only ADDS to it.
+
+MOVE UNDER `frob explore`, deleting each top-level spelling with a T-4690 shim:
+  gitlog                          -> frob explore gitlog
+  stats                           -> frob explore stats
+  graph query|why|affects         -> frob explore graph-query|graph-why|
+                                     graph-affects (or a nested `explore graph`
+                                     subgroup -- pick one and say which)
+  debt      (moved here from T-4692) -> frob explore debt
+  deprecated (moved here from T-4692) -> frob explore deprecated
+`debt` and `deprecated` are read-only listings ("list outstanding frob:debt
+entries", "list outstanding frob:deprecated entries"), which is why they belong
+here and not behind `frob check --only`.
 
 NAME: `explore`, not `show`. MEASURED by `git grep -c` over .claude/ docs/
 scripts/ src/ tests/: "frob explore" 95 citations, "frob show" 0. The name is
 chosen by existing citations, not taste.
 
-THIS IS NOT A REVIVAL OF THE T-1238 GROUP. T-4690 deletes the old `explore`,
-which was a pure alias mirror (`_mirror_subparser` aliased the flat parsers into
-a group and kept both spellings). The `explore` this ticket builds is the ONLY
-spelling: after this ticket `frob xref` is a shim, not a peer.
-
-`graph`'s non-read-only halves (cache build, drift explanation with a write
-side) STAY on `frob graph`. Only the pure queries move. State in the Done
+`graph`'s non-read-only halves (cache build, and any drift explanation with a
+write side) STAY on `frob graph`. Only the pure queries move. State in the Done
 report which graph subverbs moved and which did not, with the reason.
 
-POSITIVE CONTROL (acceptance): a test that runs `frob explore xref <symbol>` on
-a fixture with a KNOWN definition site plus two known use sites, and asserts all
-three paths appear; plus a test asserting the deprecated top-level `frob xref`
-prints the `frob explore xref` spelling on stderr and still works before the
-sunset date. `frob xref` has 16 recorded kind=cli invocations, so its shim is
-the one with a real live consumer -- do not skip it.
+TOP-LEVEL `debt`/`deprecated` VS `frob ticket debt`/`frob ticket deprecated`:
+these are four names for two concepts. T-4698 renders the verdict on the
+`ticket` side; coordinate so the two tickets do not both decide, and record the
+agreed outcome in whichever closes second.
+
+POSITIVE CONTROL (acceptance): a test that runs `frob explore gitlog` on a
+fixture repo with a KNOWN conventional-commit history and asserts the expected
+type/granularity rollup appears; plus a test asserting the deprecated top-level
+`frob gitlog` prints the `frob explore gitlog` spelling on stderr and returns
+the identical output before the sunset date. "Runs without crashing" does not
+close this ticket.
 
 FILES (declared scope):
   src/frob/_cli_parsers/_explore.py, _core.py, _misc.py, _reporting.py
   src/frob/__main__.py
-  src/frob/app/explore_runner.py, map_runner.py, outline_runner.py,
-  docs_runner.py, gitlog_runner.py, stats_runner.py, graph_runner.py
+  src/frob/app/explore_runner.py, gitlog_runner.py, stats_runner.py,
+  graph_runner.py, debt_runner.py, deprecated_runner.py
   tests/unit/test_explore_verb.py (new)
+NOTE: map_runner.py and outline_runner.py are no longer needed here (T-4690
+handles those mirrors); debt_runner.py and deprecated_runner.py are new arrivals
+from T-4692. Reconcile the ledger scope with `frob ticket scope T-4695 --add/
+--remove` before starting.
+
+TITLE DRIFT: this ticket's title still lists map/outline/xref/docs-search. After
+this amendment it covers gitlog, stats, the graph queries, debt and deprecated.
+`frob ticket` has no title setter; this paragraph is the correction of record.
