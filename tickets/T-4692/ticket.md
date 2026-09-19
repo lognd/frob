@@ -72,9 +72,11 @@ acceptance:
     printed name is accepted by frob check --only; pool, profile, debt, deprecated
     and parse are absent from that list because none of them is a check stage
   evidence: []
-- text: Given the exports generate mode, when the check half folds into frob check
-    --only exports, then the generate half is reachable under its new home and a test
-    exercises it
+- text: Given the exports verb is split, when this ticket closes, then its CHECK half
+    runs as frob check --only exports and its GENERATE half (generate __init__.py
+    from public symbols in a package directory) is reachable under frob scaffold --
+    owner decision 2026-09-19, scaffold not refactor -- and a test exercises each
+    half
   evidence: []
 acceptance_amendments:
 - op: replace
@@ -88,6 +90,20 @@ acceptance_amendments:
   reason: '2026-09-19 coordinator review: pool/profile mutate state, debt/deprecated
     are read-only listings that move to T-4695 under explore, parse is a tool-output
     adapter that moves to T-4698 verdict form'
+  actor: logan
+  at: '2026-09-19'
+- op: replace
+  index: 3
+  old_text: Given the exports generate mode, when the check half folds into frob check
+    --only exports, then the generate half is reachable under its new home and a test
+    exercises it
+  new_text: Given the exports verb is split, when this ticket closes, then its CHECK
+    half runs as frob check --only exports and its GENERATE half (generate __init__.py
+    from public symbols in a package directory) is reachable under frob scaffold --
+    owner decision 2026-09-19, scaffold not refactor -- and a test exercises each
+    half
+  reason: '2026-09-19 owner decision: exports check half into check --only, generate
+    half under scaffold'
   actor: logan
   at: '2026-09-19'
 threat: null
