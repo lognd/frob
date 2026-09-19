@@ -15,8 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_acceptance_template.py
-- tests/unit/tickets/test_acceptance_template.py
 - docs/guides/extending/failure-injection-acceptance-criteria.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -31,6 +29,20 @@ scope_changes:
     lint over acceptance-criteria prose to reuse, so per the ticket''s own explicit
     fallback this ships as documentation-only guidance in a new standalone doc, not
     code'
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/tickets/_acceptance_template.py
+  reason: 'retargeted: neither file exists in this repo; no dedicated ticket-acceptance-template
+    module or test file to fix. The real fix is documentation-only authoring guidance
+    (see scope --add reason above).'
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/unit/tickets/test_acceptance_template.py
+  reason: 'retargeted: neither file exists in this repo; no dedicated ticket-acceptance-template
+    module or test file to fix. The real fix is documentation-only authoring guidance
+    (see scope --add reason above).'
   actor: logan
   at: '2026-09-19'
 triage_changes:
