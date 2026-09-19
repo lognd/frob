@@ -1,7 +1,7 @@
 ---
 id: T-draft-a62505d4
 title: 'Registry-file class: append-shared, not whole-file leases'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -64,20 +64,39 @@ scope_changes:
   reason: whole-file leased by in-progress T-4112/T-4113; same premise collision
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_registry_file_matches_with_empty_scope
+- tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_registry_file_matches_with_unrelated_scope
+- tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_additive_registry_change_is_exempt
+- tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_destructive_registry_change_is_not_exempt
+- tests/test_tickets_registry_files.py::TestRegistryFiles::test_no_root_returns_default
+- tests/test_tickets_registry_files.py::TestRegistryFiles::test_no_frob_toml_returns_default
+- tests/test_tickets_registry_files.py::TestRegistryFiles::test_configured_override_replaces_default
+- tests/test_tickets_registry_files.py::TestRegistryFiles::test_malformed_value_falls_back_to_default
+- tests/test_tickets_registry_files.py::TestRegistryFiles::test_is_registry_file_membership
+- tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_pure_append_is_additive
+- tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_deleted_line_is_not_additive
+- tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_bad_ref_fails_closed
+- tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_non_registry_file_still_requires_declared_scope
+- tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_non_registry_path_is_never_exempt
 designated_repro_test: null
 acceptance:
 - text: Given an in-progress ticket with no declared scope over docs/modules/gates.md,
     when it edits that file, then scope_lease_conflict never refuses and no --add
     is required
-  evidence: []
+  evidence:
+  - tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_registry_file_matches_with_empty_scope
+  - tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_registry_file_matches_with_unrelated_scope
 - text: Given two in-progress tickets both appending distinct lines to a configured
     registry file, when the second lands, then CrossTicketLeakage does not refuse
     (additive-only diff)
-  evidence: []
+  evidence:
+  - tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_additive_registry_change_is_exempt
 - text: Given an in-progress ticket whose branch deletes or rewrites a line in a configured
     registry file that it did not itself add, when it lands, then CrossTicketLeakage
     still refuses
-  evidence: []
+  evidence:
+  - tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_destructive_registry_change_is_not_exempt
 threat: null
 component: null
 anchor: false
