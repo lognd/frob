@@ -85,6 +85,12 @@ body_changes:
   old_length: 6316
   new_length: 6316
 designated_repro_test: null
+acceptance:
+- text: Given frob --help after all seven leaves land, when the top-level verb count
+    is re-measured with the same command that produced the 2026-09-19 baseline of
+    51, then it reports 12 or fewer verbs excluding live deprecation shims, and the
+    Done report states both numbers (surface, and surface plus live shims)
+  evidence: []
 threat: null
 component: null
 anchor: false
