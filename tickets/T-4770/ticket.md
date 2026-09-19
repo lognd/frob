@@ -1,5 +1,5 @@
 ---
-id: T-draft-640e1838
+id: T-4770
 title: 'Source narrative C2: gates B (_parse_failures..invariants) -- 20 files, 44
   runs, 1019 lines'
 state: queued
