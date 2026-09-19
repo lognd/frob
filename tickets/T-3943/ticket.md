@@ -2,7 +2,7 @@
 id: T-3943
 title: 'F-173: check/done-report/close hardcode main as diff base, burying 8 real
   findings under 431 false ones'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -94,6 +94,15 @@ body_changes:
   old_length: 5821
   new_length: 8350
 designated_repro_test: null
+acceptance:
+- text: 'bound([''tests/test_check_gate_base.py::TestCheckDefaultBase.test_explicit_check_base_wins'',
+    ''tests/test_check_gate_base.py::TestCheckDefaultBase.test_falls_back_to_current_branch_not_literal_main'',
+    ''tests/test_check_gate_base.py::TestCheckDefaultBase.test_degrades_to_main_on_unresolvable_branch'']):
+    frob check''s gate dispatch, close''s own-obligations guard, and done-report''s
+    touched-files diff all resolve an unset base through the one shared frob.tickets._land._resolve_default_ticket_branch
+    helper (root''s current branch, else ticket_land_branch, else main) instead of
+    a hardcoded main literal'
+  evidence: []
 threat: null
 component: null
 anchor: false
