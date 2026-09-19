@@ -17,9 +17,7 @@ runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
-no_scope_declared_reason: 'tier=story rollup: all file work lives in its leaves (grammar,
-  kernel, elaborator, linker, assume gate, litmus, 11 migration leaves, per-module
-  leases, monolith deletion)'
+no_scope_declared_reason: 'tier=story rollup: all file work lives in its leaves'
 designated_repro_test: null
 threat: null
 component: null
