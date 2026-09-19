@@ -1044,6 +1044,22 @@ def check_stale_via_symbols(
 # OTHER node/atom, and a non-glob (enumerated) via-list on `testsuite`
 # itself, keeps the original fail-closed, hand-edited-only ratchet
 # unchanged.
+#
+# T-4563 LAND-OWNED WRITE: the auto-accept write above landed
+# (T-4495) with no check on WHO was running it -- the DETACHED post-land
+# sweep (`frob.app.ticket_runner._rapid_sweep`) spawns its own `frob
+# check` against the plain root checkout well after the land that
+# triggered it has finished, so that write rewrote the lock file
+# directly in the SHARED ROOT with no commit absorbing it: DirtyMain then
+# refused every next land. `_land_commit_in_progress` (this module) now
+# gates the write on `root`'s own `land.lock` actually being held --
+# true only while a land's own pre-commit check is running, exactly the
+# window whose result becomes part of that land's composed commit (the
+# same land-owned posture the T-0731 version bump already has). Any
+# other caller (interactive `frob check`, the post-land sweep) still
+# OBSERVES the growth -- logged at WARNING and returned as an ordinary
+# `CapabilityRatchetViolation` -- it just never writes; the next land's
+# own check run auto-accepts and commits it instead.
 # ---------------------------------------------------------------------------
 
 # frob:doc docs/strata/surface.md#may-scope
@@ -1053,8 +1069,11 @@ def check_stale_via_symbols(
 #: recorded justification" act the module-level docstring above
 #: describes), read fresh on every check -- EXCEPT the T-4495
 #: testsuite-glob carve-out (module docstring), the one narrow shape a
-#: code path here (`capability_ratchet_violations`) does write on its
-#: own, since a glob-form via has no per-file diff for a human to review.
+#: code path here (`capability_ratchet_violations`) writes on its own,
+#: since a glob-form via has no per-file diff for a human to review --
+#: and even that write only happens while `_land_commit_in_progress`
+#: (T-4563) reads `True`, so it never lands outside a land's
+#: own composed commit.
 CAPABILITY_RATCHET_LOCK_REL = "docs/design/registry/capability-via-ratchet.lock.json"
 
 
@@ -1202,6 +1221,43 @@ def _testsuite_glob_ratcheted_keys(model: KernelModel) -> frozenset[str]:
     )
 
 
+# frob:ticket T-4563
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_sweep_context_does_not_write_lock  # noqa: E501
+def _land_commit_in_progress(root: Path) -> bool:
+    """`True` when a `frob ticket land` run currently holds `root`'s own
+    `land.lock` (T-4563). The T-4495 testsuite-glob auto-accept
+    (`_capability_ratchet_growth_finding`) may only WRITE the committed
+    ratchet lock file when this is `True` -- a land's own pre-commit
+    `frob check` spawn holds this lock for its whole run, so the write
+    lands inside that SAME not-yet-committed changeset (exactly like the
+    T-0731 version bump, land-owned). A `frob check` spawned any other
+    way -- an interactive run, or the DETACHED post-land sweep
+    (`frob.app.ticket_runner._rapid_sweep`), which by design runs only
+    AFTER the land that spawned it has already finished and released
+    this lock -- observes `False` here and must never write: that write
+    would land in the plain root working tree with no commit absorbing
+    it, leaving it dirty and DirtyMain-blocking the next land (the exact
+    regression this ticket fixes). Lazily imports `LAND_LOCK_REL` from
+    `frob.tickets._leases` (never at module level) to avoid a
+    `frob.strata` <-> `frob.tickets` import cycle -- this module has no
+    other reason to depend on `frob.tickets`. Best-effort: any OSError
+    probing the path reads as `False` (fail toward "not a land," the
+    safer side: refusing to write is recoverable, an errant write to the
+    shared root is not)."""
+    from frob.tickets._leases import LAND_LOCK_REL
+
+    try:
+        return (root / LAND_LOCK_REL).is_file()
+    except OSError as exc:
+        _log.warning(
+            "strata effects: capability ratchet: could not probe %s for an "
+            "active land lock (%s) -- treating as no land in progress",
+            LAND_LOCK_REL,
+            exc,
+        )
+        return False
+
+
 # frob:ticket T-4495
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
 def _write_capability_ratchet_lock_entry(
@@ -1272,6 +1328,52 @@ def _load_capability_ratchet_lock(root: Path) -> dict:
     return entries if isinstance(entries, dict) else {}
 
 
+# frob:ticket T-4563
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_sweep_context_does_not_write_lock  # noqa: E501
+def _testsuite_glob_growth_finding(
+    root: Path, key: str, node_id: str, atom: str, count: int, accepted: int
+) -> CapabilityRatchetViolation | None:
+    """T-4563: the outcome for one testsuite-glob-ratcheted `key`
+    that has grown, split out of `_capability_ratchet_growth_finding` to
+    keep it under ARCH001's line threshold. Writes the lock (returning
+    `None`, auto-accepted) only when `_land_commit_in_progress` reads
+    `True` -- a land's own pre-commit check, whose write lands inside
+    that SAME composed commit. Any other caller (an interactive `frob
+    check`, or the detached post-land sweep, which by design runs only
+    after its triggering land has already released this lock) observes
+    the growth without writing anything: logged at WARNING as a pending
+    acceptance and returned as an ordinary `CapabilityRatchetViolation`
+    (the pre-T-4495 shape) so it stays visible rather than silently
+    swallowed -- the next land's own check run sees the same growth,
+    finds `_land_commit_in_progress` `True`, and writes+clears it then."""
+    if _land_commit_in_progress(root):
+        _write_capability_ratchet_lock_entry(root, key, count, "testsuite glob growth")
+        return None
+    _log.warning(
+        "strata effects: capability ratchet: %s %s testsuite-glob growth "
+        "to %d site(s) observed outside a land's own composed tree -- "
+        "NOT writing %s (pending: only a land's own commit may write "
+        "it); the next land's check run auto-accepts and commits it",
+        node_id,
+        atom,
+        count,
+        CAPABILITY_RATCHET_LOCK_REL,
+    )
+    return CapabilityRatchetViolation(
+        node=node_id,
+        atom=atom,
+        observed_count=count,
+        accepted_count=accepted,
+        detail=(
+            f"{atom} testsuite-glob via-list on {node_id} grew to "
+            f"{count} site(s) -- pending auto-accept: only a land's own "
+            f"composed-tree check run may write {CAPABILITY_RATCHET_LOCK_REL} "
+            "for this glob-form pair; a bare check outside a land never "
+            "writes it (T-4563)"
+        ),
+    )
+
+
 # frob:ticket T-4495
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_non_testsuite_bare_glob_via_is_not_auto_accepted  # noqa: E501
@@ -1287,11 +1389,12 @@ def _capability_ratchet_growth_finding(
     """T-4495: one GROWN `(node, atom)` pair's outcome, split out of
     `capability_ratchet_violations` to keep it under ARCH001's line
     threshold -- `None` (auto-accepted, lock rewritten in place) when
-    `key` is testsuite-glob-ratcheted, else a real `CapabilityRatchet
-    Violation` (the original, unchanged fail-closed behavior)."""
+    `key` is testsuite-glob-ratcheted and a land holds the write
+    (`_testsuite_glob_growth_finding`, T-4563), else a real
+    `CapabilityRatchetViolation` (the original, unchanged fail-closed
+    behavior)."""
     if key in glob_ratcheted:
-        _write_capability_ratchet_lock_entry(root, key, count, "testsuite glob growth")
-        return None
+        return _testsuite_glob_growth_finding(root, key, node_id, atom, count, accepted)
     _log.warning(
         "strata effects: capability ratchet: %s %s grew to %d "
         "site(s), above the committed ceiling of %d",

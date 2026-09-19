@@ -2203,7 +2203,59 @@ class TestTestsuiteViaGlobRatchet:
         growth is auto-accepted, and the lock file is written in place
         with `reason="testsuite glob growth"` (module docstring's T-4495
         section) instead of demanding a hand lock edit for an ordinary new
-        test file."""
+        test file.
+
+        T-4563: the write only happens while `root`'s own
+        `land.lock` is held (`_land_commit_in_progress`) -- this test
+        creates that marker to simulate running inside a land's own
+        pre-commit check, the ONE context this auto-accept write is
+        allowed in; `test_sweep_context_does_not_write_lock` below covers
+        the complementary (no lock held) case."""
+        from frob.strata._effects import (
+            CAPABILITY_RATCHET_LOCK_REL,
+            capability_ratchet_violations,
+        )
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        _write(
+            tmp_path,
+            "tests/test_new_thing.py",
+            "import subprocess\ndef test_it():\n    subprocess.run(['true'])\n",
+        )
+        (tmp_path / LAND_LOCK_REL).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / LAND_LOCK_REL).write_text("land in progress\n", encoding="utf-8")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="testsuite",
+                    trust="trusted",
+                    attrs=("code=tests/**",),
+                    may_grants=(MayGrant(atom="exec", via=("tests/**",)),),
+                ),
+            )
+        )
+        found = capability_ratchet_violations(model, tmp_path)
+        assert found == ()
+        lock_path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
+        assert lock_path.is_file()
+        import json
+
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        entry = lock["entries"]["testsuite::exec"]
+        assert entry["accepted_count"] == 1
+        assert entry["reason"] == "testsuite glob growth"
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_sweep_context_does_not_write_lock(self, tmp_path: Path):
+        """T-4563 regression: the SAME testsuite-glob growth as
+        `test_testsuite_glob_growth_auto_accepts_and_writes_lock` above,
+        but with NO `land.lock` held -- the shape of a `frob check` spawn
+        from the detached post-land sweep, or any plain interactive
+        check, run against the shared root outside a land. The lock file
+        must NOT be written (that write, uncommitted, is exactly what
+        DirtyMain-blocked every subsequent land); the growth is instead
+        surfaced as an ordinary `CapabilityRatchetViolation` so it stays
+        visible rather than silently disappearing."""
         from frob.strata._effects import (
             CAPABILITY_RATCHET_LOCK_REL,
             capability_ratchet_violations,
@@ -2225,15 +2277,11 @@ class TestTestsuiteViaGlobRatchet:
             )
         )
         found = capability_ratchet_violations(model, tmp_path)
-        assert found == ()
-        lock_path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
-        assert lock_path.is_file()
-        import json
-
-        lock = json.loads(lock_path.read_text(encoding="utf-8"))
-        entry = lock["entries"]["testsuite::exec"]
-        assert entry["accepted_count"] == 1
-        assert entry["reason"] == "testsuite glob growth"
+        assert len(found) == 1
+        assert found[0].node == "testsuite"
+        assert found[0].atom == "exec"
+        assert found[0].observed_count == 1
+        assert not (tmp_path / CAPABILITY_RATCHET_LOCK_REL).is_file()
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
     def test_non_testsuite_bare_glob_via_is_not_auto_accepted(self, tmp_path: Path):

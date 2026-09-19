@@ -3,7 +3,7 @@ id: T-4563
 title: 'T-4495 regression: the post-land sweep''s testsuite-glob ratchet auto-accept
   rewrites capability-via-ratchet.lock.json in the SHARED ROOT, DirtyMain-blocking
   every subsequent land'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-17'
@@ -23,16 +23,21 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_sweep_context_does_not_write_lock
+- tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_testsuite_glob_growth_auto_accepts_and_writes_lock
+designated_repro_test: tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_sweep_context_does_not_write_lock
 acceptance:
 - text: GIVEN a post-land sweep that observes testsuite glob growth WHEN it runs in
     the root checkout THEN it never writes the lock file into the root working tree;
     the growth is recorded by the NEXT land (which owns the lock write) or logged
     as a pending acceptance
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_sweep_context_does_not_write_lock
 - text: GIVEN a land WHEN it runs the same growth acceptance THEN it writes the lock
     inside its own composed commit exactly as the version bump is land-owned
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_testsuite_glob_growth_auto_accepts_and_writes_lock
 threat: null
 component: null
 anchor: false
