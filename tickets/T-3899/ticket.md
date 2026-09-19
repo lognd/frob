@@ -14,10 +14,36 @@ runs_last: false
 milestone: v0.541.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_empty_diff_close.py
+- src/frob/gates/_tickets_gate.py
+- tests/test_gates_empty_diff_close.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_empty_diff_close.py
+  reason: 'T-3899: fix TICK014 to inspect the ticket''s land_commit diff (whole branch
+    range) instead of the stored done-report Changed block, which is empty for the
+    normal feat-commit-then-chore-close-commit workflow'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: 'T-3899: fix TICK014 to inspect the ticket''s land_commit diff (whole branch
+    range) instead of the stored done-report Changed block, which is empty for the
+    normal feat-commit-then-chore-close-commit workflow'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_gates_empty_diff_close.py
+  reason: 'T-3899: fix TICK014 to inspect the ticket''s land_commit diff (whole branch
+    range) instead of the stored done-report Changed block, which is empty for the
+    normal feat-commit-then-chore-close-commit workflow'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
