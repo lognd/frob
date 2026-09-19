@@ -2,7 +2,7 @@
 id: T-draft-dfc98d31
 title: Warm sweep stage's pre-commit check probes the wrong land.lock path (T-4563
   regression)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_effects.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: regression test proving the FROB_LAND_LOCK_ROOT env override
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
