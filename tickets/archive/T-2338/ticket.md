@@ -22,6 +22,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1672
+  new_length: 2223
 evidence:
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_picks_line_nearest_of_two_same_file_same_rule
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_still_suppresses_regardless_of_which_one_wins
@@ -61,3 +68,5 @@ Investigate `src/frob/gates/_waive.py::_match_waiver` for how it
 selects a reason string among 2+ waiver comments for the same
 (file, rule) pair, and make the match line-precise if it is not
 already.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_test_gate.py::TestTestGate.test_match_waiver_picks_line_nearest_of_two_same_file_same_rule's docstring used to say: 'T-2338: a file with 2+ frob:waive PERF008 comments at DIFFERENT lines (the real T-2321 incident shape) must have each violation matched to the waiver comment nearest ITS OWN line, not whichever waiver happens to come first in build order -- this MUST FAIL on main (the old code always returned candidates[0]).' Moved here; the test docstring now states only what it verifies.
