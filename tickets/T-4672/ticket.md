@@ -1,5 +1,5 @@
 ---
-id: T-draft-ccb19ed4
+id: T-4672
 title: 'SF-01: instrument the SYS/SELFAUDIT slice -- 614,294 telemetry rule fires
   contain zero SYS ids and no one has ever timed check --only sys'
 state: queued
