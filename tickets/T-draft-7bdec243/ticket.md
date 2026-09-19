@@ -1,0 +1,59 @@
+---
+id: T-draft-7bdec243
+title: Clean tests/ticket_land_suite docstrings of change-narrative (DOCARCH001)
+state: queued
+kind: docs
+origin: human
+created: '2026-09-19'
+priority: medium
+parent: T-4420
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- tests/ticket_land_suite/test_archive.py
+- tests/ticket_land_suite/test_claim_close.py
+- tests/ticket_land_suite/test_dirt_ownership.py
+- tests/ticket_land_suite/test_draft.py
+- tests/ticket_land_suite/test_land_core.py
+- tests/ticket_land_suite/test_land_lock.py
+- tests/ticket_land_suite/test_land_plan.py
+- tests/ticket_land_suite/test_push.py
+- tests/ticket_land_suite/test_release.py
+- tests/ticket_land_suite/test_verify_reset.py
+- tests/ticket_land_suite/test_waive_deletion.py
+- tests/ticket_land_suite/test_wip.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: DOCARCH001 count for tests/ticket_land_suite's 12 scoped files is 0
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Split from T-4420 (Clean land and gates test-suite docstrings of
+change-narrative, DOCARCH001). Measured 2026-09-19 via `frob check
+--only docblocks --files tests/ticket_land_suite --base dev`: 42
+DOCARCH001 findings across tests/ticket_land_suite (test_land_core.py 7,
+test_ledger_splice.py 6, test_land_plan.py 5, test_verify_reset.py 3,
+test_release.py 3, test_land_lock.py 3, test_draft.py 3,
+test_dirt_ownership.py 3, test_archive.py 3, test_wip.py 2,
+test_push.py 2, test_waive_deletion.py 1, test_claim_close.py 1).
+
+test_ledger_splice.py (6 findings) is excluded from this ticket's scope
+as filed -- check .git/frob-leases before adding it; add it to scope
+once free if still leased when this is picked up.
+
+Rewrite each flagged docstring to state WHAT the test verifies; move
+narrative (what a prior attempt got wrong, which policy superseded
+which) into the originating ticket's body via `frob ticket body
+--append`, per docs/modules/docstrings.md's purpose test.
