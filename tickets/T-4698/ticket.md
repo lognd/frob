@@ -50,6 +50,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 2338
   new_length: 4610
+- mode: set
+  reason: 'DOC006: planned CLI forms written as prose so unrelated lands are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4610
+  new_length: 4626
 designated_repro_test: null
 acceptance:
 - text: Given the 20 tail subverbs, when the ticket closes, then the Done report carries
@@ -97,7 +103,7 @@ report: `plan` (state transition queued -> planned, part of the close dance),
 `waive-audit` (T-1614/T-2467), `contention` (the number that caps fleet
 parallelism). `migrate` is a one-shot legacy converter and is the strongest
 delete candidate. `debt` and `deprecated` duplicate the top-level verbs of the
-same names that T-4692 is folding into `frob check --only` -- coordinate the
+same names that T-4692 is folding into frob check --only (planned) -- coordinate the
 verdict with T-4692's outcome rather than deciding twice.
 
 ACCEPTANCE IS THE VERDICT TABLE: the Done report must carry one row per subverb
@@ -139,7 +145,7 @@ PARSE, MEASURED 2026-09-19 (the grep evidence this table requires):
   goes in the verdict table -- the recommendation is not the verdict.
 
 `debt` and `deprecated` under `frob ticket`: T-4695 is simultaneously moving the
-TOP-LEVEL `debt`/`deprecated` under `frob explore`. Four names, two concepts.
+TOP-LEVEL `debt`/`deprecated` under frob explore (planned). Four names, two concepts.
 Coordinate with T-4695 so only one ticket decides, and record the agreed
 outcome in whichever of the two closes second.
 
