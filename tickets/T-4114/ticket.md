@@ -1,7 +1,7 @@
 ---
 id: T-4114
 title: 'H3-5: a config path field''s relative-path default should be flagged'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
