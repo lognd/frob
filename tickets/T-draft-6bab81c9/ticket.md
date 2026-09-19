@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: '2026-09-19: epic container; all file work lives in its
+  story/leaf children, which carry the disjoint scopes'
 designated_repro_test: null
 acceptance:
 - text: Given the 23 measured findings in scratchpad/STRATA-FRICTION.md, when this
