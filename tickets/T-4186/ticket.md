@@ -2,7 +2,7 @@
 id: T-4186
 title: 'lint: a never/always/idempotent docstring or spec-row claim with no bound
   frob:invariant'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-07'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 Consumer F-307/H3-4 (T-4109), consolidating identical findings independently reported as F-317/M-4, F-326/M2-5, F-327/M-2 (all T-4135), F-362/H4-6 (T-4166), F-386 item3 (T-4182). A cheap lint distinguishable from full frob:invariant coverage: an absolute-guarantee word (never/always/idempotent/fails closed/guaranteed) in a docstring, decision-record row, or spec-row clause with no invariant bound to it. Extend across Python and, per F-327/M-2, TypeScript. Fixture-testable: YES in Python today; TS variant not exercised here.
+
+## Drop reason
+- 2026-09-19: absorbed by T-4116 (CLAIM001): same never/always/idempotent-claim lint, T-4116 implemented it with tests and a positive control; T-4186 had no code (absorbed by T-4116)
