@@ -2,7 +2,7 @@
 id: T-4118
 title: 'H3-6: a failure-injection test must assert on every response field, not only
   the field the test-plan row named'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-09-06'
@@ -17,10 +17,22 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_acceptance_template.py
 - tests/unit/tickets/test_acceptance_template.py
+- docs/guides/extending/failure-injection-acceptance-criteria.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/extending/failure-injection-acceptance-criteria.md
+  reason: 'T-4118''s own body: this is a template/checklist authoring-guidance fix,
+    not an AST-analysis gate; src/frob/tickets/_acceptance_template.py does not exist
+    in this repo (no dedicated ticket-authoring template module) and there is no existing
+    lint over acceptance-criteria prose to reuse, so per the ticket''s own explicit
+    fallback this ships as documentation-only guidance in a new standalone doc, not
+    code'
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
