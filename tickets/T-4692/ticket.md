@@ -78,6 +78,11 @@ acceptance:
     owner decision 2026-09-19, scaffold not refactor -- and a test exercises each
     half
   evidence: []
+- text: Given pool and profile, when this ticket closes, then neither is reachable
+    through frob check --only (they mutate ratchet and profile state) and each is
+    either a frob check pool|profile subverb or is documented in the Done report as
+    deliberately left top-level, with the reason
+  evidence: []
 acceptance_amendments:
 - op: replace
   index: 2
