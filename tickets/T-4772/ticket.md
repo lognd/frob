@@ -1,5 +1,5 @@
 ---
-id: T-draft-f4a30f8e
+id: T-4772
 title: Promote DOCARCH002 from WARN to ERROR once the eight cluster leaves land (and
   decide the docstring/citation halves on the record)
 state: queued
