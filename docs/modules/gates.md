@@ -3835,6 +3835,46 @@ gate set is follow-up work for whichever ticket owns that file next.
 <!-- frob:describes src/frob/gates/_guard_closure.py::GuardClosurePair -->
 <!-- frob:describes src/frob/gates/_guard_closure.py::load_guard_closure_pairs -->
 
+## CLAIM001 (T-4116)
+
+<a id="claim001-t-4116"></a>
+<!-- frob:describes src/frob/gates/_claim_lint.py::claim_lint_gate -->
+
+F-307 H3-4: a symbol docstring asserting never/always/idempotent-shaped
+language with no `frob:invariant` directive bound to that same symbol
+anywhere in its own span is an UNVERIFIED claim -- exactly the gap a full
+invariant-coverage sweep (INV001/INV002 in `frob.gates._inv`) misses,
+since that sweep only ever measures claims someone already marked; this
+is a directive-PRESENCE check, never a code-behavior check, and NOT the
+same comparison as a module docstring vs. that module's own code (a
+different leaf's job) -- this one compares a SYMBOL's own docstring text
+against that SAME symbol's own `frob:invariant` binding.
+
+`frob.gates._claim_lint.claim_lint_gate(root)` walks every function/
+method/class `frob.lang.parse_file` extracts from a tracked `.py` file: a
+whole-word, case-insensitive match of `never`/`always`/`idempotent`
+against `RawSymbol.doc_text` is a claim. The claim is unverified (WARN)
+unless `frob.graph.dsl.parse_directives` finds an `EdgeKind.INVARIANT`
+edge whose `src` is that exact symbol's own `path::qualname` symref -- the
+SAME symref format `frob.graph.dsl._enclosing_src` already builds, and
+the same convention `_inv.py`/`_wire.py` use, not a second one. A
+`frob:waive CLAIM001 reason="..."` edge bound to the same symref
+suppresses the finding (T-0148's exact-symref precision, no file-wide
+blanket match).
+
+Duplication note: T-4186 proposed the same never/always/idempotent-claim
+shape as a broader, TypeScript/spec-row-inclusive lint scoped to
+`_docblocks.py`; T-4116 checked `frob ticket show T-4186` before
+implementing and found it still queued with no code landed, so this
+module implements exactly T-4116's own Python-symbol-docstring-only
+scope. T-4186 was dropped on dev as absorbed by T-4116 once both were
+reconciled by the coordinator.
+
+Not yet wired into `run_gates`'s dispatch table (`src/frob/gates/
+__init__.py` is outside this ticket's declared scope) -- call
+`claim_lint_gate(root)` directly today; wiring it into the standing gate
+set is follow-up work for whichever ticket owns that file next.
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/_suppress.py::SuppressionDialect -->
