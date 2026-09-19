@@ -3,7 +3,7 @@ id: T-draft-769b07dc
 title: post-land sweep raises quarantine on its own lease-file/doc noise (TICK010
   on .git/frob-leases, DOC012 docs/commands) and dirties the root ratchet lock, forcing
   every land synchronous
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
