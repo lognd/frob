@@ -1,7 +1,7 @@
 ---
 id: T-draft-5658939f
 title: 'cli-regrouping: ops natives group leaf missing --path (parity drift)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -40,6 +40,10 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: GIVEN the ops-group natives leaf WHEN its option strings are compared to the
+    flat natives parser's THEN they are identical (including --path)
+  evidence: []
 threat: null
 component: null
 anchor: false
