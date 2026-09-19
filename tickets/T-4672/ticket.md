@@ -49,10 +49,6 @@ acceptance:
     is recorded with more than one sample, with the fleet-load conditions stated alongside
     it and the spread reported rather than a single figure.
   evidence: []
-- text: Given a zero can mean clean, could-not-run, nothing-to-measure or matcher-never-fired,
-    when a SYS violation is PLANTED in the fixture, then a test asserts the runner
-    reports it -- so a future zero is provably a clean zero.
-  evidence: []
 acceptance_amendments:
 - op: replace
   index: 1
@@ -78,6 +74,17 @@ acceptance_amendments:
   new_text: null
   reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); the timing criterion
     is now criterion 1, so this duplicate timing criterion is removed'
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  index: 2
+  old_text: Given a zero can mean clean, could-not-run, nothing-to-measure or matcher-never-fired,
+    when a SYS violation is PLANTED in the fixture, then a test asserts the runner
+    reports it -- so a future zero is provably a clean zero.
+  new_text: null
+  reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); planting a positive-control
+    SYS violation is instrumentation work that waits on T-4804''s decision about what
+    the family should measure, so it is withdrawn from this measurement-only ticket'
   actor: logan
   at: '2026-09-19'
 threat: null
