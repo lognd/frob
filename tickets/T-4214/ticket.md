@@ -45,6 +45,18 @@ triage_changes:
   actor: logan
   at: '2026-09-13'
 designated_repro_test: null
+acceptance:
+- text: the until= grammar accepts a closed tree-state predicate vocabulary (ticket-closed:T-####,
+    file-absent:path, symbol-absent:path::Sym) alongside the existing YYYY-MM-DD date
+    form
+  evidence: []
+- text: one evaluator (_until_premise_expired) judges each predicate against real
+    tree state (ticket queue, filesystem, graph symbols) and returns whether the named
+    condition still holds
+  evidence: []
+- text: a WAIVE012 gate error fires once a waiver's until= predicate no longer holds,
+    and stays silent while it still does
+  evidence: []
 threat: null
 component: null
 anchor: false
