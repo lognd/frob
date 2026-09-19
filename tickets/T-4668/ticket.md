@@ -1,5 +1,5 @@
 ---
-id: T-draft-60aab1b5
+id: T-4668
 title: 'SF-03: one loader, one writer, one schema for capability-via-ratchet.lock.json
   -- delete the 3 shadow top-level keys'
 state: queued
