@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_claim_lint.py
 - tests/gates_suite/test_claim_lint.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-4111 lease released; CLAIM001 doc row required by coordinator checklist
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
@@ -28,6 +35,14 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/gates_suite/test_claim_lint.py::test_claim001_fires_on_unbound_never_claim
+- tests/gates_suite/test_claim_lint.py::test_claim001_quiet_when_invariant_directive_present
+- tests/gates_suite/test_claim_lint.py::test_claim001_quiet_on_ordinary_prose_regardless_of_invariant_coverage
+- tests/gates_suite/test_claim_lint.py::test_claim001_honors_frob_waive_escape_hatch
+- tests/gates_suite/test_claim_lint.py::test_claim001_fires_once_per_offending_symbol_not_per_word
+- tests/gates_suite/test_claim_lint.py::test_claim001_scopes_to_the_exact_symbol_not_the_whole_file
+- tests/gates_suite/test_claim_lint.py::test_claim001_fires_on_class_docstring_too
 designated_repro_test: null
 threat: null
 component: null
