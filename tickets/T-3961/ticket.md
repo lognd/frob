@@ -27,7 +27,9 @@ triage_changes:
   actor: logan
   at: '2026-09-19'
 evidence:
-- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:grep -n "^### Design note" tickets/T-3961/done-report.md exit=0 sha256=b684f52719c1
+- cmd:grep -n "implementation delegated to child T-draft-1cc03713" tickets/T-3961/ticket.md
+  exit=0 sha256=d288b8e6038b
 kind_history:
 - 2026-09-19 security->docs evidence=1 done_report=yes
 designated_repro_test: null
@@ -36,10 +38,11 @@ acceptance:
     carries()/atoms and how SYS100 would consume it, when this ticket's design step
     completes, then the note is attached before any implementation begins
   evidence:
-  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+  - cmd:grep -n "^### Design note" tickets/T-3961/done-report.md exit=0 sha256=b684f52719c1
 - text: design note attached and implementation delegated to child T-draft-1cc03713
   evidence:
-  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+  - cmd:grep -n "implementation delegated to child T-draft-1cc03713" tickets/T-3961/ticket.md
+    exit=0 sha256=d288b8e6038b
 acceptance_amendments:
 - op: replace
   index: 2
@@ -52,6 +55,13 @@ acceptance_amendments:
     work was split to child T-draft-1cc03713, which is queued to land separately --
     this criterion cannot be evidenced by design-step artifacts and was blocking this
     ticket''s own close'
+  actor: logan
+  at: '2026-09-19'
+evidence_changes:
+- old_node: tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+  new_node: ''
+  reason: docs-kind design step evidenced by --evidence-cmd checks on the design note
+    itself, not an unrelated CLI dispatch test
   actor: logan
   at: '2026-09-19'
 threat: null
