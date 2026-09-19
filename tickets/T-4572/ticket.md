@@ -11,7 +11,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4654
 tier: ticket
-sprint: null
+sprint: v0.535.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -43,6 +43,12 @@ triage_changes:
   reason: 'kernel-decoupling epic T-4651: rederive the frob kernel behind enforced
     module boundaries; this ticket already states the right work for this concern
     and is adopted as a child rather than duplicated'
+  actor: logan
+  at: '2026-09-19'
+- field: sprint
+  old_value: null
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 body_changes:
