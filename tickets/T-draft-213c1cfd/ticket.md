@@ -5,7 +5,7 @@ title: 'SYS111 ratchet ceilings race every land: a ticket that declares a new vi
   refuses with ''grew above the committed ceiling''; the land''s composed-tree check
   must auto-accept growth that is exactly the branch''s own declared via additions
   (same posture as the T-4596 testsuite-glob auto-accept)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -22,6 +22,7 @@ scope:
 - src/frob/tickets/_land_squash.py
 - docs/modules/gate-sys111-ratchet-auto-accept.md
 - tests/strata/test_sys111_auto_accept.py
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,11 @@ scope_changes:
 - op: add
   glob: tests/strata/test_sys111_auto_accept.py
   reason: positive controls for auto-accept and undeclared-site refusal
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: frob:tests directives for branch-own via growth auto-accept
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
