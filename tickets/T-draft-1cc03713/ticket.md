@@ -7,7 +7,7 @@ kind: security
 origin: human
 created: '2026-09-19'
 priority: high
-parent: null
+parent: T-3961
 tier: ticket
 sprint: null
 runs_last: false
@@ -44,6 +44,13 @@ scope_changes:
 - op: add
   glob: docs/strata/provenance-trust-identity.md
   reason: 'standalone doc row: docs/modules/gates.md is leased by T-4111'
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3961
+  reason: implementation of accepted T-3961 design
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
