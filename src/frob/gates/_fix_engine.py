@@ -80,11 +80,9 @@ _log = logging.getLogger(__name__)
 # frob:ticket T-2400
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_id_on_merge_tar\
-# get_but_not_worktree_is_silent kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_id_on_merge_target_but_not_worktree_is_silent kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_not_measured_me\
-# rge_target_files_nothing kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_not_measured_merge_target_files_nothing kind="unit"  # noqa: E501
 class MergeTargetKnownIds(BaseModel):
     """Ticket ids resolvable on `frob ticket land`'s merge target (the
     primary checkout, i.e. main) at the moment the pre-land Tier-A batch
@@ -157,13 +155,67 @@ def _origin_site(origin: str) -> tuple[str, int]:
     return origin, 0
 
 
-def _rewrite_line_substring(path: Path, line: int, old: str, new: str) -> bool:
+# frob:ticket T-4642
+def _noqa_e501_guard(line_text: str, path: Path, root: Path) -> str:
+    """T-4642: if rewriting a directive line pushed it past the
+    line-length limit `path`'s own language enforces (`resolve_line_
+    length`), and it does not already carry a suppression (`_NOQA_SUFFIX_
+    RE`), append `"  # noqa: E501"` -- the SAME self-healing shape `frob.
+    gates._fmt_directives._canonical_lines` already applies when ITS OWN
+    wrap loop is forced to leave an unsplittable token over budget (that
+    function's own T-4179 comment: "a NEW ruff E501 finding at land time
+    ... blocking on it").
+
+    `_rewrite_line_substring`'s two callers (DOC007's dotted-form rewrite,
+    DOC002's fuzzy-matched anchor-slug rewrite) are plain substring
+    replacements with no length awareness of their own -- DOC002 in
+    particular can lengthen a `#<slug>` anchor arbitrarily (the matched
+    candidate is a REAL heading slug in the target doc, not bounded by
+    the original slug's width), so a directive that fit before a Tier-A
+    rewrite can stop fitting after one, and the land's own `ruff check`
+    gate then refuses the NEW E501 finding Tier-A just caused (measured
+    on T-4230's land, twice). Guarding here, at the one shared rewrite
+    primitive both callers already funnel through, covers both without
+    either handler needing its own length bookkeeping.
+
+    Only appends for a `#`-comment-leader language (`marker_for`) --
+    ruff's E501 has no meaning for a `//`-leader file (`.rs`/`.strata`/
+    TS/JS), matching `_canonical_lines`'s own `marker == "#"` gate.
+    Returns `line_text` unchanged in every other case: under the limit,
+    already suppressed, or no ruff-checked marker for this suffix."""
+    from frob.gates._fmt_directives import (
+        _NOQA_SUFFIX_RE,
+        marker_for,
+        resolve_line_length,
+    )
+
+    if marker_for(str(path)) != "#":
+        return line_text
+    limit = resolve_line_length(path, root)
+    stripped = line_text.rstrip("\n")
+    if limit is None or len(stripped) <= limit:
+        return line_text
+    if _NOQA_SUFFIX_RE.search(stripped):
+        return line_text
+    newline = line_text[len(stripped) :]
+    return f"{stripped}  # noqa: E501{newline}"
+
+
+def _rewrite_line_substring(
+    path: Path, root: Path, line: int, old: str, new: str
+) -> bool:
     """Replace the FIRST occurrence of `old` with `new` on 1-indexed
     `line` of `path`, in place. Returns whether a rewrite actually
     happened -- False (a no-op, never a partial/garbled write) if the
     file cannot be read, `line` is out of range, or `old` is not
     literally present on that line (the directive moved, or was already
-    fixed by a prior run)."""
+    fixed by a prior run).
+
+    T-4642: `root` is used only to resolve the rewritten line's
+    own length budget (`_noqa_e501_guard`) -- if the substitution pushed
+    the line past it, a trailing `# noqa: E501` is appended in the same
+    write, so this Tier-A rewrite can never itself hand the land's own
+    `ruff check` gate a brand-new violation to refuse."""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -175,7 +227,7 @@ def _rewrite_line_substring(path: Path, line: int, old: str, new: str) -> bool:
             return False
         if old not in lines[idx]:
             return False
-        lines[idx] = lines[idx].replace(old, new, 1)
+        lines[idx] = _noqa_e501_guard(lines[idx].replace(old, new, 1), path, root)
     except (KeyError, IndexError, TypeError):
         # A directive's recorded `line` no longer lining up with the
         # file's current shape (edited concurrently, or a stale graph
@@ -206,7 +258,7 @@ def fix_doc007_dotted_form(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
         fixed_target = _dotted_form(edge.target)
         if fixed_target == edge.target:
             continue
-        if _rewrite_line_substring(root / file, line, edge.target, fixed_target):
+        if _rewrite_line_substring(root / file, root, line, edge.target, fixed_target):
             applied.append(
                 FixApplied(
                     rule="DOC007",
@@ -293,7 +345,7 @@ def fix_doc002_unique_slug(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
         file, line = _origin_site(edge.origin)
         old_ref = f"{docfile}#{slug}"
         new_ref = f"{docfile}#{candidate}"
-        if _rewrite_line_substring(root / file, line, old_ref, new_ref):
+        if _rewrite_line_substring(root / file, root, line, old_ref, new_ref):
             applied.append(
                 FixApplied(
                     rule="DOC002",
@@ -376,14 +428,11 @@ def _tick006_context_excerpt(done_report_text: str, tid: str) -> str:
 
 # frob:ticket T-3108
 # frob:tests \
-# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_reads_\
-# an_active_id_from_another_worktree kind="unit"
+# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_reads_an_active_id_from_another_worktree kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_exclud\
-# es_root_itself kind="unit"
+# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_excludes_root_itself kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_unread\
-# able_worktree_is_skipped_not_fatal kind="unit"
+# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_unreadable_worktree_is_skipped_not_fatal kind="unit"  # noqa: E501
 def _sibling_worktree_known_ids(root: Path) -> frozenset[str]:
     """T-3108: ticket ids visible in every OTHER git worktree's own local
     ledger -- widens `fix_tick006_phantom_refile`'s known-id resolution
@@ -446,14 +495,11 @@ def _sibling_worktree_known_ids(root: Path) -> frozenset[str]:
 # frob:ticket T-2702
 # frob:ticket T-3108
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_refiles_and_rew\
-# rites_citation kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_refiles_and_rewrites_citation kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_known_id_is_nev\
-# er_touched kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_known_id_is_never_touched kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_two_lands_citin\
-# g_same_draft_produce_at_most_one_ticket kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket kind="unit"  # noqa: E501
 def fix_tick006_phantom_refile(
     root: Path,
     queue: TicketQueue,
@@ -609,11 +655,9 @@ def _resolve_via_git_rename(root: Path, tid: str) -> str | None:
 
 # frob:ticket T-2702
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_git_rename_look\
-# up_failure_files_nothing_never_treated_as_confirmed_non_rename kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_git_rename_lookup_failure_files_nothing_never_treated_as_confirmed_non_rename kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_lookup_failure_\
-# then_clean_retry_recovers_correctly kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_lookup_failure_then_clean_retry_recovers_correctly kind="unit"  # noqa: E501
 def _resolve_via_git_rename_measured(root: Path, tid: str) -> tuple[str | None, bool]:
     """T-2690: best-effort resolution of `tid` (an id TICK006's own
     ledger-snapshot lookup could not find) via git's OWN rename record --

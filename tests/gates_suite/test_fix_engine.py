@@ -178,6 +178,66 @@ class TestFixEngineTierA:
         after = docanchor_gate(root, self._snap(root))
         assert not [v for v in after if v.rule == "DOC002"]
 
+    # frob:ticket T-4642
+    def test_doc002_rewrite_that_exceeds_ruff_limit_gets_noqa(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_doc002_unique_slug kind="unit"
+        # frob:tests src/frob/gates/_fix_engine.py::_rewrite_line_substring kind="unit"
+        # POSITIVE CONTROL (T-4642, measured on T-4230's land): the
+        # fuzzy-matched candidate slug is a REAL heading slug in the target
+        # doc, unbounded by the original (short) slug's width -- rewriting
+        # `# frob:doc docs/m.md#widget-alph` to the one matching real
+        # heading's slug pushes the line to 91 chars, past ruff's 88-char
+        # default. Before this fix, `_rewrite_line_substring` was a bare
+        # `str.replace` with no length awareness, so the land's own `ruff
+        # check` gate refused the NEW E501 finding Tier-A had just caused. A
+        # directive that expands past 88 chars must instead survive both
+        # Tier-A AND ruff -- a trailing noqa suppression (E501) appended
+        # in the same rewrite.
+        from frob.gates import apply_tier_a_fixes, docanchor_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n"
+            "## Widget Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda\n",
+            encoding="utf-8",
+        )
+        original_line = "# frob:doc docs/m.md#widget-alpha-beta-gamma-delta-epsil"
+        (root / "src" / "m.py").write_text(
+            f"{original_line}\ndef f():\n    return 1\n", encoding="utf-8"
+        )
+        snapshot = self._snap(root)
+        before = docanchor_gate(root, snapshot)
+        assert any(v.rule == "DOC002" for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        doc002_applied = [a for a in applied if a.rule == "DOC002"]
+        assert len(doc002_applied) == 1
+
+        rewritten_line = (
+            (root / "src" / "m.py").read_text(encoding="utf-8").splitlines()[0]
+        )
+        assert rewritten_line != original_line
+        assert len(rewritten_line.split("  # noqa: E501")[0]) > 88
+        assert rewritten_line.endswith("  # noqa: E501")
+
+        # ruff itself must be clean on the rewritten file -- the load-
+        # bearing half of this control (a suppression the fixer wrote but
+        # ruff does not honor would still self-refuse the land).
+        ruff_result = subprocess.run(
+            ["ruff", "check", "--no-cache", str(root / "src" / "m.py")],
+            capture_output=True,
+            text=True,
+        )
+        assert ruff_result.returncode == 0, ruff_result.stdout + ruff_result.stderr
+
+        after = docanchor_gate(root, self._snap(root))
+        assert not [v for v in after if v.rule == "DOC002"]
+
     def test_doc002_ambiguous_candidates_stay_unfixed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::fix_doc002_unique_slug kind="unit"
         from frob.gates import apply_tier_a_fixes, docanchor_gate
