@@ -56,9 +56,10 @@ acceptance:
     runs, then it prints the frob explore gitlog spelling on stderr and returns output
     identical to the new spelling; the same holds for stats, debt and deprecated
   evidence: []
-- text: Given frob --help after this ticket, then map, outline, xref, docs-search,
-    gitlog and stats are absent from the top-level usage line and present under frob
-    explore --help
+- text: Given frob --help after this ticket, then gitlog, stats, debt and deprecated
+    are absent from the top-level usage line and present under frob explore --help,
+    and graph query/why/affects are reachable through frob explore while frob graph
+    keeps its cache-building and write-side subverbs
   evidence: []
 acceptance_amendments:
 - op: replace
@@ -84,6 +85,19 @@ acceptance_amendments:
     output identical to the new spelling; the same holds for stats, debt and deprecated
   reason: '2026-09-19 coordinator review: the shims this ticket owns are gitlog/stats/debt/deprecated,
     not xref (T-4690 owns that one)'
+  actor: logan
+  at: '2026-09-19'
+- op: replace
+  index: 3
+  old_text: Given frob --help after this ticket, then map, outline, xref, docs-search,
+    gitlog and stats are absent from the top-level usage line and present under frob
+    explore --help
+  new_text: Given frob --help after this ticket, then gitlog, stats, debt and deprecated
+    are absent from the top-level usage line and present under frob explore --help,
+    and graph query/why/affects are reachable through frob explore while frob graph
+    keeps its cache-building and write-side subverbs
+  reason: '2026-09-19 coordinator review: this ticket adds leaves to the surviving
+    explore verb; map/outline/xref/docs-search were already folded by T-4690'
   actor: logan
   at: '2026-09-19'
 threat: null
