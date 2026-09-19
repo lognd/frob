@@ -981,17 +981,37 @@ def _tier(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2770
+# frob:ticket T-2965
 def _set_parent(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket set-parent <id> <parent-id> (--reason TEXT |
-    --reason-file PATH)`: the ONLY thing this command does is resolve the
-    reason (`_resolve_triage_reason`, T-2353 precedent) and forward to
+    """`frob ticket set-parent <id> (<parent-id> | --clear) (--reason TEXT
+    | --reason-file PATH)`: the ONLY thing this command does is resolve
+    the reason (`_resolve_triage_reason`, T-2353 precedent) and forward to
     `frob.tickets.set_parent` -- no structural validation (existence,
     cycle, tier-inversion, self-parent) is re-derived here, same "thin CLI
-    shell over the real setter" shape `_tier`/T-1069 uses."""
+    shell over the real setter" shape `_tier`/T-1069 uses.
+
+    T-2965: `cfg.ticket_parent_clear` (the `--clear` flag) forwards
+    `parent_id=None` to `set_parent`, detaching `cfg.ticket_id` to a
+    root/top-level ticket instead of naming a new parent -- logged at
+    INFO like every other transition here, `parent now None` reading the
+    same way any other field-clear does elsewhere in this module.
+    `argparse.add_mutually_exclusive_group` cannot hold a positional
+    (`ticket_parent_id_value`), so "exactly one of `parent-id` or
+    `--clear`" is enforced HERE, not at parse time in `_add_ticket_
+    set_parent_parser` -- both given, or neither, are refused before
+    `set_parent` is ever called."""
     from frob.tickets import set_parent
 
-    if cfg.ticket_id is None or cfg.ticket_parent_id_value is None:
+    if cfg.ticket_id is None:
         _log.error("frob ticket set-parent requires <id> <parent-id>")
+        sys.exit(1)
+    if cfg.ticket_parent_clear and cfg.ticket_parent_id_value is not None:
+        _log.error(
+            "frob ticket set-parent takes either <parent-id> or --clear, not both"
+        )
+        sys.exit(1)
+    if not cfg.ticket_parent_clear and cfg.ticket_parent_id_value is None:
+        _log.error("frob ticket set-parent requires <id> <parent-id> or --clear")
         sys.exit(1)
 
     reason = _resolve_triage_reason(cfg)
@@ -1001,7 +1021,8 @@ def _set_parent(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    result = set_parent(root, cfg.ticket_id, cfg.ticket_parent_id_value, reason=reason)
+    new_parent_id = None if cfg.ticket_parent_clear else cfg.ticket_parent_id_value
+    result = set_parent(root, cfg.ticket_id, new_parent_id, reason=reason)
     if result.is_err:
         _log.error("set-parent failed: %s", result.danger_err)
         sys.exit(1)
@@ -1033,11 +1054,9 @@ def _runs_last(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-2624
 # frob:tests \
-# tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_reason_missi\
-# ng_exits_nonzero
+# tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_reason_missing_exits_nonzero  # noqa: E501
 # frob:tests \
-# tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_sets_both_fi\
-# elds
+# tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_sets_both_fields  # noqa: E501
 def _runs_last_parallel_safe(root: Path, cfg: AppConfig) -> None:
     """`frob ticket runs-last-parallel-safe <id> (--reason TEXT |
     --reason-file PATH)`: MILE004's escape hatch (T-2579) actually reached

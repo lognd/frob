@@ -570,23 +570,52 @@ def _add_ticket_tier_parser(ticket_sub):
 
 
 # frob:ticket T-2770
+# frob:ticket T-2965
 def _add_ticket_set_parent_parser(ticket_sub):
-    """Register `frob ticket set-parent <id> <parent-id> (--reason TEXT |
-    --reason-file PATH)` -- the mutate-in-place counterpart to `frob ticket
-    new --parent` (T-2770): a ticket filed unparented, or with the wrong
-    parent, previously had no CLI route to correct it, only the forbidden
-    hand edit of `tickets/T-####/ticket.md`. Same shape as `_add_ticket_
-    tier_parser`'s T-1069 precedent -- `--reason`/`--reason-file` required,
-    same as every other single-value triage setter. All structural
-    validation (existence, cycle, tier-inversion, self-parent) happens in
-    `frob.tickets.set_parent` itself, not re-derived here."""
+    """Register `frob ticket set-parent <id> (<parent-id> | --clear)
+    (--reason TEXT | --reason-file PATH)` -- the mutate-in-place
+    counterpart to `frob ticket new --parent` (T-2770): a ticket filed
+    unparented, or with the wrong parent, previously had no CLI route to
+    correct it, only the forbidden hand edit of `tickets/T-####/
+    ticket.md`. Same shape as `_add_ticket_tier_parser`'s T-1069
+    precedent -- `--reason`/`--reason-file` required, same as every other
+    single-value triage setter. All structural validation (existence,
+    cycle, tier-inversion, self-parent) happens in `frob.tickets.
+    set_parent` itself, not re-derived here.
+
+    T-2965: `parent-id` is now `nargs="?"` (optional) and a `--clear`
+    flag (dest `ticket_parent_clear`) detaches the ticket to root
+    instead of naming a new parent -- the missing inverse of the
+    original attach-only design (a ticket mis-parented under the wrong
+    epic, whose correct parent is genuinely none). `argparse`'s
+    `add_mutually_exclusive_group` cannot hold a positional (the library
+    only supports optionals there), so "exactly one of `parent-id` or
+    `--clear`" is enforced downstream in `_set_parent`
+    (`frob.app.ticket_runner._mutate`) instead of at parse time here --
+    the same "thin CLI shell, real validation lives one layer in" split
+    this module already uses for `_reason`/`--reason-file`."""
     ticket_set_parent_p = ticket_sub.add_parser(
         "set-parent",
-        help="set an existing ticket's parent edge (T-2770); refuses a "
-        "nonexistent parent, a cycle, a tier inversion, or self-parenting",
+        help="set an existing ticket's parent edge (T-2770), or clear it "
+        "to root with --clear (T-2965); refuses a nonexistent parent, a "
+        "cycle, a tier inversion, or self-parenting",
     )
     ticket_set_parent_p.add_argument("ticket_id", metavar="id")
-    ticket_set_parent_p.add_argument("ticket_parent_id_value", metavar="parent-id")
+    ticket_set_parent_p.add_argument(
+        "ticket_parent_id_value",
+        metavar="parent-id",
+        nargs="?",
+        default=None,
+        help="the new parent ticket id; omit and pass --clear instead to "
+        "detach to root",
+    )
+    ticket_set_parent_p.add_argument(
+        "--clear",
+        dest="ticket_parent_clear",
+        action="store_true",
+        help="detach this ticket to root (parent=null) instead of naming "
+        "a new parent; mutually exclusive with parent-id",
+    )
     _add_triage_reason_flags(ticket_set_parent_p)  # frob:ticket T-2353
     _add_no_commit_flag(ticket_set_parent_p)  # frob:ticket T-1615
     return ticket_set_parent_p

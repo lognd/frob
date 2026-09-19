@@ -237,8 +237,7 @@ def _set_reasoned_field(
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_reason_missing_refuses
 # frob:tests \
-# tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_e\
-# ntry
+# tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_entry  # noqa: E501
 def set_priority(
     root: Path, ticket_id: str, priority: Priority, *, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -433,7 +432,9 @@ def _validate_parent_edge(
     `ticket` cannot parent an `epic`/`story`, a `story` cannot parent an
     `epic`, but same-tier chaining (an `epic` parenting another `epic`,
     T-2770's own T-2384->T-1382 positive control) is allowed. `None` when
-    `parent_id` is a valid target."""
+    `parent_id` is a valid target. Only called for a non-null `parent_id`
+    -- `--clear` (T-2965) skips this entirely, the same way a ticket
+    filed with no `--parent` skips it at creation time."""
     parent = queue.get(parent_id)
     if parent is None:
         return TicketError.ParentNotFound
@@ -458,52 +459,32 @@ def _validate_parent_edge(
 # frob:tests tests/test_tickets_parent.py::TestSetParent.test_moving_an_existing_parent_drops_the_old_edge  # noqa: E501
 # frob:tests tests/test_tickets_parent.py::TestSetParent.test_archived_ticket_routes_to_archive_path  # noqa: E501
 def set_parent(
-    root: Path, ticket_id: str, parent_id: str, *, reason: str
+    root: Path, ticket_id: str, parent_id: str | None, *, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
-    """`frob ticket set-parent <id> <parent-id> --reason TEXT`: the
-    accountable, single-writer way to correct `ticket_id`'s `parent` edge
-    (T-2770) -- `frob ticket new --parent` was the only place this field
-    could previously be set, so a mis-parented ticket had no CLI route to
-    fix, only the forbidden hand edit `set_body`/T-2392 exists to prevent
-    for the body field.
+    """`frob ticket set-parent <id> (<parent-id> | --clear) --reason
+    TEXT`: the accountable, single-writer way to correct `ticket_id`'s
+    `parent` edge (T-2770); `frob ticket new --parent` was previously the
+    only place this field could be set.
+
+    `parent_id=None` (T-2965's `--clear`) detaches `ticket_id` back to a
+    root ticket; refused with `Err(TicketError.ParentAlreadyRoot)` when
+    `ticket.parent` is already `None` (the caller likely mis-targeted).
+    `_validate_parent_edge` is skipped for a clear.
 
     Refuses (write nothing) for a blank `reason`
-    (`Err(TicketError.ParentTicketReasonMissing)`), `parent_id ==
-    ticket_id` self-parenting (`Err(TicketError.ParentSelfReference)`), a
-    land genuinely in progress against `root`
-    (`Err(LeaseError.LandInProgress)`, T-2785 -- see
-    `_refuse_write_if_land_in_progress`), or any of
-    `_validate_parent_edge`'s structural checks (nonexistent parent,
-    cycle, tier inversion) -- see that function's docstring for the exact
-    rule set. T-2770's own measured customer: a `tier=epic` ticket whose
-    successor work was filed with `parent: null` reads as "every child
-    terminal, epic closeable" to the rot detector even though the epic's
-    real goal is unmet; re-parenting the successor onto the epic is the
-    fix, and this is the only way to do it without a hand edit.
+    (`ParentTicketReasonMissing`), self-parenting (`ParentSelfReference`),
+    a land in progress against `root` (`LeaseError.LandInProgress`,
+    T-2785), or any `_validate_parent_edge` structural check (nonexistent
+    parent, cycle, tier inversion).
 
-    Re-parenting a DONE-but-still-active OR archived ticket is allowed
-    (parent is organizational metadata, not a state-machine transition,
-    and the T-2770 customer instance -- T-2386 -- is exactly a `done`
-    ticket needing correction); an archived target routes through
-    `write_archived_ticket` via `_ticket_currently_archived`, the same
-    `set_body`/T-2678 fix, never creating a duplicate active-tree copy.
-    Moving an already-parented ticket simply overwrites the scalar field
-    -- the old edge never lingers.
-
-    T-2785: setting `parent_id` to the value `ticket_id` ALREADY carries
-    is a clean no-op -- no `TriageChangeEntry` is appended and no write
-    is attempted at all (`updated` is returned byte-identical to the
-    loaded ticket), the same "no audit event for a non-change" posture
-    `_redesignation_entry` already gives `set_designated_repro_test`. The
-    measured incident this closes: a `set-parent` call that re-asserted
-    an already-current parent (an earlier caller had already performed
-    the real move) still appended `old_value == new_value` triage noise
-    and, combined with the pre-T-2785 land-in-progress race, was exactly
-    what produced the dirty working tree that DirtyMain-blocked the
-    fleet."""
+    Re-parenting a DONE or archived ticket is allowed (parent is
+    organizational metadata, not a state transition); an archived target
+    routes through `write_archived_ticket`, never a duplicate active copy.
+    Re-asserting the CURRENT parent is a clean no-op with no triage entry
+    and no write (T-2785: that noise once DirtyMain-blocked the fleet)."""
     if not reason.strip():
         return Err(TicketError.ParentTicketReasonMissing)
-    if parent_id == ticket_id:
+    if parent_id is not None and parent_id == ticket_id:
         return Err(TicketError.ParentSelfReference)
     land_check = _refuse_write_if_land_in_progress(root)
     if land_check.is_err:
@@ -518,6 +499,8 @@ def set_parent(
         if loaded.is_err:
             return Err(loaded.danger_err)
         ticket, queue = loaded.danger_ok
+        if parent_id is None and ticket.parent is None:
+            return Err(TicketError.ParentAlreadyRoot)
         if ticket.parent == parent_id:
             _log.info(
                 "tickets: %s parent already %s -- no-op, nothing written",
@@ -533,20 +516,23 @@ def _write_parent_change(
     root: Path,
     ticket: Ticket,
     queue: dict[str, Ticket],
-    parent_id: str,
+    parent_id: str | None,
     reason: str,
 ) -> Result[Ticket, TicketError | LeaseError]:
     """`set_parent`'s validate-then-write half, split out to keep that
     function under ARCH001's line threshold (T-2785): runs
-    `_validate_parent_edge`'s structural checks, then appends the
-    `TriageChangeEntry` and writes -- called ONLY for a genuine change
-    (`set_parent` already returned early for a no-op); must be called
-    from inside the SAME `ledger_lock` hold `set_parent` already took, so
-    this never re-acquires it itself."""
+    `_validate_parent_edge`'s structural checks for a non-null
+    `parent_id`, then appends the `TriageChangeEntry` and writes --
+    called ONLY for a genuine change (`set_parent` already returned early
+    for a no-op); must be called from inside the SAME `ledger_lock` hold
+    `set_parent` already took, so this never re-acquires it itself.
+    `parent_id=None` (T-2965 `--clear`) skips `_validate_parent_edge`
+    entirely -- a null target needs no existence/cycle/tier check."""
     old_parent = ticket.parent
-    validation_error = _validate_parent_edge(queue, ticket, parent_id)
-    if validation_error is not None:
-        return Err(validation_error)
+    if parent_id is not None:
+        validation_error = _validate_parent_edge(queue, ticket, parent_id)
+        if validation_error is not None:
+            return Err(validation_error)
     entry = _triage_change_entry("parent", old_parent, parent_id, reason)
     updated = ticket.model_copy(
         update={
@@ -793,11 +779,9 @@ def set_runs_last(
 # frob:ticket T-2624
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
-# tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_reason_missing_r\
-# efuses
+# tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_reason_missing_refuses  # noqa: E501
 # frob:tests \
-# tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_ack_sets_both_fi\
-# elds
+# tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_ack_sets_both_fields  # noqa: E501
 def set_runs_last_parallel_safe(
     root: Path, ticket_id: str, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -1046,20 +1030,15 @@ def _redesignation_entry(
 # frob:ticket T-1749
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests \
-# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evi\
-# dence_id
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evidence_id  # noqa: E501
 # frob:tests \
-# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_e\
-# vidence
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_evidence  # noqa: E501
 # frob:tests \
-# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_appends_\
-# an_audit_entry
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_appends_an_audit_entry  # noqa: E501
 # frob:tests \
-# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_designation\
-# _appends_no_audit_entry
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_designation_appends_no_audit_entry  # noqa: E501
 # frob:tests \
-# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_the_same\
-# _id_appends_no_audit_entry
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_the_same_id_appends_no_audit_entry  # noqa: E501
 def set_designated_repro_test(
     root: Path, ticket_id: str, node_id: str, *, reason: str | None = None
 ) -> Result[Ticket, TicketError | LeaseError]:

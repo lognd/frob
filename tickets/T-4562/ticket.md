@@ -1,5 +1,5 @@
 ---
-id: T-draft-b6949eab
+id: T-4562
 title: docs/guides/extending/comment-dsl-directives.md lists seven walkers; csharp,
   java, bash, cuda and zig are wired in COMMENT_TYPES but undocumented
 state: queued

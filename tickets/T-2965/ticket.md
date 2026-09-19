@@ -2,7 +2,7 @@
 id: T-2965
 title: frob ticket set-parent needs a --clear path to detach a mis-parented ticket
   to root
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -44,6 +44,19 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/test_tickets_parent.py::TestSetParentClear::test_clear_detaches_to_root
+- tests/test_tickets_parent.py::TestSetParentClear::test_clear_records_a_triage_entry
+- tests/test_tickets_parent.py::TestSetParentClear::test_clear_on_already_root_ticket_refuses
+- tests/test_tickets_parent.py::TestSetParentClear::test_clear_requires_a_reason
+- tests/test_tickets_parent.py::TestSetParentClear::test_clear_skips_structural_validation
+- tests/test_tickets_parent.py::TestSetParentClear::test_clear_on_archived_ticket_routes_to_archive_path
+- tests/test_tickets_parent.py::TestSetParentCliClearFlag::test_parser_accepts_clear_with_no_parent_id
+- tests/test_tickets_parent.py::TestSetParentCliClearFlag::test_parser_accepts_parent_id_with_no_clear
+- tests/test_tickets_parent.py::TestSetParentCliClearFlag::test_parser_accepts_both_together_argparse_alone_does_not_refuse
+- tests/test_tickets_parent.py::TestSetParentCliClearFlag::test_handler_refuses_both_parent_id_and_clear
+- tests/test_tickets_parent.py::TestSetParentCliClearFlag::test_handler_refuses_neither_parent_id_nor_clear
+- tests/test_tickets_parent.py::TestSetParentCliClearFlag::test_handler_clear_detaches_via_the_cli_config_shape
 designated_repro_test: null
 threat: null
 component: null

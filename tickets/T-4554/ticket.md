@@ -27,7 +27,7 @@ scope_changes:
 - op: remove
   glob: src/frob/strata/_effects.py
   reason: fix confined to _dangerous_ops_bash_csharp.py and test_effects.py; _effects.py
-    leased by T-draft-d56bad34
+    leased by T-4563
   actor: logan
   at: '2026-09-17'
 - op: add

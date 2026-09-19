@@ -7,6 +7,7 @@ tier-inversion, self-parent) `set_tier` deliberately does not need.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import date
 from pathlib import Path
@@ -251,6 +252,101 @@ class TestSetParent:
         assert archived.danger_ok["T-1688"].parent == "T-0002"
 
 
+class TestSetParentClear:
+    """T-2965: `set_parent(root, id, None, reason=...)` (`frob ticket
+    set-parent <id> --clear`) -- the missing detach-to-root path. The
+    original design (T-2770) only ever attached a ticket TO a parent;
+    a ticket mis-parented under the wrong epic whose correct parent is
+    genuinely null had no route except a hand edit or inventing a
+    placeholder parent ticket just to have something valid to point
+    `set-parent` at."""
+
+    def test_clear_detaches_to_root(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentClear.test_clear_detaches_to_root  # noqa: E501
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        result = set_parent(tmp_path, "T-0001", None, reason="mis-parented, detach")
+        assert result.is_ok
+        assert result.danger_ok.parent is None
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].parent is None
+
+    def test_clear_records_a_triage_entry(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentClear.test_clear_records_a_triage_entry  # noqa: E501
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        result = set_parent(tmp_path, "T-0001", None, reason="mis-parented, detach")
+        assert result.is_ok
+        assert len(result.danger_ok.triage_changes) == 1
+        entry = result.danger_ok.triage_changes[0]
+        assert entry.field == "parent"
+        assert entry.old_value == "T-0002"
+        assert entry.new_value is None
+
+    def test_clear_on_already_root_ticket_refuses(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentClear.test_clear_on_already_root_ticket_refuses  # noqa: E501
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent=None)
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        result = set_parent(tmp_path, "T-0001", None, reason="already root")
+        assert result.is_err
+        assert result.danger_err is TicketError.ParentAlreadyRoot
+
+    def test_clear_requires_a_reason(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentClear.test_clear_requires_a_reason  # noqa: E501
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        result = set_parent(tmp_path, "T-0001", None, reason="")
+        assert result.is_err
+        assert result.danger_err is TicketError.ParentTicketReasonMissing
+
+    def test_clear_skips_structural_validation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentClear.test_clear_skips_structural_validation  # noqa: E501
+        # A tier=epic ticket clearing its own parent must succeed even
+        # though there is nothing to validate against -- proves the
+        # _validate_parent_edge path is genuinely skipped for None, not
+        # merely happening to pass.
+        grandparent = _ticket(ticket_id="T-0001", tier=TicketTier.EPIC)
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC, parent="T-0001")
+        assert write_ticket(tmp_path, grandparent).is_ok
+        assert write_ticket(tmp_path, epic).is_ok
+
+        result = set_parent(tmp_path, "T-0002", None, reason="detach epic")
+        assert result.is_ok
+        assert result.danger_ok.parent is None
+
+    def test_clear_on_archived_ticket_routes_to_archive_path(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentClear.test_clear_on_archived_ticket_routes_to_archive_path  # noqa: E501
+        archived_leaf = _ticket(
+            ticket_id="T-1688", tier=TicketTier.TICKET, parent="T-0002"
+        )
+        (tmp_path / "tickets" / "archive" / "T-1688").mkdir(parents=True)
+        (tmp_path / "tickets" / "archive" / "T-1688" / "ticket.md").write_text(
+            _serialize_ticket(archived_leaf)
+        )
+
+        result = set_parent(tmp_path, "T-1688", None, reason="detach archived")
+        assert result.is_ok
+        assert result.danger_ok.parent is None
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok["T-1688"].parent is None
+
+
 class TestSetParentNoOp:
     """T-2785: setting `parent` to the value it already carries must be a
     clean no-op -- no `TriageChangeEntry`, no write at all (the file stays
@@ -384,3 +480,115 @@ class TestSetParentLandInProgressGuard:
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok["T-0001"].parent == "T-0002"
+
+
+class TestSetParentCliClearFlag:
+    """T-2965: CLI-surface coverage for `frob ticket set-parent <id>
+    --clear` -- `argparse.add_mutually_exclusive_group` cannot hold a
+    positional, so `parent-id` is `nargs="?"` and the "exactly one of
+    `parent-id` or `--clear`" rule is enforced downstream in
+    `frob.app.ticket_runner._mutate._set_parent`, not by the parser
+    itself. These tests exercise that split end to end: the parser
+    accepts either shape, and the handler refuses the two ways they can
+    conflict (both given, or neither)."""
+
+    @staticmethod
+    def _parser() -> argparse.ArgumentParser:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag._parser  # noqa: E501
+        from frob._cli_parsers._ticket._metadata import (
+            _add_ticket_set_parent_parser,
+        )
+
+        top = argparse.ArgumentParser(prog="frob")
+        sub = top.add_subparsers(dest="verb")
+        _add_ticket_set_parent_parser(sub)
+        return top
+
+    def test_parser_accepts_clear_with_no_parent_id(self) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag.test_parser_accepts_clear_with_no_parent_id  # noqa: E501
+        args = self._parser().parse_args(
+            ["set-parent", "T-0001", "--clear", "--reason", "detach"]
+        )
+        assert args.ticket_parent_clear is True
+        assert args.ticket_parent_id_value is None
+
+    def test_parser_accepts_parent_id_with_no_clear(self) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag.test_parser_accepts_parent_id_with_no_clear  # noqa: E501
+        args = self._parser().parse_args(
+            ["set-parent", "T-0001", "T-0002", "--reason", "reparent"]
+        )
+        assert args.ticket_parent_clear is False
+        assert args.ticket_parent_id_value == "T-0002"
+
+    def test_parser_accepts_both_together_argparse_alone_does_not_refuse(
+        self,
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag.test_parser_accepts_both_together_argparse_alone_does_not_refuse  # noqa: E501
+        # Documents WHY the conflict check lives in _set_parent: argparse
+        # itself has no positional-aware mutually-exclusive-group support,
+        # so parsing both together succeeds at this layer -- the handler
+        # is the only thing that refuses it (see the next test).
+        args = self._parser().parse_args(
+            ["set-parent", "T-0001", "T-0002", "--clear", "--reason", "x"]
+        )
+        assert args.ticket_parent_clear is True
+        assert args.ticket_parent_id_value == "T-0002"
+
+    def test_handler_refuses_both_parent_id_and_clear(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag.test_handler_refuses_both_parent_id_and_clear  # noqa: E501
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._mutate import _set_parent
+
+        cfg = AppConfig(
+            ticket_id="T-0001",
+            ticket_parent_id_value="T-0002",
+            ticket_parent_clear=True,
+            ticket_triage_reason="x",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _set_parent(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+    def test_handler_refuses_neither_parent_id_nor_clear(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag.test_handler_refuses_neither_parent_id_nor_clear  # noqa: E501
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._mutate import _set_parent
+
+        cfg = AppConfig(
+            ticket_id="T-0001",
+            ticket_parent_id_value=None,
+            ticket_parent_clear=False,
+            ticket_triage_reason="x",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _set_parent(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+    def test_handler_clear_detaches_via_the_cli_config_shape(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag.test_handler_clear_detaches_via_the_cli_config_shape  # noqa: E501
+        # End-to-end: an AppConfig shaped exactly like what
+        # AppConfig.from_external would build from the parsed --clear
+        # args reaches set_parent and actually detaches the ticket.
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._mutate import _set_parent
+
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        cfg = AppConfig(
+            ticket_id="T-0001",
+            ticket_parent_id_value=None,
+            ticket_parent_clear=True,
+            ticket_triage_reason="mis-parented, detach",
+        )
+        _set_parent(tmp_path, cfg)
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].parent is None

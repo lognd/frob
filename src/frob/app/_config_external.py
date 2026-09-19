@@ -594,6 +594,8 @@ _BOOL_FLAGS = (
     "ticket_doable_show_anchors",
     "ticket_anchor_set",
     "ticket_anchor_clear",
+    # frob:ticket T-2965
+    "ticket_parent_clear",
 )
 
 

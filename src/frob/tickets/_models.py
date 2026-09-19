@@ -253,11 +253,9 @@ CMD_EVIDENCE_ALLOWED_KINDS = frozenset({TicketKind.DOCS, TicketKind.UX})
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
-# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true\
-# _for_bug_kind_with_no_python_surface
+# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bug_kind_with_no_python_surface  # noqa: E501
 # frob:tests \
-# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_fals\
-# e_for_bug_kind_with_real_python_surface
+# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_bug_kind_with_real_python_surface  # noqa: E501
 def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
     """T-3156: True if any file under `scope` (real, tracked, on-disk
     matches via `frob.excludes.iter_files`, not a filesystem-blind glob
@@ -312,11 +310,9 @@ def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
 # frob:tests \
 # tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_empty_is_ok
 # frob:tests \
-# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_loaded_resol\
-# ves
+# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_loaded_resolves  # noqa: E501
 # frob:tests \
-# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_unloaded_unr\
-# esolved
+# tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_unloaded_unresolved  # noqa: E501
 def rule_shaped_findings_unresolved(ticket: "Ticket") -> tuple[str, ...]:
     """T-4037: a ticket is RULE-SHAPED (an audit finding whose remediation
     is a policy/gate rule, not a code fix) exactly when it declares one or
@@ -1075,14 +1071,11 @@ _CHANGED_HEADING = "### Changed"
 # frob:ticket T-1005
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
-# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_recovers_narrative_befor\
-# e_changed_marker
+# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_recovers_narrative_before_changed_marker  # noqa: E501
 # frob:tests \
-# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_done_report\
-# _section
+# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_done_report_section  # noqa: E501
 # frob:tests \
-# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_changed_mar\
-# ker_to_anchor_against
+# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_changed_marker_to_anchor_against  # noqa: E501
 def recover_done_report_why(body: str) -> str | None:
     """Recover the free-narrative WHY prose a caller once passed to
     `set_done_report`/`compose_done_report`, given only the ticket `body`
@@ -1605,8 +1598,7 @@ class ScopeChangeEntry(BaseModel):
 # frob:ticket T-2353
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests \
-# tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_e\
-# ntry
+# tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_entry  # noqa: E501
 class TriageChangeEntry(BaseModel):
     """One append-only audit line for a `frob ticket priority`/`kind`/
     `component`/`tier` mutation (T-2353): which single-value field moved,
@@ -1669,8 +1661,7 @@ class BodyChangeEntry(BaseModel):
 # frob:ticket T-2333
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
-# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_pers\
-# isted_to_the_ticket_ledger kind="unit"
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_persisted_to_the_ticket_ledger kind="unit"  # noqa: E501
 class LeaseForceReleaseEntry(BaseModel):
     """One append-only audit line for a `frob worktree release-lease
     --force --reason TEXT` forced lease release (T-2333): the operator's
@@ -2167,14 +2158,11 @@ class Ticket(BaseModel):
     # frob:ticket T-4453
     # frob:doc docs/modules/tickets-data-storage.md#data-models
     # frob:tests \
-    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotC\
-    # rash.test_corrupt_row_is_named_loudly_not_silently_coerced
+    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_corrupt_row_is_named_loudly_not_silently_coerced  # noqa: E501
     # frob:tests \
-    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotC\
-    # rash.test_unrelated_ticket_still_files_despite_one_corrupt_row
+    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_unrelated_ticket_still_files_despite_one_corrupt_row  # noqa: E501
     # frob:tests \
-    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotC\
-    # rash.test_multiple_corrupt_entries_use_plural_wording
+    # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_multiple_corrupt_entries_use_plural_wording  # noqa: E501
     def model_copy(
         self, *, update: Mapping[str, object] | None = None, deep: bool = False
     ) -> "Ticket":
@@ -2914,6 +2902,12 @@ class TicketError(ErrorSet):
         "parent an epic or story, a story cannot parent an epic -- "
         "same-tier chaining (e.g. epic parenting epic) is allowed"
     )
+    # frob:ticket T-2965
+    #: `frob ticket set-parent <id> --clear --reason TEXT` (T-2965): the
+    #: detach-to-root counterpart of the attach-only original -- refused
+    #: only when the ticket already has no parent, since clearing an
+    #: already-null parent is a no-op with nothing to account for.
+    ParentAlreadyRoot = "ticket already has no parent -- nothing to clear"
     # frob:ticket T-2954
     # T-2954: `frob ticket restore <id> --reason TEXT` failure modes -- the
     # missing repair primitive for a ticket stranded under tickets/

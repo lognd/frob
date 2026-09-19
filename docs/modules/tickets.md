@@ -576,7 +576,7 @@ def set_tier(root: Path, ticket_id: str, tier: TicketTier) -> Result[Ticket, Tic
     # but no mutator for an existing ticket). Same single-writer,
     # ledger-locked pattern as set_priority/set_kind/set_component/
     # set_sprint. Does not re-validate or move `parent` links.
-def set_parent(root: Path, ticket_id: str, parent_id: str, *, reason: str) -> Result[Ticket, TicketError]
+def set_parent(root: Path, ticket_id: str, parent_id: str | None, *, reason: str) -> Result[Ticket, TicketError]
     # T-2770: `frob ticket set-parent <id> <parent-id> --reason TEXT` --
     # `frob ticket new --parent` was the only place `parent` could be set;
     # this is the mutate-in-place correction path. Refuses (writes
@@ -591,6 +591,13 @@ def set_parent(root: Path, ticket_id: str, parent_id: str, *, reason: str) -> Re
     # `write_archived_ticket` via `_ticket_currently_archived`, the same
     # T-2678 fix `set_body` uses, never materializing a fresh active-tree
     # duplicate.
+    # T-2965: `parent_id=None` (`frob ticket set-parent <id> --clear
+    # --reason TEXT`) detaches the ticket back to root/top-level instead of
+    # naming a new parent -- the missing inverse of the original attach-
+    # only design. Refused with Err(TicketError.ParentAlreadyRoot) when
+    # the ticket already has no parent; skips all of _validate_parent_
+    # edge's structural checks (a null target needs no existence/cycle/
+    # tier-inversion check).
 def set_runs_last(root: Path, ticket_id: str, runs_last: bool) -> Result[Ticket, TicketError]
     # T-1613: `frob ticket runs-last <id> <on|off>` -- flip the runs-last
     # marker: while True, `doable`/`start` structurally refuse to surface

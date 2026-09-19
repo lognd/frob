@@ -716,6 +716,12 @@ class AppConfig(BaseModel):
     # shape as `ticket_tier_value`'s T-1069 precedent. Validated (existence,
     # cycle, tier-inversion, self-parent) by `set_parent` itself, not here.
     ticket_parent_id_value: str | None = None
+    # frob:ticket T-2965
+    # `frob ticket set-parent <id> --clear` -- detach to root instead of
+    # naming a new parent; mutually exclusive with the `parent-id`
+    # positional (`_add_ticket_set_parent_parser` enforces this at parse
+    # time). `_set_parent` reads this to call `set_parent(..., None, ...)`.
+    ticket_parent_clear: bool = False
     # frob:ticket T-2353
     # `frob ticket priority/kind/component/tier ... (--reason TEXT |
     # --reason-file PATH)` -- ONE shared dest reused across all four
