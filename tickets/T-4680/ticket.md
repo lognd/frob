@@ -27,6 +27,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 3559
   new_length: 5945
+- mode: append
+  reason: 'BUG002 front door (T-2393): 2026-09-19: DECISION ticket whose sole deliverable
+    is an owner decision recorded in the body. Owner recorded D-M6 (the monofile is
+    split module by module by hand; no split tool). Implementation belongs to the
+    module-system story, not here. No code, model or doc file changes under this id.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5944
+  new_length: 6268
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (defaults-and-inheritance
@@ -143,3 +152,5 @@ splits the lock per module.
 Closing with no behavior change: the deliverable of a DECISION ticket is the
 decision, now recorded above. The hand split itself belongs to the module-system
 story being filed by the other planner. No files change under this id.
+
+frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M6 (the monofile is split module by module by hand; no split tool). Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."

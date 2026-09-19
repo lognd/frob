@@ -1,5 +1,5 @@
 ---
-id: T-draft-1c99bf71
+id: T-4774
 title: 'worker and mcp-server presets: the long-running-service shapes the scaffold
   cannot express today'
 state: queued
