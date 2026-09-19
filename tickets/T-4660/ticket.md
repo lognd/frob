@@ -1,5 +1,5 @@
 ---
-id: T-draft-1df8285a
+id: T-4660
 title: post-publish never holds .frob/derived.lock across a full check
 state: queued
 kind: feature
