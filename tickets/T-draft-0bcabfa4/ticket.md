@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'pure decision record (D-M9): no file scope until the owner
+  rules'
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
