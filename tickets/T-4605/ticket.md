@@ -37,6 +37,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 1639
   new_length: 3412
+- mode: append
+  reason: T-3961 implementation (T-draft-1cc03713) hit the identical _sys.py/_waive.py
+    lease-blocked wiring gap this ticket already tracks for INV011/CONFIGPATH001/ROUTE001
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3412
+  new_length: 4685
 designated_repro_test: null
 threat: null
 component: null
@@ -52,3 +59,5 @@ Also fold in: src/frob/gates/_inv.py's time_stable_gate/_spawn_time_stable_test/
 Also fold in: T-3962 (INV011 forbidden-constant reachability) added the rule's docs page as a standalone file, docs/modules/gate-inv011-forbidden-constant-reachability.md, and pointed src/frob/gates/_design_invariants.py's frob:doc directives at it -- docs/modules/gates.md was leased by T-4111 for T-3962's entire duration (the same lease conflict this ticket's body already tracks for T-4114/T-4115/T-4221). Once docs/modules/gates.md is free: fold the standalone page's "INV011 (forbidden-constant reachability)" section into it (next to the existing "INV007 and INV008 (T-0757)" section), add an INV011 row to the rule table and to the file's frob:enumerates members list, retarget src/frob/gates/_design_invariants.py's frob:doc anchors from the standalone file onto docs/modules/gates.md#inv011-forbidden-constant-reachability-t-3962 (or whatever heading the fold-in lands under), and delete the now-redundant standalone page.
 
 Also: T-3962 registers the new gate rule id INV011 (frob.gates._design_invariants.inv011_violations, wired into src/frob/gates/__init__.py's "invariant" thread job) but src/frob/gates/_waive.py -- where INV011 needs a _KNOWN_GATE_RULES entry (the same UnregisteredGateRuleConstructed land-time refusal T-2388/T-2441 hit for PORT001/GATESSCHEMA001/etc) and docs/design/registry/check-coverage.yaml needs a CHK-GATE-INV011 entry (frob.gates._design_invariants.inv011_violations already carries a frob:enforces CHK-GATE-INV011 directive expecting it) -- were both leased by other in-progress tickets (T-4212 and T-4112 respectively) for T-3962's entire duration. Register "INV011" in _waive.py's _KNOWN_GATE_RULES frozenset (T-2441 courtesy-registration pattern) and add a CHK-GATE-INV011 row to check-coverage.yaml once each file is free.
+
+Also fold in: T-draft-1cc03713 (T-3961 provenance/trust-as-identity implementation) added src/frob/gates/_sys_provenance.py with two new rule ids (SYS116 undeclared provenance, SYS117 trust_identity without carries -- renumbered from an initial SYS114/SYS115 pick that collided with T-4113's outbound-destination/foreign-flow-rate rules) but could not wire evaluate_provenance into src/frob/gates/_sys.py::sys_gate's dispatch, nor register SYS116/SYS117 in src/frob/gates/_waive.py's _KNOWN_GATE_RULES frozenset -- both files were leased by in-progress T-4212 for the ticket's entire duration (the same _waive.py lease conflict this ticket's own T-3962 fold-in item above already names for INV011). Once _sys.py and _waive.py are free: wire evaluate_provenance(model) into sys_gate's dispatch (mirrors how SELFAUDIT001/other SYS1xx families are folded in), register SYS116 and SYS117 in _KNOWN_GATE_RULES (T-2441 courtesy-registration pattern), and add their rows to docs/modules/gates.md's rule table + frob:enumerates members list (the standalone docs/strata/provenance-trust-identity.md page this ticket wrote can then fold into docs/modules/gates.md the same way T-3962's INV011 page is asked to above, or stay standalone with a frob:doc retarget -- reviewer's call).
