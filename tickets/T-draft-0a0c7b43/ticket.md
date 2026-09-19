@@ -1,0 +1,72 @@
+---
+id: T-draft-0a0c7b43
+title: 'Strata module system: imports, export surfaces, two-sided contracts, per-module
+  elaboration and link; monolith split module by module (owner decisions D-M1..D-M8)'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: critical
+parent: T-4662
+tier: story
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Owner decisions 2026-09-19 18:30 (binding). Source: scratchpad STRATA-MODULES.md
+(proposal with sourced facts: no import/export construct exists today; names are
+global; multi-file designs are merged into one flat bag in
+src/frob/strata/_multifile.py; the 11-module partition has 109 of 117 flows
+crossing a boundary and 16 bidirectional module pairs).
+
+DECIDED: Option C (imports + private-by-default export surface + two-sided
+cross-module flow contracts via `accepts`), delivered by Option D (per-module
+elaboration plus an explicit link step), with Option A (dotted namespaces)
+folded in.
+
+D-M1 privacy: YES. Private-by-default export surfaces; unexported names are
+unnameable outside the module.
+D-M2 import cycles: HARD compile error with the full path printed
+(a -> b -> c -> a). Shipped only AFTER the 16 existing bidirectional pairs are
+each decided individually -- never bulk-waived.
+D-M3 cross-module flow: BOTH sides declare. Importer declares the `flow`,
+exporter declares `accepts <flow> from <module>` on the exported node. One side
+alone is a checker error (deny-by-default, charter law 2).
+D-M4 kernel: exactly ONE new attribute, `module` on Node. Nothing else. No
+Module primitive, no module-level flows, no module trust levels.
+D-M5 partition: KEEP the 11 modules of the proposal (platform, tickets, graph,
+gates, strata, vet, deploy, natives, serve, app, test).
+D-M6 OVERRIDDEN: there will be NO `frob sys split` tool. The split of
+design/frob.strata is a one-time reviewed rewrite done by agents, module by
+module, with the 111 duplicate declaration lines (SF-10) removed in the
+process. The migration must NOT leave a half-split state on dev: each module
+lands as a coherent file with its contracts, the monolith shrinking by exactly
+that module on each land, checker green at every step.
+D-M7 per-module leases and per-module via-ratchet locks: LAST, after isolation
+is real. Grants and the ratchet lock stay whole-file until that leaf.
+D-M8 OVERRIDDEN AND STRENGTHENED: the 33 boilerplate CWE assumes (SF-08, one
+template per node per CWE with identical owner and date) are NOT carried over.
+An assume must be module-owned and SPECIFIC: its reason text names the concrete
+mechanism or evidence gap for THAT module. A structural gate refuses templated
+assumes -- two assumes whose text is identical after substituting the
+node/module name are a finding (token-level comparison, not a keyword
+heuristic), as are assumes sharing one expiry date across more than N modules.
+That gate is a leaf of this story and MUST be red on today's design/frob.strata
+as its positive control.
+
+Refused by construction (section 5 of the proposal): wildcard imports, implicit
+re-export, global name fallback, string-path cross-module references,
+module-level flows, auto-generated exports, `part of` fragments as the
+modularity story.
