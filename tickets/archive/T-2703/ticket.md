@@ -44,6 +44,13 @@ scope_changes:
   reason: DOC006 finding newly surfaced by T-2703 prose-scan fix, needs frob:waive
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve config-ref false-positive examples trimmed from _docptr.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1673
+  new_length: 2254
 evidence:
 - tests/test_docptr_gate.py::TestDoc006Config::test_bracket_shape_inside_code_span_is_not_flagged
 - tests/test_docptr_gate.py::TestDoc006Config::test_bare_bracket_word_without_dot_never_a_candidate
@@ -97,3 +104,14 @@ code span should be inert.
 - a genuinely unresolved `[section.key]` pointer in plain prose must STILL
   fire -- without this the fix is indistinguishable from disabling DOC006
 - a fenced code block must remain inert (existing behavior, do not regress)
+
+
+T-4709 follow-up (condensed from _CONFIG_REF_PROSE_RE's docstring in
+src/frob/gates/_docptr.py, trimmed for DOCARCH002's 12-line cap):
+this repo's own docs are full of plain-prose bracket shapes that are NOT
+config pointers at all -- numbered citations ([0], [2]), bare-word
+footnote/memory-slug citations ([silent-zero], [catalogued-is-not-
+enforced]) -- and every one of those is a single undotted segment,
+which is why the DOT-separated-segment requirement is load-bearing:
+0 findings with the narrowing, dozens of false ones without it
+(TestDoc004Doc006ZeroOnFrobsOwnRepo).
