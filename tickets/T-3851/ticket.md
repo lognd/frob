@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/frob-suggest.py
 - tests/test_hook_frob_suggest.py
+- .claude/hooks/_shellscan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,11 @@ scope_changes:
 - op: add
   glob: tests/test_hook_frob_suggest.py
   reason: regression tests for ack segmentation
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: .claude/hooks/_shellscan.py
+  reason: one home for the segmenter shared by ack detection and trigger scan (T-3851)
   actor: logan
   at: '2026-09-19'
 triage_changes:
