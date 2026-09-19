@@ -22,6 +22,8 @@ scope:
 - docs/guides/unity.md
 - tests/fixtures/lang/csharp/tests
 - src/frob/testing/_dotnet_runner.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +61,20 @@ scope_changes:
     own separation rationale'
   actor: logan
   at: '2026-09-18'
+- op: add
+  glob: design/frob.strata
+  reason: declare src/frob/testing/_dotnet_runner.py's fs.read/fs.write via-list sites
+    on core and tests/unit/test_dotnet_runner.py's env.write site on testsuite; raise
+    core::fs.read/fs.write ratchet ceilings
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: declare src/frob/testing/_dotnet_runner.py's fs.read/fs.write via-list sites
+    on core and tests/unit/test_dotnet_runner.py's env.write site on testsuite; raise
+    core::fs.read/fs.write ratchet ceilings
+  actor: logan
+  at: '2026-09-19'
 evidence:
 - tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_maps_passing_and_failing_ids
 - tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml::test_parses_nested_test_suites_into_fqn_result_map
