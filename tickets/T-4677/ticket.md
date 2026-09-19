@@ -47,12 +47,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 5861
   new_length: 6274
+evidence:
+- cmd:git grep -n 'D-M8' -- tickets/T-4677/ticket.md exit=0 sha256=01eccfec75cf
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (class-level/quantified
     assume, defaults-and-inheritance, or generated boilerplate), and what it changes.
     No implementation ticket may be filed against SF-08 before that decision is recorded.'
-  evidence: []
+  evidence:
+  - cmd:git grep -n 'D-M8' -- tickets/T-4677/ticket.md exit=0 sha256=01eccfec75cf
 threat: null
 component: strata
 anchor: false
