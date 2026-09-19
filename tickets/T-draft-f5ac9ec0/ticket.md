@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/unit/test_land_phase_elapsed_logging.py
 - tests/unit/test_land_auto_rebase.py
+- tests/unit/test_land_cmd_drain_wiring.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,16 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_auto_rebase.py
   reason: positive controls for the new checkpoint log lines
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_land_cmd_drain_wiring.py
+  reason: positive control for the new post-land-sweep-dispatch phase marker
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_land_cmd_drain_wiring.py
+  reason: positive control for the new post-land-sweep-dispatch phase marker
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
