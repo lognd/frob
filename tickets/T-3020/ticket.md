@@ -51,6 +51,13 @@ triage_changes:
   actor: logan
   at: '2026-09-15'
 designated_repro_test: null
+acceptance:
+- text: GIVEN frob.narrative's fs.read/fs.write and its cli -> narrative import WHEN
+    frob check --only sys/selfaudit runs THEN neither the SELFAUDIT001 waiver on narrative_blocks_gate
+    nor the SYS003 waiver on _dispatch_narrative exists in source, and both remain
+    unnecessary because design/frob.strata's narrative node and cli -> narrative flow
+    (T-3029) declare the capability directly
+  evidence: []
 threat: null
 component: null
 anchor: false
