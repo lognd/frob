@@ -19,6 +19,7 @@ scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
 - tests/gates_suite/test_invariant.py
+- docs/modules/gate-time-stable-invariant.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +66,13 @@ scope_changes:
   reason: over-broad glob per scope-add warning; not needed -- the fixture is a synthetic
     time-dependent function+test in the gate's own test file, not a real invariants/*.md
     entry
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/modules/gate-time-stable-invariant.md
+  reason: docs/modules/gates.md is leased by T-4111 (same conflict as T-4114/T-4115
+    this sprint); INV010's frob:doc anchor and the frob:invariant kind=/horizon= grammar
+    doc go in a new standalone doc file instead, folded into gates.md later via T-draft-9a4eb7be
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
