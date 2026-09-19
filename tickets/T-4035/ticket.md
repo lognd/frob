@@ -6,6 +6,8 @@ kind: security
 origin: agent
 created: '2026-09-06'
 priority: high
+blocked_by:
+- T-4221
 parent: T-4025
 tier: ticket
 sprint: null
