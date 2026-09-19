@@ -57,6 +57,15 @@ body_changes:
   at: '2026-09-07'
   old_length: 7809
   new_length: 9988
+- mode: append
+  reason: '2026-09-19: attaching SF-18''s evidence row verbatim plus a FRESH fourth
+    and fifth measurement taken while filing epic T-4662 -- 587 scope-closure warnings
+    on a ticket with an EMPTY scope, which disproves the assumption that only tickets
+    touching design/frob.strata are affected'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 9988
+  new_length: 12228
 designated_repro_test: null
 threat: null
 component: null
@@ -236,3 +245,40 @@ their docs to suit a gate. That is the wrong direction, and it strengthens the
 case for the diff-scoped option this ticket already prefers: narrow the closure to
 the anchors the diff actually touches, which requires nothing of the document at
 all.
+
+
+## SF-18 evidence (attached 2026-09-19 by the STRATA friction epic, T-4662)
+
+Recorded in scratchpad/STRATA-FRICTION.md as SF-18, evidence table row verbatim:
+
+| SF-18 | Touching design/frob.strata detonates SCOPE002 over hundreds of unrelated doc anchors | tickets/T-4127/ticket.md: three agents independently measured 140, 345 and 71 on 2026-09-06; 88 open tickets mention SCOPE002 | every strata-touching ticket | MEDIUM |
+
+And verbatim from the SF-18 section:
+- this ticket's own body_changes record "three independent agents measured the
+  same explosion at 140, 345 and 71 on 2026-09-06" and "9 open SCOPE002-titled
+  tickets, 4 filed today by 3 different agents who each hit the explosion while
+  working something unrelated". 88 ticket.md files under tickets/ mention
+  SCOPE002.
+- scratchpad/why-T-4111.txt:154-155: "Scope-closure WARN noise on
+  design/frob.strata (500+ doc-anchor cross-references)".
+- CHANGELOG T-3884 discloses it as known debt: "hundreds of unrelated symbols
+  (docs/strata/roadmap.md alone describes 134), none of which this ticket touches".
+
+FRESH MEASUREMENT, 2026-09-19, taken by the planner while filing epic T-4662:
+filing the epic's own container ticket -- a ticket with an EMPTY scope that
+touches no files at all -- emitted 587 scope-closure warnings, reported as
+"579 more warning(s) collapsed -- set FROB_SCOPE_CLOSURE_VERBOSE=1 and retry to
+see all 587". Every one named a design/frob.strata frob:doc anchor resolving into
+docs/strata/roadmap.md or docs/guides/claude-hooks.md. The same 587 fired again
+on T-4668, whose scope is three files, none of them design/frob.strata.
+
+That is a fourth and fifth independent measurement, higher than any of the
+original three, and it establishes something the earlier ones did not: the
+explosion does not require TOUCHING design/frob.strata. It fires on a ticket
+with no scope whatsoever. Whatever the fix is, "only tickets that touch the hub
+file are affected" is not a true statement about the current behaviour.
+
+NOW A CHILD OF T-4665 (story B of epic T-4662). Related by mechanism, not by
+fix: T-4598 (KERNEL DECOUPLING epic) and T-4680 (DECISION: SF-10, split the
+monofile) both reduce the same contention on design/frob.strata from other
+directions.
