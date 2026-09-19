@@ -1,5 +1,5 @@
 ---
-id: T-draft-4c4a0621
+id: T-4680
 title: 'DECISION: SF-10 -- design/frob.strata is 70% comment prose with 15.4% literal
   duplicate declarations; defaults, or split the monofile?'
 state: queued
