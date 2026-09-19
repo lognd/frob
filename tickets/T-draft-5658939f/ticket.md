@@ -14,7 +14,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/_cli_parsers/**
 - tests/unit/test_cli_group_parity.py
 - src/frob/_cli_parsers/_ops.py
 - src/frob/_cli_parsers/_misc.py
@@ -32,6 +31,12 @@ scope_changes:
   glob: src/frob/_cli_parsers/_misc.py
   reason: reference flat natives parser for the --path mirror pattern; may extract
     shared helper
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: narrow to the two files that actually need the fix; ** collided with T-3995's
+    lease on _check.py
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
