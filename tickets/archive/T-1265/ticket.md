@@ -9,6 +9,10 @@ priority: medium
 parent: T-1193
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
 - src/frob/gates/_coverage.py
@@ -19,6 +23,8 @@ scope:
 - docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_gates.py
@@ -37,6 +43,13 @@ scope_changes:
   reason: repoint CHK-THEME-GITIGNORED-TRUST from T-1265 to its successor T-1366
   actor: logan
   at: '2026-08-01'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2090
+  new_length: 2877
 evidence:
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
@@ -60,6 +73,9 @@ acceptance:
   - tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Successor row from T-1193 (CHK-THEME-GITIGNORED-TRUST, docs/design/registry/check-coverage.yaml).
 
@@ -95,3 +111,5 @@ Right-way fix direction (pick one, or combine):
 Do NOT weaken this to doc-only -- CHK-THEME-GITIGNORED-TRUST is a
 security-relevant trust-boundary finding (a locally-green check proves
 nothing to a reviewer or to CI), not a cosmetic one.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_test_gate.py::TestTestGate.test_ci_workflow_self_gate_does_not_swallow_errors's docstring carried a long narrative (T-1265, CHK-THEME-GITIGNORED-TRUST successor: the CI self-gate step used to run uv run frob check || echo ::warning..., swallowing every finding including ERROR-tier so a real gate error never failed the build; T-4460/T-4481: the self-gate step now tees its output to RUNNER_TEMP/frob-check.log so run: uv run frob check alone no longer matches; asserts the surviving intent structurally via _self_gate_run_script_errors, exercised against synthetic swallow shapes by TestSelfGateRunScriptSwallowDetection below). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
