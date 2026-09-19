@@ -20,6 +20,7 @@ scope:
 - src/frob/strata/_inbound_rate.py
 - tests/unit/strata/test_inbound_rate.py
 - src/frob/strata/_waive.py
+- src/frob/strata/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/strata/_waive.py
+  reason: wiring REL303 into audit/waivers/docs
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/strata/__init__.py
   reason: wiring REL303 into audit/waivers/docs
   actor: logan
   at: '2026-09-19'
