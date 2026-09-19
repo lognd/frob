@@ -18,6 +18,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: '2026-09-19: attaching SF-12''s evidence row verbatim plus corroboration
+    this ticket lacked when filed -- three independent arrivals at item 6''s missing
+    axis (T-3919 item 6, T-3961), item 7 being the same finding as T-4598, and item
+    1 now measured as a discoverability gap since confine/forbid are implemented but
+    among SF-09''s 56 unused keywords'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4957
+  new_length: 7872
 designated_repro_test: null
 threat: null
 component: null
@@ -103,3 +114,50 @@ DO NOT treat any of this as a specification. It is a competent outside reading
 by someone who hit these while doing real security work, written without
 knowledge of frob's internals. Verify each against what exists before building;
 "search the code, not just the queue" applies fully.
+
+
+## SF-12 evidence (attached 2026-09-19 by the STRATA friction epic, T-4662)
+
+Recorded in scratchpad/STRATA-FRICTION.md as SF-12, evidence table row verbatim:
+
+| SF-12 | Eight recorded expressiveness gaps from a real threat-model pass, still unbuilt | tickets/T-3920/ticket.md (queued, high, sprint v0.546.0) -- notably #6 "nothing polices what code may TRUST as identity" and #7 file-granular scope collision (3rd sighting) | 8 gaps | MEDIUM |
+
+From the SF-12 section, the corroboration this ticket did not have when it was
+filed:
+
+- Item 6 ("the capability ratchet polices what code may DO; NOTHING POLICES WHAT
+  IT MAY TRUST AS IDENTITY") is independently corroborated from two other
+  directions: T-3919 item 6 (provenance / `derived_from` for PII atoms) and
+  T-3961 "provenance / trust-as-identity construct in strata" (queued). THREE
+  INDEPENDENT ARRIVALS AT THE SAME MISSING AXIS.
+- Item 7 (scope collision is file-granular, not section-granular, "THIRD
+  sighting ... and the first where it blocked a SECURITY pass") is the same
+  finding as SF-06, which is T-4598 in the KERNEL DECOUPLING epic. Fix it there,
+  not here.
+- Item 1 (no negative/exclusion globs on [[policy.pattern]], a consumer
+  gerrymandering globs because they could not say "ban X except in Y") turns out
+  to be a DISCOVERABILITY gap, not a missing feature: SF-09 measured that
+  `confine` and `forbid` are both implemented in strata-core's parser and
+  `confine` is documented in docs/strata/policy.md -- and both are in the list of
+  56 keywords used NOWHERE in the entire .strata corpus. This ticket guessed that
+  ("exactly as T-3920 guessed", per the audit); it is now measured. See T-4678
+  (DECISION: SF-09).
+- Consumer-round corroboration of the same class: T-4157 "consumer round-4 engine
+  audit: findings frob or strata should have caught" (H4-1 is a dynamic import by
+  source path against design/logand-app.strata; line 115 proposes
+  `may: dom.global_key_capture`) and T-4109 "consumer round-3 backend audit: ten
+  defects frob or strata should have caught".
+
+WHY THIS IS NOW A CHILD OF T-4667 (story D of epic T-4662) AND NOT OF A BUILD
+STORY: the audit records this ticket's fix surface as "the grammar and semantics
+(item 6 especially), the gate (item 8), and tooling/diagnostics (item 2)". The
+owner is personally rethinking strata grammar and semantics, so T-4662 treats
+every grammar-surface finding as a DECISION to be recorded, not as work to be
+started. Item 6 in particular is a new axis in the language and must not be
+designed ahead of that rethink.
+
+Items 2 (tree-sitter query field order diagnostics) and 8 (INV001/INV002 have no
+waiver path) are NOT grammar and could be split into leaves at any time; item 1
+is now answered by discoverability work rather than new grammar. This ticket
+keeps its existing sprint v0.546.0 commitment; it is attached here so the
+decision it needs is visible in one place.
