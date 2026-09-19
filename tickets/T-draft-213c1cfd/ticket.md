@@ -23,6 +23,7 @@ scope:
 - docs/modules/gate-sys111-ratchet-auto-accept.md
 - tests/strata/test_sys111_auto_accept.py
 - tests/unit/strata/test_selfconform.py
+- tickets/T-4605/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +52,12 @@ scope_changes:
 - op: add
   glob: tests/unit/strata/test_selfconform.py
   reason: frob:tests directives for branch-own via growth auto-accept
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tickets/T-4605/ticket.md
+  reason: append fold-in note for gate-sys111-ratchet-auto-accept.md, same convention
+    as prior lease-conflict fold-ins
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
