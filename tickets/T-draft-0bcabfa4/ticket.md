@@ -165,9 +165,18 @@ body_changes:
   at: '2026-09-19'
   old_length: 7464
   new_length: 7623
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure decision record: the owner ruling is recorded
+    verbatim; the behaviour lands in the grammar, linker and migration leaves'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7623
+  new_length: 7782
 evidence:
 - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
   tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
+- cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+  tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=fd01c186c636
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
@@ -176,18 +185,24 @@ acceptance:
   evidence:
   - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
     tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
+  - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+    tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=fd01c186c636
 - text: Given the 16 bidirectional pairs listed in the body, when the decision is
     applied on paper to each pair, then each pair is shown to be expressible without
     an import cycle, or is named as needing option (b) or (c) with a reason.
   evidence:
   - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
     tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
+  - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+    tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=fd01c186c636
 - text: Given the decision, when the grammar and linker leaves start, then their acceptance
     criteria are reconciled with it (accepts naming an unimported module; SCC over
     imports only).
   evidence:
   - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
     tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
+  - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+    tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=fd01c186c636
 threat: null
 component: null
 anchor: false
@@ -281,6 +296,8 @@ frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 (h
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
+
+frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
 
