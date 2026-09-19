@@ -19,6 +19,7 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_land.py
+- tests/unit/rapid_sweep_suite/*
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land.py
   reason: land staging writer for ratchet lock
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/rapid_sweep_suite/*
+  reason: positive-control tests for filtering
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
