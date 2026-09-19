@@ -2,7 +2,7 @@
 id: T-4689
 title: Telemetry records the verb and subverb of every frob invocation (91% of rows
   carry none today)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -18,10 +18,18 @@ scope:
 - .claude/hooks/tool-call-telemetry.py
 - src/frob/app/telemetry/**
 - tests/unit/test_telemetry_verb_recording.py
+- src/frob/app/app.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/app.py
+  reason: record_cli_event/timed_call call site lives in app.py's App.__call__, not
+    __main__.py; needed to compute and pass subverb per T-4689
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
