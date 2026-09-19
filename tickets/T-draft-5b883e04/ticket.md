@@ -1,0 +1,89 @@
+---
+id: T-draft-5b883e04
+title: Regenerate docs/commands from the final CLI surface (18 files for 51 verbs
+  today) and report the drift in the owner-owned ~/.claude/refs/frob.md
+state: queued
+kind: docs
+origin: human
+created: '2026-09-19'
+priority: high
+blocked_by:
+- T-4690
+- T-4692
+- T-4695
+- T-4696
+- T-4698
+parent: T-4687
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- docs/commands/**
+- docs/design/cli-regrouping.md
+- tests/unit/test_docs_commands_coverage.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: Given the live argparse tree, when the coverage test runs, then every top-level
+    verb has a docs/commands entry and every docs/commands entry names a live verb
+  evidence: []
+- text: Given a planted verb with no doc and a planted doc with no verb, when the
+    coverage test runs, then it fails on each -- the assertion is proven to fire in
+    both directions
+  evidence: []
+- text: Given ~/.claude/refs/frob.md, when this ticket closes, then the Done report
+    lists each stale spelling with file:line and replacement text and the file itself
+    is unmodified
+  evidence: []
+threat: null
+component: docs
+labels:
+- cli-debloat
+- points-2
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+POINTS: 2. Parent story T-4687. blocked_by T-4689, T-4690, T-4691, T-4692,
+T-4693 -- it documents the FINAL surface, so it cannot start until the surface
+has stopped moving.
+
+MEASURED 2026-09-19: docs/commands/ holds 18 files (check, cli-vocabulary,
+cycle, deploy, exports, format, gitlog, map, narrative, outline, parse,
+refactor, release, scaffold, sync-skills, sys, ticket, xref) against 51
+top-level verbs and 54 ticket subverbs. It documented a third of the surface
+before this story started, and this story moves or deletes most of what it does
+cover (cycle, exports, gitlog, map, outline, parse, xref all move).
+
+WORK:
+1. Regenerate docs/commands/ from the FINAL surface. Prefer generating it from
+   the argparse tree over hand-writing 18 more files -- if a generator does not
+   exist, write one and wire it so the docs cannot drift again silently. Say in
+   the Done report whether it was generated or hand-written and why.
+2. Update docs/commands/cli-vocabulary.md and docs/design/cli-regrouping.md:
+   the latter is the design doc that JUSTIFIED the four group verbs T-4689
+   deletes. It must record that the regrouping was reverted, and why (the
+   groups added four names and removed zero).
+3. `git grep` every removed spelling across docs/ and fix the citations.
+
+OUT OF SCOPE, REPORT ONLY: ~/.claude/refs/frob.md is the OWNER'S file. Do not
+edit it. The Done report must list, line by line, the edits it needs: each stale
+verb spelling, its file:line, and the replacement text -- so the owner can apply
+them without re-deriving anything.
+
+POSITIVE CONTROL (acceptance): a test that walks the live argparse tree and
+asserts every top-level verb has a docs/commands entry AND every docs/commands
+entry names a live verb -- it must FAIL if a verb is added without docs or a
+doc outlives its verb. Plant one of each in the test fixture to prove the
+assertion fires in both directions.
+
+FILES (declared scope):
+  docs/commands/**
+  docs/design/cli-regrouping.md
+  tests/unit/test_docs_commands_coverage.py (new)
