@@ -25,6 +25,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'owner decision: docstring half split to T-4807; record the narrowed scope
+    and the generalisation requirement'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2572
+  new_length: 3597
 designated_repro_test: null
 acceptance:
 - text: given a fixture with a '# T-1234:' citation and 3 prose lines under it, when
@@ -92,3 +100,21 @@ archived path and `frob ticket list` still exits 0.
 
 NEGATIVE CONTROL: a block where the citation is a `frob:ticket` directive is not
 touched by `--fix` at all.
+
+
+SCOPE NARROWED 2026-09-19 (owner decision on the docstring half). This leaf is
+the COMMENT-RUN half of the Tier-A fix only. The DOCSTRING half -- keep paragraph
+1, route the remainder to the cited ticket or to docs/modules/<module>.md with a
+`frob:doc` pointer -- is split out as T-4807, blocked by this leaf, because it
+adds a second destination type (docs/modules writes, heading creation, pointer
+emission, COV/TEST finding invariance) and would have taken this leaf past three
+points.
+
+T-4807 REUSES this leaf's machinery rather than building a parallel one: the same
+Tier-A registration, the same ledger write inside the fix transaction, the same
+idempotency guarantee, the same archived-path DuplicateId precaution. Design those
+here so they generalise to a second destination -- a transaction that can only
+write ticket bodies will have to be reopened for T-4807.
+
+The owner's framing for both halves: AUTOMATE IT, NO SEPARATE VERB. Neither half
+gets a command an agent has to remember; both are `frob check --fix`.
