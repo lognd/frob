@@ -24,6 +24,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: '2026-09-19: coordinator/owner amendment -- D-M6 splits design/frob.strata
+    module by module and migration step 7 splits the ratchet lock per module, so the
+    single loader/writer this ticket builds must be designed for per-module lock files
+    from the start rather than retrofitted'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2785
+  new_length: 5145
 designated_repro_test: null
 acceptance:
 - text: Given the committed lock carries 3 capability keys at the JSON top level (stratamod::fs.read
@@ -91,3 +101,46 @@ BLOCKER: T-4598 (KERNEL DECOUPLING epic) -- shared registry files must be
 append-shared, not whole-file leases. This leaf's whole job is rewriting
 docs/design/registry/capability-via-ratchet.lock.json, so it is exactly the case
 T-4598 exists to unblock; starting it before T-4598 serialises the fleet.
+
+
+## AMENDMENT 2026-09-19 -- design for PER-MODULE lock files from the start
+
+Binding constraint added by the coordinator on the owner's module-system
+decisions (D-M6, recorded on T-4680, now closed):
+
+**The single loader/writer/schema this ticket builds must be designed for
+per-module lock files from the start -- `design/<module>.via.lock.json` -- not
+for the one monolithic `docs/design/registry/capability-via-ratchet.lock.json`
+with a per-module split retrofitted later.**
+
+WHY. D-M6 decided that design/frob.strata is split module by module, by hand,
+and **migration step 7 of the module system splits the ratchet lock per module**.
+So the single-file lock this ticket is cleaning up is already known to be
+temporary. A loader written against one global `entries` map, then retrofitted,
+would be the third writer of this file rather than the last one -- which is
+precisely the failure mode this ticket exists to end (SF-03: two writers, two
+schemas, one file; SF-13: four regressions on the same mechanism).
+
+WHAT THIS CHANGES ABOUT THE WORK HERE
+- The loader's interface takes a MODULE, not a root path, and resolves that
+  module's lock; the single global file is one implementation of that resolution,
+  not the shape the API assumes.
+- The schema validator validates ONE module's lock, and the "no capability keys
+  outside `entries`" rule is a per-file rule, so it keeps working unchanged after
+  the split.
+- The key namespace is already module-prefixed (`stratamod::fs.read`,
+  `testsuite::net`, `gates::fs.write`), so the split is a partition of the
+  existing keyspace by the part before `::`. Do not invent a second naming
+  scheme.
+- Migration must be expressible as: read the one global file, write N per-module
+  files, with the drift reporter (T-4670) reporting zero drift across the move.
+  If the design cannot express that, it is the wrong design.
+
+WHAT THIS DOES NOT CHANGE
+This ticket still deletes the 3 shadow top-level keys and still lands the
+positive control that fails at HEAD. It does NOT perform the per-module split --
+that is migration step 7 of the module-system story, filed by the other planner.
+This ticket only guarantees the split will not require a fourth rewrite.
+
+The T-4598 blocker is unchanged and still real: this ticket rewrites the shared
+lock file, which 5 other tickets' scopes already name (2 in-progress).
