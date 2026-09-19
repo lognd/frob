@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: '2026-09-19: DECISION ticket -- its deliverable is an owner
+  decision recorded in the body, which legitimately changes no files'
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (headline
