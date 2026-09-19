@@ -61,6 +61,14 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: A branch whose SYS111 ratchet-ceiling growth is exactly accounted for by its
+    own via additions to design/frob.strata auto-accepts at land composed-tree check
+    time (lock rewritten with a reason naming the ticket), never outside a land.
+  evidence: []
+- text: A branch whose growth includes an undeclared site (or growth another already-landed
+    ticket is responsible for) still refuses.
+  evidence: []
 threat: null
 component: null
 anchor: false
