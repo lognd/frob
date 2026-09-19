@@ -23,6 +23,7 @@ scope:
 - src/frob/strata/__init__.py
 - src/frob/app/sys_runner.py
 - docs/strata/threat.md
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,11 @@ scope_changes:
   at: '2026-09-19'
 - op: add
   glob: docs/strata/threat.md
+  reason: wiring SYS111/SYS112 into audit/waivers/docs
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
   reason: wiring SYS111/SYS112 into audit/waivers/docs
   actor: logan
   at: '2026-09-19'
