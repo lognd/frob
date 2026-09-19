@@ -46,6 +46,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 1987
   new_length: 3223
+- mode: set
+  reason: 'DOC006: planned CLI forms written as prose so unrelated lands are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3223
+  new_length: 3255
 designated_repro_test: null
 acceptance:
 - text: Given a fixture repo with a KNOWN conventional-commit history, when frob explore
@@ -120,7 +126,7 @@ and no longer moves map/outline/xref/docs-search. T-4690 keeps `explore` as the
 surviving verb and deletes their standalone mirrors, so those four leaves are
 ALREADY under `explore` when this ticket starts. This ticket only ADDS to it.
 
-MOVE UNDER `frob explore`, deleting each top-level spelling with a T-4690 shim:
+MOVE UNDER frob explore (planned), deleting each top-level spelling with a T-4690 shim:
   gitlog                          -> frob explore gitlog
   stats                           -> frob explore stats
   graph query|why|affects         -> frob explore graph-query|graph-why|
@@ -130,7 +136,7 @@ MOVE UNDER `frob explore`, deleting each top-level spelling with a T-4690 shim:
   deprecated (moved here from T-4692) -> frob explore deprecated
 `debt` and `deprecated` are read-only listings ("list outstanding frob:debt
 entries", "list outstanding frob:deprecated entries"), which is why they belong
-here and not behind `frob check --only`.
+here and not behind frob check --only (planned).
 
 NAME: `explore`, not `show`. MEASURED by `git grep -c` over .claude/ docs/
 scripts/ src/ tests/: "frob explore" 95 citations, "frob show" 0. The name is
@@ -145,10 +151,10 @@ these are four names for two concepts. T-4698 renders the verdict on the
 `ticket` side; coordinate so the two tickets do not both decide, and record the
 agreed outcome in whichever closes second.
 
-POSITIVE CONTROL (acceptance): a test that runs `frob explore gitlog` on a
+POSITIVE CONTROL (acceptance): a test that runs frob explore gitlog (planned) on a
 fixture repo with a KNOWN conventional-commit history and asserts the expected
 type/granularity rollup appears; plus a test asserting the deprecated top-level
-`frob gitlog` prints the `frob explore gitlog` spelling on stderr and returns
+`frob gitlog` prints the frob explore gitlog (planned) spelling on stderr and returns
 the identical output before the sunset date. "Runs without crashing" does not
 close this ticket.
 
