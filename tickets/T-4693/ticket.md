@@ -2,7 +2,7 @@
 id: T-4693
 title: 'DOCARCH002: structural comment lint -- content-blind length cap, T-#### citations
   must be directives, ratcheted (baseline 507 runs/1055 docstrings/2303 citations)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -19,10 +19,17 @@ scope:
 - tests/gates/test_docarch_structural.py
 - docs/modules/gates.md
 - frob.toml
+- frob-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: frob-ratchet.lock.json
+  reason: T-4693 DOCARCH002 ratchet baseline snapshot
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a 20-line comment run of pure algorithm explanation citing no ticket,
