@@ -1,5 +1,5 @@
 ---
-id: T-draft-b98ca434
+id: T-4743
 title: 'frob ticket evidence --bind and docs-gate --bind: write directives from recorded
   evidence, never guess a binding'
 state: queued
