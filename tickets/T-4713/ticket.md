@@ -1,5 +1,5 @@
 ---
-id: T-draft-fa5c24c8
+id: T-4713
 title: Directive stack lint (N+ consecutive, default 4) plus a Tier-A fix that merges
   same-kind directives into multi-target headers
 state: queued
