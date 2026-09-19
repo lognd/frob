@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/_quarantine.py
 - tests/unit/verify/test_quarantine.py
+- src/frob/app/verify_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
   glob: tests/unit/verify/test_quarantine.py
   reason: 'T-3082: add regression tests for the new .frob/quarantine.status tombstone
     marker written by raise/clear_quarantine'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/app/verify_runner.py
+  reason: 'T-3082: wire quarantine_status_marker into frob verify status output so
+    a human reading the CLI (not just raw disk) also sees the tombstone distinction'
   actor: logan
   at: '2026-09-19'
 triage_changes:
@@ -41,13 +48,24 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_none_when_never_raised
+- tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_raised_after_raise
+- tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_clear
+- tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_retire_unidentifiable_findings
+- tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_stays_raised_when_retire_leaves_a_sibling_undisposed
 designated_repro_test: null
 acceptance:
 - text: GIVEN a raised quarantine is cleared (via clear_quarantine or retire_unidentifiable_findings)
     WHEN a caller reads .frob/quarantine.status directly THEN it reads 'cleared',
     never the byte-identical-in-shape stale record misread as live; the marker reads
     'raised' only while genuinely raised
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_none_when_never_raised
+  - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_raised_after_raise
+  - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_clear
+  - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_retire_unidentifiable_findings
+  - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_stays_raised_when_retire_leaves_a_sibling_undisposed
 threat: null
 component: null
 anchor: false
