@@ -29,6 +29,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 363
   new_length: 958
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 958
+  new_length: 1804
 evidence:
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_is_symref_gates
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
@@ -54,3 +60,5 @@ land_commit: null
 T-0809 reviewer condition (b): _cov006_third_file_reachable (gates/__init__.py ~3361) does split('::',1)[1] on every closure entry and IndexErrors on any non-symref (discovered when mark_unresolved=True injected UNRESOLVED_CALLEE); same shape assumption at 3 gates call sites + dup/_pipeline. Any future graph extension crashes them. Harden all closure consumers.
 
 DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov006_third_file_reachable_skips_unresolved_callee_sentinel's docstring used to say: 'T-0814 (T-0809 reviewer condition b): _cov006_third_file_reachable iterates closure(...)'s output and used to do helper_symref.split("::", 1)[1] unconditionally -- a bare UNRESOLVED_CALLEE sentinel entry (no ::) IndexErrors that. Forcing closure to always return the sentinel proves the function now skips it and returns cleanly instead of raising.' Moved here; the test docstring now states only what it verifies.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers.test_callee_name_map_skips_unresolved_callee_sentinel's docstring used to say: 'T-0814: _callee_name_map iterates graph.calls.get(caller, ()) and used to do callee_symref.split("::", 1)[1] unconditionally -- a bare UNRESOLVED_CALLEE sentinel entry (no ::) IndexErrors that. A CallGraph carrying the sentinel alongside a real callee must not raise, and the real callee must still resolve -- the sentinel is skipped, not silently swallowing real entries too.' Moved here; the test docstring now states only what it verifies. (Note: this is a second, distinct test citing T-0814 alongside tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov006_third_file_reachable_skips_unresolved_callee_sentinel, also cleaned in this same T-4420 pass.)
