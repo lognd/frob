@@ -1,5 +1,5 @@
 ---
-id: T-draft-3a073b48
+id: T-4695
 title: 'Fold the read-only analysis surface into one verb: explore map/outline/xref/docs-search/gitlog/stats
   and the graph queries'
 state: queued
