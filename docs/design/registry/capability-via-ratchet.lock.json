@@ -76,14 +76,14 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 38,
-      "reason": "T-4517: adds src/frob/testing/_collect_csharp.py to core's fs.read via-list (C# test collector reads .cs sources / writes its cache). One new site.",
-      "ticket": "T-4517"
+      "accepted_count": 41,
+      "reason": "T-4508: adds src/frob/testing/_dotnet_runner.py to core's fs.read via-list (the .NET test runner reads test-discovery output). Three new sites over the T-4517 ceiling.",
+      "ticket": "T-4508"
     },
     "core::fs.write": {
-      "accepted_count": 28,
-      "reason": "T-4503: adds src/frob/scaffold/_unity_project.py to core's fs.write via-list (render_unity_project writes rendered .strata fragments per (node, path) pair). One new site.",
-      "ticket": "T-4503"
+      "accepted_count": 30,
+      "reason": "T-4508: adds src/frob/testing/_dotnet_runner.py to core's fs.write via-list (the .NET test runner writes its results/cache file). Two new sites, re-applied on top of dev's T-4503 baseline (which already added src/frob/scaffold/_unity_project.py, one new site, raising the T-4517 ceiling of 27 to 28) -- 28 + 2 = 30.",
+      "ticket": "T-4508"
     },
     "core::process-control": {
       "accepted_count": 1,
@@ -226,14 +226,14 @@
       "ticket": "T-3591"
     },
     "testsuite::env.read": {
-      "accepted_count": 50,
-      "reason": "T-4596: pre-accepted by hand because the land-side auto-accept is the defect this ticket fixes",
-      "ticket": "T-4596"
+      "accepted_count": 51,
+      "reason": "T-4508: land-repair merge with dev (T-4563) landed on top of this ticket brings testsuite::env.read to 51 measured sites; bumping the ceiling 50 -> 51 to match the currently measured, real via-list.",
+      "ticket": "T-4508"
     },
     "testsuite::env.write": {
-      "accepted_count": 6,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 7,
+      "reason": "T-4508: adds tests/unit/test_dotnet_runner.py to testsuite's env.write via-list (positive-control tests set env vars to drive the .NET runner's discovery path). One new site over the T-3029 baseline.",
+      "ticket": "T-4508"
     },
     "testsuite::eval": {
       "accepted_count": 26,
@@ -261,8 +261,9 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 538,
-      "reason": "testsuite glob growth"
+      "accepted_count": 540,
+      "reason": "T-4508: land-repair merge with dev brings testsuite::fs.write to 540 measured sites (T-4111/T-4524 test additions landed on dev in between); bumping the ceiling 538 -> 540 to match the currently measured, real via-list.",
+      "ticket": "T-4508"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

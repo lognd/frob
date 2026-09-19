@@ -84,6 +84,16 @@ class TestingError(ErrorSet):
         "The native strata sys-audit invocation for a touched .strata "
         "selection could not load or evaluate the design model (T-0242)"
     )
+    # frob:ticket T-4508
+    DotnetRunFailed = (
+        "dotnet test exited with no TRX results file -- a crash/timeout, "
+        "not a genuine test failure"
+    )
+    # frob:ticket T-4508
+    DotnetResultsUnreadable = (
+        "dotnet test's TRX output was malformed, or a requested node id "
+        "had no matching result -- never a silent empty pass"
+    )
 
 
 def _validate_placeholder(command: tuple[str, ...]) -> str | None:

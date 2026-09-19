@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testId="id-1" outcome="Passed" />
+    <UnitTestResult testId="id-2" outcome="Failed" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest id="id-1" name="AddsTwoNumbers">
+      <TestMethod className="Frob.Fixtures.Csharp.SampleNunitTests, SampleAssembly" name="AddsTwoNumbers" />
+    </UnitTest>
+    <UnitTest id="id-2" name="AddsPair">
+      <TestMethod className="Frob.Fixtures.Csharp.SampleNunitTests, SampleAssembly" name="AddsPair" />
+    </UnitTest>
+  </TestDefinitions>
+</TestRun>

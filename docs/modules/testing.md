@@ -347,6 +347,27 @@ backdating internals (`_tracked_source_digest`,
 itself stays a thin, same-signature wrapper in `_native_staleness.py`, so
 every existing caller keeps importing it from there unchanged.
 
+T-4508: `run_dotnet_tests` (`frob.testing._dotnet_runner`, split out of
+`_runners.py` once adding this channel crossed `LARGE001`'s 800-line
+threshold -- same rationale as `_native_staleness_digest.py` above) adds
+a direct, non-bisection evidence channel for T-4517's csharp node ids:
+ONE batched
+`dotnet test --filter FullyQualifiedName=...` invocation, its TRX output
+parsed into a per-node `{node_id: passed}` map -- distinct from
+`run_selected`'s generic `[[test.runner]]` path (which only ever reports
+one aggregate exit code per spawn, never a per-test breakdown). The
+sibling Unity batchmode channel (`frob.testing._unity_batchmode.
+run_unity_batchmode`, NUnit3 XML instead of TRX, editor resolution via
+`[tool.frob] unity_editor`/T-4501's doctor lookup) is documented in
+`docs/guides/unity.md` rather than here, since it is not a `[[test.
+runner]]`-shaped command at all (a Unity Editor launch is minutes, not
+seconds, so it always runs one whole selected batch per invocation, with
+no bisection-friendly single-test rerun). Both channels share the same
+"never a silent empty-results false pass" rule: a requested node id
+absent from the parsed results, or a run that exits with no results file
+at all, is a hard `Err`, never an omitted map entry.
+
+<!-- frob:describes src/frob/testing/_dotnet_runner.py::run_dotnet_tests -->
 <!-- frob:describes src/frob/strata/_native_staleness.py::record_native_build_attempt -->
 <!-- frob:describes src/frob/strata/_native_staleness.py::stale_natives -->
 <!-- frob:describes src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes -->

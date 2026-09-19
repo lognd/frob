@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test-run id="1" testcasecount="2" result="Failed">
+  <test-suite type="Assembly" fullname="SampleAssembly.dll">
+    <test-suite type="TestFixture" fullname="Frob.Fixtures.Csharp.SampleUnityTests">
+      <test-case fullname="Frob.Fixtures.Csharp.SampleUnityTests.SpawnsPlayerNextFrame" result="Passed" />
+      <test-case fullname="Frob.Fixtures.Csharp.SampleUnityTests.MovesPlayerRight" result="Failed" />
+    </test-suite>
+  </test-suite>
+</test-run>
