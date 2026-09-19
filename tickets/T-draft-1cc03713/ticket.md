@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_pii.py
 - tests/**/test_sys*.py
+- src/frob/gates/_sys_provenance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
 - op: add
   glob: tests/**/test_sys*.py
   reason: tests for SYS10x consumer rule
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/gates/_sys_provenance.py
+  reason: new SYS10x consumer rule module for derived_from/trust_identity (avoids
+    _sys.py lease held by T-4212)
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
