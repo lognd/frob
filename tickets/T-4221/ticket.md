@@ -19,7 +19,6 @@ scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
 - tests/gates_suite/test_invariant.py
-- invariants/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +58,13 @@ scope_changes:
     same validator that already shapes no_import=/establishes= for this verb; the
     runner itself and its tests stay in src/frob/gates/_inv.py per declared scope,
     but the grammar cannot be added without touching its one existing home
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: invariants/
+  reason: over-broad glob per scope-add warning; not needed -- the fixture is a synthetic
+    time-dependent function+test in the gate's own test file, not a real invariants/*.md
+    entry
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
