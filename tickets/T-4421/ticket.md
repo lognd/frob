@@ -446,6 +446,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+body_changes:
+- mode: append
+  reason: record measured denominator and scope-split rationale
+  actor: logan
+  at: '2026-09-19'
+  old_length: 326
+  new_length: 1455
 designated_repro_test: null
 acceptance:
 - text: Given a full frob check on tests/system, scripts/, and the remaining test
@@ -458,3 +465,25 @@ anchor_reason: null
 land_commit: null
 ---
 DOCARCH001 measured tests/system 12 + scripts/fleet_status.py 7 + remaining tests ~100 = ~119 findings (owner's estimate ~130) on a full check today (2026-09-11), outside src/frob, tests/unit and the land+gates suites. Rewrite each flagged docstring to state WHAT the symbol/test does. Denominator: ~130 (system+scripts+rest).
+
+
+## Scope split (2026-09-19)
+
+Owner's original estimate of ~130 combined DOCARCH001 findings for
+tests/system + scripts/ + remaining test corpora was measured wrong: a
+`frob check --only gates --files tests/system --files scripts/fleet_status.py
+--base dev` run (filtered to DOCARCH001) found 500+ findings repo-wide across
+src/frob, tests/gates_suite, tests/system, tests/ticket_land_suite,
+tests/unit, tests/vet_suite, and top-level tests/test_*.py -- the "remaining
+test corpora" clause alone is ~150+ findings across ~100 files, each needing
+a judged rewrite plus moving narrative into the originating ticket.
+
+Scope narrowed to scripts/** and tests/system/** (excluding
+tests/system/test_system.py, which is leased by T-4612 via its
+'tests/**/test_sys*.py' glob and carries no DOCARCH001 finding of its own).
+Measured denominator for the narrowed scope: ~15-20 (scripts/fleet_status.py
+7, scripts/verify_lands.py 1, tests/system/* ~7-12 depending on the sys_audit
+file's lease status).
+
+The remainder is being split into child tickets in clusters of ~30 findings
+each, parented to this ticket via `frob ticket set-parent`.
