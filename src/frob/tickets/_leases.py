@@ -2921,6 +2921,7 @@ def refuse_if_land_in_progress(
     monotonic: Callable[[], float] = _time.monotonic,
     now_wall: Callable[[], datetime] = lambda: datetime.now(UTC),
     exclude_pid: int | None = None,
+    whole_land: bool = False,
 ) -> Result[None, LeaseError]:
     """`Err(LeaseError.LandInProgress)` iff `root`'s single-writer ledger
     lock (`.frob/tickets.lock`) is currently held by a live writer --
@@ -2938,6 +2939,14 @@ def refuse_if_land_in_progress(
     `docs/modules/tickets-landing.md` for the full incident/rationale.
     `land()` itself never called this function and is unaffected.
 
+    T-4556: `whole_land=True` restores the pre-T-3612 `land.lock`-
+    duration probe for the small set of verbs that rewrite MANY ticket
+    files across their own multi-file transaction with no single
+    `tickets.lock` span covering it (`renumber`/`promote`/`archive`/
+    `migrate`) -- see `_probe_land_once`'s docstring for the exact
+    rationale. Every OTHER caller leaves this `False` (the T-3612
+    splice-only probe, unchanged).
+
     T-2406: `exclude_pid`, when given, is threaded to every `_probe_
     land_once` call -- see `_refuse_for_held_land_lock`'s docstring for
     the exact single-pid exclusion rule `frob.verify._drain` relies on."""
@@ -2948,7 +2957,9 @@ def refuse_if_land_in_progress(
     deadline = monotonic() + remaining_budget
     warned = False
     while True:
-        result = _probe_land_once(root, quiet=warned, exclude_pid=exclude_pid)
+        result = _probe_land_once(
+            root, quiet=warned, exclude_pid=exclude_pid, whole_land=whole_land
+        )
         if result.is_ok:
             _log_allowed_write_during_land(root)
             return result
@@ -2988,8 +2999,13 @@ def _warn_wait_budget_exhausted(
 
 # frob:ticket T-1961
 # frob:ticket T-3612
+# frob:ticket T-4556
 def _probe_land_once(
-    root: Path, *, quiet: bool, exclude_pid: int | None = None
+    root: Path,
+    *,
+    quiet: bool,
+    exclude_pid: int | None = None,
+    whole_land: bool = False,
 ) -> Result[None, LeaseError]:
     """`refuse_if_land_in_progress`'s per-iteration body, split out to
     keep that function under the ARCH001 threshold.
@@ -3005,7 +3021,21 @@ def _probe_land_once(
     land.lock-based check; `ledger_lock` carries no holder pid to
     compare against) purely so this function's own signature -- and
     `refuse_if_land_in_progress`'s, and `frob.verify._drain`'s one call
-    passing that argument -- needs no change."""
+    passing that argument -- needs no change.
+
+    T-4556: `whole_land=True` reverts to the pre-T-3612 `_land_flock_
+    probe` (`land.lock`, held for a land's ENTIRE duration) instead of
+    the splice-only probe, for the small set of verbs
+    (`renumber`/`promote`/`archive`/`migrate`) that rewrite MANY ticket
+    files across their own multi-file transaction with no single
+    `tickets.lock` span covering it -- T-3612's narrowed probe let those
+    verbs interleave with a land's out-of-tree compose, since the
+    splice window they need excluded against is the land's whole
+    lifetime, not one short critical section. `exclude_pid` is honored
+    (not discarded) on this path, matching `_land_flock_probe`'s own
+    contract."""
+    if whole_land:
+        return _land_flock_probe(root, quiet=quiet, exclude_pid=exclude_pid)
     del exclude_pid  # T-3612: no holder pid on the bare ledger flock
     return _ledger_splice_flock_probe(root, quiet=quiet)
 

@@ -62,7 +62,7 @@ scope_changes:
   at: '2026-09-19'
 - op: remove
   glob: src/frob/app/ticket_runner/_land_cmd.py
-  reason: unused in final diff -- freeing for T-draft-f5ac9ec0
+  reason: unused in final diff -- freeing for T-4599
   actor: logan
   at: '2026-09-19'
 evidence:

@@ -1,5 +1,5 @@
 ---
-id: T-draft-fced7fcf
+id: T-4600
 title: 'post-land residue from T-4214 (WAIVE012 until= predicate): COV001 src/frob/graph/dsl.py,
   COV002 src/frob/gates/_waive.py and tests/test_waive_gate.py, COV007 src/frob/gates/_waive.py
   -- new public symbols lack frob:doc/frob:tests edges'

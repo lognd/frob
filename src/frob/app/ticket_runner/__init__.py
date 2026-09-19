@@ -545,9 +545,28 @@ _LAND_SAFE_READ_ONLY_VERBS = frozenset(
 #     the land lock on its own terms; T-1699 owns that interaction.
 _LAND_LOCK_EXEMPT_VERBS = frozenset({"land", "merge-driver", "sweep-async"})
 
+# frob:ticket T-4556
+# Verbs classified WHOLE-LAND rather than splice-only for the pre-dispatch
+# guard below: T-3612 narrowed `refuse_if_land_in_progress` to probe only
+# `tickets.lock`'s short splice window, correct for every OTHER mutating
+# verb (each commits through that exact lock via `commit_ticket_ledger_
+# change`/`_add_and_commit_tickets_md`, T-1130/T-1178), but "renumber"/
+# "promote"/"archive" own their OWN multi-file transaction across MANY
+# ticket files with no single `tickets.lock` span covering the whole
+# rewrite (T-1615 deliberately excludes them from the uniform auto-
+# commit) -- so the splice-only probe let them interleave with a land's
+# out-of-tree compose for their entire multi-file duration, not just a
+# few seconds. "migrate" is included even though T-4521 removed its
+# handler to a no-op notice: it is still dispatched through this same
+# guard and this ticket's acceptance criterion names it explicitly.
+# These get `whole_land=True` (the pre-T-3612 `land.lock`-duration probe)
+# instead.
+_LAND_WHOLE_LAND_VERBS = frozenset({"renumber", "promote", "archive", "migrate"})
+
 
 # frob:ticket T-1779
 # frob:ticket T-1779
+# frob:ticket T-4556
 # frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_land_in_progress  # noqa: E501
 # frob:tests \
@@ -556,6 +575,10 @@ _LAND_LOCK_EXEMPT_VERBS = frozenset({"land", "merge-driver", "sweep-async"})
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_land_verb_itself_is_exempt
 # frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the_ticket_file_at_all  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_renumber_refused_while_only_land_lock_held  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_splice_only_verb_allowed_while_only_land_lock_held  # noqa: E501
 def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) -> None:
     """`run()`'s pre-dispatch closing of T-1779's gap 1: the EXISTING
     `refuse_if_land_in_progress` guard (T-1619) only ran inside
@@ -588,7 +611,15 @@ def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) ->
     mutating verb). Runs BEFORE the land-in-progress refusal below, same
     ordering `land()` itself already uses (reclaim first, since a
     genuinely live land still holds `land.lock` and this is a provable
-    no-op against it -- see that function's own docstring)."""
+    no-op against it -- see that function's own docstring).
+
+    T-4556: `command in _LAND_WHOLE_LAND_VERBS` (renumber/promote/
+    archive/migrate) is threaded to `refuse_if_land_in_progress` as
+    `whole_land=True` -- T-3612 narrowed the guard's probe to `tickets.
+    lock`'s short splice window, correct for every verb that commits
+    through that lock, but wrong for these four, which own their own
+    multi-file transaction with no such commit step. See
+    `_LAND_WHOLE_LAND_VERBS`' own comment for the full rationale."""
     if command in _LAND_SAFE_READ_ONLY_VERBS or command in _LAND_LOCK_EXEMPT_VERBS:
         return
     from frob.tickets._land_git_ops import reclaim_orphaned_squash_residue
@@ -604,7 +635,9 @@ def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) ->
             reclaimed.danger_err,
         )
 
-    refused = refuse_if_land_in_progress(root)
+    refused = refuse_if_land_in_progress(
+        root, whole_land=command in _LAND_WHOLE_LAND_VERBS
+    )
     if refused.is_err:
         _log.error(
             "ticket %s: refused -- %s", command or "<unknown>", refused.danger_err

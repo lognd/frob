@@ -2,7 +2,7 @@
 id: T-4556
 title: 'T-3612 follow-up: renumber, promote and archive still route through the narrowed
   LandInProgress probe; their multi-file writes need the whole-land exclusion back'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-17'
@@ -22,12 +22,21 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_renumber_refused_while_only_land_lock_held
+- tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_splice_only_verb_allowed_while_only_land_lock_held
+- tests/unit/test_land_in_progress_window.py::TestDispatchLayerWholeLandClassification::test_renumber_exits_while_only_land_lock_held
+- tests/unit/test_land_in_progress_window.py::TestDispatchLayerWholeLandClassification::test_evidence_proceeds_while_only_land_lock_held
 designated_repro_test: null
 acceptance:
 - text: GIVEN a land in progress (land.lock held, tickets.lock free) WHEN frob ticket
     renumber, promote, archive or migrate is invoked THEN it is refused naming the
     land, while new/drop/body/scope/fail/evidence/done-report/accept succeed
-  evidence: []
+  evidence:
+  - tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_renumber_refused_while_only_land_lock_held
+  - tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_splice_only_verb_allowed_while_only_land_lock_held
+  - tests/unit/test_land_in_progress_window.py::TestDispatchLayerWholeLandClassification::test_renumber_exits_while_only_land_lock_held
+  - tests/unit/test_land_in_progress_window.py::TestDispatchLayerWholeLandClassification::test_evidence_proceeds_while_only_land_lock_held
 threat: null
 component: null
 anchor: false

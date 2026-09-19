@@ -225,3 +225,127 @@ class TestSecondLandStillRefused:
             with pytest.raises(LandLockTimeout):
                 with _land_lock(root, "T-9102", timeout=0.2):
                     pass  # pragma: no cover -- must never be reached
+
+
+@pytest.mark.skipif(os.name == "nt", reason="fcntl-backed flock probe, POSIX (T-3612)")
+class TestWholeLandVerbClassification:
+    """T-4556: `renumber`/`promote`/`archive`/`migrate` rewrite MANY
+    ticket files across their own multi-file transaction with no single
+    `tickets.lock` span covering the whole rewrite (T-1615 excludes them
+    from the uniform auto-commit) -- so T-3612's splice-only probe let
+    them interleave with a land's out-of-tree compose for their entire
+    multi-file duration. `whole_land=True` (passed by the dispatch layer
+    for exactly these four verbs, see `_LAND_WHOLE_LAND_VERBS`) restores
+    the pre-T-3612 `land.lock`-duration probe for them, while every
+    OTHER verb keeps the narrowed splice-only check.
+
+    This is this ticket's BUG002 repro: at the parent commit (T-3612,
+    before this ticket), `refuse_if_land_in_progress` has no `whole_land`
+    parameter at all, so `test_renumber_refused_while_only_land_lock_
+    held` fails with a `TypeError` (unexpected keyword argument) rather
+    than the assertion it makes here -- FAILED_AT_PARENT, not "passed
+    but asserted the wrong thing"."""
+
+    def test_renumber_refused_while_only_land_lock_held(self, tmp_path: Path) -> None:
+        """A land's slow phase (`land.lock` held, `tickets.lock` free):
+        a whole-land-classified verb (`renumber`, standing in for
+        `promote`/`archive`/`migrate`, all four routed identically by
+        the dispatch layer) is refused -- unlike a splice-only verb,
+        which the sibling test below shows succeeds in this exact same
+        scenario."""
+        root = tmp_path
+        _write_land_lock_holder_json(root, pid=os.getpid(), ticket_id="T-9201")
+        with _HeldLock(root / LAND_LOCK_REL):
+            result = refuse_if_land_in_progress(
+                root, wait_timeout_s=0.0, whole_land=True
+            )
+        assert result.is_err
+        assert result.danger_err is LeaseError.LandInProgress
+
+    def test_splice_only_verb_allowed_while_only_land_lock_held(
+        self, tmp_path: Path
+    ) -> None:
+        """The SAME scenario (`land.lock` held, `tickets.lock` free) as
+        the sibling test above, but `whole_land=False` (every verb OTHER
+        than renumber/promote/archive/migrate, e.g. `evidence`/`body`/
+        `scope`): succeeds -- T-3612's narrowed splice-only probe is
+        unaffected by this ticket for every verb that does not opt into
+        `whole_land=True`."""
+        root = tmp_path
+        _write_land_lock_holder_json(root, pid=os.getpid(), ticket_id="T-9202")
+        with _HeldLock(root / LAND_LOCK_REL):
+            result = refuse_if_land_in_progress(
+                root, wait_timeout_s=0.0, whole_land=False
+            )
+        assert result.is_ok
+
+
+@pytest.mark.skipif(os.name == "nt", reason="fcntl-backed flock probe, POSIX (T-3612)")
+class TestDispatchLayerWholeLandClassification:
+    """T-4556: the dispatch-layer guard itself
+    (`frob.app.ticket_runner._refuse_if_land_in_progress_for_dispatch`)
+    routes `renumber`/`promote`/`archive`/`migrate` through
+    `whole_land=True` and every other mutating verb through the
+    unchanged splice-only check -- exercised end to end here (not just
+    at the `refuse_if_land_in_progress` unit level above) so a future
+    change to `_LAND_WHOLE_LAND_VERBS` or its wiring is caught even if
+    it never touches the lower-level function's own tests.
+
+    Monkeypatches `frob.tickets._leases.refuse_if_land_in_progress`
+    itself (the dispatch guard's own local import re-reads this module
+    attribute on every call, so patching it here is observed) purely to
+    force `wait_timeout_s=0.0` -- the dispatch guard never exposes that
+    parameter itself, and calling it unpatched would wait out the real,
+    multi-second-to-minutes T-1961 wait budget before refusing, exactly
+    as it must in production. The real, un-mocked `refuse_if_land_in_
+    progress` behavior for both `whole_land` values is already locked
+    down by `TestWholeLandVerbClassification` above; this class checks
+    only that the dispatch layer passes the RIGHT `whole_land` value for
+    the RIGHT verb."""
+
+    @staticmethod
+    def _force_zero_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+        """Shared setup for both tests below: pins `wait_timeout_s=0.0`
+        on every `refuse_if_land_in_progress` call the dispatch guard
+        makes, so a genuine refusal returns immediately instead of
+        idling through the real T-1961 wait budget."""
+        import frob.tickets._leases as leases_module
+
+        real = leases_module.refuse_if_land_in_progress
+
+        def _zero_wait(root: Path, *, whole_land: bool = False) -> object:
+            return real(root, wait_timeout_s=0.0, whole_land=whole_land)
+
+        monkeypatch.setattr(leases_module, "refuse_if_land_in_progress", _zero_wait)
+
+    def test_renumber_exits_while_only_land_lock_held(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`renumber`, dispatched through the real pre-dispatch guard,
+        with only `land.lock` held (`tickets.lock` free): refused via
+        `sys.exit(1)`, matching every other mutating verb's refusal
+        shape in this module."""
+        from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
+
+        self._force_zero_wait(monkeypatch)
+        root = tmp_path
+        _write_land_lock_holder_json(root, pid=os.getpid(), ticket_id="T-9301")
+        with _HeldLock(root / LAND_LOCK_REL):
+            with pytest.raises(SystemExit) as exc_info:
+                _refuse_if_land_in_progress_for_dispatch(root, "renumber")
+        assert exc_info.value.code == 1
+
+    def test_evidence_proceeds_while_only_land_lock_held(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`evidence` (a splice-only verb, unclassified as whole-land):
+        proceeds without exiting in the exact same scenario the sibling
+        test above refuses -- the classification is per-verb, not
+        global."""
+        from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
+
+        self._force_zero_wait(monkeypatch)
+        root = tmp_path
+        _write_land_lock_holder_json(root, pid=os.getpid(), ticket_id="T-9302")
+        with _HeldLock(root / LAND_LOCK_REL):
+            _refuse_if_land_in_progress_for_dispatch(root, "evidence")

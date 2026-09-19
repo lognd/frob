@@ -1,5 +1,5 @@
 ---
-id: T-draft-aefc4511
+id: T-4598
 title: 'shared registry files (design/frob.strata, docs/design/registry/capability-via-ratchet.lock.json,
   docs/modules/gates.md rule table, frob.toml severity zone) must be append-shared,
   not whole-file leases: one in-progress ticket holding them blocks every sibling
