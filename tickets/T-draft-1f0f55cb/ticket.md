@@ -1,0 +1,57 @@
+---
+id: T-draft-1f0f55cb
+title: 'strata grammar: import/export/pub and the accepts clause on cross-module flows
+  (parse-only)'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: critical
+blocked_by:
+- T-draft-0bcabfa4
+parent: T-draft-0a0c7b43
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- strata-core/src/parse/**
+- docs/strata/surface.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: Given a module file using `import a.b as c;`, `export { ... }` and `accepts
+    f from m;`, when parsed by strata-core, then the AST carries import, export and
+    accepts records with their dotted paths and aliases.
+  evidence: []
+- text: Given `import tickets.*;` or any wildcard/re-export spelling, when parsed,
+    then the parser reports a syntax error (the form does not exist in the grammar).
+  evidence: []
+- text: 'Given design/frob.strata and all 7 design/litmus/*.strata files, when parsed
+    after the grammar change, then the parse result is unchanged from before (positive
+    control: a planted new-syntax file parses, the old files are byte-identical in
+    their AST).'
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Grammar only, no semantics. In strata-core/src/parse (grammar_core.rs holds the
+existing `module` header at ~line 406-433; lexer.rs holds the token set) add:
+  - `import a.b as c;` with dotted module paths (charter D6). No wildcard form
+    exists in the grammar at all -- `import a.*` must be a parse error.
+  - `export { node X; channel Y; label Z; }` and/or a `pub` marker on a
+    declaration. An absent or empty export block is legal and means a fully
+    private module.
+  - `accepts <flow-name> from <module>;` clause on a node declaration.
+Dotted module names accepted in the `module` header. Parse-only: the AST/py
+bridge carries the new nodes through, nothing checks them yet. All 7 existing
+design/litmus/*.strata files and design/frob.strata must still parse unchanged,
+because none of them use the new syntax.
