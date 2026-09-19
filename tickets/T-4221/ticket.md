@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_inv.py
 - src/frob/graph/dsl.py
-- tests/unit/graph/test_dsl.py
 - tests/gates_suite/test_invariant.py
 - docs/modules/gate-time-stable-invariant.md
 - tests/unit/graph/test_dsl_invariant_property.py
@@ -81,6 +80,12 @@ scope_changes:
   reason: this repo's existing home for frob:invariant obligation-attr grammar tests
     (no_import=/establishes=, T-0757); kind=/horizon= belongs alongside them, not
     in tests/unit/graph/test_dsl.py which carries no invariant-attr cases at all
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/unit/graph/test_dsl.py
+  reason: not needed -- frob:invariant attr-grammar tests belong in tests/unit/graph/test_dsl_invariant_property.py
+    instead (added above)
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
