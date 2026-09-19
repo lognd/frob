@@ -1,5 +1,5 @@
 ---
-id: T-draft-3e8b2402
+id: T-4624
 title: 'Clean docstrings: test_tickets_acceptance/refs_gate/hook_root_write_guard/docptr/check_runner/scan_tree/etc
   (DOCARCH001)'
 state: queued

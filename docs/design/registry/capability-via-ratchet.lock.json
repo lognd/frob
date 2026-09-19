@@ -111,9 +111,9 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 56,
-      "reason": "T-3696: adds src/frob/gates/_win32_kill_signal.py's own real, new fs.read via-list site (the new PLATFORM002 detector reads the same tracked src/frob/**/*.py source text WALK001/PORT001 already read) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3696"
+      "accepted_count": 57,
+      "reason": "T-4111: dev's own gates fs.read via-list grew independently of this ticket's own bump (dev at 56 by the time this land re-checked); re-measured live via --only sys against the merged tree and setting the ceiling to the current observed count, 56 -> 57, which includes this ticket's own src/frob/gates/_guard_closure.py addition.",
+      "ticket": "T-4111"
     },
     "gates::fs.write": {
       "accepted_count": 40,

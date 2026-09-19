@@ -28,7 +28,7 @@ acceptance:
     completes, then the note is attached before any implementation begins
   evidence:
   - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-- text: design note attached and implementation delegated to child T-draft-1cc03713
+- text: design note attached and implementation delegated to child T-4622
   evidence: []
 acceptance_amendments:
 - op: replace
@@ -36,10 +36,10 @@ acceptance_amendments:
   old_text: given the design is accepted, when implemented, then SYS100 (or a successor
     rule) can require that a single helper produce every client IP, and a trust-as-identity
     declaration exists distinct from the capability ratchet
-  new_text: design note attached and implementation delegated to child T-draft-1cc03713
+  new_text: design note attached and implementation delegated to child T-4622
   reason: 'T-3961 is a design-only step (per its own body: ''Needs its own design
     pass before implementation''); the SYS100-can-require/trust-as-identity IMPLEMENTATION
-    work was split to child T-draft-1cc03713, which is queued to land separately --
+    work was split to child T-4622, which is queued to land separately --
     this criterion cannot be evidenced by design-step artifacts and was blocking this
     ticket''s own close'
   actor: logan

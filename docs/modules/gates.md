@@ -3793,6 +3793,48 @@ distinct signal, not a severity bump on the same one.
 <!-- frob:describes src/frob/gates/_lock_producer.py::producer_status -->
 <!-- frob:describes src/frob/gates/_lock_producer.py::all_producer_statuses -->
 
+## GUARD001 (T-4111)
+
+<a id="guard001-t-4111"></a>
+<!-- frob:describes src/frob/gates/_guard_closure.py::guard_closure_gate -->
+
+F-307 H3-1: a rate-limit-style guard reads a lockout primitive (e.g.
+`retry_after_seconds(cls, ...)`) but nothing outside the guard's own tests
+writes it (e.g. `record_failure(cls, ...)`) from a real, route-reachable
+caller in the SAME class -- a control that fires on nothing, disguised by
+a test that calls the write primitive directly instead of going through a
+real caller. Neither existing gate can see this: `WIRE001` only asks "is
+this diff-added symbol reached at all"; `DEAD001`/`frob.graph.callgraph`
+only resolve edges to PRIVATE symbols (their own resolver's rule), while
+route handlers and guard/lockout primitives are routinely public.
+
+`frob.gates._guard_closure.guard_closure_gate(root)` is therefore a
+bespoke, class-scoped closure check over parsed `ast` nodes (never a text
+scan, never routed through the private-only call-graph resolver): per
+class, BFS `self.<name>()`/`cls.<name>()`/bare `<name>()` calls starting
+from every method carrying a configured route-decorator marker
+(`[guard_closure] route_decorator_markers` in `frob.toml`, default
+`route`/`get`/`post`/`put`/`patch`/`delete`/`websocket`); a method that
+calls a configured READ primitive (`[[guard_closure.pairs]]` `read=`/
+`write=`, default `retry_after_seconds`/`record_failure`) is flagged
+unless some method IN that class's route-reachable closure calls the
+matching WRITE primitive. A write call reachable only from a DIFFERENT
+class, or only from a `tests/` file (excluded from the scan entirely), does
+not satisfy closure.
+
+`[[guard_closure.pairs]]`/`route_decorator_markers` are read once per run
+by `load_guard_closure_pairs`, wholesale-replacing (never merging with)
+the shipped defaults -- a naming-convention-generic check, not one
+hardcoded to any one consumer's own symbol names.
+
+Not yet wired into `run_gates`'s dispatch table (`src/frob/gates/
+__init__.py` is outside this ticket's declared scope) -- call
+`guard_closure_gate(root)` directly today; wiring it into the standing
+gate set is follow-up work for whichever ticket owns that file next.
+
+<!-- frob:describes src/frob/gates/_guard_closure.py::GuardClosurePair -->
+<!-- frob:describes src/frob/gates/_guard_closure.py::load_guard_closure_pairs -->
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/_suppress.py::SuppressionDialect -->

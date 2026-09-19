@@ -2,7 +2,7 @@
 id: T-4111
 title: 'H3-1: a guard that only reads a lockout, with no reachable writer, is a control
   that fires on nothing'
-state: in-progress
+state: done
 kind: invariant
 origin: human
 created: '2026-09-06'
@@ -56,6 +56,15 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/gates_suite/test_guard_closure.py::test_guard001_fires_when_no_writer_reachable
+- tests/gates_suite/test_guard_closure.py::test_guard001_quiet_when_writer_reachable_from_same_class_route
+- tests/gates_suite/test_guard_closure.py::test_guard001_fires_when_writer_reachable_only_from_a_different_class
+- tests/gates_suite/test_guard_closure.py::test_guard001_quiet_when_read_only_reachable_from_class_with_no_route
+- tests/gates_suite/test_guard_closure.py::test_load_guard_closure_pairs_defaults_when_unconfigured
+- tests/gates_suite/test_guard_closure.py::test_load_guard_closure_pairs_reads_frob_toml
+- tests/gates_suite/test_guard_closure.py::test_guard001_honors_configured_pair_and_route_marker
+- tests/gates_suite/test_guard_closure.py::test_guard001_ignores_tests_directory
 designated_repro_test: null
 threat: null
 component: null
