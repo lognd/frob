@@ -1,5 +1,5 @@
 ---
-id: T-draft-07e7d209
+id: T-4759
 title: 'frob.toml [commands] table plus a run verb: one declared home for every project
   command, sequences included'
 state: queued
