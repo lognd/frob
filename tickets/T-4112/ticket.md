@@ -24,6 +24,8 @@ scope:
 - src/frob/app/sys_runner.py
 - docs/strata/reliability.md
 - docs/design/registry/check-coverage.yaml
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +54,21 @@ scope_changes:
 - op: add
   glob: docs/design/registry/check-coverage.yaml
   reason: wiring REL303 into audit/waivers/docs
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: design/frob.strata
+  reason: leases released
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: leases released
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: leases released
   actor: logan
   at: '2026-09-19'
 triage_changes:
