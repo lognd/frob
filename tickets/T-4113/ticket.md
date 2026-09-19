@@ -22,6 +22,7 @@ scope:
 - src/frob/strata/_waive.py
 - src/frob/strata/__init__.py
 - src/frob/app/sys_runner.py
+- docs/strata/threat.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
   at: '2026-09-19'
 - op: add
   glob: src/frob/app/sys_runner.py
+  reason: wiring SYS111/SYS112 into audit/waivers/docs
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/strata/threat.md
   reason: wiring SYS111/SYS112 into audit/waivers/docs
   actor: logan
   at: '2026-09-19'
