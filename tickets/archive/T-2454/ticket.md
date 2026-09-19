@@ -89,6 +89,13 @@ scope_changes:
     line'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3205
+  new_length: 3996
 evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
@@ -185,3 +192,5 @@ POSITIVE CONTROLS:
     with the bottleneck.
   - must-preserve-auditability: the complete list of registered rule ids
     remains obtainable in one place, generated rather than hand-kept.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion's class docstring used to say: 'T-2454: _wire001_rule_id_violations (WIRE001 case 2, T-1421's BUG002 shape) is the diff-scoped check that actually serialized this ticket's measured incident -- it fires the instant a ticket's OWN diff constructs a new rule="..." literal, well before land/close time, and used to compare only against the hand-maintained _KNOWN_GATE_RULES literal. It now also recognizes a standard-shape construction via a fresh generated_gate_rule_ids scan, so a ticket adding a brand-new gate rule in its own module never needs to also take a write lease on src/frob/gates/_waive.py in the same diff.' Moved here; the class docstring now states only what its tests verify.
