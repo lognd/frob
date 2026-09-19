@@ -1,5 +1,5 @@
 ---
-id: T-draft-e580d201
+id: T-4690
 title: 'Delete every CLI alias and duplicate name: the four group verbs, fmt, docs/docs-search,
   three spellings of status, whereis'
 state: queued
