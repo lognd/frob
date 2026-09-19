@@ -19,13 +19,13 @@ _log = get_logger(__name__)
 class ScaffoldError(ErrorSet):
     UnknownType = "Requested project type is not registered"
     TemplateNotFound = "Template .j2 file is missing from the data directory"
-    OutputExists = (
-        "One or more output files already exist (use force=True to overwrite)"
-    )
+    OutputExists = "output already exists (use force=True to overwrite)"
     RenderFailed = "Jinja2 raised an error while rendering a template"
     # T-0431: worktree-lease git hook install failure modes.
     NotAGitRepo = "root is not inside a git work tree"
     HookWriteFailed = "could not write the hook script to the resolved hooks path"
+    # frob:ticket T-4503
+    NotAUnityProject = "root has neither Assets/ nor Packages/"
 
 
 @dataclass(frozen=True)

@@ -77,6 +77,23 @@ frob scaffold pool status     # print the current manifest
 | `cpp-library` / `cpp-tool` | CMake + ctest | `src/`, `include/`, `tests/`, `frob.toml` (`cpp` test runner via ctest), CI + release + branch-protection workflows |
 | `pybind11-library` | CMake + scikit-build + pytest | `src/`, bindings, `tests/`, `frob.toml` (`python` test runner), CI |
 
+`unity-project` (T-4503) is not in the table above because it does not fit
+its shape: every type above scaffolds a FRESH `<output_dir>/<name>/`
+tree via `render_project`/`frob scaffold new <type> <name>`, while
+`unity-project` scaffolds ONTO an EXISTING Unity project directory (one
+that already has `Assets/`/`Packages/`) via its own entry point,
+`render_unity_project(root, *, force=False)` -- see Public API below. It
+writes a starter `frob.toml` with Unity's `Library/Temp/Logs/obj/*.meta`
+excludes pre-populated (T-4515's `UNITY_EXCLUDE_GLOBS`) and a
+`dotnet test` `[[test.runner]]` entry, plus one `design/<node_id>.strata`
+component-boundary fragment per detected `.asmdef` (T-4512's asmdef
+reader, reused unchanged -- one node per asmdef, plus the always-present
+default-assembly node covering any `.cs` file no asmdef claims). A
+directory with neither `Assets/` nor `Packages/` is refused with
+`ScaffoldError.NotAUnityProject`, never a bogus config; a second run
+without `force=True` is refused with `OutputExists` before anything is
+written.
+
 No type ships a `tickets.md` or `tickets/` seed (T-3272): the scaffold
 writes no ledger content at all, so every fresh project starts in ledger
 v2 mode (per-ticket files) the moment `frob ticket new` is first run there
@@ -145,21 +162,33 @@ Jinja2 variables available in all templates:
 <!-- frob:describes src/frob/scaffold/project.py::ScaffoldError -->
 <!-- frob:describes src/frob/scaffold/project.py::list_project_types -->
 <!-- frob:describes src/frob/scaffold/project.py::render_project -->
+<!-- frob:describes src/frob/scaffold/_unity_project.py::render_unity_project -->
 <!-- frob:describes src/frob/scaffold/project.py::install_worktree_lease_hook -->
 
 ```python
 # frob/scaffold/project.py
 class ScaffoldError(ErrorSet)
     # Failure values: unknown type, missing template, existing output
-    # files without --force, a Jinja2 render error, or (T-0431) a hook
-    # install failure (not a git repo, or the write itself failed).
+    # files without --force, a Jinja2 render error, (T-0431) a hook
+    # install failure (not a git repo, or the write itself failed), or
+    # (T-4503) a unity-project scaffold run against a non-Unity directory.
 
 def list_project_types() -> list[str]
-    # The registered scaffold type names, read directly off _MANIFESTS.
+    # The registered scaffold type names, read directly off _MANIFESTS
+    # (unity-project is deliberately not one of these -- see above).
 
 def render_project(project_type, name, output_dir, *, force=False) -> Result[list[Path], ScaffoldError]
     # Render one registered type's templates into output_dir; the single
     # entry point behind `frob scaffold new`.
+
+def render_unity_project(root, *, force=False) -> Result[list[Path], ScaffoldError]
+    # T-4503: scaffold the unity-project type onto an EXISTING Unity
+    # project directory at root -- frob.toml plus one design/*.strata
+    # per detected .asmdef (T-4512's discover_asmdefs/build_component_
+    # nodes, reused unchanged). Err(NotAUnityProject) for a directory
+    # with neither Assets/ nor Packages/; Err(OutputExists) when
+    # frob.toml or any computed design/*.strata path already exists and
+    # force is not set, checked before anything is written.
 
 def install_worktree_lease_hook(root, *, force=False) -> Result[tuple[Path, ...], ScaffoldError]
     # T-0431: installs pre-commit + pre-merge-commit git hooks into root's

@@ -81,9 +81,9 @@
       "ticket": "T-4517"
     },
     "core::fs.write": {
-      "accepted_count": 27,
-      "reason": "T-4517: adds src/frob/testing/_collect_csharp.py to core's fs.write via-list (C# test collector reads .cs sources / writes its cache). One new site.",
-      "ticket": "T-4517"
+      "accepted_count": 28,
+      "reason": "T-4503: adds src/frob/scaffold/_unity_project.py to core's fs.write via-list (render_unity_project writes rendered .strata fragments per (node, path) pair). One new site.",
+      "ticket": "T-4503"
     },
     "core::process-control": {
       "accepted_count": 1,
@@ -261,9 +261,8 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 537,
-      "reason": "T-4596: pre-accepted by hand because the land-side auto-accept is the defect this ticket fixes",
-      "ticket": "T-4596"
+      "accepted_count": 538,
+      "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

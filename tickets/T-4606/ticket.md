@@ -1,5 +1,5 @@
 ---
-id: T-draft-b29e5e84
+id: T-4606
 title: 'post-land residue (auto-filed by the coordinator dispose loop): COV002:tests/unit/rapid_sweep_suite/test_window.py
   DOC007:src/frob/app/ticket_runner/__init__.py DRIFT002:src/frob/app/ticket_runner/__init__.py'
 state: queued
