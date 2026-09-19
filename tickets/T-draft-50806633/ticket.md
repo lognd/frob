@@ -10,7 +10,7 @@ priority: high
 blocked_by:
 - T-4540
 - T-4214
-parent: null
+parent: T-4230
 tier: ticket
 sprint: null
 runs_last: false
@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4230
+  reason: 'follow-up: wire entrypoint_coverage_violations built under T-4230 into
+    the gate pipeline'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
