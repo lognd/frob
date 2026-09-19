@@ -20,6 +20,8 @@ scope:
 - tests/gates_suite/test_invariant.py
 - docs/modules/gate-time-stable-invariant.md
 - tests/unit/graph/test_dsl_invariant_property.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -86,6 +88,16 @@ scope_changes:
   glob: tests/unit/graph/test_dsl.py
   reason: not needed -- frob:invariant attr-grammar tests belong in tests/unit/graph/test_dsl_invariant_property.py
     instead (added above)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: design/frob.strata
+  reason: T-4111 lease released
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-4111 lease released
   actor: logan
   at: '2026-09-19'
 evidence:
