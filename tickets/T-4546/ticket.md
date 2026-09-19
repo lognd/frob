@@ -2,7 +2,7 @@
 id: T-4546
 title: 'flatten the remaining single-child verb groups: agent env, worktree sweep
   (in _core.py) and narrative move (frob/narrative/_cli.py + _root.py)'
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-09-16'
@@ -36,3 +36,6 @@ anchor_reason: null
 land_commit: null
 ---
 T-4522 flattened claude and natives; agent env and worktree sweep live in src/frob/_cli_parsers/_core.py (leased by T-4523 at the time) and narrative move's parser is src/frob/narrative/_cli.py wired from _root.py (leased by T-4520). Same mechanism as T-4522: default the dispatch dest to the single child and mirror the child's flags onto the group parser.
+
+## Unblock log
+- 2026-09-19: unblocked by T-3233 -- T-3233 landed on dev
