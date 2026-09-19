@@ -37,6 +37,14 @@ acceptance:
     control: a planted new-syntax file parses, the old files are byte-identical in
     their AST).'
   evidence: []
+- text: Given the D-M9 hierarchy decision, when a module file declares its position
+    in the hierarchy, then the grammar accepts that declaration form and rejects a
+    file that declares it twice.
+  evidence: []
+- text: 'Given `accepts f from <module>` where <module> is NOT imported, when parsed,
+    then it parses: `accepts` takes a module REFERENCE, never an import alias. Positive
+    control: an `accepts` written with an import alias is a parse error.'
+  evidence: []
 threat: null
 component: null
 anchor: false
