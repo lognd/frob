@@ -2,7 +2,7 @@
 id: T-4677
 title: 'DECISION: SF-08 -- 33/33 assumes are one boilerplate shape, one owner, one
   date; how should a weakness class be stated once?'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-09-19'
@@ -47,6 +47,16 @@ body_changes:
   at: '2026-09-19'
   old_length: 5861
   new_length: 6274
+- mode: append
+  reason: 'BUG002 front door (T-2393): 2026-09-19: DECISION ticket whose sole deliverable
+    is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned
+    and specific; a structural gate refuses templated assumes). Implementation belongs
+    to the module-system story, not here. No code, model or doc file changes under
+    this id.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6274
+  new_length: 6619
 evidence:
 - cmd:git grep -n 'D-M8' -- tickets/T-4677/ticket.md exit=0 sha256=01eccfec75cf
 designated_repro_test: null
@@ -159,3 +169,5 @@ decision, now recorded above. No code or model file changes under this id.
 frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned and specific; a structural gate refuses templated assumes), which rejects the framing of all three options this ticket offered. Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
 
 frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned and specific; a structural gate refuses templated assumes), which rejects the framing of all three options this ticket offered. Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
+
+frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned and specific; a structural gate refuses templated assumes). Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
