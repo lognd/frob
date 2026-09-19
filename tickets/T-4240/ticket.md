@@ -2,7 +2,7 @@
 id: T-4240
 title: 'BASE001: a tracked ratchet/baseline file whose current violation count exceeds
   its baseline blocks land, reported by name'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-07'
