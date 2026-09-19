@@ -10,7 +10,7 @@ blocked_by:
 - T-1736
 parent: T-4410
 tier: epic
-sprint: v0.532.0
+sprint: v0.535.0
 runs_last: false
 milestone: v0.532.0
 runs_last_parallel_safe: false
@@ -137,6 +137,12 @@ triage_changes:
   reason: landing/verify cost epic T-4410 covers this scope
   actor: logan
   at: '2026-09-11'
+- field: sprint
+  old_value: v0.532.0
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 evidence:
 - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue
