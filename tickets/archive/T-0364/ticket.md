@@ -9,11 +9,24 @@ priority: medium
 parent: T-0204
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/**
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: preserve change-narrative removed from git()'s docstring for DOCARCH001
+  actor: logan
+  at: '2026-09-19'
+  old_length: 532
+  new_length: 761
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_app_runner_map
 - tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks
@@ -31,5 +44,16 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0204 family 6: frob-dup reports 64 duplicate groups. Triage each into (a) a real extraction candidate -- feed into T-0187's extraction tree, or (b) a false pair -- disposition with a written reason (structural coincidence, distinct semantics, etc.), waived accordingly. NO blanket waiver. Cross-reference T-0187 (dup bleeding-edge work in progress) before duplicating extraction effort. Acceptance: every one of the 64 groups has an explicit disposition (extracted, ticketed under T-0187, or reasoned waiver); honest summary line.
+
+
+
+## Docstring narrative preserved (T-4421 debloat, 2026-09-19)
+
+tests/system/conftest.py::git was extracted from four system test modules
+that had copy-pasted the same 'run a git subcommand, raise on nonzero exit'
+body inline.
