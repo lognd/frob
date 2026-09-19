@@ -1,7 +1,7 @@
 ---
 id: T-4660
 title: post-publish never holds .frob/derived.lock across a full check
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
