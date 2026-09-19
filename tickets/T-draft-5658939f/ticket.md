@@ -17,6 +17,7 @@ scope:
 - src/frob/_cli_parsers/**
 - tests/unit/test_cli_group_parity.py
 - src/frob/_cli_parsers/_ops.py
+- src/frob/_cli_parsers/_misc.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
 - op: add
   glob: src/frob/_cli_parsers/_ops.py
   reason: mirror --path onto the ops-group natives leaf
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: reference flat natives parser for the --path mirror pattern; may extract
+    shared helper
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
