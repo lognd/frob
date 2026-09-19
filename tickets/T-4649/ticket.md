@@ -1,7 +1,7 @@
 ---
-id: T-draft-cdd5b1eb
+id: T-4649
 title: TICK008 real-repo smoke test exceeds 120s on posix under fleet load
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'

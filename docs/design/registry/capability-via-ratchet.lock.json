@@ -261,9 +261,8 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 540,
-      "reason": "T-4508: land-repair merge with dev brings testsuite::fs.write to 540 measured sites (T-4111/T-4524 test additions landed on dev in between); bumping the ceiling 538 -> 540 to match the currently measured, real via-list.",
-      "ticket": "T-4508"
+      "accepted_count": 541,
+      "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

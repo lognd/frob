@@ -597,11 +597,52 @@ def _v2_archive_glob(root: Path) -> list[Path]:
     return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
 
 
+# frob:ticket T-4649
+# T-4649: per-root memoization cache for `_store_mode`, keyed on a
+# cheap invalidation signal (the mtimes of the three paths `_store_mode`
+# itself reads: `tickets/`, `tickets/archive/`, and `tickets.md`) rather than
+# re-globbing the whole tickets/ tree on every call. Guarded by
+# `_store_mode_cache_lock` since `doable()`/`read_all_leases()` call
+# `_store_mode` from multiple threads under fleet load (see docstring below
+# for the O(tickets x leases) cost this replaces).
+_store_mode_cache: dict[Path, tuple[tuple[float, float, float], str]] = {}
+_store_mode_cache_lock = threading.Lock()
+
+
+# frob:ticket T-4649
+# frob:tests \
+# tests/unit/test_store_mode_memoization.py::TestStoreModeMemo.test_invalidates_new
+def _store_mode_cache_signal(root: Path) -> tuple[float, float, float]:
+    """Cheap invalidation signal for `_store_mode`'s cache: the mtimes of the
+    three on-disk locations `_store_mode` itself inspects (`tickets/`,
+    `tickets/archive/`, `tickets.md`), -1.0 for any that do not exist -- any
+    ticket creation/archive/drop or v1/v2 migration touches at least one of
+    these paths' own mtime (a new/removed entry under a directory, or the
+    ledger file's own write), so a stale cache entry is detected on the very
+    next call after any change that could flip the answer."""
+
+    def _mtime_or_missing(p: Path) -> float:
+        try:
+            return p.stat().st_mtime
+        except OSError:
+            return -1.0
+
+    return (
+        _mtime_or_missing(tickets_dir(root)),
+        _mtime_or_missing(tickets_dir(root) / "archive"),
+        _mtime_or_missing(ledger_path(root)),
+    )
+
+
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper"
+# frob:ticket T-4649
+# frob:tests tests/unit/test_store_mode_memoization.py::TestStoreModeMemo.test_memoized
+# frob:tests \
+# tests/unit/test_store_mode_memoization.py::TestStoreModeMemo.test_invalidates_new
 def _store_mode(root: Path) -> str:
     """Which backend a repo uses: 'v2' if any `tickets/T-####/ticket.md`
     directory exists, ACTIVE OR ARCHIVED (ledger v2, design section 1/4.3 --
@@ -629,14 +670,37 @@ def _store_mode(root: Path) -> str:
     repo whose active tree has been fully drained (every ticket done/
     dropped and archived) still reads as 'v2', not 'single' -- without this
     an all-archived v2 repo would silently misdetect as a fresh/legacy
-    store the moment its last active ticket is archived."""
+    store the moment its last active ticket is archived.
+
+    T-4649: this used to re-glob the entire tickets/ tree (active
+    AND archive) on EVERY call with no caching. `read_all_leases()` calls
+    this once per lease while pruning stale records, and `doable()` calls
+    that once per candidate ticket while filtering lease collisions -- net
+    O(active_tickets x live_leases) full-directory-tree glob scans, which at
+    this repo's own scale (1000+ active tickets, dozens of concurrent fleet
+    leases) measured out to minutes per ledger verb (`frob ticket doable`,
+    `new`, `accept`, and any TICK-gate check that walks `doable()`).
+    Memoized below, invalidated by `_store_mode_cache_signal`."""
+    signal = _store_mode_cache_signal(root)
+    with _store_mode_cache_lock:
+        cached = _store_mode_cache.get(root)
+        if cached is not None and cached[0] == signal:
+            _log.debug("store: _store_mode cache hit for %s (signal=%s)", root, signal)
+            return cached[1]
     if _v2_glob(root) or _v2_archive_glob(root):
-        return "v2"
-    if ledger_path(root).exists():
-        return "single"
-    if _dir_glob(root):
-        return "dir"
-    return "v2"
+        mode = "v2"
+    elif ledger_path(root).exists():
+        mode = "single"
+    elif _dir_glob(root):
+        mode = "dir"
+    else:
+        mode = "v2"
+    with _store_mode_cache_lock:
+        _store_mode_cache[root] = (signal, mode)
+    _log.debug(
+        "store: _store_mode cache miss for %s -> %s (signal=%s)", root, mode, signal
+    )  # noqa: E501
+    return mode
 
 
 # ---------------------------------------------------------------------------
