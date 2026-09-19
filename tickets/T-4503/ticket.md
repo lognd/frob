@@ -21,6 +21,7 @@ scope:
 - src/frob/scaffold/data/types/unity-project/**
 - src/frob/scaffold/project.py
 - tests/unit/test_scaffold_unity_project.py
+- docs/commands/scaffold.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
   glob: tests/unit/test_scaffold_unity_project.py
   reason: unit tests for the new render_unity_project function and its three acceptance
     criteria
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: render_unity_project is a new frob:doc docs/commands/scaffold.md#public-api
+    symbol; the doc's own manifest table needs the unity-project entry
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
