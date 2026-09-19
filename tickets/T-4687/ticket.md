@@ -28,6 +28,14 @@ triage_changes:
     surface'
   actor: logan
   at: '2026-09-19'
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3648
+  new_length: 4265
 designated_repro_test: null
 threat: null
 component: null
@@ -97,3 +105,12 @@ disjoint -- a frob scope is a write lease and cannot be shared.
 
 OUT OF SCOPE, REPORT ONLY: ~/.claude/refs/frob.md is the owner's file. No leaf
 edits it; leaf 7 lists the needed edits in its Done report.
+
+LEAVES (filed 2026-09-19):
+  T-4689  telemetry records verb+subverb            2 pts  blocked_by []
+  T-4690  delete aliases and duplicates + shim mod  3 pts  blocked_by []
+  T-4692  gate stages -> frob check --only          3 pts  blocked_by [T-4690]
+  T-4695  read-only analysis -> frob explore        3 pts  blocked_by [T-4690, T-4692]
+  T-4696  ticket field setters -> ticket set        2 pts  blocked_by [T-4690]
+  T-4698  ticket subverb tail verdicts              3 pts  blocked_by [T-4690, T-4696]
+  T-4702  regenerate docs/commands + refs drift     2 pts  blocked_by [T-4690, T-4692, T-4695, T-4696, T-4698]
