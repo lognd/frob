@@ -26,6 +26,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 2839
   new_length: 2839
+- mode: append
+  reason: record the D-M9 module hierarchy order in the story body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2839
+  new_length: 3718
 designated_repro_test: null
 threat: null
 component: null
@@ -78,3 +84,29 @@ Refused by construction (section 5 of the proposal): wildcard imports, implicit
 re-export, global name fallback, string-path cross-module references,
 module-level flows, auto-generated exports, `part of` fragments as the
 modularity story.
+
+
+## Module hierarchy (D-M9, owner 2026-09-19 19:30)
+
+Modules declare their position explicitly. Import is UPWARD ONLY (importing a
+module below you is a compile error naming both modules), so import cycles are
+impossible by construction. Flows are declared by the LOWER module in either
+direction, because only the lower module can name both ends; the upper module
+declares `accepts f from <lower-module>` by reference, with no import. An
+`accepts` naming a module above you is an error.
+
+Top-down order of the 11-module partition:
+  1. platform   (top: imports nothing; shared vocabulary)
+  2. tickets
+  3. graph
+  4. strata
+  5. vet
+  6. gates
+  7. natives
+  8. deploy
+  9. serve
+  10. app       (bottom)
+  11. test      (bottom)
+
+The 16 bidirectional pairs are NOT waivers: each migration leaf decides which of
+the two modules is lower and moves the flow declarations there.
