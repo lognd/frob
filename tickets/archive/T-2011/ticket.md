@@ -51,6 +51,13 @@ scope_changes:
     successor before this ticket can close'
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve PERF_RULE_IDS symbol-path detail trimmed from _fix_engine_sync.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1039
+  new_length: 1558
 evidence:
 - tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard::test_examined_perf_site_is_deleted
 - tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard::test_unexamined_perf_site_refuses
@@ -80,3 +87,13 @@ site_examined(stats, family, file) for each of "perf"/"strata"/"graph"/
 "vet", alongside (never instead of) the existing archgate guard and the
 absolute/proportional count guards. Refuse on any uncertainty, same
 regression-lock posture as T-1942's own acceptance test.
+
+
+T-4709 follow-up (condensed from _PERF_RULE_IDS's docstring in
+src/frob/gates/_fix_engine_sync.py, trimmed for DOCARCH002's 12-line
+cap): the file set is exactly what `perf_gate`'s own
+`_perf_gate_candidate_paths` + `_perf_gate_parse_files` computes, the
+same "has a registered tree-sitter grammar, and `parse_file` succeeded
+on it" test `frob.gates._coverage_sites._perf_examined_sites`
+re-derives independently. PERF009 is `frob.perf._ratchet.
+ratchet_violations`, reading from `.frob/perf/ratchet_findings.json`.
