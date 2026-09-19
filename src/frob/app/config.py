@@ -926,6 +926,9 @@ class AppConfig(BaseModel):
     # only-evidence finding is logged but does not refuse the direct close.
     # For genuine false positives only.
     ticket_close_skip_mutation_evidence: bool = False
+    # `frob ticket done-report <id> --no-check`: write the report with
+    # gate-state unmeasured instead of spawning the scoped check.
+    ticket_no_check: bool = False
     # frob:ticket T-2393
     # `frob ticket close <id> --no-behavior-change --no-behavior-change-
     # reason TEXT`: the first-class front door for BUG002's pre-existing

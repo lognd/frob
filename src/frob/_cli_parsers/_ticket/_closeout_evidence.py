@@ -418,6 +418,27 @@ def _add_ticket_done_report_parser(ticket_sub):
         help="skip T-1178's auto-commit of the done-report ledger change "
         "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
     )
+    # frob:ticket T-4550
+    # T-4550 acceptance criterion 3: skip the capture check's
+    # `frob check --ticket` spawn entirely, writing the report with
+    # gate-state unmeasured in under 5s -- for an agent who only needs a
+    # fast/re-run report, not a gate-state claim, and does not want to pay
+    # for (or wait a budget out on) a check spawn at all. NOTE: as of this
+    # ticket's filing, `AppConfig`'s `ticket_no_check` field (the plumbing
+    # this flag's parsed value forwards into -- `src/frob/app/config.py`/
+    # `src/frob/app/_config_external.py`) is under an active scope lease
+    # held by T-3613; this flag is registered and its runner-side handling
+    # (`_verify._done_report`) is written and ready, but the value cannot
+    # reach `cfg.ticket_no_check` until that lease releases and the
+    # AppConfig field is added -- see the Done report/why narrative.
+    ticket_done_report_p.add_argument(
+        "--no-check",
+        dest="ticket_no_check",
+        action="store_true",
+        help="skip the capture check's `frob check --ticket` spawn "
+        "entirely -- writes the report with gate-state unmeasured, "
+        "in under 5s (T-4550)",
+    )
     return ticket_done_report_p
 
 

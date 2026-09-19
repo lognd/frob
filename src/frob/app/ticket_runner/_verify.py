@@ -26,6 +26,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
@@ -949,13 +950,17 @@ def _extract_lock_holder(combined: str) -> str | None:
 
 
 # frob:ticket T-0919
+# frob:ticket T-4550
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
+# kind="unit"
+# frob:tests tests/unit/test_done_report_check_scope.py::TestSharedCheckSpawnFnTimeout \
 # kind="unit"
 def _shared_check_spawn_fn(  # noqa: ANN201
     root: Path,
     ticket_id: str,
     base: str | None = None,
     files: tuple[str, ...] | None = None,
+    timeout: int = 600,
 ):
     """T-0919: build a zero-arg closure that spawns `frob check --ticket
     <id>` in `root` AT MOST ONCE, caching the resulting
@@ -1101,7 +1106,20 @@ def _shared_check_spawn_fn(  # noqa: ANN201
     layer (the ~150s warm-cache floor named above) and its file-iterating
     gates run over that scoped set instead of the whole tree. The
     standard profile passes nothing, so its spawn is byte-for-byte
-    unchanged."""
+    unchanged.
+
+    T-4550 (done-report scoping/budget): `timeout` (default
+    `600`, every prior caller's implicit value) is the `guarded_
+    subprocess_run` timeout budget in seconds -- `_done_report` passes
+    its own configurable `[tool.frob] done_report_check_budget_s`
+    (default 300) here instead of the fixed 600s every caller used to
+    get unconditionally. A budget that expires is not a crash:
+    `guarded_subprocess_run` catches `subprocess.TimeoutExpired` and
+    returns `Err(ProcessGuardError.Timeout)` (see that function's own
+    docstring), which the `spawn()` closure below already treats as an
+    ordinary refused-spawn -> `cache["result"] = None`, the same
+    "gate-state unmeasured" path every other refusal already takes --
+    no new failure mode, just a shorter fuse on the existing one."""
     cache: dict[str, subprocess.CompletedProcess | None] = {}
 
     def spawn() -> subprocess.CompletedProcess | None:
@@ -1158,7 +1176,7 @@ def _shared_check_spawn_fn(  # noqa: ANN201
             cwd=root,
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=timeout,
             check=False,
             env=child_env,
         )
@@ -2104,11 +2122,138 @@ def _warn_if_done_report_not_visible_on_primary(root: Path, ticket_id: str) -> N
     )
 
 
+# frob:ticket T-4550
+#: `done-report`'s capture-check timeout budget, seconds, when neither
+#: `frob.toml`/`pyproject.toml` names an override -- see
+#: `_done_report_check_budget_s`'s own docstring for why 300 was chosen.
+_DONE_REPORT_CHECK_DEFAULT_BUDGET_S = 300
+
+
+# frob:ticket T-4550
+# frob:tests tests/unit/test_done_report_check_scope.py::TestDoneReportCheckBudgetS \
+# kind="unit"
+def _done_report_check_budget_s(root: Path) -> int:
+    """The `done-report` capture check's timeout budget, seconds (T-draft-
+    db13b6bc, acceptance criterion 2): `pyproject.toml`'s `[tool.frob]
+    done_report_check_budget_s`, falling back to `_DONE_REPORT_CHECK_
+    DEFAULT_BUDGET_S` (300) when unset, the file is absent, or the value
+    fails to parse as a number. Reuses `_rapid_sweep._toml_number` (T-4414's
+    own tolerant dotted-key TOML reader -- never raises, missing file/table/
+    key or an unparsable file all degrade to `None`) rather than a second
+    hand-rolled `tomllib.load` here, per this repo's no-duplication rule.
+    Measured at 480-595s per fleet-box spawn under 3+ concurrent agents
+    (T-4550's own filing) -- 300s gives one real check a chance
+    to finish before this ticket's budget-exceeded fallback (criterion 2)
+    takes over and still writes the Done report."""
+    from frob.app.ticket_runner._rapid_sweep import _toml_number
+
+    value = _toml_number(
+        root / "pyproject.toml", ("tool", "frob", "done_report_check_budget_s")
+    )
+    if value is None:
+        return _DONE_REPORT_CHECK_DEFAULT_BUDGET_S
+    return int(value)
+
+
+# frob:ticket T-4550
+# frob:tests tests/unit/test_done_report_check_scope.py::TestDoneReportTouchedFiles \
+# kind="unit"
+def _done_report_touched_files(
+    root: Path, ticket_id: str, base: str
+) -> tuple[str, ...] | None:
+    """The `--files` set `done-report`'s own capture check is scoped to
+    (T-4550, acceptance criterion 1): `working_diff(root, base)`'s
+    hunk files (this ticket's OWN touched set, computed against `base`
+    rather than `_land_cmd._land_touched_paths`'s hardcoded `"main"` --
+    done-report already resolves the caller's real base via `cfg.
+    ticket_base_ref`, and reusing that hardcoded-`"main"` helper here would
+    silently ignore a non-default `--base-ref`), then widened to their
+    direct dependents via `_land_cmd._rapid_check_scope_files` (T-4413's
+    own reverse-edge walk, reused here rather than copied, per this
+    ticket's own body instruction). `None` -- unscoped, today's whole-tree
+    behavior -- when the diff itself cannot be computed (no merge-base,
+    detached HEAD, a `git` spawn failure): a done-report capture must
+    never silently narrow what it verifies just because the diff it would
+    have scoped against is itself unmeasurable."""
+    from frob.app.ticket_runner._land_cmd import _rapid_check_scope_files
+    from frob.gitio import working_diff
+
+    diff_result = working_diff(root, base)
+    if diff_result.is_err:
+        _log.warning(
+            "ticket %s: done-report could not compute a touched-file set "
+            "against base %r (%s) -- capture check runs unscoped",
+            ticket_id,
+            base,
+            diff_result.danger_err,
+        )
+        return None
+    touched = frozenset(hunk.file for hunk in diff_result.danger_ok.hunks)
+    return _rapid_check_scope_files(root, ticket_id, touched)
+
+
 # frob:ticket T-0458
 # frob:ticket T-0754
 # frob:ticket T-3468
+# frob:ticket T-4550
 # frob:tests \
 # tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes
+# frob:tests tests/unit/test_done_report_check_scope.py::TestDoneReportModes kind="unit"
+def _done_report_base(cfg: AppConfig) -> str | None:
+    """T-4105: `cfg.ticket_base_ref`'s effective override -- `None` (use
+    frob.toml's own `check_base` fallback) unless the caller passed a
+    real non-default `--base-ref`, since argparse's literal `"main"`
+    default cannot otherwise be told apart from "flag omitted"."""
+    return cfg.ticket_base_ref if cfg.ticket_base_ref != "main" else None
+
+
+# frob:ticket T-4550
+def _done_report_no_check(cfg: AppConfig) -> bool:
+    """Whether `--no-check` (T-4550 criterion 3) was given.
+    `getattr`, not a direct attribute read: `AppConfig.ticket_no_check`
+    and its argparse forwarding live in `src/frob/app/config.py`/`src/
+    frob/app/_config_external.py`, both under an active T-3613 scope
+    lease for this ticket's whole duration -- this degrades to
+    always-False (always-checked) until that field lands, needing no
+    second edit here once it does."""
+    return bool(getattr(cfg, "ticket_no_check", False))
+
+
+# frob:ticket T-4550
+def _done_report_capture_check(root: Path, cfg: AppConfig, base: str | None):  # noqa: ANN201
+    """Build `done-report`'s `(check_gates, check_gate_findings, mode)`
+    triple (T-4550): the two capture closures `set_done_report`
+    calls for its `### Captured claims` section (T-0754), plus a short
+    mode label for the caller's own INFO log line.
+
+    `_done_report_no_check(cfg)` True (criterion 3, `--no-check`) skips
+    the `frob check --ticket` spawn entirely -- both closures are `None`,
+    so `set_done_report` records the same "unmeasured" marker with zero
+    subprocess cost. Otherwise (the default) the spawn is scoped via
+    `--files` to `_done_report_touched_files`'s diff-touched-plus-direct-
+    dependents set (criterion 1) and budgeted to `_done_report_check_
+    budget_s` seconds (criterion 2, default 300) -- a budget that expires
+    is not a verb failure, it is the SAME "gate-state unmeasured" path
+    `check_gates()`/`check_gate_findings()` returning `None` already takes
+    (`_shared_check_spawn_fn`'s own docstring). Replaces this same fresh
+    `frob check --ticket` spawning FULL and UNBUDGETED (implicit 600s) on
+    every call -- under 3+ concurrent agents that exceeded every wrapper
+    timeout and produced retry loops with no Done report written for
+    hours (this ticket's own filing)."""
+    assert cfg.ticket_id is not None  # narrowed by the caller
+    if _done_report_no_check(cfg):
+        return None, None, "no-check"
+    budget = _done_report_check_budget_s(root)
+    files = _done_report_touched_files(root, cfg.ticket_id, base or "main")
+    spawn = _shared_check_spawn_fn(
+        root, cfg.ticket_id, base=base, files=files, timeout=budget
+    )
+    check_gates = _check_gates_summary_fn(root, cfg.ticket_id, spawn=spawn)
+    check_gate_findings = _check_gate_findings_fn(root, cfg.ticket_id, spawn=spawn)
+    mode = f"scoped-check(files={len(files) if files else 0},budget={budget}s)"
+    return check_gates, check_gate_findings, mode
+
+
 def _done_report(root: Path, cfg: AppConfig) -> None:
     """`frob ticket done-report <id> (--why TEXT | --why-file PATH | -)`:
     resolve the narrative why, then call `frob.tickets.set_done_report` --
@@ -2122,7 +2267,12 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
     `### Captured claims` section -- a test count from actually running
     the ticket's own evidence and a gate-state summary from a fresh `frob
     check --ticket`, neither typed by the agent -- instead of leaving the
-    Done report's test/gate claims as unverified free prose."""
+    Done report's test/gate claims as unverified free prose.
+
+    T-4550: `check_gates`/`check_gate_findings`/the mode label
+    logged at INFO now come from `_done_report_capture_check` -- see that
+    function's own docstring for the scoped/budgeted/skipped modes it
+    picks between."""
     from frob.tickets import set_done_report
 
     if cfg.ticket_id is None:
@@ -2137,32 +2287,25 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
-    # below instead of each running its own full `frob check --ticket`.
-    # frob:ticket T-4105
-    # T-4105: `cfg.ticket_base_ref`'s argparse default is the literal
-    # string `"main"` (no unset sentinel -- `done-report --base-ref` has
-    # no way to distinguish "user typed --base-ref main" from "flag
-    # omitted"), so forwarding it unconditionally would send an explicit
-    # `--base main` to every nested spawn and silently override a repo's
-    # own frob.toml `check_base` default even when the user never asked
-    # for `main` specifically. Forwarding only when it differs from that
-    # default is the deliberate compromise: a real `--base-ref
-    # <other-branch>` reaches the nested spawn (fixture 1), while leaving
-    # it unset stays byte-identical to pre-T-4105 behavior including the
-    # frob.toml fallback (fixtures 2/3).
-    _base = cfg.ticket_base_ref if cfg.ticket_base_ref != "main" else None
-    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id, base=_base)
+    _t0 = time.monotonic()
+    check_gates, check_gate_findings, mode = _done_report_capture_check(
+        root, cfg, _done_report_base(cfg)
+    )
     result = set_done_report(
         root,
         cfg.ticket_id,
         why=why,
         base_ref=cfg.ticket_base_ref,
         run_tests=_run_tests_count_fn(root),
-        check_gates=_check_gates_summary_fn(root, cfg.ticket_id, spawn=_shared_spawn),
-        check_gate_findings=_check_gate_findings_fn(
-            root, cfg.ticket_id, spawn=_shared_spawn
-        ),
+        check_gates=check_gates,
+        check_gate_findings=check_gate_findings,
+    )
+    _elapsed = time.monotonic() - _t0
+    _log.info(
+        "ticket %s: done-report check mode=%s elapsed=%.2fs",
+        cfg.ticket_id,
+        mode,
+        _elapsed,
     )
     if result.is_err:
         _log.error("done-report failed: %s", result.danger_err)

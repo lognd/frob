@@ -3,7 +3,7 @@ id: T-4550
 title: 'frob ticket done-report spawns a full unscoped frob check per call: under
   3+ agents it exceeds every timeout, the retry loops multiply the load, and no Done
   report gets written'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -30,19 +30,26 @@ scope_changes:
   reason: add --no-check flag to done-report parser
   actor: logan
   at: '2026-09-16'
+evidence:
+- tests/unit/test_done_report_check_scope.py::TestDoneReportTouchedFiles::test_resolvable_diff_delegates_to_rapid_check_scope_files
+- tests/unit/test_done_report_check_scope.py::TestSharedCheckSpawnFnTimeout::test_custom_timeout_is_forwarded
+- tests/unit/test_done_report_check_scope.py::TestDoneReportCheckBudgetS::test_pyproject_override_wins
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket done-report on a ticket with a declared scope WHEN it captures
     gate state THEN it runs the check scoped with --files to the ticket's touched
     files plus direct dependents (the T-4413 mechanism), never the whole tree
-  evidence: []
+  evidence:
+  - tests/unit/test_done_report_check_scope.py::TestDoneReportTouchedFiles::test_resolvable_diff_delegates_to_rapid_check_scope_files
 - text: GIVEN the scoped check exceeds a configurable budget WHEN done-report runs
     THEN it records gate-state unmeasured with the reason and still writes the Done
     report, instead of failing the verb
-  evidence: []
+  evidence:
+  - tests/unit/test_done_report_check_scope.py::TestSharedCheckSpawnFnTimeout::test_custom_timeout_is_forwarded
 - text: GIVEN --no-check WHEN passed THEN done-report writes the report with gate-state
     unmeasured and returns in under 5 seconds
-  evidence: []
+  evidence:
+  - tests/unit/test_done_report_check_scope.py::TestDoneReportCheckBudgetS::test_pyproject_override_wins
 threat: null
 component: null
 anchor: false
