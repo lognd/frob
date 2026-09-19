@@ -28,6 +28,9 @@ scope_changes:
   reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-draft-a62505d4
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/gates_suite/test_coverage.py::TestTestmock001::test_satisfied_by_a_companion_test_leaving_one_collaborator_real
+- tests/gates_suite/test_coverage.py::TestTestmock001::test_t3933_shaped_dynamic_dispatch_table_scenario_fires
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests-bound symbol whose only binding test mocks every collaborator,
@@ -35,10 +38,19 @@ acceptance:
   evidence: []
 - text: given a second test for the same symbol with at least one non-mocked binding,
     when frob check runs, then the rule is satisfied
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_coverage.py::TestTestmock001::test_satisfied_by_a_companion_test_leaving_one_collaborator_real
 - text: given T-3933's own scenario, when this rule ships, then it would have flagged
     the synthetic LANGUAGE_COLLECTORS stand-in before F-171 surfaced the gap externally
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_coverage.py::TestTestmock001::test_t3933_shaped_dynamic_dispatch_table_scenario_fires
+evidence_changes:
+- old_node: tests/gates_suite/test_coverage.py::TestTestmock001::test_fires_when_the_only_binding_test_mocks_every_collaborator
+  new_node: ''
+  reason: 're-bind after fix(gates) COV001/COV002 commit 2d2fd5575, per playbook rule:
+    evidence must be bound after the last commit'
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
