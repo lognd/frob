@@ -2,7 +2,7 @@
 id: T-draft-0bcabfa4
 title: 'DECISION: how bidirectional cross-module flows are expressed without an import
   cycle'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-19'
