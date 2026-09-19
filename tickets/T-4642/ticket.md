@@ -1,5 +1,5 @@
 ---
-id: T-draft-ede38ca6
+id: T-4642
 title: land Tier-A directive canonicalizer emits lines over the ruff limit that the
   land's own ruff gate then refuses (E501), self-refusing every ticket whose frob:doc
   anchor is long

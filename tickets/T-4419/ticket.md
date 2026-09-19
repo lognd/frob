@@ -135,8 +135,8 @@ Per-subdirectory breakdown:
 2 files excluded from all clustering because they are leased by in-progress tickets
 (grep -l against .git/frob-leases/*.json):
 - tests/unit/verify/test_verify_runner.py (1 finding) -- leased by T-3082
-- tests/unit/strata/test_selfconform.py (4 findings) -- leased by T-draft-213c1cfd
-These 5 findings are DEFERRED, not dropped: pick them up once T-3082 / T-draft-213c1cfd land.
+- tests/unit/strata/test_selfconform.py (4 findings) -- leased by T-4633
+These 5 findings are DEFERRED, not dropped: pick them up once T-3082 / T-4633 land.
 
 Remaining 177 findings split into 6 clusters of ~30-33 each (file-granular, no file split
 across clusters). T-4419 itself is narrowed to cluster 0 (32 findings, 5 files). The other

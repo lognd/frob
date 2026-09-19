@@ -1,11 +1,11 @@
 ---
-id: T-draft-213c1cfd
+id: T-4633
 title: 'SYS111 ratchet ceilings race every land: a ticket that declares a new via
   site bumps accepted_count against a stale dev count, then dev moves and the land
   refuses with ''grew above the committed ceiling''; the land''s composed-tree check
   must auto-accept growth that is exactly the branch''s own declared via additions
   (same posture as the T-4596 testsuite-glob auto-accept)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -60,15 +60,24 @@ scope_changes:
     as prior lease-conflict fold-ins
   actor: logan
   at: '2026-09-19'
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_branch_own_growth_auto_accepts
+- tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_own_addition_is_measured
+- tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_growth_beyond_branch_own_addition_still_refuses
+- tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_no_head_blob_treats_every_entry_as_added
+designated_repro_test: tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_branch_own_growth_auto_accepts
 acceptance:
 - text: A branch whose SYS111 ratchet-ceiling growth is exactly accounted for by its
     own via additions to design/frob.strata auto-accepts at land composed-tree check
     time (lock rewritten with a reason naming the ticket), never outside a land.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_branch_own_growth_auto_accepts
+  - tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_own_addition_is_measured
+  - tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_no_head_blob_treats_every_entry_as_added
 - text: A branch whose growth includes an undeclared site (or growth another already-landed
     ticket is responsible for) still refuses.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_growth_beyond_branch_own_addition_still_refuses
 threat: null
 component: null
 anchor: false

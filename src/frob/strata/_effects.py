@@ -1243,6 +1243,47 @@ def _testsuite_glob_ratcheted_keys(model: KernelModel) -> frozenset[str]:
 FROB_LAND_LOCK_ROOT_ENV = "FROB_LAND_LOCK_ROOT"
 
 
+#: T-4633 (SYS111 ratchet ceiling land race, measured T-4508 x2,
+#: T-4111): env var carrying the id of the ticket currently landing, set by
+#: `frob.tickets._land_squash._refuse_if_selfaudit_findings_in_touched_
+#: files` for the duration of its in-process SYS111 gate call. Threaded via
+#: environ, not a parameter, for the exact same reason `FROB_LAND_LOCK_
+#: ROOT_ENV` above is: `frob.gates._sys.sys111_findings_touching`'s fixed
+#: `(root, files)` signature lives in a module leased by another in-
+#: progress ticket (T-4212) for this ticket's whole duration, so its
+#: signature cannot grow a new parameter here. Read only by `_branch_own_
+#: via_growth_reason` to NAME the landing ticket in an auto-accepted lock
+#: entry's reason; absent/blank reads as "no ticket id available" and
+#: falls back to a generic reason, never as "skip the auto-accept".
+# frob:doc docs/modules/gate-sys111-ratchet-auto-accept.md#fix-branch-own-via-growth-auto-accept-at-land-composed-tree-check-time  # noqa: E501
+# frob:ticket T-4633
+FROB_LAND_TICKET_ENV = "FROB_LAND_TICKET_ID"
+
+
+# frob:ticket T-4633
+@contextmanager
+def _land_ticket_id_env(ticket_id: str | None):
+    """Context manager: while `ticket_id` is truthy, sets `FROB_LAND_
+    TICKET_ENV` in `os.environ` to it for the duration of the `with`
+    block and restores the prior value (or clears it) on exit; a no-op
+    when `ticket_id` is falsy. Mirrors `_land_lock_root_env`'s own env-
+    set/restore shape exactly -- same caller (`frob.tickets._land_squash.
+    _refuse_if_selfaudit_findings_in_touched_files`), same T-4596
+    precedent, one ticket later (T-4633)."""
+    if not ticket_id:
+        yield
+        return
+    prior = os.environ.get(FROB_LAND_TICKET_ENV)
+    os.environ[FROB_LAND_TICKET_ENV] = ticket_id
+    try:
+        yield
+    finally:
+        if prior is None:
+            os.environ.pop(FROB_LAND_TICKET_ENV, None)
+        else:
+            os.environ[FROB_LAND_TICKET_ENV] = prior
+
+
 # frob:ticket T-4596
 @contextmanager
 def _land_lock_root_env(land_lock_root: Path | None):
@@ -1459,9 +1500,176 @@ def _testsuite_glob_growth_finding(
     )
 
 
+#: T-4633: the one file this auto-accept diffs -- matches
+#: `CAPABILITY_RATCHET_LOCK_REL`'s own single-file disclosed-scope
+#: precedent (module docstring's T-4495 section) rather than walking
+#: every `.strata` file under the design dir; every measured land-race
+#: incident (T-4508 x2, T-4111) grew this same file.
+# frob:ticket T-4633
+_BRANCH_VIA_GROWTH_STRATA_REL = "design/frob.strata"
+
+
+# frob:ticket T-4633
+def _via_len_counts_from_module(module) -> dict[str, int]:
+    """`{"<node_id>::<atom>": summed len(via)}` across every `MayGrantDecl`
+    in a parsed `frob.strata._ast.Module`'s `nodes` AND `extends`
+    (T-4633) -- the raw, unmerged, single-file counterpart to
+    `capability_via_site_counts` (which needs a fully cross-file-
+    elaborated `KernelModel`); used only to diff one file's via-list
+    length before/after a branch's own edits, never to evaluate an
+    actual ratchet ceiling itself."""
+    counts: dict[str, int] = {}
+    for node in module.nodes:
+        for grant in node.may_grants:
+            if not grant.via:
+                continue
+            key = f"{node.id}::{grant.atom}"
+            counts[key] = counts.get(key, 0) + len(grant.via)
+    for extend in module.extends:
+        for grant in extend.may_grants:
+            if not grant.via:
+                continue
+            key = f"{extend.id}::{grant.atom}"
+            counts[key] = counts.get(key, 0) + len(grant.via)
+    return counts
+
+
+# frob:ticket T-4633
+# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_own_addition_is_measured  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_no_head_blob_treats_every_entry_as_added  # noqa: E501
+#: T-4633, split out of `_branch_own_via_growth` (ARCH001, the
+#: 60-line function-length threshold): the two text-acquisition halves,
+#: `_read_new_strata_text` (plain file read, best-effort) and
+#: `_git_show_head_strata_text` (the `HEAD`-blob half, via `frob.gitio.
+#: run_argv` -- never a bare `subprocess` call in THIS file, since
+#: `stratamod`'s own node declaration has no `exec` grant and this
+#: module's scope does not cover `design/frob.strata`, leased by T-4111
+#: for this ticket's whole duration; `run_argv`'s spawn lives inside
+#: `gitio.py`, a node whose `exec` capability IS already declared, so
+#: routing through it needs no new via-site declaration at all -- and
+#: gets the `FROB_DISABLE_EXEC` kill-switch and spawn-recorder
+#: integration every other git call in the codebase already has, for
+#: free), and `_via_growth_from_texts` (the pure diff: parse both,
+#: subtract, keep only positive deltas). All three are best-effort:
+#: any git/read/parse failure reads as "nothing to diff" (`""`/`{}`),
+#: fail closed -- no key gets auto-accepted -- matching this module's
+#: existing best-effort-on-infra-failure posture (`_write_capability_
+#: ratchet_lock_entry`, `_land_commit_in_progress`).
+def _read_new_strata_text(root: Path) -> str | None:
+    """The current working-tree content of `_BRANCH_VIA_GROWTH_STRATA_
+    REL` under `root`, or `None` if it does not exist or cannot be
+    read."""
+    path = root / _BRANCH_VIA_GROWTH_STRATA_REL
+    if not path.is_file():
+        return None
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning(
+            "strata effects: branch-own via growth: could not read %s: %s",
+            path,
+            exc,
+        )
+        return None
+
+
+# frob:ticket T-4633
+def _git_show_head_strata_text(root: Path) -> str:
+    """`git show HEAD:_BRANCH_VIA_GROWTH_STRATA_REL` under `root`, via
+    `frob.gitio.run_argv` -- `""` (never a parse target) on any spawn
+    failure or nonzero exit."""
+    from frob.gitio import run_argv
+
+    shown = run_argv(["git", "show", f"HEAD:{_BRANCH_VIA_GROWTH_STRATA_REL}"], cwd=root)
+    if shown.is_err:
+        _log.warning(
+            "strata effects: branch-own via growth: could not git-show "
+            "HEAD:%s under %s: %s",
+            _BRANCH_VIA_GROWTH_STRATA_REL,
+            root,
+            shown.danger_err,
+        )
+        return ""
+    completed = shown.danger_ok
+    return completed.stdout if completed.returncode == 0 else ""
+
+
+# frob:ticket T-4633
+def _via_growth_from_texts(old_text: str, new_text: str) -> dict[str, int]:
+    """`{"<node_id>::<atom>": N}` for every POSITIVE via-list-length
+    delta between `old_text` and `new_text` (both raw `design/
+    frob.strata`-shaped source), via `_via_len_counts_from_module`.
+    `{}` if `new_text` fails to parse; an unparseable `old_text` (or
+    `""`, the no-prior-blob case) reads as zero prior counts, so every
+    entry in `new_text` counts as newly added."""
+    from ._parse import parse_module
+
+    new_parsed = parse_module(new_text)
+    if new_parsed.is_err:
+        return {}
+    old_parsed = parse_module(old_text) if old_text else None
+    old_counts = (
+        _via_len_counts_from_module(old_parsed.danger_ok)
+        if old_parsed is not None and old_parsed.is_ok
+        else {}
+    )
+    new_counts = _via_len_counts_from_module(new_parsed.danger_ok)
+    return {
+        key: new_count - old_counts.get(key, 0)
+        for key, new_count in new_counts.items()
+        if new_count - old_counts.get(key, 0) > 0
+    }
+
+
+# frob:ticket T-4633
+def _branch_own_via_growth(root: Path) -> dict[str, int]:
+    """T-4633 (SYS111 ratchet ceiling land race, measured
+    T-4508 x2, T-4111): `{"<node_id>::<atom>": N}` for every via-list
+    growth `_BRANCH_VIA_GROWTH_STRATA_REL` itself shows between its
+    committed `HEAD` blob and the CURRENT working-tree content under
+    `root` (`_git_show_head_strata_text` vs `_read_new_strata_text`,
+    diffed by `_via_growth_from_texts`). A land's composed-tree check
+    runs with `root`'s git `HEAD` still at the pre-squash tip
+    (`_refuse_if_selfaudit_findings_in_touched_files`'s own docstring:
+    "before-any-commit-exists shape") and the staged, not-yet-committed
+    squash content already written into the working tree -- so this is
+    exactly the diff the branch itself is about to introduce, with no
+    base-ref parameter needing to thread through `frob.gates._sys.
+    sys111_findings_touching`'s fixed signature (see `FROB_LAND_TICKET_
+    ENV`'s own docstring above for why that module cannot grow one right
+    now).
+
+    Used ONLY to bound how much of an observed ratchet violation's
+    growth `_capability_ratchet_growth_finding` may auto-accept -- never
+    to widen a ceiling beyond what this diff itself shows; growth a land
+    observes beyond what its OWN diff added (e.g. another ticket already
+    landed on `dev` widened the same via-list) is not in this dict and
+    so still refuses, unchanged."""
+    new_text = _read_new_strata_text(root)
+    if new_text is None:
+        return {}
+    return _via_growth_from_texts(_git_show_head_strata_text(root), new_text)
+
+
+# frob:ticket T-4633
+def _branch_own_via_growth_reason() -> str:
+    """T-4633: the lock-entry reason `_capability_ratchet_
+    growth_finding` writes for a branch-own via-addition auto-accept --
+    names the landing ticket via `FROB_LAND_TICKET_ENV` when set (the
+    common case, `_land_ticket_id_env`'s own caller), else a generic
+    fallback naming only the mechanism."""
+    ticket_id = os.environ.get(FROB_LAND_TICKET_ENV, "").strip()
+    if ticket_id:
+        return f"branch-own via addition auto-accept ({ticket_id})"
+    return "branch-own via addition auto-accept"
+
+
 # frob:ticket T-4495
+# frob:ticket T-4633
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_non_testsuite_bare_glob_via_is_not_auto_accepted  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_branch_own_growth_auto_accepts  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_growth_beyond_branch_own_addition_still_refuses  # noqa: E501
 def _capability_ratchet_growth_finding(
     root: Path,
     key: str,
@@ -1470,16 +1678,39 @@ def _capability_ratchet_growth_finding(
     count: int,
     accepted: int,
     glob_ratcheted: frozenset[str],
+    branch_growth: dict[str, int],
 ) -> CapabilityRatchetViolation | None:
-    """T-4495: one GROWN `(node, atom)` pair's outcome, split out of
-    `capability_ratchet_violations` to keep it under ARCH001's line
-    threshold -- `None` (auto-accepted, lock rewritten in place) when
-    `key` is testsuite-glob-ratcheted and a land holds the write
-    (`_testsuite_glob_growth_finding`, T-4563), else a real
-    `CapabilityRatchetViolation` (the original, unchanged fail-closed
-    behavior)."""
+    """T-4495/T-4633: one GROWN `(node, atom)` pair's outcome,
+    split out of `capability_ratchet_violations` to keep it under
+    ARCH001's line threshold -- `None` (auto-accepted, lock rewritten in
+    place) when EITHER `key` is testsuite-glob-ratcheted and a land holds
+    the write (`_testsuite_glob_growth_finding`, T-4563), OR (T-draft-
+    213c1cfd) the growth beyond `accepted` is fully accounted for by the
+    branch's OWN via additions (`_branch_own_via_growth`) and a land
+    holds the write -- same auto-accept posture as the T-4596 testsuite-
+    glob carve-out, generalized to any node/atom whose ceiling race is
+    caused by the branch's own declared growth rather than a stale
+    observation. Otherwise a real `CapabilityRatchetViolation` (the
+    original, unchanged fail-closed behavior)."""
     if key in glob_ratcheted:
         return _testsuite_glob_growth_finding(root, key, node_id, atom, count, accepted)
+    needed = count - accepted
+    if (
+        needed > 0
+        and branch_growth.get(key, 0) >= needed
+        and _land_commit_in_progress(root)
+    ):
+        reason = _branch_own_via_growth_reason()
+        _write_capability_ratchet_lock_entry(root, key, count, reason)
+        _log.info(
+            "strata effects: capability ratchet: %s %s branch-own via "
+            "growth to %d site(s) auto-accepted (%s)",
+            node_id,
+            atom,
+            count,
+            reason,
+        )
+        return None
     _log.warning(
         "strata effects: capability ratchet: %s %s grew to %d "
         "site(s), above the committed ceiling of %d",
@@ -1502,9 +1733,37 @@ def _capability_ratchet_growth_finding(
     )
 
 
+# frob:ticket T-4633
+def _missing_reason_violation(
+    key: str, node_id: str, atom: str, count: int, accepted: int, entry: dict | None
+) -> CapabilityRatchetViolation | None:
+    """One `(node, atom)` pair's outcome when it is NOT grown (`count <=
+    accepted`): `None` unless `entry` exists with no non-empty `reason`,
+    in which case a `CapabilityRatchetViolation` demanding one -- the
+    same discipline `frob:waive` already requires. Split out of
+    `capability_ratchet_violations` (ARCH001, T-4633) to keep
+    that function under the 60-line threshold."""
+    reason = entry.get("reason") if isinstance(entry, dict) else None
+    if entry is None or (isinstance(reason, str) and reason.strip()):
+        return None
+    return CapabilityRatchetViolation(
+        node=node_id,
+        atom=atom,
+        observed_count=count,
+        accepted_count=accepted,
+        detail=(
+            f"{CAPABILITY_RATCHET_LOCK_REL} entry for {key!r} has no "
+            "non-empty reason -- every ratchet entry must carry one, "
+            "the same discipline frob:waive already requires"
+        ),
+    )
+
+
 # frob:doc docs/strata/surface.md#may-scope
+# frob:doc docs/modules/gate-sys111-ratchet-auto-accept.md#fix-branch-own-via-growth-auto-accept-at-land-composed-tree-check-time  # noqa: E501
 # frob:ticket T-1628
 # frob:ticket T-4495
+# frob:ticket T-4633
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_beyond_justified_ceiling_fails_even_after_a_prior_shrink  # noqa: E501
 # frob:tests \
@@ -1524,26 +1783,23 @@ def capability_ratchet_violations(
     """T-1628: every `(node, atom)` pair whose current scoped via-list site
     count (`capability_via_site_counts`) exceeds the committed lock's
     `accepted_count` for that pair (module docstring: a missing entry is
-    `accepted_count=0`, so deleting an entry cannot un-ratchet it), plus
-    every EXISTING lock entry with no non-empty `reason`. Silent whenever
-    the observed count is at or below the accepted ceiling, regardless of
-    how it got there -- shrinking, holding steady, or re-growing back up to
-    (never past) a previously justified high-water mark are all ordinary,
-    unremarkable movement.
+    `accepted_count=0`), plus every EXISTING lock entry with no non-empty
+    `reason` (`_missing_reason_violation`). Silent whenever the observed
+    count is at or below the accepted ceiling, regardless of how it got
+    there.
 
-    T-4495: growth on a `testsuite`-node, glob-only-via `(node, atom)` pair
-    (`_testsuite_glob_ratcheted_keys`) is the ONE exception -- instead of
-    raising a violation, it is auto-accepted: the lock is rewritten in
-    place (`_write_capability_ratchet_lock_entry`) with the new observed
-    count and reason `"testsuite glob growth"`, and no violation is
-    returned for that pair on this call (module docstring's T-4495
-    section explains why: a glob has no per-file diff for a human to
-    review, so demanding a hand lock-edit for ordinary test-suite growth
-    would defeat the whole point of switching to a glob). Every other
-    `(node, atom)` pair, including `testsuite` itself for a non-glob atom,
-    keeps the original fail-closed behavior unchanged."""
+    Two land-only auto-accept exceptions, both applied inside
+    `_capability_ratchet_growth_finding` rather than here: T-4495's
+    testsuite-glob carve-out, and T-4633's branch-own-via-
+    growth carve-out (the SYS111 ratchet-ceiling land race measured
+    T-4508 x2, T-4111 -- see `_branch_own_via_growth`'s own docstring).
+    `branch_growth` is computed once here, outside the per-key loop,
+    since it does one `git show` regardless of how many keys grew."""
     observed = capability_via_site_counts(model, root)
     glob_ratcheted = _testsuite_glob_ratcheted_keys(model)
+    branch_growth = (
+        _branch_own_via_growth(root) if _land_commit_in_progress(root) else {}
+    )
     lock = _load_capability_ratchet_lock(root)
     found: list[CapabilityRatchetViolation] = []
     for key, count in sorted(observed.items()):
@@ -1553,26 +1809,16 @@ def capability_ratchet_violations(
         accepted = accepted_raw if isinstance(accepted_raw, int) else 0
         if count > accepted:
             growth = _capability_ratchet_growth_finding(
-                root, key, node_id, atom, count, accepted, glob_ratcheted
+                root, key, node_id, atom, count, accepted, glob_ratcheted, branch_growth
             )
             if growth is not None:
                 found.append(growth)
             continue
-        reason = entry.get("reason") if isinstance(entry, dict) else None
-        if entry is not None and not (isinstance(reason, str) and reason.strip()):
-            found.append(
-                CapabilityRatchetViolation(
-                    node=node_id,
-                    atom=atom,
-                    observed_count=count,
-                    accepted_count=accepted,
-                    detail=(
-                        f"{CAPABILITY_RATCHET_LOCK_REL} entry for {key!r} has no "
-                        "non-empty reason -- every ratchet entry must carry one, "
-                        "the same discipline frob:waive already requires"
-                    ),
-                )
-            )
+        missing_reason = _missing_reason_violation(
+            key, node_id, atom, count, accepted, entry
+        )
+        if missing_reason is not None:
+            found.append(missing_reason)
     return tuple(found)
 
 

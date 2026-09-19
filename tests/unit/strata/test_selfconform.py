@@ -2376,3 +2376,200 @@ class TestTestsuiteViaGlobRatchet:
         assert found[0].node == "widget"
         assert found[0].atom == "exec"
         assert not (tmp_path / CAPABILITY_RATCHET_LOCK_REL).is_file()
+
+
+# frob:ticket T-4633
+def _git(root: Path, *args: str) -> None:
+    """Test-only helper (T-4633): runs `git <args>` under `root`,
+    raising on a nonzero exit -- used only to build the tiny throwaway
+    commit history `_branch_own_via_growth` diffs against."""
+    import subprocess
+
+    subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+# frob:ticket T-4633
+def _init_repo_with_strata(root: Path, strata_text: str) -> None:
+    """Test-only helper (T-4633): initializes a throwaway git
+    repo at `root` with `design/frob.strata` committed at `strata_text` --
+    the committed `HEAD` blob `_branch_own_via_growth` reads via `git show`
+    before the test overwrites the working-tree copy to simulate the
+    branch's own uncommitted addition."""
+    _git(root, "init", "-q")
+    _git(root, "config", "user.email", "test@example.com")
+    _git(root, "config", "user.name", "Test")
+    _write(root, "design/frob.strata", strata_text)
+    _git(root, "add", "design/frob.strata")
+    _git(root, "commit", "-q", "-m", "initial")
+
+
+# frob:ticket T-4633
+class TestBranchOwnViaGrowth:
+    """T-4633: the SYS111 ratchet-ceiling land race measured
+    three times (T-4508 x2, T-4111) -- a ticket declares a new via site
+    for `design/frob.strata` and bumps the matching lock `accepted_count`
+    against a stale `dev` count, `dev` moves before the serial land runs,
+    and the land's own composed-tree check then refuses growth that is
+    fully accounted for by the branch's OWN via additions. Same posture
+    as the T-4495/T-4596 testsuite-glob auto-accept, generalized to any
+    node/atom via a `git show HEAD:design/frob.strata` diff instead of a
+    real-file glob scan."""
+
+    # frob:tests src/frob/strata/_effects.py::_branch_own_via_growth kind="unit"
+    # frob:ticket T-4633
+    def test_own_addition_is_measured(self, tmp_path: Path):
+        """A `design/frob.strata` edit that adds one `via` entry to an
+        existing node/atom, still uncommitted in the working tree, is
+        measured as `{"widget::net": 1}` against its committed `HEAD`
+        blob -- the exact diff a land's composed-tree check (git `HEAD`
+        still at the pre-squash tip, module docstring) observes for the
+        branch's own change."""
+        from frob.strata._effects import _branch_own_via_growth
+
+        _init_repo_with_strata(
+            tmp_path,
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py";\n}\n',
+        )
+        _write(
+            tmp_path,
+            "design/frob.strata",
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py", "b.py";\n}\n',
+        )
+        growth = _branch_own_via_growth(tmp_path)
+        assert growth == {"widget::net": 1}
+
+    # frob:tests src/frob/strata/_effects.py::_branch_own_via_growth kind="unit"
+    # frob:ticket T-4633
+    def test_no_head_blob_treats_every_entry_as_added(self, tmp_path: Path):
+        """A brand-new `design/frob.strata` with no committed `HEAD` blob
+        at all (a repo with no commits yet, or the file itself newly
+        added) reads the empty `git show` output as "nothing existed
+        before" -- every via entry in the working tree counts as this
+        branch's own addition, not a parse failure."""
+        from frob.strata._effects import _branch_own_via_growth
+
+        _git(tmp_path, "init", "-q")
+        _write(
+            tmp_path,
+            "design/frob.strata",
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py", "b.py";\n}\n',
+        )
+        growth = _branch_own_via_growth(tmp_path)
+        assert growth == {"widget::net": 2}
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:ticket T-4633
+    def test_branch_own_growth_auto_accepts(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """The land race itself: a committed lock ceiling of 1 for
+        `widget::net`, a `design/frob.strata` edit (uncommitted, in the
+        composed tree) that adds exactly one more `via` entry, and a
+        `model` whose observed count agrees (2) -- growth of 1 is fully
+        accounted for by the branch's own addition, so it auto-accepts
+        (no violation, lock rewritten to `accepted_count=2`) exactly like
+        the T-4495 testsuite-glob carve-out, but for a non-testsuite node.
+        The written reason names the landing ticket via `FROB_LAND_
+        TICKET_ID` (set by `_land_squash._refuse_if_selfaudit_findings_
+        in_touched_files` in the real land path)."""
+        from frob.strata._effects import (
+            CAPABILITY_RATCHET_LOCK_REL,
+            capability_ratchet_violations,
+        )
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        _init_repo_with_strata(
+            tmp_path,
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py";\n}\n',
+        )
+        _write(
+            tmp_path,
+            "design/frob.strata",
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py", "b.py";\n}\n',
+        )
+        (tmp_path / LAND_LOCK_REL).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / LAND_LOCK_REL).write_text("land in progress\n", encoding="utf-8")
+        lock_path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text(
+            '{"entries": {"widget::net": {"accepted_count": 1, "reason": "prior"}}}\n',
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("FROB_LAND_TICKET_ID", "T-9999")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may_grants=(MayGrant(atom="net", via=("a.py", "b.py")),),
+                ),
+            )
+        )
+        found = capability_ratchet_violations(model, tmp_path)
+        assert found == ()
+        import json
+
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        entry = lock["entries"]["widget::net"]
+        assert entry["accepted_count"] == 2
+        assert entry["reason"] == "branch-own via addition auto-accept (T-9999)"
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:ticket T-4633
+    def test_growth_beyond_branch_own_addition_still_refuses(self, tmp_path: Path):
+        """The negative control: `design/frob.strata`'s own committed-vs-
+        working-tree diff shows the branch adding only ONE `via` entry
+        (`widget::net` 1 -> 2), but the observed `model` count is 3 --
+        one site is unaccounted for by the branch's own diff (an
+        undeclared site, or growth some OTHER already-landed ticket is
+        responsible for). Needed growth (2, ceiling 1) exceeds what the
+        branch's own diff shows (1), so this still refuses as an ordinary
+        `CapabilityRatchetViolation` and the lock is never rewritten."""
+        from frob.strata._effects import (
+            CAPABILITY_RATCHET_LOCK_REL,
+            capability_ratchet_violations,
+        )
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        _init_repo_with_strata(
+            tmp_path,
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py";\n}\n',
+        )
+        _write(
+            tmp_path,
+            "design/frob.strata",
+            'module frob\n\nnode widget : trusted {\n    code "src/frob/widget/**";\n    may "net" via "a.py", "b.py";\n}\n',
+        )
+        (tmp_path / LAND_LOCK_REL).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / LAND_LOCK_REL).write_text("land in progress\n", encoding="utf-8")
+        lock_path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text(
+            '{"entries": {"widget::net": {"accepted_count": 1, "reason": "prior"}}}\n',
+            encoding="utf-8",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may_grants=(MayGrant(atom="net", via=("a.py", "b.py", "c.py")),),
+                ),
+            )
+        )
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert found[0].node == "widget"
+        assert found[0].atom == "net"
+        assert found[0].observed_count == 3
+        import json
+
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        assert lock["entries"]["widget::net"]["accepted_count"] == 1

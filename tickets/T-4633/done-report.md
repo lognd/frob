@@ -1,107 +1,177 @@
 ## Done report
 
-T-4562: docs/guides/extending/comment-dsl-directives.md lists seven
-walkers; csharp, java, bash, cuda and zig are wired in COMMENT_TYPES but
-undocumented.
-Worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-b6949eab
-(branch t-draft-b6949eab)
-Final HEAD: d9e8caa7dbd6d678bbefc1d8be48fcf2d2a0cc60 (merge of dev; no
-conflicts; no further code changes required this session)
+Done report -- T-4633
+SYS111 ratchet ceilings race every land
 
-Note on the ticket id: the brief said the draft id may have been renumbered
-on dev. I checked -- it is still T-4562 both in this worktree's
-`tickets/T-4562/ticket.md` and after merging dev (dev's own ledger
-still carries it under that id; `git log --all | grep b6949eab` shows no
-renumber commit). It resolves fine; no report of it going stale needed.
+WHAT changed, per file
+-----------------------
 
-WHAT changed, per file (all done BEFORE this session, verified not
-re-touched)
-------------------------------------------------------------------
-- docs/guides/extending/comment-dsl-directives.md: the "twelve tree-sitter
-  comment-node walkers" prose paragraph was regenerated to list all twelve
-  (python, typescript, tsx, rust, c, cpp, kotlin, bash, csharp, java, cuda,
-  zig -- previously seven, missing csharp/java/bash/cuda/zig), and bound
-  with a `frob:enumerates src/frob/lang/_extract.py::COMMENT_TYPES
-  members="python,typescript,tsx,rust,c,cpp,kotlin,bash,csharp,java,cuda,zig"`
-  directive so DOCENUM001 re-verifies this list against the real
-  `COMMENT_TYPES` dict every run (it cannot silently drift again the way the
-  original prose list did).
-- tests/test_docenum_gate.py: added
-  `TestCommentDslDirectivesDocMatchesCommentTypes::
-  test_enumerates_directive_members_match_comment_types`, a doc test that
-  independently asserts the doc's claimed member set equals
-  `frob.lang._extract.COMMENT_TYPES`'s real keys -- redundant with
-  DOCENUM001's own AST-diff by design (the ticket's acceptance criterion
-  asked for "a doc test or a frob:enumerates directive"; this ticket shipped
-  both).
+src/frob/strata/_effects.py
+  - New FROB_LAND_TICKET_ENV env var + _land_ticket_id_env context manager
+    (mirrors T-4596's FROB_LAND_LOCK_ROOT_ENV/_land_lock_root_env shape):
+    threads the landing ticket id into this module without adding a
+    parameter to frob.gates._sys.sys111_findings_touching's fixed
+    (root, files) signature -- that module is leased by T-4212 for this
+    ticket's whole duration.
+  - New _BRANCH_VIA_GROWTH_STRATA_REL ("design/frob.strata"),
+    _via_len_counts_from_module, _branch_own_via_growth(root): computes
+    "{node::atom: N}" via-list growth design/frob.strata itself shows
+    between its committed HEAD blob (git show HEAD:design/frob.strata,
+    via frob.gitio.run_argv -- never a bare subprocess call, since
+    stratamod's own node declaration has no exec grant and design/
+    frob.strata is leased by T-4111 so a new via site could not be added
+    there) and the current working-tree content. At land composed-tree
+    check time, root's git HEAD is still the pre-squash tip and the
+    staged squash content is already in the working tree, so this diff
+    is exactly the branch's own addition.
+  - New _branch_own_via_growth_reason(): reads FROB_LAND_TICKET_ENV to
+    name the landing ticket in the auto-accepted lock entry's reason.
+  - _capability_ratchet_growth_finding gained a branch_growth parameter
+    and a new auto-accept branch (same land-only posture as the existing
+    T-4495/T-4563 testsuite-glob carve-out): when the ceiling breach
+    (count - accepted) is <= branch_growth.get(key, 0) and a land holds
+    the write (_land_commit_in_progress), the lock is rewritten in place
+    with a reason naming the ticket and no violation is returned.
+    Growth beyond that -- an undeclared site, or another already-landed
+    ticket's growth -- still refuses unchanged.
+  - capability_ratchet_violations now computes branch_growth once (only
+    when a land holds the write) and threads it through the per-key loop.
+  - frob:doc/frob:ticket directives added on every new/changed symbol
+    (FROB_LAND_TICKET_ENV, _BRANCH_VIA_GROWTH_STRATA_REL,
+    _via_len_counts_from_module, _branch_own_via_growth_reason,
+    capability_ratchet_violations) pointing at the new standalone doc
+    page (docs/modules/gates.md is leased by T-4111).
+
+src/frob/tickets/_land_squash.py
+  - _refuse_if_selfaudit_findings_in_touched_files now wraps its
+    in-process SYS111/SELFAUDIT/DOCPTR gate calls in
+    _land_ticket_id_env(ticket_id) alongside the existing
+    _land_lock_root_env(land_lock_root), so the landing ticket id is
+    available to _branch_own_via_growth_reason for the duration of that
+    one call.
+
+tests/unit/strata/test_selfconform.py
+  - New TestBranchOwnViaGrowth class (plus _git/_init_repo_with_strata
+    test-only helpers building a throwaway git repo with a committed
+    design/frob.strata blob):
+    - test_own_addition_is_measured / test_no_head_blob_treats_every_
+      entry_as_added: unit tests of _branch_own_via_growth's git-diff
+      measurement directly.
+    - test_branch_own_growth_auto_accepts: POSITIVE CONTROL -- a branch
+      whose growth (widget::net 1 -> 2) is exactly its own via addition
+      auto-accepts (found == ()), the lock is rewritten to
+      accepted_count=2, and the reason names the ticket via
+      FROB_LAND_TICKET_ID (monkeypatched to "T-9999").
+    - test_growth_beyond_branch_own_addition_still_refuses: NEGATIVE
+      CONTROL -- growth (widget::net 1 -> 3) that the branch's own diff
+      only accounts for 1 of (2 needed) still refuses as an ordinary
+      CapabilityRatchetViolation and the lock is untouched.
+
+docs/modules/gate-sys111-ratchet-auto-accept.md (NEW)
+  - Standalone doc (docs/modules/gates.md leased by T-4111 for this
+    ticket's whole duration) describing the problem, the fix, and both
+    positive controls. Fold-in item appended to T-4605's body (the same
+    lease-conflict fold-in queue T-4114/T-4115/T-4221/T-3962/T-3961
+    already use) so the fold into docs/modules/gates.md happens once
+    that lease is free.
+
+tickets/T-4605/ticket.md
+  - Appended fold-in note for the new standalone doc page (frob ticket
+    body --append-file, reason: same T-4111 lease conflict).
 
 WHY
 ---
-Found by the T-4507 implementer: this guide's own "seven walkers" list had
-gone stale relative to `COMMENT_TYPES` in `src/frob/lang/_extract.py`, which
-already had twelve entries. Filed as this ticket rather than fixed inline
-(out of T-4507's declared scope). The fix regenerates the list from the
-real source of truth and binds it so the specific drift class (T-1227's
-DOCENUM001 motivating case: doc prose restating a collection's members with
-no graph edge) cannot recur silently here.
+Measured three times (T-4508 x2, T-4111): a ticket bumps its ratchet
+accepted_count against a stale dev observation, dev moves before the
+land runs, and the land's own SYS111 composed-tree check refuses growth
+that is entirely the branch's own declared addition. This generalizes
+the existing T-4495/T-4596 testsuite-glob auto-accept posture to any
+node/atom via a git-diff of design/frob.strata, land-only, never
+widening what counts as legitimate growth beyond the branch's own diff.
 
-HOW the acceptance criterion is proven
----------------------------------------
-Criterion: "GIVEN docs/guides/extending/comment-dsl-directives.md WHEN read
-THEN its walker list matches frob.lang._extract.COMMENT_TYPES exactly,
-proven by a doc test or a frob:enumerates directive."
+Acceptance criteria and evidence
+---------------------------------
+1. "A branch whose SYS111 ratchet-ceiling growth is exactly accounted
+   for by its own via additions to design/frob.strata auto-accepts at
+   land composed-tree check time..., never outside a land."
+   -> tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::
+      test_branch_own_growth_auto_accepts
+   -> tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::
+      test_own_addition_is_measured
+   -> tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::
+      test_no_head_blob_treats_every_entry_as_added
+2. "A branch whose growth includes an undeclared site ... still
+   refuses."
+   -> tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::
+      test_growth_beyond_branch_own_addition_still_refuses
 
-Bound evidence (already present in the ticket before this session; verified
-still valid): tests/test_docenum_gate.py::
-TestCommentDslDirectivesDocMatchesCommentTypes::
-test_enumerates_directive_members_match_comment_types
+All 4 evidence node ids bound via `frob ticket evidence --accepts N
+--base-ref dev`.
 
-Verification this session:
-  - grep confirms docs/guides/extending/comment-dsl-directives.md:19 carries
-    `frob:enumerates src/frob/lang/_extract.py::COMMENT_TYPES
-    members="python,typescript,tsx,rust,c,cpp,kotlin,bash,csharp,java,cuda,zig"`,
-    and that the twelve names match `COMMENT_TYPES`'s keys in
-    src/frob/lang/_extract.py exactly (both grepped directly).
-  - PYTHONPATH=<worktree>/src .venv/bin/python -m pytest
-    tests/test_docenum_gate.py -p no:cacheprovider -q
-    -> SUITE-RESULT: exitstatus=0 collected=16 failed=0 (the whole file's
-    suite, this ticket's test included, all pass).
+BUG002 repro: kind=bug, so a designated repro was required.
+designated_repro_test = tests/unit/strata/test_selfconform.py::
+TestBranchOwnViaGrowth::test_branch_own_growth_auto_accepts. Since the
+test was authored in the same commit as the fix, a T-2021-style
+technique was used: commit 85c2967e0 temporarily disabled the
+branch-own auto-accept branch (branch_growth forced to {}) while
+keeping the test, confirmed FAILED_AT_PARENT via `frob ticket evidence
+--designate-repro ... --base-ref 85c2967e0`, then commit ef654a54a
+restored the real fix. `frob ticket evidence --check-repro --base-ref
+85c2967e0` confirms FAILED_AT_PARENT (a real repro).
 
-Merge: `git merge dev --no-edit` -- clean, no conflicts (dev had since
-landed T-3612, T-4520 and others under tickets/, none touching this
-ticket's two scoped files).
+Commit shas (branch t-draft-213c1cfd)
+--------------------------------------
+2606cd4fb fix(strata): auto-accept SYS111 growth the branch's own via added
+85c2967e0 test(strata): BUG002 repro commit -- disable branch-own auto-accept
+ef654a54a fix(strata): restore branch-own auto-accept after BUG002 repro
+(plus frob ticket ledger auto-commits for scope/accept/evidence/body)
+HEAD = ce213692d
 
-Filed: none.
+Gates
+-----
+- `frob check --only sys --files <4 touched files> --base dev`: clean
+  SELFAUDIT/DSL/DRIFT attributable to this ticket. DRIFT (6, 5 waived)
+  and DSL (1) are PRE-EXISTING on dev in files this ticket never touched
+  (src/frob/app/ticket_runner/_rapid_sweep.py, src/frob/gates/
+  invariants.py, src/frob/tickets/_evidence.py, tests/test_app.py --
+  `git diff dev` on each is empty). SELFAUDIT was 2 errors before the
+  frob.gitio.run_argv fix (raw subprocess.run in _effects.py tripped
+  SYS100 for stratamod, which has no exec grant and design/frob.strata
+  is leased so a new via site could not be declared) -- now 0.
+- `frob check --only arch --files <3 touched files> --base dev`: pass,
+  0 errors (repo-wide advisory suggestions only, unrelated to this diff).
+- `frob check --only coverage --files <3 touched files> --base dev`:
+  COV002 resolved by adding frob:ticket T-4633 to every new/
+  changed symbol in src/frob/strata/_effects.py and tests/unit/strata/
+  test_selfconform.py. Remaining COV001 (FROB_LAND_LOCK_ROOT_ENV, no
+  frob:doc) and TODO002 (T-0919/T-0775/T-0134) are pre-existing, on
+  code this ticket did not touch.
+- `ty check src/frob/strata/_effects.py src/frob/tickets/_land_squash.py`:
+  clean.
+- `ruff check`/`ruff format --check` on all touched files: clean.
 
-Gates: `frob check --only gates --files
-docs/guides/extending/comment-dsl-directives.md --files
-tests/test_docenum_gate.py --base dev` was run to completion. Result:
-gate:DOCENUM and gate:DOCARCH both report 0 errors (DOCENUM: 10 warnings,
-DOCARCH: 546 warnings -- both WARN-tier only, per
-src/frob/gates/_docenum.py's own documented posture: the undocumented-member
-warning was introduced at WARN specifically because landing it at ERROR
-would redden main on ~79 pre-existing ids, "filed as a separate backlog
-ticket, not blocked on here"). The DOCENUM001 warning on this file's two
-`frob:enumerates` directives is a pre-existing false-positive shape (the
-checker's `_documented_ids` only recognizes RULEID-shaped tokens in table
-cells/headings -- verb names like "doc"/"ticket" and walker names like
-"csharp"/"bash" never match that shape in ANY file using this directive
-style, including the already-landed `ticket-kinds-states.md` precedent), not
-something this ticket introduced or can fix by editing prose further.
+Cross-ticket
+------------
+git diff --name-only dev...HEAD = docs/modules/gate-sys111-ratchet-
+auto-accept.md, src/frob/strata/_effects.py, src/frob/tickets/
+_land_squash.py, tests/unit/strata/test_selfconform.py, tickets/
+T-4605/ticket.md, tickets/T-4633/ticket.md -- all within this
+ticket's own declared/leased scope, none leased by another in-progress
+ticket.
 
-The only FAIL-tier gates this run reported (DRIFT, DSL, LANG, PERF, PRE,
-REF, SCOPE, TICK, TODO) carried byte-identical error counts to a
-simultaneous --files-scoped run against T-4508's unrelated files in a
-different worktree off the same dev base, confirming they are
-repo-wide/dev-baseline conditions, not caused by this ticket's two files.
-The one WIRE-tier finding in this run (src/frob/dup/_legacy_cs.py, a WIRE002
-missing follow_up on someone else's ticket's waiver) is in a file entirely
-outside this ticket's scope. PRE001/SCOPE001 fired because this invocation
-used --files/--base rather than --ticket (per the standing brief's
-instruction to never run a bare/--ticket `frob check`); both note "pass
---ticket ... to skip", which is an artifact of the invocation shape, not a
-real scope/pre-work violation -- confirmed by the identical PRE001/SCOPE001
-pair firing against T-4508's own files in the same manner.
+Scope refusals recorded (leased elsewhere, left untouched)
+------------------------------------------------------------
+- src/frob/app/ticket_runner/_land_cmd.py: leased by T-4599.
+- src/frob/gates/_sys.py: leased by T-4212 (this is why FROB_LAND_
+  TICKET_ENV is an env var, not a new sys111_findings_touching
+  parameter).
+- docs/modules/gates.md, docs/design/registry/capability-via-ratchet.
+  lock.json, design/frob.strata: leased by T-4111 for this ticket's
+  whole duration -- doc handled as a standalone page + T-4605 fold-in,
+  same convention T-4114/T-4115/T-4221/T-3962/T-3961 already established.
+
+Filed: none (no out-of-scope work discovered beyond the pre-existing
+lease conflicts already tracked by T-4605/T-4212/T-4599/T-4111).
 
 ### Changed
 ```
@@ -110,7 +180,7 @@ pair firing against T-4508's own files in the same manner.
  .claude/hooks/frob-timeout-guard.py                | 127 +++-
  .frob-release.json                                 |   2 +-
  .github/workflows/ci.yml                           | 107 ++-
- CHANGELOG.md                                       |  54 ++
+ CHANGELOG.md                                       |  55 ++
  changelog.d/T-2965.md                              |   2 +
  changelog.d/T-3020.md                              |   2 +
  changelog.d/T-3232.md                              |   2 +
@@ -159,6 +229,7 @@ pair firing against T-4508's own files in the same manner.
  changelog.d/T-4554.md                              |   2 +
  changelog.d/T-4555.md                              |   2 +
  changelog.d/T-4556.md                              |   2 +
+ changelog.d/T-4562.md                              |   2 +
  changelog.d/T-4563.md                              |   2 +
  changelog.d/T-4579.md                              |   2 +
  changelog.d/T-4582.md                              |   2 +
@@ -179,6 +250,7 @@ pair firing against T-4508's own files in the same manner.
  docs/guides/release.md                             |  37 +
  docs/modules/app.md                                |  20 +
  docs/modules/dup.md                                |  12 +
+ docs/modules/gate-sys111-ratchet-auto-accept.md    |  95 +++
  docs/modules/gates.md                              |  45 +-
  docs/modules/graph.md                              |  39 +
  docs/modules/lang.md                               |  33 +
@@ -238,7 +310,7 @@ pair firing against T-4508's own files in the same manner.
  src/frob/scaffold/_unity_project.py                | 193 +++++
  .../scaffold/data/types/unity-project/frob.toml.j2 |  64 ++
  src/frob/scaffold/project.py                       |   6 +-
- src/frob/strata/_effects.py                        | 494 +++++++++++--
+ src/frob/strata/_effects.py                        | 780 ++++++++++++++++++--
  src/frob/strata/_unity_asmdef.py                   | 412 +++++++++++
  src/frob/testing/__init__.py                       |   9 +
  src/frob/testing/_collect.py                       |  21 +-
@@ -248,7 +320,7 @@ pair firing against T-4508's own files in the same manner.
  src/frob/tickets/_land.py                          | 122 +++-
  src/frob/tickets/_land_git_ops.py                  | 149 +++-
  src/frob/tickets/_land_queue.py                    | 151 +++-
- src/frob/tickets/_land_squash.py                   |  48 +-
+ src/frob/tickets/_land_squash.py                   |  49 +-
  src/frob/tickets/_leases.py                        | 552 ++++++++++----
  src/frob/tickets/_models.py                        |  42 +-
  src/frob/tickets/_setters.py                       | 113 ++-
@@ -331,7 +403,7 @@ pair firing against T-4508's own files in the same manner.
  tests/unit/rapid_sweep_suite/test_filing.py        |  33 +
  tests/unit/rapid_sweep_suite/test_window.py        | 457 ++++++++++++
  tests/unit/strata/test_effects.py                  |  44 ++
- tests/unit/strata/test_selfconform.py              | 263 ++++++-
+ tests/unit/strata/test_selfconform.py              | 460 +++++++++++-
  tests/unit/strata/test_unity_asmdef.py             | 160 ++++
  ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 ++
  tests/unit/test_app_runners_batch7.py              | 128 ++--
@@ -461,7 +533,7 @@ pair firing against T-4508's own files in the same manner.
  tickets/T-3923/ticket.md                           |  17 +-
  tickets/T-3943/done-report.md                      | 626 ++++++++++++++++
  tickets/T-3943/ticket.md                           |  49 +-
- tickets/T-3961/ticket.md                           |  23 +-
+ tickets/T-3961/ticket.md                           |  47 +-
  tickets/T-3962/ticket.md                           |  21 +-
  tickets/T-3986/ticket.md                           |   2 +-
  tickets/T-3995/ticket.md                           |  19 +-
@@ -496,7 +568,7 @@ pair firing against T-4508's own files in the same manner.
  tickets/T-4415/ticket.md                           |  24 +-
  tickets/T-4416/ticket.md                           |  56 +-
  tickets/T-4418/ticket.md                           |  17 +-
- tickets/T-4419/ticket.md                           | 206 +++++-
+ tickets/T-4419/ticket.md                           | 242 ++++++-
  tickets/T-4420/ticket.md                           |  17 +-
  tickets/T-4421/ticket.md                           | 483 ++++++++++++-
  tickets/T-4422/ticket.md                           |  17 +-
@@ -601,7 +673,7 @@ pair firing against T-4508's own files in the same manner.
  tickets/T-4559/ticket.md                           |  54 ++
  tickets/T-4560/ticket.md                           |  41 ++
  tickets/T-4561/ticket.md                           |  38 +
- tickets/T-4562/done-report.md                      | 518 +++++++++++++
+ tickets/T-4562/done-report.md                      | 665 +++++++++++++++++
  tickets/T-4562/ticket.md                           |  54 ++
  tickets/T-4563/done-report.md                      | 556 ++++++++++++++
  tickets/T-4563/ticket.md                           |  47 ++
@@ -612,7 +684,7 @@ pair firing against T-4508's own files in the same manner.
  tickets/T-4573/ticket.md                           |  27 +
  tickets/T-4574/ticket.md                           |  29 +
  tickets/T-4575/ticket.md                           |  38 +
- tickets/T-4578/ticket.md                           |  32 +
+ tickets/T-4578/ticket.md                           |  52 ++
  tickets/T-4579/done-report.md                      | 522 ++++++++++++++
  tickets/T-4579/ticket.md                           |  68 ++
  tickets/T-4580/ticket.md                           |  47 ++
@@ -649,17 +721,23 @@ pair firing against T-4508's own files in the same manner.
  tickets/T-4627/ticket.md                           |  52 ++
  tickets/T-4628/ticket.md                           |  53 ++
  tickets/T-4629/ticket.md                           |  46 ++
- tickets/T-4630/ticket.md                           |  48 ++
+ tickets/T-4630/ticket.md                           |  54 ++
  tickets/T-4631/ticket.md                           |  65 ++
  tickets/T-4632/ticket.md                           |  41 ++
- tickets/T-4633/ticket.md                 |  77 ++
+ tickets/T-4633/done-report.md            | 726 +++++++++++++++++++
+ tickets/T-4633/ticket.md                 |  86 +++
+ tickets/T-draft-5658939f/ticket.md                 |  53 ++
+ tickets/T-draft-8c1c8d09/ticket.md                 |  30 +
  tickets/T-draft-a62505d4/ticket.md                 | 112 +++
  tickets/T-4642/ticket.md                 |  49 ++
  tickets/archive/T-0364/ticket.md                   |  24 +
  tickets/archive/T-3128/ticket.md                   |  28 +
  uv.lock                                            |   2 +-
- 553 files changed, 43123 insertions(+), 1922 deletions(-)
+ 558 files changed, 44730 insertions(+), 1948 deletions(-)
 ```
 
 ### Evidence
-- `tests/test_docenum_gate.py::TestCommentDslDirectivesDocMatchesCommentTypes::test_enumerates_directive_members_match_comment_types` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_branch_own_growth_auto_accepts` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_own_addition_is_measured` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_growth_beyond_branch_own_addition_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth::test_no_head_blob_treats_every_entry_as_added` (pytest node id, verified passing when recorded)

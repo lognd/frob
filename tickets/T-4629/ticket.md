@@ -43,4 +43,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Split from T-4419 (166->182 re-measurement, 2026-09-19). Cluster 5: 14 DOCARCH001 findings across 14 files (all weight-1). Includes the 2 leased files DEFERRED from every cluster: tests/unit/verify/test_verify_runner.py (leased T-3082) and tests/unit/strata/test_selfconform.py (leased T-draft-213c1cfd) -- pick those up once the leases release. Rewrite each flagged docstring to state WHAT the test proves, not the change narrative. See T-4419 body for the full per-file breakdown and cluster plan.
+Split from T-4419 (166->182 re-measurement, 2026-09-19). Cluster 5: 14 DOCARCH001 findings across 14 files (all weight-1). Includes the 2 leased files DEFERRED from every cluster: tests/unit/verify/test_verify_runner.py (leased T-3082) and tests/unit/strata/test_selfconform.py (leased T-4633) -- pick those up once the leases release. Rewrite each flagged docstring to state WHAT the test proves, not the change narrative. See T-4419 body for the full per-file breakdown and cluster plan.

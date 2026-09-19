@@ -1637,7 +1637,7 @@ def _refuse_if_selfaudit_findings_in_touched_files(
         selfaudit_findings_touching,
         sys111_findings_touching,
     )
-    from frob.strata._effects import _land_lock_root_env
+    from frob.strata._effects import _land_lock_root_env, _land_ticket_id_env
 
     # frob:ticket T-4596
     _log.info(
@@ -1645,7 +1645,8 @@ def _refuse_if_selfaudit_findings_in_touched_files(
         ticket_id,
         land_lock_root,
     )
-    with _land_lock_root_env(land_lock_root):
+    # frob:ticket T-4633
+    with _land_lock_root_env(land_lock_root), _land_ticket_id_env(ticket_id):
         findings = (
             selfaudit_findings_touching(stage, touched_files)
             + sys111_findings_touching(stage, touched_files)
