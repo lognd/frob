@@ -22,6 +22,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4079
+  new_length: 4830
 evidence:
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_logs_diagnostic_on_genuine_symref_mismatch
@@ -121,3 +128,5 @@ POSITIVE CONTROLS, both directions, mandatory:
     every same-file waiver match everything -- that would turn a precise
     mechanism into a blanket file waiver and delete the precision
     T-2338 deliberately built (nearest-line attribution for display).
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_test_gate.py::TestTestGate.test_match_waiver_symref_formatting_difference_still_waives's docstring carried a long narrative (the confirmed live mismatch between frob.arch's hand-rolled C++ symref producer spelling Class::method with the native scope operator vs. the DSL/graph symbol table's dot-joined Class.method for a symbol-bound frob:waive comment; before this fix _match_waiver's symbol-exact branch compared these with plain == and found no match; verification against the real producers frob.arch._cpp._check_long_functions and frob.lang.parse_file + frob.graph.dsl.parse_directives). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
