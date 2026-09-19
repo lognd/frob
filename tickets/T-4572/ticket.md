@@ -9,7 +9,7 @@ kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: null
+parent: T-4654
 tier: ticket
 sprint: null
 runs_last: false
@@ -34,6 +34,15 @@ scope_changes:
   glob: docs/modules/tickets-landing.md
   reason: doc anchors for the new commits_touch_only_ledger_paths/rebase_composed_commit_onto/_clean_root_on_refusal
     symbols (COV001)
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4654
+  reason: 'kernel-decoupling epic T-4651: rederive the frob kernel behind enforced
+    module boundaries; this ticket already states the right work for this concern
+    and is adopted as a child rather than duplicated'
   actor: logan
   at: '2026-09-19'
 body_changes:
