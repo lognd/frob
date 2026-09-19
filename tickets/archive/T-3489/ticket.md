@@ -48,6 +48,13 @@ scope_changes:
     tests in this file
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve T-2691 fragment example trimmed from _docptr.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1526
+  new_length: 2000
 evidence:
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_fragment_dir_is_an_archival_record_not_checked
 designated_repro_test: null
@@ -76,3 +83,12 @@ that the next land resets). Must-fire: a Done report containing
 
 ## Unblock log
 - 2026-08-30: unblocked by T-2450 -- root-cause fix is a DOC006 exemption for changelog.d/ in _docptr.py, matching the existing CHANGELOG.md/tickets-archive.md archival-record precedent -- no longer needs to touch src/frob/app/ticket_runner/_land_cmd.py, so the T-2450 lease collision is moot
+
+
+T-4709 follow-up (condensed from _CHANGELOG_FRAGMENT_DIR_PREFIX's comment
+block in src/frob/gates/_docptr.py, trimmed for DOCARCH002's 12-line
+cap): T-3489's own motivating case was `changelog.d/T-2691.md`, which
+named both a real symbol mangled by a since-irrelevant markdown
+line-wrap, and a CLI verb the prose explicitly said was NOT added --
+correct-at-the-time (or never-quite-true, by design) prose, not this
+gate's motivating "a doc that is wrong RIGHT NOW" case.
