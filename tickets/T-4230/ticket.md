@@ -2,7 +2,7 @@
 id: T-4230
 title: 'entrypoint coverage: a module''s __main__ guard is not a symbol, so TEST/COV
   gates never see whether the CLI entry path itself is exercised'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-07'
