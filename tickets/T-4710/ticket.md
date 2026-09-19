@@ -23,6 +23,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'coordinator amendment (owner-approved): pin the move-path semantics and
+    its refusal case as acceptance'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3296
+  new_length: 4354
 designated_repro_test: null
 threat: null
 component: null
@@ -81,3 +89,21 @@ _coverage.py:420-426 unions both sides (`for side in (edge.src, edge.target)`).
 - Test-side declarations produce implementation -> test edges; zero new TDD001 findings.
 - COV/TEST findings on the real repo identical before and after, counts in the Done report.
 - Stack count with reverse copies removed, measured and reported against the 1,712 baseline.
+
+
+## Move semantics (coordinator amendment, owner-approved) -- additional acceptance
+
+When the Tier-A fix MOVES a production-side `frob:tests` to the test file (case (i): no
+test-side declaration exists yet), it must:
+
+- place the declaration DIRECTLY ABOVE the exact test node the id names, class-qualified --
+  not at the top of the file, not above the class, not above a neighbouring test;
+- REFUSE, reporting rather than fixing, when that node no longer exists in the test file. A
+  dangling id is a finding for a human, never a binding to relocate by guess;
+- NEVER invent a binding. The fix relocates exactly what the production-side directive already
+  declared, verbatim; it derives nothing.
+
+Acceptance for the move path specifically: COV and TEST gate findings are byte-for-byte
+identical on the fixture before and after the move. Positive control: plant a production-side
+`frob:tests` naming a node that does NOT exist and assert the fix refuses and reports, and that
+the file is left byte-identical -- so the refusal path cannot pass vacuously.
