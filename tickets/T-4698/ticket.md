@@ -42,6 +42,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 2338
   new_length: 2338
+- mode: set
+  reason: '2026-09-19 coordinator review: explore survives; pool/profile/debt/deprecated/parse
+    reclassified out of the check --only fold; exports split check/scaffold; ordering
+    vs hooks story'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2338
+  new_length: 4610
 designated_repro_test: null
 acceptance:
 - text: Given the 20 tail subverbs, when the ticket closes, then the Done report carries
@@ -104,3 +112,41 @@ FILES (declared scope):
   src/frob/app/ticket_runner/__init__.py, _archive.py, _attach_backfill.py,
   _query.py, _verify.py, _waive_audit.py, _lifecycle.py
   tests/unit/test_ticket_subverb_tail.py (new)
+
+AMENDED 2026-09-19 (coordinator review): `parse` is added to this verdict table.
+It was originally in T-4692's fold list, which misclassified it -- it is a
+tool-output adapter (pytest/ruff/ty/clang/junit -> compact summary), not a gate
+stage. It is a TOP-LEVEL verb, not a ticket subverb, so it is the one row in
+this table that is not under `frob ticket`; it is here because this is the
+story's verdict-rendering leaf.
+
+PARSE, MEASURED 2026-09-19 (the grep evidence this table requires):
+  `git grep -n "frob parse " -- src .claude docs scripts tests` -> 23 hits
+    src/frob/_cli_parsers/_core.py      its own parser registration
+    src/frob/app/parse_runner.py        its own implementation
+    tests/unit/test_parse.py            its own test
+    docs/commands/parse.md              its own doc page
+    docs/design/cli-regrouping.md       the design doc being reverted by T-4690
+  .claude/  0 hits
+  scripts/  0 hits
+  (the ~77 further hits of the string "frob parse" are prose -- "frob parses
+  and analyzes source code" in docs/design/registry/weaknesses.yaml -- not
+  invocations. Counting them would be the lexical-match error this repo's
+  token/grammar directive exists to prevent.)
+  RECOMMENDED VERDICT: DELETE with a shim. No consumer exists outside its own
+  implementation, its own test, and its own documentation. If the implementer
+  finds a consumer this grep missed, that is a KEEP and the citing file:line
+  goes in the verdict table -- the recommendation is not the verdict.
+
+`debt` and `deprecated` under `frob ticket`: T-4695 is simultaneously moving the
+TOP-LEVEL `debt`/`deprecated` under `frob explore`. Four names, two concepts.
+Coordinate with T-4695 so only one ticket decides, and record the agreed
+outcome in whichever of the two closes second.
+
+SCOPE NOTE: `parse` lives in src/frob/_cli_parsers/_core.py and
+src/frob/app/parse_runner.py, both outside this ticket's declared scope and
+_core.py is contended with T-4690/T-4692/T-4695. Render the parse VERDICT here
+(it is a documentation act), but execute the deletion in whichever of those
+tickets still holds _core.py, or take the scope with `frob ticket scope T-4698
+--add src/frob/app/parse_runner.py --reason ...` once _core.py is free. Say
+which route was taken in the Done report.
