@@ -21,6 +21,7 @@ scope:
 - docs/modules/testing.md
 - docs/guides/unity.md
 - tests/fixtures/lang/csharp/tests
+- src/frob/testing/_dotnet_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +52,13 @@ scope_changes:
   reason: static TRX/NUnit3 XML fixtures for the dotnet/unity evidence-channel tests
   actor: logan
   at: '2026-09-17'
+- op: add
+  glob: src/frob/testing/_dotnet_runner.py
+  reason: 'LARGE001: _runners.py crossed the 800-line threshold after adding the dotnet
+    test runner code; extracting it into its own module mirrors _unity_batchmode.py''s
+    own separation rationale'
+  actor: logan
+  at: '2026-09-18'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a plain C# test project (no Unity), WHEN the evidence channel runs,
