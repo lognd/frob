@@ -19,6 +19,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_effects.py
+- src/frob/tickets/_land_squash.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,11 @@ scope_changes:
 - op: add
   glob: src/frob/strata/_effects.py
   reason: SYS111 auto-accept for branch-own via growth
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: auto-accept path for ratchet ceiling growth (T-4596 posture)
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
