@@ -301,6 +301,7 @@ class TestBehavioralCapabilityCheck:
 
     # frob:ticket T-2682
     # frob:ticket T-2698
+    # frob:ticket T-4582
     def test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust(
         self,
     ) -> None:
@@ -308,14 +309,18 @@ class TestBehavioralCapabilityCheck:
         verifiable, not just prose in a comment: typescript/c/cpp/kotlin
         all have `test_discovery` IMPLEMENTED in the live registry
         (T-2499), but `_behaviorally_checked_languages` restricts the
-        behavioral check to python/rust (T-2698 added rust) -- so none of
-        the remaining four appear in `_implemented_behavioral_cells()`'s
-        own parametrization, confirmed directly rather than assumed."""
+        behavioral check to python/rust/csharp (T-2698 added rust,
+        T-4582 added csharp -- static tree-sitter source
+        parsing via `collect_csharp_tests`, no toolchain build required,
+        the same "cheap, single-fixture-file" shape python/rust already
+        have) -- so none of the remaining four appear in
+        `_implemented_behavioral_cells()`'s own parametrization,
+        confirmed directly rather than assumed."""
         registry = derive_capability_registry()
         remaining_implemented = {
             language
             for language, support in registry.items()
-            if language not in ("python", "rust")
+            if language not in ("python", "rust", "csharp")
             and support.capabilities["test_discovery"].state is FacetState.IMPLEMENTED
         }
         # A real, non-vacuous set: at least typescript/kotlin/c/cpp are
@@ -382,6 +387,74 @@ class TestBehavioralCapabilityCheck:
         )
         ok, detail = _behavioral_capability_check("rust", "test_discovery", tmp_path)
         assert not ok, f"unbuildable crate was wrongly reported as passing: {detail}"
+
+    # frob:ticket T-4582
+    def test_csharp_test_discovery_is_behaviorally_checked(self) -> None:
+        """T-4582's own positive control, the csharp analogue
+        of `test_rust_test_discovery_is_behaviorally_checked` above:
+        csharp IS in `_implemented_behavioral_cells()`'s own
+        parametrization now, proving the widened dispatch actually
+        reaches csharp rather than the docstring/comment claiming it
+        does while the dispatch dict silently still excludes it."""
+        cells = set(_implemented_behavioral_cells())
+        assert ("csharp", "test_discovery") in cells
+
+    # frob:ticket T-4582
+    def test_csharp_test_discovery_passes_on_a_real_discoverable_fixture(
+        self, tmp_path: Path
+    ) -> None:
+        """Positive control: the real csharp fixture builder
+        (`_check_test_discovery_csharp`) writes a genuine NUnit `[Test]`
+        method and `collect_csharp_tests` (static tree-sitter source
+        scan) finds it -- proves the adapter's own collector integration
+        works, not just that a checker function exists."""
+        ok, detail = _behavioral_capability_check("csharp", "test_discovery", tmp_path)
+        assert ok, detail
+        assert "TestCapabilityFixtureDiscoverable" in detail
+
+    # frob:ticket T-4582
+    def test_csharp_test_discovery_fails_when_no_test_attribute_is_present(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """MUST-FAIL positive control (the csharp analogue of `test_rust_
+        test_discovery_fails_when_the_crate_cannot_compile` above): a
+        `.cs` file with no NUnit `[Test]`/`[TestCase]`/`[UnityTest]`
+        attribute at all has nothing for `collect_csharp_tests` to find
+        -- this check must propagate that emptiness as `ok=False`,
+        proving it genuinely inspects `collect_csharp_tests`'s own result
+        rather than always reporting success once the file parses."""
+        import frob.gates._lang_conformance as module
+
+        def _broken_csharp_project(project: Path) -> tuple[bool, str]:
+            # No [Test]-family attribute at all -- nothing for
+            # collect_csharp_tests to discover, the csharp-toolchain
+            # equivalent of the "no [package] table" rust fixture above.
+            (project / "NotATest.cs").write_text(
+                "namespace Frob.CapabilityFixture\n"
+                "{\n"
+                "    public class NotATest\n"
+                "    {\n"
+                "        public void JustAMethod() { }\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            from frob.testing import collect_csharp_tests
+
+            collected = collect_csharp_tests(project)
+            if collected.is_err:
+                return False, f"collect_csharp_tests failed: {collected.danger_err}"
+            node_ids = collected.danger_ok.node_ids
+            ok = any("TestCapabilityFixtureDiscoverable" in n for n in node_ids)
+            return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
+
+        monkeypatch.setitem(
+            module._TEST_DISCOVERY_BUILDERS, ".cs", _broken_csharp_project
+        )
+        ok, detail = _behavioral_capability_check("csharp", "test_discovery", tmp_path)
+        assert not ok, (
+            f"attribute-less fixture was wrongly reported as passing: {detail}"
+        )
 
 
 # frob:ticket T-1604

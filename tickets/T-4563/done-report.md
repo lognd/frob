@@ -542,7 +542,7 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-4579/ticket.md                 |  65 +++
  tickets/T-draft-a06debc6/ticket.md                 |  41 ++
  tickets/T-4581/ticket.md                 |  47 ++
- tickets/T-draft-be56039a/ticket.md                 |  49 ++
+ tickets/T-4582/ticket.md                 |  49 ++
  uv.lock                                            |   2 +-
  416 files changed, 25960 insertions(+), 1610 deletions(-)
 ```

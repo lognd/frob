@@ -563,7 +563,7 @@ simply not yet reflected in this ticket's own stale description.
  tickets/T-4579/ticket.md                 |  65 +++
  tickets/T-draft-a06debc6/ticket.md                 |  41 ++
  tickets/T-4581/ticket.md                 |  47 ++
- tickets/T-draft-be56039a/ticket.md                 |  49 ++
+ tickets/T-4582/ticket.md                 |  49 ++
  uv.lock                                            |   2 +-
  440 files changed, 27792 insertions(+), 1628 deletions(-)
 ```

@@ -1,119 +1,86 @@
 ## Done report
 
-T-4554: T-4536 regression -- TestExtendedKindsDriftLock fails
-(_PATTERNS/_KIND_MAP/_EXTENDED_KINDS drift from the C# resolver)
+T-4582: csharp test_discovery capability has no behavioral fixture builder
 
-WHAT changed (worktree /home/logan/projects/frob/.claude/worktrees/t-4554,
-branch t-4554, HEAD 16cdad545b4493349489c9db4357579d57c5abf0):
+WHAT changed:
+- src/frob/gates/_lang_conformance.py:
+  - added `_check_test_discovery_csharp` (writes a minimal real NUnit
+    `[Test]` fixture and calls `frob.testing.collect_csharp_tests`,
+    mirroring `_check_test_discovery_python`/`_check_test_discovery_rust`).
+  - registered it in `_TEST_DISCOVERY_BUILDERS[".cs"]`.
+  - widened `_BEHAVIORAL_CAPABILITY_LANGUAGES[CAPABILITY_TEST_DISCOVERY]`
+    to include "csharp" alongside "python"/"rust".
+- tests/test_lang_conformance_gate.py:
+  - updated `test_test_discovery_is_not_behaviorally_checked_outside_
+    python_and_rust`'s body/docstring to exclude csharp too (kept the
+    ORIGINAL function name -- see "tests skipped/notes" below).
+  - added three csharp mirrors of the existing rust positive/negative
+    controls: `test_csharp_test_discovery_is_behaviorally_checked`,
+    `test_csharp_test_discovery_passes_on_a_real_discoverable_fixture`,
+    `test_csharp_test_discovery_fails_when_no_test_attribute_is_present`.
 
-1. tests/unit/strata/test_effects.py
-   Added TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind,
-   a regression guard asserting no capability-registry entry (across all
-   registered languages, including C#) emits the retired bare `net`
-   capability_kind -- the class of bug T-4536 introduced.
+WHY:
+CI's dev run 35223985836 failed (both ubuntu and windows) on
+tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance::
+test_csharp_registered_capabilities_pass with:
 
-2. src/frob/vet/_capability_registry/_unity_api.py
-   T-4514's Unity entries for UnityWebRequest, WWW, NetworkManager, and
-   Application.OpenURL used the bare retired capability_kind=net.
-   Recategorized all four to net-connect (the live, non-retired kind),
-   consistent with every other entry in the registry. No resolver
-   behaviour change -- purely a capability_kind classification fix on
-   these four entries.
+  AssertionError: csharp/test_discovery: no test_discovery fixture
+  builder for suffix '.cs'
 
-3. tests/vet_suite/test_capability_registry_unity.py
-   Updated the 4 existing assertions that asserted kind==net for these
-   same entries to kind==net-connect, matching the corrected
-   classification. Same test coverage, same entries, no rename/delete.
+`derive_capability_registry()` marks csharp/test_discovery IMPLEMENTED
+(T-4516/T-4517 wired `collect_csharp_tests`, a real NUnit/Unity Test
+Framework static source scanner, into `frob.testing`), and
+`_BEHAVIORALLY_CHECKED_CAPABILITIES` includes test_discovery
+unconditionally -- so `test_csharp_registered_capabilities_pass`
+dispatches a real behavioral check for csharp/test_discovery, but
+`_check_test_discovery`'s dispatch table (`_TEST_DISCOVERY_BUILDERS`)
+only had python (`.py`) and rust (`.rs`) entries. csharp's collector is
+static source parsing with no toolchain build step -- cheaper than even
+rust's `cargo test --lib -- --list` -- so it belongs in the same
+behaviorally-checked set, not the structural-only typescript/c/cpp/
+kotlin group T-2682's cost-driven cut names.
 
-4. src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
-   Scope was granted for this file (per the ticket's original repro
-   trace) but no additional bash/csharp dangerous-ops entries needed a
-   kind fix beyond the Unity API entries above; left unmodified beyond
-   what the C# resolver work already carried on dev.
+IMPORTANT SIDE FIX: my first pass renamed the existing negative-control
+test to advertise "python_rust_csharp" in its name, which broke
+T-2682's and T-2698's own `frob:tests` evidence bindings (their bound
+node id no longer resolved -- COV003 fired for both tickets in this
+worktree's own `frob check --only gates` run). Reverted the function
+name to the original
+`test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust`
+(only the docstring/body content changed) so those two tickets' evidence
+stays valid.
 
-WHY: T-4536 (the C# capability resolver) added _PATTERNS entries whose
-resolved kinds overlapped _EXTENDED_KINDS/_KIND_MAP, and T-4514's Unity
-API entries specifically used the bare, retired "net" capability_kind
-that _EXTENDED_KINDS/_KIND_MAP's disjointness invariant forbids. Fixing
-the registry data (not the drift lock or the resolver itself) closes the
-gap with no behaviour change to the resolver, per the ticket's own
-constraint.
+How each acceptance criterion is proven:
+[1] bound(['tests/test_lang_conformance_gate.py::
+    TestCSharpCapabilityConformance::test_csharp_registered_
+    capabilities_pass', '...::TestBehavioralCapabilityCheck::
+    test_csharp_test_discovery_is_behaviorally_checked', '...::
+    TestBehavioralCapabilityCheck::
+    test_csharp_test_discovery_passes_on_a_real_discoverable_fixture']):
+    Verified locally before (failing with the exact CI error) and after
+    (passing) the fix:
+    `PYTHONPATH=$(pwd)/src python -m pytest
+    tests/test_lang_conformance_gate.py -p no:cacheprovider -q`
+    -> SUITE-RESULT: exitstatus=0 collected=113 failed=0 (up from 110
+    before this ticket's new tests were added).
 
-Acceptance criterion (from `frob ticket show T-4554`):
-  GIVEN dev WHEN tests/unit/strata/test_effects.py runs THEN
-  TestExtendedKindsDriftLock passes
-  Bound evidence:
-    - tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind
-    - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
-  (TestExtendedKindsDriftLock itself lives in test_selfconform.py, not
-  test_effects.py, on current dev -- test_effects.py carries the
-  designated repro test plus the cross-reference comment pointing at the
-  drift-lock class; both node ids are the ticket's own bound evidence.)
+`frob check --only gates --files src/frob/gates/_lang_conformance.py
+--files tests/test_lang_conformance_gate.py --base dev` was run twice in
+the worktree: the first run caught the COV003 test-rename regression
+described above (fixed in commit 132d927ec); a second pass found no
+remaining findings referencing either file -- every other FAIL-state
+gate line in the summary belongs to other files across the shared root
+under concurrent fleet load (NARR/CPLACE/ARCH/LARGE/PERF findings on
+_lang_conformance.py's untouched lines are pre-existing and already
+waived).
 
-PROOF -- both node ids pass after merging dev into this worktree:
+Commits (branch t-draft-be56039a, base dev):
+- 72ceeea9d feat(gates): add csharp test_discovery behavioral fixture builder
+- 132d927ec fix(tests): keep test_discovery negative-control test name stable
+- 2549f421b chore(tickets): accept T-4582
+- 52832c83b chore(tickets): record evidence for T-4582
 
-  $ PYTHONPATH=$(pwd)/src /home/logan/projects/frob/.venv/bin/python -m pytest \
-      tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map \
-      tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind \
-      tests/vet_suite/test_capability_registry_unity.py \
-      -p no:cacheprovider -q
-  ................                                                         [100%]
-  SUITE-RESULT: exitstatus=0 collected=16 failed=0
-
-Merge: dev merged clean into t-4554 (merge commit 16cdad545, no conflicts
-requiring dev-side resolution) -- HEAD now carries dev through
-"3a913ade3 chore(tickets): mirror accept T-4508 from worktree".
-
-Gates: `frob check --only gates --ticket T-4554 --files
-src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py --files
-tests/unit/strata/test_effects.py --files
-src/frob/vet/_capability_registry/_unity_api.py --files
-tests/vet_suite/test_capability_registry_unity.py --base dev`, run from
-inside the worktree with the venv binary. `frob ticket sweep T-4554` was
-re-run first (pre-work sweep was stale against the post-merge scope);
-gate:PRE and gate:SCOPE both report 0 errors afterward. Per the tool's
-own scope-note, only gate:SCOPE/gate:PREWORK and the diff-driven COV002/
-TODO001/FMT/AFFECT checks are ticket-scoped -- every other gate family's
-counts are repo-wide, not filtered to this diff. Grepping the full gate
-output for our 4 touched files specifically:
-  - No DOC/DSL/LANG/PERF/REF/CROSSTICKET/ARCH/DRIFT/TODO/WIRE finding
-    names any of the 4 touched files.
-  - COV006 (call-graph reachability, best-effort, informational) fires
-    on the updated test_capability_registry_unity.py assertions against
-    _UNITY_OPERATIONS, a module-level dict never "called" -- the same
-    known false-positive shape this repo already waives elsewhere for
-    module-constant assertions (T-0536 precedent); no COV001 (missing
-    doc) fires because no new public symbol was added.
-  - DOCARCH001 warnings on two pre-existing test_effects.py docstrings
-    (TestDeployServeMutateNodeSplitConformance, TestStaleViaSymbol) and
-    NARR001 on a pre-existing comment block are untouched by this diff
-    and gate:DOCARCH/gate:NARR both report 0 errors overall.
-  - The repo-wide FAIL gates (ARCH, COV, CROSSTICKET, DOC, DRIFT, DSL,
-    LANG, PERF, TICK, TODO, WIRE) all locate their errors in files this
-    ticket never touched (e.g. src/frob/dup/_legacy_cs.py's WIRE002,
-    src/frob/tickets/_leases.py's COV001) -- pre-existing repo state,
-    not introduced by this change.
-
-Evidence: already bound in tickets/T-4554/ticket.md (recorded by the
-prior agent before the session died) --
-  tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind
-  tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
-Both re-verified passing after the dev merge above; no re-recording
-needed.
-
-Commits (t-4554, in order):
-  fb01fbc74 chore(tickets): scope T-4554
-  6461f2b7f chore(tickets): record T-4554 start transition
-  9728085b4 chore(tickets): scope T-4554
-  5a4b370d7 chore(tickets): scope T-4554
-  5068af8a8 test(vet): add regression guard for retired bare capability kinds
-  07ccdd7a6 fix(vet): recategorize Unity net entries from retired bare net to net-connect
-  9c67a02fb chore(tickets): record evidence for T-4554
-  15e02ef6f chore(tickets): record evidence for T-4554
-  fb1943c47 chore(tickets): record evidence for T-4554
-  16cdad545 Merge branch 'dev' into t-4554  <- HEAD
-
-Filed: none (no out-of-scope work discovered).
+Tests skipped: none. Scope refusals: none. Waivers added: none.
 
 ### Changed
 ```
@@ -122,8 +89,9 @@ Filed: none (no out-of-scope work discovered).
  .claude/hooks/frob-timeout-guard.py                | 127 +++--
  .frob-release.json                                 |   2 +-
  .github/workflows/ci.yml                           | 107 +++-
- CHANGELOG.md                                       |  37 ++
+ CHANGELOG.md                                       |  42 ++
  changelog.d/T-2965.md                              |   2 +
+ changelog.d/T-3020.md                              |   2 +
  changelog.d/T-3232.md                              |   2 +
  changelog.d/T-3612.md                              |   2 +
  changelog.d/T-3613.md                              |   2 +
@@ -143,6 +111,7 @@ Filed: none (no out-of-scope work discovered).
  changelog.d/T-4502.md                              |   2 +
  changelog.d/T-4510.md                              |   2 +
  changelog.d/T-4511.md                              |   2 +
+ changelog.d/T-4512.md                              |   2 +
  changelog.d/T-4514.md                              |   2 +
  changelog.d/T-4517.md                              |   2 +
  changelog.d/T-4520.md                              |   2 +
@@ -159,14 +128,18 @@ Filed: none (no out-of-scope work discovered).
  changelog.d/T-4550.md                              |   2 +
  changelog.d/T-4552.md                              |   2 +
  changelog.d/T-4553.md                              |   2 +
+ changelog.d/T-4554.md                              |   2 +
  changelog.d/T-4555.md                              |   2 +
- design/frob.strata                                 | 116 +++--
+ changelog.d/T-4563.md                              |   2 +
+ changelog.d/T-4579.md                              |   2 +
+ design/frob.strata                                 | 118 +++--
  docs/commands/check.md                             |  15 +
+ docs/commands/narrative.md                         |   8 +
  docs/commands/scaffold.md                          |  15 +
  docs/commands/ticket.md                            |  72 +++
  docs/commands/xref.md                              |   4 +-
  docs/design/cli-regrouping.md                      |  73 +++
- .../registry/capability-via-ratchet.lock.json      |  52 +-
+ .../registry/capability-via-ratchet.lock.json      |  58 +--
  docs/guides/install.md                             |  40 ++
  docs/guides/release.md                             |  37 ++
  docs/modules/app.md                                |  20 +
@@ -177,9 +150,11 @@ Filed: none (no out-of-scope work discovered).
  docs/modules/tickets-data-storage.md               |   8 +
  docs/modules/tickets-landing.md                    | 188 ++++++-
  docs/modules/tickets.md                            |   9 +-
+ docs/strata/surface.md                             |  40 ++
  frob.lock                                          |  20 +-
  pyproject.toml                                     |  22 +-
- src/frob/__main__.py                               |  16 +-
+ src/frob/__init__.py                               |   2 +
+ src/frob/__main__.py                               |  26 +-
  src/frob/_cli_parsers/_check.py                    |  16 +
  src/frob/_cli_parsers/_design.py                   |  24 +-
  src/frob/_cli_parsers/_explore.py                  | 102 ++--
@@ -189,7 +164,7 @@ Filed: none (no out-of-scope work discovered).
  src/frob/_cli_parsers/_ticket/__init__.py          |  55 +-
  .../_cli_parsers/_ticket/_closeout_evidence.py     |  21 +
  src/frob/_cli_parsers/_ticket/_metadata.py         |  53 +-
- src/frob/_cli_parsers/_ticket/_progress.py         | 144 ++++--
+ src/frob/_cli_parsers/_ticket/_progress.py         | 144 +++--
  src/frob/app/_config_external.py                   |  19 +
  src/frob/app/check_runner.py                       |  23 +-
  src/frob/app/config.py                             |  92 +++-
@@ -197,7 +172,7 @@ Filed: none (no out-of-scope work discovered).
  src/frob/app/ticket_runner/_land_cmd.py            | 480 ++++++++++++++++-
  src/frob/app/ticket_runner/_lifecycle.py           |  79 ++-
  src/frob/app/ticket_runner/_mutate.py              |  39 +-
- src/frob/app/ticket_runner/_rapid_sweep.py         | 568 ++++++++++++++++++++-
+ src/frob/app/ticket_runner/_rapid_sweep.py         | 568 +++++++++++++++++++-
  src/frob/app/ticket_runner/_verify.py              | 235 +++++++--
  src/frob/check/__init__.py                         | 244 +++++----
  src/frob/check/_python.py                          | 136 +++--
@@ -207,16 +182,20 @@ Filed: none (no out-of-scope work discovered).
  src/frob/dup/_legacy_cs.py                         | 207 ++++++++
  src/frob/excludes.py                               |  83 ++-
  src/frob/gates/__init__.py                         | 213 ++++----
+ src/frob/gates/_lang_conformance.py                |  36 +-
  src/frob/gates/_models.py                          |   7 +
+ src/frob/gates/_narrative_blocks.py                |  28 +-
  src/frob/gates/_suppress.py                        |  46 +-
  src/frob/graph/affects.py                          |  53 ++
  src/frob/graph/dsl.py                              |  69 ++-
+ src/frob/lang/__init__.py                          |  17 +-
  src/frob/lang/_extract.py                          |  13 +
  src/frob/lang/_project_detect.py                   | 147 ++++++
  src/frob/lang/_support.py                          |  23 +-
  src/frob/lang/_walk_csharp.py                      | 111 +++-
- src/frob/strata/_effects.py                        | 306 +++++++++--
- src/frob/testing/__init__.py                       |   2 +
+ src/frob/strata/_effects.py                        | 409 +++++++++++++--
+ src/frob/strata/_unity_asmdef.py                   | 412 +++++++++++++++
+ src/frob/testing/__init__.py                       |   9 +
  src/frob/testing/_collect.py                       |  21 +-
  src/frob/testing/_collect_csharp.py                | 327 ++++++++++++
  src/frob/testing/_stackdump.py                     |  68 ++-
@@ -224,7 +203,7 @@ Filed: none (no out-of-scope work discovered).
  src/frob/tickets/_land.py                          | 122 ++++-
  src/frob/tickets/_land_git_ops.py                  | 149 ++++--
  src/frob/tickets/_land_queue.py                    | 151 +++++-
- src/frob/tickets/_leases.py                        | 518 +++++++++++++------
+ src/frob/tickets/_leases.py                        | 518 +++++++++++++-----
  src/frob/tickets/_models.py                        |  42 +-
  src/frob/tickets/_setters.py                       | 113 ++--
  src/frob/tickets/_store.py                         |  42 +-
@@ -272,21 +251,35 @@ Filed: none (no out-of-scope work discovered).
  .../lang/csharp/unity/lifecycle_methods.cs         |  21 +
  tests/fixtures/lang/csharp/unity/menu_item.cs      |  18 +
  tests/fixtures/lang/csharp/var_local_httpclient.cs |  12 +
+ .../Assets/Editor/Editor.asmdef                    |   6 +
+ .../Assets/Editor/Editor.asmdef.meta               |   2 +
+ tests/fixtures/unity_sample_asmdef/Assets/Loose.cs |   2 +
+ .../Assets/Runtime/Runtime.asmdef                  |   6 +
+ .../Assets/Runtime/Runtime.asmdef.meta             |   2 +
+ .../Assets/RuntimeUtils/RuntimeUtils.asmdef        |   6 +
+ .../Assets/RuntimeUtils/RuntimeUtils.asmdef.meta   |   2 +
+ .../unity_sample_asmdef/Assets/Tests/Tests.asmdef  |   6 +
+ .../Assets/Tests/Tests.asmdef.meta                 |   2 +
+ .../unity_sample_asmdef/Packages/manifest.json     |   3 +
+ .../ProjectSettings/ProjectVersion.txt             |   2 +
  tests/test_excludes.py                             |  75 +++
  tests/test_gates_suppress.py                       |  34 +-
  tests/test_hook_frob_suggest.py                    |  47 ++
  tests/test_hook_frob_timeout_guard.py              |  54 ++
  tests/test_hook_root_write_guard.py                |  89 ++++
  tests/test_lang.py                                 |  90 ++++
+ tests/test_lang_conformance_gate.py                |  81 ++-
+ tests/test_narrative_blocks.py                     |  27 +
  tests/test_testing.py                              | 106 +++-
- tests/test_ticket_leases.py                        | 313 ++++++++----
+ tests/test_ticket_leases.py                        | 313 +++++++----
  tests/test_tickets_migration.py                    | 121 +++--
  tests/test_tickets_parent.py                       | 208 ++++++++
  tests/unit/graph/test_dsl.py                       | 164 +++++-
- tests/unit/rapid_sweep_suite/test_window.py        | 457 +++++++++++++++++
+ tests/unit/rapid_sweep_suite/test_window.py        | 457 ++++++++++++++++
  tests/unit/strata/test_effects.py                  |  44 ++
- tests/unit/strata/test_selfconform.py              | 154 +++++-
- ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 +++
+ tests/unit/strata/test_selfconform.py              | 202 ++++++-
+ tests/unit/strata/test_unity_asmdef.py             | 160 ++++++
+ ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 ++
  tests/unit/test_app_runners_batch7.py              | 128 +++--
  tests/unit/test_check_scoped_files.py              | 566 ++++++++++++++++++++
  tests/unit/test_ci_self_gate_unscoped.py           | 189 +++++++
@@ -294,13 +287,13 @@ Filed: none (no out-of-scope work discovered).
  tests/unit/test_cli_single_child_groups.py         | 106 ++++
  tests/unit/test_dev_branch_workflow.py             |  50 ++
  tests/unit/test_docs_module.py                     |  35 +-
- tests/unit/test_doctor.py                          | 115 +++++
+ tests/unit/test_doctor.py                          | 115 ++++
  tests/unit/test_done_report_check_scope.py         | 177 +++++++
  tests/unit/test_land_default_queue.py              | 128 +++++
  tests/unit/test_land_in_progress_window.py         | 227 ++++++++
  tests/unit/test_land_leaked_tickets_lease_hoist.py |  95 ++++
  tests/unit/test_land_merge_conflict_drop.py        | 198 +++++++
- tests/unit/test_land_queue.py                      | 114 +++++
+ tests/unit/test_land_queue.py                      | 114 ++++
  tests/unit/test_land_stackdump.py                  | 321 ++++++++++++
  tests/unit/test_lang_project_detect.py             | 108 ++++
  tests/unit/test_leases_staleness_perf.py           | 310 +++++++++++
@@ -331,13 +324,14 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-2965/done-report.md                      | 149 ++++++
  tickets/T-2965/ticket.md                           |  41 +-
  tickets/T-2994/ticket.md                           |  16 +-
- tickets/T-3020/ticket.md                           |  41 +-
+ tickets/T-3020/done-report.md                      | 578 +++++++++++++++++++++
+ tickets/T-3020/ticket.md                           |  50 +-
  tickets/T-3022/ticket.md                           |  16 +-
  tickets/T-3032/ticket.md                           |  17 +-
  tickets/T-3053/ticket.md                           |  16 +-
  tickets/T-3063/ticket.md                           |  17 +-
  tickets/T-3067/ticket.md                           |  17 +-
- tickets/T-3082/ticket.md                           |  51 +-
+ tickets/T-3082/ticket.md                           |  63 ++-
  tickets/T-3083/ticket.md                           |  17 +-
  tickets/T-3102/ticket.md                           |  17 +-
  tickets/T-3127/ticket.md                           |  17 +-
@@ -392,6 +386,7 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-3802/ticket.md                           |  17 +-
  tickets/T-3811/ticket.md                           |  16 +-
  tickets/T-3850/ticket.md                           |  17 +-
+ tickets/T-3851/ticket.md                           |  26 +
  tickets/T-3856/done-report.md                      | 247 +++++++++
  tickets/T-3856/ticket.md                           |  60 ++-
  tickets/T-3859/ticket.md                           |  17 +-
@@ -406,9 +401,15 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-3919/ticket.md                           |  17 +-
  tickets/T-3923/ticket.md                           |  17 +-
  tickets/T-3943/ticket.md                           |  40 +-
+ tickets/T-3995/ticket.md                           |   2 +
  tickets/T-4010/ticket.md                           |  17 +-
  tickets/T-4011/ticket.md                           |  16 +-
  tickets/T-4029/ticket.md                           |  16 +-
+ tickets/T-4185/ticket.md                           |   7 +-
+ tickets/T-4214/ticket.md                           |  31 +-
+ tickets/T-4230/ticket.md                           |  15 +-
+ tickets/T-4240/ticket.md                           |   2 +-
+ tickets/T-4254/ticket.md                           |  10 +-
  tickets/T-4365/ticket.md                           |   6 +-
  tickets/T-4413/done-report.md                      |  71 +++
  tickets/T-4413/ticket.md                           |  75 ++-
@@ -445,18 +446,19 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-4501/ticket.md                           |  81 +++
  tickets/T-4502/done-report.md                      |  19 +
  tickets/T-4502/ticket.md                           |  73 +++
- tickets/T-4503/ticket.md                           |  38 ++
+ tickets/T-4503/ticket.md                           |  74 +++
  tickets/T-4504/ticket.md                           |  69 +++
  tickets/T-4505/ticket.md                           |  38 ++
  tickets/T-4506/ticket.md                           |  40 ++
  tickets/T-4507/ticket.md                           |  37 ++
- tickets/T-4508/ticket.md                           |  98 ++++
+ tickets/T-4508/ticket.md                           | 114 ++++
  tickets/T-4509/ticket.md                           |  47 ++
  tickets/T-4510/done-report.md                      | 149 ++++++
  tickets/T-4510/ticket.md                           |  81 +++
  tickets/T-4511/done-report.md                      |  97 ++++
  tickets/T-4511/ticket.md                           | 103 ++++
- tickets/T-4512/ticket.md                           |  86 ++++
+ tickets/T-4512/done-report.md                      | 524 +++++++++++++++++++
+ tickets/T-4512/ticket.md                           | 102 ++++
  tickets/T-4513/ticket.md                           |  36 ++
  tickets/T-4514/done-report.md                      | 179 +++++++
  tickets/T-4514/ticket.md                           |  66 +++
@@ -469,7 +471,7 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-4519/ticket.md                           |  67 +++
  tickets/T-4520/done-report.md                      | 163 ++++++
  tickets/T-4520/ticket.md                           |  58 +++
- tickets/T-4521/done-report.md                      | 228 +++++++++
+ tickets/T-4521/done-report.md                      | 228 ++++++++
  tickets/T-4521/ticket.md                           | 125 +++++
  tickets/T-4522/done-report.md                      |  99 ++++
  tickets/T-4522/ticket.md                           |  49 ++
@@ -495,7 +497,7 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-4540/ticket.md                           |  49 ++
  tickets/T-4541/ticket.md                           | 112 ++++
  tickets/T-4542/ticket.md                           |  55 ++
- tickets/T-4543/done-report.md                      | 115 +++++
+ tickets/T-4543/done-report.md                      | 115 ++++
  tickets/T-4543/ticket.md                           |  79 +++
  tickets/T-4546/ticket.md                           |  38 ++
  tickets/T-4547/done-report.md                      | 137 +++++
@@ -503,39 +505,47 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-4548/done-report.md                      |  59 +++
  tickets/T-4548/ticket.md                           |  50 ++
  tickets/T-4549/ticket.md                           |  53 ++
- tickets/T-4550/done-report.md                      | 545 ++++++++++++++++++++
+ tickets/T-4550/done-report.md                      | 545 +++++++++++++++++++
  tickets/T-4550/ticket.md                           |  59 +++
  tickets/T-4552/done-report.md                      | 146 ++++++
  tickets/T-4552/ticket.md                           | 100 ++++
  tickets/T-4553/done-report.md                      | 501 ++++++++++++++++++
  tickets/T-4553/ticket.md                           |  55 ++
+ tickets/T-4554/done-report.md                      | 541 +++++++++++++++++++
  tickets/T-4554/ticket.md                           |  63 +++
  tickets/T-4555/done-report.md                      | 556 ++++++++++++++++++++
- tickets/T-4555/ticket.md                           |  73 +++
+ tickets/T-4555/ticket.md                           |  78 +++
  tickets/T-4556/ticket.md                           |  37 ++
  tickets/T-4558/ticket.md                           |  30 ++
  tickets/T-4559/ticket.md                           |  54 ++
  tickets/T-4560/ticket.md                           |  41 ++
  tickets/T-4561/ticket.md                           |  38 ++
  tickets/T-4562/ticket.md                           |  35 ++
- tickets/T-4563/ticket.md                           |  42 ++
+ tickets/T-4563/done-report.md                      | 556 ++++++++++++++++++++
+ tickets/T-4563/ticket.md                           |  47 ++
  tickets/T-4566/ticket.md                           | 154 ++++++
  tickets/T-4567/ticket.md                           |  27 +
  tickets/T-4571/ticket.md                           |  43 ++
  tickets/T-4572/ticket.md                           |  43 ++
  tickets/T-4573/ticket.md                           |  27 +
- tickets/T-4579/ticket.md                 |  65 +++
+ tickets/T-4574/ticket.md                           |  29 ++
+ tickets/T-4575/ticket.md                           |  38 ++
+ tickets/T-4579/done-report.md                      | 522 +++++++++++++++++++
+ tickets/T-4579/ticket.md                           |  68 +++
+ tickets/T-4580/ticket.md                           |  46 ++
+ tickets/T-4581/ticket.md                           |  47 ++
  tickets/T-draft-a06debc6/ticket.md                 |  41 ++
- tickets/T-4581/ticket.md                 |  47 ++
- tickets/T-4582/ticket.md                 |  49 ++
+ tickets/T-4582/ticket.md                 |  56 ++
+ tickets/T-draft-dfc98d31/ticket.md                 |  73 +++
  uv.lock                                            |   2 +-
- 412 files changed, 25199 insertions(+), 1610 deletions(-)
+ 454 files changed, 29308 insertions(+), 1651 deletions(-)
 ```
 
 ### Evidence
-- `tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map` (pytest node id, verified passing when recorded)
+- `tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance::test_csharp_registered_capabilities_pass` (pytest node id, verified passing when recorded)
+- `tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_csharp_test_discovery_is_behaviorally_checked` (pytest node id, verified passing when recorded)
+- `tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_csharp_test_discovery_passes_on_a_real_discoverable_fixture` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
+- tests: 3 passed (from 3 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)

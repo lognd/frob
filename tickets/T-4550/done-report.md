@@ -530,7 +530,7 @@ ledger-level repair before evidence/close can bind to T-4550.
  tickets/T-4563/ticket.md                           |  42 ++
  tickets/T-4579/ticket.md                 |  65 +++
  tickets/T-4581/ticket.md                 |  47 ++
- tickets/T-draft-be56039a/ticket.md                 |  41 ++
+ tickets/T-4582/ticket.md                 |  41 ++
  uv.lock                                            |   2 +-
  393 files changed, 23210 insertions(+), 1573 deletions(-)
 ```

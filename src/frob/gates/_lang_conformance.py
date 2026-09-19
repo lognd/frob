@@ -368,7 +368,7 @@ _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
 # implies). A capability absent from this dict is checked for every
 # language with an IMPLEMENTED cell, unchanged from before this ticket.
 _BEHAVIORAL_CAPABILITY_LANGUAGES: dict[str, frozenset[str]] = {
-    CAPABILITY_TEST_DISCOVERY: frozenset({"python", "rust"}),
+    CAPABILITY_TEST_DISCOVERY: frozenset({"python", "rust", "csharp"}),
 }
 
 
@@ -492,6 +492,39 @@ def _check_test_discovery_python(project: Path) -> tuple[bool, str]:
     return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
 
 
+def _check_test_discovery_csharp(project: Path) -> tuple[bool, str]:
+    """`CAPABILITY_TEST_DISCOVERY`'s csharp-specific behavioral check
+    (T-4582): a minimal real NUnit fixture (one `[Test]`
+    method), collected via `frob.testing.collect_csharp_tests`
+    (`_collect_csharp.py`'s static tree-sitter source scan -- no
+    `dotnet`/NUnit console runner invocation, mirroring this function's
+    python/rust siblings' "no build/run just to collect" restraint, and
+    cheaper still since csharp needs no toolchain build step at all)."""
+    (project / "SampleTests.cs").write_text(
+        "using NUnit.Framework;\n\n"
+        "namespace Frob.CapabilityFixture\n"
+        "{\n"
+        "    public class SampleTests\n"
+        "    {\n"
+        "        [Test]\n"
+        "        public void TestCapabilityFixtureDiscoverable()\n"
+        "        {\n"
+        "            Assert.That(true, Is.True);\n"
+        "        }\n"
+        "    }\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    from frob.testing import collect_csharp_tests
+
+    collected = collect_csharp_tests(project)
+    if collected.is_err:
+        return False, f"collect_csharp_tests failed: {collected.danger_err}"
+    node_ids = collected.danger_ok.node_ids
+    ok = any("TestCapabilityFixtureDiscoverable" in n for n in node_ids)
+    return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
+
+
 def _check_test_discovery_rust(project: Path) -> tuple[bool, str]:
     """`CAPABILITY_TEST_DISCOVERY`'s rust-specific behavioral check
     (T-2698): a minimal real crate (`Cargo.toml` + `src/lib.rs` with one
@@ -537,6 +570,7 @@ def _check_test_discovery_rust(project: Path) -> tuple[bool, str]:
 _TEST_DISCOVERY_BUILDERS: dict[str, Callable[[Path], tuple[bool, str]]] = {
     ".py": _check_test_discovery_python,
     ".rs": _check_test_discovery_rust,
+    ".cs": _check_test_discovery_csharp,
 }
 
 

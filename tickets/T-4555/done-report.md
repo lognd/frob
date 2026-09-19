@@ -541,7 +541,7 @@ READY.
  tickets/T-4563/ticket.md                           |  42 ++
  tickets/T-4579/ticket.md                 |  65 +++
  tickets/T-4581/ticket.md                 |  47 ++
- tickets/T-draft-be56039a/ticket.md                 |  49 ++
+ tickets/T-4582/ticket.md                 |  49 ++
  tickets/T-draft-f84e10f5/ticket.md                 | 154 ++++++
  uv.lock                                            |   2 +-
  403 files changed, 24301 insertions(+), 1582 deletions(-)
