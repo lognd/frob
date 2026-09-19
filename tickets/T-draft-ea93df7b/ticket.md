@@ -70,6 +70,8 @@ acceptance:
 - text: two consecutive get_snapshot calls on an unchanged tree build the graph zero
     additional times on the second call
   evidence: []
+- text: one changed file between two get_snapshot calls triggers exactly one rebuild
+  evidence: []
 threat: null
 component: null
 anchor: false
