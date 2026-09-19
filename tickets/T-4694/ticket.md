@@ -1,5 +1,5 @@
 ---
-id: T-draft-77a716ab
+id: T-4694
 title: Register 'frob narrative move' as the Tier-A --fix for DOCARCH002 check 2 (ledger
   write inside the fix transaction, archived-path safe, idempotent)
 state: queued
