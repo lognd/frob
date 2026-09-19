@@ -1,7 +1,7 @@
 ---
 id: T-3953
 title: 'RACE001: concurrent read-then-write test obligation'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_inv.py
+- docs/modules/gate-race001.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gate-race001.md
+  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-draft-a62505d4
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a function with an unlocked read of a value followed by a write derived
