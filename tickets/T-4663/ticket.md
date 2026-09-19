@@ -18,10 +18,18 @@ scope:
 - frob.toml
 - tests/unit/test_layering_gate.py
 - docs/modules/arch.md
+- src/frob/gates/_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: wiring check_layering_edges into frob check requires calling it from the
+    ARCH gate module; layering.py alone cannot invoke frob check
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: v0.535.0
