@@ -60,6 +60,38 @@ acceptance:
     atomic ledger write: no state exists in which the ticket is renamed but its citations
     are not (this is T-3929''s failure mode).'
   evidence: []
+- text: Given any refusal in the trunk-numbering flow, when it is shown to a user,
+    then the message carries the EXACT next command to run, not a description of it.
+    The PR check refusing a branch-minted id says "run `frob ticket sync --base main`,
+    then push". No refusal in this flow may state a problem without stating its remedy.
+  evidence: []
+- text: Given `frob ticket sync`, when it runs, then it prints a before/after table
+    of every renumbered id and every rewritten citation, and exits with a one-line
+    summary of what changed. A sync that renumbered nothing says so on one line rather
+    than printing an empty table.
+  evidence: []
+- text: Given `frob ticket new` on a non-trunk branch, when the ticket is created,
+    then the author is told their id is a DRAFT that will be numbered when it reaches
+    the trunk -- so nobody is surprised at merge by an id they had already written
+    into a commit message or a doc.
+  evidence: []
+- text: 'Given docs/guides/collaborating.md (new), when a reader follows it, then
+    it walks the two-collaborator, two-branch scenario end to end: both file tickets,
+    both merge main, both renumber, every citation resolves. It is LINKED from the
+    README section on tickets, so it is reachable without already knowing it exists.'
+  evidence: []
+- text: Given `frob doctor`, when it runs on a branch carrying numeric ids not present
+    on main, then it reports them and names the sync command -- the problem is surfaced
+    before the PR check refuses it, not after.
+  evidence: []
+- text: 'POSITIVE CONTROL: a scripted two-collaborator scenario asserts EVERY message
+    a user sees, verbatim -- the `new` draft notice, the sync before/after table,
+    the sync summary line, the doctor report, and the PR check refusal with its embedded
+    command. It FAILS on dev today (none of these messages exist) and passes after
+    this leaf. Asserting the text verbatim is the point: a test that only checks an
+    exit code would pass against silent or unhelpful output, which is exactly the
+    failure this criterion exists to prevent.'
+  evidence: []
 threat: null
 component: null
 anchor: false
