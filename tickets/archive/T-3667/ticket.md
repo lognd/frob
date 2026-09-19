@@ -23,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4400
+  new_length: 4888
 evidence:
 - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_finds_the_violation_even_when_cwd_relativization_diverges
 designated_repro_test: null
@@ -47,3 +54,5 @@ Filed per this campaign's process step 2 with a partial diagnosis rather than sk
 Traceback evidence: scratchpad/win-33521-failures.txt lines 5554-16479 (all 10 failures, identical `assert v is not None` shape; full captured-log block for the first one at lines 6635-6636... see the WARNING line quoted above, immediately following each failure's traceback).
 
 References T-3659 (tracking ticket for this campaign).
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_finds_the_violation_even_when_cwd_relativization_diverges's docstring carried a long narrative (win32 gates_suite campaign T-3659; the old _package_edges .replace()-based path reconstruction bug and its win32/POSIX-reproducible failure modes; the abs_path=result.danger_ok.path fix). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
