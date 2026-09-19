@@ -61,6 +61,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_unauthenticated_write_with_retention_but_no_rate_fires
+- tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_declared_rate_stays_quiet
+- tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_authenticated_route_stays_quiet
+- tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_non_carries_store_stays_quiet
+- tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_outbound_flow_from_store_never_fires
+- tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_waived_finding_is_suppressed
 designated_repro_test: null
 threat: null
 component: null
