@@ -21,6 +21,14 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
+acceptance:
+- text: frob:doc edges sharing the same anchor are grouped into one contract (_shared_doc_anchor_groups),
+    ignoring anchors with only one participant symbol
+  evidence: []
+- text: cov009_violations warns on every untouched sibling in a group once the diff
+    touches at least one other sibling's own line span, and stays silent when the
+    diff touches none or all of them
+  evidence: []
 threat: null
 component: null
 anchor: false
