@@ -1,5 +1,5 @@
 ---
-id: T-draft-665780a8
+id: T-4740
 title: 'Land phase (c): publish is a single update-ref CAS reusing T-4572''s ledger-only
   fast path'
 state: queued
