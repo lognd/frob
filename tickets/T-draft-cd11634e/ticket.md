@@ -1,0 +1,73 @@
+---
+id: T-draft-cd11634e
+title: Multi-target directive grammar and the one documented continuation form, with
+  a DSL001 mid-token break check
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: high
+blocked_by:
+- T-4710
+parent: T-4703
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/dsl.py
+- docs/modules/graph.md
+- tests/unit/graph/test_dsl.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Leaf 2 of T-4703. 3 points. Multi-target directive grammar plus the ONE documented
+continuation form. Owns the parser; no gate or fixer changes live here.
+
+## What to build
+
+(a) Multi-target parsing: `# frob:tests a.py::A.m, b.py::B.n` and `# frob:doc path#a, path#b`
+    -- same kind, comma-separated, one Edge emitted per target with identical kind/src/attrs.
+    Comma inside a quoted value is NOT a separator.
+(b) Adopt the trailing-backslash continuation as THE one continuation form. It is already
+    half-supported: `_fold_continuations` / `fold_comment_runs`, src/frob/graph/dsl.py:
+    1431-1545 (T-0286 / T-0441 / T-0987) already fold a run before tokenizing, already stop
+    the fold on a genuinely-valid directive start (`_is_genuine_directive_start`, :1503), and
+    already treat an unfoldable trailing backslash literally. This leaf documents that
+    behaviour as the contract and closes the gaps the multi-target form opens (a run that ends
+    mid-list; a continuation whose first token is a bare target rather than prose).
+    The indented-hash alternative is explicitly NOT built.
+(c) DSL001 mid-token break detection: a folded run whose join point lands INSIDE a symbol path,
+    an anchor, or a quoted value is a `MalformedDirective` whose reason NAMES the fix. This is
+    the parser-side half of owner decision 2; the wrapper-side half is leaf 3. T-2857 already
+    measured this exact corruption shape and left a comment about it at
+    src/frob/graph/dsl.py:586 (`frob:describes path::Class.metho d_further_here` -- a wrapped
+    continuation's trailing space landing mid-identifier); that comment is the repro to
+    promote into a real check.
+(d) docs/modules/graph.md: multi-target grammar, the one continuation form, the mid-token rule.
+
+## Positive control
+
+- Plant a directive whose continuation joins mid-symbol-path and assert DSL001 fires with a
+  reason naming the fix. Plant the same directive broken at a real token boundary and assert
+  it does NOT fire.
+- Plant a multi-target `frob:tests` with a comma inside a quoted title and assert one target,
+  not two.
+- Round-trip property: fold(unfold(x)) == x for every multi-target and continued shape.
+
+## Acceptance
+
+- Multi-target directives of both kinds parse to the same edge set as the equivalent stack.
+- Mid-token break is a DSL001 finding naming its fix; token-boundary break is clean.
+- Full existing tests/unit/graph/test_dsl.py passes unchanged (no regression on the 30,915
+  existing single-target lines).
