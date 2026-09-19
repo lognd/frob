@@ -29,6 +29,13 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: GIVEN the composed-tree pre-commit sweep runs the check against a warm sweep
+    stage / disposable squash worktree (not the primary checkout) WHEN FROB_LAND_LOCK_ROOT
+    is set to the primary checkout's path THEN _land_commit_in_progress finds the
+    real land.lock there and the testsuite-glob ratchet auto-accepts/writes the lock,
+    instead of re-reporting a live SELFAUDIT001/SYS111 finding every run
+  evidence: []
 threat: null
 component: null
 anchor: false
