@@ -15,12 +15,18 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/_tickets_gate.py
 - tests/unit/gates/test_cov002_strata_declarations.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_tickets_gate.py
+  reason: T-3899 holds active lease on _tickets_gate.py; cannot touch, per BRIEF do-not-touch-leased-elsewhere
+    rule
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given tickets/archive/T-0164/ticket.md already named the class 'COV002 demands
