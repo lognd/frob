@@ -19,6 +19,14 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: DECISION ticket -- its deliverable is an owner
   decision recorded in the body, which legitimately changes no files'
+body_changes:
+- mode: append
+  reason: '2026-09-19: owner DECISION D-M6 recorded; this decision ticket''s deliverable
+    is complete and it closes with no behavior change'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3559
+  new_length: 5945
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (defaults-and-inheritance
@@ -93,3 +101,45 @@ the decision with that epic rather than in isolation.
 
 ACCEPTANCE
 Owner records a decision in the body: which option, and what it changes.
+
+
+## DECISION RECORDED -- owner, 2026-09-19 (D-M6)
+
+**Decided: option 2 (split the monofile), with one binding constraint the option
+as written did not have -- the split is done MODULE BY MODULE, BY HAND. No split
+tool is to be written.**
+
+D-M6, from the owner's module-system decisions. design/frob.strata stops being a
+monofile; each module carries its own model. The 1,948 comment lines and the 111
+literal duplicate declarations measured in SF-10 are resolved by the split
+itself: a module's clearance, label and interface are stated once in that
+module's own file, so `clearance Internal;` x24 and `attr interface=[` x19 stop
+being restatements and become one statement each, per module.
+
+Explicitly NOT decided and NOT to be built:
+- **No split tool.** A mechanical splitter is refused. The split is hand work,
+  module by module, because deciding which module owns which node IS the design
+  work and a tool would only relocate text without making that judgment. This
+  also answers option 3's "split first, defaults later" -- there is no automated
+  first pass to run.
+- **No grammar defaults/inheritance (option 1).** The module boundary is the
+  unit of sharing; a defaults block would be a second, competing mechanism for
+  the same thing. Compare D-M8 on T-4677, which refuses templated assumes for
+  the same reason: the module is the unit, not a template.
+
+INTERACTION WITH T-4598, now resolved rather than left open: this ticket's body
+previously recorded that T-4598 (append-shared registry files) and a split were
+"complementary, not alternatives", and asked the owner to coordinate. D-M6
+settles it -- the split is the answer to the contention, and per-module files
+end the whole-file lease problem structurally, because a module's model is
+leased with that module. T-4598 remains the right fix for the registry files
+that are NOT split (the KERNEL DECOUPLING epic owns that call).
+
+CONSEQUENCE FOR T-4668, also appended to that ticket: the single ratchet-lock
+loader/writer must be designed for PER-MODULE lock files from the start
+(design/<module>.via.lock.json), since migration step 7 of the module system
+splits the lock per module.
+
+Closing with no behavior change: the deliverable of a DECISION ticket is the
+decision, now recorded above. The hand split itself belongs to the module-system
+story being filed by the other planner. No files change under this id.
