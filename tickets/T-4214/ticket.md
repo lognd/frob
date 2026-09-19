@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
 - src/frob/graph/dsl.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
     _attrs_verb_error_waive; the WAIVE012 evaluator in _waive.py cannot see a non-date
     until= value at all unless dsl.py's own grammar check is relaxed to accept the
     closed predicate vocabulary too
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/modules/gates.md
+  reason: WAIVE012's rule-catalog entry and the until= predicate DSL doc anchor live
+    here, matching every sibling WAIVE00* rule's frob:doc target
   actor: logan
   at: '2026-09-19'
 triage_changes:
