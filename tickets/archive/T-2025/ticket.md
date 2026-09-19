@@ -44,6 +44,13 @@ scope_changes:
     test files cover the new outcome's classification and message
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve TEST_ABSENT_AT_PARENT detail trimmed from _bug_repro.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2689
+  new_length: 3710
 evidence:
 - tests/test_gates_mutation_evidence.py::TestBugReproAtRef::test_test_absent_at_parent_is_distinct_from_no_verdict
 - tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_reports_test_absent_at_parent_exit1_with_explanatory_message
@@ -101,3 +108,20 @@ document this as a permanent limitation of `--check-repro` post-land,
 so a coordinator does not ask an agent to do what T-2019 asked (which
 this repo's own review process is going to keep re-discovering
 otherwise).
+
+
+T-4709 follow-up (condensed from BugReproOutcome.TEST_ABSENT_AT_PARENT's
+docstring in src/frob/gates/_bug_repro.py, trimmed for DOCARCH002's
+12-line cap): the pytest signal is exit 5, "no tests ran" (collection
+succeeded, zero items matched the node id). Distinct from `NO_VERDICT`
+(a genuine infra failure a retry or different environment might resolve)
+so the caller can say exactly that instead of the generic "could not
+even collect" wording, which reads like a transient, maybe-retryable
+failure when it is actually permanent for this test_id/base_ref pair.
+Treated identically to `NO_VERDICT` by every violation-producing caller
+(never a false PASSED_AT_PARENT/FAILED_AT_PARENT). This outcome fires
+only when no earlier commit is reachable, which is unconditionally true
+for base_ref="main" (the default) against any ticket that has already
+landed; T-2021's own evidence used a worktree branch's pre-land,
+pre-squash commit, still reachable before the worktree is removed, as
+the explicit --base-ref workaround.
