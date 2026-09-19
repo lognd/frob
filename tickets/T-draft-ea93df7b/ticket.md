@@ -16,11 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/__init__.py
-- src/frob/gates/__init__.py
-- src/frob/gates/_sys.py
 - src/frob/gates/_prework.py
-- src/frob/app/check_runner.py
-- src/frob/app/sys_runner.py
 - src/frob/app/coverage_runner.py
 - src/frob/app/dup_runner.py
 - src/frob/app/ack_runner.py
@@ -30,6 +26,31 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: in-progress leases held by T-3962/T-3995/T-4112/T-4113/T-4212; deferring
+    those call sites to avoid collision
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/app/check_runner.py
+  reason: in-progress leases held by T-3962/T-3995/T-4112/T-4113/T-4212; deferring
+    those call sites to avoid collision
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/app/sys_runner.py
+  reason: in-progress leases held by T-3962/T-3995/T-4112/T-4113/T-4212; deferring
+    those call sites to avoid collision
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/gates/_sys.py
+  reason: in-progress leases held by T-3962/T-3995/T-4112/T-4113/T-4212; deferring
+    those call sites to avoid collision
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
