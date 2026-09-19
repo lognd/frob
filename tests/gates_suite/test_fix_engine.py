@@ -1331,6 +1331,19 @@ class TestFixEngineTierA:
             ["git", "-C", str(root), "commit", "-q", "-m", message], check=True
         )
 
+    def _hold_land_lock(self, root: Path) -> None:
+        """T-4607: `fix_sys111_capability_ratchet_sync`'s write is now
+        gated on `frob.strata._effects._land_commit_in_progress`, the
+        same land-owned posture T-4563 already applied to the sibling
+        testsuite-glob write -- create the marker `land.lock` file this
+        checks for so a test exercising the real WRITE path (not just
+        the computed `applied` list) still can."""
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        lock_path = root / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text("1\n", encoding="utf-8")
+
     def _write_ratchet_lock(self, root: Path, entries: dict) -> None:
         import json
 
@@ -1371,6 +1384,7 @@ class TestFixEngineTierA:
         # simulate SYS100's own auto-fix widening the via-list, uncommitted,
         # in THIS land -- exactly the shape T-1977/T-1665 measured.
         self._write_strata(root, ("app/a.py", "app/b.py"))
+        self._hold_land_lock(root)  # T-4607: write is land-owned
 
         applied = fix_sys111_capability_ratchet_sync(root)
         assert len(applied) == 1
@@ -1414,6 +1428,7 @@ class TestFixEngineTierA:
         self._init_git_repo(root)
         self._commit_all(root, "init: 1 via site, ceiling at 1")
         self._write_strata(root, ("app/a.py", "app/b.py"))
+        self._hold_land_lock(root)  # T-4607: write is land-owned
 
         landing = _ticket(
             ticket_id="T-2284",
@@ -1489,6 +1504,54 @@ class TestFixEngineTierA:
         model = merge_models(ids.models)
         violations = capability_ratchet_violations(model, root)
         assert any(v.node == "Api" and v.atom == "fs.write" for v in violations)
+
+    # frob:ticket T-4607
+    def test_sys111_without_land_lock_reports_but_does_not_write(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_without_land_lock_reports_but_does_not_write  # noqa: E501
+        """T-4607: the measured incident -- a DETACHED post-land sweep's
+        own unscoped `frob check` (no land.lock held, since the land
+        that spawned it already finished and released it) must NEVER
+        rewrite `capability-via-ratchet.lock.json` in the plain root
+        working tree; that write is exactly what left `root` dirty and
+        DirtyMain-blocked the next land. `applied` reads empty (same
+        shape as "nothing to fix"), same as every other best-effort
+        Tier-A skip in this module -- the growth is still surfaced as an
+        ordinary SYS111 gate violation on the NEXT (land-owned) check
+        run, logged loudly here rather than silently dropped."""
+        import logging
+
+        from frob.gates._fix_engine_sync import fix_sys111_capability_ratchet_sync
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "app").mkdir()
+        (root / "app" / "a.py").write_text('open("x", "w")\n', encoding="utf-8")
+        self._write_strata(root, ("app/a.py",))
+        self._write_ratchet_lock(
+            root, {"Api::fs.write": {"accepted_count": 1, "reason": "T-0000 baseline"}}
+        )
+        self._init_git_repo(root)
+        self._commit_all(root, "init: 1 via site, ceiling at 1")
+        self._write_strata(root, ("app/a.py", "app/b.py"))
+        # Deliberately NO self._hold_land_lock(root) here -- this is the
+        # detached-sweep shape.
+
+        import json
+
+        lock_path = (
+            root / "docs" / "design" / "registry" / "capability-via-ratchet.lock.json"
+        )
+        before = lock_path.read_text(encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING):
+            applied = fix_sys111_capability_ratchet_sync(root)
+
+        assert applied == []  # write skipped -- reads as "nothing applied"
+        assert lock_path.read_text(encoding="utf-8") == before  # not written
+        assert json.loads(before)["entries"]["Api::fs.write"]["accepted_count"] == 1
+        assert "T-4607" in caplog.text
 
     # frob:ticket T-2001
     def test_sys111_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:

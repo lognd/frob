@@ -1,5 +1,5 @@
 ---
-id: T-draft-c85a5f60
+id: T-4610
 title: 'post-land residue (auto-filed by the coordinator dispose loop): COV002:src/frob/tickets/_land_squash.py
   COV002:tests/test_ticket_work_and_land_finish.py SEC110:tests/test_ticket_work_and_land_finish.py
   TICK006:tickets.md'

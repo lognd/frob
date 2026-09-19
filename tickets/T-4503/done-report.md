@@ -579,7 +579,7 @@ above, which is a coordination note, not new work).
  tickets/T-4601/ticket.md                           |  27 +
  tickets/T-4602/ticket.md                           |  41 ++
  tickets/T-4603/ticket.md                           |  30 +
- tickets/T-draft-769b07dc/ticket.md                 |  81 +++
+ tickets/T-4607/ticket.md                 |  81 +++
  tickets/T-4606/ticket.md                 |  27 +
  uv.lock                                            |   2 +-
  506 files changed, 36663 insertions(+), 1801 deletions(-)

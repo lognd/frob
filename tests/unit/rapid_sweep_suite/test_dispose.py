@@ -488,6 +488,45 @@ class TestNormalizeIdentities:
         assert len(result) == 1
         assert next(iter(result))[0] == "E501"
 
+    # frob:ticket T-4607
+    def test_drops_git_metadata_path_such_as_a_lease_file(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_drops_git_metadata_path_such_as_a_lease_file  # noqa: E501
+        # Positive control for T-4607: a TICK010 finding against another
+        # in-progress ticket's OWN lease file must never enter the
+        # sweep's finding set at all -- it is process state (renewed on
+        # every lease touch), not repository content a land can regress,
+        # and left in it re-files/re-raises quarantine on every sweep.
+        import logging
+
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identities
+
+        with caplog.at_level(logging.INFO):
+            result = _normalize_identities(
+                tmp_path,
+                frozenset(
+                    {
+                        ("TICK010", ".git/frob-leases/T-9999.json"),
+                        ("E501", "a.py"),
+                    }
+                ),
+            )
+        assert result == frozenset({("E501", "a.py")})
+        assert "T-4607" in caplog.text
+
+    # frob:ticket T-4607
+    def test_leaves_a_real_tickets_dir_finding_alone(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_a_real_tickets_dir_finding_alone  # noqa: E501
+        # Negative control: a real TICK010 against a genuine `tickets/`
+        # path (repository content, not git-internal state) must still
+        # pass through unchanged -- T-4607's filter checks the literal
+        # `.git/` path prefix, never the rule id.
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identities
+
+        identities = frozenset({("TICK010", "tickets/T-9999/ticket.md")})
+        assert _normalize_identities(tmp_path, identities) == identities
+
 
 # frob:ticket T-2036
 class TestAbsoluteVsRelativePathIdentityMismatch:

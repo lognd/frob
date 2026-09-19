@@ -389,17 +389,13 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
 
 
 # frob:tests \
-# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_stra\
-# ta_file_gets_slash_slash_leader
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_strata_file_gets_slash_slash_leader  # noqa: E501
 # frob:tests \
-# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_rust\
-# _file_gets_slash_slash_leader
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_rust_file_gets_slash_slash_leader  # noqa: E501
 # frob:tests \
-# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_pyth\
-# on_file_gets_hash_leader
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_python_file_gets_hash_leader  # noqa: E501
 # frob:tests \
-# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unkn\
-# own_extension_refuses_insertion
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unknown_extension_refuses_insertion  # noqa: E501
 # frob:ticket T-1581
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to marker_for, a \
 # cross-module helper the resolver cannot see through; the one real raise path (file \
@@ -1207,7 +1203,9 @@ def _capability_counts_at_head(root: Path) -> "dict[str, int] | None":
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused kind="unit"  # noqa: E501
 # frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_leaves_a_pre_existing_breach_untouched kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_without_land_lock_reports_but_does_not_write kind="unit"  # noqa: E501
 # frob:ticket T-2001
+# frob:ticket T-4607
 def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-2001): re-baseline `capability-via-ratchet.lock.json`'s
     `accepted_count` for exactly the `(node, atom)` pairs whose scoped
@@ -1221,6 +1219,18 @@ def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
     case there is nothing left for THIS pass to have caused; growth can
     still come from a human-authored `may=` widening committed before
     this land, which this handler still correctly attributes and syncs.
+
+    T-4607: the write itself only happens while `frob.strata._effects.
+    _land_commit_in_progress(root)` reads `True` -- see `_apply_
+    capability_ratchet_bumps`'s own paragraph on this: a caller with no
+    `land.lock` held (an interactive `frob check --fix`, or any future
+    non-land Tier-A wiring) reads back an empty `applied` list, same
+    shape as "nothing to fix," and the lock file is left untouched --
+    that write would otherwise land in the plain root working tree with
+    no commit absorbing it. Logged loudly (WARNING, naming the count
+    that was computed but not written) rather than silently dropped; the
+    growth still surfaces as an ordinary SYS111 gate violation on the
+    next (land-owned) check run.
 
     Never bumps unconditionally to whatever is currently observed --
     that would turn the ratchet into a no-op that ratifies any growth,
@@ -1311,9 +1321,23 @@ def _apply_capability_ratchet_bumps(
     when its current count exceeds the committed ceiling AND grew since
     `before_counts` -- a pair already exceeding the ceiling but unchanged
     since `before_counts` is a PRE-EXISTING breach, left untouched (still
-    surfaced by SYS111) rather than silently ratified."""
+    surfaced by SYS111) rather than silently ratified.
+
+    T-4607: even when bumps ARE computed, the on-disk write only happens
+    while `frob.strata._effects._land_commit_in_progress(root)` reads
+    `True` -- mirroring the T-4563 gate the sibling testsuite-glob
+    auto-accept already carries in that module. Without this a caller
+    with no `land.lock` held (concretely: the DETACHED post-land sweep,
+    `frob.app.ticket_runner._rapid_sweep`, running its own unscoped
+    `frob check` well after the land that spawned it already released
+    the lock) rewrites `CAPABILITY_RATCHET_LOCK_REL` directly in the
+    plain root working tree with no commit absorbing it -- exactly the
+    DirtyMain-blocks-the-next-land shape T-4563 fixed for the OTHER
+    writer of this same file, still open here. Skipped (never written,
+    `applied` returned empty), logged at WARNING, never raised."""
     from frob.strata._effects import (
         CAPABILITY_RATCHET_LOCK_REL,
+        _land_commit_in_progress,
         _load_capability_ratchet_lock,
     )
 
@@ -1353,6 +1377,33 @@ def _apply_capability_ratchet_bumps(
             )
         )
     if not applied:
+        return []
+    # frob:ticket T-4607
+    if not _land_commit_in_progress(root):
+        # T-4607: this handler's own two current callers
+        # (`_land_cmd._sweep_apply_tier_a_pre_commit`/`_sweep_apply_
+        # tier_a_and_commit`) both run while `land()` holds `land.lock`
+        # for its whole run, so the write below normally lands inside
+        # that land's own composed commit -- but ANY other caller of
+        # Tier-A (an interactive `frob check --fix`, or a future sweep
+        # wiring) does not hold that lock, and writing the ratchet lock
+        # there rewrites the PLAIN root working tree with no commit
+        # absorbing it, leaving it dirty and DirtyMain-blocking the next
+        # land -- the exact T-4563 regression shape, for this module's
+        # OWN unconditional write rather than the one T-4563 already
+        # gated in `frob.strata._effects`. Growth is still reported as a
+        # real SYS111 violation by the gate itself; only the auto-bump
+        # write is skipped here.
+        _log.warning(
+            "fix_sys111_capability_ratchet_sync: %d capability-ratchet "
+            "bump(s) computed but NOT written -- no land.lock held for "
+            "%s, so writing %s here would dirty the plain root working "
+            "tree with no commit absorbing it (T-4607); the next land's "
+            "own Tier-A pass will auto-baseline this instead",
+            len(applied),
+            root,
+            CAPABILITY_RATCHET_LOCK_REL,
+        )
         return []
     _write_text(lock_path, json.dumps(raw, indent=2, sort_keys=True) + "\n")
     return applied

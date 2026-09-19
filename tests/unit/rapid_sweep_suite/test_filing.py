@@ -156,6 +156,39 @@ class TestRaiseQuarantineForRedBatch:
         assert filed is not None
         assert is_quarantined(tmp_path).danger_ok is False
 
+    # frob:ticket T-4607
+    def test_directory_shaped_finding_is_filed_but_not_quarantined(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_directory_shaped_finding_is_filed_but_not_quarantined  # noqa: E501
+        """T-4607: DOC012's own finding shape (`file="docs/commands/"`,
+        a directory, never a real changed file) can never be resolved by
+        commit-diff attribution and would otherwise re-raise quarantine
+        on every sweep that still has any doc drift at all. Still filed
+        as a real regression ticket (drift is real) but dropped from the
+        quarantine dispose queue -- unlike a real file finding in the
+        SAME batch, which still raises normally."""
+        from frob.verify._quarantine import is_quarantined, load_quarantine
+
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("DOC012", "docs/commands/"), ("RULE1", "a.py")}),
+        )
+        assert filed is not None
+
+        record = load_quarantine(tmp_path)
+        assert record.is_ok
+        if record.danger_ok is not None:
+            quarantined_pairs = {(f.rule_id, f.file) for f in record.danger_ok.findings}
+            assert ("DOC012", "docs/commands/") not in quarantined_pairs
+        else:
+            # Both pairs got auto-disposed by the same filing (T-2208) --
+            # is_quarantined() below is the real assertion either way.
+            pass
+        assert is_quarantined(tmp_path).danger_ok is False
+
     # frob:ticket T-2604
     def test_open_ticket_attribution_clears_the_quarantine_raise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -310,14 +310,36 @@ def _normalize_identity_file(root: Path, file: str) -> str:
         return path.as_posix()
 
 
+# frob:ticket T-4607
+def _is_git_metadata_path(file: str) -> bool:
+    """`True` when `file` (already `_normalize_identity_file`-relative)
+    names something under this checkout's own `.git/` directory --
+    lease files (`.git/frob-leases/T-####.json`), lock files, and every
+    other bit of git-internal bookkeeping is process state, never
+    repository content a land can regress. Measured incident (T-4607):
+    the deferred post-land sweep's own unscoped `frob check` reads
+    `.git/frob-leases/*.json` for another ticket's OWN in-progress
+    worktree lease and reports a TICK010 against it; the file's
+    `mtime`/contents change on every concurrent lease renewal, so the
+    NEXT sweep sees it as a brand-new, unattributable finding every
+    single time -- a permanent, self-inflicted quarantine raise no land
+    ever actually caused. Checked structurally on the path's own leading
+    component, never on the emitting rule id, since any future rule
+    reading `.git/**` would hit the exact same false-regression shape."""
+    return file == ".git" or file.startswith(".git/")
+
+
 # frob:ticket T-2313
+# frob:ticket T-4607
 # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_drops_genuinely_empty_identity_pair  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_well_formed_pairs_untouched  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_drops_git_metadata_path_such_as_a_lease_file  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_a_real_tickets_dir_finding_alone  # noqa: E501
 def _normalize_identities(
     root: Path, identities: frozenset[tuple[str, str]]
 ) -> frozenset[tuple[str, str]]:
-    """T-2036/T-2313: apply `_normalize_identity_file` across a whole
-    `(rule, file)` identity set -- the single call every producer/
+    """T-2036/T-2313/T-4607: apply `_normalize_identity_file` across a
+    whole `(rule, file)` identity set -- the single call every producer/
     consumer of an identity set in this module should route through.
 
     T-2313: also drops any genuinely identity-less pair (rule AND file
@@ -332,14 +354,30 @@ def _normalize_identities(
     actionable finding. Logged when it happens, never silently dropped.
     A pair with only ONE field empty (a real rule with no file, or vice
     versa) is left alone -- that is still a genuine, if partial,
-    identity, not the T-2313 shape."""
+    identity, not the T-2313 shape.
+
+    T-4607: a pair whose normalized `file` is git-internal
+    (`_is_git_metadata_path`, e.g. `.git/frob-leases/T-1234.json`) is
+    ALSO dropped here, at the same choke point and for the same reason
+    as the identity-less case above: it is not repository content this
+    module's baseline/attribution/quarantine machinery can meaningfully
+    reason about, and left in, it re-files and re-raises quarantine on
+    every single sweep (see the helper's own docstring for the measured
+    incident). A `tickets/` (or any other real repo path) finding is
+    untouched -- this checks the literal `.git/` path prefix, never a
+    rule id, so it can never suppress a genuine regression."""
     normalized: set[tuple[str, str]] = set()
     dropped = 0
+    git_metadata_dropped = 0
     for rule, file in identities:
         if not rule and not file:
             dropped += 1
             continue
-        normalized.add((rule, _normalize_identity_file(root, file)))
+        normalized_file = _normalize_identity_file(root, file)
+        if _is_git_metadata_path(normalized_file):
+            git_metadata_dropped += 1
+            continue
+        normalized.add((rule, normalized_file))
     if dropped:
         _log.warning(
             "rapid sweep: T-2313: dropped %d genuinely identity-less "
@@ -347,6 +385,14 @@ def _normalize_identities(
             "attributed, deduped, or disposed; likely an upstream "
             "diagnostic missing its code/file data",
             dropped,
+        )
+    if git_metadata_dropped:
+        _log.info(
+            "rapid sweep: T-4607: dropped %d (rule, file) pair(s) whose "
+            "file is git-internal (under .git/, e.g. a frob-lease file) "
+            "-- process state, never repository content a land can "
+            "regress",
+            git_metadata_dropped,
         )
     return frozenset(normalized)
 
@@ -1788,6 +1834,33 @@ def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> 
 # breaker (T-1693) section documents several symbols under one section, not just a \
 # public entry point -- the many-symbols- one-section convention this repo already \
 # accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
+# frob:ticket T-4607
+def _log_directory_shaped_pairs_dropped(
+    final_id: str, directory_shaped_pairs: list[tuple[str, str]]
+) -> None:
+    """`_filter_pairs_for_quarantine_raise`'s own ARCH001 split: logs why
+    `directory_shaped_pairs` (T-4607) was dropped from the quarantine
+    raise, when non-empty -- a directory-shaped identity (e.g. DOC012's
+    own `file="docs/commands/"`) never appears as a changed FILE in any
+    commit's diff, so file-based attribution can never resolve it and it
+    would re-trip the quarantine circuit breaker on every sweep that
+    still has any doc drift at all. A no-op on an empty list. Still filed
+    as a regression ticket by the caller's own caller (real doc drift,
+    not suppressed) -- this only keeps it off the dispose queue."""
+    if not directory_shaped_pairs:
+        return
+    _log.info(
+        "rapid sweep: %s: %d directory-shaped (rule, file) pair(s) "
+        "(e.g. DOC012's docs/commands/) dropped from the quarantine "
+        "raise -- a directory never matches a commit's changed-file "
+        "set, so attribution can never resolve it and it would "
+        "re-raise quarantine on every sweep (still filed as a "
+        "regression ticket, just not sent to the dispose queue)",
+        final_id,
+        len(directory_shaped_pairs),
+    )
+
+
 def _filter_pairs_for_quarantine_raise(
     root: Path,
     final_id: str,
@@ -1825,14 +1898,22 @@ def _filter_pairs_for_quarantine_raise(
         and attr.status == "attributed"
         and _ticket_is_open(root, attr.ticket_id)
     ]
+    # frob:ticket T-4607
+    directory_shaped_pairs = [
+        (rule, file)
+        for rule, file in pairs
+        if (rule, file) not in open_ticket_pairs and file.endswith("/")
+    ]
     quarantine_pairs = [
         (rule, file)
         for rule, file in pairs
         if (rule, file) not in open_ticket_pairs
+        and (rule, file) not in directory_shaped_pairs
         and not _warm_tree_clears_unattributed_native_noise(
             root, rule, attributions.get((rule, file))
         )
     ]
+    _log_directory_shaped_pairs_dropped(final_id, directory_shaped_pairs)
     if open_ticket_pairs:
         _log.info(
             "rapid sweep: %s: %d finding(s) already attributed to still-"
@@ -1842,7 +1923,12 @@ def _filter_pairs_for_quarantine_raise(
             final_id,
             len(open_ticket_pairs),
         )
-    dropped = len(pairs) - len(quarantine_pairs) - len(open_ticket_pairs)
+    dropped = (
+        len(pairs)
+        - len(quarantine_pairs)
+        - len(open_ticket_pairs)
+        - len(directory_shaped_pairs)
+    )
     if dropped:
         _log.info(
             "rapid sweep: %s: warm-tree re-check cleared %d cold-worktree "
