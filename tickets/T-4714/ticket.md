@@ -1,5 +1,5 @@
 ---
-id: T-draft-43bee443
+id: T-4714
 title: 'Strip no-longer-needed noqa from directive lines: Tier-A fix plus lint, without
   re-tripping T-1987''s ARCH001 line-count regression'
 state: queued
