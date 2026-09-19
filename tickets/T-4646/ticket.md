@@ -2,7 +2,7 @@
 id: T-4646
 title: over_broad_literal_globs re-reads pyproject.toml uncached per doable() lease
   check, blowing TICK008 real-repo budget
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_models.py
 - src/frob/lang/_nodes.py
+- tests/unit/test_pyproject_data_memoization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_pyproject_data_memoization.py
+  reason: positive-control regression test for the pyproject.toml re-read fix
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
