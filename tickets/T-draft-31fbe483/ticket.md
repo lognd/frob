@@ -1,7 +1,7 @@
 ---
 id: T-draft-31fbe483
 title: 'test_drain: stale _fake_probe after T-4556 added whole_land kwarg'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -20,6 +20,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
+acceptance:
+- text: GIVEN _probe_land_once's real signature (T-4556 added whole_land) WHEN test_drain's
+    _fake_probe monkeypatches it THEN the fake accepts the same keywords and the test
+    suite passes
+  evidence: []
 threat: null
 component: null
 anchor: false
