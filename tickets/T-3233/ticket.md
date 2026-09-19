@@ -61,6 +61,12 @@ scope_changes:
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
+acceptance:
+- text: GIVEN frob cycle/xref/exports --consumers's --lang flags WHEN frob.lang gains
+    or loses a tree-sitter grammar THEN all three flags' choices update automatically
+    from one shared, frob.lang-derived source instead of three separately hand-typed
+    literals
+  evidence: []
 threat: null
 component: null
 anchor: false
