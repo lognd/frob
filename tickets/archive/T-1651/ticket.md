@@ -53,6 +53,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-06'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstrings per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2583
+  new_length: 3662
 evidence:
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_test_file_exempt_from_large001
@@ -116,3 +123,5 @@ expected -- fix what you can and FILE A FOLLOW-UP TICKET for the
 remainder") and per this repo's own T-1420/T-1204 incident history
 (closing a partially-worked LARGE001 ticket without filing the
 remainder silently dropped it from the queue twice already).
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_wire.py has two tests citing this ticket's own change-narrative in their docstrings (test_waiver_directly_above_symbol_suppresses_it and test_autouse_pytest_fixture_is_not_flagged). Original text: (1) 'T-1651: DEAD001's Violation now carries symref, so a frob:waive DEAD001 reason="..." placed directly above the flagged symbol (the exact pattern the gate's own message recommends) actually matches via _match_waiver's symbol-exact path -- previously every such waiver silently failed to bind because the Violation left symref unset (None), forcing every DEAD001 waiver onto the file-scoped fallback instead.' (2) 'T-1651: an @pytest.fixture(autouse=True) fixture is invoked implicitly by pytest's own injection machinery for every test in its module, never by a name/call token this gate's reference-graph scan can see -- _is_autouse_pytest_fixture (moved here from WIRE001's own T-1510 rescue) exempts it. DEAD001 previously lacked this exemption entirely.' Moved here; both docstrings now state only what they verify.
