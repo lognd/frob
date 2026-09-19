@@ -3,7 +3,7 @@ id: T-draft-ede38ca6
 title: land Tier-A directive canonicalizer emits lines over the ruff limit that the
   land's own ruff gate then refuses (E501), self-refusing every ticket whose frob:doc
   anchor is long
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -36,6 +36,11 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: 'A directive rewrite (DOC007 dotted-form / DOC002 fuzzy-slug) that pushes
+    a line past the resolved line-length limit gets a trailing noqa: E501 appended
+    in the same write, and the rewritten file is clean under a real ruff check.'
+  evidence: []
 threat: null
 component: null
 anchor: false
