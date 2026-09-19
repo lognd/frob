@@ -42,6 +42,12 @@ body_changes:
   at: '2026-09-05'
   old_length: 4581
   new_length: 7563
+- mode: append
+  reason: 'T-4709: preserve title-field prose rationale trimmed from _docptr.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7562
+  new_length: 8074
 evidence:
 - tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
 - tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion::test_single_line_title_not_flagged
@@ -191,3 +197,13 @@ prose vs. structured, as of this ticket:
   as narrative prose the way `title`/`reason` are, so they are left
   un-blanked; if either is ever observed holding a citation-shaped false
   positive, this same mechanism (add the key to the alternation) is the fix.
+
+
+T-4709 follow-up (condensed from _PROSE_KEY_RE's comment block in
+src/frob/gates/_docptr.py, trimmed for DOCARCH002's 12-line cap):
+this generalized from "any *reason key" (T-3724) to "any known PROSE
+key". `title` was T-3843's own addition: a feature ticket's title is
+prose in exactly the same sense a `reason` field is, and DOC006's only
+waive mechanism (an inline HTML comment adjacent to the citation) cannot
+be placed inside a YAML scalar, making a frontmatter-title finding
+unwaivable by construction.
