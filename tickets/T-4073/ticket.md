@@ -1,7 +1,7 @@
 ---
 id: T-4073
 title: 'H-1: node declares no-PII, client_storage write requires waiver'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -15,10 +15,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_pii_structural/__init__.py
+- tests/test_pii_structural_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: 'PII013 (H-1) needs test evidence; adding the gate''s own test file to scope,
+    per the ticket''s own ''positive control, failing test first, evidence'' instruction.
+
+    '
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a strata node with an explicit no-PII declaration, when a client_storage
