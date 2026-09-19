@@ -4,14 +4,14 @@ title: land spends 10+ minutes AFTER publishing the commit in _record_verify_int
   -> _load_snapshot_for_intent (full snapshot load in the land's critical path); the
   serial land queue idles for every minute of it -- defer the verify-intent snapshot
   to the async sweep or reuse the pre-land snapshot
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
 priority: critical
-parent: T-4654
+parent: null
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -28,31 +28,24 @@ scope_changes:
   reason: 'positive control: snapshot loader must not be called after publish'
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: parent
-  old_value: null
-  new_value: T-4654
-  reason: 'kernel-decoupling epic T-4651: rederive the frob kernel behind enforced
-    module boundaries; this ticket already states the right work for this concern
-    and is adopted as a child rather than duplicated'
-  actor: logan
-  at: '2026-09-19'
-- field: sprint
-  old_value: null
-  new_value: v0.535.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
-designated_repro_test: null
+evidence:
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_given_snapshot_is_reused_never_reloaded
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_dry_run_is_a_noop
+designated_repro_test: tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_given_snapshot_is_reused_never_reloaded
 acceptance:
 - text: the post-publish _record_verify_intent_for_landed_commit call reuses a caller-supplied
     pre-publish graph snapshot instead of loading/building one after the commit is
     published
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_given_snapshot_is_reused_never_reloaded
+  - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
+  - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_dry_run_is_a_noop
 - text: a positive-control test proves the snapshot loader (_load_snapshot_for_intent)
     is never called when a snapshot is supplied, alongside the existing verify-intent
     tests still passing
-  evidence: []
+  evidence:
+  - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_given_snapshot_is_reused_never_reloaded
 threat: null
 component: null
 anchor: false

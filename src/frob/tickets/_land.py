@@ -2907,6 +2907,7 @@ def _squash_apply_on_disposable_stage(
 # frob:ticket T-1495
 # frob:ticket T-1736
 # frob:ticket T-2076
+# frob:ticket T-4634
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -3173,6 +3174,30 @@ def _land_locked(
             return Err(finalized.danger_err)
         final_id = finalized.danger_ok
 
+        # T-4634: load (or build) the T-1736 verify-intent graph snapshot
+        # NOW, before `_squash_apply_on_disposable_stage` mutates `root` --
+        # at this instant `root`'s `.frob/cache.db` still matches
+        # `root_pre_land_tip` (the PRIOR land's own squash-apply is what
+        # last wrote it), so `_load_snapshot_for_intent`'s `load_graph`
+        # call is ordinarily a cache HIT. The pre-T-4634 shape loaded (or,
+        # on a miss, fully rebuilt) this same snapshot AFTER publish
+        # instead -- but the squash-apply's own file writes are exactly
+        # what `load_graph`'s staleness check (`_first_stale_cached_file`)
+        # flags as drifted, so that post-publish load ALWAYS missed and
+        # fell through to a full `build_graph` rebuild, on every single
+        # land, in the critical section between LAND-PROOF and process
+        # exit (T-4634/T-4635's own measurement: 10+ minutes under fleet
+        # load). Capturing it here instead reuses the land's own
+        # already-fresh cache rather than rebuilding a full repo snapshot
+        # a second time for the same commit. Best-effort like every other
+        # use of this snapshot: `None` on any load/build failure (logged
+        # inside `_load_snapshot_for_intent` itself), carried through
+        # unchanged to `_record_verify_intent_for_landed_commit` below,
+        # never raised here.
+        pre_land_snapshot = _load_snapshot_for_intent(
+            root, ticket_id, root_pre_land_tip.danger_ok
+        )
+
         # T-0907: the land-repair marker is written right before the ONLY
         # step that mutates `root` (`_land_squash_apply`) and cleared in
         # this inner `finally` on any exit -- an uncatchable SIGKILL
@@ -3211,9 +3236,17 @@ def _land_locked(
                 )
             )
             # T-1736: feed the T-1686 watermark epic's verify queue --
-            # best-effort, never gates an already-sealed land.
+            # best-effort, never gates an already-sealed land. T-4634:
+            # `pre_land_snapshot`, captured above BEFORE this land's own
+            # squash-apply mutated `root`, is passed straight through so
+            # this post-publish call never re-loads or rebuilds a
+            # snapshot of its own.
             _record_verify_intent_for_landed_commit(
-                root, final_id, squash_result.danger_ok, root_pre_land_tip.danger_ok
+                root,
+                final_id,
+                squash_result.danger_ok,
+                root_pre_land_tip.danger_ok,
+                snapshot=pre_land_snapshot,
             )
         return squash_result
     finally:
@@ -3221,6 +3254,7 @@ def _land_locked(
 
 
 # frob:ticket T-1736
+# frob:ticket T-4634
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # frob:tests \
@@ -3231,8 +3265,14 @@ def _land_locked(
 # tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
 # frob:tests \
 # tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_diff_failure_is_logged_not_raised  # noqa: E501
+# frob:tests \
+# tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_given_snapshot_is_reused_never_reloaded  # noqa: E501
 def _record_verify_intent_for_landed_commit(
-    root: Path, ticket_id: str, report: LandReport, pre_land_tip: str
+    root: Path,
+    ticket_id: str,
+    report: LandReport,
+    pre_land_tip: str,
+    snapshot=None,  # noqa: ANN001 -- GraphSnapshot | None, deferred-import type
 ) -> None:
     """T-1736: the T-1686 epic's missing enqueue side -- WITHOUT this, the
     coalescing verify worker (T-1688, already draining/advancing/compacting
@@ -3250,6 +3290,18 @@ def _record_verify_intent_for_landed_commit(
     commit, so the merge-base IS `pre_land_tip` itself and the resulting
     diff is exactly this land's own delta -- not a re-derivation of some
     other window.
+
+    T-4634: `snapshot`, when given, is `_land_locked`'s own PRE-publish
+    graph snapshot (loaded via `_load_snapshot_for_intent` BEFORE
+    `_squash_apply_on_disposable_stage` mutated `root`, while `root`'s
+    `.frob/cache.db` still matched `pre_land_tip`) and is used exactly as
+    handed in -- this function never re-loads or rebuilds one itself in
+    that case. Loading it AFTER publish instead (the pre-T-4634 shape,
+    still exercised here when `snapshot` is omitted, e.g. by an existing
+    caller/test) always missed cache: the squash-apply's own file writes
+    are exactly what `load_graph`'s staleness check flags as drifted,
+    forcing a full `build_graph` rebuild on every single land's critical
+    path (T-4634/T-4635's own measurement: 10+ minutes under fleet load).
 
     Best-effort throughout: a diff/graph-build failure, an empty touched-
     symbol set, or a `record_intent` failure are each logged and
@@ -3274,7 +3326,8 @@ def _record_verify_intent_for_landed_commit(
         )
         return
 
-    snapshot = _load_snapshot_for_intent(root, ticket_id, report.commit_sha)
+    if snapshot is None:
+        snapshot = _load_snapshot_for_intent(root, ticket_id, report.commit_sha)
     if snapshot is None:
         return
 
@@ -3292,11 +3345,24 @@ def _record_verify_intent_for_landed_commit(
 
 
 # frob:ticket T-1736
+# frob:ticket T-4634
 def _load_snapshot_for_intent(root: Path, ticket_id: str, commit_sha: str):  # noqa: ANN201 -- GraphSnapshot | None, deferred-import type
     """`_record_verify_intent_for_landed_commit`'s own ARCH001 split: load
     (or build, on a cold `.frob/cache.db`) the graph snapshot -- the same
     load-or-build shape every other graph-backed caller in this repo
-    shares. `None` on any build failure, logged, never raised."""
+    shares. `None` on any build failure, logged, never raised.
+
+    T-4634: `_land_locked` now calls this itself, BEFORE
+    `_squash_apply_on_disposable_stage` mutates `root`, and threads the
+    result through as `_record_verify_intent_for_landed_commit`'s own
+    `snapshot` argument -- at that pre-publish instant `root`'s
+    `.frob/cache.db` still matches the not-yet-superseded tip, so
+    `load_graph` is ordinarily a cache hit rather than the guaranteed
+    post-publish miss (and full `build_graph` rebuild) this function used
+    to pay for on every land. `commit_sha` here is purely a log label
+    (identifies which commit's intent this load is FOR) -- it plays no
+    role in cache-freshness/staleness at all, whether called before or
+    after that commit exists on `root`."""
     from frob.graph import build_graph, load_graph
 
     cache = root / ".frob" / "cache.db"

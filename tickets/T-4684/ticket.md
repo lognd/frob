@@ -1,5 +1,5 @@
 ---
-id: T-draft-93f13817
+id: T-4684
 title: cross-worktree lease release must not gate on the LOCAL ticket's prior state
 state: queued
 kind: bug

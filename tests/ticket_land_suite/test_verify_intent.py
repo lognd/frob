@@ -85,9 +85,7 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExclu\
-        # desNoTicketNoise.test_pre001_and_scope001_are_excluded_but_real_findings_surv\
-        # ive
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExcludesNoTicketNoise.test_pre001_and_scope001_are_excluded_but_real_findings_survive  # noqa: E501
         from frob.app import ticket_runner
 
         payload = self._json_payload(
@@ -114,8 +112,7 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExclu\
-        # desNoTicketNoise.test_only_no_ticket_noise_present_returns_empty_not_none
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExcludesNoTicketNoise.test_only_no_ticket_noise_present_returns_empty_not_none  # noqa: E501
         """A run whose ONLY findings are PRE001/SCOPE001 -- exactly the
         five-tickets-in-an-hour incident -- must read as a real, measured
         EMPTY set (clean), never `None` (unmeasurable): the whole point is
@@ -151,8 +148,7 @@ class TestUnscopedErrorFindingsFullMode:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullM\
-        # ode.test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode.test_full_mode_omits_budget_flag_and_sets_allow_full_check_env  # noqa: E501
         from frob.app import ticket_runner
 
         captured: dict[str, Any] = {}
@@ -193,8 +189,7 @@ class TestUnscopedErrorFindingsFullMode:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullM\
-        # ode.test_full_mode_default_is_false_preserves_prior_budgeted_behavior
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode.test_full_mode_default_is_false_preserves_prior_budgeted_behavior  # noqa: E501
         from frob.app import ticket_runner
 
         captured: dict[str, Any] = {}
@@ -262,8 +257,7 @@ class TestUnscopedErrorFindingsRecordsBudgetDeferral:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecor\
-        # dsBudgetDeferral.test_budget_truncated_run_records_deferred_groups
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral.test_budget_truncated_run_records_deferred_groups  # noqa: E501
         from frob.app import ticket_runner
         from frob.app.ticket_runner import _land_cmd
 
@@ -287,8 +281,7 @@ class TestUnscopedErrorFindingsRecordsBudgetDeferral:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecor\
-        # dsBudgetDeferral.test_clean_run_records_no_deferral
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral.test_clean_run_records_no_deferral  # noqa: E501
         """The must-still-land positive control at this layer: a run with
         no `BUDGET001` deferral at all leaves `_LAST_BUDGET_DEFERRALS`
         untouched for this ticket id."""
@@ -342,8 +335,7 @@ class TestPrintLandProofSurfacesBudgetDeferred:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudg\
-        # etDeferred.test_deferred_groups_named_on_the_land_proof_line
+        # tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred.test_deferred_groups_named_on_the_land_proof_line  # noqa: E501
         import logging
 
         from frob.app.ticket_runner import _land_cmd
@@ -378,8 +370,7 @@ class TestPrintLandProofSurfacesBudgetDeferred:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudg\
-        # etDeferred.test_no_deferral_reports_none_not_absent
+        # tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred.test_no_deferral_reports_none_not_absent  # noqa: E501
         """The must-still-land positive control: a land whose sweep ran
         clean prints `budget_deferred=none` -- present and explicit,
         never a silently-omitted field a human could mistake for
@@ -592,3 +583,63 @@ class TestRecordVerifyIntentForLandedCommit:
             tmp_path, "T-9000", self._report(commit_sha="c1"), "deadbeef"
         )
         assert queue_status(tmp_path).danger_ok == ()
+
+    # frob:ticket T-4634
+    def test_given_snapshot_is_reused_never_reloaded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_given_snapshot_is_reused_never_reloaded  # noqa: E501
+        """T-4634's own positive control: with a caller-supplied `snapshot`
+        (the shape `_land_locked` now uses, having loaded it BEFORE
+        publish), this function must resolve touched symbols from that
+        snapshot directly and never call `_load_snapshot_for_intent`
+        (and, transitively, `frob.graph.load_graph`/`build_graph`) itself
+        after publish -- the exact post-publish reload T-4634/T-4635 filed
+        against."""
+        from frob.gitio import Diff, Hunk
+        from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import queue_status
+
+        diff = Diff(base="deadbeef", hunks=(Hunk(file="a.py", span=(1, 3)),))
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        monkeypatch.setattr("frob.gitio.working_diff", lambda root, base: Ok(diff))
+
+        load_spy_calls: list[object] = []
+        monkeypatch.setattr(
+            _land_mod,
+            "_load_snapshot_for_intent",
+            lambda *a, **k: load_spy_calls.append((a, k)) or snapshot,
+        )
+
+        _land_mod._record_verify_intent_for_landed_commit(
+            tmp_path,
+            "T-9000",
+            self._report(commit_sha="c1"),
+            "deadbeef",
+            snapshot=snapshot,
+        )
+
+        # The spy on `_load_snapshot_for_intent` must never fire -- the
+        # given snapshot is used as-is, so nothing re-loads or rebuilds a
+        # graph snapshot after publish.
+        assert load_spy_calls == []
+
+        queue = queue_status(tmp_path)
+        assert queue.is_ok
+        assert len(queue.danger_ok) == 1
+        entry = queue.danger_ok[0]
+        assert entry.commit_sha == "c1"
+        assert entry.touched_symbols == ("a.py::fn",)
