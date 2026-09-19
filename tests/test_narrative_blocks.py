@@ -95,6 +95,33 @@ class TestNarrativeBlocksGate:
         assert len(scan_narrative_blocks(Path("f.py"), one_over)) == 1
 
 
+class TestT3020WaiversRemoved:
+    """Locks `narrative_blocks_gate` and `_dispatch_narrative` against
+    ever regrowing a `frob:waive SELFAUDIT001`/`frob:waive SYS003`
+    directive -- both capabilities are declared directly in
+    `design/frob.strata`'s `narrative` node and its `cli -> narrative`
+    flow (see T-3020's ticket body for the removal rationale), so
+    neither waiver is ever warranted again for these two call sites."""
+
+    def test_narrative_blocks_gate_has_no_selfaudit001_waiver(self) -> None:
+        """`narrative_blocks_gate`'s source no longer carries a
+        `frob:waive SELFAUDIT001` directive -- its `fs.read` is declared
+        directly on the `gates` strata node's via-list instead."""
+        import frob.gates._narrative_blocks as module
+
+        source = Path(module.__file__).read_text(encoding="utf-8")
+        assert "frob:waive SELFAUDIT001" not in source
+
+    def test_dispatch_narrative_has_no_sys003_waiver(self) -> None:
+        """`_dispatch_narrative`'s `frob.narrative._cli` import no longer
+        carries a `frob:waive SYS003` directive -- the `cli -> narrative`
+        flow it names is declared directly in `design/frob.strata`."""
+        import frob.__main__ as main_module
+
+        source = Path(main_module.__file__).read_text(encoding="utf-8")
+        assert "frob:waive SYS003" not in source
+
+
 class TestNarrativeBlocksGateRepoScan:
     """`narrative_blocks_gate`'s own tracked-file walk, over a throwaway
     git repo (not this repo) so the test does not depend on live counts."""

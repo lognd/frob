@@ -2,7 +2,7 @@
 id: T-3020
 title: Register frob.narrative as a strata component; close its SELFAUDIT001/SYS003
   waivers
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -50,6 +50,10 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+evidence:
+- tests/test_narrative_blocks.py::TestT3020WaiversRemoved::test_narrative_blocks_gate_has_no_selfaudit001_waiver
+- tests/test_narrative_blocks.py::TestT3020WaiversRemoved::test_dispatch_narrative_has_no_sys003_waiver
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob.narrative's fs.read/fs.write and its cli -> narrative import WHEN
@@ -57,7 +61,10 @@ acceptance:
     nor the SYS003 waiver on _dispatch_narrative exists in source, and both remain
     unnecessary because design/frob.strata's narrative node and cli -> narrative flow
     (T-3029) declare the capability directly
-  evidence: []
+  evidence:
+  - tests/test_narrative_blocks.py::TestT3020WaiversRemoved::test_narrative_blocks_gate_has_no_selfaudit001_waiver
+  - tests/test_narrative_blocks.py::TestT3020WaiversRemoved::test_dispatch_narrative_has_no_sys003_waiver
+  - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 threat: null
 component: null
 anchor: false

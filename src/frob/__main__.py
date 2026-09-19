@@ -335,6 +335,9 @@ def _dispatch_refactor(argv: list[str]) -> None:
 
 
 # frob:ticket T-2993
+# frob:ticket T-3020
+# frob:tests \
+# tests/test_narrative_blocks.py::TestT3020WaiversRemoved.test_dispatch_narrative_has_no_sys003_waiver  # noqa: E501
 # frob:waive DUP001 reason="deliberate structural duplicate of _dispatch_refactor \
 # immediately above -- both are the same direct-dispatch-verb shape this file already \
 # repeats 4 times (bind/agent/worktree/refactor) for a runner returning a raw exit \
@@ -351,12 +354,7 @@ def _dispatch_narrative(argv: list[str]) -> None:
     land may CHECK, never REWRITE)."""
     import sys as _sys
 
-    # frob:waive SYS003 reason="mirrors the identical cli -> refactor import two \
-    # functions above (_dispatch_refactor) -- frob.narrative has no strata \
-    # component/node of its own yet (unlike frob.refactor's node + cli->refactor \
-    # flow), so declaring this import needs a new node/flow, not a one-line fix; \
-    # tracked by the same follow-up as the SELFAUDIT001 waiver on \
-    # frob.gates._narrative_blocks" follow_up="T-3020"
+    # frob:ticket T-3020
     from frob.narrative._cli import add_narrative_parser, run_narrative_command
 
     narrative_parser = argparse.ArgumentParser(prog="frob")

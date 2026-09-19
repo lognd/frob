@@ -73,17 +73,13 @@ def _iter_blocks(lines: list[str]) -> list[tuple[int, int]]:
 
 # frob:doc docs/commands/narrative.md#narr001-the-detector
 # frob:tests \
-# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_must_fire_long_archaeolo\
-# gy_block
+# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_must_fire_long_archaeology_block  # noqa: E501
 # frob:tests \
-# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_must_stay_quiet_short_ke\
-# ep_block
+# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_must_stay_quiet_short_keep_block  # noqa: E501
 # frob:tests \
-# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_socketd_t2961_block_stay\
-# s_quiet_at_default_threshold
+# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_socketd_t2961_block_stays_quiet_at_default_threshold  # noqa: E501
 # frob:tests \
-# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_threshold_boundary_is_in\
-# clusive
+# tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_threshold_boundary_is_inclusive  # noqa: E501
 def scan_narrative_blocks(
     path: Path, text: str, *, threshold: int = NARR001_THRESHOLD_LINES
 ) -> tuple[Violation, ...]:
@@ -119,11 +115,13 @@ def scan_narrative_blocks(
 
 # frob:doc docs/commands/narrative.md#narr001-the-detector
 # frob:tests \
-# tests/test_narrative_blocks.py::TestNarrativeBlocksGateRepoScan.test_fires_on_a_track\
-# ed_file_with_a_long_block
+# tests/test_narrative_blocks.py::TestNarrativeBlocksGateRepoScan.test_fires_on_a_tracked_file_with_a_long_block  # noqa: E501
+# frob:tests \
+# tests/test_narrative_blocks.py::TestT3020WaiversRemoved.test_narrative_blocks_gate_has_no_selfaudit001_waiver  # noqa: E501
 # T-3014: wired into gates/__init__.py's GATE_RUNNERS dict (the WIRE001
 # waiver this comment used to carry is no longer warranted -- the T-2986
 # lease that blocked it has been released and the wiring is done).
+# frob:ticket T-3020
 # frob:enforces CHK-GATE-NARR001
 def narrative_blocks_gate(root: Path) -> tuple[Violation, ...]:
     """NARR001 over every tracked `.py`/`.strata` file under `root` (T-2993).
@@ -138,11 +136,11 @@ def narrative_blocks_gate(root: Path) -> tuple[Violation, ...]:
         if not rel.endswith(_SCANNED_SUFFIXES):
             continue
         full = root / rel
-        # frob:waive SELFAUDIT001 reason="fs.read of every tracked .py/.strata file \
-        # under root, same repo-wide-scan shape excludehazard/refs/secrets already \
-        # declare fs.read for; T-3014 wired this gate into GATE_RUNNERS but could not \
-        # add its fs.read to the 'gates' strata node because design/frob.strata was \
-        # T-2989-leased for this ticket's whole work window" follow_up="T-3020"
+        # frob:ticket T-3020
+        # fs.read of every tracked .py/.strata file under root, same
+        # repo-wide-scan shape excludehazard/refs/secrets already declare
+        # fs.read for -- now declared on the 'gates' strata node itself
+        # (design/frob.strata's via-list already names this file).
         try:
             text = full.read_text(encoding="utf-8")
         except OSError:

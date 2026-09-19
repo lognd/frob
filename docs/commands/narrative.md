@@ -54,3 +54,11 @@ burn-down, mirroring the TICK011/T-2372 precedent.
 
 `narrative_blocks_gate` is wired into `frob check`'s live gate set as
 `NARR001` (`--only narrative_blocks`), T-3014.
+
+T-3020: `narrative_blocks_gate`'s own repo-wide `fs.read` (every tracked
+`.py`/`.strata` file's text) is declared on the `gates` strata node's
+`may "fs.read"` via-list (`design/frob.strata`) -- T-3029 had already
+added `src/frob/gates/_narrative_blocks.py` there, so the SELFAUDIT001
+waiver this function used to carry (recorded as blocked on
+`design/frob.strata`'s lease state) was stale by the time this ticket
+picked it up, and is now removed outright rather than re-justified.
