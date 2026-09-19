@@ -1,5 +1,5 @@
 ---
-id: T-4748
+id: T-draft-5658939f
 title: 'cli-regrouping: ops natives group leaf missing --path (parity drift)'
 state: in-progress
 kind: bug

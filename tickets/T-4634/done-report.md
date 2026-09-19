@@ -810,8 +810,8 @@ test_verify_intent.py`: All checks passed!
  tickets/T-4650/ticket.md                           | 166 ++++
  tickets/T-4651/ticket.md                           |  46 +
  tickets/T-draft-31fbe483/ticket.md                 |  34 +
- tickets/T-4748/ticket.md                 |  53 ++
- tickets/T-4751/ticket.md                 |  35 +
+ tickets/T-draft-5658939f/ticket.md                 |  53 ++
+ tickets/T-draft-8c1c8d09/ticket.md                 |  35 +
  tickets/archive/T-0090/ticket.md                   |  18 +
  tickets/archive/T-0240/ticket.md                   |  18 +
  tickets/archive/T-0292/ticket.md                   |  18 +

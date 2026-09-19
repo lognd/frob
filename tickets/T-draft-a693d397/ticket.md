@@ -1,5 +1,5 @@
 ---
-id: T-4756
+id: T-draft-a693d397
 title: 'strata kernel: module attribute on Node plus the kernel.md law-1 record of
   the deliberate growth (D-M4)'
 state: queued
@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: critical
-parent: T-4744
+parent: T-draft-0a0c7b43
 tier: ticket
 sprint: null
 runs_last: false

@@ -1,5 +1,5 @@
 ---
-id: T-4750
+id: T-draft-7755815c
 title: 'frob-suggest: replace blanket FROB_SUGGEST_ACK with per-rule token, update
   docs'
 state: queued
@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: T-4752
+parent: T-draft-8c7e665d
 tier: ticket
 sprint: null
 runs_last: false
@@ -42,4 +42,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Leaf 3 of T-4752. See scratchpad/HOOK-AUDIT.md section 3.2.
+Leaf 3 of T-draft-8c7e665d. See scratchpad/HOOK-AUDIT.md section 3.2.

@@ -41,12 +41,12 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/_cli_parsers/_ops.py
-  reason: T-4748 holds live lease on _ops.py; will re-add once it lands
+  reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
   actor: logan
   at: '2026-09-19'
 - op: remove
   glob: src/frob/app/ops_runner.py
-  reason: T-4748 holds live lease on _ops.py; will re-add once it lands
+  reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
   actor: logan
   at: '2026-09-19'
 body_changes:
@@ -71,6 +71,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 3416
   new_length: 3436
+- mode: set
+  reason: '2026-09-19 coordinator review: explore survives (no delete-then-rebuild);
+    pool/profile/debt/deprecated/parse reclassified out of the check --only fold;
+    exports split check/scaffold; story acceptance numbers; T-4689-before-hooks ordering'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3436
+  new_length: 4480
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
@@ -101,6 +109,11 @@ T-4696 and T-4698 all import, which is why those four are blocked on it.
 
 OWNER DECISION: "Delete the duplicates."
 
+AMENDED 2026-09-19 (coordinator review): the earlier version of this ticket
+deleted `explore` and had T-4695 rebuild it. That was delete-then-rebuild churn
+on the same verb. REVISED: `explore` is the SURVIVING verb and is never deleted.
+This leaf deletes its standalone mirrors; T-4695 then moves more leaves under it.
+
 MEASURED 2026-09-19. Four verb GROUPS exist that added names and removed none:
   explore  (T-1238) -> map, outline, xref, docs-search
   quality  (T-1567) -> check, test, dup, arch, bind, cycle, mutate, perf
@@ -110,22 +123,30 @@ MEASURED 2026-09-19. Four verb GROUPS exist that added names and removed none:
 `_cli_parsers/_explore.py::_mirror_subparser` proves the duplication literally:
 it writes the FLAT parser object into the group's `choices` dict, so
 `frob explore xref` and `frob xref` are the same ArgumentParser instance.
-Not one of these four group verbs has ever been recorded in a kind=cli
-telemetry row.
+None of these four group verbs has ever been recorded in a kind=cli row.
+
+KEEP: `explore`. It has 95 citations across .claude/ docs/ scripts/ src/ tests/
+("frob show" has 0), and T-4695 folds the rest of the read-only surface under
+it. Keeping it here is what makes T-4695 an additive move rather than a rebuild.
 
 DELETE, each with a one-minor-version shim:
-  - the four group verbs `explore`, `quality`, `design`, `ops` (T-4695 later
-    reintroduces `explore` as a REAL verb with real leaves; this leaf removes
-    the alias-mirror version and its `_mirror_subparser` machinery)
+  - the standalone top-level mirrors of explore's four existing leaves:
+    `outline`, `map`, `xref`, `docs-search`. The surviving spelling for each is
+    `frob explore <leaf>`. `xref` has 16 recorded kind=cli invocations -- it is
+    the one mirror with a live consumer, so its shim must actually work, not
+    merely exist.
+  - the three remaining group verbs `quality`, `design`, `ops`
   - `fmt` -> `format` (already marked DEPRECATED, sunset 2026-12-01; finish it)
-  - `docs` vs `docs-search`: keep `docs-search` as the search surface; `docs`'s
-    docstring-extraction mode survives under the surviving name
+  - `docs` vs `docs-search`: keep `docs-search` (under `explore`) as the search
+    surface; `docs`'s docstring-extraction mode survives under that one name
   - `status` vs `verify status` vs `fleet status`: three spellings, one concept.
-    Keep top-level `status` (it is the one the delta-first summary is written
-    for); `verify status` and `fleet status` become shims.
-  - `whereis` folded into `doctor` (frob doctor with a whereis option (planned) or a section of
+    Keep top-level `status`; `verify status` and `fleet status` become shims.
+  - `whereis` folded into `doctor` (`frob doctor --whereis` or a section of
     plain `frob doctor` output). `whereis` (T-4299) answers "which interpreter
     is this frob" -- that is a doctor question.
+
+ONCE `_mirror_subparser` HAS NO CALLERS, DELETE IT. It exists only to make one
+parser object answer to two names, which is the duplication this story removes.
 
 BUILD, once, for the whole story: a single shim helper (suggested home
 src/frob/_cli_parsers/_shims.py) that registers a deprecated name, prints the
@@ -149,6 +170,11 @@ FILES (declared scope):
   ops_runner.py, status_runner.py, fmt_runner.py, docs_runner.py,
   doctor_runner.py
   tests/unit/test_cli_shims.py (new), tests/unit/test_main_entry.py
-NOTE: _core.py, _misc.py, _reporting.py and __main__.py are contended with
-T-4692 and T-4695; that is why those two are blocked on this ticket rather than
-declared disjoint. A frob scope is a write lease and cannot be shared.
+NOTE: _core.py, _misc.py, _reporting.py, _explore.py and __main__.py are
+contended with T-4692 and T-4695; that is why those two are blocked on this
+ticket rather than declared disjoint. A frob scope is a write lease and cannot
+be shared.
+
+TITLE DRIFT: this ticket's title still says "the four group verbs". After this
+amendment it is three group verbs plus four standalone mirrors. `frob ticket`
+has no title setter; this paragraph is the correction of record.

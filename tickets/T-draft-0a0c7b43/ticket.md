@@ -1,5 +1,5 @@
 ---
-id: T-4744
+id: T-draft-0a0c7b43
 title: 'Strata module system: imports, export surfaces, two-sided contracts, per-module
   elaboration and link; monolith split module by module (owner decisions D-M1..D-M8)'
 state: queued

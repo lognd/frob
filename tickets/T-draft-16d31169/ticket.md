@@ -1,5 +1,5 @@
 ---
-id: T-4746
+id: T-draft-16d31169
 title: 'frob-suggest: narrow rule verdicts per HOOK-AUDIT table (recursive-grep, deletes,
   version-skew, find, worktree, floor-count, ledger)'
 state: queued
@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: T-4752
+parent: T-draft-8c7e665d
 tier: ticket
 sprint: null
 runs_last: false
@@ -51,4 +51,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Leaf 2 of T-4752. See scratchpad/HOOK-AUDIT.md sections 1.1-1.9 and 3.1.
+Leaf 2 of T-draft-8c7e665d. See scratchpad/HOOK-AUDIT.md sections 1.1-1.9 and 3.1.

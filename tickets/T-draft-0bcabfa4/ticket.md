@@ -1,5 +1,5 @@
 ---
-id: T-4745
+id: T-draft-0bcabfa4
 title: 'DECISION: how bidirectional cross-module flows are expressed without an import
   cycle'
 state: queued
@@ -7,7 +7,7 @@ kind: docs
 origin: human
 created: '2026-09-19'
 priority: critical
-parent: T-4744
+parent: T-draft-0a0c7b43
 tier: ticket
 sprint: null
 runs_last: false

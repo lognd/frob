@@ -2,7 +2,7 @@
 id: T-4659
 title: 'Lease lifecycle: release on every terminal transition; drop no longer leaves
   .git/frob-leases/<id>.json'
-state: done
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -29,53 +29,22 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
-evidence:
-- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
-- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
-- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
-- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
-- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
-- tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 designated_repro_test: null
 acceptance:
 - text: Given an in-progress ticket holding a lease, when `frob ticket drop` runs,
     then .git/frob-leases/<id>.json is removed and a sibling `scope --add` on the
     same path succeeds.
-  evidence:
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
-  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
+  evidence: []
 - text: 'POSITIVE CONTROL: tests/unit/test_lease_lifecycle.py::test_drop_releases_lease
     starts a ticket, drops it, and asserts the lease file is gone. It FAILS on dev
     today (the file survives; measured 2026-09-19) and passes after this leaf.'
-  evidence:
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
-  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
+  evidence: []
 - text: 'Given the same, for `fail` and `requeue`: tests/unit/test_lease_lifecycle.py::test_fail_releases_lease
     and ::test_requeue_releases_lease each hold.'
-  evidence:
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
-  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
+  evidence: []
 - text: docs/modules/tickets-lifecycle.md states the acquire/release table (transition
     -> lease effect) and is updated in this same change.
-  evidence:
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
-  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
-  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
+  evidence: []
 threat: null
 component: null
 anchor: false

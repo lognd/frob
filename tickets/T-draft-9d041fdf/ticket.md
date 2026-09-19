@@ -1,5 +1,5 @@
 ---
-id: T-4754
+id: T-draft-9d041fdf
 title: 'strata elaborator: per-module elaboration, private-by-default, imports bind
   exports only (no wildcard, no re-export, no global fallback)'
 state: queued
@@ -8,9 +8,9 @@ origin: human
 created: '2026-09-19'
 priority: critical
 blocked_by:
-- T-4747
-- T-4756
-parent: T-4744
+- T-draft-1f0f55cb
+- T-draft-a693d397
+parent: T-draft-0a0c7b43
 tier: ticket
 sprint: null
 runs_last: false

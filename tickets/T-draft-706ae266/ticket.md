@@ -1,12 +1,12 @@
 ---
-id: T-4749
+id: T-draft-706ae266
 title: 'frob-suggest: log every block/allow/ignored-ack decision to .frob/telemetry.jsonl'
 state: queued
 kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: T-4752
+parent: T-draft-8c7e665d
 tier: ticket
 sprint: null
 runs_last: false
@@ -33,4 +33,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Leaf 4 of T-4752. See scratchpad/HOOK-AUDIT.md section 3.3.
+Leaf 4 of T-draft-8c7e665d. See scratchpad/HOOK-AUDIT.md section 3.3.
