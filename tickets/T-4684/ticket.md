@@ -20,7 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_drop_from_a_worktree_that_never_saw_in_progress_still_releases
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_release_on_close_removes_the_lease
+designated_repro_test: tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_drop_from_a_worktree_that_never_saw_in_progress_still_releases
 threat: null
 component: null
 anchor: false
