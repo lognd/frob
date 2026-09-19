@@ -1,5 +1,5 @@
 ---
-id: T-draft-74ff7815
+id: T-4698
 title: 'Ticket subverb tail: verdict per subverb (attach anchor flow plan board epic
   wave runs-last migrate archive reverify waive-audit review admin debt deprecated
   scope-ack worktree contention) -- keep with a cited consumer or delete with a shim'
