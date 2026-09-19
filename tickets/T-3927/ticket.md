@@ -9,7 +9,7 @@ created: '2026-09-05'
 priority: high
 blocked_by:
 - T-4659
-parent: null
+parent: T-4651
 tier: epic
 sprint: v0.535.0
 runs_last: false
@@ -25,6 +25,14 @@ triage_changes:
   old_value: v0.554.0
   new_value: v0.535.0
   reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
+- field: parent
+  old_value: null
+  new_value: T-4651
+  reason: 'kernel-decoupling epic T-4651: T-3927 is itself tier=epic (scope/lease
+    design), so it chains under the kernel epic directly rather than under the LEASE
+    story T-4653 (ParentTierInversion)'
   actor: logan
   at: '2026-09-19'
 body_changes:
