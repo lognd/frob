@@ -1,7 +1,7 @@
 ---
 id: T-3961
 title: provenance / trust-as-identity construct in strata
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-09-06'
