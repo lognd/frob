@@ -19,6 +19,7 @@ scope:
 - src/frob/app/config.py
 - src/frob/check/_python.py
 - src/frob/app/check_runner.py
+- src/frob/app/ticket_runner/_verify.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/check_runner.py
   reason: same fix, Tier-C/census/daemon GateConfig base sites
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: done-report base site
   actor: logan
   at: '2026-09-19'
 body_changes:
