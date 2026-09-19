@@ -2,7 +2,7 @@
 id: T-4112
 title: 'H3-2: an unauthenticated route writing to a carries-bearing store needs a
   declared inbound rate, not just retention'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-06'
@@ -19,10 +19,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_inbound_rate.py
 - tests/unit/strata/test_inbound_rate.py
+- src/frob/strata/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_waive.py
+  reason: wiring REL303 into audit/waivers/docs
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
