@@ -28,6 +28,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2024
+  new_length: 2024
 designated_repro_test: null
 acceptance:
 - text: Given the live argparse tree, when the coverage test runs, then every top-level
@@ -50,8 +58,8 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-POINTS: 2. Parent story T-4687. blocked_by T-4689, T-4690, T-4691, T-4692,
-T-4693 -- it documents the FINAL surface, so it cannot start until the surface
+POINTS: 2. Parent story T-4687. blocked_by T-4690, T-4692, T-4695, T-4696,
+T-4698 -- it documents the FINAL surface, so it cannot start until the surface
 has stopped moving.
 
 MEASURED 2026-09-19: docs/commands/ holds 18 files (check, cli-vocabulary,
@@ -67,7 +75,7 @@ WORK:
    exist, write one and wire it so the docs cannot drift again silently. Say in
    the Done report whether it was generated or hand-written and why.
 2. Update docs/commands/cli-vocabulary.md and docs/design/cli-regrouping.md:
-   the latter is the design doc that JUSTIFIED the four group verbs T-4689
+   the latter is the design doc that JUSTIFIED the four group verbs T-4690
    deletes. It must record that the regrouping was reverted, and why (the
    groups added four names and removed zero).
 3. `git grep` every removed spelling across docs/ and fix the citations.
