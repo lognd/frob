@@ -20,6 +20,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_land.py
 - tests/unit/rapid_sweep_suite/*
+- docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,11 @@ scope_changes:
 - op: add
   glob: tests/unit/rapid_sweep_suite/*
   reason: positive-control tests for filtering
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/**
+  reason: why-file / doc updates
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
