@@ -7,6 +7,8 @@ kind: feature
 origin: agent
 created: '2026-09-19'
 priority: high
+blocked_by:
+- T-4112
 parent: T-4665
 tier: ticket
 sprint: v0.536.0
