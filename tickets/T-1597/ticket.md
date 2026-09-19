@@ -8,7 +8,7 @@ created: '2026-08-05'
 priority: medium
 parent: null
 tier: epic
-sprint: v1.1.0
+sprint: v0.535.0
 runs_last: false
 milestone: 1.1.0
 runs_last_parallel_safe: false
@@ -52,6 +52,13 @@ scope_changes:
     children (T-1599, T-1600..T-1607)'
   actor: logan
   at: '2026-08-18'
+triage_changes:
+- field: sprint
+  old_value: v1.1.0
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
