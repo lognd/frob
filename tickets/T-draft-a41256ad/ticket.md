@@ -2,7 +2,7 @@
 id: T-draft-a41256ad
 title: 'Capability matrix: csharp/net cell is both patterned and excused after Unity
   net APIs landed (T-4514)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-18'
@@ -33,6 +33,12 @@ scope_changes:
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
+acceptance:
+- text: 'bound([''tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_cell_is_both_patterned_and_excused'',
+    ''tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells'']):
+    the generated csharp/net excuse is removed and no matrix cell is both patterned
+    and excused, while every cell remains patterned or excused'
+  evidence: []
 threat: null
 component: null
 anchor: false
