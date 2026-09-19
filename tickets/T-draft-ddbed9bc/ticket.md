@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: '2026-09-19: story container under T-4662; the disjoint
+  scopes live on its leaves'
 designated_repro_test: null
 acceptance:
 - text: Given _models.py:589, docs/strata/evidence.md:117 and docs/strata/charter.md:4
