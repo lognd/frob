@@ -46,6 +46,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 2203
   new_length: 2203
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2203
+  new_length: 2203
 designated_repro_test: null
 acceptance:
 - text: Given a committed fixture tree containing a planted duplicate block, when
