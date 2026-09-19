@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'pure decision record (D-M9): no file scope until the owner
   rules'
+body_changes:
+- mode: append
+  reason: owner decision on D-M9 recorded verbatim, 2026-09-19 19:30
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2740
+  new_length: 4298
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
@@ -84,3 +91,36 @@ CONSEQUENCES IF (a) IS ADOPTED: the grammar leaf must allow a module name in
 alias), and the linker leaf must build its SCC over imports only, with the
 two-sided check keyed on flow direction relative to the import direction. The
 cycle-rule enforcement in migration depends on this decision being made first.
+
+
+## DECIDED 2026-09-19 19:30 (owner, verbatim)
+
+HIERARCHY. Modules declare their position in an explicit hierarchy (platform at
+the top; app and test at the bottom; the 11-module partition gets an order in
+the story body).
+
+IMPORT UP ONLY: a module may import only modules above it; importing a module
+below you is a compile error naming both modules, so import cycles are
+impossible by construction (the SCC check becomes a redundant assertion).
+
+FLOWS ARE DECLARED BY THE LOWER MODULE in either direction, because only the
+lower module can name both ends.
+
+ACCEPT DOWN: the upper module declares `accepts f from <lower-module>` naming
+the lower module by reference with no import; an accepts naming a module above
+you is an error.
+
+The 16 bidirectional pairs are not waivers: each migration leaf decides which
+module is lower and moves the flow declarations there.
+
+## Consequences filed against the leaves
+
+Grammar leaf T-draft-1f0f55cb: `accepts` takes a module REFERENCE, not an
+import; the hierarchy declaration form is part of the grammar.
+Linker leaf T-draft-27d3ece1: upward-only import check with BOTH module names
+in the error; accepts-direction check (an accepts naming a module above is an
+error); the SCC check remains as a redundant assertion that must never fire.
+Migration order is unchanged and already top-down in STRATA-MODULES-TREE.md:
+platform first, then the leaf consumers, then the hubs.
+Option (a) of this ticket (accepts-by-reference without an import) is adopted as
+part of the hierarchy rule; options (b) and (c) are not taken.
