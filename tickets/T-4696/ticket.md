@@ -26,6 +26,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2270
+  new_length: 2270
 designated_repro_test: null
 acceptance:
 - text: Given a fixture ledger, when frob ticket set priority high runs on a ticket,
@@ -49,8 +57,8 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-POINTS: 2. Parent story T-4687. blocked_by T-4689 (needs the shim helper).
-File-disjoint from T-4690 and T-4691 (those touch _cli_parsers/*.py and
+POINTS: 2. Parent story T-4687. blocked_by T-4690 (needs the shim helper).
+File-disjoint from T-4692 and T-4695 (those touch _cli_parsers/*.py and
 __main__.py; this one touches only _cli_parsers/_ticket/** and
 app/ticket_runner/**), so it runs in parallel with them.
 
@@ -72,7 +80,7 @@ say which way it went.
 `set-parent` is NOT in this list -- it takes a second ticket id and maintains a
 graph edge, not a field. Leave it alone.
 
-Shims: each of the nine deleted names keeps the T-4689 shim for one minor
+Shims: each of the nine deleted names keeps the T-4690 shim for one minor
 version, printing `frob ticket set <field> ...`.
 
 POSITIVE CONTROL (acceptance): a round-trip test per field -- `frob ticket set
