@@ -14,7 +14,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/graph/__init__.py
 - src/frob/graph/_core.py
 - src/frob/graph/cache.py
 - src/frob/graph/dsl.py
@@ -39,6 +38,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/graph/__init__.py
+  reason: leased by T-draft-ea93df7b, collision at start
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
