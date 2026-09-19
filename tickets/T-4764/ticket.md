@@ -1,5 +1,5 @@
 ---
-id: T-draft-a95e8b24
+id: T-4764
 title: Logging by project package name, App startup wiring, real AppConfig fields,
   and a docblocks commands entry
 state: queued
