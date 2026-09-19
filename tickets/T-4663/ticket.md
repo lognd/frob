@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_layering_gate.py
 - docs/modules/arch.md
 - src/frob/gates/_arch.py
+- frob-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
   glob: src/frob/gates/_arch.py
   reason: wiring check_layering_edges into frob check requires calling it from the
     ARCH gate module; layering.py alone cannot invoke frob check
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: frob-ratchet.lock.json
+  reason: baselining T-4663's own measured 30 pre-existing ARCH104 dip-layering-violation
+    edges via frob pool snapshot, per brief instruction to ratchet rather than waive
   actor: logan
   at: '2026-09-19'
 triage_changes:
