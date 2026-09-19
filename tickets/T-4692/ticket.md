@@ -38,6 +38,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2203
+  new_length: 2203
 designated_repro_test: null
 acceptance:
 - text: Given a committed fixture tree containing a planted duplicate block, when
@@ -60,7 +68,7 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-POINTS: 3. Parent story T-4687. blocked_by T-4689 (needs the shim helper, and
+POINTS: 3. Parent story T-4687. blocked_by T-4690 (needs the shim helper, and
 shares _core.py/_misc.py/_reporting.py/__main__.py with it).
 
 PRINCIPLE: a gate stage is not a verb. `frob check` already runs these stages;
@@ -70,7 +78,7 @@ capability, and it is why `frob --help` lists 51 entries.
 FOLD INTO `frob check --only <stage>`:
   dup arch cycle bind perf mutate coverage parse pool profile narrative
   debt deprecated
-Each keeps a one-minor-version shim (the T-4689 helper) that prints
+Each keeps a one-minor-version shim (the T-4690 helper) that prints
 `frob check --only <stage>` and exits non-zero after the sunset date.
 
 ADD `frob check --list-stages`: prints every stage name, one per line, so the
