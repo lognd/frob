@@ -19,6 +19,16 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: DECISION ticket -- its deliverable is an owner
   decision recorded in the body, which legitimately changes no files'
+body_changes:
+- mode: append
+  reason: '2026-09-19: owner decision recorded -- kernel.md is the spec, keywords
+    are wired into the kernel rather than deleted, and per-keyword-group leaves are
+    filed only after the pessimistic keyword audit (scratchpad/STRATA-KEYWORDS.md)
+    lands; ticket stays OPEN as the tracking record until then'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3425
+  new_length: 6683
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (headline
@@ -94,3 +104,61 @@ together.
 
 ACCEPTANCE
 Owner records a decision in the body: which option, and what it changes.
+
+
+## DECISION RECORDED -- owner, 2026-09-19 19:50
+
+**Decided: option 1, with the opposite disposal rule from the one the option
+implied. docs/strata/kernel.md IS the spec. A keyword that produces facts no
+primitive owns is NOT deleted -- it is wired into the kernel deliberately, with
+a law-1 record -- UNLESS the pessimistic keyword audit proves it was never a
+good idea.**
+
+Governing posture, in the owner's words: **"err on the side of adding
+capabilities; we originally had a good idea and then forgot to implement it."**
+
+So the gap SF-21 measured -- kernel.md's "six primitives" versus 139 parser
+keywords -- is resolved in the kernel's favour as the SPECIFICATION, and against
+the kernel as the current IMPLEMENTATION. The six primitives are what strata
+means; the 139 keywords are evidence of intent that was never finished. The
+default disposition of an unowned keyword is therefore WIRE IT IN, not delete
+it, and the burden of proof falls on deletion rather than on retention.
+
+WHAT THIS REJECTS
+- Option 2 (the headline is wrong; document the 139-keyword surface as the real
+  language) is rejected: it would ratify the drift instead of closing it.
+- Option 3 (six core primitives plus named extension surfaces) is not taken as
+  framed, because it also treats the unowned keywords as a settled surface to be
+  catalogued rather than as unfinished work.
+- SF-09's option 1 on T-4678 ("retire the dead surfaces") is pre-empted for the
+  same reason. Note that catalogued is not enforced, and neither is catalogued
+  the same as decided -- see memory/catalogued-is-not-enforced.md.
+
+THE ONE ESCAPE HATCH, AND THE GATE ON IT
+A keyword may be dropped only where **the pessimistic keyword audit proves it
+was never a good idea** -- not merely that it is unused. SF-09's measurement
+(56 keywords used nowhere, 19 more only in litmus) establishes DISUSE, and the
+audit's own boundary note says 139 is a LOWER bound from keyword-literal
+extraction, so "unused" is an upper-bound claim about deadness, never a verdict
+about value. `confine` is the standing counter-example: implemented, documented
+in docs/strata/policy.md, used nowhere, and a real consumer gerrymandered globs
+rather than use it (T-3920 item 1). Disuse there measured a discoverability
+failure, not a bad idea.
+
+SEQUENCING -- WHY NO LEAVES ARE FILED YET
+The pessimistic keyword audit is being written to **scratchpad/STRATA-KEYWORDS.md**
+and has not landed. Implementation leaves are filed AFTER it lands, **one per
+non-sugar keyword group** (sugar needs no kernel wiring and no law-1 record).
+Filing them now would mean guessing the groups, and per
+memory/verify-premise-before-filing.md the premise has to be established before
+the ticket. This ticket stays OPEN as the tracking record for that follow-up.
+
+DELIVERABLE OF EACH FUTURE LEAF
+For its keyword group: the facts the keywords produce, the primitive that owns
+them (existing or new), the **law-1 record** for the wiring, the kernel.md
+section that now specifies them, and a litmus case that exercises the group --
+or, for a group the audit condemns, the argument that it was never a good idea
+and the removal.
+
+NEXT ACTION (not this ticket's): land scratchpad/STRATA-KEYWORDS.md, then file
+the per-group leaves against this id.
