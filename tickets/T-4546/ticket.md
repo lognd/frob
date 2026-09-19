@@ -22,6 +22,7 @@ scope:
 - src/frob/app/agent_runner.py
 - src/frob/app/worktree_runner.py
 - src/frob/__main__.py
+- tests/test_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,22 @@ scope_changes:
     positional slot the same way agent's path positional did -- flattening 'frob narrative
     FILE LINE' requires normalizing argv before parse_args, and that boundary is owned
     by _dispatch_narrative in __main__.py, not by _cli.py
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: T-1400's test_unrecognized_subcommand_falls_through_to_usage_error asserted
+    bare 'frob agent' (no subcommand) exits 1 with a usage error -- exactly the behavior
+    T-4546 intentionally flattens away (bare frob agent now runs env); the test needs
+    updating to the new contract
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: T-1400's test_unrecognized_subcommand_falls_through_to_usage_error asserted
+    bare 'frob agent' (no subcommand) exits 1 with a usage error -- exactly the behavior
+    T-4546 intentionally flattens away (bare frob agent now runs env); the test needs
+    updating to the new contract
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
