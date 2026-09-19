@@ -1,0 +1,6 @@
+{
+  "name": "Game.Runtime",
+  "references": ["Game.RuntimeUtils"],
+  "includePlatforms": [],
+  "defineConstraints": []
+}

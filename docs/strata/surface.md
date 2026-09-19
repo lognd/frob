@@ -1040,6 +1040,46 @@ T-2502 built and proved this mechanism only; migrating
 `design/frob.strata`'s own testsuite via-lists into a fragment file is
 deliberately left to a follow-up ticket, not folded in here.
 
+## Unity asmdef component boundaries (T-4512)
+
+<!-- frob:ticket T-4512 -->
+<!-- frob:describes src/frob/strata/_unity_asmdef.py::discover_asmdefs -->
+<!-- frob:describes src/frob/strata/_unity_asmdef.py::build_component_nodes -->
+<!-- frob:describes src/frob/strata/_unity_asmdef.py::render_unity_fragment -->
+<!-- frob:describes src/frob/strata/_unity_asmdef.py::write_unity_fragment -->
+
+`frob.strata._unity_asmdef` maps a Unity project's `.asmdef` assembly
+definition files (built on T-4515's `detect_unity_project`/exclude-glob
+work) onto strata component nodes: one node per discovered asmdef
+(`code=<asmdef dir>/**`), a `depends` edge per resolved `references`
+entry (by assembly name or by `GUID:<hex>` resolved via the referencing
+asmdef's own `.asmdef.meta` sidecar), an `is_editor_only` flag for an
+asmdef whose `includePlatforms == ["Editor"]`, and always exactly one
+synthetic `unity_default_assembly` node catching `.cs` files no
+discovered asmdef's directory subtree covers -- Unity's own implicit
+default-assembly behavior, never a silent drop.
+
+This is NOT a T-2502 fragment: a T-2502 `part of`/`extend node` file can
+only widen an EXISTING root node's `may ... via` list, never declare a
+fresh node -- and every asmdef-derived node is, by definition, new. The
+generated output (`write_unity_fragment`) is instead its own root
+`module` file (`design/unity-assemblies.strata`, the T-4512 default <!-- frob:waive DOC006 reason="design/unity-assemblies.strata is the generated default OUTPUT path in a consumer Unity project, not a tracked file of this repo" -->
+output path), loaded and merged the same T-1196 multi-file way any other
+independently-named root `.strata` file already is (`_design_load.py`'s
+`design/**/*.strata` glob, `_multifile.merge_modules`) -- no new loader
+entry point, no second merge mechanism. `render_unity_fragment` is pure
+and deterministic (sorted node ids, mirroring `_export.py`'s exporters);
+`write_unity_fragment` is the sole I/O boundary and is idempotent on an
+unchanged project, the same generate-and-verify contract `_sync_
+interface.py`'s writer already established for a machine-maintained
+`.strata` block (T-1198's Done report), just applied to a whole sidecar
+file instead of an in-place attr rewrite -- T-1198 itself considered and
+rejected a sidecar fragment for its OWN narrower interface= problem
+(grammar shorthand won there instead, see the "Compact `interface=[...]`
+attrs" section above), so this is the first real use of the sidecar-file
+shape `_multifile.py`'s own module docstring names as a generalization
+T-1196 already supports, not a second parallel mechanism next to it.
+
 ## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
 
 <!-- frob:ticket T-0080 -->

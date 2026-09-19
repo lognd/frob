@@ -191,14 +191,14 @@
       "ticket": "T-1628"
     },
     "stratamod::fs.read": {
-      "accepted_count": 11,
-      "reason": "T-4443: LARGE001 split moved _tracked_source_digest's Path.read_bytes() fs.read site from src/frob/strata/_native_staleness.py into the new sibling src/frob/strata/_native_staleness_digest.py; design/frob.strata's stratamod fs.read via-list now names both files for the same, already-declared call site -- not a fresh grant, the site pre-dates this ticket.",
-      "ticket": "T-4443"
+      "accepted_count": 12,
+      "reason": "T-4512: src/frob/strata/_unity_asmdef.py's .asmdef assembly-boundary parsing adds one new stratamod fs.read via-list site (reading .asmdef JSON files as strata component boundaries); bumping the ceiling 11 -> 12, one new site.",
+      "ticket": "T-4512"
     },
     "stratamod::fs.write": {
-      "accepted_count": 6,
-      "reason": "T-4495: adds src/frob/strata/_effects.py to stratamod's fs.write via-list -- _write_capability_ratchet_lock_entry's real fs.write site (the testsuite-glob-ratchet auto-accept write). Bumping the ceiling 5 -> 6, one new site.",
-      "ticket": "T-4495"
+      "accepted_count": 7,
+      "reason": "T-4512: src/frob/strata/_unity_asmdef.py adds one new stratamod fs.write via-list site (writing back the derived .asmdef assembly-boundary mapping); bumping the ceiling 6 -> 7, one new site.",
+      "ticket": "T-4512"
     },
     "stratamod::net.connect": {
       "accepted_count": 1,

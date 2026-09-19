@@ -1,0 +1,6 @@
+{
+  "name": "Game.Editor",
+  "references": ["GUID:11111111111111111111111111111111"],
+  "includePlatforms": ["Editor"],
+  "defineConstraints": []
+}
