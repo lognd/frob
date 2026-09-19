@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
-parent: null
+parent: T-4655
 tier: ticket
 sprint: null
 runs_last: false
@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4655
+  reason: 'T-3032 dispatch: DOCENUM002 lint follow-up belongs under the GATES story
+    alongside T-4661'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
