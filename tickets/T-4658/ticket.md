@@ -1,7 +1,7 @@
 ---
 id: T-4658
 title: 'Ids are assigned once at new: renumbering inside a worktree is refused'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -28,18 +28,27 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_ids_assigned_once.py::test_renumber_refused_inside_worktree
+- tests/unit/test_ids_assigned_once.py::test_concurrent_new_allocates_distinct_ids
 designated_repro_test: null
 acceptance:
 - text: Given a checkout under .claude/worktrees/, when a renumber is attempted, then
     it is refused with a named, logged error and the ledger is unchanged.
-  evidence: []
+  evidence:
+  - tests/unit/test_ids_assigned_once.py::test_renumber_refused_inside_worktree
 - text: 'POSITIVE CONTROL: tests/unit/test_ids_assigned_once.py::test_renumber_refused_inside_worktree
     constructs a worktree-shaped checkout and asserts the refusal. It FAILS on dev
     today (the renumber succeeds and rewrites ids) and passes after this leaf.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ids_assigned_once.py::test_renumber_refused_inside_worktree
 - text: Given two concurrent `frob ticket new` calls in the root, when both allocate,
     then they receive distinct ids and neither rewrites the other's; tests/unit/test_ids_assigned_once.py::test_concurrent_new_allocates_distinct_ids
     proves it.
+  evidence:
+  - tests/unit/test_ids_assigned_once.py::test_concurrent_new_allocates_distinct_ids
+- text: draft promotion happens only at publish time on dev; the land never renumbers
+    inside the worktree
   evidence: []
 threat: null
 component: null
