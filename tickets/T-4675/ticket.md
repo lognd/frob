@@ -1,5 +1,5 @@
 ---
-id: T-draft-31436f2d
+id: T-4675
 title: 'SF-07: overdue assumes are documented as gate failures and are not -- wire
   the verdict before the 2026-10-15 cliff'
 state: queued
