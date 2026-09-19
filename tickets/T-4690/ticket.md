@@ -82,8 +82,9 @@ body_changes:
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
-    explore, quality, design, ops, fmt, docs, whereis and the verify status / fleet
-    status spellings are absent from the usage line
+    explore SURVIVES in the usage line while its standalone mirrors outline, map,
+    xref and docs-search are absent, and quality, design, ops, fmt, docs, whereis
+    and the verify status / fleet status spellings are absent
   evidence: []
 - text: Given a deprecated spelling before its sunset date, when it is invoked, then
     it prints the surviving spelling on stderr and exits 0; given the same spelling
@@ -94,6 +95,20 @@ acceptance:
     shim definitions themselves; the hits in ~/.claude/refs/frob.md are listed in
     the Done report instead of edited
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: Given the built argparse tree, when frob --help runs after this ticket,
+    then explore, quality, design, ops, fmt, docs, whereis and the verify status /
+    fleet status spellings are absent from the usage line
+  new_text: Given the built argparse tree, when frob --help runs after this ticket,
+    then explore SURVIVES in the usage line while its standalone mirrors outline,
+    map, xref and docs-search are absent, and quality, design, ops, fmt, docs, whereis
+    and the verify status / fleet status spellings are absent
+  reason: '2026-09-19 coordinator review: explore is the surviving verb, not a deletion
+    target; removing the delete-then-rebuild cycle between this ticket and T-4695'
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: cli
 labels:
