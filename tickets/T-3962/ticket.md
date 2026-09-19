@@ -1,7 +1,7 @@
 ---
 id: T-3962
 title: 'invariant obligation: forbidden-constant reachability'
-state: queued
+state: in-progress
 kind: invariant
 origin: agent
 created: '2026-09-06'
@@ -16,10 +16,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_design_invariants.py
 - src/frob/graph/callgraph.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wire/register/document new INV010 forbidden-constant reachability rule
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a module-level frozenset named matching *_FORBIDDEN/*_EXCLUDED/*_ALLOWED
