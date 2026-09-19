@@ -31,6 +31,16 @@ body_changes:
   at: '2026-09-19'
   old_length: 2685
   new_length: 3286
+- mode: set
+  reason: '2026-09-19: coordinator/owner re-classification -- SF-01 is a DECISION,
+    not instrumentation, and is now T-4804. This ticket is re-scoped down to the ONE
+    measurement nobody has ever taken (a check --only sys wall-clock), which is an
+    input to that decision. The instrumentation and positive-control acceptance criteria
+    are withdrawn into T-4804.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3286
+  new_length: 2542
 designated_repro_test: null
 acceptance:
 - text: Given .frob/telemetry.jsonl records 614,294 rule fires across 82 rule ids
@@ -52,51 +62,47 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-SF-01 (HIGH). Leaf of story B (T-4665) under epic T-4662. Story points: 3.
-IMMEDIATELY DISPATCHABLE -- no blockers.
+SF-01, measurement half only. Leaf of story B (T-4665) under epic T-4662.
+Story points: 1. IMMEDIATELY DISPATCHABLE -- no blockers.
 
-EVIDENCE. Parsing .frob/telemetry.jsonl (31,459 rows) and summing every
-rule_counts map: 614,294 rule fires across 82 distinct rule ids. NOT ONE id
-starts with SYS. SELFAUDIT001 appears exactly ONCE. Top fires for contrast:
-CPLACE002 124,184; CPLACE001 89,963; TICK014 88,050; DOCARCH001 59,362.
-79 rule ids of the SYS/SELFAUDIT/REL/PII/THREAT/VMOD/CLAIM families are defined
-under src/frob/strata + src/frob/gates/_sys.py; zero appear in telemetry.
+RE-SCOPED 2026-09-19. This ticket was originally filed as instrumentation for
+the SYS/SELFAUDIT family. The coordinator and owner re-classified SF-01 as a
+DECISION -- "what should the SYS/SELFAUDIT family measure so that zero fires
+means clean rather than measures-nothing" -- now filed as **T-4804** under story
+D (T-4667). Do not add telemetry, do not plant positive-control fixtures, and do
+not re-tune any rule under this id; all of that waits on T-4804's decision.
 
-Against that: git log --since="60 days ago" -- design/frob.strata = 434 commits
-(452 all-time), so >95% of the self-model's lifetime churn happened in the last
-60 days and produced ONE recorded finding.
+WHAT REMAINS HERE: take the one measurement nobody has ever taken.
 
-And nobody has ever measured the slice: there is NO `check --only sys` row in
-31,459 telemetry rows. The audit could not run one end-to-end either (check
---json median 717s, fleet live), so the strata slice is inferred from an
-in-process capability_via_site_counts measurement, never from a gate wall-clock.
-The audit explicitly hands that measurement to this epic.
+THE GAP, VERBATIM FROM THE AUDIT'S BOUNDARIES SECTION:
+"I did not run `frob check --only sys` end-to-end: telemetry shows `check --json`
+at a median of 717s and the fleet is live, so the strata slice is inferred from
+the in-process `capability_via_site_counts` measurement, not from a gate
+wall-clock. **No one has ever recorded a `check --only sys` timing** -- zero such
+rows in 31,459 telemetry entries. That measurement is still missing and the epic
+should take it."
 
-WHY THIS LEAF IS MEASUREMENT FIRST
-Per memory/silent-zero-is-the-dominant-bug-class.md, a zero is one of four
-things: clean, could-not-run, nothing-to-measure, or matcher-never-fired. Today
-we cannot tell which one this zero is. The audit's own caveat is that SYS is a
-SELF-CONFORMANCE family, so "zero findings" is partly the INTENDED steady state
--- the friction is the RATIO, not the zero. It also notes that if a gate path
-exists that does not emit telemetry, its SYS findings would be invisible to this
-finding altogether (SELFAUDIT001's single recorded fire suggests the path IS
-instrumented, but that is inference, not proof). Nothing else in story B should
-be re-tuned until this leaf can distinguish the four cases.
+SUPPORTING NUMBERS (context, not this ticket's work):
+- 614,294 rule fires across 82 rule ids in .frob/telemetry.jsonl; ZERO start
+  with SYS; SELFAUDIT001 appears once.
+- Container cost for contrast: `check --json` n=145, median 717.1s, max 1684.5s;
+  `verify drain-async` n=64, median 1008.5s.
+- The in-process proxy: capability_via_site_counts 23.03s cold, 17.83s warm.
+- `frob check --ticket` is NOT a speedup (memory/frob-check-cost-model.md), so
+  do not substitute it for the real `--only sys` form.
 
-WHAT TO BUILD
-In src/frob/app/sys_runner.py: emit rule_counts telemetry for SYS/SELFAUDIT rule
-EVALUATIONS, not only for findings, so an evaluated-and-clean rule is
-distinguishable from a never-evaluated one; and record a timing row for the
-`--only sys` slice so the epic finally has the wall-clock number nobody has.
-Log the evaluated-rule set and the elapsed time at INFO.
+WHY THE NUMBER MATTERS TO THE DECISION
+T-4804's option 1 is "keep the family but stop paying for it on every land" --
+run it nightly or pre-release instead. That option cannot be costed without
+knowing what the slice actually costs per land. This ticket produces that input.
 
-POSITIVE CONTROL (the test that fails today)
-A test that runs the SYS slice over a fixture tree and asserts the emitted
-telemetry contains a row naming at least one SYS rule id. It fails at HEAD:
-zero SYS ids exist in 614,294 recorded fires. Per
-memory/positive-control-or-it-proves-nothing.md, add a second test that PLANTS a
-genuine SYS violation in the fixture and asserts the runner reports it -- so a
-future zero is provably a clean zero.
+HOW TO TAKE IT HONESTLY
+Per memory/coordinator-measurement-discipline.md and the CPU-budget rule in the
+standing brief: the box is shared with a serial land, so a slice timed under
+fleet load is measuring the load, not the gate. Record the load conditions
+alongside the number, take more than one sample, and report the spread rather
+than a single figure. Per memory/wrapper-exit-code-is-not-the-work.md, the
+deliverable is the recorded timing artifact, not a command that exited 0.
 
-
-BLOCKED by T-4112 (2026-09-19, agent 2): frob ticket work T-4672 refused with 'declared scope collides with in-progress T-4112's lease on src/frob/app/sys_runner.py'. T-4112 (in-progress, security, F-307 H3-2 inbound-rate work) holds an active whole-file lease on src/frob/app/sys_runner.py among 8 other scoped paths. This leaf's SF-01 instrumentation work (rule_counts telemetry for SYS/SELFAUDIT evaluations plus a --only sys timing row) needs to edit the exact same file. Cannot proceed without colliding writes. Re-dispatch this leaf once T-4112 closes (or narrows its scope off sys_runner.py).
+Nothing in src/ changes under this ticket unless emitting the timing row
+requires it; if it does, keep it to the timing row alone.
