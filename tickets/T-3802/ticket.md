@@ -1,7 +1,7 @@
 ---
 id: T-3802
 title: update docs/modules/process.md for ProcessGuardError.SpawnFailed (T-3797 follow-up)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-05'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/process.md
+- src/frob/process/_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_guard.py
+  reason: removing the now-obsolete AFFECT001 waiver that named this ticket as the
+    doc-update follow-up
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: v0.533.0
