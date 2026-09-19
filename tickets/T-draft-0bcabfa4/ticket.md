@@ -44,6 +44,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 4575
   new_length: 4852
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure decision record: the owner ruled on D-M9
+    and the ruling is recorded verbatim in the body; the behaviour lands in the grammar,
+    linker and migration leaves'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4852
+  new_length: 5045
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
@@ -147,3 +155,5 @@ part of the hierarchy rule; options (b) and (c) are not taken.
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 (hierarchy, import up only, flows declared by the lower module, accept down) and the ruling is recorded verbatim in the body; the behaviour changes land in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 (hierarchy, import up only, flows declared by the lower module, accept down) and the ruling is recorded verbatim in the body; the behaviour changes land in the grammar, linker and migration leaves"
+
+frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
