@@ -2,7 +2,7 @@
 id: T-4111
 title: 'H3-1: a guard that only reads a lockout, with no reachable writer, is a control
   that fires on nothing'
-state: queued
+state: in-progress
 kind: invariant
 origin: human
 created: '2026-09-06'
@@ -19,6 +19,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_guard_closure.py
 - tests/gates_suite/test_guard_closure.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,11 @@ scope_changes:
     land as a small unscoped doc append at close time
   actor: logan
   at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: GUARD001 doc row required by coordinator checklist
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
