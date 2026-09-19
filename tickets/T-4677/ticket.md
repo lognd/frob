@@ -19,6 +19,14 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: DECISION ticket -- its deliverable is an owner
   decision recorded in the body, which legitimately changes no files'
+body_changes:
+- mode: append
+  reason: '2026-09-19: owner DECISION D-M8 recorded; this decision ticket''s deliverable
+    is complete and it closes with no behavior change'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3431
+  new_length: 5448
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (class-level/quantified
@@ -88,3 +96,38 @@ INTERACTIONS THE OWNER SHOULD WEIGH
 
 ACCEPTANCE
 Owner records a decision in the body: which option, and what it changes.
+
+
+## DECISION RECORDED -- owner, 2026-09-19 (D-M8)
+
+**Decided: none of the three options as framed. Assumes become MODULE-OWNED and
+SPECIFIC, and a structural gate REFUSES templated assumes.**
+
+D-M8, from the owner's module-system decisions: an assume belongs to the module
+whose weakness it is about, and it must say something specific about that module.
+The 33-line `assume "weakness:CWE-NNN:<node>" noflow registry -> <node> owner
+logan review "2026-10-15"` block measured in SF-08 is exactly the shape the new
+gate refuses -- it is one template instantiated per node, asserting nothing a
+reader could not derive from the node list.
+
+This rejects the framing of all three options this ticket offered:
+- Option 1 (class-level/quantified assume) would make the templating CHEAPER to
+  express. The decision makes it illegal instead.
+- Option 2 (defaults/inheritance) is superseded by module ownership: the unit
+  that carries the posture is the module, not a defaults block.
+- Option 3 (generated boilerplate) is the exact opposite of the decision -- a
+  generator is a machine for producing templated assumes at scale.
+
+Consequences for whoever implements it, in the module-system story being filed
+by the other planner (this ticket does NOT own that work):
+- a structural gate that refuses a templated assume -- i.e. detects N assumes
+  differing only by a node name substitution -- and the 33 existing ones must be
+  rewritten as specific, module-owned claims or removed;
+- the shared `review "2026-10-15"` date stops being a fleet-wide cliff once
+  assumes are module-owned, because each module reviews on its own cadence;
+- T-4675 (SF-07, wiring the overdue-assume verdict) is UNAFFECTED and still
+  lands independently -- it makes an overdue review a gate failure regardless of
+  who owns the assume, and it is the CRITICAL leaf with 26 days to 2026-10-15.
+
+Closing with no behavior change: the deliverable of a DECISION ticket is the
+decision, now recorded above. No code or model file changes under this id.
