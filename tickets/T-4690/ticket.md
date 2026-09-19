@@ -40,6 +40,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3416
+  new_length: 3416
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
@@ -64,9 +72,9 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-POINTS: 3. Parent story T-4687. blocked_by: none (runs in parallel with T-4688).
-This leaf also builds the shared deprecation-shim helper that T-4690, T-4691,
-T-4692 and T-4693 all import, which is why those four are blocked on it.
+POINTS: 3. Parent story T-4687. blocked_by: none (runs in parallel with T-4689).
+This leaf also builds the shared deprecation-shim helper that T-4692, T-4695,
+T-4696 and T-4698 all import, which is why those four are blocked on it.
 
 OWNER DECISION: "Delete the duplicates."
 
@@ -83,7 +91,7 @@ Not one of these four group verbs has ever been recorded in a kind=cli
 telemetry row.
 
 DELETE, each with a one-minor-version shim:
-  - the four group verbs `explore`, `quality`, `design`, `ops` (T-4691 later
+  - the four group verbs `explore`, `quality`, `design`, `ops` (T-4695 later
     reintroduces `explore` as a REAL verb with real leaves; this leaf removes
     the alias-mirror version and its `_mirror_subparser` machinery)
   - `fmt` -> `format` (already marked DEPRECATED, sunset 2026-12-01; finish it)
@@ -119,5 +127,5 @@ FILES (declared scope):
   doctor_runner.py
   tests/unit/test_cli_shims.py (new), tests/unit/test_main_entry.py
 NOTE: _core.py, _misc.py, _reporting.py and __main__.py are contended with
-T-4690 and T-4691; that is why those two are blocked on this ticket rather than
+T-4692 and T-4695; that is why those two are blocked on this ticket rather than
 declared disjoint. A frob scope is a write lease and cannot be shared.
