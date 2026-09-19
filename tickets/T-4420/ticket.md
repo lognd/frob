@@ -1,7 +1,7 @@
 ---
 id: T-4420
 title: Clean land and gates test-suite docstrings of change-narrative (DOCARCH001)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -27,22 +27,6 @@ scope:
 - tests/gates_suite/test_test_gate.py
 - tests/gates_suite/test_waive.py
 - tests/gates_suite/test_wire.py
-- tests/ticket_land_suite/conftest.py
-- tests/ticket_land_suite/test_archive.py
-- tests/ticket_land_suite/test_claim_close.py
-- tests/ticket_land_suite/test_dirt_ownership.py
-- tests/ticket_land_suite/test_draft.py
-- tests/ticket_land_suite/test_land_core.py
-- tests/ticket_land_suite/test_land_lock.py
-- tests/ticket_land_suite/test_land_plan.py
-- tests/ticket_land_suite/test_land_target_branch.py
-- tests/ticket_land_suite/test_ledger_splice.py
-- tests/ticket_land_suite/test_push.py
-- tests/ticket_land_suite/test_release.py
-- tests/ticket_land_suite/test_verify_intent.py
-- tests/ticket_land_suite/test_verify_reset.py
-- tests/ticket_land_suite/test_waive_deletion.py
-- tests/ticket_land_suite/test_wip.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -249,6 +233,102 @@ scope_changes:
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
     test_tick.py/T-draft-cdd5b1eb)'
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/conftest.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_archive.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_claim_close.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_dirt_ownership.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_draft.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_land_core.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_land_lock.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_land_plan.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_land_target_branch.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_ledger_splice.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_push.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_release.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_verify_intent.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_verify_reset.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_waive_deletion.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/test_wip.py
+  reason: T-4420 narrowed to tests/gates_suite cluster (33 findings after excluding
+    leased files); tests/ticket_land_suite (42 findings) split to a child ticket
   actor: logan
   at: '2026-09-19'
 triage_changes:
