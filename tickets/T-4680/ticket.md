@@ -2,7 +2,7 @@
 id: T-4680
 title: 'DECISION: SF-10 -- design/frob.strata is 70% comment prose with 15.4% literal
   duplicate declarations; defaults, or split the monofile?'
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-09-19'
