@@ -1,5 +1,5 @@
 ---
-id: T-draft-9d587b17
+id: T-4692
 title: 'Gate stages are not verbs: fold dup arch cycle bind perf mutate coverage parse
   pool profile narrative debt deprecated into frob check --only'
 state: queued
