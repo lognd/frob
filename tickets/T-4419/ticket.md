@@ -1,7 +1,7 @@
 ---
 id: T-4419
 title: Clean tests/unit docstrings of change-narrative (DOCARCH001)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -77,9 +77,24 @@ body_changes:
   new_length: 6321
 designated_repro_test: null
 acceptance:
-- text: Given a full frob check on tests/unit, when DOCARCH001 is measured, then its
-    finding count for tests/unit is 0
+- text: Given a scoped frob check on the 5 files in cluster 0 (tests/unit/test_ticket_runner_gate_findings.py,
+    tests/unit/test_conftest_sigbreak_faulthandler.py, tests/unit/test_graph_cache.py,
+    tests/unit/strata/test_threat.py, tests/unit/test_makefile_coverage.py), when
+    DOCARCH001 is measured, then its finding count for those files is 0
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: Given a full frob check on tests/unit, when DOCARCH001 is measured, then
+    its finding count for tests/unit is 0
+  new_text: Given a scoped frob check on the 5 files in cluster 0 (tests/unit/test_ticket_runner_gate_findings.py,
+    tests/unit/test_conftest_sigbreak_faulthandler.py, tests/unit/test_graph_cache.py,
+    tests/unit/strata/test_threat.py, tests/unit/test_makefile_coverage.py), when
+    DOCARCH001 is measured, then its finding count for those files is 0
+  reason: narrowed scope to cluster 0 per the split plan; the other 5 clusters (177
+    findings) are covered by child tickets
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
@@ -228,4 +243,4 @@ Cluster 5 -- 14 findings, 14 files (all weight-1):
   tests/unit/vet/test_capability_modes.py
 
 
-Filed child tickets for clusters 1-5 (kind=docs, parent T-4419): T-4632 (cluster 1), T-4630 (cluster 2), T-4628 (cluster 3), T-4631 (cluster 4), T-4629 (cluster 5, also carries the 2 leased-file deferrals). T-4419 itself is narrowed to cluster 0 (32 findings, 5 files, scope set above).
+Filed child tickets for clusters 1-5 (kind=docs, parent T-4419): T-draft-c59d62f0 (cluster 1), T-draft-a2f2c3f2 (cluster 2), T-draft-05ad774f (cluster 3), T-draft-be0fd2f1 (cluster 4), T-draft-283ebe53 (cluster 5, also carries the 2 leased-file deferrals). T-4419 itself is narrowed to cluster 0 (32 findings, 5 files, scope set above).
