@@ -17,13 +17,24 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/policy/_models.py
 - src/frob/app/run_runner.py
-- src/frob/_cli_parsers/_core.py
 - docs/commands/run.md
 - tests/unit/test_run_commands.py
+- src/frob/_cli_parsers/_run.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_core.py
+  reason: avoid the T-4546/T-4690 lease
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/_cli_parsers/_run.py
+  reason: avoid the T-4546/T-4690 lease
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given a [commands] entry that is an array of three steps, when it is run and
