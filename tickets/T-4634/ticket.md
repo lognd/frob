@@ -9,7 +9,7 @@ kind: bug
 origin: human
 created: '2026-09-19'
 priority: critical
-parent: null
+parent: T-4654
 tier: ticket
 sprint: null
 runs_last: false
@@ -26,6 +26,15 @@ scope_changes:
 - op: add
   glob: tests/ticket_land_suite/test_verify_intent.py
   reason: 'positive control: snapshot loader must not be called after publish'
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4654
+  reason: 'kernel-decoupling epic T-4651: rederive the frob kernel behind enforced
+    module boundaries; this ticket already states the right work for this concern
+    and is adopted as a child rather than duplicated'
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
