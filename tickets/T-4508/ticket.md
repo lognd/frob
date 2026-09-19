@@ -1,7 +1,7 @@
 ---
 id: T-4508
 title: 'Evidence channel: dotnet test runner + Unity batchmode XML results parser'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -59,20 +59,29 @@ scope_changes:
     own separation rationale'
   actor: logan
   at: '2026-09-18'
+evidence:
+- tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_maps_passing_and_failing_ids
+- tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml::test_parses_nested_test_suites_into_fqn_result_map
+- tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode::test_crash_with_no_results_file_is_run_failed_distinct_from_a_test_failure
+- tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_crash_with_no_results_file_is_run_failed
 designated_repro_test: null
 acceptance:
 - text: GIVEN a plain C# test project (no Unity), WHEN the evidence channel runs,
     THEN it invokes 'dotnet test' and maps pass/fail results back to the collected
     node ids.
-  evidence: []
+  evidence:
+  - tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_maps_passing_and_failing_ids
 - text: GIVEN a Unity batchmode XML results file (NUnit3 XML format), WHEN the parser
     runs on it, THEN it extracts per-test pass/fail/skip status keyed to the same
     node ids [UnityTest]/[Test] collection produced.
-  evidence: []
+  evidence:
+  - tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml::test_parses_nested_test_suites_into_fqn_result_map
 - text: GIVEN a Unity batchmode run that exits non-zero (editor crash, license failure),
     WHEN the evidence channel handles it, THEN it surfaces a clear error distinct
     from a genuine test failure, not a silent empty-results false pass.
-  evidence: []
+  evidence:
+  - tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode::test_crash_with_no_results_file_is_run_failed_distinct_from_a_test_failure
+  - tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_crash_with_no_results_file_is_run_failed
 threat: null
 component: null
 anchor: false
