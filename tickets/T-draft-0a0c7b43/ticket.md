@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'tier=story rollup: all file work lives in its leaves'
+body_changes:
+- mode: set
+  reason: 'DOC006: the rejected sys-split tool must not read as a cli invocation pointer
+    (it does not exist by owner decision D-M6)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2839
+  new_length: 2839
 designated_repro_test: null
 threat: null
 component: null
@@ -48,7 +56,7 @@ D-M4 kernel: exactly ONE new attribute, `module` on Node. Nothing else. No
 Module primitive, no module-level flows, no module trust levels.
 D-M5 partition: KEEP the 11 modules of the proposal (platform, tickets, graph,
 gates, strata, vet, deploy, natives, serve, app, test).
-D-M6 OVERRIDDEN: there will be NO `frob sys split` tool. The split of
+D-M6 OVERRIDDEN: there will be NO a sys-split tool tool. The split of
 design/frob.strata is a one-time reviewed rewrite done by agents, module by
 module, with the 111 duplicate declaration lines (SF-10) removed in the
 process. The migration must NOT leave a half-split state on dev: each module
