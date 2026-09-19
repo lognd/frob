@@ -29,6 +29,13 @@ triage_changes:
     the gate pipeline'
   actor: logan
   at: '2026-09-19'
+body_changes:
+- mode: append
+  reason: resolve COV009/COV010 rule-id clash with T-4254
+  actor: logan
+  at: '2026-09-19'
+  old_length: 0
+  new_length: 472
 designated_repro_test: null
 threat: null
 component: null
@@ -36,3 +43,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+RENAME: rule id COV009 clashed with T-4254's already-landed COV009 (symbols sharing one frob:doc anchor). This ticket's underlying finding is now COV010: wire src/frob/gates/_coverage.py::entrypoint_coverage_violations (COV010) into the gate pipeline (_ProcessJob registry in gates/__init__.py, _KNOWN_GATE_RULES in _waive.py) and the land pre-sweep. Title text still says COV009 only because no CLI verb renames a ticket title after filing; treat COV010 as authoritative.
