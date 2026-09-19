@@ -57,6 +57,8 @@ body_changes:
 evidence:
 - cmd:git grep -n 'DECISION RECORDED -- owner, 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md
   exit=0 sha256=8e541b8832e8
+- cmd:git grep -n 'DECISION RECORDED -- owner, 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md
+  exit=0 sha256=ed35a5e91432
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (defaults-and-inheritance
@@ -65,8 +67,10 @@ acceptance:
     T-4598 in the KERNEL DECOUPLING epic, since both attack the same contention on
     this file from opposite directions.'
   evidence:
+  - cmd:git grep -n 'DECISION RECORDED -- owner
+  - 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md exit=0 sha256=8e541b8832e8
   - cmd:git grep -n 'DECISION RECORDED -- owner, 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md
-    exit=0 sha256=8e541b8832e8
+    exit=0 sha256=ed35a5e91432
 threat: null
 component: strata
 anchor: false
