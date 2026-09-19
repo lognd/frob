@@ -1,5 +1,5 @@
 ---
-id: T-draft-0357eabe
+id: T-4669
 title: 'SF-04/SF-20: digest-keyed cache for capability_via_site_counts and load_design_ids
   -- 17.8s warm per call, no memoization'
 state: queued
