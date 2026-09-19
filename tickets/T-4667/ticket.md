@@ -1,5 +1,5 @@
 ---
-id: T-draft-a73d5fb2
+id: T-4667
 title: 'Story D: DECISIONS the owner must record before any strata grammar or semantics
   work'
 state: queued

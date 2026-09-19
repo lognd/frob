@@ -1,5 +1,5 @@
 ---
-id: T-draft-ddbed9bc
+id: T-4666
 title: 'Story C: assumptions and claims as-implemented -- wire the overdue-assume
   verdict before the 2026-10-15 cliff'
 state: queued

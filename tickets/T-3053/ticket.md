@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
-parent: null
+parent: T-4654
 tier: ticket
 sprint: backlog
 runs_last: false
@@ -40,6 +40,14 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+- field: parent
+  old_value: null
+  new_value: T-4654
+  reason: 'kernel-decoupling epic T-4651: rederive the frob kernel behind enforced
+    module boundaries; this ticket already states the right work for this concern
+    and is adopted as a child rather than duplicated'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
