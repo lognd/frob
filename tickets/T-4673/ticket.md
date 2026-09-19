@@ -1,5 +1,5 @@
 ---
-id: T-draft-af1747bc
+id: T-4673
 title: 'SF-11: require_analyzable WARNs on every single design load -- 570 occurrences
   across 45 land logs, ~12.7 per land'
 state: queued
