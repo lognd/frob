@@ -67,13 +67,29 @@ acceptance:
     frob check --only dup runs on it, then it reports that duplicate -- the same finding
     frob dup reported before the fold (golden comparison, not a no-crash assertion)
   evidence: []
-- text: Given frob check --list-stages, when it runs, then every folded stage name
-    is printed and each printed name is accepted by frob check --only
+- text: Given frob check --list-stages, when it runs, then it prints exactly the folded
+    stages (dup arch cycle bind perf mutate coverage narrative exports) and every
+    printed name is accepted by frob check --only; pool, profile, debt, deprecated
+    and parse are absent from that list because none of them is a check stage
   evidence: []
 - text: Given the exports generate mode, when the check half folds into frob check
     --only exports, then the generate half is reachable under its new home and a test
     exercises it
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 2
+  old_text: Given frob check --list-stages, when it runs, then every folded stage
+    name is printed and each printed name is accepted by frob check --only
+  new_text: Given frob check --list-stages, when it runs, then it prints exactly the
+    folded stages (dup arch cycle bind perf mutate coverage narrative exports) and
+    every printed name is accepted by frob check --only; pool, profile, debt, deprecated
+    and parse are absent from that list because none of them is a check stage
+  reason: '2026-09-19 coordinator review: pool/profile mutate state, debt/deprecated
+    are read-only listings that move to T-4695 under explore, parse is a tool-output
+    adapter that moves to T-4698 verdict form'
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: cli
 labels:
