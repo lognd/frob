@@ -1,5 +1,5 @@
 ---
-id: T-draft-bd1c31ca
+id: T-4687
 title: 'CLI surface: 52 verbs and 49 ticket subverbs down to a dozen verbs; aliases,
   read-only analysis and field-setters folded'
 state: queued
