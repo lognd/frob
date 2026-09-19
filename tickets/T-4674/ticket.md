@@ -7,6 +7,8 @@ kind: docs
 origin: agent
 created: '2026-09-19'
 priority: low
+blocked_by:
+- T-4612
 parent: T-4665
 tier: ticket
 sprint: v0.536.0
