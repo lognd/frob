@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/_guard_closure.py
 - tests/gates_suite/test_guard_closure.py
 - docs/modules/gates.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,11 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: GUARD001 doc row required by coordinator checklist
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: design/frob.strata
+  reason: GUARD001's frob.toml read needs a fs.read via declaration
   actor: logan
   at: '2026-09-19'
 triage_changes:
