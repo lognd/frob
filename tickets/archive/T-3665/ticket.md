@@ -36,6 +36,12 @@ body_changes:
   at: '2026-09-01'
   old_length: 2222
   new_length: 2470
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2470
+  new_length: 3063
 evidence:
 - tests/gates_suite/test_run.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
 - tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_pool_start_method_falls_back_to_spawn_without_forkserver
@@ -62,3 +68,5 @@ References T-3659 (tracking ticket for this campaign).
 frob:no-behavior-change reason="test-only fix: corrects a hardcoded POSIX-only assertion in an existing test to check the platform-appropriate property; product's own _process_pool_start_method fallback logic was already correct and is unchanged"
 
 frob:no-behavior-change reason="test-only fix: corrects a hardcoded POSIX-only assertion in an existing test to check the platform-appropriate property; product's own _process_pool_start_method fallback logic was already correct and is unchanged"
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_run.py::TestProcessPoolGates.test_process_pool_start_method_falls_back_to_spawn_without_forkserver's docstring carried a long narrative (win32 gates_suite campaign T-3659; multiprocessing.get_all_start_methods() reporting only ["spawn"] on win32 since CPython never registers forkserver there without os.fork; the prior hardcoded assertion in test_open_process_pool_preloads_forkserver_when_available that this ticket's fix corrected). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
