@@ -18,10 +18,30 @@ scope:
 - src/frob/app/scaffold_runner.py
 - src/frob/_cli_parsers/_core.py
 - src/frob/app/config.py
+- src/frob/scaffold/_unity_project.py
+- src/frob/app/_config_external.py
+- docs/commands/scaffold.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/_unity_project.py
+  reason: removing WIRE001 waiver now that a real CLI caller exists, per ticket body
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: argparse Namespace -> AppConfig field-copy for scaffold_unity_root/scaffold_unity_force,
+    the mapping layer _core.py/config.py alone cannot populate
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: usage block + frob:doc anchor for the new unity-project CLI leaf
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
