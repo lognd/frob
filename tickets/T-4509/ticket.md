@@ -7,7 +7,6 @@ origin: agent
 created: '2026-09-16'
 priority: medium
 blocked_by:
-- T-4506
 - T-4511
 - T-4514
 - T-4518
@@ -45,3 +44,6 @@ GIVEN the unity_sample fixture, WHEN 'frob scaffold unity-project' (or init dete
 GIVEN the fixture's MonoBehaviour and coroutine, WHEN frob check's dead-code/callgraph detectors run, THEN the lifecycle method and coroutine are NOT flagged as dead code (proves story 3's roots).
 GIVEN the fixture's Editor-only API call and the fixture's BCL/Unity API calls (net, fs.write), WHEN frob vet runs, THEN exactly the expected findings appear, tagged correctly (editor-only vs runtime), with zero unexpected findings.
 GIVEN the fixture's NUnit and [UnityTest] tests, WHEN test evidence collection runs (T-4517/T-4508), THEN both are collected and bindable, proving stories 1-5 compose end to end.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4506 -- leaves landed or queued; capstone can proceed against dev
