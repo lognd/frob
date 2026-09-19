@@ -15,12 +15,38 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- .claude/hooks/*
 - tests/test_hook_frob_suggest.py
+- .claude/hooks/frob-suggest.py
+- .claude/hooks/_shellscan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: .claude/hooks/*
+  reason: avoid lease collision with T-4689 on tool-call-telemetry.py; scope only
+    to rule logic files
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: .claude/hooks/frob-suggest.py
+  reason: avoid lease collision with T-4689 on tool-call-telemetry.py; scope only
+    to rule logic files
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: .claude/hooks/_shellscan.py
+  reason: avoid lease collision with T-4689 on tool-call-telemetry.py; scope only
+    to rule logic files
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_hook_frob_suggest.py
+  reason: avoid lease collision with T-4689 on tool-call-telemetry.py; scope only
+    to rule logic files
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: recursive-grep exemption handles trailing slash, glob, single-segment dir,
