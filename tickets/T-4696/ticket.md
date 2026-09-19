@@ -76,6 +76,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 2270
   new_length: 2270
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2270
+  new_length: 2270
 designated_repro_test: null
 acceptance:
 - text: Given a fixture ledger, when frob ticket set priority high runs on a ticket,
