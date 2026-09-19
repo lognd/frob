@@ -2,7 +2,7 @@
 id: T-draft-be56039a
 title: csharp test_discovery capability has no behavioral fixture builder (registered
   IMPLEMENTED without one)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-18'
@@ -33,6 +33,14 @@ scope_changes:
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
+acceptance:
+- text: 'bound([''tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance::test_csharp_registered_capabilities_pass'',
+    ''tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_csharp_test_discovery_is_behaviorally_checked'',
+    ''tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_csharp_test_discovery_passes_on_a_real_discoverable_fixture'']):
+    csharp/test_discovery has a real behavioral fixture builder (_check_test_discovery_csharp)
+    registered in _TEST_DISCOVERY_BUILDERS and _BEHAVIORAL_CAPABILITY_LANGUAGES, and
+    test_csharp_registered_capabilities_pass passes against the live registry'
+  evidence: []
 threat: null
 component: null
 anchor: false
