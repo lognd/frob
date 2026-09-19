@@ -2,7 +2,7 @@
 id: T-draft-f5ac9ec0
 title: instrument the silent ~111s land phase between rapid --files scoping and worktree
   auto-sync with phase-transition logging
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -24,6 +24,16 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_land_cmd.py
   reason: instrument the silent land phase with _LandPhaseElapsedFilter-covered logging
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/ticket_land_suite/*
+  reason: phase-transition logging tests
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: tests/ticket_land_suite/*
+  reason: wrong glob, using real test files instead
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
