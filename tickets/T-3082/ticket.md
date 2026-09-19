@@ -73,6 +73,11 @@ acceptance:
   - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_clear
   - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_retire_unidentifiable_findings
   - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_stays_raised_when_retire_leaves_a_sibling_undisposed
+- text: GIVEN frob verify status is run WHEN quarantine has been raised and then cleared
+    THEN its output surfaces the same raised/cleared tombstone marker (quarantine_status_marker)
+    that a direct disk read would show, never leaving the CLI's own report as the
+    only place still ambiguous between stale and live
+  evidence: []
 threat: null
 component: null
 anchor: false
