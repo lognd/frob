@@ -1,5 +1,5 @@
 ---
-id: T-draft-6c53db5b
+id: T-4709
 title: 'Source narrative C1: gates A (_arch.._opaque) -- 21 files, 54 runs, 1464 lines'
 state: queued
 kind: docs
