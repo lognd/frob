@@ -2,7 +2,7 @@
 id: T-4596
 title: 'SELFAUDIT001 SYS111 auto-accept never fires: sys111_findings_touching runs
   in-process, never sees FROB_LAND_LOCK_ROOT'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -22,13 +22,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_land_lock_root_sets_env_for_the_in_process_gate_call
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_no_land_lock_root_leaves_env_untouched
 designated_repro_test: null
 acceptance:
 - text: GIVEN a land with a land_lock_root and a real SYS111 testsuite-glob-growth
     finding in touched files, WHEN _refuse_if_selfaudit_findings_in_touched_files
     runs its in-process gate calls, THEN FROB_LAND_LOCK_ROOT is set in os.environ
     for the duration of that call and restored afterward
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_land_lock_root_sets_env_for_the_in_process_gate_call
+  - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_no_land_lock_root_leaves_env_untouched
 threat: null
 component: null
 anchor: false

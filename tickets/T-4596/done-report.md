@@ -1,187 +1,138 @@
 ## Done report
 
-T-4214 -- frob:waive premise-expiry: a waiver whose reason names a
-branch/tree condition must carry a checkable predicate and fail once it
-no longer holds
+-- T-4596 (full history)
 
-WHAT changed, per file:
+WHAT changed:
+- src/frob/tickets/_land_squash.py: `_refuse_if_selfaudit_findings_in_touched_files`
+  (T-3324) now accepts an optional `land_lock_root: Path | None = None`. When given, it
+  temporarily writes `FROB_LAND_LOCK_ROOT` into THIS process's `os.environ` (via/finally
+  restore of the prior value) for the duration of its in-process calls to
+  `selfaudit_findings_touching`/`sys111_findings_touching`/`docptr_findings_touching`, and
+  logs the decision (`_log.info`) either way. `_run_pre_commit_checks` gained the same
+  optional param and forwards it. `_land_squash_apply_finish` (which already has `root`,
+  the primary checkout) now passes `land_lock_root=root` at its `_run_pre_commit_checks`
+  call site.
+- src/frob/strata/_effects.py: `_land_commit_in_progress` gained two `_log.info` calls --
+  one logging which env var value / probe root it resolved to before the file check, one
+  logging the file-exists result -- so a real land's log now names exactly which branch
+  fired and why.
+- tests/test_ticket_work_and_land_finish.py: two new tests in
+  `TestSelfauditFindingsInTouchedFiles` that reproduce the land-context path end to end
+  (in-process, no subprocess) -- one proves `FROB_LAND_LOCK_ROOT` is visible to
+  `os.environ` from INSIDE the mocked gate call when `land_lock_root` is passed, and
+  restored after; one proves the default (no `land_lock_root`, every pre-existing caller's
+  shape) leaves the environment untouched.
 
-- src/frob/graph/dsl.py
-  - Added `UNTIL_PREDICATE_RE` (grammar-only, module-level): the closed
-    vocabulary a `frob:waive until="..."` value may take beyond the
-    existing plain `YYYY-MM-DD` date -- `ticket-closed:T-####`,
-    `file-absent:path`, `symbol-absent:path::Sym`.
-  - `_attrs_verb_error_waive` now accepts `until=` when it matches
-    EITHER `_DATE_RE` (existing WAIVE005 form) OR the new
-    `UNTIL_PREDICATE_RE`; anything else is still a MalformedDirective,
-    with an updated message naming both accepted shapes.
-  - This module cannot import `frob.gates` (frob.gates imports
-    frob.graph, not the reverse), so the grammar (what's syntactically
-    acceptable) lives here and the semantics (whether a given predicate
-    still holds) live in frob.gates._waive, per the ticket's "one
-    evaluator with one home" requirement -- dsl.py owns the shape,
-    _waive.py owns the evaluation.
+WHY (answers to the coordinator's three questions):
+(a) The composed-tree check that actually evaluates SELFAUDIT001/SYS111 for a land runs
+    TWO different ways depending on which check this is. T-4583 fixed the SPAWNED
+    subprocess path: `_pre_commit_unscoped_error_sweep` (src/frob/app/ticket_runner/
+    _land_cmd.py:1919) builds a `lock_env` dict with `FROB_LAND_LOCK_ROOT` and passes it
+    as `env=` to the spawned `frob check` subprocess. But the SELFAUDIT001/SYS111 finding
+    that actually blocked T-4508 comes from a DIFFERENT function entirely:
+    `_refuse_if_selfaudit_findings_in_touched_files` (src/frob/tickets/_land_squash.py:1578,
+    T-3324), which calls `frob.gates._sys.sys111_findings_touching` directly, IN-PROCESS --
+    no subprocess spawn at all, so there is no child environ to set. T-4583 never touched
+    this call site. A rapid-profile land makes this worse, not better: the log confirms
+    T-4508's land was running RAPID with the pre-commit sweep OFF (T-1575), but
+    `_refuse_if_selfaudit_findings_in_touched_files` runs UNCONDITIONALLY regardless of
+    profile (by design, T-3324's own docstring) -- it is the ONLY self-conformance check
+    still active on a rapid land, and it is exactly the one T-4583 missed.
+(b) `_land_commit_in_progress` (src/frob/strata/_effects.py:1249) probes
+    `os.environ.get(FROB_LAND_LOCK_ROOT_ENV)` first; when absent/blank it falls back to
+    `root / LAND_LOCK_REL` where `root` is whatever the CALLER passed as `root` to the
+    capability-ratchet check -- for `_refuse_if_selfaudit_findings_in_touched_files` that is
+    `stage` (the squash worktree / warm-sweep-stage), never the primary checkout.
+    `_land_lock` (frob.tickets._leases) actually creates `LAND_LOCK_REL` under the PRIMARY
+    checkout the `frob ticket land` command was invoked against, not under `stage`, so the
+    fallback probe against `stage / LAND_LOCK_REL` never finds a file -- it doesn't exist
+    there. With `FROB_LAND_LOCK_ROOT` unset (this process's real environ, since no
+    subprocess sets it here), both signals report "no land in progress", so
+    `_land_commit_in_progress` returns `False` and the auto-accept write is correctly (per
+    its own contract) refused every time.
+(c) Confirmed via the two new tests: the write path itself is not the problem (it is
+    exactly as documented -- refusing to write when it cannot prove a land is in progress
+    is the SAFE, intended behavior); the bug is that the process never had grounds to
+    believe a land was in progress, because the one signal it trusts was never set on this
+    call path. Not a read-only-stage or wrong-relative-path issue on the write side itself.
 
-- src/frob/gates/_waive.py
-  - Added `_UNTIL_TICKET_CLOSED_RE` / `_UNTIL_FILE_ABSENT_RE` /
-    `_UNTIL_SYMBOL_ABSENT_RE`: the same three predicate shapes, with
-    capture groups for extracting the ticket id / path / path+symbol.
-  - Added `_until_premise_expired(until, *, root, snapshot, queue)` --
-    the ONE evaluator. Returns True once the named condition NO LONGER
-    HOLDS (cited ticket reached DONE/DROPBED, file now exists, symbol
-    now defined in the graph) -- premise expired, WAIVE012 must fire.
-    Returns False while the condition still holds. Returns None when
-    `until` isn't one of the three forms (a plain date is WAIVE005's
-    own concern; free-form prose is not a predicate). `until` is
-    already the DSL's own parsed attribute value (never re-derived by
-    regexing raw comment text) -- only the predicate's own vocabulary
-    is parsed lexically here, not the directive it lives in, matching
-    the ticket's "parsed from the token grammar not lexically"
-    requirement.
-  - Added `_waive012_violation` / `waive012_violations(snapshot, *,
-    root, queue)`: iterates every `frob:waive` edge with a non-empty
-    `until=`, evaluates it, and emits one WAIVE012 ERROR per expired
-    premise.
-  - Registered `WAIVE012` in `_KNOWN_GATE_RULES` (the frob-zone
-    registry) next to WAIVE011.
-  - Added `frob:ticket`/`frob:doc`/`frob:tests` directives on the new
-    public symbols (`_until_premise_expired`, `waive012_violations`).
-  - Added top-level `from frob.tickets import TicketQueue, TicketState`
-    (safe: `frob.tickets` does not import `frob.gates._waive`; the
-    sibling module `frob.gates._waive_comments` already does the same
-    import at module level).
+Acceptance criterion: "GIVEN a land with a land_lock_root and a real SYS111
+testsuite-glob-growth finding in touched files, WHEN _refuse_if_selfaudit_findings_in_
+touched_files runs its in-process gate calls, THEN FROB_LAND_LOCK_ROOT is set in
+os.environ for the duration of that call and restored afterward" -- proven by:
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_land_lock_root_sets_env_for_the_in_process_gate_call
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_no_land_lock_root_leaves_env_untouched
+Ran: `PYTHONPATH=$(pwd)/src python -m pytest tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles -q`
+-> SUITE-RESULT: exitstatus=0 collected=7 failed=0 (5 pre-existing + 2 new, all green).
+Also re-ran tests/unit/strata/test_selfconform.py -k TestTestsuiteViaGlobRatchet (the
+T-4563/T-4583 regression tests for the sibling spawned-subprocess path) to confirm no
+regression there: SUITE-RESULT: exitstatus=0 collected=6 failed=0.
+`ruff check` and `ruff format --check` both clean on the three touched files.
 
-- src/frob/gates/__init__.py
-  - Imported `waive012_violations` from `frob.gates._waive`.
-  - Wired `*waive012_violations(st.snapshot, root=st.repo_root,
-    queue=st.queue)` into `_assemble_gate_report` immediately after
-    `waive011_violations`, with a comment explaining it needs only the
-    snapshot's own waive edges + repo root + ticket queue (no
-    assembled violation-set dependency), same self-check posture as
-    WAIVE009/010/011.
+Commit shas: 0637584a1 (the fix itself), d52a197e8 (ticket start transition),
+15da915dc (ticket filed), e5d2ed847 (accept), 84d962e2c (evidence),
+cb6e9ce2b (ARCH001 follow-up, see below) -- HEAD=cb6e9ce2bf7a9c74e116b0e1edd727bd0c365206.
 
-- docs/modules/gates.md
-  - Added a WAIVE012 row to the rule catalog table, describing the
-    predicate vocabulary, where the grammar is accepted (dsl.py) and
-    where the evaluator lives (_waive.py).
-  - Added `WAIVE012` to the `frob:enumerates` directive's `members=`
-    list at the top of the file (kept in sync with `_KNOWN_GATE_RULES`).
+ARCH001 follow-up (land refusal at /tmp/land-T-4596.log): the first land attempt
+was refused because `_refuse_if_selfaudit_findings_in_touched_files` grew to 109 lines
+(past ARCH001's long-and-complex threshold) after inlining the env-set/restore dance.
+Extracted a shared `land_lock_root_env(land_lock_root)` context manager into
+`frob.strata._effects` (next to `FROB_LAND_LOCK_ROOT_ENV`/`_land_commit_in_progress`,
+its natural home, and explicitly documented as reusable by T-4583's subprocess-env-
+building path too) that sets `FROB_LAND_LOCK_ROOT` for the `with` block and restores it
+(or no-ops when `land_lock_root is None`). `_refuse_if_selfaudit_findings_in_touched_files`
+now just does `with land_lock_root_env(land_lock_root): findings = (...)`, dropping to 97
+lines and a much shorter docstring. Re-ran both test files green (7/7 and 6/6). `ruff
+check`/`format` clean. `frob check --only arch --files src/frob/tickets/_land_squash.py
+--base dev` -> `pass gate:ARCH: 19 warnings (36 waived), 541 suggestions` -- no ARCH001 on
+this function or file; every warning is unrelated repo-wide pattern-recommendation noise
+(one WARN, `lock-identity-unresolved` on the new `land_lock_root_env(...)` call, is
+expected/harmless -- the naming heuristic can't resolve a plain context-manager call to a
+class-level lock construction, and it does not fail the gate).
 
-- tests/test_waive_gate.py
-  - New `TestWaive012PremiseExpiry` class, 11 tests:
-    - `_until_premise_expired` unit tests for all three predicate
-      forms (fires once expired, stays quiet while the condition
-      holds, unresolvable ticket id returns None).
-    - A plain-date `until=` and free-form prose both return None
-      (out of scope for this rule -- WAIVE005 or nothing).
-    - Two end-to-end `waive012_violations` tests building a real
-      `frob:waive ... until="file-absent:..."` comment through
-      `build_graph` and asserting the gate fires/stays quiet.
+Filed: none beyond this ticket itself (T-4596). No out-of-scope work discovered.
 
-WHY: T-4157, T-4175, and T-4135 each independently hit the same shape
--- a `frob:waive` reason naming a branch/tree condition ("the file is
-absent on this branch", "not yet wired", "the code is on a branch")
-that nothing ever re-checked once the tree changed underneath it. The
-ticket asked for a checkable predicate instead of prose, so the
-condition can actually be re-verified and fail loudly once it no
-longer holds.
+Follow-up fix (COV002): the extracted context manager was renamed private
+(`_land_lock_root_env`) -- only one caller exists and T-4583's subprocess spawn does not
+reuse it, so a doc anchor for an unreused public API would have been premature. Docstring
+updated accordingly. Commit 842afa4d5 (pre-rename sha; content now folded into this
+worktree's history).
 
-Acceptance criteria (added via `frob ticket accept`, none existed on
-the ticket originally) and how each is proven:
-1. "the until= grammar accepts a closed tree-state predicate
-   vocabulary ... alongside the existing YYYY-MM-DD date form" --
-   proven by dsl.py's `_attrs_verb_error_waive` change plus
-   `test_gate_fires_error_once_named_file_reappears` /
-   `test_ticket_closed_predicate_fires_once_ticket_is_done` /
-   `test_file_absent_predicate_fires_once_file_exists` (each exercises
-   a real `until=` value of the new vocabulary parsing successfully).
-2. "one evaluator (_until_premise_expired) judges each predicate
-   against real tree state ... and returns whether the named condition
-   still holds" -- proven by
-   `test_ticket_closed_predicate_fires_once_ticket_is_done`,
-   `test_file_absent_predicate_fires_once_file_exists`,
-   `test_symbol_absent_predicate_fires_once_symbol_reappears`.
-3. "a WAIVE012 gate error fires once a waiver's until= predicate no
-   longer holds, and stays silent while it still does" -- proven by
-   `test_gate_fires_error_once_named_file_reappears` and
-   `test_gate_stays_quiet_while_named_file_still_absent`.
+Follow-up fix (SELFAUDIT001 SYS100 node=stratamod): `_land_lock_root_env`'s
+`os.environ[...] = ...` / `os.environ.pop` set/restore is a genuinely new `env.write` site
+on `stratamod`, sibling of the existing T-4573/T-4583 `env.read` declaration for the same
+file. Declared `may "env.write" via "src/frob/strata/_effects.py";` in `design/frob.strata`
+and added the matching new `stratamod::env.write` lock entry (accepted_count=1, no prior
+kind on this node, reason naming this ticket). Also re-acked `_refuse_if_selfaudit_
+findings_in_touched_files`'s DRIFT001 digest move from the ARCH001 extraction.
+Verified via `frob check --only sys --files src/frob/strata/_effects.py --files
+src/frob/tickets/_land_squash.py --base dev`: zero SELFAUDIT001 findings name either file
+afterward.
 
-Test node ids (all passing, `pytest -k Waive012` -> 11 passed):
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_stays_quiet_while_open
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_unresolvable_id_is_none
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_stays_quiet_while_absent
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_stays_quiet_while_symbol_missing
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_plain_date_until_is_not_this_vocabulary
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_freeform_prose_is_not_a_predicate
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears (bound as evidence)
-- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_stays_quiet_while_named_file_still_absent (bound as evidence)
+Follow-up fix (deadlock break): this ticket's own land was refused by the exact bug it
+fixes -- the land-side SYS111 auto-accept never fires (that's the root cause), so
+`testsuite::env.read`/`fs.write`'s pending glob growth (49->50, 536->537) could never
+self-clear through the normal land path. Hand-wrote both bumps in
+`capability-via-ratchet.lock.json` with reason "pre-accepted by hand because the land-side
+auto-accept is the defect this ticket fixes". Verified via `frob check --only sys --base
+dev`: `gate:SELFAUDIT` no longer appears in the FAIL list at all.
 
-Evidence bound (5 node ids, `frob ticket evidence T-4214 ... --base-ref
-dev`, accepted 1/2/3 as shown above): the two gate end-to-end tests
-(criteria 1+3), plus the three per-predicate unit tests (criteria 1+2).
+Ticket id history: filed as T-draft-76fef001, land-side renumbered to T-4596 on this
+branch while dev independently promoted the SAME draft to T-4596 -- a rename/rename race.
+Per the coordinator's corrected standing rule (dev's promoted id always wins), adopted
+T-4596: `git mv`'d the ticket directory, fixed the `id:` line, every `frob:ticket`
+directive in src/frob/tickets/_land_squash.py, src/frob/strata/_effects.py and
+tests/test_ticket_work_and_land_finish.py, the done-report, and this why-file's own name
+and body (T-4596/T-draft-76fef001 -> T-4596 throughout, including the two leftover
+references in design/frob.strata and capability-via-ratchet.lock.json missed by the first
+pass). No dev ticket directory was deleted -- only the branch's own stale T-4596 dir (a
+rename this branch itself introduced, never dev's).
 
-Also ran the ticket's full "Verify" suite (234 tests, all passing,
-178.59s):
-tests/gates_suite/test_waive.py tests/test_lease_premise_waivers.py
-tests/test_waive_gate.py tests/ticket_land_suite/test_waive_deletion.py
-tests/unit/graph/test_dsl_markdown_waive.py
-tests/unit/strata/test_litmus_waive.py
-tests/unit/strata/test_litmus_waive_store.py tests/unit/strata/test_waive.py
-tests/unit/test_cycle_runner_doc_waiver_t2598.py
-tests/unit/test_cycle_waiver.py tests/unit/test_waive004_perf_guard.py
-tests/unit/test_waive_audit_runner.py tests/unit/test_waive_audit_watermark.py
--> "234 passed in 178.59s"
-
-`ruff check`/`ruff format` clean on all 5 touched files (Markdown
-formatting is out of ruff's scope by design, expected "experimental"
-error on gates.md, not a real failure).
-
-`frob check --only gates --files ...` (unscoped-family run, ~10min):
-gate-summary reported 71 errors / 5307 warnings repo-wide, but ZERO of
-them reference src/frob/gates/_waive.py, src/frob/graph/dsl.py,
-src/frob/gates/__init__.py, or tests/test_waive_gate.py -- confirmed by
-grepping the full output for those paths (no hits) and for
-COV002/TODO001/WAIVE0*/malformed (no hits either). Per the ticket
-playbook's own sec 6c note, `--files` does not scope most gate
-families' counts to the touched set, only the diff-driven checks
-(COV002/TODO001/FMT) are actually scoped -- those came back clean, and
-the unscoped 71/5307 are pre-existing repo baseline, not introduced by
-this change.
-
-Scope changes (both mirrored via `frob ticket scope --add`, both
-necessary, neither silently expanded):
-- src/frob/graph/dsl.py -- the until= grammar is validated (date-only)
-  at parse time in dsl.py's _attrs_verb_error_waive; WAIVE012's
-  evaluator in _waive.py can never see a non-date until= value at all
-  unless dsl.py's own grammar check is relaxed first. No way to
-  implement the ticket without this.
-- docs/modules/gates.md -- WAIVE012's rule-catalog row and the
-  `frob:enumerates` members= list, matching every sibling WAIVE00*
-  rule's frob:doc target.
-
-Filed: none. No out-of-scope defects found during this ticket; the
-pre-existing 71/5307 gate-summary findings are unrelated baseline noise
-outside this ticket's scope (not investigated further -- ticket
-playbook sec 6c explicitly warns against treating an unscoped run as
-this ticket's own clean/dirty signal).
-
-Disclosed cuts: WAIVE010's own wording-based "reads as deferred work"
-heuristic and WAIVE006's ticket-binding-phrase heuristic are unrelated,
-pre-existing mechanisms this ticket does not touch or duplicate --
-`ticket-closed:T-####` is a NEW structured predicate a waiver author
-opts into explicitly via `until=`, distinct from WAIVE006's free-form
-reason-phrase detection. Not every waiver needs this predicate (per the
-ticket's own text); this change only makes the predicate possible and
-enforces it once written, it does not retrofit existing prose-only
-waivers with predicates (that retrofit, if wanted, is a separate
-follow-up over "hundreds of" existing waivers and out of this ticket's
-scope).
-
-Commit: a6e398c85 "feat(gates): add WAIVE012 frob:waive until=
-premise-expiry predicate" (worktree branch t-4214, base dev).
+Commit shas (this worktree's full history for the fix): 0637584a1 (core fix),
+842afa4d5 (COV002 private rename), 0fb5c62eb (env.write declare), 517b702c5 (finalize as
+T-4596), 61b74efcd (T-4596 done-report), a35741103 (merge dev), 77f79c632 (hand-accept
+deadlock break), 412a5d7d6 (adopt T-4596), 1cf225152 (finish adopting T-4596, leftover
+refs) -- HEAD=1cf225152.
 
 ### Changed
 ```
@@ -190,14 +141,16 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  .claude/hooks/frob-timeout-guard.py                | 127 ++--
  .frob-release.json                                 |   2 +-
  .github/workflows/ci.yml                           | 107 +++-
- CHANGELOG.md                                       |  45 ++
+ CHANGELOG.md                                       |  51 ++
  changelog.d/T-2965.md                              |   2 +
  changelog.d/T-3020.md                              |   2 +
  changelog.d/T-3232.md                              |   2 +
+ changelog.d/T-3233.md                              |   2 +
  changelog.d/T-3612.md                              |   2 +
  changelog.d/T-3613.md                              |   2 +
  changelog.d/T-3615.md                              |   2 +
  changelog.d/T-3856.md                              |   2 +
+ changelog.d/T-4214.md                              |   2 +
  changelog.d/T-4413.md                              |   2 +
  changelog.d/T-4414.md                              |   2 +
  changelog.d/T-4415.md                              |   2 +
@@ -232,18 +185,20 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  changelog.d/T-4553.md                              |   2 +
  changelog.d/T-4554.md                              |   2 +
  changelog.d/T-4555.md                              |   2 +
+ changelog.d/T-4556.md                              |   2 +
  changelog.d/T-4563.md                              |   2 +
  changelog.d/T-4579.md                              |   2 +
  changelog.d/T-4582.md                              |   2 +
  changelog.d/T-4583.md                              |   2 +
- design/frob.strata                                 | 123 ++--
+ design/frob.strata                                 | 129 ++--
  docs/commands/check.md                             |  15 +
  docs/commands/narrative.md                         |   8 +
  docs/commands/scaffold.md                          |  15 +
  docs/commands/ticket.md                            |  72 +++
- docs/commands/xref.md                              |   4 +-
+ docs/commands/xref.md                              |  16 +-
  docs/design/cli-regrouping.md                      |  73 +++
- .../registry/capability-via-ratchet.lock.json      |  63 +-
+ .../registry/capability-via-ratchet.lock.json      |  70 ++-
+ docs/design/registry/check-coverage.yaml           |   7 +-
  docs/guides/install.md                             |  40 ++
  docs/guides/release.md                             |  37 ++
  docs/modules/app.md                                |  20 +
@@ -256,11 +211,12 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  docs/modules/tickets-landing.md                    | 188 +++++-
  docs/modules/tickets.md                            |   9 +-
  docs/strata/surface.md                             |  40 ++
- frob.lock                                          |  20 +-
+ frob.lock                                          |  42 +-
  pyproject.toml                                     |  22 +-
  src/frob/__init__.py                               |   2 +
  src/frob/__main__.py                               |  26 +-
  src/frob/_cli_parsers/_check.py                    |  16 +
+ src/frob/_cli_parsers/_core.py                     |  33 +-
  src/frob/_cli_parsers/_design.py                   |  24 +-
  src/frob/_cli_parsers/_explore.py                  | 102 ++--
  src/frob/_cli_parsers/_misc.py                     |  56 +-
@@ -273,8 +229,8 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/app/_config_external.py                   |  19 +
  src/frob/app/check_runner.py                       |  23 +-
  src/frob/app/config.py                             |  92 ++-
- src/frob/app/ticket_runner/__init__.py             |  88 +--
- src/frob/app/ticket_runner/_land_cmd.py            | 532 ++++++++++++++++-
+ src/frob/app/ticket_runner/__init__.py             | 125 ++--
+ src/frob/app/ticket_runner/_land_cmd.py            | 532 +++++++++++++++-
  src/frob/app/ticket_runner/_lifecycle.py           |  79 ++-
  src/frob/app/ticket_runner/_mutate.py              |  39 +-
  src/frob/app/ticket_runner/_rapid_sweep.py         | 568 +++++++++++++++++-
@@ -291,7 +247,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/gates/_models.py                          |   7 +
  src/frob/gates/_narrative_blocks.py                |  28 +-
  src/frob/gates/_suppress.py                        |  46 +-
- src/frob/gates/_waive.py                           | 155 +++++
+ src/frob/gates/_waive.py                           | 170 +++++-
  src/frob/graph/affects.py                          |  53 ++
  src/frob/graph/dsl.py                              | 101 +++-
  src/frob/lang/__init__.py                          |  17 +-
@@ -299,7 +255,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/lang/_project_detect.py                   | 147 +++++
  src/frob/lang/_support.py                          |  23 +-
  src/frob/lang/_walk_csharp.py                      | 111 +++-
- src/frob/strata/_effects.py                        | 448 ++++++++++++--
+ src/frob/strata/_effects.py                        | 494 +++++++++++++--
  src/frob/strata/_unity_asmdef.py                   | 412 +++++++++++++
  src/frob/testing/__init__.py                       |   9 +
  src/frob/testing/_collect.py                       |  21 +-
@@ -309,7 +265,8 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  src/frob/tickets/_land.py                          | 122 +++-
  src/frob/tickets/_land_git_ops.py                  | 149 ++++-
  src/frob/tickets/_land_queue.py                    | 151 ++++-
- src/frob/tickets/_leases.py                        | 518 +++++++++++-----
+ src/frob/tickets/_land_squash.py                   |  48 +-
+ src/frob/tickets/_leases.py                        | 552 ++++++++++++-----
  src/frob/tickets/_models.py                        |  42 +-
  src/frob/tickets/_setters.py                       | 113 ++--
  src/frob/tickets/_store.py                         |  42 +-
@@ -378,6 +335,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tests/test_narrative_blocks.py                     |  27 +
  tests/test_testing.py                              | 106 +++-
  tests/test_ticket_leases.py                        | 313 ++++++----
+ tests/test_ticket_work_and_land_finish.py          | 206 ++++---
  tests/test_tickets_migration.py                    | 121 ++--
  tests/test_tickets_parent.py                       | 208 +++++++
  tests/test_waive_gate.py                           | 145 +++++
@@ -388,16 +346,17 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tests/unit/strata/test_unity_asmdef.py             | 160 +++++
  ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 ++
  tests/unit/test_app_runners_batch7.py              | 128 ++--
- tests/unit/test_check_scoped_files.py              | 566 ++++++++++++++++++
+ tests/unit/test_check_scoped_files.py              | 566 +++++++++++++++++
  tests/unit/test_ci_self_gate_unscoped.py           | 189 ++++++
  tests/unit/test_cli_group_parity.py                | 220 +++++++
+ tests/unit/test_cli_lang_choices_drift.py          | 113 ++++
  tests/unit/test_cli_single_child_groups.py         | 106 ++++
  tests/unit/test_dev_branch_workflow.py             |  50 ++
  tests/unit/test_docs_module.py                     |  35 +-
  tests/unit/test_doctor.py                          | 115 ++++
  tests/unit/test_done_report_check_scope.py         | 177 ++++++
  tests/unit/test_land_default_queue.py              | 128 ++++
- tests/unit/test_land_in_progress_window.py         | 227 +++++++
+ tests/unit/test_land_in_progress_window.py         | 351 +++++++++++
  tests/unit/test_land_leaked_tickets_lease_hoist.py |  95 +++
  tests/unit/test_land_merge_conflict_drop.py        | 198 ++++++
  tests/unit/test_land_queue.py                      | 114 ++++
@@ -449,7 +408,8 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-3229/ticket.md                           |  17 +-
  tickets/T-3232/done-report.md                      | 179 ++++++
  tickets/T-3232/ticket.md                           |  88 ++-
- tickets/T-3233/ticket.md                           |  51 +-
+ tickets/T-3233/done-report.md                      | 606 +++++++++++++++++++
+ tickets/T-3233/ticket.md                           |  62 +-
  tickets/T-3241/ticket.md                           |  17 +-
  tickets/T-3259/ticket.md                           |  17 +-
  tickets/T-3262/ticket.md                           |  17 +-
@@ -513,9 +473,19 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4010/ticket.md                           |  17 +-
  tickets/T-4011/ticket.md                           |  16 +-
  tickets/T-4029/ticket.md                           |  16 +-
+ tickets/T-4111/ticket.md                           |  20 +-
+ tickets/T-4112/ticket.md                           |  33 +-
+ tickets/T-4113/ticket.md                           |  33 +-
+ tickets/T-4114/ticket.md                           |  10 +-
+ tickets/T-4115/ticket.md                           |  10 +-
+ tickets/T-4116/ticket.md                           |   2 +-
+ tickets/T-4118/ticket.md                           |  30 +-
  tickets/T-4185/ticket.md                           |   7 +-
- tickets/T-4214/done-report.md                      | 665 +++++++++++++++++++++
+ tickets/T-4186/ticket.md                           |   7 +-
+ tickets/T-4212/ticket.md                           |  16 +-
+ tickets/T-4214/done-report.md                      | 667 +++++++++++++++++++++
  tickets/T-4214/ticket.md                           |  46 +-
+ tickets/T-4221/ticket.md                           |  80 ++-
  tickets/T-4230/ticket.md                           |  15 +-
  tickets/T-4240/ticket.md                           |   2 +-
  tickets/T-4254/ticket.md                           |  10 +-
@@ -609,7 +579,7 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4542/ticket.md                           |  55 ++
  tickets/T-4543/done-report.md                      | 115 ++++
  tickets/T-4543/ticket.md                           |  79 +++
- tickets/T-4546/ticket.md                           |  38 ++
+ tickets/T-4546/ticket.md                           |  84 +++
  tickets/T-4547/done-report.md                      | 137 +++++
  tickets/T-4547/ticket.md                           |  45 ++
  tickets/T-4548/done-report.md                      |  59 ++
@@ -618,14 +588,15 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4550/done-report.md                      | 545 +++++++++++++++++
  tickets/T-4550/ticket.md                           |  59 ++
  tickets/T-4552/done-report.md                      | 146 +++++
- tickets/T-4552/ticket.md                           | 100 ++++
+ tickets/T-4552/ticket.md                           | 100 +++
  tickets/T-4553/done-report.md                      | 501 ++++++++++++++++
  tickets/T-4553/ticket.md                           |  55 ++
  tickets/T-4554/done-report.md                      | 541 +++++++++++++++++
  tickets/T-4554/ticket.md                           |  63 ++
  tickets/T-4555/done-report.md                      | 556 +++++++++++++++++
  tickets/T-4555/ticket.md                           |  78 +++
- tickets/T-4556/ticket.md                           |  37 ++
+ tickets/T-4556/done-report.md                      | 602 +++++++++++++++++++
+ tickets/T-4556/ticket.md                           |  46 ++
  tickets/T-4558/ticket.md                           |  30 +
  tickets/T-4559/ticket.md                           |  54 ++
  tickets/T-4560/ticket.md                           |  41 ++
@@ -642,26 +613,28 @@ premise-expiry predicate" (worktree branch t-4214, base dev).
  tickets/T-4575/ticket.md                           |  38 ++
  tickets/T-4579/done-report.md                      | 522 ++++++++++++++++
  tickets/T-4579/ticket.md                           |  68 +++
- tickets/T-4580/ticket.md                           |  46 ++
+ tickets/T-4580/ticket.md                           |  47 ++
  tickets/T-4581/ticket.md                           |  47 ++
  tickets/T-4582/done-report.md                      | 551 +++++++++++++++++
  tickets/T-4582/ticket.md                           |  56 ++
  tickets/T-4583/done-report.md                      | 620 +++++++++++++++++++
  tickets/T-4583/ticket.md                           |  87 +++
- tickets/T-4590/ticket.md                 |  38 ++
- tickets/T-4588/ticket.md                 |  41 ++
- tickets/T-4589/ticket.md                 |  53 ++
+ tickets/T-4588/ticket.md                           |  41 ++
+ tickets/T-4589/ticket.md                           |  53 ++
+ tickets/T-4596/done-report.md                      | 637 ++++++++++++++++++++
+ tickets/T-4596/ticket.md                           |  43 ++
+ tickets/T-4597/ticket.md                           |  31 +
+ tickets/T-4598/ticket.md                           |  29 +
+ tickets/T-4599/ticket.md                           |  69 +++
+ tickets/T-4600/ticket.md                           |  28 +
+ tickets/T-4601/ticket.md                 |  27 +
+ tickets/T-draft-769b07dc/ticket.md                 |  81 +++
+ tickets/T-4602/ticket.md                 |  41 ++
+ tickets/T-4603/ticket.md                 |  30 +
  uv.lock                                            |   2 +-
- 467 files changed, 32487 insertions(+), 1666 deletions(-)
+ 496 files changed, 35578 insertions(+), 1793 deletions(-)
 ```
 
 ### Evidence
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_stays_quiet_while_named_file_still_absent` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists` (pytest node id, verified passing when recorded)
-- `tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 5 passed (from 5 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
+- `tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_land_lock_root_sets_env_for_the_in_process_gate_call` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_no_land_lock_root_leaves_env_untouched` (pytest node id, verified passing when recorded)

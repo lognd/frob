@@ -638,6 +638,12 @@ node stratamod : trusted {
     // composed-tree check's own `frob check` cannot otherwise locate --
     // a genuinely new env.read site, no prior declaration on this node.
     may "env.read" via "src/frob/strata/_effects.py";
+    // T-4596: `_land_lock_root_env`'s `os.environ[...] = ...`
+    // set/restore (and its `os.environ.pop` clear) writes the SAME
+    // `FROB_LAND_LOCK_ROOT` var the env.read site above reads -- a
+    // genuinely new env.write site, sibling of that one, no prior
+    // declaration on this node.
+    may "env.write" via "src/frob/strata/_effects.py";
 }
 
 // T-0707: the unified registry-entry model (T-0407, `frob.registry`) --

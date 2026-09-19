@@ -3302,6 +3302,24 @@
       "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
       "reason": "T-4501: run_diagnosis now also calls _diagnose_unity_toolchain to report the Unity project/editor status; every dependent's own claim about run_diagnosis's behavior is unaffected (the new fields are additive and default to None outside a Unity project).",
       "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-19",
+      "facet": "body",
+      "new_digest": "129a33421ef8e34b10e4611320b944e7a93c547f86aa88511c534b6f7fe02e26",
+      "old_digest": "1aa11e0c11146cb6a460abf4faabb0ea50615d1736e4c6f8551e09cf21d55e90",
+      "reason": "T-draft-76fef001: re-verified after extracting _land_lock_root_env -- docs/modules/tickets.md's T-3324 self-conformance description still accurately describes this function's behavior (same unconditional selfaudit/sys111/docptr check, same unwind-on-hit); only the internal env-set/restore mechanism moved into a helper",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-19",
+      "facet": "sig",
+      "new_digest": "433c09d1837dbfca77ec46941bedeec70bcf46c74cf104f26c1ee0e295218171",
+      "old_digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
+      "reason": "T-draft-76fef001: re-verified after extracting _land_lock_root_env -- docs/modules/tickets.md's T-3324 self-conformance description still accurately describes this function's behavior (same unconditional selfaudit/sys111/docptr check, same unwind-on-hit); only the internal env-set/restore mechanism moved into a helper",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     }
   ],
   "entries": [
@@ -4601,12 +4619,12 @@
       "ref": "src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2"
     },
     {
-      "digest": "1aa11e0c11146cb6a460abf4faabb0ea50615d1736e4c6f8551e09cf21d55e90",
+      "digest": "129a33421ef8e34b10e4611320b944e7a93c547f86aa88511c534b6f7fe02e26",
       "facet": "body",
       "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     },
     {
-      "digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
+      "digest": "433c09d1837dbfca77ec46941bedeec70bcf46c74cf104f26c1ee0e295218171",
       "facet": "sig",
       "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     },

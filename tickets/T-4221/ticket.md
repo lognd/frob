@@ -72,7 +72,7 @@ scope_changes:
   glob: docs/modules/gate-time-stable-invariant.md
   reason: docs/modules/gates.md is leased by T-4111 (same conflict as T-4114/T-4115
     this sprint); INV010's frob:doc anchor and the frob:invariant kind=/horizon= grammar
-    doc go in a new standalone doc file instead, folded into gates.md later via T-draft-9a4eb7be
+    doc go in a new standalone doc file instead, folded into gates.md later via T-4602
   actor: logan
   at: '2026-09-19'
 - op: add

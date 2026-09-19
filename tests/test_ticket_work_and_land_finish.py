@@ -155,8 +155,7 @@ class TestDefaultWorkWorktree:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestDefaultWorkWorktree.test_slug_\
-        # is_lowercased_ticket_id_under_dot_claude_worktrees
+        # tests/test_ticket_work_and_land_finish.py::TestDefaultWorkWorktree.test_slug_is_lowercased_ticket_id_under_dot_claude_worktrees  # noqa: E501
         result = _default_work_worktree(tmp_path, "T-1175")
         assert result == tmp_path / ".claude" / "worktrees" / "t-1175"
 
@@ -165,8 +164,7 @@ class TestDefaultWorkWorktree:
 class TestWork:
     def test_creates_worktree_merges_main_and_starts_ticket(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWork.test_creates_worktree_mer\
-        # ges_main_and_starts_ticket
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_creates_worktree_merges_main_and_starts_ticket  # noqa: E501
         created = _new_ticket(repo, "Work verb")
         assert created.is_ok
         tid = created.danger_ok.id
@@ -188,8 +186,7 @@ class TestWork:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWork.test_reuses_an_existing_w\
-        # orktree_and_merges_main_for_freshness
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_reuses_an_existing_worktree_and_merges_main_for_freshness  # noqa: E501
         created = _new_ticket(repo, "Work verb reuse")
         assert created.is_ok
         tid = created.danger_ok.id
@@ -220,8 +217,7 @@ class TestWork:
         path -- fails today (zero references to 'agent env' anywhere
         under `src/frob/app/ticket_runner/`)."""
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWork.test_prints_the_agent_env\
-        # _eval_line_naming_the_worktree
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_prints_the_agent_env_eval_line_naming_the_worktree  # noqa: E501
         created = _new_ticket(repo, "Work verb env hint")
         assert created.is_ok
         tid = created.danger_ok.id
@@ -243,8 +239,7 @@ class TestWork:
         `ticket work` must not invent a claim of one either -- a solo
         developer's output stays free of any fleet-bound line."""
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWork.test_no_fleet_context_doe\
-        # s_not_claim_an_xdist_bound
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_no_fleet_context_does_not_claim_an_xdist_bound  # noqa: E501
         created = _new_ticket(repo, "Work verb solo")
         assert created.is_ok
         tid = created.danger_ok.id
@@ -265,8 +260,7 @@ class TestWork:
         (T-2221's real cross-worktree lease signal), not a second
         computation here."""
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWork.test_fleet_context_report\
-        # s_the_bound_agent_env_exports_computed
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_fleet_context_reports_the_bound_agent_env_exports_computed  # noqa: E501
         from frob.tickets._leases import _LeaseRecord, leases_dir
 
         created = _new_ticket(repo, "Work verb fleet")
@@ -405,8 +399,7 @@ class TestAbsorbPreLandFixes:
 
     def test_fmt_half_canonicalizes_a_non_canonical_directive(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_ha\
-        # lf_canonicalizes_a_non_canonical_directive
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_half_canonicalizes_a_non_canonical_directive  # noqa: E501
         target = repo / "src" / "noncanon.py"
         original = (
             '# frob:waive R reason="this reason is intentionally long so '
@@ -431,8 +424,7 @@ class TestAbsorbPreLandFixes:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of\
-        # _scope_file_with_noncanonical_directive_is_left_untouched
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
         # T-1404 acceptance [0]: a file elsewhere in the tree, already
         # committed to `main` (never touched by this ticket's own diff),
         # carrying a non-canonical `frob:` directive, must be left
@@ -461,8 +453,7 @@ class TestAbsorbPreLandFixes:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_sco\
-        # pe_file_with_noncanonical_directive_is_still_fixed
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
         # T-1404 acceptance [1]: a file genuinely inside the landing
         # ticket's own touched set still gets fixed exactly as before,
         # even with an unrelated committed out-of-scope file also present.
@@ -490,8 +481,7 @@ class TestAbsorbPreLandFixes:
         self, repo: Path, monkeypatch, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
-        # ormat_half_rewrites_a_touched_drifted_file
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_rewrites_a_touched_drifted_file  # noqa: E501
         # T-4323 acceptance: a `.py` file genuinely inside the landing
         # ticket's own touched set, that `ruff format --check` would
         # rewrite, is rewritten in place by the pre-land absorption step
@@ -538,8 +528,7 @@ class TestAbsorbPreLandFixes:
         self, repo: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
-        # ormat_half_leaves_an_out_of_scope_drifted_file_untouched
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched  # noqa: E501
         # T-4323's diff-scoping requirement: a file already committed to
         # `main` (never touched by this ticket's own diff), that `ruff
         # format --check` would ALSO rewrite, must be left byte-identical
@@ -586,8 +575,7 @@ class TestAbsorbPreLandFixes:
         self, repo: Path, monkeypatch, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
-        # ormat_half_is_silent_on_a_clean_touched_file
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_is_silent_on_a_clean_touched_file  # noqa: E501
         # T-4323's other required direction: a touched file `ruff format
         # --check` would NOT rewrite is left byte-identical and the land
         # emits no rewrite log line for it at all -- the apply step must
@@ -626,8 +614,7 @@ class TestAbsorbPreLandFixes:
         self, repo: Path, monkeypatch, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_f\
-        # ormat_half_leaves_the_file_alone_when_ruff_itself_fails
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_ruff_format_half_leaves_the_file_alone_when_ruff_itself_fails  # noqa: E501
         # A nonzero `ruff format` exit (not a spawn failure -- `ruff`
         # itself refused to write, e.g. a syntax error) is best-effort:
         # logged, with BOTH stdout and stderr surfaced in the warning, and
@@ -1212,9 +1199,7 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocA\
-        # ndTestEdges.test_a_decorated_new_class_with_directives_above_decorator_not_re\
-        # fused
+        # tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_decorated_new_class_with_directives_above_decorator_not_refused  # noqa: E501
         # T-2609's DESIGNATED REPRO (BUG002): `ast.ClassDef.lineno` for a
         # decorated class is the `class` keyword's own line, never the
         # decorator's -- `_public_top_level_defs` used that line
@@ -1249,9 +1234,7 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocA\
-        # ndTestEdges.test_a_decorated_new_symbol_with_no_edges_still_refuses_positive_\
-        # control
+        # tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_decorated_new_symbol_with_no_edges_still_refuses_positive_control  # noqa: E501
         # Must-still-pass control: the decorator-lineno offset only moves
         # WHERE the directive-block search starts -- a genuinely
         # undocumented decorated symbol (nothing above the decorator
@@ -1523,8 +1506,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLoc\
-        # alErrors.test_a_bare_print_outside_the_render001_pathspec_does_not_refuse
+        # tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_bare_print_outside_the_render001_pathspec_does_not_refuse  # noqa: E501
         # T-3940 MUST-STAY-QUIET fixture: `repo` is a real off-repo tree
         # shape -- no `src/frob`, no `frob.render` importable, exactly a
         # consumer repo like kicad-libsync. A bare print in its `src/`
@@ -1646,9 +1628,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLoc\
-        # alErrors.test_render001_checker_agrees_with_render001_scans_in_and_out_of_sco\
-        # pe
+        # tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope  # noqa: E501
         # T-3940 THIRD fixture: makes the gate/land-time desync itself
         # checkable, for a path INSIDE the pathspec (src/frob/...) and one
         # OUTSIDE it (src/...). `_render001_checker` must fire iff
@@ -1892,8 +1872,7 @@ class TestWorktreeNativesVerifiablyHealthy:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealt\
-        # hy.test_healthy_natives_return_true
+        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy.test_healthy_natives_return_true  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
             _worktree_natives_verifiably_healthy,
         )
@@ -1908,8 +1887,7 @@ class TestWorktreeNativesVerifiablyHealthy:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealt\
-        # hy.test_stale_after_autorebuild_attempt_returns_false
+        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy.test_stale_after_autorebuild_attempt_returns_false  # noqa: E501
         """A native still reported stale AFTER the auto-rebuild attempt
         (disabled, or the rebuild itself failed) must read as unhealthy --
         the whole point of preflighting before paying for a full
@@ -1928,8 +1906,7 @@ class TestWorktreeNativesVerifiablyHealthy:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealt\
-        # hy.test_unimportable_native_returns_false
+        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy.test_unimportable_native_returns_false  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
             _worktree_natives_verifiably_healthy,
         )
@@ -1972,8 +1949,7 @@ class TestPostLandUnscopedSweep:
 
     # frob:ticket T-1456
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_\
-    # error_is_a_silent_no_op
+    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_error_is_a_silent_no_op  # noqa: E501
     def test_no_new_error_is_a_silent_no_op(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1993,8 +1969,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1456
     # frob:ticket T-1513
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_err\
-    # or_fixed_by_tier_a_lands_with_a_followup_commit
+    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
     def test_new_error_fixed_by_tier_a_lands_with_a_followup_commit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2028,8 +2003,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1456
     # frob:ticket T-1513
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_err\
-    # or_absent_before_land_refuses_and_reverts
+    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
     def test_new_error_absent_before_land_refuses_and_reverts(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2054,8 +2028,7 @@ class TestPostLandUnscopedSweep:
 
     # frob:ticket T-1513
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_com\
-    # mit_stages_only_touched_paths_not_git_add_dash_a
+    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_commit_stages_only_touched_paths_not_git_add_dash_a  # noqa: E501
     def test_fix_commit_stages_only_touched_paths_not_git_add_dash_a(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2103,8 +2076,7 @@ class TestPostLandUnscopedSweep:
 
     # frob:ticket T-1456
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_unmeasu\
-    # rable_baseline_or_fresh_skips_the_sweep
+    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_unmeasurable_baseline_or_fresh_skips_the_sweep  # noqa: E501
     def test_unmeasurable_baseline_or_fresh_skips_the_sweep(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2134,8 +2106,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1514
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_none\
-    # _baseline_or_fresh_is_a_skip_not_a_pass
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_none_baseline_or_fresh_is_a_skip_not_a_pass  # noqa: E501
     def test_none_baseline_or_fresh_is_a_skip_not_a_pass(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2154,8 +2125,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1514
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_no_n\
-    # ew_finding_is_true
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_no_new_finding_is_true  # noqa: E501
     def test_no_new_finding_is_true(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2171,8 +2141,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1514
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_new_\
-    # finding_fixed_by_tier_a_stages_and_returns_true
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_new_finding_fixed_by_tier_a_stages_and_returns_true  # noqa: E501
     def test_new_finding_fixed_by_tier_a_stages_and_returns_true(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2207,8 +2176,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1514
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_new_\
-    # finding_unresolved_by_tier_a_returns_false
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_new_finding_unresolved_by_tier_a_returns_false  # noqa: E501
     def test_new_finding_unresolved_by_tier_a_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2230,8 +2198,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1524
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_land\
-    # _owned_only_findings_are_exempt_and_pass
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_land_owned_only_findings_are_exempt_and_pass  # noqa: E501
     def test_land_owned_only_findings_are_exempt_and_pass(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2256,8 +2223,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1524
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_chec\
-    # kpoint_artifact_rules_are_exempt
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_checkpoint_artifact_rules_are_exempt  # noqa: E501
     def test_checkpoint_artifact_rules_are_exempt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2282,8 +2248,7 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1524
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_nest\
-    # ed_land_owned_name_is_not_exempt
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_nested_land_owned_name_is_not_exempt  # noqa: E501
     def test_nested_land_owned_name_is_not_exempt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2448,8 +2413,7 @@ class TestLandProofAndFinish:
 
     def test_proof_verifies_a_real_land(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_\
-        # verifies_a_real_land
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_a_real_land  # noqa: E501
         _tid, _worktree, report = self._land_a_real_ticket(repo)
         assert _print_land_proof(repo, report) is True
 
@@ -2546,8 +2510,7 @@ class TestLandProofAndFinish:
 
     def test_finish_removes_the_worktree(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_finish\
-        # _removes_the_worktree
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_finish_removes_the_worktree  # noqa: E501
         tid, worktree, report = self._land_a_real_ticket(repo)
         assert _print_land_proof(repo, report) is True
 
@@ -2562,8 +2525,7 @@ class TestLandProofAndFinish:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_retire\
-        # _on_proof_removes_worktree_and_deletes_its_branch
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_retire_on_proof_removes_worktree_and_deletes_its_branch  # noqa: E501
         tid, worktree, report = self._land_a_real_ticket(repo)
         assert _print_land_proof(repo, report) is True
 
@@ -2582,8 +2544,7 @@ class TestLandProofAndFinish:
         self, repo: Path, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_worktr\
-        # ee_branch_name_returns_none_for_an_unregistered_path
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_worktree_branch_name_returns_none_for_an_unregistered_path  # noqa: E501
         bogus = tmp_path / "not-a-real-worktree"
         assert _worktree_branch_name(repo, bogus) is None
 
@@ -2592,8 +2553,7 @@ class TestLandProofAndFinish:
         self, repo: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_delete\
-        # _worktree_branch_is_a_logged_no_op_for_none
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_delete_worktree_branch_is_a_logged_no_op_for_none  # noqa: E501
         with caplog.at_level("WARNING"):
             _delete_worktree_branch(repo, None, "T-0001")
         assert "could not determine the worktree's branch name" in caplog.text
@@ -2603,8 +2563,7 @@ class TestLandProofAndFinish:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_retire\
-        # _on_proof_refuses_and_touches_nothing_when_unverified
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_retire_on_proof_refuses_and_touches_nothing_when_unverified  # noqa: E501
         # The exact "one command, not two" property the repo owner asked
         # for: an UNVERIFIED land (here, a report naming a commit that is
         # not an ancestor of main -- the shape a failed/interrupted land
@@ -2772,8 +2731,7 @@ class TestLandParityFindings:
     cache-bypassed, against the current tree with no baseline diff."""
 
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_none_when_\
-    # unmeasurable
+    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_none_when_unmeasurable  # noqa: E501
     def test_none_when_unmeasurable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2784,8 +2742,7 @@ class TestLandParityFindings:
         assert land_parity_findings(tmp_path) is None
 
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_\
-    # gate_cache_env_on_the_spawn
+    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_gate_cache_env_on_the_spawn  # noqa: E501
     def test_forces_no_gate_cache_env_on_the_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2805,8 +2762,7 @@ class TestLandParityFindings:
         assert seen_env["FROB_NO_GATE_CACHE"] == "1"
 
     # frob:tests \
-    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_wit\
-    # h_the_land_sweeps_own_exemption_function
+    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function  # noqa: E501
     def test_parity_with_the_land_sweeps_own_exemption_function(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -3112,3 +3068,83 @@ class TestSelfauditFindingsInTouchedFiles:
         assert result.danger_err == LandError.PreLandUnscopedSweepFailed
         status = _run(["git", "status", "--porcelain"], repo).stdout
         assert "feature.py" not in status
+
+    # frob:ticket T-4596
+    def test_land_lock_root_sets_env_for_the_in_process_gate_call(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_land_lock_root_sets_env_for_the_in_process_gate_call  # noqa: E501
+        """T-4596 regression (the live incident: T-4508's land
+        refused twice on this exact shape even with T-4583 landed,
+        /tmp/land-T-4508.log). `_refuse_if_selfaudit_findings_in_touched_
+        files` calls `frob.gates._sys.sys111_findings_touching` (and
+        siblings) IN-PROCESS -- no subprocess spawn, so T-4583's
+        subprocess-env forwarding never reaches this call. Reproduces
+        the real land path end to end: a `land_lock_root` is passed
+        (as `_land_squash_apply_finish` now does with its own `root`),
+        and this test proves `FROB_LAND_LOCK_ROOT` is actually visible
+        to `os.environ` from INSIDE the mocked gate call, and restored
+        to its prior value afterward -- the exact env-var contract
+        `frob.strata._effects._land_commit_in_progress` reads."""
+        import os
+
+        monkeypatch.delenv("FROB_LAND_LOCK_ROOT", raising=False)
+        observed: dict[str, str | None] = {}
+
+        def _spy_sys111(root: Path, files: frozenset[str]):  # noqa: ANN202
+            observed["value"] = os.environ.get("FROB_LAND_LOCK_ROOT")
+            return ()
+
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr("frob.gates._sys.sys111_findings_touching", _spy_sys111)
+        monkeypatch.setattr(
+            "frob.gates._sys.docptr_findings_touching", lambda root, files: ()
+        )
+        tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        primary_root = repo / "primary-checkout"
+
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            repo,
+            "T-0001",
+            "T-0001",
+            tip,
+            frozenset({"src/feature.py"}),
+            land_lock_root=primary_root,
+        )
+
+        assert result.is_ok
+        assert observed["value"] == str(primary_root)
+        # Restored afterward -- must not leak into later in-process calls.
+        assert os.environ.get("FROB_LAND_LOCK_ROOT") is None
+
+    # frob:ticket T-4596
+    def test_no_land_lock_root_leaves_env_untouched(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_no_land_lock_root_leaves_env_untouched  # noqa: E501
+        """T-4596: every pre-T-4596 caller passes no
+        `land_lock_root` (the default) -- this must be a pure no-op on
+        the environment, matching `_land_commit_in_progress`'s documented
+        fallback (fail toward "not a land")."""
+        import os
+
+        monkeypatch.delenv("FROB_LAND_LOCK_ROOT", raising=False)
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.sys111_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.docptr_findings_touching", lambda root, files: ()
+        )
+        tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            repo, "T-0001", "T-0001", tip, frozenset({"src/feature.py"})
+        )
+
+        assert result.is_ok
+        assert os.environ.get("FROB_LAND_LOCK_ROOT") is None

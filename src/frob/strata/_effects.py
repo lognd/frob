@@ -59,6 +59,7 @@ import functools
 import json
 import os
 import re
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -1242,6 +1243,36 @@ def _testsuite_glob_ratcheted_keys(model: KernelModel) -> frozenset[str]:
 FROB_LAND_LOCK_ROOT_ENV = "FROB_LAND_LOCK_ROOT"
 
 
+# frob:ticket T-4596
+@contextmanager
+def _land_lock_root_env(land_lock_root: Path | None):
+    """Context manager: while `land_lock_root` is not `None`, sets
+    `FROB_LAND_LOCK_ROOT_ENV` in `os.environ` to it for the duration of
+    the `with` block and restores the prior value (or clears it) on
+    exit; a no-op when `land_lock_root` is `None`. Private, single-caller
+    helper (`frob.tickets._land_squash._refuse_if_selfaudit_findings_in_
+    touched_files`, T-3324/T-4596) extracted only to keep that
+    function under ARCH001's threshold -- the env-set/restore dance
+    `_land_commit_in_progress` (below) trusts. T-4583's SUBPROCESS spawn
+    (`frob.app.ticket_runner._land_cmd`) builds its own `env=` dict
+    inline instead, since it needs a full `os.environ.copy()` for the
+    child process, not a same-process mutation; if a future caller wants
+    that same shape, promote this to a public `land_lock_root_env` with
+    its own frob:doc/frob:tests edges first (COV002)."""
+    if land_lock_root is None:
+        yield
+        return
+    prior = os.environ.get(FROB_LAND_LOCK_ROOT_ENV)
+    os.environ[FROB_LAND_LOCK_ROOT_ENV] = str(land_lock_root)
+    try:
+        yield
+    finally:
+        if prior is None:
+            os.environ.pop(FROB_LAND_LOCK_ROOT_ENV, None)
+        else:
+            os.environ[FROB_LAND_LOCK_ROOT_ENV] = prior
+
+
 # frob:ticket T-4563
 # frob:ticket T-4583
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_sweep_context_does_not_write_lock  # noqa: E501
@@ -1283,8 +1314,23 @@ def _land_commit_in_progress(root: Path) -> bool:
 
     env_root = os.environ.get(FROB_LAND_LOCK_ROOT_ENV, "").strip()
     probe_root = Path(env_root) if env_root else root
+    # frob:ticket T-4596
+    _log.info(
+        "strata effects: _land_commit_in_progress: %s=%r -> probing %s/%s",
+        FROB_LAND_LOCK_ROOT_ENV,
+        env_root or None,
+        probe_root,
+        LAND_LOCK_REL,
+    )
     try:
-        return (probe_root / LAND_LOCK_REL).is_file()
+        found = (probe_root / LAND_LOCK_REL).is_file()
+        # frob:ticket T-4596
+        _log.info(
+            "strata effects: _land_commit_in_progress: lock file %s -> %s",
+            probe_root / LAND_LOCK_REL,
+            found,
+        )
+        return found
     except OSError as exc:
         _log.warning(
             "strata effects: capability ratchet: could not probe %s for an "

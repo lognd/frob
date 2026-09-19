@@ -1,5 +1,5 @@
 ---
-id: T-draft-9a4eb7be
+id: T-4602
 title: Wire CONFIGPATH001/ROUTE001 gates into the gate registry and docs/modules/gates.md
 state: queued
 kind: feature

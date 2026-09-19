@@ -1374,8 +1374,7 @@ def _absorbed_land_report(
 # frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_default_stage_runs_the_whole_transaction_in_root  # noqa: E501
 # frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_explicit_stage_leaves_root_completely_untouched  # noqa: E501
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_squash----the-squash-apply-stage-tar\
-# get-t-3089
+# docs/modules/tickets-landing.md#frobtickets_land_squash----the-squash-apply-stage-target-t-3089  # noqa: E501
 def _land_squash_apply(
     root: Path,
     worktree: Path,
@@ -1575,12 +1574,14 @@ def _apply_pre_commit_sweep_or_unwind(
 
 
 # frob:ticket T-3324
+# frob:ticket T-4596
 def _refuse_if_selfaudit_findings_in_touched_files(
     stage: Path,
     ticket_id: str,
     final_id: str,
     pre_land_tip: str,
     touched_files: frozenset[str],
+    land_lock_root: Path | None = None,
 ) -> Result[None, LandError]:
     """T-3324: land-time enforcement for the self-conformance drift class
     T-3283 diagnosed structurally -- a repo-wide "still clean" assertion
@@ -1615,18 +1616,41 @@ def _refuse_if_selfaudit_findings_in_touched_files(
     (a land-time-unscoped-sweep refusal is exactly what this is,
     narrowed to the self-conformance surface; a dedicated error variant
     would live in `frob.tickets._models`, outside this ticket's declared
-    scope)."""
+    scope).
+
+    T-4596 (bug fix): unlike `_pre_commit_unscoped_error_sweep`
+    (`frob.app.ticket_runner._land_cmd`), which spawns a SUBPROCESS and
+    forwards `FROB_LAND_LOCK_ROOT` into that child's own environ (T-4583),
+    this function calls `frob.gates._sys.sys111_findings_touching`
+    IN-PROCESS, so every real land refused the T-4495 testsuite-glob
+    auto-accept forever (SELFAUDIT001 SYS111 pending-auto-accept) even
+    with T-4583 landed. `land_lock_root` (the primary checkout
+    `_land_lock` actually locks, threaded down from
+    `_land_squash_apply_finish`'s own `root`) is set as `FROB_LAND_
+    LOCK_ROOT` in THIS process's own environ for the duration of the
+    in-process gate calls via `_land_lock_root_env` (shared helper,
+    `frob.strata._effects`) -- the same contract `_land_commit_in_
+    progress` already trusts, just satisfied without a subprocess
+    boundary in the way."""
     from frob.gates._sys import (
         docptr_findings_touching,
         selfaudit_findings_touching,
         sys111_findings_touching,
     )
+    from frob.strata._effects import _land_lock_root_env
 
-    findings = (
-        selfaudit_findings_touching(stage, touched_files)
-        + sys111_findings_touching(stage, touched_files)
-        + docptr_findings_touching(stage, touched_files)
+    # frob:ticket T-4596
+    _log.info(
+        "land: %s self-conformance check running in-process, land_lock_root=%s",
+        ticket_id,
+        land_lock_root,
     )
+    with _land_lock_root_env(land_lock_root):
+        findings = (
+            selfaudit_findings_touching(stage, touched_files)
+            + sys111_findings_touching(stage, touched_files)
+            + docptr_findings_touching(stage, touched_files)
+        )
     if not findings:
         return Ok(None)
     unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)
@@ -1827,6 +1851,7 @@ def _seal_squash_apply(
 
 # frob:ticket T-0907
 # frob:ticket T-3324
+# frob:ticket T-4596
 def _run_pre_commit_checks(
     stage: Path,
     ticket_id: str,
@@ -1834,6 +1859,7 @@ def _run_pre_commit_checks(
     pre_land_tip: str,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None,
     touched_files: frozenset[str],
+    land_lock_root: Path | None = None,
 ) -> Result[None, LandError]:
     """`_land_squash_apply_finish`'s two pre-commit checks (split out to
     keep that function under ARCH001's threshold, T-3324): the existing
@@ -1851,7 +1877,12 @@ def _run_pre_commit_checks(
     if swept.is_err:
         return Err(swept.danger_err)
     return _refuse_if_selfaudit_findings_in_touched_files(
-        stage, ticket_id, final_id, pre_land_tip, touched_files
+        stage,
+        ticket_id,
+        final_id,
+        pre_land_tip,
+        touched_files,
+        land_lock_root=land_lock_root,
     )
 
 
@@ -1936,6 +1967,7 @@ def _land_squash_apply_finish(
         pre_land_tip,
         pre_commit_sweep,
         worktree_changeset,
+        land_lock_root=root,
     )
     if pre_commit_checks.is_err:
         return Err(pre_commit_checks.danger_err)

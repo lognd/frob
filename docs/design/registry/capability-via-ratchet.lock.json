@@ -180,6 +180,16 @@
       "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
       "ticket": "T-3029"
     },
+    "stratamod::env.read": {
+      "accepted_count": 1,
+      "reason": "T-4583: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence, not a grown ceiling). src/frob/strata/_effects.py's _land_commit_in_progress reads FROB_LAND_LOCK_ROOT (os.environ.get) to find the primary checkout's land.lock when a composed-tree check runs against a nested warm sweep stage -- confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+      "ticket": "T-4583"
+    },
+    "stratamod::env.write": {
+      "accepted_count": 1,
+      "reason": "T-4596: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence). src/frob/strata/_effects.py's _land_lock_root_env context manager writes/restores FROB_LAND_LOCK_ROOT (os.environ[...] = ..., os.environ.pop) around an in-process self-conformance check that needs _land_commit_in_progress to see the primary checkout -- confirmed genuine by reading the declaring code.",
+      "ticket": "T-4596"
+    },
     "stratamod::eval": {
       "accepted_count": 3,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
@@ -216,8 +226,9 @@
       "ticket": "T-3591"
     },
     "testsuite::env.read": {
-      "accepted_count": 49,
-      "reason": "testsuite glob growth"
+      "accepted_count": 50,
+      "reason": "T-4596: pre-accepted by hand because the land-side auto-accept is the defect this ticket fixes",
+      "ticket": "T-4596"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
@@ -250,8 +261,9 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 536,
-      "reason": "testsuite glob growth"
+      "accepted_count": 537,
+      "reason": "T-4596: pre-accepted by hand because the land-side auto-accept is the defect this ticket fixes",
+      "ticket": "T-4596"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -357,11 +369,6 @@
       "accepted_count": 1,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
-    },
-    "stratamod::env.read": {
-      "accepted_count": 1,
-      "reason": "T-4583: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence, not a grown ceiling). src/frob/strata/_effects.py's _land_commit_in_progress reads FROB_LAND_LOCK_ROOT (os.environ.get) to find the primary checkout's land.lock when a composed-tree check runs against a nested warm sweep stage -- confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
-      "ticket": "T-4583"
     }
   },
   "generated_by": "T-1628",
