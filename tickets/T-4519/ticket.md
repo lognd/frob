@@ -1,7 +1,7 @@
 ---
 id: T-4519
 title: docs/xref/perf coverage for csharp (post T-3232/T-3234 generic fix)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -21,18 +21,30 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_xref.py::test_csharp_finds_property_definition
+- tests/unit/test_xref.py::test_csharp_finds_const_field_definition
+- tests/unit/test_xref.py::test_csharp_finds_nested_type_definition
+- tests/unit/test_xref.py::test_csharp_event_declaration_is_not_yet_a_symbol
+- tests/unit/test_docs_module.py::test_extract_docstrings_csharp_class_and_method
+- tests/unit/test_docs_module.py::test_extract_docstrings_csharp_nested_class_is_skipped
+- tests/unit/test_xref.py::test_csharp_finds_definition_and_usage_with_explicit_lang
 designated_repro_test: null
 acceptance:
 - text: 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition,
     not just methods/classes'
-  evidence: []
+  evidence:
+  - tests/unit/test_xref.py::test_csharp_finds_property_definition
+  - tests/unit/test_xref.py::test_csharp_finds_const_field_definition
 - text: 'xref: a class nested inside another class (csharp: Container.Inner) resolves
     as an xref definition by its own bare name, same as a top-level class'
-  evidence: []
+  evidence:
+  - tests/unit/test_xref.py::test_csharp_finds_nested_type_definition
 - text: 'xref: csharp event_declaration members are NOT YET resolvable (frob.lang._walk_csharp
     has no event_declaration case, out of T-4519''s scope) -- pinned by test_csharp_event_declaration_is_not_yet_a_symbol;
-    follow-up filed as T-draft-df7ce2e1'
-  evidence: []
+    follow-up filed as T-4679'
+  evidence:
+  - tests/unit/test_xref.py::test_csharp_event_declaration_is_not_yet_a_symbol
 acceptance_amendments:
 - op: remove
   index: 3

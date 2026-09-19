@@ -255,3 +255,81 @@ def test_csharp_finds_definition_and_usage_with_explicit_lang(csharp_file):
     xr = result.danger_ok
     assert xr.definition is not None
     assert xr.usages
+
+
+@pytest.fixture
+def csharp_nested_file():
+    # frob:ticket T-4519
+    """Static fixture (T-4519): a namespaced class with a nested type, a
+    property, a const field, and an event -- see the fixture's own
+    module comment for why the event is included but not asserted as
+    found."""
+    from pathlib import Path
+
+    return (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "lang"
+        / "csharp"
+        / "nested_property_event.cs"
+    )
+
+
+# frob:waive DUP002 reason="T-4519: property vs nested-type lookups share the \
+# xref()-call/assert shape by design -- one exercises SymbolKind.CONST via a \
+# property_declaration, the other SymbolKind.CLASS via a nested type; each proves a \
+# distinct _DEFINITION_KINDS branch, not a copy-paste"
+def test_csharp_finds_property_definition(csharp_nested_file):
+    # frob:tests tests/unit/test_xref.py::test_csharp_finds_property_definition
+    # frob:ticket T-4519
+    # T-4519: `Total` is a `property_declaration`, mapped by
+    # `_walk_csharp._cs_property_symbol` onto `SymbolKind.CONST` -- before
+    # widening `_DEFINITION_KINDS` (this ticket), CONST-kind symbols were
+    # never candidate definitions and this lookup returned None.
+    result = xref("Total", csharp_nested_file, lang="csharp")
+    assert result.is_ok
+    xr = result.danger_ok
+    assert xr.definition is not None
+    assert xr.definition.file.endswith("nested_property_event.cs")
+
+
+def test_csharp_finds_const_field_definition(csharp_nested_file):
+    # frob:tests tests/unit/test_xref.py::test_csharp_finds_const_field_definition  # noqa: E501
+    # frob:ticket T-4519
+    # T-4519: `MaxTotal` is a `const`-modified field, also SymbolKind.CONST.
+    result = xref("MaxTotal", csharp_nested_file, lang="csharp")
+    assert result.is_ok
+    assert result.danger_ok.definition is not None
+
+
+def test_csharp_finds_nested_type_definition(csharp_nested_file):
+    # frob:tests tests/unit/test_xref.py::test_csharp_finds_nested_type_definition  # noqa: E501
+    # frob:ticket T-4519
+    # T-4519: `Inner` is a class nested inside `Container` (qualname
+    # `Frob.Sample.Nested.Container.Inner`) -- `_parsed_definition`
+    # matches on the bare rightmost name component, so nesting depth
+    # (already exercised by namespace qualification in `sample.cs`) does
+    # not need a `_DEFINITION_KINDS` change to resolve here.
+    result = xref("Inner", csharp_nested_file, lang="csharp")
+    assert result.is_ok
+    xr = result.danger_ok
+    assert xr.definition is not None
+    assert xr.definition.file.endswith("nested_property_event.cs")
+
+
+def test_csharp_event_declaration_is_not_yet_a_symbol(csharp_nested_file):
+    # frob:tests tests/unit/test_xref.py::test_csharp_event_declaration_is_not_yet_a_symbol  # noqa: E501
+    # frob:ticket T-4519
+    # frob:ticket T-4679
+    # T-4519: DISCLOSED GAP, not a regression -- `frob.lang._walk_csharp`
+    # (owned by T-4507's live edit, out of this ticket's scope:
+    # src/frob/xref/__init__.py, src/frob/docs/__init__.py, src/frob/perf/
+    # _collectors.py only) has no `event_declaration` case, so `Changed`
+    # never becomes a RawSymbol at all and xref cannot find it regardless
+    # of `_DEFINITION_KINDS`. This test pins the current (missing)
+    # behavior so a future walker change is a deliberate, visible diff
+    # here rather than a silent flip. See the filed follow-up ticket for
+    # adding an event_declaration case to _walk_csharp.py.
+    result = xref("Changed", csharp_nested_file, lang="csharp")
+    assert result.is_ok
+    assert result.danger_ok.definition is None

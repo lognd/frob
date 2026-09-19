@@ -224,7 +224,26 @@ def _is_hidden(path: Path, root: Path) -> bool:
     return any(p.startswith(".") or p == "__pycache__" for p in rel_parts)
 
 
-_DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS, SymbolKind.METHOD)
+# frob:ticket T-4519
+# T-4519: widened from (FUNCTION, CLASS, METHOD) to also cover CONST and
+# TYPE -- csharp's `_walk_csharp` maps a `property_declaration` (its real
+# API-surface member shape, module docstring there) and a `const` field
+# onto `SymbolKind.CONST`, and an `enum_declaration` onto `SymbolKind.
+# TYPE`; neither kind was resolvable as an xref definition before this,
+# silently dropping every property/const/enum lookup in EVERY language
+# this resolver covers (python module constants, rust `const`/`static`,
+# not just csharp). A nested type (csharp: a class nested inside another
+# class) needs no change here -- it is still `SymbolKind.CLASS`, and
+# `_parsed_definition` already matches on the symbol's bare (rightmost)
+# name component regardless of how many dotted qualname segments precede
+# it, so a nested class resolves through the existing CLASS branch.
+_DEFINITION_KINDS = (
+    SymbolKind.FUNCTION,
+    SymbolKind.CLASS,
+    SymbolKind.METHOD,
+    SymbolKind.CONST,
+    SymbolKind.TYPE,
+)
 
 
 def _definition_symbols(symbols: tuple[RawSymbol, ...]) -> tuple[RawSymbol, ...]:

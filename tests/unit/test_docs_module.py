@@ -83,6 +83,31 @@ def test_extract_docstrings_csharp_class_and_method(tmp_path):
     assert "Renders the widget" in by_symbol["Frob.Sample.Widget.Render"].text
 
 
+def test_extract_docstrings_csharp_nested_class_is_skipped(tmp_path):
+    # frob:tests src/frob/docs/__init__.py::extract_docstrings kind="unit"
+    # frob:ticket T-4519
+    # T-4519: pins two DISCLOSED, PRE-EXISTING behaviors on a csharp
+    # fixture with a nested type and a property doc comment (neither of
+    # which `sample.cs`, T-3232's fixture, exercises) --
+    # `_class_qualnames`/`_docstring_for_symbol` deliberately drop a
+    # nested class's own docstring (its qualname's owner is another
+    # class in the same file, module docstring's namespace-vs-nesting
+    # distinction), and `_docstring_for_symbol` has no branch for
+    # `SymbolKind.CONST` at all, so a property's `///` doc comment
+    # (`_walk_csharp._cs_property_symbol` maps it onto CONST) is never
+    # emitted either. Neither is a T-4519 defect -- both predate this
+    # ticket and its scope (src/frob/docs/__init__.py, but not a rewrite
+    # of the nested/CONST design) -- this test only makes the current
+    # behavior visible instead of silently unverified.
+    src = _FIXTURES / "csharp" / "nested_property_event.cs"
+    docs = extract_docstrings(src)
+    by_symbol = {d.symbol: d for d in docs}
+    assert "Frob.Sample.Nested.Container" in by_symbol
+    assert "container exercising" in by_symbol["Frob.Sample.Nested.Container"].text
+    assert "Frob.Sample.Nested.Container.Inner" not in by_symbol
+    assert "Frob.Sample.Nested.Container.Total" not in by_symbol
+
+
 def test_extract_docstrings_parse_failure_returns_empty(tmp_path):
     # frob:tests src/frob/docs/__init__.py::extract_docstrings kind="unit"
     src = tmp_path / "does_not_exist.py"
