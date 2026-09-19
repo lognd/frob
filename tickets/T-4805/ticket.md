@@ -7,7 +7,7 @@ kind: bug
 origin: agent
 created: '2026-09-19'
 priority: high
-parent: T-4665
+parent: T-4127
 tier: ticket
 sprint: v0.536.0
 runs_last: false
@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: T-4665
+  new_value: T-4127
+  reason: '2026-09-19: coordinator amendment -- T-4127 is the standing record of the
+    SCOPE002 hub-file explosion and is this leaf''s parent record; T-4127 is itself
+    a child of story B (T-4665), so T-4805 remains under story B transitively'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given filing a ticket with an EMPTY declared scope emits 587 scope-closure
