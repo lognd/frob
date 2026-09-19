@@ -1,5 +1,5 @@
 ---
-id: T-draft-fb2e44b5
+id: T-4737
 title: 'gates stop importing the lease store: lease facts become passed-in inputs,
   ARCH104 ratchet burned to zero'
 state: queued
