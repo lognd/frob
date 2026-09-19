@@ -22,6 +22,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 877
+  new_length: 1407
 evidence:
 - tests/unit/test_check.py::TestGatesErrorResultRealTicketError::test_real_ticket_error_names_specific_mode
 - tests/unit/test_check.py::TestGatesErrorResultRealTicketError::test_dummy_sentinel_still_a_defensive_fallback
@@ -46,3 +53,5 @@ carrying the underlying TicketError + path) so _gates_error_result can
 name the real failing artifact directly in the diagnostic message,
 closing the remaining half of the "four failed land attempts, long
 misdiagnosis" incident T-2684's own body describes.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError's class docstring used to say: 'T-2710: run_gates used to collapse ANY ticket-queue load failure into the bare GateError.QueueUnavailable sentinel -- a reader could not tell a duplicate id from a malformed frontmatter file without a separate frob ticket list/frob ticket show <id> run. It must now propagate the REAL TicketError load_queue hit.' Moved here; the class docstring now states only what its tests verify.
