@@ -24,6 +24,8 @@ scope:
 - src/frob/app/sys_runner.py
 - docs/strata/threat.md
 - docs/design/registry/check-coverage.yaml
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +56,21 @@ scope_changes:
   reason: wiring SYS111/SYS112 into audit/waivers/docs
   actor: logan
   at: '2026-09-19'
+- op: add
+  glob: design/frob.strata
+  reason: leases released
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: leases released
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: leases released
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
@@ -61,6 +78,14 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint::test_hardcoded_literal_host_fires
+- tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint::test_config_bound_host_stays_quiet
+- tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint::test_internal_flow_never_fires
+- tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint::test_waived_finding_is_suppressed
+- tests/unit/strata/test_outbound_destination.py::TestOutboundRateLint::test_missing_rate_with_sibling_rate_fires
+- tests/unit/strata/test_outbound_destination.py::TestOutboundRateLint::test_every_flow_with_rate_stays_quiet
+- tests/unit/strata/test_outbound_destination.py::TestOutboundRateLint::test_lone_outbound_flow_with_no_sibling_stays_quiet
 designated_repro_test: null
 threat: null
 component: null
