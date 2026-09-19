@@ -16,8 +16,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=epic/story rollup for the kernel-decoupling epic:
+  all file work lives in the leaf children; this ticket carries no write lease by
+  design'
 designated_repro_test: null
 threat: null
 component: null
