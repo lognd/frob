@@ -2,7 +2,7 @@
 id: T-4212
 title: 'gates evaluate main only: extend SYS/capability audits to run against a worktree/branch,
   and treat an unrunnable check as unmeasured, not clean'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-07'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sys.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: SYS900 UNMEASURED rule needs registering in the gate-rule registry (GATERULE001)
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
