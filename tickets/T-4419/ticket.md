@@ -13,10 +13,42 @@ runs_last: false
 milestone: 0.534.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/unit/test_conftest_sigbreak_faulthandler.py
+- tests/unit/test_graph_cache.py
+- tests/unit/strata/test_threat.py
+- tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: narrow to cluster 0 (32 DOCARCH001 findings, 5 files) per split plan
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_conftest_sigbreak_faulthandler.py
+  reason: narrow to cluster 0 (32 DOCARCH001 findings, 5 files) per split plan
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_graph_cache.py
+  reason: narrow to cluster 0 (32 DOCARCH001 findings, 5 files) per split plan
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: narrow to cluster 0 (32 DOCARCH001 findings, 5 files) per split plan
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: narrow to cluster 0 (32 DOCARCH001 findings, 5 files) per split plan
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: v0.533.0
