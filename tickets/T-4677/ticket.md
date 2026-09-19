@@ -37,6 +37,16 @@ body_changes:
   at: '2026-09-19'
   old_length: 5448
   new_length: 5861
+- mode: append
+  reason: 'BUG002 front door (T-2393): 2026-09-19: DECISION ticket whose sole deliverable
+    is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned
+    and specific; a structural gate refuses templated assumes), which rejects the
+    framing of all three options this ticket offered. Implementation belongs to the
+    module-system story, not here. No code, model or doc file changes under this id.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5861
+  new_length: 6274
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (class-level/quantified
@@ -142,5 +152,7 @@ by the other planner (this ticket does NOT own that work):
 Closing with no behavior change: the deliverable of a DECISION ticket is the
 decision, now recorded above. No code or model file changes under this id.
 
+
+frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned and specific; a structural gate refuses templated assumes), which rejects the framing of all three options this ticket offered. Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
 
 frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M8 (assumes are module-owned and specific; a structural gate refuses templated assumes), which rejects the framing of all three options this ticket offered. Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
