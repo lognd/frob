@@ -83,7 +83,6 @@ evidence:
 - tests/test_tickets_registry_files.py::TestRegistryFiles::test_is_registry_file_membership
 - tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_pure_append_is_additive
 - tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_deleted_line_is_not_additive
-- tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_bad_ref_fails_closed
 - tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_non_registry_file_still_requires_declared_scope
 - tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_non_registry_path_is_never_exempt
 designated_repro_test: null
@@ -104,6 +103,14 @@ acceptance:
     still refuses
   evidence:
   - tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_destructive_registry_change_is_not_exempt
+evidence_changes:
+- old_node: tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_bad_ref_fails_closed
+  new_node: ''
+  reason: class renamed to TestIsAdditiveDiffText (pure)/TestRegistryFileDiffIsAdditive
+    (git spawn) when the subprocess call moved out of _registry_files.py into _land.py
+    for SELFAUDIT001
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
