@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sys.py
 - src/frob/gates/_waive.py
+- src/frob/gates/_sys_branch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_waive.py
   reason: SYS900 UNMEASURED rule needs registering in the gate-rule registry (GATERULE001)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/gates/_sys_branch.py
+  reason: split sys_gate_for_branch out to fix LARGE001 on _sys.py (885 > 800 lines),
+    same T-1420 split-family precedent
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
