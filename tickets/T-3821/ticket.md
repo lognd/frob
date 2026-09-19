@@ -8,7 +8,7 @@ kind: feature
 origin: human
 created: '2026-09-05'
 priority: medium
-parent: null
+parent: T-4665
 tier: ticket
 sprint: v1.1.0
 runs_last: false
@@ -19,6 +19,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4665
+  reason: '2026-09-19: SF-15 in the STRATA friction audit; joins story B of epic T-4662
+    (gate signal and consumer-reported false positives)'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
