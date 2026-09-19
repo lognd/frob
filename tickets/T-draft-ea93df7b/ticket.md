@@ -22,6 +22,8 @@ scope:
 - src/frob/app/ack_runner.py
 - src/frob/app/graph_runner.py
 - docs/modules/graph*.md
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/test_graph_get_snapshot.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +51,18 @@ scope_changes:
   glob: src/frob/gates/_sys.py
   reason: in-progress leases held by T-3962/T-3995/T-4112/T-4113/T-4212; deferring
     those call sites to avoid collision
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_app_runners_batch5.py
+  reason: test fixture updates required by get_snapshot migration (T-draft-ea93df7b);
+    new test file since tests/test_graph.py is leased by in-progress T-4625
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_graph_get_snapshot.py
+  reason: test fixture updates required by get_snapshot migration (T-draft-ea93df7b);
+    new test file since tests/test_graph.py is leased by in-progress T-4625
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
