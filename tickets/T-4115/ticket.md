@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_route_response_model.py
 - tests/gates_suite/test_route_response_model.py
+- docs/modules/gate-route-response-model.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gate-route-response-model.md
+  reason: docs/modules/gates.md is leased by T-4111; ROUTE001's frob:doc anchor and
+    docs row go in a new standalone doc file instead
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
