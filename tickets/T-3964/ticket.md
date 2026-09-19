@@ -17,6 +17,7 @@ scope:
 - src/frob/strata/_models.py
 - src/frob/strata/_dataset.py
 - tests/test_dataset_construct.py
+- docs/strata/dataset-construct.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,11 @@ scope_changes:
 - op: add
   glob: tests/test_dataset_construct.py
   reason: tests for dataset construct
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/strata/dataset-construct.md
+  reason: 'standalone doc row: docs/modules/gates.md leased'
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
