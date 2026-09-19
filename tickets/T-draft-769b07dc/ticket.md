@@ -21,6 +21,7 @@ scope:
 - src/frob/tickets/_land.py
 - tests/unit/rapid_sweep_suite/*
 - src/frob/gates/_fix_engine_sync.py
+- tests/gates_suite/test_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +60,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_fix_engine_sync.py
   reason: second unguarded writer of capability-via-ratchet.lock.json
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/gates_suite/test_fix_engine.py
+  reason: positive control for land.lock gating on SYS111 write
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
