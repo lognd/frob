@@ -68,6 +68,7 @@ evidence:
   exit=0 sha256=8e541b8832e8
 - cmd:git grep -n 'DECISION RECORDED -- owner, 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md
   exit=0 sha256=ed35a5e91432
+- cmd:git grep -n 'D-M6' -- tickets/T-4680/ticket.md exit=0 sha256=05c548a789b3
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (defaults-and-inheritance
@@ -80,6 +81,7 @@ acceptance:
   - 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md exit=0 sha256=8e541b8832e8
   - cmd:git grep -n 'DECISION RECORDED -- owner
   - 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md exit=0 sha256=ed35a5e91432
+  - cmd:git grep -n 'D-M6' -- tickets/T-4680/ticket.md exit=0 sha256=05c548a789b3
 threat: null
 component: strata
 anchor: false
