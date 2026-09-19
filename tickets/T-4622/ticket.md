@@ -2,7 +2,7 @@
 id: T-4622
 title: 'implement T-3961 provenance/trust-as-identity: derived_from and trust_identity
   node attrs with SYS10x consumer'
-state: in-progress
+state: dropped
 kind: security
 origin: human
 created: '2026-09-19'
@@ -103,3 +103,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Drop reason
+- 2026-09-19: duplicate promotion of the same draft (T-draft-1cc03713) by successive lands; T-4612 is the live ticket with the worktree (absorbed by T-4612)
