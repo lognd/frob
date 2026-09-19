@@ -2,7 +2,7 @@
 id: T-draft-1cc03713
 title: 'implement T-3961 provenance/trust-as-identity: derived_from and trust_identity
   node attrs with SYS10x consumer'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-19'
