@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: '2026-09-19: story tier; all files are declared by its seven
+  leaves T-4688..T-4694, which are the write-lease holders'
 designated_repro_test: null
 threat: null
 component: null
