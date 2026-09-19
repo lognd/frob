@@ -1,5 +1,5 @@
 ---
-id: T-draft-39513c48
+id: T-4742
 title: 'Separator canonicalization to path::Class.method: lint plus Tier-A fix, parser
   never refuses a spelling'
 state: queued
