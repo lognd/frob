@@ -2,7 +2,7 @@
 id: T-draft-8c1c8d09
 title: 'test_ticket_runner_base_forward_t4105: stale spawn-fn fake after T-4550 added
   files= kwarg'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -21,6 +21,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
+acceptance:
+- text: GIVEN _shared_check_spawn_fn's real signature (T-4550 added files, timeout)
+    WHEN test_ticket_runner_base_forward_t4105's fake monkeypatches it THEN the fake
+    accepts the same keywords and the test suite passes
+  evidence: []
 threat: null
 component: null
 anchor: false
