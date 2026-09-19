@@ -1,5 +1,5 @@
 ---
-id: T-draft-0521e6f2
+id: T-4655
 title: 'Gate kernel: one registration interface from which job list, known-rule set,
   docs and check-coverage are derived'
 state: queued
