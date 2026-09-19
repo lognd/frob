@@ -48,6 +48,19 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: GIVEN an existing Unity project directory with two .asmdef files, WHEN 'frob
+    scaffold unity-project' (or equivalent frob init detection) runs against it, THEN
+    it writes a frob.toml with Unity's excludes pre-populated and one design/*.strata
+    file per asmdef.
+  evidence: []
+- text: GIVEN the scaffold is run twice without --force, WHEN it detects existing
+    frob.toml/design files, THEN it refuses (ScaffoldError.OutputExists) rather than
+    silently overwriting.
+  evidence: []
+- text: GIVEN a directory that is not a Unity project, WHEN 'frob scaffold unity-project'
+    is invoked against it, THEN it errors clearly rather than producing a bogus config.
+  evidence: []
 threat: null
 component: null
 anchor: false
