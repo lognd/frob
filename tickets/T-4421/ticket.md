@@ -1,7 +1,7 @@
 ---
 id: T-4421
 title: Clean system, scripts, and remaining test docstrings of change-narrative (DOCARCH001)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -455,9 +455,22 @@ body_changes:
   new_length: 1455
 designated_repro_test: null
 acceptance:
-- text: Given a full frob check on tests/system, scripts/, and the remaining test
-    corpora, when DOCARCH001 is measured, then their combined finding count is 0
+- text: Given a frob check scoped to scripts/fleet_status.py, scripts/verify_lands.py,
+    and tests/system/** (excluding tests/system/test_system.py, leased elsewhere),
+    when DOCARCH001 is measured, then the combined finding count is 0
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: Given a full frob check on tests/system, scripts/, and the remaining test
+    corpora, when DOCARCH001 is measured, then their combined finding count is 0
+  new_text: Given a frob check scoped to scripts/fleet_status.py, scripts/verify_lands.py,
+    and tests/system/** (excluding tests/system/test_system.py, leased elsewhere),
+    when DOCARCH001 is measured, then the combined finding count is 0
+  reason: scope narrowed per coordinator instruction; remainder split into child tickets
+    T-4623..T-4627
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
