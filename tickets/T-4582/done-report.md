@@ -534,7 +534,7 @@ Tests skipped: none. Scope refusals: none. Waivers added: none.
  tickets/T-4579/ticket.md                           |  68 +++
  tickets/T-4580/ticket.md                           |  46 ++
  tickets/T-4581/ticket.md                           |  47 ++
- tickets/T-draft-a06debc6/ticket.md                 |  41 ++
+ tickets/T-4588/ticket.md                 |  41 ++
  tickets/T-4582/ticket.md                 |  56 ++
  tickets/T-4583/ticket.md                 |  73 +++
  uv.lock                                            |   2 +-

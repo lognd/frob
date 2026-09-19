@@ -254,6 +254,7 @@ from frob.gates._waive import (
     waive009_violations,
     waive010_violations,
     waive011_violations,
+    waive012_violations,
 )
 from frob.gates._waive_comments import (
     _place001,
@@ -9424,6 +9425,11 @@ def _assemble_gate_report(
         # -- see waive011_violations's own docstring for why this lives in
         # the WAIVE family rather than a new gate.
         *waive011_violations(st.repo_root),
+        # T-4214: same self-check posture as WAIVE009/010/011 -- needs
+        # only the snapshot's own waive edges, the repo root (for
+        # file-absent/symbol-absent predicates) and the ticket queue
+        # (for ticket-closed predicates), no assembled violation set.
+        *waive012_violations(st.snapshot, root=st.repo_root, queue=st.queue),
         # T-2988: same PROVENANCE-vs-DEFERRED-WORK wording discriminator
         # as WAIVE009/010, applied to public docstrings instead of a
         # waiver's own reason text -- re-parses source directly

@@ -70,6 +70,7 @@ from pydantic import BaseModel
 from frob.gates._models import Severity, Violation, WaiverRef
 from frob.graph import Edge, EdgeKind, GraphSnapshot
 from frob.logging import get_logger
+from frob.tickets import TicketQueue, TicketState
 
 _log = get_logger(__name__)
 
@@ -128,8 +129,7 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:tests \
 # tests/gates_suite/test_waive.py::TestDsl001.test_malformed_frob_doc_directive_flagged
 # frob:tests \
-# tests/gates_suite/test_waive.py::TestDsl001.test_waive_reason_and_tests_kind_not_doub\
-# le_flagged
+# tests/gates_suite/test_waive.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged  # noqa: E501
 # frob:enforces CHK-GATE-DSL001
 def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DSL001: a malformed `frob:` directive not already claimed by a
@@ -193,8 +193,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # `_rule_id_scan`'s module docstring) and stay purely hand-maintained here
 # as before this ticket.
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_i\
-# s_known
+# tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
 # frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
 # frob-zone-start known-gate-rules T-1002
@@ -417,6 +416,10 @@ _KNOWN_GATE_RULES = frozenset(
         # to the bulk-pool ratchet mechanism (T-0569) instead of one
         # inline frob:waive comment.
         "WAIVE011",
+        # T-4214: a `frob:waive until="..."` predicate from the closed
+        # tree-state vocabulary (ticket-closed:/file-absent:/symbol-
+        # absent:) whose named condition no longer holds.
+        "WAIVE012",
         # T-2988: a public symbol's docstring cites a ticket AND reads as
         # change-narrative rather than utility prose -- the WAIVE009/010
         # provenance-vs-deferred-work discriminator applied to docstrings
@@ -2241,6 +2244,156 @@ def waive011_violations(root: Path) -> tuple[Violation, ...]:
     )
 
 
+# frob:ticket T-4214
+# frob:doc docs/modules/gates.md#rule-catalog
+#: T-4214's closed predicate vocabulary for `frob:waive until="..."`: a
+#: waiver reasoning about branch/tree state (T-4157's "file is absent on
+#: this branch", T-4175's "not yet wired", T-4135's "the code is on a
+#: branch") gets a checkable condition instead of leaving that fact only
+#: in prose nothing re-evaluates. `ticket-closed:T-####` fires once the
+#: named ticket reaches DONE/DROPPED; `file-absent:path` fires once
+#: `path` exists again; `symbol-absent:path::Sym` fires once `Sym` is
+#: defined in the graph again. A bare `YYYY-MM-DD` date is WAIVE005's own
+#: form, not this vocabulary's -- none of these three patterns can match
+#: a date literal.
+_UNTIL_TICKET_CLOSED_RE = re.compile(r"^ticket-closed:(T-[A-Za-z0-9-]+)$")
+_UNTIL_FILE_ABSENT_RE = re.compile(r"^file-absent:(.+)$")
+_UNTIL_SYMBOL_ABSENT_RE = re.compile(r"^symbol-absent:(.+?)::(.+)$")
+
+
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_ticket_closed_predicate_fires_once_ticket_is_done  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_ticket_closed_predicate_stays_quiet_while_open  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_ticket_closed_predicate_unresolvable_id_is_none  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_file_absent_predicate_fires_once_file_exists  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_file_absent_predicate_stays_quiet_while_absent  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_symbol_absent_predicate_fires_once_symbol_reappears  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_symbol_absent_predicate_stays_quiet_while_symbol_missing  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_plain_date_until_is_not_this_vocabulary  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_freeform_prose_is_not_a_predicate  # noqa: E501
+def _until_premise_expired(
+    until: str,
+    *,
+    root: Path,
+    snapshot: GraphSnapshot | None,
+    queue: TicketQueue | None,
+) -> bool | None:
+    """T-4214: the ONE evaluator for `frob:waive until="..."`'s closed
+    tree-state predicate vocabulary (`_UNTIL_TICKET_CLOSED_RE`/
+    `_UNTIL_FILE_ABSENT_RE`/`_UNTIL_SYMBOL_ABSENT_RE`) -- `until` here
+    already comes from the DSL's own parsed attribute value (never
+    re-derived by regexing raw comment text), so only the predicate's
+    own vocabulary is parsed lexically, not the directive it lives in.
+
+    Returns `True` once the named condition NO LONGER HOLDS (the cited
+    ticket closed, the file reappeared, or the symbol was redefined) --
+    the waiver's premise has expired and WAIVE012 must fire. Returns
+    `False` while the condition still holds (stay quiet -- the premise
+    is still true). Returns `None` when `until` matches none of this
+    vocabulary's three forms at all: a plain date is WAIVE005's own
+    concern, and free-form prose is not a checkable predicate."""
+    value = until.strip()
+    match = _UNTIL_TICKET_CLOSED_RE.match(value)
+    if match:
+        if queue is None:
+            return None
+        ticket = queue.tickets.get(match.group(1))
+        if ticket is None:
+            return None
+        return ticket.state in (TicketState.DONE, TicketState.DROPPED)
+    match = _UNTIL_FILE_ABSENT_RE.match(value)
+    if match:
+        return (root / match.group(1).strip()).exists()
+    match = _UNTIL_SYMBOL_ABSENT_RE.match(value)
+    if match:
+        if snapshot is None:
+            return None
+        target = _canonical_symref(
+            f"{match.group(1).strip()}::{match.group(2).strip()}"
+        )
+        return any(_canonical_symref(ref) == target for ref in snapshot.symbols)
+    return None
+
+
+def _waive012_violation(
+    *, file: str, line: int, site: str, rule_and_target: str, until: str
+) -> Violation:
+    """The single WAIVE012 `Violation` for one waiver whose `until=`
+    tree-state predicate no longer holds."""
+    _log.error(
+        "WAIVE012: %s (%s) premise expired (until=%s)",
+        site,
+        rule_and_target,
+        until,
+    )
+    return Violation(
+        rule="WAIVE012",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"WAIVE012: frob:waive {rule_and_target} at {site} names a "
+            f"tree-state condition (until={until!r}) that no longer "
+            f"holds -- re-review the waiver now that the condition it "
+            f"was contingent on has changed: extend `until` with a fresh "
+            f"predicate, or remove the directive if the gap it excused "
+            f"has been addressed"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-WAIVE012
+# frob:ticket T-4214
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_gate_fires_error_once_named_file_reappears  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_gate_stays_quiet_while_named_file_still_absent  # noqa: E501
+def waive012_violations(
+    snapshot: GraphSnapshot, *, root: Path, queue: TicketQueue | None
+) -> tuple[Violation, ...]:
+    """WAIVE012 (T-4214, premise-expiry): a `frob:waive until="..."`
+    predicate from `_until_premise_expired`'s closed vocabulary whose
+    named condition no longer holds -- the mechanical fix for the shape
+    T-4157/T-4175/T-4135 each hit independently: a waiver whose
+    justification is contingent on branch/tree state, with nothing that
+    re-checks the condition once the tree changes. Only `until=` values
+    that match the vocabulary are evaluated; every other `until=` (a
+    plain date, or no `until=` at all) is silently out of scope for this
+    rule."""
+    out: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        until = edge.attrs.get("until", "")
+        if not until:
+            continue
+        expired = _until_premise_expired(
+            until, root=root, snapshot=snapshot, queue=queue
+        )
+        if not expired:
+            continue
+        from frob.gates import _site_from_edge_origin  # local: avoids circularity
+
+        file, line = _site_from_edge_origin(edge.origin)
+        out.append(
+            _waive012_violation(
+                file=file,
+                line=line,
+                site=edge.src,
+                rule_and_target=f"frob:waive {edge.target}",
+                until=until,
+            )
+        )
+    return tuple(out)
+
+
 # frob:ticket T-1764
 # frob:doc docs/modules/app.md#frob-check---census-t-1764
 class RuleCensusEntry(BaseModel):
@@ -2661,11 +2814,9 @@ def _match_waiver_by_symref(
 
 # frob:ticket T-4392
 # frob:tests \
-# tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_path_\
-# still_matches_posix_violation
+# tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_path_still_matches_posix_violation  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_still\
-# _matches_package_prefix
+# tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_still_matches_package_prefix  # noqa: E501
 def _match_waiver_file_scoped(
     violation: Violation, candidates: Sequence[Edge], *, package_scoped: bool
 ) -> Edge | None:
@@ -2825,8 +2976,7 @@ def _severity_overrides(root: Path | str) -> dict[str, Severity]:
 
 # frob:ticket T-4386
 # frob:tests \
-# tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_un\
-# resolved_severity kind="unit"
+# tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_unresolved_severity kind="unit"  # noqa: E501
 def _apply_severity_overrides(
     violations: tuple[Violation, ...], root: Path | str
 ) -> tuple[Violation, ...]:

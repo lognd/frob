@@ -203,6 +203,20 @@ _TESTS_KINDS = frozenset({"unit", "integration", "e2e", "property"})
 #: real-world date regardless of how the release train moves.
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+#: T-4214: `frob:waive until="..."` also accepts a closed tree-state
+#: predicate vocabulary alongside the plain `YYYY-MM-DD` date above (a
+#: waiver reasoning about branch/tree state -- "the file is absent on
+#: this branch", "not yet wired" -- gets a form the gate can re-check
+#: instead of only prose). One home for the GRAMMAR (what shape is
+#: syntactically acceptable, checked here at parse time); the SEMANTICS
+#: (whether a given predicate still holds) live in `frob.gates._waive`'s
+#: `_until_premise_expired`, the one evaluator -- this module cannot
+#: import that one (`frob.gates` imports `frob.graph`, not the reverse),
+#: so the shape lives here and `_waive.py` imports it back.
+UNTIL_PREDICATE_RE = re.compile(
+    r"^(?:ticket-closed:T-[A-Za-z0-9-]+|file-absent:.+|symbol-absent:.+::.+)$"
+)
+
 #: `frob:protocol`'s optional `cleanup=` attribute (T-0744): the per-protocol
 #: cleanup obligation later verification (T-0739 child 4) enforces. Defaults
 #: to `"on-error"` when omitted (`_parse_attrs_verb_error`'s protocol branch).
@@ -901,12 +915,18 @@ def _attrs_verb_error_waive(
             )
         attrs.setdefault("reason", resolved)
     until = attrs.get("until")
-    if until is not None and not _DATE_RE.match(until.strip()):
-        return MalformedDirective(
-            file=path,
-            line=lineno,
-            reason=(f"frob:waive until={until!r} is not a YYYY-MM-DD date"),
-        )
+    if until is not None:
+        value = until.strip()
+        if not _DATE_RE.match(value) and not UNTIL_PREDICATE_RE.match(value):
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"frob:waive until={until!r} is not a YYYY-MM-DD date or a "
+                    "recognized predicate (ticket-closed:T-####, "
+                    "file-absent:path, symbol-absent:path::Sym)"
+                ),
+            )
     return None
 
 

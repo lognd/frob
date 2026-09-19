@@ -604,7 +604,7 @@ shape this fix's test reproduces).
  tickets/T-4581/ticket.md                           |  47 ++
  tickets/T-4582/done-report.md                      | 551 ++++++++++++++++++++
  tickets/T-4582/ticket.md                           |  56 ++
- tickets/T-draft-a06debc6/ticket.md                 |  41 ++
+ tickets/T-4588/ticket.md                 |  41 ++
  tickets/T-4583/ticket.md                 |  87 ++++
  uv.lock                                            |   2 +-
  456 files changed, 30033 insertions(+), 1656 deletions(-)

@@ -540,7 +540,7 @@ Filed: none (no out-of-scope work discovered).
  tickets/T-4572/ticket.md                           |  43 ++
  tickets/T-4573/ticket.md                           |  27 +
  tickets/T-4579/ticket.md                 |  65 +++
- tickets/T-draft-a06debc6/ticket.md                 |  41 ++
+ tickets/T-4588/ticket.md                 |  41 ++
  tickets/T-4581/ticket.md                 |  47 ++
  tickets/T-4582/ticket.md                 |  49 ++
  uv.lock                                            |   2 +-

@@ -2,7 +2,7 @@
 id: T-4214
 title: 'frob:waive premise-expiry: a waiver whose reason names a branch/tree condition
   must carry a checkable predicate and fail once it no longer holds'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-07'
@@ -44,19 +44,34 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
+evidence:
+- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_stays_quiet_while_named_file_still_absent
+- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears
+- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done
+- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists
+- tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears
 designated_repro_test: null
 acceptance:
 - text: the until= grammar accepts a closed tree-state predicate vocabulary (ticket-closed:T-####,
     file-absent:path, symbol-absent:path::Sym) alongside the existing YYYY-MM-DD date
     form
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears
 - text: one evaluator (_until_premise_expired) judges each predicate against real
     tree state (ticket queue, filesystem, graph symbols) and returns whether the named
     condition still holds
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_ticket_closed_predicate_fires_once_ticket_is_done
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_file_absent_predicate_fires_once_file_exists
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_symbol_absent_predicate_fires_once_symbol_reappears
 - text: a WAIVE012 gate error fires once a waiver's until= predicate no longer holds,
     and stays silent while it still does
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_stays_quiet_while_named_file_still_absent
+  - tests/test_waive_gate.py::TestWaive012PremiseExpiry::test_gate_fires_error_once_named_file_reappears
 threat: null
 component: null
 anchor: false

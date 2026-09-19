@@ -38,10 +38,12 @@ from frob.gates._waive import (
     _reason_promises_followup,
     _reason_reads_as_deferred_work,
     _reason_ticket_ids,
+    _until_premise_expired,
     _waive004_dead_count_by_rule,
     census_gate_rules,
     waive009_violations,
     waive010_violations,
+    waive012_violations,
 )
 from frob.graph import build_graph
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
@@ -1213,4 +1215,147 @@ class TestWaive011ProducerAbandoned:
             git("add", "-A")
             git("commit", "-q", "-m", f"code change {i}")
         violations = waive011_violations(tmp_path)
+        assert violations == ()
+
+
+class TestWaive012PremiseExpiry:
+    """T-4214: `frob:waive until="..."` predicate evaluation
+    (`_until_premise_expired`/`waive012_violations`) -- a waiver naming a
+    checkable tree-state condition must fire once that condition no
+    longer holds."""
+
+    def test_ticket_closed_predicate_fires_once_ticket_is_done(self) -> None:
+        queue = TicketQueue(
+            tickets={"T-0001": _ticket(ticket_id="T-0001", state=TicketState.DONE)}
+        )
+        assert (
+            _until_premise_expired(
+                "ticket-closed:T-0001", root=Path("."), snapshot=None, queue=queue
+            )
+            is True
+        )
+
+    def test_ticket_closed_predicate_stays_quiet_while_open(self) -> None:
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", state=TicketState.IN_PROGRESS)
+            }
+        )
+        assert (
+            _until_premise_expired(
+                "ticket-closed:T-0001", root=Path("."), snapshot=None, queue=queue
+            )
+            is False
+        )
+
+    def test_ticket_closed_predicate_unresolvable_id_is_none(self) -> None:
+        queue = TicketQueue(tickets={})
+        assert (
+            _until_premise_expired(
+                "ticket-closed:T-9999", root=Path("."), snapshot=None, queue=queue
+            )
+            is None
+        )
+
+    def test_file_absent_predicate_fires_once_file_exists(self, tmp_path: Path) -> None:
+        (tmp_path / "gone.py").write_text("x = 1\n")
+        assert (
+            _until_premise_expired(
+                "file-absent:gone.py", root=tmp_path, snapshot=None, queue=None
+            )
+            is True
+        )
+
+    def test_file_absent_predicate_stays_quiet_while_absent(
+        self, tmp_path: Path
+    ) -> None:
+        assert (
+            _until_premise_expired(
+                "file-absent:gone.py", root=tmp_path, snapshot=None, queue=None
+            )
+            is False
+        )
+
+    def test_symbol_absent_predicate_fires_once_symbol_reappears(
+        self, tmp_path: Path
+    ) -> None:
+        _write(tmp_path, "pkg/a.py", "def foo():\n    pass\n")
+        snapshot = _snapshot(tmp_path)
+        assert (
+            _until_premise_expired(
+                "symbol-absent:pkg/a.py::foo",
+                root=tmp_path,
+                snapshot=snapshot,
+                queue=None,
+            )
+            is True
+        )
+
+    def test_symbol_absent_predicate_stays_quiet_while_symbol_missing(
+        self, tmp_path: Path
+    ) -> None:
+        _write(tmp_path, "pkg/a.py", "def bar():\n    pass\n")
+        snapshot = _snapshot(tmp_path)
+        assert (
+            _until_premise_expired(
+                "symbol-absent:pkg/a.py::foo",
+                root=tmp_path,
+                snapshot=snapshot,
+                queue=None,
+            )
+            is False
+        )
+
+    def test_plain_date_until_is_not_this_vocabulary(self) -> None:
+        """A bare `YYYY-MM-DD` `until=` stays WAIVE005's own concern --
+        none of the three predicate forms match a date literal, so this
+        evaluator returns None (out of scope) rather than misfiring."""
+        assert (
+            _until_premise_expired(
+                "2099-01-01", root=Path("."), snapshot=None, queue=None
+            )
+            is None
+        )
+
+    def test_freeform_prose_is_not_a_predicate(self) -> None:
+        assert (
+            _until_premise_expired(
+                "the file is absent on this branch",
+                root=Path("."),
+                snapshot=None,
+                queue=None,
+            )
+            is None
+        )
+
+    def test_gate_fires_error_once_named_file_reappears(self, tmp_path: Path) -> None:
+        """End-to-end: a real `frob:waive` comment with a `file-absent:`
+        `until=` fires WAIVE012 once the named file exists again."""
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            '# frob:waive DEAD001 reason="the file is absent on this branch" '
+            'until="file-absent:pkg/gone.py"\n'
+            "x = 1\n",
+        )
+        _write(tmp_path, "pkg/gone.py", "y = 2\n")
+        snapshot = _snapshot(tmp_path)
+        violations = waive012_violations(snapshot, root=tmp_path, queue=None)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE012"
+        assert violations[0].severity == Severity.ERROR
+        assert "file-absent:pkg/gone.py" in violations[0].message
+
+    def test_gate_stays_quiet_while_named_file_still_absent(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            '# frob:waive DEAD001 reason="the file is absent on this branch" '
+            'until="file-absent:pkg/gone.py"\n'
+            "x = 1\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = waive012_violations(snapshot, root=tmp_path, queue=None)
         assert violations == ()
