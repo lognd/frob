@@ -1,5 +1,5 @@
 ---
-id: T-draft-e0489b72
+id: T-4810
 title: Run the docstring --fix repo-wide in a coordinator-declared quiet window as
   one cross-ticket land (1055 -> N is the acceptance, agents review diffs per package)
 state: queued
