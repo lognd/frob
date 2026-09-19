@@ -7,7 +7,7 @@ kind: security
 origin: human
 created: '2026-09-05'
 priority: high
-parent: null
+parent: T-4662
 tier: epic
 sprint: v0.546.0
 runs_last: false
@@ -18,6 +18,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4662
+  reason: '2026-09-19: SF-12 in the STRATA friction audit; attached directly to epic
+    T-4662 rather than to story D (T-4667) because this ticket is itself tier=epic
+    and ParentTierInversion refuses a story parenting an epic -- it is grouped WITH
+    story D''s decisions, since its fix surface is the grammar and semantics the owner
+    is personally rethinking'
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: '2026-09-19: attaching SF-12''s evidence row verbatim plus corroboration
