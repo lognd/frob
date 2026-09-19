@@ -110,7 +110,34 @@ def v2_repo(tmp_path: Path) -> Path:
     return main_repo
 
 
-# frob:ticket T-4498
+# frob:ticket T-4552
+# frob:waive WIRE001 reason="test-only fixture helper (T-4552 DUP001 extraction), called by both TestCapabilityRatchetConflictRefused methods in this same file -- same shape as tests/unit/test_leases_staleness_perf.py's own _write_lease_for, no production caller expected"  # noqa: E501
+def _seed_widget_worktree(
+    v2_repo: Path, wt_name: str, branch: str, title: str, scope: tuple[str, ...]
+) -> tuple[Path, str]:
+    """DUP001 (T-4552): the setup shared by both
+    `TestCapabilityRatchetConflictRefused` cases -- add a worktree, give
+    it a throwaway `src/widget.py` so its ticket has an ordinary in-scope
+    file, and register a closeable ticket for it. Returns `(wt, ticket_id)`
+    so the caller can still write the file-under-conflict's content and
+    commit it itself -- that part is the one thing that genuinely differs
+    between the two cases."""
+    wt = v2_repo.parent / wt_name
+    _run(["git", "worktree", "add", "-b", branch, str(wt)], v2_repo)
+
+    # Worktree ticket is scoped to src/widget.py -- it never legitimately
+    # declares the capability-ratchet file "in scope" for THIS ticket,
+    # mirroring the real T-4492 incident's shape.
+    (wt / "src").mkdir(exist_ok=True)
+    (wt / "src" / "widget.py").write_text("# widget\n")
+    created = new_ticket(wt, _spec(title, scope=scope))
+    assert created.is_ok
+    tid = created.danger_ok.id
+    _make_closeable(wt, tid)
+    return wt, tid
+
+
+# frob:ticket T-4552
 class TestCapabilityRatchetConflictRefused:
     """A conflict on `design/frob.strata` or the capability-via-ratchet
     lock file must refuse the land (naming the file and both sides'
@@ -120,21 +147,12 @@ class TestCapabilityRatchetConflictRefused:
     def test_conflicting_strata_via_list_refuses_instead_of_dropping(
         self, v2_repo: Path
     ) -> None:
-        wt = v2_repo.parent / "wt-strata"
-        _run(["git", "worktree", "add", "-b", "feature-strata", str(wt)], v2_repo)
-
-        # Worktree ticket is scoped to src/widget.py -- it never
-        # legitimately declares design/frob.strata "in scope" for THIS
-        # ticket, mirroring the real T-4492 incident's shape.
-        (wt / "src").mkdir(exist_ok=True)
-        (wt / "src" / "widget.py").write_text("# widget\n")
+        wt, tid = _seed_widget_worktree(
+            v2_repo, "wt-strata", "feature-strata", "Add widget", ("src/widget.py",)
+        )
         (wt / "design" / "frob.strata").write_text(
             "testsuite:\n  exec: [tests/unit/test_a.py, tests/unit/test_worktree_new.py]\n"
         )
-        created = new_ticket(wt, _spec("Add widget", scope=("src/widget.py",)))
-        assert created.is_ok
-        tid = created.danger_ok.id
-        _make_closeable(wt, tid)
         _commit_all(wt, "worktree adds a via-list entry to design/frob.strata")
 
         # Main independently edits the SAME via-list line after the
@@ -163,17 +181,11 @@ class TestCapabilityRatchetConflictRefused:
     def test_conflicting_ratchet_lock_refuses_instead_of_dropping(
         self, v2_repo: Path
     ) -> None:
-        wt = v2_repo.parent / "wt-lock"
-        _run(["git", "worktree", "add", "-b", "feature-lock", str(wt)], v2_repo)
-
-        (wt / "src").mkdir(exist_ok=True)
-        (wt / "src" / "widget.py").write_text("# widget\n")
+        wt, tid = _seed_widget_worktree(
+            v2_repo, "wt-lock", "feature-lock", "Add widget 2", ("src/widget.py",)
+        )
         lock_path = "docs/design/registry/capability-via-ratchet.lock.json"
         (wt / lock_path).write_text('{"accepted_count": 108}\n')
-        created = new_ticket(wt, _spec("Add widget 2", scope=("src/widget.py",)))
-        assert created.is_ok
-        tid = created.danger_ok.id
-        _make_closeable(wt, tid)
         _commit_all(wt, "worktree bumps the ratchet lock")
 
         (v2_repo / lock_path).write_text('{"accepted_count": 109}\n')

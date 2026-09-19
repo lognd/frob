@@ -912,7 +912,7 @@ def _commit_rapid_debt_only_drift(root: Path) -> bool:
 _COVERAGE_LOCK_PATH = "frob-coverage.lock.json"
 
 
-# frob:ticket T-4498
+# frob:ticket T-4552
 # T-4498: the capability-declaration pair a via-list edit always touches
 # together -- `design/frob.strata` (the via-list source) and its ratchet
 # lock (`docs/design/registry/capability-via-ratchet.lock.json`, the
@@ -933,11 +933,12 @@ _CAPABILITY_RATCHET_PATHS = frozenset(
 )
 
 
-# frob:ticket T-4498
+# frob:ticket T-4552
 _LAND_COMMIT_SUBJECT_TICKET_RE = re.compile(r"\bland (T-\S+)\b")
 
 
-# frob:ticket T-4498
+# frob:ticket T-4552
+# frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_strata_via_list_refuses_instead_of_dropping kind="integration"  # noqa: E501
 def _land_ticket_for_commit_touching(cwd: Path, ref: str, path: str) -> str | None:
     """The ticket id named in the most recent `<type>(tickets): land <id>
     ...` commit subject (`_commit_message`'s exact shape, `frob.tickets.
@@ -1649,7 +1650,8 @@ def _auto_resolve_out_of_scope_conflicts(
     return Ok(frozenset(still_conflicted))
 
 
-# frob:ticket T-4498
+# frob:ticket T-4552
+# frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_ratchet_lock_refuses_instead_of_dropping kind="integration"  # noqa: E501
 def _resolve_one_out_of_scope_conflict(
     cwd: Path, ticket: Ticket, keep: str, path: str
 ) -> bool:
@@ -1691,7 +1693,8 @@ def _resolve_one_out_of_scope_conflict(
     return True
 
 
-# frob:ticket T-4498
+# frob:ticket T-4552
+# frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_strata_via_list_refuses_instead_of_dropping kind="integration"  # noqa: E501
 def _log_capability_ratchet_refusal(cwd: Path, ticket: Ticket, path: str) -> None:
     """Never blind-checkout a capability-ratchet declaration (`design/
     frob.strata`, its ratchet lock) -- log the refusal naming `path` and

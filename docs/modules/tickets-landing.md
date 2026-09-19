@@ -172,9 +172,9 @@ Order of operations, and why it is this order:
 2.6. **Tier-A auto-fix crash recovery** (T-1348). Before `land()` (the
    function documented by this numbered list) is ever called, `frob
    ticket land`'s CLI layer (`_absorb_pre_land_fixes`, T-1175) already ran
-   `frob fmt` and every Tier-A `--fix` handler (T-1870 removed <!-- frob:waive DOC006 reason="naming the T-1870-removed command for historical context, not claiming it currently exists" -->`frob sys
-   sync-interface` from this pipeline -- `interface=` is now purely
-   hand-declared, with no auto-writer anywhere in this codebase)
+   `frob fmt` and every Tier-A `--fix` handler (T-1870 removed
+   <!-- frob:waive DOC006 reason="naming the T-1870-removed command for historical context, not claiming it currently exists" -->`frob sys sync-interface` from this pipeline -- `interface=` is now
+   purely hand-declared, with no auto-writer anywhere in this codebase)
    (`apply_tier_a_fixes`, `src/frob/gates/_fix_engine.py`) directly against
    the worktree, on disk, with NO commit of any kind yet -- this step's
    own wip-commit (step 3 below) is the FIRST commit that captures any of
