@@ -29,6 +29,15 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: the post-publish _record_verify_intent_for_landed_commit call reuses a caller-supplied
+    pre-publish graph snapshot instead of loading/building one after the commit is
+    published
+  evidence: []
+- text: a positive-control test proves the snapshot loader (_load_snapshot_for_intent)
+    is never called when a snapshot is supplied, alongside the existing verify-intent
+    tests still passing
+  evidence: []
 threat: null
 component: null
 anchor: false
