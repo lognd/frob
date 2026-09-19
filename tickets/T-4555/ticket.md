@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/tickets/_leases.py
 - tests/test_ticket_leases.py
+- tests/unit/test_ticket_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,11 @@ scope_changes:
 - op: add
   glob: tests/test_ticket_leases.py
   reason: test binding TICKETS_LEDGER_LOCK_REL single-source invariant
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: test binding TICKETS_LEDGER_LOCK_REL / _lock_path invariant
   actor: logan
   at: '2026-09-18'
 evidence:
