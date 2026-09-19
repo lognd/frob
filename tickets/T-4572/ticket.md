@@ -18,6 +18,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_land_cas_ledger_retry.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,12 @@ scope_changes:
   glob: tests/unit/test_land_cas_ledger_retry.py
   reason: new unleased test file for T-4572 CAS-retry fast path (test_land_compose.py/test_land_stage_flip.py
     both held by other in-progress tickets)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: doc anchors for the new commits_touch_only_ledger_paths/rebase_composed_commit_onto/_clean_root_on_refusal
+    symbols (COV001)
   actor: logan
   at: '2026-09-19'
 body_changes:
