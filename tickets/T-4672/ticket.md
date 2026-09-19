@@ -23,6 +23,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record scope-collision blocker discovered while attempting frob ticket work
+    T-4672
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2685
+  new_length: 3286
 designated_repro_test: null
 acceptance:
 - text: Given .frob/telemetry.jsonl records 614,294 rule fires across 82 rule ids
@@ -89,3 +97,6 @@ zero SYS ids exist in 614,294 recorded fires. Per
 memory/positive-control-or-it-proves-nothing.md, add a second test that PLANTS a
 genuine SYS violation in the fixture and asserts the runner reports it -- so a
 future zero is provably a clean zero.
+
+
+BLOCKED by T-4112 (2026-09-19, agent 2): frob ticket work T-4672 refused with 'declared scope collides with in-progress T-4112's lease on src/frob/app/sys_runner.py'. T-4112 (in-progress, security, F-307 H3-2 inbound-rate work) holds an active whole-file lease on src/frob/app/sys_runner.py among 8 other scoped paths. This leaf's SF-01 instrumentation work (rule_counts telemetry for SYS/SELFAUDIT evaluations plus a --only sys timing row) needs to edit the exact same file. Cannot proceed without colliding writes. Re-dispatch this leaf once T-4112 closes (or narrows its scope off sys_runner.py).
