@@ -29,12 +29,25 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
+- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
+- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
+- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
+- tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
+- tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 designated_repro_test: null
 acceptance:
 - text: Given an in-progress ticket holding a lease, when `frob ticket drop` runs,
     then .git/frob-leases/<id>.json is removed and a sibling `scope --add` on the
     same path succeeds.
-  evidence: []
+  evidence:
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
+  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 - text: 'POSITIVE CONTROL: tests/unit/test_lease_lifecycle.py::test_drop_releases_lease
     starts a ticket, drops it, and asserts the lease file is gone. It FAILS on dev
     today (the file survives; measured 2026-09-19) and passes after this leaf.'
