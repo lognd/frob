@@ -455,3 +455,112 @@ class TestRapidLandFilesWiring:
         spawn = verify_mod._shared_check_spawn_fn(tmp_path, "T-0001")
         spawn()
         assert "--files" not in seen[0]
+
+
+class TestCallerDependentFiles:
+    """`frob.graph.affects.caller_dependent_files` (T-4553): one hop of
+    caller files read off an already-built `CallGraph`, pure (no disk IO,
+    no graph building)."""
+
+    def test_direct_caller_files_found(self) -> None:
+        # frob:tests src/frob/graph/affects.py::caller_dependent_files kind="unit"
+        from frob.graph.affects import caller_dependent_files
+        from frob.graph.callgraph import CallGraph
+
+        graph = CallGraph(
+            calls={
+                "caller1.py::f": ("target.py::_changed",),
+                "caller2.py::g": ("target.py::_changed", "other.py::_x"),
+                "caller3.py::h": ("target.py::_changed",),
+                "unrelated.py::z": ("other.py::_x",),
+            }
+        )
+        added, truncated = caller_dependent_files(
+            graph, frozenset({"target.py::_changed"}), frozenset({"target.py"})
+        )
+        assert added == frozenset({"caller1.py", "caller2.py", "caller3.py"})
+        assert truncated is False
+
+    def test_already_covered_files_excluded(self) -> None:
+        # frob:tests src/frob/graph/affects.py::caller_dependent_files kind="unit"
+        from frob.graph.affects import caller_dependent_files
+        from frob.graph.callgraph import CallGraph
+
+        graph = CallGraph(calls={"already.py::f": ("target.py::_changed",)})
+        added, truncated = caller_dependent_files(
+            graph,
+            frozenset({"target.py::_changed"}),
+            frozenset({"target.py", "already.py"}),
+        )
+        assert added == frozenset()
+        assert truncated is False
+
+    def test_capped_at_max_added(self) -> None:
+        # frob:tests src/frob/graph/affects.py::caller_dependent_files kind="unit"
+        from frob.graph.affects import caller_dependent_files
+        from frob.graph.callgraph import CallGraph
+
+        calls = {f"caller{i}.py::f": ("target.py::_changed",) for i in range(5)}
+        graph = CallGraph(calls=calls)
+        added, truncated = caller_dependent_files(
+            graph,
+            frozenset({"target.py::_changed"}),
+            frozenset({"target.py"}),
+            max_added=3,
+        )
+        assert len(added) == 3
+        assert truncated is True
+
+
+class TestRapidCheckScopeFilesCallerDependents:
+    """`_rapid_check_scope_files` end to end (T-4553): the one-hop caller
+    sweep (`_rapid_caller_dependents`) is what actually finds a plain,
+    undirectived caller -- `affects()`'s own `uses-contract` walk was
+    measured to always report 0 for exactly this shape."""
+
+    def test_three_callers_of_a_changed_function_are_included(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_rapid_check_scope_files \
+        # kind="unit"
+        from frob.app.ticket_runner._land_cmd import _rapid_check_scope_files
+
+        (tmp_path / "target.py").write_text("def _changed():\n    return 1\n")
+        for i in range(1, 4):
+            (tmp_path / f"caller{i}.py").write_text(
+                "from target import _changed\n\n\ndef use():\n    return _changed()\n"
+            )
+        (tmp_path / "unrelated.py").write_text("def other():\n    return 2\n")
+
+        result = _rapid_check_scope_files(tmp_path, "T-4553", frozenset({"target.py"}))
+        assert result is not None
+        for i in range(1, 4):
+            assert f"caller{i}.py" in result, f"caller{i}.py not scoped in: {result}"
+        assert "unrelated.py" not in result
+
+    def test_falls_back_and_logs_info_when_callgraph_unavailable(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_rapid_caller_dependents \
+        # kind="unit"
+        import logging
+
+        import frob.graph.callgraph as callgraph_mod
+        from frob.app.ticket_runner._land_cmd import _rapid_check_scope_files
+
+        (tmp_path / "target.py").write_text("def _changed():\n    return 1\n")
+
+        def _boom(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise RuntimeError("callgraph boom")
+
+        monkeypatch.setattr(callgraph_mod, "build_call_graph", _boom)
+        with caplog.at_level(logging.INFO):
+            result = _rapid_check_scope_files(
+                tmp_path, "T-4553", frozenset({"target.py"})
+            )
+        assert result is not None
+        assert set(result) == {"target.py"}
+        assert any(
+            "caller-dependent scoping unavailable" in rec.message
+            for rec in caplog.records
+        )

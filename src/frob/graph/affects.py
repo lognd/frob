@@ -17,10 +17,12 @@ doc/test edges.
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Iterable
 
 from pydantic import BaseModel, ConfigDict
 
 from frob.graph._models import EdgeKind, GraphSnapshot
+from frob.graph.callgraph import CallGraph
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -161,6 +163,56 @@ def affects(
         tests=tuple(sorted(tests)),
         truncated=truncated,
     )
+
+
+# frob:doc docs/modules/graph.md#caller-dependents-t-4553
+# frob:ticket T-4553
+# frob:tests tests/unit/test_check_scoped_files.py::TestCallerDependentFiles.test_direct_caller_files_found  # noqa: E501
+# frob:tests tests/unit/test_check_scoped_files.py::TestCallerDependentFiles.test_already_covered_files_excluded  # noqa: E501
+# frob:tests tests/unit/test_check_scoped_files.py::TestCallerDependentFiles.test_capped_at_max_added  # noqa: E501
+def caller_dependent_files(
+    graph: CallGraph,
+    changed_symrefs: Iterable[str],
+    already_covered: frozenset[str],
+    *,
+    max_added: int = 200,
+) -> tuple[frozenset[str], bool]:
+    """One hop of CALLER files for every symref in `changed_symrefs`, read
+    off an already-built `frob.graph.callgraph.CallGraph` (T-4553): for
+    every `caller -> callees` edge where one of `callees` is a changed
+    symref, the caller's own file is a direct dependent -- `affects()`
+    above only follows `frob:uses-contract` directive edges, so a plain
+    (undirectived) caller of a changed symbol was previously invisible to
+    the rapid land scope check T-4413 introduced.
+
+    Pure -- no disk IO, no graph building: `graph` must already be built
+    by the caller, and `build_call_graph(..., verify_imports=True)` is the
+    intended source (see `frob.vet._capability_python`'s own T-2188
+    lesson: an unrestricted, bare-short-name match cross-wires same-named
+    helpers living in unrelated files repo-wide, so `verify_imports=True`
+    -- which resolves a cross-file candidate only when the caller's file
+    actually imports the callee's file -- is load-bearing here, not
+    optional).
+
+    Files already in `already_covered` (the touched set, or anything the
+    `uses-contract` walk already added) are never re-added. Capped at
+    `max_added` newly-added files -- `truncated=True` in the returned
+    `(files, truncated)` pair means the cap cut the result short and the
+    caller should log a WARN naming the cap, matching `affects()`'s own
+    `max_nodes` truncation contract above."""
+    changed = frozenset(changed_symrefs)
+    added: set[str] = set()
+    for caller, callees in graph.calls.items():
+        caller_file = caller.split("::", 1)[0]
+        if caller_file in already_covered:
+            continue
+        if changed.isdisjoint(callees):
+            continue
+        added.add(caller_file)
+    truncated = len(added) > max_added
+    if truncated:
+        added = set(sorted(added)[:max_added])
+    return frozenset(added), truncated
 
 
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
@@ -310,6 +362,7 @@ __all__ = [
     "AffectedSet",
     "ScopeClosureGap",
     "affects",
+    "caller_dependent_files",
     "scope_doc_code_gaps",
     "scope_test_gaps",
 ]

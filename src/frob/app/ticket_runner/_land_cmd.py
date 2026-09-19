@@ -91,6 +91,13 @@ from ._verify import (
 _LAST_BUDGET_DEFERRALS: dict[str, tuple[str, ...]] = {}
 
 if TYPE_CHECKING:
+    # frob:ticket T-4553
+    # Type-only: `_rapid_caller_dependents`'s `snapshot` parameter needs
+    # this name resolvable for static analysis; the real import stays
+    # local to `_rapid_check_scope_files` (matching this module's
+    # existing lazy-import convention), since `frob.graph` is a heavier
+    # import than this thin CLI command module wants to pay at module
+    # load time for every `frob` invocation.
     # frob:ticket T-2400
     # Type-only: `_resolve_merge_target_known_ids`'s return annotation
     # needs this name resolvable for static analysis (ruff F821); the
@@ -100,6 +107,7 @@ if TYPE_CHECKING:
     # command module wants to pay at module load time for every `frob`
     # invocation, not just a land.
     from frob.gates._fix_engine import MergeTargetKnownIds
+    from frob.graph._models import GraphSnapshot
 
 _log = get_logger("frob.app.ticket_runner")
 
@@ -422,6 +430,7 @@ def _land_touched_paths(
 
 # frob:ticket T-4413
 # frob:ticket T-4547
+# frob:ticket T-4553
 def _rapid_check_scope_files(
     worktree: Path,
     ticket_id: str,
@@ -432,11 +441,17 @@ def _rapid_check_scope_files(
     """The `--files` set rapid's synchronous pre-land check spawn is scoped
     to (T-4413): `touched_paths` (T-1404's own diff-derived set, reused --
     see `_land_touched_paths`) plus every file containing a DIRECT
-    dependent of a symbol defined in one of those files, via
-    `frob.graph.affects.affects` (`max_depth=1`) over a fresh `build_graph`
-    snapshot -- the same "uses-contract" reverse-edge walk `frob affects`
-    itself runs, one hop only: a diff-touched file's own contract change
-    can invalidate a direct caller's correctness, but this is a synchronous
+    dependent of a symbol defined in one of those files, via TWO
+    independent walks over a fresh `build_graph` snapshot: (1)
+    `frob.graph.affects.affects` (`max_depth=1`), the "uses-contract"
+    reverse-edge walk `frob affects` itself runs; and (2) T-4553's own
+    `_rapid_caller_dependents`, a one-hop CALLER sweep via
+    `frob.graph.callgraph.build_call_graph` -- (1) alone was measured
+    (T-4553) to always report 0 direct dependents, since `uses-contract`
+    is an explicit opt-in directive almost nothing in this repo carries;
+    a plain, undirectived caller needs (2) to be found at all. Both are
+    one hop only: a diff-touched file's own contract change can
+    invalidate a direct caller's correctness, but this is a synchronous
     land-blocking check, not a full transitive-closure impact analysis (the
     deferred post-land sweep still covers the whole tree unscoped).
 
@@ -473,28 +488,80 @@ def _rapid_check_scope_files(
             continue
         for dep_symref in affects(snapshot, symref, max_depth=1).dependents:
             scoped.add(dep_symref.split("::", 1)[0])
-    direct_dependent_count = len(scoped) - len(touched_paths)
+    uses_contract_count = len(scoped) - len(touched_paths)
+    caller_count = _rapid_caller_dependents(worktree, ticket_id, snapshot, scoped)
     _log.info(
         "ticket land: %s rapid --files scoped to %d file(s) against "
-        "target_branch=%r (%d touched + %d direct-dependent)",
+        "target_branch=%r (%d touched + %d uses-contract-dependent + "
+        "%d caller-dependent)",
         ticket_id,
         len(scoped),
         target_branch,
         len(touched_paths),
-        direct_dependent_count,
+        uses_contract_count,
+        caller_count,
     )
-    if direct_dependent_count == 0:
+    if uses_contract_count == 0 and caller_count == 0:
         _log.info(
             "ticket land: %s rapid --files found 0 direct-dependent files -- "
-            "this is expected, not a broken walk: affects()/_dependents_of() "
-            "only follows explicit `frob:uses-contract` directive edges, not "
-            "a general call graph, so it is 0 whenever none of the %d "
-            "touched file(s)' symbols is the target of a `frob:uses-contract` "
-            "directive anywhere else in the tree",
+            "this is expected, not a broken walk: neither the "
+            "`frob:uses-contract` directive edges affects() follows nor the "
+            "one-hop caller sweep found any dependent among the %d touched "
+            "file(s)' symbols",
             ticket_id,
             len(touched_paths),
         )
     return tuple(sorted(scoped))
+
+
+# frob:ticket T-4553
+def _rapid_caller_dependents(
+    worktree: Path,
+    ticket_id: str,
+    snapshot: GraphSnapshot,
+    scoped: set[str],
+) -> int:
+    """T-4553's other half of `_rapid_check_scope_files`'s scoping: one hop
+    of CALLERS of every symbol defined in a touched file, via
+    `frob.graph.callgraph.build_call_graph(verify_imports=True)` +
+    `frob.graph.affects.caller_dependent_files` -- mutates `scoped` in
+    place with any newly-found caller files and returns how many were
+    added, so the caller can log one combined count line. Extracted from
+    `_rapid_check_scope_files` to keep that function under ARCH001's line
+    threshold.
+
+    Falls back to adding nothing (INFO-logged, per this ticket's own
+    acceptance criterion) when the call graph itself cannot be built --
+    a parse failure, a missing dependency, or any other environmental
+    problem is not this synchronous land-blocking check's job to surface
+    as an error; it degrades to the `uses-contract`-only scope instead."""
+    already = frozenset(scoped)
+    try:
+        from frob.graph.affects import caller_dependent_files
+        from frob.graph.callgraph import build_call_graph
+
+        all_paths = sorted({ref.split("::", 1)[0] for ref in snapshot.symbols})
+        changed = frozenset(
+            ref for ref in snapshot.symbols if ref.split("::", 1)[0] in already
+        )
+        call_graph = build_call_graph(worktree, all_paths, verify_imports=True)
+    except Exception as exc:  # noqa: BLE001 -- see docstring: degrade, never raise
+        _log.info(
+            "ticket land: %s rapid --files caller-dependent scoping "
+            "unavailable (%s) -- falling back to uses-contract-only scope",
+            ticket_id,
+            exc,
+        )
+        return 0
+    caller_files, truncated = caller_dependent_files(call_graph, changed, already)
+    if truncated:
+        _log.warning(
+            "ticket land: %s rapid --files caller-dependent files capped "
+            "at 200 -- some caller-dependents were dropped",
+            ticket_id,
+        )
+    scoped |= caller_files
+    return len(caller_files)
 
 
 # frob:ticket T-1175

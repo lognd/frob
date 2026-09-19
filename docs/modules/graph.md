@@ -156,6 +156,45 @@ def affects(snapshot: GraphSnapshot, ref: str, *,
   silent; a truncated closure is checked against whatever it did visit
   (under-reports, never false-positives).
 
+## Caller-dependents (T-4553)
+
+<!-- frob:describes src/frob/graph/affects.py::caller_dependent_files -->
+
+`affects()` above only follows `frob:uses-contract` directive edges by
+design, so a rapid land's `--files` scope check (`_rapid_check_scope_files`,
+`frob.app.ticket_runner._land_cmd`) reported 0 direct dependents for every
+land: a plain (undirectived) caller of a changed function was invisible to
+it even though a signature change there breaks that caller just as surely.
+
+```python
+def caller_dependent_files(
+    graph: CallGraph,
+    changed_symrefs: Iterable[str],
+    already_covered: frozenset[str],
+    *, max_added: int = 200,
+) -> tuple[frozenset[str], bool]
+```
+
+- **One hop, caller side.** For every `caller -> callees` edge in an
+  already-built `frob.graph.callgraph.CallGraph` where a callee is one of
+  `changed_symrefs`, the caller's own file is added. Pure -- the caller
+  supplies the graph (`build_call_graph(..., verify_imports=True)`); this
+  function does no disk IO and does no graph building of its own.
+- **`verify_imports=True` is load-bearing, not optional** -- the same
+  T-2188 lesson `frob.vet._capability_python` already applies: an
+  unrestricted bare-short-name match cross-wires same-named helpers living
+  in unrelated files repo-wide.
+- **Union with `uses-contract`, capped.** Files already in
+  `already_covered` (touched files, or anything the `uses-contract` walk
+  already added) are never re-added. The newly-added set is capped at
+  `max_added` (default 200); hitting the cap sets the returned
+  `truncated` flag and the caller (`_rapid_check_scope_files`) logs a
+  WARNing rather than silently dropping files past the cap.
+- **Fails open to touched-files-only.** When the call graph cannot be
+  built at all, `_rapid_check_scope_files` logs the reason at INFO and
+  scopes to the touched files alone -- a rapid land never hard-fails
+  because the callgraph was unavailable.
+
 ## Evidence reach (T-3046)
 
 <!-- frob:describes src/frob/graph/reach.py::EvidenceReach -->
