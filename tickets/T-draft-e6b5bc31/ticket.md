@@ -1,0 +1,57 @@
+---
+id: T-draft-e6b5bc31
+title: 'Typed ledger store API: one module every frob module reads and writes tickets
+  through'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: critical
+parent: T-4652
+tier: ticket
+sprint: v0.535.0
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_store_api.py
+- tests/unit/test_ledger_store_api.py
+- docs/modules/tickets-data-storage.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: Given src/frob/tickets/_store_api.py exists, when another frob module needs
+    to read or write a ticket, then it imports _store_api and never opens tickets/<id>/ticket.md
+    itself.
+  evidence: []
+- text: 'POSITIVE CONTROL: tests/unit/test_ledger_store_api.py::test_no_module_opens_ticket_md_directly
+    asserts that no src/frob module other than _store_api.py performs a read/write
+    against a tickets/**/ticket.md path. This test FAILS on dev today (multiple such
+    sites exist) and passes after this leaf.'
+  evidence: []
+- text: Given a fallible store operation, when it fails, then it returns a typani
+    Result error value rather than raising; tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
+    proves it.
+  evidence: []
+- text: docs/modules/tickets-data-storage.md names _store_api as the single entry
+    point and is updated in this same change.
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Kernel decoupling leaf (LEDGER story). ~3 points.
+
+Today ticket data is reached a dozen different ways across src/frob/tickets/*.py (_store.py is 2536 lines and is only one of the readers) and src/frob/app/ticket_runner/*.py. That is why the ledger, the leases and the land cannot be separated: there is no seam.
+
+Build ONE typed store API module, src/frob/tickets/_store_api.py: pydantic models in, pydantic models out, every fallible operation returning a typani Result[T, E]. Every other module goes through it; nothing else opens tickets/<id>/ticket.md.
+
+Do NOT change the on-disk ticket.md format or the CLI. This leaf introduces the seam and migrates the readers the positive control names; a follow-up may migrate the rest.
+
+Log every read and write at DEBUG with ticket id and operation, every refusal at WARNING.
