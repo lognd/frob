@@ -1,7 +1,7 @@
 ---
 id: T-4719
 title: 'Source narrative C5: graph/ + strata/ -- 21 files, 51 runs, 1187 lines'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-19'
