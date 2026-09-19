@@ -21,6 +21,7 @@ scope:
 - tests/unit/test_cli_single_child_groups.py
 - src/frob/app/agent_runner.py
 - src/frob/app/worktree_runner.py
+- src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,14 @@ scope_changes:
   glob: src/frob/app/worktree_runner.py
   reason: worktree_runner.py owns frob worktree's REAL runtime parser/dispatch (sweep),
     same reason as agent_runner.py above
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/__main__.py
+  reason: narrative move's positionals (file, line) collide with add_subparsers' own
+    positional slot the same way agent's path positional did -- flattening 'frob narrative
+    FILE LINE' requires normalizing argv before parse_args, and that boundary is owned
+    by _dispatch_narrative in __main__.py, not by _cli.py
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
