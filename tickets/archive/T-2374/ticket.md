@@ -235,6 +235,14 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve the 3 measured DOC006 false-positive tickets trimmed from
+    _docptr.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1316
+  new_length: 1685
 evidence:
 - tests/test_docptr_gate.py::TestDoc006FilePath::test_missing_path_flagged
 - tests/test_docblocks_gate.py::TestCCppNamespace::test_include_of_tracked_header_unanchored_warns
@@ -281,3 +289,11 @@ Closure is two-part per the epic (T-0969):
 Narrow `scope` to the actual files this family's findings live in once you've
 run the gate and can see them -- do not take a broad blanket scope; this keeps
 you disjoint from sibling children of T-0969.
+
+
+T-4709 follow-up (condensed from _TICKET_SUBDIR_DOC_RE's comment block in
+src/frob/gates/_docptr.py, trimmed for DOCARCH002's 12-line cap): the 3
+live DOC006 false positives T-2374 measured under DONE tickets were
+T-1881/evidence/, T-2195/attachments/, T-2328/attachments/, waived
+individually rather than widening T-2374's own scope into
+src/frob/gates/_docptr.py.
