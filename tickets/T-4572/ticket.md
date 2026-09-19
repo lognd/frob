@@ -44,6 +44,13 @@ body_changes:
   old_length: 0
   new_length: 974
 designated_repro_test: null
+acceptance:
+- text: GIVEN the land branch advances by a ledger-only commit while a land composes
+    WHEN the publish CAS misses THEN land re-merges and publishes on the next attempt
+    without operator action.
+  evidence: []
+- text: GIVEN a refused land THEN git status in the root is clean.
+  evidence: []
 threat: null
 component: null
 anchor: false
