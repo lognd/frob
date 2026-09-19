@@ -1,5 +1,5 @@
 ---
-id: T-draft-7b4d432f
+id: T-4571
 title: 'ticket merge-driver state-precedence resolution keeps the loser''s draft id
   line: after a sibling land promotes T-draft-X to T-NNNN on dev, merging dev into
   the draft''s worktree writes tickets/T-NNNN/ticket.md with id: T-draft-X, so every

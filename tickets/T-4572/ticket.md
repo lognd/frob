@@ -1,5 +1,5 @@
 ---
-id: T-draft-998fc2ae
+id: T-4572
 title: 'frob ticket land loses the compare-and-swap publish race to sibling ledger
   commits (ticket work/scope/accept mirrors) and refuses instead of re-merging and
   retrying: under 5+ agents every third land bounces with ''dev moved away from''

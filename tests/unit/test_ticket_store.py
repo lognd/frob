@@ -32,6 +32,7 @@ from frob.tickets._models import (
     replace_done_report_section,
 )
 from frob.tickets._store import (
+    TICKETS_LEDGER_LOCK_REL,
     _lock_path,
     _parse_ticket_file,
     _serialize_ticket,
@@ -559,8 +560,7 @@ class TestV2WriteTicket:
         report-free and `done-report.md` as the one on-disk copy, same as
         a single-ticket `write_ticket` already guarantees."""
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_all_v2_keeps_do\
-        # ne_report_split_out kind="unit"
+        # tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_all_v2_keeps_done_report_split_out kind="unit"  # noqa: E501
         (tmp_path / "tickets" / "T-0001").mkdir(parents=True)
         (tmp_path / "tickets" / "T-0001" / "ticket.md").write_text(
             _serialize_ticket(_ticket())
@@ -596,8 +596,7 @@ class TestWriteArchivedTicket:
 
     def test_v2_mode_writes_under_archive_dir(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_\
-        # under_archive_dir kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_under_archive_dir kind="unit"  # noqa: E501
         from frob.tickets._store import v2_archive_dir, write_archived_ticket
 
         # Any v2 marker (active or archived) flips _store_mode to v2.
@@ -619,8 +618,7 @@ class TestWriteArchivedTicket:
 
     def test_single_mode_splices_into_archive_file(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_spl\
-        # ices_into_archive_file kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_splices_into_archive_file kind="unit"  # noqa: E501
         from frob.tickets._store import write_archived_ticket
 
         # Pin v1/'single' mode explicitly (fresh-repo default is v2,
@@ -648,8 +646,7 @@ class TestWriteArchivedTicket:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
-        # e_round_trips_through_load_archive kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archive_round_trips_through_load_archive kind="unit"  # noqa: E501
         """T-1583: `write_archive` wrote the `tickets-archive.md` monofile
         even in v2 mode, where `load_archive` globs `tickets/archive/**`
         and never reads it -- `archive()` then dropped those same ids from
@@ -686,8 +683,7 @@ class TestWriteArchivedTicket:
         must keep `ticket.md` report-free and `done-report.md` as the one
         on-disk copy, byte for byte."""
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
-        # ed_ticket_keeps_done_report_split_out kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archived_ticket_keeps_done_report_split_out kind="unit"  # noqa: E501
         from frob.tickets._store import v2_archive_dir, write_archived_ticket
 
         adir = v2_archive_dir(tmp_path, "T-0001")
@@ -718,8 +714,7 @@ class TestWriteArchivedTicket:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
-        # e_prunes_ids_absent_from_the_map kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archive_prunes_ids_absent_from_the_map kind="unit"  # noqa: E501
         """`write_archive`'s contract is wholesale REPLACE, so the v2
         branch must prune an archived id the new map omits -- otherwise
         `renumber`'s rewrite would leave the old id behind as a ghost."""
@@ -742,8 +737,7 @@ class TestWriteArchivedTicket:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_pre\
-        # serves_sibling_archived_ticket kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_preserves_sibling_archived_ticket kind="unit"  # noqa: E501
         from frob.tickets._store import write_archive, write_archived_ticket
 
         atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
@@ -763,8 +757,7 @@ class TestWriteArchivedTicket:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
-        # e_round_trips_many_tickets_count_and_content kind="unit"
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archive_round_trips_many_tickets_count_and_content kind="unit"  # noqa: E501
         """T-1583's acceptance bar is higher than "the command exits 0":
         a real archive of many tickets must round-trip both its COUNT and
         each ticket's CONTENT byte-for-byte-meaningful (title/body/state),
@@ -825,8 +818,7 @@ class TestSetBodyArchivedTicketRouting:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append\
-        # _on_archived_ticket_writes_archive_path_only kind="unit"
+        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_archived_ticket_writes_archive_path_only kind="unit"  # noqa: E501
         from frob.tickets import set_body
         from frob.tickets._store import v2_archive_dir
 
@@ -866,8 +858,7 @@ class TestSetBodyArchivedTicketRouting:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append\
-        # _on_active_ticket_still_writes_active_path kind="unit"
+        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_active_ticket_still_writes_active_path kind="unit"  # noqa: E501
         # Must-NOT-regress control: a NON-archived ticket keeps writing to
         # the active tree exactly as before this fix.
         from frob.tickets import set_body
@@ -898,8 +889,7 @@ class TestSetBodyArchivedTicketRouting:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_single\
-        # _mode_append_on_archived_ticket_writes_archive_only kind="unit"
+        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_single_mode_append_on_archived_ticket_writes_archive_only kind="unit"  # noqa: E501
         """T-2709: single mode's branch of `_ticket_currently_archived`
         (a full `load_all`/`load_archive` membership check, since single
         mode has no per-ticket path to test cheaply) had no direct unit
@@ -1221,11 +1211,21 @@ class TestAtomicWrite:
 
 
 # frob:ticket T-0458
+# frob:ticket T-4555
 class TestLockPath:
     def test_lock_path_under_frob_dir(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir
         assert _lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
+
+    def test_public_lock_rel_matches_private_lock_path(self, tmp_path: Path) -> None:
+        # frob:ticket T-4555
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestLockPath.test_public_lock_rel_matches_private_lock_path  # noqa: E501
+        """`TICKETS_LEDGER_LOCK_REL` (the public export) and `_lock_path` (the
+        private helper) must always agree -- they are the one canonical
+        ledger-lock path, not two definitions that could drift apart."""
+        assert _lock_path(tmp_path) == tmp_path / TICKETS_LEDGER_LOCK_REL
 
 
 # frob:ticket T-0458

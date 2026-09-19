@@ -65,6 +65,7 @@ from frob.process._lock import (
     portable_flock_release,
 )
 from frob.tickets._models import TicketError, TicketQueue
+from frob.tickets._store import TICKETS_LEDGER_LOCK_REL
 
 # frob:ticket T-1619
 # frob:ticket T-3506
@@ -145,23 +146,6 @@ def _open_land_lock_fd_for_probe(path: Path) -> int | None:
         return os.open(str(path), os.O_RDWR | getattr(os, "O_BINARY", 0))
     except OSError:
         return None
-
-
-# frob:ticket T-3612
-# The single-writer ledger lock's advisory-lock path (T-0458, canonically
-# `frob.tickets._store._LOCK_REL`/`_lock_path` -- T-0601 documents that
-# path as deliberately PRIVATE, "no consumer outside this module and its
-# own test"). T-3612's narrowed splice-window probe (`_ledger_splice_
-# flock_probe` below) needs this SAME path from outside `_store`, for the
-# identical reason `LAND_LOCK_REL` below already crosses from `_land.py`
-# into this module: both sides of an exclusivity check must agree on
-# exactly ONE file, never a second, independently-defined path that could
-# silently drift apart. Properly exporting `_lock_path` from `_store`
-# would touch `src/frob/tickets/_store.py`, which is outside this
-# ticket's declared scope -- filed as a follow-up (see this ticket's Done
-# report) rather than silently widening scope here. The literal value
-# MUST stay byte-for-byte identical to `_store._LOCK_REL`.
-TICKETS_LEDGER_LOCK_REL = Path(".frob") / "tickets.lock"
 
 
 # frob:ticket T-3612

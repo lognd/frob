@@ -227,7 +227,28 @@ _ARCHIVE_HEADER = (
 # this repo serializes through one lock, not two, so an `archive()` call
 # (which touches both files) can never interleave with a concurrent
 # `write_ticket` on the active ledger alone.
-_LOCK_REL = Path(".frob") / "tickets.lock"
+#
+# frob:ticket T-4555
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
+# frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_public_lock_rel_matches_private_lock_path  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestTicketsLedgerLockRelSingleSource.test_leases_constant_is_the_store_constant  # noqa: E501
+# Public on purpose (T-0601 originally kept this private with "no consumer
+# outside this module and its own test"; T-3612 needed the exact same path
+# from `_leases.py` to probe the same lock `ledger_lock` holds and, since
+# `_store.py` was out of that ticket's scope, defined a second,
+# independently-declared copy there instead -- the "two copies that could
+# silently drift apart" shape `_leases.py`'s own `LAND_LOCK_REL` comment
+# already warns against for the other lock). `TICKETS_LEDGER_LOCK_REL` is
+# now the one canonical home; `_leases.py` imports it rather than
+# redefining it.
+TICKETS_LEDGER_LOCK_REL = Path(".frob") / "tickets.lock"
+
+# frob:ticket T-4555
+# `_LOCK_REL` is now a plain alias of the public `TICKETS_LEDGER_LOCK_REL`
+# (never a second literal) so every pre-existing private use in this
+# module stays byte-for-byte in sync with the public export by
+# construction.
+_LOCK_REL = TICKETS_LEDGER_LOCK_REL
 
 # frob:ticket T-0458
 # Thread-local re-entrancy bookkeeping for `ledger_lock`: {lock_path_str:
@@ -245,12 +266,16 @@ _lock_local = threading.local()
 
 # frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir
 # frob:ticket T-0601
+# frob:ticket T-4555
 def _lock_path(root: Path) -> Path:
     """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds.
 
-    Private (T-0601): no consumer outside this module and its own test --
-    `_land.py` deliberately uses its own distinctly-named `_land_lock_path`
-    rather than this one, so there is no cross-module public contract here."""
+    The function stays private (T-0601): no consumer outside this module
+    and its own test -- `_land.py` deliberately uses its own
+    distinctly-named `_land_lock_path` rather than this one. The relative
+    path itself is public as `TICKETS_LEDGER_LOCK_REL` (T-4555) for
+    cross-module probes such as `_leases.py`'s land-in-progress check,
+    which needs the exact path without depending on this function."""
     return root / _LOCK_REL
 
 
@@ -1153,8 +1178,7 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 # frob:ticket T-0764
 # frob:tests \
-# tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_rende\
-# r_that_would_drop_an_id_is_refused kind="unit"
+# tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _check_ledger_id_integrity(
     tickets: dict[str, Ticket], rendered: str
@@ -2155,11 +2179,9 @@ def _post_splice_integrity_check(
 # frob:ticket T-1561
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests \
-# tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_under_ar\
-# chive_dir kind="unit"
+# tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_under_archive_dir kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_splices_int\
-# o_archive_file kind="unit"
+# tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_splices_into_archive_file kind="unit"  # noqa: E501
 def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert ONE ticket into ARCHIVE storage (T-1561): the archive-side
     analog of `write_ticket`, which only ever writes to ACTIVE storage.

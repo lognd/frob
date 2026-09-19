@@ -1706,6 +1706,21 @@ class TestCommitFullLedgerChange:
         )
 
 
+# frob:ticket T-4555
+class TestTicketsLedgerLockRelSingleSource:
+    """T-4555: `_leases.TICKETS_LEDGER_LOCK_REL` is a re-export of
+    `_store.TICKETS_LEDGER_LOCK_REL`, not a second, independently-defined
+    copy -- T-3612 had introduced exactly that drift-prone duplicate
+    because `_store.py` was out of its declared scope."""
+
+    def test_leases_constant_is_the_store_constant(self) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestTicketsLedgerLockRelSingleSource.test_leases_constant_is_the_store_constant  # noqa: E501
+        from frob.tickets import _leases, _store
+
+        assert _leases.TICKETS_LEDGER_LOCK_REL is _store.TICKETS_LEDGER_LOCK_REL
+
+
 # frob:ticket T-1619
 # frob:ticket T-4314
 class TestRefuseIfLandInProgress:

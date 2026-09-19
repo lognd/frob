@@ -1040,6 +1040,7 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::write_all -->
 <!-- frob:describes src/frob/tickets/_store_migrate.py::migrate_to_ledger -->
 <!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
+<!-- frob:describes src/frob/tickets/_store.py::TICKETS_LEDGER_LOCK_REL -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 <!-- frob:describes src/frob/tickets/_store.py::iter_raw_ledger_frontmatter -->
 <!-- frob:describes src/frob/tickets/_store.py::v2_ticket_dir -->
@@ -1246,6 +1247,13 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
     # Writes via temp file + os.replace in the same directory (crash-safe);
     # the one write primitive both storage backends funnel through.
+TICKETS_LEDGER_LOCK_REL = Path(".frob") / "tickets.lock"
+    # T-4555: the ledger lock's path, relative to `root`, PUBLIC on
+    # purpose so a cross-module probe (`_leases.py`'s land-in-progress
+    # check) can name the exact file `ledger_lock` flocks without a
+    # second, independently-defined copy of the same literal. `_lock_path`
+    # stays private; this constant is the one canonical value both it and
+    # any outside consumer resolve against.
 def ledger_lock(root: Path) -> Iterator[None]
     # T-0458: exclusive, blocking, cross-process lock (fcntl.flock on
     # _lock_path(root)) serializing EVERY ledger mutation -- write_ticket,

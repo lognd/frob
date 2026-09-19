@@ -2,7 +2,7 @@
 id: T-4555
 title: Export tickets.lock path publicly from frob.tickets._store for cross-module
   probes
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-09-17'
