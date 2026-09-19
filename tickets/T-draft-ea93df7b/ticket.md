@@ -2,7 +2,7 @@
 id: T-draft-ea93df7b
 title: 'graph is rebuilt 5+ times per ticket close-out: --only checks share no cache,
   docptr always cold-rebuilds'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
