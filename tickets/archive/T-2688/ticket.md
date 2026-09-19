@@ -61,6 +61,13 @@ scope_changes:
     rule this ticket adds
   actor: logan
   at: '2026-08-27'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2625
+  new_length: 3134
 evidence:
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_silent_on_uncited_deletion
@@ -132,3 +139,5 @@ Filed as investigation/design work, not scoped to specific files yet
 -- the right implementation point (a new gate module vs extending
 COV003's existing logic to also scan closed tickets vs a pre-commit
 hook) needs a short design pass before this is picked up.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov008_silent_on_rename_with_rebound_citation's docstring used to say: 'MUST-STAY-QUIET fixture #2 (T-2688): a rename whose citation was ALREADY rebound to the test's new node id must stay silent -- the ticket's evidence no longer names the vanished old path at all, so there is nothing left for COV008 to match against the old path's disappearance.' Moved here; the test docstring now states only what it verifies.
