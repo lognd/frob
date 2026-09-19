@@ -2,7 +2,7 @@
 id: T-3020
 title: Register frob.narrative as a strata component; close its SELFAUDIT001/SYS003
   waivers
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -18,10 +18,18 @@ scope:
 - design/frob.strata
 - src/frob/gates/_narrative_blocks.py
 - src/frob/__main__.py
+- docs/commands/narrative.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/commands/narrative.md
+  reason: 'AFFECT001: narrative_blocks_gate''s affects()-closure doc must be touched
+    in the same diff that changes the function''s body (waiver removal)'
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: v0.532.0
