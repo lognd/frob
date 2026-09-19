@@ -2,7 +2,7 @@
 id: T-3412
 title: 'frob ticket scope: adding a doc FILE to scope does not subsume its own anchors,
   drowning closure warnings'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_scope.py
+- src/frob/graph/affects.py
+- tests/test_graph_affects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/affects.py
+  reason: the real anchor-vs-file scope-closure bug (and its fix) live in scope_doc_code_gaps,
+    not _scope.py as originally filed
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_graph_affects.py
+  reason: the real anchor-vs-file scope-closure bug (and its fix) live in scope_doc_code_gaps,
+    not _scope.py as originally filed
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: v0.533.0
