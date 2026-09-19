@@ -28,6 +28,13 @@ scope_changes:
     coverage
   actor: logan
   at: '2026-08-11'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve removed-subcommand examples trimmed from _docptr.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1633
+  new_length: 2012
 evidence:
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_sharded_archive_dir_is_an_archival_record_not_checked
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_ticket_dir_still_flagged
@@ -67,3 +74,11 @@ decision). Do NOT touch the 49 live (non-archived) ticket-body findings
 or the 25 live docs/** findings here -- those need actual per-pointer
 judgment/repair, not a categorical exclusion, and are their own,
 separately-filed follow-ups.
+
+
+T-4709 follow-up (condensed from _ARCHIVAL_DIR_PREFIX's comment block in
+src/frob/gates/_docptr.py, trimmed for DOCARCH002's 12-line cap):
+several now-removed subcommands -- `frob edit`/`frob dispatch`/
+`frob mission`/`frob todo` -- were named honestly in Done reports written
+while those commands still existed, and were part of the 500/584
+findings this exclusion silenced.
