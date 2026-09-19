@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/test_ticket_leases.py
 - tests/unit/test_ticket_store.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_store.py
   reason: test binding TICKETS_LEDGER_LOCK_REL / _lock_path invariant
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: frob:doc anchor for the new public TICKETS_LEDGER_LOCK_REL export
   actor: logan
   at: '2026-09-18'
 evidence:
