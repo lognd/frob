@@ -66,7 +66,7 @@ evidence:
 - tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_undeclared_helper_fires_sys116
 - tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_declared_helper_does_not_fire_sys116
 - tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_non_identifier_category_is_out_of_sys116_scope
-- tests/test_pii_provenance_trust_identity.py::TestSys115TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys115
+- tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys117
 - tests/test_pii_provenance_trust_identity.py::TestSys115TrustIdentityWithoutCarries::test_trust_identity_with_matching_carries_does_not_fire
 - tests/test_pii_provenance_trust_identity.py::TestEvaluateProvenance::test_evaluate_provenance_merges_both_rules
 - tests/test_pii_provenance_trust_identity.py::TestEvaluateProvenance::test_evaluate_provenance_clean_model_has_no_violations
@@ -85,6 +85,11 @@ evidence_changes:
 - old_node: tests/test_pii_provenance_trust_identity.py::TestSys114UndeclaredProvenance::test_non_identifier_category_is_out_of_sys114_scope
   new_node: tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_non_identifier_category_is_out_of_sys116_scope
   reason: rule-id renamed SYS114 -> SYS116 (clash with T-4113)
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_pii_provenance_trust_identity.py::TestSys115TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys115
+  new_node: tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys117
+  reason: rule-id renamed SYS115 -> SYS117 (clash with T-4113)
   actor: logan
   at: '2026-09-19'
 threat: null
