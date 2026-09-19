@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=story rollup: all file scope lives in the 14 child
+  leaves (T-4759..T-4809); this ticket carries the decision record only'
 designated_repro_test: null
 acceptance:
 - text: Given the 14 child leaves are closed, when a fresh project of every registered
