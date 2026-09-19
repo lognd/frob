@@ -22,6 +22,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2411
+  new_length: 2411
 designated_repro_test: null
 acceptance:
 - text: Given a fixture telemetry root, when frob ticket show T-xxxx runs, then the
@@ -53,7 +61,7 @@ is no subverb, so `frob ticket show` and `frob ticket land` are both just
 interesting distribution is collapsed into one bucket).
 
 CONSEQUENCE: the tail of the 51 top-level verbs and 54 ticket subverbs cannot be
-ranked from data. The rest of this story (T-4689..T-4693) deletes names on the
+ranked from data. The rest of this story (T-4690..T-4698) deletes names on the
 strength of `git grep` citation counts instead. This leaf makes the NEXT round
 of pruning data-driven, and gives the sunset shims a way to prove nobody is
 still calling the deprecated spelling.
