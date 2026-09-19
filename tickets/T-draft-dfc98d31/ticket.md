@@ -18,6 +18,7 @@ scope:
 - src/frob/strata/_effects.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/unit/strata/test_selfconform.py
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,14 +29,27 @@ scope_changes:
   reason: regression test proving the FROB_LAND_LOCK_ROOT env override
   actor: logan
   at: '2026-09-19'
-designated_repro_test: null
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: declare stratamod::env.read (brand new capability kind, 0-by-absence) for
+    _land_commit_in_progress's FROB_LAND_LOCK_ROOT read
+  actor: logan
+  at: '2026-09-19'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_warm_stage_env_override_finds_the_primary_root_lock
+- tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_sweep_context_does_not_write_lock
+- tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_testsuite_glob_growth_auto_accepts_and_writes_lock
+designated_repro_test: tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_warm_stage_env_override_finds_the_primary_root_lock
 acceptance:
 - text: GIVEN the composed-tree pre-commit sweep runs the check against a warm sweep
     stage / disposable squash worktree (not the primary checkout) WHEN FROB_LAND_LOCK_ROOT
     is set to the primary checkout's path THEN _land_commit_in_progress finds the
     real land.lock there and the testsuite-glob ratchet auto-accepts/writes the lock,
     instead of re-reporting a live SELFAUDIT001/SYS111 finding every run
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_warm_stage_env_override_finds_the_primary_root_lock
+  - tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_sweep_context_does_not_write_lock
+  - tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet::test_testsuite_glob_growth_auto_accepts_and_writes_lock
 threat: null
 component: null
 anchor: false
