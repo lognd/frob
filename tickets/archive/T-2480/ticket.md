@@ -105,6 +105,13 @@ scope_changes:
     evidence
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve TIMEOUT-outcome motivating incident trimmed from _bug_repro.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3413
+  new_length: 3996
 evidence:
 - tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_slow_test_exceeding_budget_is_timeout_not_no_verdict
 - tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_timeout_outcome_reports_distinctly_and_exits_nonzero
@@ -198,3 +205,14 @@ POSITIVE CONTROLS:
     confirmatory-only evidence repeatedly.
   - must-still-complete: a fast, genuinely-reproducing test still
     verifies within the normal path with no added friction.
+
+
+T-4709 follow-up (condensed from BugReproOutcome.TIMEOUT's docstring in
+src/frob/gates/_bug_repro.py, trimmed for DOCARCH002's 12-line cap):
+T-2480's own motivating incident was a repro test that elaborates the
+full strata design plus the entire SYS gate, legitimately exceeding a 60s
+budget on real hardware -- repro tests for architecture/design-level
+defects are structurally the slowest ones (demonstrating the defect means
+elaborating the whole model), so a fixed budget selectively
+disenfranchises exactly the repro tests covering the broadest,
+highest-consequence defects.
