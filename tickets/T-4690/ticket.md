@@ -48,6 +48,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 3416
   new_length: 3416
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3416
+  new_length: 3416
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
