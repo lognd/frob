@@ -1,5 +1,5 @@
 ---
-id: T-draft-e6b5bc31
+id: T-4657
 title: 'Typed ledger store API: one module every frob module reads and writes tickets
   through'
 state: queued
