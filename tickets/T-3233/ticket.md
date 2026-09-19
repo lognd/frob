@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_check.py
 - src/frob/_cli_parsers/_core.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,11 @@ scope_changes:
   reason: narrow off src/frob/_cli_parsers/_ticket/_closeout_evidence.py, leased by
     T-4550; actual --lang choices drift is in _check.py and _core.py only (reads frob.lang
     read-only, no write scope needed there)
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: docs/commands/check.md
+  reason: 'close scope-closure warning: _add_check_parser''s frob:doc target'
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
