@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/tickets/_leases.py
 - tests/unit/test_store_mode_memoization.py
+- src/frob/tickets/_doable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,7 +40,17 @@ scope_changes:
     by T-4632)
   actor: logan
   at: '2026-09-19'
-designated_repro_test: null
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: memoize _store_mode / fix per-call re-scan for TICK008 perf fix
+  actor: logan
+  at: '2026-09-19'
+evidence:
+- tests/unit/test_store_mode_memoization.py::TestStoreModeMemo::test_memoized
+- tests/unit/test_store_mode_memoization.py::TestStoreModeMemo::test_invalidates_new
+- tests/unit/test_store_mode_memoization.py::TestStoreModeMemo::test_store_mode_cache_invalidates_on_archive
+- tests/unit/test_store_mode_memoization.py::TestStoreModeMemo::test_store_mode_cache_is_per_root
+designated_repro_test: tests/unit/test_store_mode_memoization.py::TestStoreModeMemo::test_memoized
 threat: null
 component: null
 anchor: false
