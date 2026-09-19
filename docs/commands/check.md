@@ -197,31 +197,53 @@ which `ty` narrows per `--python-platform` target the same way
 typeshed's own conditional stubs do (see "PID liveness (T-3018)" in
 `docs/modules/process.md`).
 
-### Skip flags
+### Skip flags (`--skip STAGE`, T-4524)
 
-<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
+<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_skip_unified_arg -->
+`--skip` is one repeatable, comma-splittable flag mirroring `--only`'s
+stage vocabulary, plus the multi-language tool stages `--only` does not
+name:
+
+<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_skip_unified_arg -->
 ```bash
-frob check src/ --skip-ruff
-frob check src/ --skip-ty
-frob check src/ --skip-cycle
-frob check src/ --skip-dup
-frob check src/ --skip-arch
-frob check src/ --skip-bind
-frob check src/ --skip-exports
-frob check src/ --skip-gates
+frob check src/ --skip ruff,ty          # comma-split, one flag
+frob check src/ --skip ruff --skip ty   # or repeat the flag
+frob check src/ --skip cycle,dup,arch,bind,exports,gates
 ```
 
-**T-2320: `--skip-ruff` skips BOTH `ruff check` and `ruff format --check`.**
-`--skip-ruff-check`/`--skip-ruff-format` split that bundle so a caller can
-skip just one half (either the bundled `--skip-ruff` or the matching split
-flag skips a given stage -- they combine with OR, never override each
-other):
+Known stage names: `ruff`, `ruff-check`, `ruff-format`, `ty`, `arch`,
+`cycle`, `dup`, `bind`, `exports`, `gates`, `tests`, `build`,
+`clang-tidy`, `clang-format`, `cargo-check`, `clippy`, `fmt`, `tsc`,
+`eslint`, `prettier`. An unrecognized name is a usage error naming both
+the bad stage and the full vocabulary, not a silent no-op.
 
-<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
+**T-2320: `--skip ruff` skips BOTH `ruff check` and `ruff format
+--check`.** `--skip ruff-check`/`--skip ruff-format` split that bundle so
+a caller can skip just one half (the bundled `ruff` stage and either
+split stage combine with OR, never override each other):
+
+<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_skip_unified_arg -->
 ```bash
-frob check src/ --skip-ruff-check     # skip lint, still run format --check
-frob check src/ --skip-ruff-format    # skip format --check, still run lint
+frob check src/ --skip ruff-check     # skip lint, still run format --check
+frob check src/ --skip ruff-format    # skip format --check, still run lint
 ```
+
+**`--skip` and `--only` naming the same stage refuse.** `frob check
+--only ruff --skip ruff` exits 1 with an error naming the conflicting
+stage -- drop one or the other.
+
+#### Deprecated per-stage flags (removed one release after T-4524)
+
+The 20 individual `--skip-<stage>` flags (`--skip-ruff`, `--skip-ty`,
+`--skip-cycle`, `--skip-dup`, `--skip-arch`, `--skip-bind`,
+`--skip-exports`, `--skip-gates`, `--skip-tests`, `--skip-ruff-check`,
+`--skip-ruff-format`, `--skip-build`, `--skip-clang-tidy`,
+`--skip-clang-format`, `--skip-cargo-check`, `--skip-clippy`,
+`--skip-fmt`, `--skip-tsc`, `--skip-eslint`, `--skip-prettier`) still
+work for one release, but are hidden from `frob check --help`'s rendered
+block (each carries a DEPRECATED-tagged help string, still visible to
+anything introspecting the parser directly). Use `--skip <stage>`
+instead.
 
 ### Tier-A/B/C deterministic autofix (`--fix`)
 
@@ -506,7 +528,7 @@ Runs in order:
 frob check . --type cpp
 frob check . --type cpp --valgrind
 frob check . --type cpp --build-dir build/
-frob check . --type cpp --skip-build --skip-clang-format
+frob check . --type cpp --skip build,clang-format
 ```
 
 ## Rust mode (auto-detected from `Cargo.toml`)
@@ -521,7 +543,7 @@ Runs in order:
 ```bash
 frob check . --type rust
 frob check . --type rust --valgrind
-frob check . --type rust --skip-clippy
+frob check . --type rust --skip clippy
 ```
 
 ## TypeScript mode (auto-detected from `package.json` + `tsconfig.json`)
@@ -538,18 +560,15 @@ never a crash.
 <!-- frob:describes src/frob/check/__init__.py::run_check_ts -->
 ```bash
 frob check . --type typescript
-frob check . --type typescript --skip-eslint --skip-prettier
-frob check . --type typescript --skip-tests
+frob check . --type typescript --skip eslint,prettier
+frob check . --type typescript --skip tests
 ```
 
 ### TypeScript skip flags
 
-<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
+<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_skip_unified_arg -->
 ```bash
-frob check src/ --skip-tsc
-frob check src/ --skip-eslint
-frob check src/ --skip-prettier
-frob check src/ --skip-tests
+frob check src/ --skip tsc,eslint,prettier,tests
 ```
 
 ## Auto-detection

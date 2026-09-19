@@ -48,6 +48,43 @@ _DEPLOY_CONFORM_SEVERITY = "error"
 _log = get_logger(__name__)
 
 
+# frob:ticket T-4524
+def _resolve_check_root(cfg: AppConfig) -> Path:
+    """Validate `cfg.check_path` exists and that `--skip`/`--only` name
+    disjoint stages, exiting 1 on either failure; otherwise returns the
+    resolved check root (T-4524: split out of `run` to keep it under
+    ARCH001's length threshold)."""
+    root = cfg.check_path or Path(".")
+    if not root.exists():
+        _log.error("path does not exist: %s", root)
+        sys.exit(1)
+    conflicting_stage = _refuse_skip_only_conflict(cfg)
+    if conflicting_stage is not None:
+        _log.error(
+            "--skip and --only both name stage %r -- drop one", conflicting_stage
+        )
+        sys.exit(1)
+    return root
+
+
+# frob:ticket T-4524
+# frob:tests tests/unit/test_check_skip_flag.py::TestSkipOnlyConflict
+def _refuse_skip_only_conflict(cfg: AppConfig) -> str | None:
+    """`None` when `--skip` and `--only` name disjoint stages; otherwise
+    the first stage both name, so `run` can refuse loudly (T-4524: a
+    stage named on both is a self-contradictory request -- run it, or
+    skip it, never both silently resolved one way)."""
+    from frob._cli_parsers._check import _SKIP_STAGE_FIELDS
+
+    only_stages = set(cfg.check_only or [])
+    if not only_stages:
+        return None
+    for stage, field in sorted(_SKIP_STAGE_FIELDS.items()):
+        if stage in only_stages and getattr(cfg, field, False):
+            return stage
+    return None
+
+
 def _verbosity_to_level(count: int) -> int:
     """Map `frob check`'s `-v` count to a stdout log level (T-0202).
 
@@ -1152,7 +1189,7 @@ def _check_is_mutating(cfg: AppConfig) -> bool:
     return bool(cfg.check_stamp_baseline or cfg.check_stamp_coverage)
 
 
-# frob:ticket T-0787
+# frob:ticket T-4524
 # frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_pins_to_own_worktree_lease kind="integration"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_refuses_when_lease_recorded_for_another_worktree kind="integration"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_read_only_invocation_skips_the_lease_check kind="integration"  # noqa: E501
@@ -1567,11 +1604,7 @@ def run(cfg: AppConfig) -> None:
     (`Progress` is a no-op off a TTY, so this never changes non-TTY/CI
     output).
     """
-    root = cfg.check_path or Path(".")
-
-    if not root.exists():
-        _log.error("path does not exist: %s", root)
-        sys.exit(1)
+    root = _resolve_check_root(cfg)
 
     # frob:ticket T-0627
     # frob:ticket T-1004
@@ -1583,23 +1616,40 @@ def run(cfg: AppConfig) -> None:
         _log.error(_refuse_full_check_message())
         sys.exit(1)
 
-    # frob:ticket T-0787
-    # frob:ticket T-0806
-    # T-0806: `_refuse_ticket_lease_mismatch` (and `_handle_stamp_modes`,
-    # via `stamp_baseline`'s own gate run) can each spawn `git` through
-    # `frob.gitio` before `_run_all_stages` ever enters `_stdout_log_ctx`
-    # below -- their DEBUG/INFO log lines used to print to stdout
-    # unguarded even under `--json`, corrupting the JSON payload (observed
-    # as a `json.loads` failure on real `git ls-files`/`rev-parse` noise
-    # from a tmp-dir fixture with no `.git`). Wrap both under the same
-    # `quiet_stdout_logs` `--json` uses everywhere else; the reentrant
-    # depth-counter (T-0125) means `_run_all_stages`'s own nested entry
-    # later is a no-op, not a double-clamp.
-    # T-2486: `_guard_json_stdout_writes` (the structural boundary guard,
-    # a strict superset of `quiet_stdout_logs`'s log-level-only reach)
-    # replaces the plain `quiet_stdout_logs`/`nullcontext` choice this
-    # line used before -- see that context manager's own docstring for
-    # why a level-based guard alone is not enough.
+    # frob:ticket T-4524
+    # frob:ticket T-4524
+    if _handle_lease_and_stamp_modes(root, cfg):
+        return
+
+    if cfg.check_json and _try_check_delta_via_daemon(root, cfg):
+        return
+    _run_stages_and_report(cfg, root)
+
+
+# frob:ticket T-4524
+# frob:ticket T-4524
+def _handle_lease_and_stamp_modes(root: Path, cfg: AppConfig) -> bool:
+    """Refuse a ticket-lease mismatch and run any `--stamp-*` early-exit
+    mode; returns True when `run` should return immediately afterward
+    (T-4524: split out of `run` to keep it under ARCH001's length
+    threshold, no behavior change).
+
+    T-0806: `_refuse_ticket_lease_mismatch` (and `_handle_stamp_modes`,
+    via `stamp_baseline`'s own gate run) can each spawn `git` through
+    `frob.gitio` before `_run_all_stages` ever enters `_stdout_log_ctx`
+    below -- their DEBUG/INFO log lines used to print to stdout
+    unguarded even under `--json`, corrupting the JSON payload (observed
+    as a `json.loads` failure on real `git ls-files`/`rev-parse` noise
+    from a tmp-dir fixture with no `.git`). Wrap both under the same
+    `quiet_stdout_logs` `--json` uses everywhere else; the reentrant
+    depth-counter (T-0125) means `_run_all_stages`'s own nested entry
+    later is a no-op, not a double-clamp.
+
+    T-2486: `_guard_json_stdout_writes` (the structural boundary guard,
+    a strict superset of `quiet_stdout_logs`'s log-level-only reach)
+    replaces the plain `quiet_stdout_logs`/`nullcontext` choice this
+    line used before -- see that context manager's own docstring for
+    why a level-based guard alone is not enough."""
     lease_ctx = (
         _guard_json_stdout_writes() if cfg.check_json else contextlib.nullcontext()
     )
@@ -1608,12 +1658,7 @@ def run(cfg: AppConfig) -> None:
         stamp_mode_ran = False if lease_mismatch else _handle_stamp_modes(root, cfg)
     if lease_mismatch:
         sys.exit(1)
-    if stamp_mode_ran:
-        return
-
-    if cfg.check_json and _try_check_delta_via_daemon(root, cfg):
-        return
-    _run_stages_and_report(cfg, root)
+    return stamp_mode_ran
 
 
 # frob:ticket T-1260

@@ -2,7 +2,7 @@
 id: T-4524
 title: 'frob check: replace the 20 --skip-<stage> flags with one repeatable --skip
   STAGE[,STAGE] mirroring --only'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-09-16'
@@ -24,18 +24,25 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check_skip_flag.py::TestUnifiedSkipFlag::test_comma_split_sets_both_legacy_attributes
+- tests/unit/test_check_skip_flag.py::TestLegacyFlagsDeprecated::test_legacy_flag_still_works
+- tests/unit/test_check_skip_flag.py::TestSkipOnlyConflict::test_conflicting_stage_detected
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --skip ruff,ty WHEN it runs THEN the ruff and ty stages are
     skipped exactly as --skip-ruff --skip-ty did
-  evidence: []
+  evidence:
+  - tests/unit/test_check_skip_flag.py::TestUnifiedSkipFlag::test_comma_split_sets_both_legacy_attributes
 - text: GIVEN every old --skip-<stage> spelling WHEN passed THEN it still works for
     one release with a DEPRECATED note in --help, and frob check --help lists 20 flags
     fewer
-  evidence: []
+  evidence:
+  - tests/unit/test_check_skip_flag.py::TestLegacyFlagsDeprecated::test_legacy_flag_still_works
 - text: GIVEN --skip and --only name the same stage WHEN parsed THEN the CLI refuses
     with a message naming the stage
-  evidence: []
+  evidence:
+  - tests/unit/test_check_skip_flag.py::TestSkipOnlyConflict::test_conflicting_stage_detected
 threat: null
 component: null
 anchor: false

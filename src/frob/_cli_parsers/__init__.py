@@ -16,6 +16,7 @@ from ._check import (
     _add_check_skip_args_cpp,
     _add_check_skip_args_python,
     _add_check_skip_args_rust_ts,
+    _add_check_skip_unified_arg,
 )
 from ._core import (
     _add_agent_parser,
@@ -123,6 +124,7 @@ __all__ = [
     "_add_check_skip_args_cpp",
     "_add_check_skip_args_python",
     "_add_check_skip_args_rust_ts",
+    "_add_check_skip_unified_arg",
     "_add_claude_parser",
     "_add_clean_parser",
     "_add_coverage_parser",
