@@ -14,10 +14,60 @@ runs_last: false
 milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/_hierarchy.py
+- src/frob/gates/_milestone.py
+- src/frob/tickets/_evidence.py
+- tests/unit/test_graph_hierarchy.py
+- docs/design/ticket-strata-shared-graph-inventory.md
+- docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/_hierarchy.py
+  reason: 'T-3032: extract the duplicated parent/child descendants-BFS walk (frob.gates._milestone._descendants_of
+    / frob.tickets._evidence._open_descendant_ids) into one shared frob.graph helper,
+    plus the required per-concern inventory doc'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/gates/_milestone.py
+  reason: 'T-3032: extract the duplicated parent/child descendants-BFS walk (frob.gates._milestone._descendants_of
+    / frob.tickets._evidence._open_descendant_ids) into one shared frob.graph helper,
+    plus the required per-concern inventory doc'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'T-3032: extract the duplicated parent/child descendants-BFS walk (frob.gates._milestone._descendants_of
+    / frob.tickets._evidence._open_descendant_ids) into one shared frob.graph helper,
+    plus the required per-concern inventory doc'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_graph_hierarchy.py
+  reason: 'T-3032: extract the duplicated parent/child descendants-BFS walk (frob.gates._milestone._descendants_of
+    / frob.tickets._evidence._open_descendant_ids) into one shared frob.graph helper,
+    plus the required per-concern inventory doc'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/ticket-strata-shared-graph-inventory.md
+  reason: 'T-3032: extract the duplicated parent/child descendants-BFS walk (frob.gates._milestone._descendants_of
+    / frob.tickets._evidence._open_descendant_ids) into one shared frob.graph helper,
+    plus the required per-concern inventory doc'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-3032: extract the duplicated parent/child descendants-BFS walk (frob.gates._milestone._descendants_of
+    / frob.tickets._evidence._open_descendant_ids) into one shared frob.graph helper,
+    plus the required per-concern inventory doc'
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: v0.532.0
