@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_design_invariants.py
 - src/frob/graph/callgraph.py
 - src/frob/gates/__init__.py
+- tests/unit/test_design_invariants.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
+  reason: wire/register/document new INV010 forbidden-constant reachability rule
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_design_invariants.py
   reason: wire/register/document new INV010 forbidden-constant reachability rule
   actor: logan
   at: '2026-09-19'
