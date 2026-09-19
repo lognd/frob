@@ -22,6 +22,7 @@ scope:
 - src/frob/scaffold/project.py
 - tests/unit/test_scaffold_unity_project.py
 - docs/commands/scaffold.md
+- src/frob/scaffold/_unity_project.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,13 @@ scope_changes:
   glob: docs/commands/scaffold.md
   reason: render_unity_project is a new frob:doc docs/commands/scaffold.md#public-api
     symbol; the doc's own manifest table needs the unity-project entry
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/scaffold/_unity_project.py
+  reason: 'LARGE001: project.py was already at exactly 800 lines before this diff;
+    adding render_unity_project and its helpers pushed it to 949. Move the unity-project-specific
+    rendering logic into its own sibling module.'
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
