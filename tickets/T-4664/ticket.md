@@ -1,5 +1,5 @@
 ---
-id: T-draft-3cf5f991
+id: T-4664
 title: 'Story A: ratchet lock and the SYS111 mechanism -- one writer, a cache, a drift
   report, a derivable ceiling'
 state: queued
