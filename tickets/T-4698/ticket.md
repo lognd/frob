@@ -34,6 +34,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2338
+  new_length: 2338
 designated_repro_test: null
 acceptance:
 - text: Given the 20 tail subverbs, when the ticket closes, then the Done report carries
@@ -56,7 +64,7 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-POINTS: 3. Parent story T-4687. blocked_by T-4689 (shim helper) and T-4692
+POINTS: 3. Parent story T-4687. blocked_by T-4690 (shim helper) and T-4696
 (shares _cli_parsers/_ticket/__init__.py and app/ticket_runner/__init__.py).
 
 THE TAIL. Of `frob ticket`'s 54 subverbs, 22 have ever been used in this fleet.
@@ -69,11 +77,11 @@ METHOD, per subverb, in this order:
 1. `git grep -n "ticket <name>"` across src/, .claude/, docs/, scripts/,
    tests/. Record the hit count and the citing files.
 2. Check .frob/telemetry.jsonl for a kind=cli row naming it. NOTE: today the
-   subverb is NOT recorded (91% of rows have an empty `subcommand`; see T-4688)
+   subverb is NOT recorded (91% of rows have an empty `subcommand`; see T-4689)
    so an absence here is NOT evidence of disuse. Treat a telemetry zero as
    unknown, never as a verdict.
 3. Verdict: KEEP (a real consumer exists -- name the file and line) or DELETE
-   (with a T-4689 shim for one minor version).
+   (with a T-4690 shim for one minor version).
 
 KNOWN LOAD-BEARING, do not delete without an explicit argument in the Done
 report: `plan` (state transition queued -> planned, part of the close dance),
@@ -81,8 +89,8 @@ report: `plan` (state transition queued -> planned, part of the close dance),
 `waive-audit` (T-1614/T-2467), `contention` (the number that caps fleet
 parallelism). `migrate` is a one-shot legacy converter and is the strongest
 delete candidate. `debt` and `deprecated` duplicate the top-level verbs of the
-same names that T-4690 is folding into `frob check --only` -- coordinate the
-verdict with T-4690's outcome rather than deciding twice.
+same names that T-4692 is folding into `frob check --only` -- coordinate the
+verdict with T-4692's outcome rather than deciding twice.
 
 ACCEPTANCE IS THE VERDICT TABLE: the Done report must carry one row per subverb
 with name, verdict, hit count, and the citing file:line (or "no consumer found"
