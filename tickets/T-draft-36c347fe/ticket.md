@@ -1,7 +1,7 @@
 ---
 id: T-draft-36c347fe
 title: 'frob-suggest: dedupe dual hook registration and make attempt counter per-agent-session'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -14,14 +14,37 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- .claude/hooks/*
 - .claude/settings.json
 - tests/test_hook_frob_suggest.py
 - tests/test_hook_sync_claude_config.py
+- .claude/hooks/sync-claude-config.py
+- .claude/hooks/frob-suggest.py
+- .claude/hooks/_shellscan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: .claude/hooks/*
+  reason: narrow to avoid lease collision with T-4689
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: files touched for registration dedupe + per-session counter
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: .claude/hooks/frob-suggest.py
+  reason: files touched for registration dedupe + per-session counter
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: .claude/hooks/_shellscan.py
+  reason: files touched for registration dedupe + per-session counter
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: sync-claude-config.py does not materialize a second registration of a hook
