@@ -21,6 +21,7 @@ scope:
 - tests/gates_suite/test_guard_closure.py
 - docs/modules/gates.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,11 @@ scope_changes:
 - op: add
   glob: design/frob.strata
   reason: GUARD001's frob.toml read needs a fs.read via declaration
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: accepted_count bump for the new via entry
   actor: logan
   at: '2026-09-19'
 triage_changes:
