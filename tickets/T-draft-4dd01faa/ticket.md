@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/__init__.py
+- src/frob/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
 - op: add
   glob: src/frob/lang/__init__.py
   reason: export detect_unity_project/UnityProjectDetectError/UnityProjectInfo
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: src/frob/__init__.py
+  reason: export doctor.UnityEditorStatus
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
