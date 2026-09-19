@@ -10,6 +10,10 @@ priority: medium
 parent: T-1193
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/testing/_collect.py
@@ -17,6 +21,8 @@ scope:
 - docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/design/registry/check-coverage.yaml
@@ -24,6 +30,13 @@ scope_changes:
     collector plus TEST013 disclosure are proven at gate level
   actor: logan
   at: '2026-08-01'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1985
+  new_length: 2710
 evidence:
 - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
 - tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
@@ -45,6 +58,9 @@ acceptance:
   - tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Successor row from T-1193 (CHK-SUBSYS-GATES-ACCOUNTING, docs/design/registry/check-coverage.yaml).
 
@@ -76,3 +92,5 @@ multi-source/no-build-dir case -- never a silent full-credit pass for
 those. Do not simply delete the fallback without a collector upgrade: per
 T-0552's own Done report, that would regress real existing C/C++
 TEST001-004 coverage to zero rather than to a disclosed-degraded state.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_cpp_directive_resolves_via_real_ctest_node_id's docstring carried a long narrative (T-1266, CHK-SUBSYS-GATES-ACCOUNTING successor: the C/C++ mirror of test_ts_directive_resolves_via_real_vitest_node_id above; T-0886 already made collect_cpp_tests source-accurate for the common single-source-per-target case; nothing previously proved a real frob:tests edge actually resolves against a real node id via _edge_has_execution_evidence's first real-evidence branch rather than falling through to the c/cpp structural fallback). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
