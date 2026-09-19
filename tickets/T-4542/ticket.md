@@ -2,7 +2,7 @@
 id: T-4542
 title: 'post-land sweep regression from T-4510: 1 new (rule, file) identit(ies), 2
   finding(s) (WIRE002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -24,6 +24,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'bound([''tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo'']):
+    both frob:waive WIRE001 directives in src/frob/dup/_legacy_cs.py carry follow_up="T-4542"
+    and WIRE002 reports zero findings against the live repo'
+  evidence: []
 threat: null
 component: null
 anchor: false
