@@ -6,8 +6,6 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: critical
-blocked_by:
-- T-4657
 parent: T-4656
 tier: ticket
 sprint: v0.535.0
@@ -70,3 +68,6 @@ A violation is ARCH10x RED in `frob check`, not a warning. Log every checked edg
 Keep the existing app -> lang example contract intact; this leaf ADDS the kernel layers to it.
 
 Note: the exact path globs per layer depend on the module names the sibling ledger/lease/land leaves land. File the contract against the paths that exist when this leaf starts and state any deferred layer in the done report.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4657 -- T-4657 is READY and queued to land; blocker is land order only
