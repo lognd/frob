@@ -17,7 +17,6 @@ scope:
 - src/frob/tickets/_registry_files.py
 - src/frob/tickets/_land.py
 - frob.toml
-- docs/design/registry/check-coverage.yaml
 - docs/modules/tickets.md
 - tests/test_tickets_registry_files.py
 - src/frob/tickets/_models.py
@@ -58,6 +57,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: whole-file leased by in-progress T-4116; same premise collision as design/frob.strata/capability-via-ratchet.lock.json
     above
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: docs/design/registry/check-coverage.yaml
+  reason: whole-file leased by in-progress T-4112/T-4113; same premise collision
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
