@@ -9,18 +9,31 @@ priority: medium
 parent: T-0397
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/
 - src/frob/graph/
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_gates.py
   reason: unit tests for TEST006/REL001 fixes made by this audit ticket
   actor: logan
   at: '2026-07-21'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 637
+  new_length: 1142
 evidence:
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
 - tests/gates_suite/test_test_gate.py::TestTestGate::test_changelog_mentions_rejects_substring_in_prose
@@ -28,5 +41,10 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 See docs/audits/gates-accounting.md. HIGH: the one blocking per-symbol test gate clears on a vacuous name-matching test while TEST002/005 are non-blocking WARN; DRIFT001 default sig facet is blind to body/behavior rewrites so a documented lie passes; TS/C/C++ frob:tests edges require NO execution evidence. Plus: coverage/stamp/baseline/prework chain is gitignored-local so CI cannot trust it. RIGHT-WAY fix: strengthen test-presence to reject vacuous tests + make it blocking; DRIFT over body/doc facets not just sig; execution evidence for non-Python; make CI-critical signals trackable. Then re-audit until empty. MED/LOW in the doc.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_test_gate.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp's docstring used to say: 'T-0403 B15: a file added after the last stamp has no entry in file_hashes at all -- it must be reported stale, not silently skipped (a prior version only compared hashes for paths already present in the stamp, so brand-new files' coverage went unmeasured while TEST006 stayed green).' Moved here; the test docstring now states only what it verifies.
