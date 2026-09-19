@@ -1,5 +1,5 @@
 ---
-id: T-draft-7a0794a0
+id: T-4807
 title: 'Docstring half of the DOCARCH002 Tier-A --fix: keep paragraph 1, route the
   remainder to the cited ticket or to docs/modules with a frob:doc pointer (1055 docstrings,
   39k lines)'
