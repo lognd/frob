@@ -14,11 +14,34 @@ milestone: v1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/_cli_parsers/**
+- src/frob/_cli_parsers/_check.py
+- src/frob/_cli_parsers/_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: narrow off src/frob/_cli_parsers/_ticket/_closeout_evidence.py, leased by
+    T-4550; actual --lang choices drift is in _check.py and _core.py only (reads frob.lang
+    read-only, no write scope needed there)
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: src/frob/_cli_parsers/_check.py
+  reason: narrow off src/frob/_cli_parsers/_ticket/_closeout_evidence.py, leased by
+    T-4550; actual --lang choices drift is in _check.py and _core.py only (reads frob.lang
+    read-only, no write scope needed there)
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: src/frob/_cli_parsers/_core.py
+  reason: narrow off src/frob/_cli_parsers/_ticket/_closeout_evidence.py, leased by
+    T-4550; actual --lang choices drift is in _check.py and _core.py only (reads frob.lang
+    read-only, no write scope needed there)
+  actor: logan
+  at: '2026-09-18'
 designated_repro_test: null
 threat: null
 component: null
