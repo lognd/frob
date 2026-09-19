@@ -1,5 +1,5 @@
 ---
-id: T-draft-090686fc
+id: T-4716
 title: Gate registry owns each rule's one-sentence description; DOCENUM002 flags mismatched/unregistered
   docs table rows
 state: queued

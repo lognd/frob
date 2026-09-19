@@ -3842,6 +3842,57 @@ exempt from this bug; it was exempt from the misdiagnosis this section
 corrects. The `ledger_lock`-widening fix above applies unconditionally
 to both modes.
 
+## `frob.tickets._land_compose` -- ledger-only CAS retry (T-4572)
+
+Under fleet load a precomposed land's CAS publish routinely lost the race
+not to a sibling LAND but to sibling agents' own ledger-mirror commits
+(`chore(tickets): mirror scope/accept/body ... from worktree`, deliberately
+allowed to land mid-compose per T-3612) -- after composing for 10-25
+minutes, the publish was rejected and the ENTIRE compose was redone from
+scratch, repeatedly, under a busy queue.
+
+- `commits_touch_only_ledger_paths(repo, old_tip, new_tip)` reports `True`
+  iff EVERY commit in `old_tip..new_tip` touches only `tickets/**` or a
+  land-owned file (`CHANGELOG.md`) -- checked per-commit via `git log
+  --name-only`, not as one aggregate diff, so an add-then-remove pair
+  spanning two commits cannot hide a real code touch behind a diff that
+  cancels out.
+- `rebase_composed_commit_onto(repo, pre_land_tip, composed_sha, new_base)`
+  re-parents the land's OWN content change -- the diff `pre_land_tip..
+  composed_sha`, nothing else -- onto `new_base`, entirely out-of-tree
+  (same scratch-`GIT_INDEX_FILE` diff-and-apply mechanism as
+  `compose_tree_out_of_tree`, reused with the diff pair swapped). Returns
+  `Err(ComposeFailed)` if the land's own diff no longer applies cleanly
+  against `new_base` -- never expected for a verified ledger-only advance,
+  but checked rather than assumed.
+
+See `frob.tickets._land_squash` -- ledger-only CAS retry (T-4572) for how
+`_fold_publish_and_resync` wires these into the actual retry loop.
+
+## `frob.tickets._land_squash` -- ledger-only CAS retry (T-4572)
+
+`_fold_publish_and_resync`'s CAS-miss handling now retries, bounded to
+`_LEDGER_ONLY_CAS_RETRY_LIMIT` (5) attempts, IF AND ONLY IF
+`commits_touch_only_ledger_paths` reports the sibling advance is
+ledger-only: the already-folded commit is rebased onto the new tip
+(`rebase_composed_commit_onto`) and the SAME CAS is retried -- no gate
+re-run, no composed-tree re-check, since a ledger-only advance cannot
+touch anything those gates examined. Any commit outside that shape (a
+real sibling land touching code) falls back to the pre-T-4572 behavior
+unchanged: `Err(LandError.DirtyMain)`, full recompose left to the
+caller's own retry (`frob ticket land ... --worktree ...` re-run).
+
+`_clean_root_on_refusal(root, stage, pre_land_tip, final_id)` is a
+defensive companion run alongside the existing `stage` unwind on every
+refusal path in `_fold_publish_and_resync`: a precomposed land
+(`stage != root`) never stages anything in `root` before publish, so
+`root` should already be clean on refusal, but a refused land leaving
+`root` DirtyMain-blocked for every sibling was exactly the T-4572
+incident. It runs `_verified_reset_root` against `root` too, which only
+ever hard-resets when `root`'s HEAD still equals `pre_land_tip` and
+degrades to its own safe unstage-only drift refusal otherwise (T-1740),
+so it can never destroy a sibling's real, later commit.
+
 ### The T-3135 warm sweep stage
 
 "What deliberately did NOT move" above (the T-1514 pre-commit unscoped

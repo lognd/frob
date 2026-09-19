@@ -1,7 +1,6 @@
 ---
-id: T-draft-d5c0733b
-title: 'Source narrative C6: arch/ check/ clean/ deploy/ dup/ narrative/ perf/ (A-P)
-  -- 21 files, 31 runs, 648 lines'
+id: T-4719
+title: 'Source narrative C5: graph/ + strata/ -- 21 files, 51 runs, 1187 lines'
 state: queued
 kind: docs
 origin: human
@@ -15,27 +14,27 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/__init__.py
-- src/frob/_cli_parsers/_ticket/__init__.py
-- src/frob/arch/__init__.py
-- src/frob/arch/_abstraction.py
-- src/frob/arch/_mayraise_tables.py
-- src/frob/arch/_models.py
-- src/frob/arch/_normalized.py
-- src/frob/arch/_python.py
-- src/frob/check/__init__.py
-- src/frob/check/_python.py
-- src/frob/clean/_rules.py
-- src/frob/deploy/_audit.py
-- src/frob/deploy/_conform.py
-- src/frob/doctor.py
-- src/frob/dup/_legacy.py
-- src/frob/dup/_template.py
-- src/frob/excludes.py
-- src/frob/findings.py
-- src/frob/logging/logger.py
-- src/frob/narrative/_migrate.py
-- src/frob/perf/_hotpath_smells.py
+- src/frob/graph/__init__.py
+- src/frob/graph/_core.py
+- src/frob/graph/cache.py
+- src/frob/graph/dsl.py
+- src/frob/graph/lock.py
+- src/frob/graph/reach.py
+- src/frob/graph/summary.py
+- src/frob/strata/_audit.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_facts.py
+- src/frob/strata/_infra.py
+- src/frob/strata/_multifile.py
+- src/frob/strata/_mutation_audit.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_selfconform_binding_rules.py
+- src/frob/strata/_selfconform_ids.py
+- src/frob/strata/_selfconform_surface_rules.py
+- src/frob/strata/_threat_catalog_benign.py
+- src/frob/strata/_threat_catalog_cwe.py
+- src/frob/strata/_threat_catalog_quality.py
+- src/frob/strata/_threat_discharge.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,36 +63,36 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-CLUSTER leaf of T-4691 (C6). Scope-disjoint from every other cluster leaf;
+CLUSTER leaf of T-4691 (C5). Scope-disjoint from every other cluster leaf;
 not blocked by the gate (T-4693) or tool (T-4697) leaves -- `frob narrative move
 <file> <line>` already works per-block and hand migration is sanctioned. Take
 this leaf now; if T-4697's bulk mode lands first, use it.
 
 MEASURED 2026-09-19 over src/frob/**/*.py (scratchpad/measure.py):
-  21 files, 31 comment runs of 15+ consecutive `#` lines, 648 lines.
+  21 files, 51 comment runs of 15+ consecutive `#` lines, 1187 lines.
 
 PER-FILE:
-    4 runs    73 lines  src/frob/arch/_abstraction.py
-    3 runs    73 lines  src/frob/arch/_python.py
-    3 runs   105 lines  src/frob/check/__init__.py
-    3 runs    52 lines  src/frob/check/_python.py
-    2 runs    43 lines  src/frob/doctor.py
-    1 runs    36 lines  src/frob/__init__.py
-    1 runs    15 lines  src/frob/_cli_parsers/_ticket/__init__.py
-    1 runs    17 lines  src/frob/arch/__init__.py
-    1 runs    18 lines  src/frob/arch/_mayraise_tables.py
-    1 runs    15 lines  src/frob/arch/_models.py
-    1 runs    15 lines  src/frob/arch/_normalized.py
-    1 runs    16 lines  src/frob/clean/_rules.py
-    1 runs    15 lines  src/frob/deploy/_audit.py
-    1 runs    15 lines  src/frob/deploy/_conform.py
-    1 runs    22 lines  src/frob/dup/_legacy.py
-    1 runs    20 lines  src/frob/dup/_template.py
-    1 runs    15 lines  src/frob/excludes.py
-    1 runs    15 lines  src/frob/findings.py
-    1 runs    21 lines  src/frob/logging/logger.py
-    1 runs    20 lines  src/frob/narrative/_migrate.py
-    1 runs    27 lines  src/frob/perf/_hotpath_smells.py
+   11 runs   251 lines  src/frob/graph/dsl.py
+    6 runs   151 lines  src/frob/graph/cache.py
+    4 runs    95 lines  src/frob/graph/__init__.py
+    4 runs    91 lines  src/frob/strata/_selfconform_ids.py
+    4 runs    87 lines  src/frob/strata/_threat_catalog_quality.py
+    3 runs    55 lines  src/frob/strata/_compliance.py
+    2 runs    35 lines  src/frob/strata/_infra.py
+    2 runs    37 lines  src/frob/strata/_mutation_audit.py
+    2 runs    53 lines  src/frob/strata/_selfconform_surface_rules.py
+    2 runs    75 lines  src/frob/strata/_threat_discharge.py
+    1 runs    15 lines  src/frob/graph/_core.py
+    1 runs    15 lines  src/frob/graph/lock.py
+    1 runs    20 lines  src/frob/graph/reach.py
+    1 runs    15 lines  src/frob/graph/summary.py
+    1 runs    26 lines  src/frob/strata/_audit.py
+    1 runs    21 lines  src/frob/strata/_facts.py
+    1 runs    17 lines  src/frob/strata/_multifile.py
+    1 runs    32 lines  src/frob/strata/_selfconform.py
+    1 runs    16 lines  src/frob/strata/_selfconform_binding_rules.py
+    1 runs    28 lines  src/frob/strata/_threat_catalog_benign.py
+    1 runs    52 lines  src/frob/strata/_threat_catalog_cwe.py
 
 WHAT TO DO, per T-2994's doctrine (code carries UTILITY, tickets carry NARRATIVE):
 - For each over-long run, SPLIT it. The part that tells a reader about to modify

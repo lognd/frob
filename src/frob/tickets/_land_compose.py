@@ -39,14 +39,11 @@ _log = get_logger(__name__)
 
 # frob:ticket T-3088
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-\
-# publish-primitive-t-3088
+# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-publish-primitive-t-3088  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_return\
-# s_err
+# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_returns_err  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_re\
-# f_moved
+# tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_ref_moved  # noqa: E501
 class LandComposeError(ErrorSet):
     """Fallible outcomes of the out-of-tree compose + CAS publish primitive
     (T-3088); kept as its own ErrorSet rather than folded into
@@ -102,17 +99,13 @@ def _apply_diff_to_scratch_index(
 
 # frob:ticket T-3088
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-\
-# publish-primitive-t-3088
+# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-publish-primitive-t-3088  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_worktree_untouched_by_\
-# compose
+# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_worktree_untouched_by_compose  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_composed_commit_contai\
-# ns_the_patch
+# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_composed_commit_contains_the_patch  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_return\
-# s_err
+# tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_returns_err  # noqa: E501
 def compose_tree_out_of_tree(
     repo: Path, base_commit: str, patch_source: str
 ) -> Result[str, LandComposeError]:
@@ -200,13 +193,11 @@ def _write_and_commit_scratch_index(
 
 # frob:ticket T-3088
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-\
-# publish-primitive-t-3088
+# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-publish-primitive-t-3088  # noqa: E501
 # frob:tests \
 # tests/unit/test_land_compose.py::TestPublishRefCas.test_sequential_publishes_succeed
 # frob:tests \
-# tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_re\
-# f_moved
+# tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_ref_moved  # noqa: E501
 def publish_ref_cas(
     repo: Path, ref: str, expected_old_sha: str, new_sha: str
 ) -> Result[None, LandComposeError]:
@@ -243,14 +234,11 @@ def publish_ref_cas(
 
 # frob:ticket T-3107
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
-# -way-squash-compose-t-3107
+# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three-way-squash-compose-t-3107  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_repor\
-# ts_no_conflicts
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_reports_no_conflicts  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash\
-# _reports_the_conflicted_paths
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
 class SquashStage(BaseModel):
     """A prepared disposable worktree holding a squash-merge result plus
     the paths git left unmerged in it -- the handle
@@ -323,32 +311,24 @@ def _squash_into_worktree(
 
 # frob:ticket T-3107
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_repor\
-# ts_no_conflicts
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_reports_no_conflicts  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash\
-# _reports_the_conflicted_paths
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_unto\
-# uched_by_clean_squash
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_clean_squash  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_unto\
-# uched_by_conflicted_squash
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_conflicted_squash  # noqa: E501
 # frob:ticket T-3163
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
-# -way-squash-compose-t-3107
+# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three-way-squash-compose-t-3107  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concu\
-# rrent_write_between_squash_and_splice_survives_land
+# tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 # frob:ticket T-4431
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_native_source_mtim\
-# es_are_seeded_against_the_disposable_worktree
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_native_source_mtimes_are_seeded_against_the_disposable_worktree  # noqa: E501
 # frob:ticket T-4411
 # frob:tests \
-# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_cache_db_is_seeded\
-# _against_the_disposable_worktree
+# tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_cache_db_is_seeded_against_the_disposable_worktree  # noqa: E501
 # frob:waive AFFECT001 reason="T-4411 adds one call \
 # (seed_disposable_worktree_cache(repo, worktree)) at worktree-creation time, \
 # mirroring T-4431's own native-mtime seed just above it -- an internal performance \
@@ -478,14 +458,11 @@ def compose_squash_in_disposable_worktree(
 
 # frob:ticket T-3107
 # frob:tests \
-# tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_folded_commit_contai\
-# ns_both_sides
+# tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_folded_commit_contains_both_sides  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_fold_refuses_while_p\
-# aths_are_unmerged
+# tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_fold_refuses_while_paths_are_unmerged  # noqa: E501
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
-# -way-squash-compose-t-3107
+# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three-way-squash-compose-t-3107  # noqa: E501
 def fold_worktree_into_commit(
     repo: Path, worktree: Path, base_commit: str, message: str
 ) -> Result[str, LandComposeError]:
@@ -553,14 +530,142 @@ def fold_worktree_into_commit(
 
 # frob:ticket T-3114
 # frob:doc \
-# docs/modules/tickets-landing.md#frobtickets_land_compose----post-cas-root-resync-t-31\
-# 14
+# docs/modules/tickets-landing.md#frobtickets_land_compose----post-cas-root-resync-t-3114  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_unrelated_dirty_pa\
-# th_resyncs_and_is_preserved
+# tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_unrelated_dirty_path_resyncs_and_is_preserved  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_dirty_path_the_lan\
-# d_also_changed_blocks_atomically
+# tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_dirty_path_the_land_also_changed_blocks_atomically  # noqa: E501
+# frob:ticket T-4572
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_compose----ledger-only-cas-retry-t-4572  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestLedgerOnlyAdvance.test_pure_ledger_advance_is_ledger_only  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestLedgerOnlyAdvance.test_a_single_code_touching_commit_is_not_ledger_only  # noqa: E501
+def commits_touch_only_ledger_paths(
+    repo: Path, old_tip: str, new_tip: str
+) -> Result[bool, LandComposeError]:
+    """`True` iff EVERY commit in `old_tip..new_tip` (T-4572: the sibling
+    commits a land's CAS publish lost the race to) touches only
+    `tickets/**` or a land-owned file (`CHANGELOG.md`) -- the fast-path
+    precondition `rebase_composed_commit_onto` relies on: a ledger-only
+    advance cannot conflict with a composed commit's own non-ledger
+    content, so re-splicing onto it is safe without re-running gates or
+    the composed-tree check. `False` for a mixed or code-touching commit,
+    which must fall back to the full recompose. Checked per-commit (not
+    as one aggregate diff) so an add-then-remove pair spanning two commits
+    cannot hide a real code touch behind a diff that cancels out."""
+    logged = run_argv(
+        (
+            "git",
+            "-C",
+            str(repo),
+            "log",
+            "--name-only",
+            "--format=%x00",
+            f"{old_tip}..{new_tip}",
+        )
+    )
+    if logged.is_err or logged.danger_ok.returncode != 0:
+        _log.warning(
+            "land_compose: could not list commits/paths in %s..%s", old_tip, new_tip
+        )
+        return Err(LandComposeError.ComposeFailed)
+    touched = {
+        line.strip()
+        for line in logged.danger_ok.stdout.splitlines()
+        if line.strip() and line.strip() != "\x00"
+    }
+    ledger_only = all(
+        path.startswith("tickets/") or path in _LAND_OWNED_LEDGER_RACE_FILES
+        for path in touched
+    )
+    _log.info(
+        "land_compose: %s..%s touches %d path(s), ledger_only=%s",
+        old_tip,
+        new_tip,
+        len(touched),
+        ledger_only,
+    )
+    return Ok(ledger_only)
+
+
+# frob:ticket T-4572
+#: Non-`tickets/**` paths a ledger-only sibling commit is still allowed to
+#: touch (T-4572): land-owned files a ticket-mirror commit legitimately
+#: carries alongside its ledger write, never a real code change.
+_LAND_OWNED_LEDGER_RACE_FILES = frozenset({"CHANGELOG.md"})
+
+
+# frob:ticket T-4572
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_compose----ledger-only-cas-retry-t-4572  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestRebaseComposedCommitOnto.test_rebased_commit_carries_the_same_content_change  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestRebaseComposedCommitOnto.test_rebase_failure_returns_err  # noqa: E501
+def rebase_composed_commit_onto(
+    repo: Path, pre_land_tip: str, composed_sha: str, new_base: str
+) -> Result[str, LandComposeError]:
+    """Re-parent an already-composed commit's OWN content change (the diff
+    `pre_land_tip..composed_sha` -- this land's own changeset, nothing
+    else) onto `new_base`, entirely out-of-tree (T-4572's CAS-retry fast
+    path). Returns `Ok(new_composed_sha)` with `new_base` as sole parent,
+    or `Err(ComposeFailed)` if the land's own diff no longer applies
+    cleanly against `new_base` (never expected when `new_base` is a
+    verified ledger-only advance over `pre_land_tip`, per
+    `commits_touch_only_ledger_paths`, but checked rather than assumed).
+
+    Deliberately the same diff-and-apply mechanism `compose_tree_out_of_
+    tree` uses (`git diff` piped through `git apply --cached` against a
+    scratch `GIT_INDEX_FILE` seeded from `new_base`'s tree), reusing it
+    against `pre_land_tip`/`composed_sha` as the diff pair instead of
+    `new_base`/`composed_sha` -- exactly the distinction that makes this a
+    REBASE (apply this land's own delta onto a fresh base) rather than a
+    second, wrong compose (which would instead diff `new_base` against
+    `composed_sha` and silently drop everything the sibling ledger commits
+    added)."""
+    with tempfile.TemporaryDirectory(prefix="frob-land-rebase-") as scratch:
+        index_file = Path(scratch) / "index"
+        env = dict(os.environ)
+        env["GIT_INDEX_FILE"] = str(index_file)
+
+        read_tree = run_argv(("git", "-C", str(repo), "read-tree", new_base), env=env)
+        if read_tree.is_err or read_tree.danger_ok.returncode != 0:
+            _log.warning(
+                "land_compose: rebase read-tree %s failed: %s",
+                new_base,
+                excerpt(read_tree.danger_ok.stderr)
+                if read_tree.is_ok
+                else read_tree.danger_err,
+            )
+            return Err(LandComposeError.ComposeFailed)
+
+        applied = _apply_diff_to_scratch_index(
+            repo, pre_land_tip, composed_sha, scratch, env
+        )
+        if applied.is_err:
+            _log.warning(
+                "land_compose: rebase of %s (base %s) onto %s did not apply "
+                "cleanly -- falling back to full recompose",
+                composed_sha,
+                pre_land_tip,
+                new_base,
+            )
+            return Err(applied.danger_err)
+
+        rebased = _write_and_commit_scratch_index(repo, new_base, composed_sha, env)
+        if rebased.is_ok:
+            _log.info(
+                "land_compose: rebased %s (was based on %s) onto %s -> %s",
+                composed_sha,
+                pre_land_tip,
+                new_base,
+                rebased.danger_ok,
+            )
+        return rebased
+
+
 def resync_root_to_published_tip(
     root: Path, old_tip: str, new_tip: str
 ) -> Result[None, LandComposeError]:

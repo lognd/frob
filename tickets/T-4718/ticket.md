@@ -1,7 +1,6 @@
 ---
-id: T-draft-8c366769
-title: 'Source narrative C3: tickets/ (land pipeline, models, store) -- 19 files,
-  61 runs, 1388 lines'
+id: T-4718
+title: 'Source narrative C8: testing/ verify/ vet/ -- 20 files, 29 runs, 982 lines'
 state: queued
 kind: docs
 origin: human
@@ -15,32 +14,33 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_accept.py
-- src/frob/tickets/_archive.py
-- src/frob/tickets/_flow.py
-- src/frob/tickets/_land.py
-- src/frob/tickets/_land_compose.py
-- src/frob/tickets/_land_finalize.py
-- src/frob/tickets/_land_git_ops.py
-- src/frob/tickets/_land_queue.py
-- src/frob/tickets/_land_release.py
-- src/frob/tickets/_land_squash.py
-- src/frob/tickets/_land_verify.py
-- src/frob/tickets/_live_tracker.py
-- src/frob/tickets/_models.py
-- src/frob/tickets/_mutation_evidence.py
-- src/frob/tickets/_reporting.py
-- src/frob/tickets/_setters.py
-- src/frob/tickets/_store.py
-- src/frob/tickets/_unlanded.py
-- src/frob/tickets/_worktree_sweep.py
+- src/frob/testing/_collect_kotlin.py
+- src/frob/testing/_coverage_refresh.py
+- src/frob/testing/_coverage_wait.py
+- src/frob/verify/_worker.py
+- src/frob/vet/_capability_c.py
+- src/frob/vet/_capability_core.py
+- src/frob/vet/_capability_csharp.py
+- src/frob/vet/_capability_kotlin.py
+- src/frob/vet/_capability_modes.py
+- src/frob/vet/_capability_python.py
+- src/frob/vet/_capability_registry/_dangerous_ops_python.py
+- src/frob/vet/_capability_registry/_kinds.py
+- src/frob/vet/_capability_registry/_opaque.py
+- src/frob/vet/_capability_registry/_unity_api.py
+- src/frob/vet/_capability_rust.py
+- src/frob/vet/_capability_scan.py
+- src/frob/vet/_capability_typescript_bindtable.py
+- src/frob/vet/_evasion_coverage.py
+- src/frob/vet/_obfuscation.py
+- src/frob/vet/_scan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
 acceptance:
-- text: 'given the 19 files in this cluster, when the sweep is done, then zero comment
+- text: 'given the 20 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
   evidence: []
@@ -62,34 +62,35 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-CLUSTER leaf of T-4691 (C3). Scope-disjoint from every other cluster leaf;
+CLUSTER leaf of T-4691 (C8). Scope-disjoint from every other cluster leaf;
 not blocked by the gate (T-4693) or tool (T-4697) leaves -- `frob narrative move
 <file> <line>` already works per-block and hand migration is sanctioned. Take
 this leaf now; if T-4697's bulk mode lands first, use it.
 
 MEASURED 2026-09-19 over src/frob/**/*.py (scratchpad/measure.py):
-  19 files, 61 comment runs of 15+ consecutive `#` lines, 1388 lines.
+  20 files, 29 comment runs of 15+ consecutive `#` lines, 982 lines.
 
 PER-FILE:
-   19 runs   478 lines  src/frob/tickets/_land.py
-   12 runs   210 lines  src/frob/tickets/_models.py
-    5 runs   112 lines  src/frob/tickets/_reporting.py
-    3 runs    68 lines  src/frob/tickets/_land_release.py
-    3 runs    91 lines  src/frob/tickets/_live_tracker.py
-    3 runs    61 lines  src/frob/tickets/_store.py
-    2 runs    66 lines  src/frob/tickets/_archive.py
-    2 runs    36 lines  src/frob/tickets/_land_git_ops.py
-    2 runs    49 lines  src/frob/tickets/_unlanded.py
-    1 runs    18 lines  src/frob/tickets/_accept.py
-    1 runs    18 lines  src/frob/tickets/_flow.py
-    1 runs    36 lines  src/frob/tickets/_land_compose.py
-    1 runs    15 lines  src/frob/tickets/_land_finalize.py
-    1 runs    16 lines  src/frob/tickets/_land_queue.py
-    1 runs    15 lines  src/frob/tickets/_land_squash.py
-    1 runs    38 lines  src/frob/tickets/_land_verify.py
-    1 runs    17 lines  src/frob/tickets/_mutation_evidence.py
-    1 runs    15 lines  src/frob/tickets/_setters.py
-    1 runs    29 lines  src/frob/tickets/_worktree_sweep.py
+    4 runs   132 lines  src/frob/vet/_capability_scan.py
+    3 runs    73 lines  src/frob/vet/_capability_core.py
+    2 runs    53 lines  src/frob/testing/_coverage_refresh.py
+    2 runs    38 lines  src/frob/verify/_worker.py
+    2 runs    32 lines  src/frob/vet/_capability_registry/_kinds.py
+    2 runs    58 lines  src/frob/vet/_obfuscation.py
+    1 runs    22 lines  src/frob/testing/_collect_kotlin.py
+    1 runs    30 lines  src/frob/testing/_coverage_wait.py
+    1 runs    31 lines  src/frob/vet/_capability_c.py
+    1 runs    25 lines  src/frob/vet/_capability_csharp.py
+    1 runs    24 lines  src/frob/vet/_capability_kotlin.py
+    1 runs    16 lines  src/frob/vet/_capability_modes.py
+    1 runs    67 lines  src/frob/vet/_capability_python.py
+    1 runs    20 lines  src/frob/vet/_capability_registry/_dangerous_ops_python.py
+    1 runs    47 lines  src/frob/vet/_capability_registry/_opaque.py
+    1 runs    22 lines  src/frob/vet/_capability_registry/_unity_api.py
+    1 runs    60 lines  src/frob/vet/_capability_rust.py
+    1 runs   130 lines  src/frob/vet/_capability_typescript_bindtable.py
+    1 runs    79 lines  src/frob/vet/_evasion_coverage.py
+    1 runs    23 lines  src/frob/vet/_scan.py
 
 WHAT TO DO, per T-2994's doctrine (code carries UTILITY, tickets carry NARRATIVE):
 - For each over-long run, SPLIT it. The part that tells a reader about to modify

@@ -54,8 +54,10 @@ from typani.result import Err, Ok, Result
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
 from frob.tickets._land_compose import (
+    commits_touch_only_ledger_paths,
     fold_worktree_into_commit,
     publish_ref_cas,
+    rebase_composed_commit_onto,
     resync_root_to_published_tip,
 )
 from frob.tickets._land_git_ops import (
@@ -1197,7 +1199,180 @@ def _publish_squash_apply(
         )
 
 
+# frob:ticket T-4572
+#: T-4572: bounded retries for the ledger-only CAS-retry fast path below --
+#: after this many consecutive ledger-only sibling advances, `_fold_
+#: publish_and_resync` gives up the fast path and falls back to the
+#: ordinary full-recompose refusal (`Err(LandError.DirtyMain)`), so a
+#: pathologically busy ledger cannot spin this loop forever.
+_LEDGER_ONLY_CAS_RETRY_LIMIT = 5
+
+
+# frob:ticket T-4572
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_squash----ledger-only-cas-retry-t-4572  # noqa: E501
+def _clean_root_on_refusal(
+    root: Path, stage: Path, pre_land_tip: str, final_id: str
+) -> None:
+    """T-4572: best-effort defensive cleanup run alongside the existing
+    `stage` unwind on every refusal path below -- a precomposed land
+    (`stage != root`) never stages anything in `root` before publish, so
+    `root` should already be clean on refusal, but "should already be"
+    is exactly the kind of claim the T-4572 incident (a refused land
+    leaving `root` DirtyMain-blocked for every sibling) disproved. Runs
+    `_verified_reset_root` against `root` too rather than trusting the
+    theory: that helper only ever hard-resets when `root`'s HEAD still
+    equals `pre_land_tip`, and degrades to its own safe unstage-only
+    drift refusal otherwise (T-1740), so this can never destroy a
+    sibling's real, later commit. A no-op when `stage is root` (the
+    in-root landing path already resets `stage`, which IS `root`, via the
+    call sitting next to this one at each call site)."""
+    if stage == root:
+        return
+    unwound = _verified_reset_root(root, pre_land_tip, final_id)
+    if unwound.is_err:
+        _log.warning(
+            "land: %s post-refusal cleanup found %s had already drifted "
+            "from %s (a sibling landed for real) -- unstaged only, tracked "
+            "content left at HEAD; this is that sibling's own state, not "
+            "new dirt from this land",
+            final_id,
+            root,
+            pre_land_tip,
+        )
+
+
+# frob:ticket T-4572
+def _refuse_cas_miss(
+    root: Path,
+    stage: Path,
+    pre_land_tip: str,
+    final_id: str,
+    *,
+    base: str,
+    candidate_sha: str,
+    main_branch_name: str,
+) -> LandError:
+    """Log and unwind a CAS publish that `_publish_with_ledger_only_retry`
+    has given up on -- either a non-ledger-only advance, or the T-4572
+    ledger-only fast path exhausting its attempt bound -- and return
+    `LandError.DirtyMain` for the caller to propagate. Split out of
+    `_publish_with_ledger_only_retry` (T-2214 length budget); shares the
+    exact refusal shape `_fold_publish_and_resync`'s fold-failure branch
+    uses (`_verified_reset_root` on `stage` plus the T-4572
+    `_clean_root_on_refusal` defensive root check)."""
+    _log.error(
+        "land: %s refused -- %s moved away from %s while this land was "
+        "composing (a sibling land published first, or the T-4572 "
+        "ledger-only fast path exhausted its %d-attempt bound), so the "
+        "compare-and-swap publish of %s was rejected. Nothing was "
+        "overwritten and %s is untouched; re-run `frob ticket land %s "
+        "--worktree ...` against the new tip",
+        final_id,
+        main_branch_name,
+        base,
+        _LEDGER_ONLY_CAS_RETRY_LIMIT,
+        candidate_sha,
+        root,
+        final_id,
+    )
+    _verified_reset_root(stage, pre_land_tip, final_id)
+    _clean_root_on_refusal(root, stage, pre_land_tip, final_id)
+    return LandError.DirtyMain
+
+
+# frob:ticket T-4572
+def _attempt_ledger_only_rebase(
+    root: Path, ref: str, base: str, candidate_sha: str, final_id: str, attempt: int
+) -> tuple[str, str, int] | None:
+    """One T-4572 fast-path attempt: if `ref`'s current tip is a
+    ledger-only advance over `base` (`commits_touch_only_ledger_paths`),
+    rebase `candidate_sha` onto it (`rebase_composed_commit_onto`) and
+    return the new `(base, candidate_sha, attempt + 1)` to retry the CAS
+    with; `None` if the advance is not (verifiably) ledger-only or the
+    rebase itself failed, telling `_publish_with_ledger_only_retry` to
+    give up and refuse. Split out of that function (T-2214 length
+    budget)."""
+    tip = _rev_parse(root, ref)
+    if tip.is_err:
+        return None
+    current = tip.danger_ok
+    ledger_only = commits_touch_only_ledger_paths(root, base, current)
+    if ledger_only.is_err or not ledger_only.danger_ok:
+        return None
+    rebased = rebase_composed_commit_onto(root, base, candidate_sha, current)
+    if rebased.is_err:
+        return None
+    attempt += 1
+    _log.info(
+        "land: %s CAS miss against a ledger-only advance (%s -> %s, "
+        "attempt %d/%d) -- rebasing the composed commit and retrying the "
+        "publish without re-running gates or the composed-tree check",
+        final_id,
+        base,
+        current,
+        attempt,
+        _LEDGER_ONLY_CAS_RETRY_LIMIT,
+    )
+    return current, rebased.danger_ok, attempt
+
+
+# frob:ticket T-4572
+def _publish_with_ledger_only_retry(
+    root: Path,
+    stage: Path,
+    ref: str,
+    pre_land_tip: str,
+    candidate_sha: str,
+    final_id: str,
+    main_branch_name: str,
+) -> Result[tuple[str, str], LandError]:
+    """`_fold_publish_and_resync`'s CAS-publish-with-retry loop, split out
+    so both it and its caller stay under ARCH001's length threshold
+    (T-2214). Returns `Ok((base, new_sha))` -- `base` may have advanced
+    past `pre_land_tip` via the T-4572 fast path
+    (`_attempt_ledger_only_rebase`) -- or `Err(LandError.DirtyMain)` once
+    every retry option is exhausted; see that helper's own docstring for
+    the fast path's precondition and `_refuse_cas_miss` for the refusal
+    shape."""
+    base = pre_land_tip
+    attempt = 0
+    while True:
+        published = publish_ref_cas(root, ref, base, candidate_sha)
+        if published.is_ok:
+            return Ok((base, candidate_sha))
+
+        if attempt < _LEDGER_ONLY_CAS_RETRY_LIMIT:
+            retried = _attempt_ledger_only_rebase(
+                root, ref, base, candidate_sha, final_id, attempt
+            )
+            if retried is not None:
+                base, candidate_sha, attempt = retried
+                continue
+
+        return Err(
+            _refuse_cas_miss(
+                root,
+                stage,
+                pre_land_tip,
+                final_id,
+                base=base,
+                candidate_sha=candidate_sha,
+                main_branch_name=main_branch_name,
+            )
+        )
+
+
 # frob:ticket T-3163
+# frob:ticket T-4572
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_squash----ledger-only-cas-retry-t-4572  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_ledger_only_cas_miss_rebases_and_retries_without_regates  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_code_touching_cas_miss_falls_back_to_full_recompose  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_refused_land_leaves_root_clean  # noqa: E501
 def _fold_publish_and_resync(
     root: Path,
     stage: Path,
@@ -1211,7 +1386,9 @@ def _fold_publish_and_resync(
     the lock acquisition wrapping it (T-3163) reads as a single obvious
     critical section at the call site rather than being interleaved with
     the git-plumbing steps themselves. Same contract as
-    `_publish_squash_apply` -- see that function's docstring."""
+    `_publish_squash_apply` -- see that function's docstring. The CAS
+    publish's own retry loop (T-4572) lives in
+    `_publish_with_ledger_only_retry`, split out for ARCH001 (T-2214)."""
     folded = fold_worktree_into_commit(
         root, stage, pre_land_tip, _commit_message(ticket, final_id)
     )
@@ -1225,30 +1402,23 @@ def _fold_publish_and_resync(
             root,
         )
         _verified_reset_root(stage, pre_land_tip, final_id)
+        _clean_root_on_refusal(root, stage, pre_land_tip, final_id)
         return Err(LandError.CommitFailed)
-    new_sha = folded.danger_ok
 
-    published = publish_ref_cas(
-        root, f"refs/heads/{main_branch_name}", pre_land_tip, new_sha
+    published = _publish_with_ledger_only_retry(
+        root,
+        stage,
+        f"refs/heads/{main_branch_name}",
+        pre_land_tip,
+        folded.danger_ok,
+        final_id,
+        main_branch_name,
     )
     if published.is_err:
-        _log.error(
-            "land: %s refused -- %s moved away from %s while this land was "
-            "composing (a sibling land published first), so the "
-            "compare-and-swap publish of %s was rejected. Nothing was "
-            "overwritten and %s is untouched; re-run `frob ticket land %s "
-            "--worktree ...` against the new tip",
-            final_id,
-            main_branch_name,
-            pre_land_tip,
-            new_sha,
-            root,
-            final_id,
-        )
-        _verified_reset_root(stage, pre_land_tip, final_id)
-        return Err(LandError.DirtyMain)
+        return Err(published.danger_err)
+    base, new_sha = published.danger_ok
 
-    resynced = resync_root_to_published_tip(root, pre_land_tip, new_sha)
+    resynced = resync_root_to_published_tip(root, base, new_sha)
     if resynced.is_err:
         _log.error(
             "land: %s IS LANDED as %s on %s -- the commit is public and "
@@ -1262,11 +1432,11 @@ def _fold_publish_and_resync(
             new_sha,
             main_branch_name,
             root,
-            pre_land_tip,
+            base,
             resynced.danger_err,
             root,
             root,
-            pre_land_tip,
+            base,
             new_sha,
         )
         return Ok(True)

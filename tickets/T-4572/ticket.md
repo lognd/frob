@@ -4,14 +4,14 @@ title: 'frob ticket land loses the compare-and-swap publish race to sibling ledg
   commits (ticket work/scope/accept mirrors) and refuses instead of re-merging and
   retrying: under 5+ agents every third land bounces with ''dev moved away from''
   and DirtyMain'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: T-4654
+parent: null
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -36,21 +36,6 @@ scope_changes:
     symbols (COV001)
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: parent
-  old_value: null
-  new_value: T-4654
-  reason: 'kernel-decoupling epic T-4651: rederive the frob kernel behind enforced
-    module boundaries; this ticket already states the right work for this concern
-    and is adopted as a child rather than duplicated'
-  actor: logan
-  at: '2026-09-19'
-- field: sprint
-  old_value: null
-  new_value: v0.535.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: coordinator repro
@@ -58,14 +43,21 @@ body_changes:
   at: '2026-09-19'
   old_length: 0
   new_length: 974
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_ledger_only_cas_miss_rebases_and_retries_without_regates
+- tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_refused_land_leaves_root_clean
+- tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_code_touching_cas_miss_falls_back_to_full_recompose
+designated_repro_test: tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_ledger_only_cas_miss_rebases_and_retries_without_regates
 acceptance:
 - text: GIVEN the land branch advances by a ledger-only commit while a land composes
     WHEN the publish CAS misses THEN land re-merges and publishes on the next attempt
     without operator action.
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_ledger_only_cas_miss_rebases_and_retries_without_regates
+  - tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_code_touching_cas_miss_falls_back_to_full_recompose
 - text: GIVEN a refused land THEN git status in the root is clean.
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_refused_land_leaves_root_clean
 threat: null
 component: null
 anchor: false

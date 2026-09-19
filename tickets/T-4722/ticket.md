@@ -1,6 +1,7 @@
 ---
-id: T-draft-3a95f52e
-title: 'Source narrative C5: graph/ + strata/ -- 21 files, 51 runs, 1187 lines'
+id: T-4722
+title: 'Source narrative C3: tickets/ (land pipeline, models, store) -- 19 files,
+  61 runs, 1388 lines'
 state: queued
 kind: docs
 origin: human
@@ -14,34 +15,32 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/graph/__init__.py
-- src/frob/graph/_core.py
-- src/frob/graph/cache.py
-- src/frob/graph/dsl.py
-- src/frob/graph/lock.py
-- src/frob/graph/reach.py
-- src/frob/graph/summary.py
-- src/frob/strata/_audit.py
-- src/frob/strata/_compliance.py
-- src/frob/strata/_facts.py
-- src/frob/strata/_infra.py
-- src/frob/strata/_multifile.py
-- src/frob/strata/_mutation_audit.py
-- src/frob/strata/_selfconform.py
-- src/frob/strata/_selfconform_binding_rules.py
-- src/frob/strata/_selfconform_ids.py
-- src/frob/strata/_selfconform_surface_rules.py
-- src/frob/strata/_threat_catalog_benign.py
-- src/frob/strata/_threat_catalog_cwe.py
-- src/frob/strata/_threat_catalog_quality.py
-- src/frob/strata/_threat_discharge.py
+- src/frob/tickets/_accept.py
+- src/frob/tickets/_archive.py
+- src/frob/tickets/_flow.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_compose.py
+- src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_land_queue.py
+- src/frob/tickets/_land_release.py
+- src/frob/tickets/_land_squash.py
+- src/frob/tickets/_land_verify.py
+- src/frob/tickets/_live_tracker.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/_mutation_evidence.py
+- src/frob/tickets/_reporting.py
+- src/frob/tickets/_setters.py
+- src/frob/tickets/_store.py
+- src/frob/tickets/_unlanded.py
+- src/frob/tickets/_worktree_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
 acceptance:
-- text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
+- text: 'given the 19 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
   evidence: []
@@ -63,36 +62,34 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-CLUSTER leaf of T-4691 (C5). Scope-disjoint from every other cluster leaf;
+CLUSTER leaf of T-4691 (C3). Scope-disjoint from every other cluster leaf;
 not blocked by the gate (T-4693) or tool (T-4697) leaves -- `frob narrative move
 <file> <line>` already works per-block and hand migration is sanctioned. Take
 this leaf now; if T-4697's bulk mode lands first, use it.
 
 MEASURED 2026-09-19 over src/frob/**/*.py (scratchpad/measure.py):
-  21 files, 51 comment runs of 15+ consecutive `#` lines, 1187 lines.
+  19 files, 61 comment runs of 15+ consecutive `#` lines, 1388 lines.
 
 PER-FILE:
-   11 runs   251 lines  src/frob/graph/dsl.py
-    6 runs   151 lines  src/frob/graph/cache.py
-    4 runs    95 lines  src/frob/graph/__init__.py
-    4 runs    91 lines  src/frob/strata/_selfconform_ids.py
-    4 runs    87 lines  src/frob/strata/_threat_catalog_quality.py
-    3 runs    55 lines  src/frob/strata/_compliance.py
-    2 runs    35 lines  src/frob/strata/_infra.py
-    2 runs    37 lines  src/frob/strata/_mutation_audit.py
-    2 runs    53 lines  src/frob/strata/_selfconform_surface_rules.py
-    2 runs    75 lines  src/frob/strata/_threat_discharge.py
-    1 runs    15 lines  src/frob/graph/_core.py
-    1 runs    15 lines  src/frob/graph/lock.py
-    1 runs    20 lines  src/frob/graph/reach.py
-    1 runs    15 lines  src/frob/graph/summary.py
-    1 runs    26 lines  src/frob/strata/_audit.py
-    1 runs    21 lines  src/frob/strata/_facts.py
-    1 runs    17 lines  src/frob/strata/_multifile.py
-    1 runs    32 lines  src/frob/strata/_selfconform.py
-    1 runs    16 lines  src/frob/strata/_selfconform_binding_rules.py
-    1 runs    28 lines  src/frob/strata/_threat_catalog_benign.py
-    1 runs    52 lines  src/frob/strata/_threat_catalog_cwe.py
+   19 runs   478 lines  src/frob/tickets/_land.py
+   12 runs   210 lines  src/frob/tickets/_models.py
+    5 runs   112 lines  src/frob/tickets/_reporting.py
+    3 runs    68 lines  src/frob/tickets/_land_release.py
+    3 runs    91 lines  src/frob/tickets/_live_tracker.py
+    3 runs    61 lines  src/frob/tickets/_store.py
+    2 runs    66 lines  src/frob/tickets/_archive.py
+    2 runs    36 lines  src/frob/tickets/_land_git_ops.py
+    2 runs    49 lines  src/frob/tickets/_unlanded.py
+    1 runs    18 lines  src/frob/tickets/_accept.py
+    1 runs    18 lines  src/frob/tickets/_flow.py
+    1 runs    36 lines  src/frob/tickets/_land_compose.py
+    1 runs    15 lines  src/frob/tickets/_land_finalize.py
+    1 runs    16 lines  src/frob/tickets/_land_queue.py
+    1 runs    15 lines  src/frob/tickets/_land_squash.py
+    1 runs    38 lines  src/frob/tickets/_land_verify.py
+    1 runs    17 lines  src/frob/tickets/_mutation_evidence.py
+    1 runs    15 lines  src/frob/tickets/_setters.py
+    1 runs    29 lines  src/frob/tickets/_worktree_sweep.py
 
 WHAT TO DO, per T-2994's doctrine (code carries UTILITY, tickets carry NARRATIVE):
 - For each over-long run, SPLIT it. The part that tells a reader about to modify
