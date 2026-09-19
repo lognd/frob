@@ -28,6 +28,14 @@ scope_changes:
     touched directly by the fix'
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve old_text/new_text and sibling-field rationale trimmed
+    from _docptr.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4320
+  new_length: 6040
 evidence:
 - tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_old_text_field_not_flagged
 - tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_new_text_field_not_flagged
@@ -113,3 +121,32 @@ ACCEPTANCE
 - The marked-non-pointer decision consulted, not re-invented.
 - tickets/** is NOT blanket-exempted; state how case (a) is preserved.
 - All fixtures committed.
+
+
+T-4709 follow-up (condensed from _PROSE_KEY_RE's comment block in
+src/frob/gates/_docptr.py, trimmed for DOCARCH002's 12-line cap):
+`old_text`/`new_text` (AcceptanceAmendmentEntry, src/frob/tickets/
+_models.py) are the same argument as `title`/`reason`, with a sharper
+edge -- not merely unwaivable but UNFIXABLE by the sanctioned mechanism:
+`frob ticket accept --amend` is what WRITES a corrected criterion's
+PREVIOUS (violating) text into `old_text` as a historical record, so
+re-amending to "fix" a DOC006 finding there only appends another record
+carrying the same violating string (measured no-exit: tickets/T-3976/
+ticket.md). `old_text` is by construction never-live -- it exists
+specifically to preserve text already superseded by `new_text` -- so it
+can never be DOC006's genuinely-dead-pointer case; blanking it costs
+nothing real. `new_text` is blanked alongside it because the CURRENT
+wording of an amended criterion is free-text prose composed at mutation
+time (Ticket.acceptance[index].text, itself never scanned by this gate
+for the same reason).
+
+Sibling audit-entry fields were checked against every *Entry model in
+src/frob/tickets/_models.py ("verify against the real ledger, do not
+blanket-exempt") before deciding NOT to add them: ScopeChangeEntry.glob,
+EvidenceChangeEntry.old_node/new_node, DesignatedReproChangeEntry.
+old_value/new_value hold real identifiers this gate SHOULD be able to
+check; TriageChangeEntry.old_value/new_value is a single enum/label, not
+composed narrative; ReviewEntry.findings is a live reviewer's CURRENT
+assessment, not a record of superseded text, so the amendment no-exit
+does not apply and a reviewer citing a genuinely dead symbol is exactly
+the checkable case.
