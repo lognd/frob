@@ -23,6 +23,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record scope-collision blocker discovered while attempting frob ticket work
+    T-4674
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1977
+  new_length: 2563
 designated_repro_test: null
 acceptance:
 - text: Given src/frob/strata/_pii.py's PII001-004 have fired 0 times and are a permanent
@@ -77,3 +85,6 @@ POSITIVE CONTROL (the test that fails today)
 A test asserting every PII rule id defined under src/frob/strata/_pii.py carries
 a description that names its evaluation domain and disambiguates it from the
 structural PII010-012 family. It fails at HEAD -- no such text exists.
+
+
+BLOCKED by T-4612 (2026-09-19, agent 2): frob ticket work T-4674 refused with 'declared scope collides with in-progress T-4612's lease on src/frob/strata/_pii.py'. T-4612 (in-progress, worktree t-draft-1cc03713) actively edits src/frob/strata/_pii.py to add derived_from/trust_identity provenance attrs and a SYS10x consumer -- a genuinely live, unrelated edit to the exact file this leaf needs to touch (rule-id descriptions for PII001-004). Cannot proceed without either colliding writes or waiting for T-4612 to land and release its lease. Re-dispatch this leaf once T-4612 closes.
