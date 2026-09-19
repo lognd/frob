@@ -1,7 +1,7 @@
 ---
 id: T-4499
 title: 'post-land sweep regression from T-4491: 2 new (rule, file) identit(ies) (COV002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-15'
@@ -47,3 +47,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - COV002  src/frob/tickets/_leases.py  -> attributed to T-4491 (commit 5a1bb2984cea, already closed/dropped -- filed below) via src/frob/tickets/_leases.py::_active_ledger_cache_signature
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-09-19: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (COV002 design/frob.strata, COV002 src/frob/tickets/_leases.py) is absent from a direct re-check of exactly the 824 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
