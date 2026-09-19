@@ -95,6 +95,11 @@ acceptance:
     shim definitions themselves; the hits in ~/.claude/refs/frob.md are listed in
     the Done report instead of edited
   evidence: []
+- text: Given frob explore map, frob explore outline, frob explore xref and frob explore
+    docs-search after this ticket, when each runs, then it works unchanged -- explore
+    is the surviving verb and this ticket must not delete or rebuild it; _mirror_subparser
+    is removed once it has no callers
+  evidence: []
 acceptance_amendments:
 - op: replace
   index: 1
