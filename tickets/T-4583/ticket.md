@@ -1,8 +1,8 @@
 ---
-id: T-draft-dfc98d31
+id: T-4583
 title: Warm sweep stage's pre-commit check probes the wrong land.lock path (T-4563
   regression)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'

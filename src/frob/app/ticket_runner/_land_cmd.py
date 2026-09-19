@@ -1910,6 +1910,7 @@ def land_parity_findings(
 # frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
 # frob:ticket T-1524
+# frob:ticket T-4583
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
 # sweep section (T-1456/T-1514/T-1524) is a deliberate architecture doc walking \
 # through this exact private pre-commit sweep entry point, same T-0524/T-0529 \
@@ -1921,11 +1922,25 @@ def _pre_commit_unscoped_error_sweep(
     final_id: str,
     baseline_findings: frozenset[tuple[str, str]] | None,
     base: str | None = None,
+    land_lock_root: Path | None = None,
 ) -> bool | None:
     """T-4105: `base` (default `None`) is `cfg.ticket_land_branch`,
     forwarded to every `_unscoped_error_findings` call below -- see
     `_post_land_unscoped_error_sweep`'s own T-4105 paragraph, this is its
     pre-commit twin's identical contract.
+
+    T-4583 (bug fix): `root` here is the T-1514 warm sweep stage or a
+    disposable squash worktree -- NEVER the primary checkout this land's
+    own `_land_lock` is actually acquired against (see
+    `frob.strata._effects._land_commit_in_progress`'s own T-4583
+    paragraph for the full defect this closes). `land_lock_root`
+    (default `None`, matching every pre-T-4583 caller unaffected) is that
+    primary checkout's path when the caller has one to give -- forwarded
+    into each spawned `frob check`'s environment as `FROB_LAND_LOCK_ROOT`
+    so its own `_land_commit_in_progress` probe (running inside that
+    subprocess, `root` there bound to the staged tree it is scanning, not
+    the primary checkout) can find the REAL lock file instead of
+    guessing at `root`'s own nested layout.
 
     T-1514: the pre-commit twin of `_post_land_unscoped_error_sweep` --
     same identity-set comparison and Tier-A-auto-fix-then-refuse logic,
@@ -1954,7 +1969,14 @@ def _pre_commit_unscoped_error_sweep(
         )
         return None
 
-    fresh = _unscoped_error_findings(root, ticket_id, base=base)
+    import os
+
+    lock_env: dict[str, str] | None = None
+    if land_lock_root is not None:
+        lock_env = dict(os.environ)
+        lock_env["FROB_LAND_LOCK_ROOT"] = str(land_lock_root)
+
+    fresh = _unscoped_error_findings(root, ticket_id, base=base, env=lock_env)
     if fresh is None:
         _log.warning(
             "ticket land: %s pre-commit unscoped sweep skipped -- staged "
@@ -1984,7 +2006,9 @@ def _pre_commit_unscoped_error_sweep(
     )
     fixed_paths = _sweep_apply_tier_a_pre_commit(root, ticket_id)
     reverify = (
-        _unscoped_error_findings(root, ticket_id, base=base) if fixed_paths else fresh
+        _unscoped_error_findings(root, ticket_id, base=base, env=lock_env)
+        if fixed_paths
+        else fresh
     )
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
     still_new = _drop_checkpoint_exempt_findings(
@@ -4172,7 +4196,9 @@ def _capture_pre_land_baseline(
 
 
 # frob:ticket T-1514
+# frob:ticket T-4583
 def _land_pre_commit_sweep_fn(
+    land_lock_root: Path,
     baseline_thread,  # noqa: ANN001
     baseline_holder: list[tuple[str | None, frozenset[tuple[str, str]] | None]],
     cfg: AppConfig,
@@ -4185,7 +4211,18 @@ def _land_pre_commit_sweep_fn(
     (the inline marker-write/sweep/marker-clear sequence in the land CLI
     entrypoint, T-1523) also consumes -- no second baseline
     scan. `None` (skip) if the baseline thread produced nothing (e.g. a
-    dry run, where `_capture_pre_land_baseline` returns `(None, None)`)."""
+    dry run, where `_capture_pre_land_baseline` returns `(None, None)`).
+
+    T-4583: `land_lock_root` is the primary checkout `land()` itself was
+    invoked against -- the ONE place in this whole closure chain that
+    still knows it, since `sweep`'s own `root` parameter below is
+    whatever staged tree (warm sweep stage or disposable squash
+    worktree) the composed-tree check must actually scan, never the
+    primary checkout `_land_lock` lives under. Forwarded straight to
+    `_pre_commit_unscoped_error_sweep` so its spawned `frob check` can
+    tell its own `_land_commit_in_progress` probe where the REAL lock
+    file is via `FROB_LAND_LOCK_ROOT` -- see that function's own T-4583
+    paragraph."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
     ticket_id: str = cfg.ticket_id  # closure-stable narrowed binding
 
@@ -4195,7 +4232,12 @@ def _land_pre_commit_sweep_fn(
             baseline_holder[0] if baseline_holder else (None, None)
         )
         return _pre_commit_unscoped_error_sweep(
-            root, ticket_id, final_id, pre_land_findings, base=cfg.ticket_land_branch
+            root,
+            ticket_id,
+            final_id,
+            pre_land_findings,
+            base=cfg.ticket_land_branch,
+            land_lock_root=land_lock_root,
         )
 
     return sweep
@@ -6888,7 +6930,7 @@ def _land_core_invoke(
         pre_commit_sweep=(
             None
             if rapid_land
-            else _land_pre_commit_sweep_fn(baseline_thread, baseline_holder, cfg)
+            else _land_pre_commit_sweep_fn(root, baseline_thread, baseline_holder, cfg)
         ),
         # T-3787: the land target branch -- `--branch`/`--onto`, else the
         # ticket_land_branch config default, else `None` (root's current

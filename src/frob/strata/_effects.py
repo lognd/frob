@@ -1221,10 +1221,33 @@ def _testsuite_glob_ratcheted_keys(model: KernelModel) -> frozenset[str]:
     )
 
 
+#: T-4583 (this ticket): the T-1514 pre-commit unscoped sweep's own
+#: composed-tree `frob check` runs with `root` set to the land's
+#: PERSISTENT warm sweep stage (`_ensure_warm_sweep_stage`,
+#: `<primary root>/.frob/warm-sweep-stage`) or a disposable squash
+#: worktree, NEVER the primary checkout `_land_lock` is actually
+#: acquired against -- so `root / LAND_LOCK_REL` inside that spawned
+#: subprocess never resolves to the real lock file no matter how the
+#: nested stage path is walked. `_land_cmd.py`'s land-side spawn sets
+#: this env var to the primary checkout's own path (str) for the
+#: DURATION of that one spawn (mirrors `_land_internal_git_env`'s
+#: restore-on-exit precedent for the identically-shaped FROB_LAND_
+#: INTERNAL marker) whenever it is spawning the pre-commit sweep's
+#: composed-tree check; `_land_commit_in_progress` below prefers it over
+#: `root` whenever it is set and non-empty, so this file never needs a
+#: path heuristic reconstructing the primary checkout from a warm
+#: stage's nested layout -- the land is the only caller that knows its
+#: own primary root, so it says so explicitly instead of this probe
+#: guessing.
+FROB_LAND_LOCK_ROOT_ENV = "FROB_LAND_LOCK_ROOT"
+
+
 # frob:ticket T-4563
+# frob:ticket T-4583
 # frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_sweep_context_does_not_write_lock  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_warm_stage_env_override_finds_the_primary_root_lock  # noqa: E501
 def _land_commit_in_progress(root: Path) -> bool:
-    """`True` when a `frob ticket land` run currently holds `root`'s own
+    """`True` when a `frob ticket land` run currently holds its own
     `land.lock` (T-4563). The T-4495 testsuite-glob auto-accept
     (`_capability_ratchet_growth_finding`) may only WRITE the committed
     ratchet lock file when this is `True` -- a land's own pre-commit
@@ -1237,22 +1260,38 @@ def _land_commit_in_progress(root: Path) -> bool:
     this lock -- observes `False` here and must never write: that write
     would land in the plain root working tree with no commit absorbing
     it, leaving it dirty and DirtyMain-blocking the next land (the exact
-    regression this ticket fixes). Lazily imports `LAND_LOCK_REL` from
-    `frob.tickets._leases` (never at module level) to avoid a
-    `frob.strata` <-> `frob.tickets` import cycle -- this module has no
-    other reason to depend on `frob.tickets`. Best-effort: any OSError
-    probing the path reads as `False` (fail toward "not a land," the
-    safer side: refusing to write is recoverable, an errant write to the
-    shared root is not)."""
+    regression this ticket fixes).
+
+    T-4583: probes `FROB_LAND_LOCK_ROOT_ENV` FIRST (see its own comment
+    above) -- when the land-side spawn set it, this is the ONLY
+    trustworthy answer, since `root` here is the warm sweep stage or a
+    disposable squash worktree, never the primary checkout the lock
+    actually lives under. Only when that env var is absent/blank does
+    this fall back to probing `root / LAND_LOCK_REL` directly (the
+    pre-T-4583 behavior, still correct for every caller that IS handed
+    its own primary root, e.g. an interactive `frob check`).
+
+    Lazily imports `LAND_LOCK_REL` from `frob.tickets._leases` (never at
+    module level) to avoid a `frob.strata` <-> `frob.tickets` import
+    cycle -- this module has no other reason to depend on
+    `frob.tickets`. Best-effort: any OSError probing the path reads as
+    `False` (fail toward "not a land," the safer side: refusing to
+    write is recoverable, an errant write to the shared root is not)."""
+    import os
+
     from frob.tickets._leases import LAND_LOCK_REL
 
+    env_root = os.environ.get(FROB_LAND_LOCK_ROOT_ENV, "").strip()
+    probe_root = Path(env_root) if env_root else root
     try:
-        return (root / LAND_LOCK_REL).is_file()
+        return (probe_root / LAND_LOCK_REL).is_file()
     except OSError as exc:
         _log.warning(
             "strata effects: capability ratchet: could not probe %s for an "
-            "active land lock (%s) -- treating as no land in progress",
+            "active land lock under %s (%s) -- treating as no land in "
+            "progress",
             LAND_LOCK_REL,
+            probe_root,
             exc,
         )
         return False

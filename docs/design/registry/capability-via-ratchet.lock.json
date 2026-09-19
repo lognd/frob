@@ -357,6 +357,11 @@
       "accepted_count": 1,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
+    },
+    "stratamod::env.read": {
+      "accepted_count": 1,
+      "reason": "T-4583: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence, not a grown ceiling). src/frob/strata/_effects.py's _land_commit_in_progress reads FROB_LAND_LOCK_ROOT (os.environ.get) to find the primary checkout's land.lock when a composed-tree check runs against a nested warm sweep stage -- confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+      "ticket": "T-4583"
     }
   },
   "generated_by": "T-1628",

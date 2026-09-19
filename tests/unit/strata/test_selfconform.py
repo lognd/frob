@@ -2284,6 +2284,67 @@ class TestTestsuiteViaGlobRatchet:
         assert not (tmp_path / CAPABILITY_RATCHET_LOCK_REL).is_file()
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_warm_stage_env_override_finds_the_primary_root_lock(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """T-4583 regression (the live incident: T-4508's land refused
+        twice on this exact shape, /tmp/land-T-4508.log). The T-1514
+        pre-commit sweep's composed-tree check runs with `root` bound to
+        the warm sweep stage (`<primary>/.frob/warm-sweep-stage`) or a
+        disposable squash worktree -- NEVER the primary checkout
+        `_land_lock` is actually acquired against. `land.lock` held
+        under a SEPARATE `primary_root` (simulating the real primary
+        checkout) is invisible to a bare `capability_ratchet_violations
+        (model, stage)` call -- same as `test_sweep_context_does_not_
+        write_lock` above, this must NOT auto-accept/write. Setting
+        `FROB_LAND_LOCK_ROOT` to `primary_root` (what `_land_cmd.py`'s
+        `_pre_commit_unscoped_error_sweep` now does for every spawn it
+        makes) makes the SAME call on the SAME `stage` correctly find
+        the lock and auto-accept, proving the env override -- not a
+        path heuristic reconstructing `primary_root` from `stage`'s own
+        nested layout -- is what closes the gap."""
+        from frob.strata._effects import (
+            CAPABILITY_RATCHET_LOCK_REL,
+            capability_ratchet_violations,
+        )
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        primary_root = tmp_path / "primary"
+        stage = tmp_path / "primary" / ".frob" / "warm-sweep-stage"
+        stage.mkdir(parents=True)
+        (primary_root / LAND_LOCK_REL).parent.mkdir(parents=True, exist_ok=True)
+        (primary_root / LAND_LOCK_REL).write_text(
+            "land in progress\n", encoding="utf-8"
+        )
+
+        _write(
+            stage,
+            "tests/test_new_thing.py",
+            "import subprocess\ndef test_it():\n    subprocess.run(['true'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="testsuite",
+                    trust="trusted",
+                    attrs=("code=tests/**",),
+                    may_grants=(MayGrant(atom="exec", via=("tests/**",)),),
+                ),
+            )
+        )
+
+        monkeypatch.delenv("FROB_LAND_LOCK_ROOT", raising=False)
+        found_without_env = capability_ratchet_violations(model, stage)
+        assert len(found_without_env) == 1
+        assert not (stage / CAPABILITY_RATCHET_LOCK_REL).is_file()
+
+        monkeypatch.setenv("FROB_LAND_LOCK_ROOT", str(primary_root))
+        found_with_env = capability_ratchet_violations(model, stage)
+        assert found_with_env == ()
+        lock_path = stage / CAPABILITY_RATCHET_LOCK_REL
+        assert lock_path.is_file()
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
     def test_non_testsuite_bare_glob_via_is_not_auto_accepted(self, tmp_path: Path):
         """The T-4495 auto-accept carve-out is `testsuite`-specific: a
         DIFFERENT node declaring a bare-glob `via` still ratchets the
