@@ -1292,8 +1292,24 @@ def _run_gates(
                 replay.partial,
             )
             return _label_replay(list(replay.results), age_s=replay.age_s)
+    # T-3943: a bare `frob check` (no `--base`) used to fall back to the
+    # literal "main" here, so on a repo whose default branch is `dev`
+    # (this repo, post-T-4496) every symbol in dev's own history since
+    # main last merged is reported as "changed with no frob:ticket edge"
+    # -- signal-destroying noise burying real findings (F-173). Route
+    # through `frob.tickets._land`'s already-canonical
+    # `_resolve_default_ticket_branch` instead (root's own current
+    # branch, else `[tool.frob] ticket_land_branch`, else "main" -- the
+    # same resolver `frob ticket work`/evidence/done-report already use,
+    # T-4492) so `check`, `close`, `done-report`, and the CI self-gate
+    # all agree on one answer instead of each hardcoding a second copy
+    # of the rule. Lazy import: `frob.tickets._land` is a much larger
+    # module than this gate-dispatch chokepoint needs to pull in eagerly.
+    from frob.tickets._land import _resolve_default_ticket_branch
+
+    resolved_base = base or _resolve_default_ticket_branch(root, None)
     cfg = GateConfig(
-        root=str(root), base=base or "main", ticket=ticket, gates=gates, files=files
+        root=str(root), base=resolved_base, ticket=ticket, gates=gates, files=files
     )
     result = run_gates(cfg, use_cache=cache_on)
     if result.is_err:

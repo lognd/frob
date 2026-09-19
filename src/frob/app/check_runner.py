@@ -159,6 +159,28 @@ _LANGUAGE_SUFFIXES: dict[str, tuple[str, ...]] = {
 }
 
 
+# frob:ticket T-3943
+def _check_default_base(root: Path, cfg: AppConfig) -> str:
+    """`cfg.check_base` if the caller passed one, else the same
+    canonical resolver `frob.tickets._land._resolve_default_ticket_
+    branch` already gives `frob ticket work`/evidence/done-report
+    (T-4492): root's own current branch, else `[tool.frob]
+    ticket_land_branch`, else the literal "main". Before T-3943 every
+    one of this module's three unscoped `frob check` call sites (the
+    skip-unchanged probe, the Tier-C rerun's `GateConfig`, and the
+    check-delta daemon RPC) independently hardcoded "main" -- on a repo
+    whose default branch is `dev` (this one, post-T-4496) that buried
+    real findings under hundreds of false "changed since main" ones
+    (F-173). One helper, reused everywhere this module used to spell
+    "main" as a fallback, so there is exactly one rule to fix next time
+    it is wrong, not three copies to find."""
+    if cfg.check_base:
+        return cfg.check_base
+    from frob.tickets._land import _resolve_default_ticket_branch
+
+    return _resolve_default_ticket_branch(root, None)
+
+
 # frob:ticket T-0421
 def _language_unchanged(root: Path, base: str, project_type: str) -> bool:
     """Whether NO file matching `project_type`'s suffixes changed against
@@ -476,7 +498,7 @@ def _run_all_detected(
         if progress is not None:
             progress.update(f"check: {project_type}", i, total)
         if cfg.check_skip_unchanged and _language_unchanged(
-            root, cfg.check_base or "main", project_type
+            root, _check_default_base(root, cfg), project_type
         ):
             results.append(_unchanged_skip_result(project_type))
         else:
@@ -1762,7 +1784,7 @@ def _apply_tier_a_and_reverify(
     # fixed/rolled-back above.
     gate_cfg = GateConfig(
         root=str(root),
-        base=cfg.check_base or "main",
+        base=_check_default_base(root, cfg),
         ticket=cfg.check_ticket,
         gates=frozenset(),
     )
@@ -1818,7 +1840,7 @@ def _query_check_delta_daemon(root: Path, cfg: AppConfig) -> dict | None:
     proxied = query(
         root,
         "frob_check_delta",
-        {"ticket_id": cfg.check_ticket, "base": cfg.check_base or "main"},
+        {"ticket_id": cfg.check_ticket, "base": _check_default_base(root, cfg)},
     )
     if proxied.is_err:
         return None

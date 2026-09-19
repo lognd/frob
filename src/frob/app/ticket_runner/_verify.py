@@ -2244,7 +2244,17 @@ def _done_report_capture_check(root: Path, cfg: AppConfig, base: str | None):  #
     if _done_report_no_check(cfg):
         return None, None, "no-check"
     budget = _done_report_check_budget_s(root)
-    files = _done_report_touched_files(root, cfg.ticket_id, base or "main")
+    # T-3943: was `base or "main"` -- on a repo whose default branch is
+    # `dev` (post-T-4496), a done-report with no explicit `--base-ref`
+    # diffed against the wrong branch and reported every file dev has
+    # ever touched as "changed" (F-173). Same canonical resolver `frob
+    # ticket work`/evidence already use (T-4492), reused here rather
+    # than a second hardcoded "main".
+    from frob.tickets._land import _resolve_default_ticket_branch
+
+    files = _done_report_touched_files(
+        root, cfg.ticket_id, base or _resolve_default_ticket_branch(root, None)
+    )
     spawn = _shared_check_spawn_fn(
         root, cfg.ticket_id, base=base, files=files, timeout=budget
     )

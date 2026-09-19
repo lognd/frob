@@ -934,7 +934,15 @@ def _close_own_obligations_for_ticket(
     three obligations is outstanding."""
     from frob.gitio import working_diff
 
-    diff = working_diff(root, "main")
+    # T-3943: was `working_diff(root, "main")` unconditionally -- ignored
+    # this function's own `base` parameter entirely and hardcoded "main"
+    # even when a caller passed a real base. Falls back to the same
+    # canonical resolver `frob ticket work`/evidence/done-report already
+    # use (T-4492: root's current branch, else `ticket_land_branch`, else
+    # "main") instead of a second hardcoded copy.
+    from frob.tickets._land import _resolve_default_ticket_branch
+
+    diff = working_diff(root, base or _resolve_default_ticket_branch(root, None))
     if diff.is_err:
         _log.warning(
             "ticket close: %s working_diff unavailable (%s), skipping "
