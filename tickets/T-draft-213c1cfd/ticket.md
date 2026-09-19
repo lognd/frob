@@ -20,6 +20,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_effects.py
 - src/frob/tickets/_land_squash.py
+- docs/modules/gate-sys111-ratchet-auto-accept.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land_squash.py
   reason: auto-accept path for ratchet ceiling growth (T-4596 posture)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/modules/gate-sys111-ratchet-auto-accept.md
+  reason: standalone doc since docs/modules/gates.md is leased by T-4111
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
