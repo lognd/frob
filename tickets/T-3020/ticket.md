@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/_narrative_blocks.py
 - src/frob/__main__.py
 - docs/commands/narrative.md
+- tests/test_narrative_blocks.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
   glob: docs/commands/narrative.md
   reason: 'AFFECT001: narrative_blocks_gate''s affects()-closure doc must be touched
     in the same diff that changes the function''s body (waiver removal)'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_narrative_blocks.py
+  reason: regression test proving the SELFAUDIT001/SYS003 waivers are gone and stay
+    gone
   actor: logan
   at: '2026-09-19'
 triage_changes:
