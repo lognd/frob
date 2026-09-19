@@ -37,6 +37,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 0
   new_length: 1398
+- mode: append
+  reason: '2026-09-19: owner decision recorded -- the PARSER is incomplete, not the
+    docs wrong; this converts from a DECISION into an implementation leaf under story
+    B (T-4665), acceptance becomes ''the documented form parses and elaborates with
+    a litmus case'''
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1398
+  new_length: 3835
 designated_repro_test: null
 threat: null
 component: null
@@ -69,3 +78,49 @@ Decide it together with:
 
 All four are one question asked at four scales: when the docs and the parser
 disagree, which one is the specification?
+
+
+## DECISION RECORDED -- owner, 2026-09-19 19:50 -- NOW AN IMPLEMENTATION LEAF
+
+**Decided: the PARSER IS INCOMPLETE. The docs are not wrong. Make the documented
+`attr IDENT` form parse and elaborate.**
+
+Governing posture, in the owner's words: **"err on the side of adding
+capabilities; we originally had a good idea and then forgot to implement it."**
+docs/strata/surface.md and threat.md showing `attr IDENT` is exactly that shape:
+the form was designed, written down, and never implemented. The fix is to
+implement it, not to edit the documentation down to what the parser happens to
+accept.
+
+This reverses this ticket's ORIGINAL framing. Its title still reads "fix the
+docs to show the STRING attr form" -- **that is now the rejected option**. Read
+the title as the finding, not the remedy. The remedy is the opposite: the parser
+gains the IDENT form, and the STRING form continues to work.
+
+CONVERTED FROM DECISION TO IMPLEMENTATION LEAF. Re-parented from story D
+(T-4667, decisions) to **story B (T-4665)**. Acceptance is replaced with: the
+documented form parses AND elaborates, proven by a litmus case.
+
+SCOPE AND DISJOINTNESS
+- `strata-core/src/parse/grammar_node.rs` -- node `attr` parsing (confirmed by
+  `git grep -ln '"attr"' -- strata-core/src/parse/`, which also names
+  grammar_flow.rs and grammar_infra.rs; if the node attr form proves to live in
+  one of those, scope --add it).
+- `design/litmus/attr_ident.strata` -- a NEW litmus file, deliberately its own
+  file so this leaf stays scope-disjoint from T-3823, which also touches the
+  parser.
+- `docs/strata/surface.md`, `docs/strata/threat.md` -- these become CORRECT
+  rather than aspirational once the parser accepts the form; check the examples
+  against the implemented grammar and fix any that were wrong for a second
+  reason.
+
+SEQUENCING NOTE: T-3823 (the secret `rotate within`/`revoke` grammar) is the
+same class and the same decision, and its parser site may also be
+grammar_node.rs. If both leaves need that file, they are SEQUENCED, not
+parallel -- coordinate rather than taking a lease race.
+
+WHY A LITMUS CASE AND NOT ONLY A UNIT TEST: SF-09 measured that the 7
+design/litmus/*.strata files are the ONLY thing exercising 19 constructs the
+self-model never uses. A documented form with no litmus case is how a construct
+becomes dead again. Per memory/positive-control-or-it-proves-nothing.md, the
+litmus case must fail to parse at HEAD and pass after.
