@@ -1,5 +1,5 @@
 ---
-id: T-draft-00349cb5
+id: T-4736
 title: 'Gate cut-over: delete the hand-written job list and the _KNOWN_GATE_RULES
   literal; the registry is the sole source'
 state: queued
