@@ -111,6 +111,13 @@ scope_changes:
     registry entry'
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4125
+  new_length: 4567
 evidence:
 - tests/gates_suite/test_invariant.py::TestInvariantLoad::test_malformed_bad_id
 - tests/gates_suite/test_invariant.py::TestInvariantLoad::test_duplicate_id
@@ -201,3 +208,5 @@ ACCEPTANCE
 - A skipped/aborted gate never reports pass; exit status reflects it.
 - One id grammar shared by the directive and the loader, widened not narrowed.
 - All four fixtures committed.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius's class docstring used to say: 'T-4019: this repo's own invariants/ is empty (T-3928), so nothing here previously proved this code path -- these fixtures build a real invariants/*.md file, including a malformed one, rather than relying on this repo's vacuous invariant gate.' Moved here; the class docstring now states only what its tests verify.
