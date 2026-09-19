@@ -48,6 +48,13 @@ scope_changes:
     perf_gate/_violation construction, and the gate test file'
   actor: logan
   at: '2026-08-17'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2792
+  new_length: 3513
 evidence:
 - tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_reports_a_repo_relative_file_not_absolute
 - tests/gates_suite/test_run.py::TestOptInGates::test_frob_waive_perf004_suppresses_the_named_finding
@@ -143,3 +150,5 @@ POSITIVE CONTROLS: (1) a waived PERF site produces no finding;
 (2) must-still-pass -- an UNWAIVED genuine PERF site still produces one, so
 the fix is not a blanket suppression; (3) the existing waiver at
 `_rapid_sweep.py:1652` stops reporting.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_run.py::TestOptInGates.test_perf_gate_reports_a_repo_relative_file_not_absolute's docstring used to say: 'T-2314 (MUST FAIL FIRST on main): before this fix, perf_gate's Violation.file carried an ABSOLUTE path (parse_file(root / rel_path)'s ParsedFile.path flowed straight through to _violation), while every other gate -- and frob:waive's own graph-derived edge src -- uses a repo-relative path. This is the root cause of the waiver-defect T-2314 exists to fix: _match_waiver's file-level fallback does exact string equality, so an absolute violation.file could never match a relative waiver src.' Moved here; the test docstring now states only what it verifies.
