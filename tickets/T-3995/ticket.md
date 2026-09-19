@@ -6,8 +6,6 @@ kind: bug
 origin: agent
 created: '2026-09-06'
 priority: high
-blocked_by:
-- T-3943
 parent: T-3984
 tier: ticket
 sprint: null
@@ -42,3 +40,6 @@ F-206 (T-3984 item 11). MEASURED SPECIFICALLY for this ticket, per the coordinat
 MEASUREMENT: ran `frob check --only ruff --json` (ruff is a real, known entry in src/frob/check/__init__.py's _TOOL_STAGES) against this repo. Result: 3 ToolResult entries came back with tool values ruff-check, ruff-format, AND claude-config-drift. claude-config-drift is unrelated to the ruff stage -- reading src/frob/app/check_runner.py confirms _claude_config_drift_result(root) (and, in the same unconditional tail of run_check, _deploy_drift_result/_deploy_conformance_result) is called unconditionally at the end of run_check with no check against cfg.check_only at all. So --only ruff, a KNOWN stage name, does NOT actually restrict output to only that stage: at minimum the claude-config-drift (and likely deploy-drift/deploy-conformance) checks always run regardless of --only.
 
 FINDING THIS WOULD HAVE CAUGHT (and this repo just reproduced independently): a user running `frob check --only <stage>` believing they scoped the run gets extra, unrelated findings anyway -- and by the same silent-zero logic this epic is about, might also get FEWER findings than expected from stages that DO respect --only, with no signal distinguishing "this stage was filtered out on purpose" from "this stage silently didn't run." Fix: either every unconditional tail check (claude-config-drift, deploy-drift, deploy-conformance, and any others added the same way) is gated by cfg.check_only when --only is given, or --only's own documentation/behavior is corrected to state plainly which checks it does NOT filter and why (some may be legitimately unconditional, e.g. cheap sanity checks) -- but today neither is true: it is undocumented and inconsistent.
+
+## Unblock log
+- 2026-09-19: unblocked by T-3943 -- T-3943 landed
