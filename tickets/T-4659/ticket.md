@@ -60,7 +60,13 @@ acceptance:
   - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 - text: 'Given the same, for `fail` and `requeue`: tests/unit/test_lease_lifecycle.py::test_fail_releases_lease
     and ::test_requeue_releases_lease each hold.'
-  evidence: []
+  evidence:
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
+  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 - text: docs/modules/tickets-lifecycle.md states the acquire/release table (transition
     -> lease effect) and is updated in this same change.
   evidence: []
