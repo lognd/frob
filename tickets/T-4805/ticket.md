@@ -2,7 +2,7 @@
 id: T-4805
 title: SCOPE002 emits 587 scope-closure warnings on a ticket with EMPTY scope; scope
   closure must be computed against the ticket's declared scope only
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-19'
