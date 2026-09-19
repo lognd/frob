@@ -1,5 +1,5 @@
 ---
-id: T-draft-f5ac9ec0
+id: T-4599
 title: instrument the silent ~111s land phase between rapid --files scoping and worktree
   auto-sync with phase-transition logging
 state: in-progress
