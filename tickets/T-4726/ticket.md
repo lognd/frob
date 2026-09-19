@@ -1,5 +1,5 @@
 ---
-id: T-draft-12bce48e
+id: T-4726
 title: docs/modules/vet.md rule rows VET006/008/009/010 describe unimplemented designs
   under live rule ids; align with gates.md and the emitting sites
 state: in-progress

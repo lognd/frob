@@ -36,7 +36,7 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: tests/unit/test_cli_group_parity.py
-  reason: leased by in-progress T-draft-5658939f (cli-regrouping parity fix); deferred,
+  reason: leased by in-progress T-4748 (cli-regrouping parity fix); deferred,
     pick up once that lease releases
   actor: logan
   at: '2026-09-19'

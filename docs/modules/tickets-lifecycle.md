@@ -326,6 +326,64 @@ existence) that keeps a dead worktree's forgotten lease from wedging
 (dead in-progress ticket -> requeue, live worktree with no in-progress
 ticket -> flag/clean) is T-0476's job, not this one's.
 
+### Lease lifecycle: acquire and release table (T-4659)
+
+The cross-worktree lease is not tied to any single verb -- it is acquired
+and released purely as a SIDE EFFECT of the `IN_PROGRESS` state-machine
+edge, wherever that edge is crossed. `frob.tickets._evidence.
+_sync_cross_worktree_lease` is the ONE place this rule is applied, riding
+along every `transition()` call:
+
+| Transition (`from_state` -> `to_state`)         | Lease effect                          |
+| ------------------------------------------------ | -------------------------------------- |
+| `* -> IN_PROGRESS` (start)                        | `record_lease` (acquire)               |
+| `IN_PROGRESS -> DONE` (close)                     | `release_lease` (release, terminal)    |
+| `IN_PROGRESS -> DROPPED` (drop)                   | `release_lease` (release, terminal)    |
+| `IN_PROGRESS -> QUEUED` (requeue, incl. `fail`'s  | `release_lease` (release, non-terminal |
+| own post-fail-log requeue, T-1131)                | but exits `IN_PROGRESS`)               |
+| `IN_PROGRESS -> BLOCKED`                          | `release_lease` (release)              |
+| any transition NOT leaving `IN_PROGRESS`          | no lease effect                        |
+
+`frob ticket fail <id> --summary TEXT` (T-1131) deserves its own line:
+`record_failure` on its own only appends a `## Failure log` entry and
+performs NO transition, so it releases nothing by itself -- the `_fail`
+CLI wiring (`frob.app.ticket_runner._close_cmd._fail`) always follows it
+with `_requeue_if_in_progress`, which is the ONE `transition(...,
+QUEUED)` call that actually crosses the `IN_PROGRESS -> QUEUED` edge and
+releases the lease. A ticket that was NOT `IN_PROGRESS` when fail-logged
+holds no lease to release and is left unchanged.
+
+**T-4659 hardening: `release_lease`'s own unlink failure now logs at
+ERROR, not WARNING.** A lease file that exists but cannot be removed
+(permission denied, a directory sitting at the expected path, a
+read-only filesystem) is the exact shape that left `.git/frob-leases/
+T-3259.json` behind after `frob ticket drop T-3259` (measured
+2026-09-19) until a human ran `frob worktree release-lease` by hand --
+`release_lease` still degrades to `Ok(None)` on that path (T-0473's
+original best-effort contract, pinned by `tests/test_ticket_leases.py::
+TestRecordReleaseRenameLeaseErrorBranches.
+test_release_lease_degrades_on_unlink_failure`, which a live sibling
+lease on that file blocked T-4659 from extending), but the ERROR-level
+log line now names the exact ticket id and path so the incident leaves a
+trail instead of silence. T-draft-e6324810 tracks turning this into a
+hard `Err` once that sibling lease is free.
+
+**Known remaining gap (T-draft-93f13817, filed alongside T-4659, NOT
+fixed by it): the release gate above is keyed on the LOCAL worktree's own
+prior `Ticket.state`, not on whether a cross-worktree lease file actually
+exists.** A ticket started `IN_PROGRESS` in one worktree, then acted on
+(closed/dropped/requeued) from a SECOND worktree/checkout whose own
+local ledger view never observed that `IN_PROGRESS` transition (per-
+branch `tickets.md`, not yet merged), has its lease survive: the second
+worktree's own `from_state` was never `IN_PROGRESS`, so `_sync_cross_
+worktree_lease`'s release branch never fires, even though the lease file
+itself is present and now orphaned. This is the T-3259 incident's true
+root cause when the drop happens from a DIFFERENT checkout than the one
+that started the ticket (the same-worktree case above already releases
+correctly). Fixing it means changing `_sync_cross_worktree_lease` itself
+(`src/frob/tickets/_evidence.py`), outside this ticket's `_leases.py`-only
+scope.
+
 **Attribution provenance, and a supported release path for an orphaned
 lease (T-1743).** `frob ticket doable --show-blocked`'s per-ticket
 explanation used to name only a bare holder id (`leased by in-progress

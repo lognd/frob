@@ -1,5 +1,5 @@
 ---
-id: T-draft-2eeb3c7b
+id: T-4727
 title: record verb/subverb for --help and argparse usage-error exits
 state: queued
 kind: bug

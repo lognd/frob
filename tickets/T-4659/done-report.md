@@ -1,192 +1,206 @@
 ## Done report
 
-T-4519 -- docs/xref/perf coverage for csharp (post T-3232/T-3234 generic fix)
-================================================================================
+T-4659 -- Lease lifecycle: release on every terminal transition; drop no
+longer leaves .git/frob-leases/<id>.json
+=============================================================================
 
-Worktree: /home/logan/projects/frob/.claude/worktrees/t-4519 (branch t-4519)
-Final HEAD: 82d39335f
+WHAT changed, per file
+-----------------------
+src/frob/tickets/_leases.py
+  - LeaseError: added a T-4659 comment reserving a future ReleaseFailed
+    error kind for T-draft-e6324810 (see "Scope conflict found" below);
+    no new enum member added in THIS change (would have broken an
+    out-of-scope test's pinned contract).
+  - release_lease(): hardened observability without changing its Result
+    contract. Now logs at INFO when there is nothing to release (no
+    shared git common dir, or no lease file present) and at INFO on a
+    successful removal; a genuine unlink OSError now logs at ERROR
+    (previously WARNING), naming the ticket id and path, and still
+    degrades to Ok(None) -- the existing best-effort contract
+    (tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::
+    test_release_lease_degrades_on_unlink_failure) is preserved verbatim.
+  - Added/updated frob:tests and frob:doc directives on release_lease
+    pointing at the new test file and the new docs anchor.
 
-WHAT changed
-------------
-A prior agent session had already committed the real fix plus proof
-tests before this session picked the ticket up:
+tests/unit/test_lease_lifecycle.py (NEW)
+  - TestReleaseLeaseLifecycle: test_drop_releases_lease,
+    test_fail_releases_lease, test_requeue_releases_lease -- positive
+    controls proving a held cross-worktree lease is released when a
+    ticket started IN_PROGRESS in the SAME worktree is dropped,
+    fail-logged-then-requeued, or bare-requeued. test_drop_releases_lease
+    additionally proves a sibling ticket can now claim the freed scope
+    (the T-3259 incident's observable symptom).
+  - TestReleaseLeaseHardening: test_missing_lease_is_a_silent_ok,
+    test_real_unlink_failure_logs_at_error -- pin release_lease's
+    contract directly (Ok(None) always; ERROR-level log on a real
+    unlink failure).
 
-  - src/frob/xref/__init__.py: widened `_DEFINITION_KINDS` from
-    (FUNCTION, CLASS, METHOD) to also include CONST and TYPE. csharp's
-    `_walk_csharp` maps a `property_declaration` and a `const` field onto
-    `SymbolKind.CONST`, and an `enum_declaration` onto `SymbolKind.TYPE`;
-    neither kind was ever a candidate xref definition before, in ANY
-    language this resolver covers (also fixes python module constants
-    and rust const/static, not just csharp -- disclosed in the commit
-    message as a side effect, not scope creep, since the fix is one
-    tuple literal).
-  - tests/fixtures/lang/csharp/nested_property_event.cs (new, static
-    fixture): a namespaced Container class with a nested Inner class, a
-    Total property, a MaxTotal const field, and a Changed event.
-  - tests/unit/test_xref.py: 4 new tests against the fixture.
-  - tests/unit/test_docs_module.py: 1 new test against the same fixture,
-    proving frob.docs's docstring extraction also sees the fixture's
-    Container class doc comment while correctly still skipping the
-    nested class's and the property's (disclosed, pre-existing,
-    out-of-scope-for-this-ticket gaps in _class_qualnames/
-    _docstring_for_symbol, not something T-4519 was asked to fix).
-
-My own change (commit 82d39335f) only touched the two test files, to
-bind gate findings `frob check --only gates` reported:
-
-  - tests/unit/test_xref.py: added `# frob:ticket T-4519` to the
-    csharp_nested_file fixture and all 4 new test functions (fixes
-    COV002, 5 findings); added `# frob:ticket T-4679` to
-    test_csharp_event_declaration_is_not_yet_a_symbol additionally,
-    since that test specifically pins the gap that follow-up ticket
-    tracks; added a `# frob:waive DUP002 reason="..."` above
-    test_csharp_finds_property_definition -- it and
-    test_csharp_finds_nested_type_definition are ~95% similar in body
-    shape (fixes DUP002, 1 finding). Reason: each test proves resolution
-    through a DIFFERENT _DEFINITION_KINDS branch (SymbolKind.CONST via a
-    property vs SymbolKind.CLASS via a nested type), not a copy-paste.
-  - tests/unit/test_docs_module.py: added `# frob:ticket T-4519` to
-    test_extract_docstrings_csharp_nested_class_is_skipped (fixes
-    COV002, 1 finding I initially missed -- my first pass at scoping the
-    diff only diffed the ticket's declared `scope:` paths plus
-    test_xref.py and missed that commit 618a7cfad also touched
-    test_docs_module.py; caught on the first full gate-check pass).
+docs/modules/tickets-lifecycle.md
+  - New "### Lease lifecycle: acquire and release table (T-4659)"
+    subsection under "## Cross-worktree lease side-channel (T-0473)":
+    the transition -> lease-effect table, the `fail`-then-requeue
+    two-step explanation (T-1131), the T-4659 ERROR-logging hardening
+    note, and an explicit "Known remaining gap" callout for the
+    cross-worktree state-blind release path (see below).
 
 WHY
 ---
-Both T-3232 (frob.docs/frob.xref language filters) and T-3234 (frob.perf
-hot-graph collector) had already landed their generic, language-agnostic
-fixes before this ticket started (see the ticket's Unblock log). T-4519's
-job was PROOF COVERAGE, not re-implementation: confirm docs/xref actually
-cover csharp end to end now, using real static fixtures parsed through
-the real parse_file/extract_docstrings/xref call paths (no mocks), and
-disclose -- rather than silently leave unverified -- the one xref gap
-that widening _DEFINITION_KINDS did NOT fix (event_declaration has no
-RawSymbol case in _walk_csharp.py at all, so no kind-widening can help;
-filed as T-4679 instead of expanding this ticket's scope into
-frob.lang, which T-4507 owns).
+The ticket's premise (frob ticket drop leaving a stale lease file) was
+verified NOT to reproduce in the common, same-worktree case on current
+dev -- `_sync_cross_worktree_lease` (frob.tickets._evidence, T-0473)
+already calls release_lease unconditionally whenever the LOCAL ticket
+transitions out of IN_PROGRESS, and T-1131 already fixed the `fail`
+verb's own instance of this bug (record_failure alone does not
+transition; `_fail`'s CLI wiring always follows it with a requeue
+transition that releases the lease). I reproduced this directly with a
+throwaway repro script (kept at
+/tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/repro_drop.py)
+before writing any test, per "verify the premise before filing."
 
-frob.perf's hot-graph collector coverage was explicitly deferred to
-v1.1.0 with T-3234 per the ticket's own 2026-09-16 unblock-log entry, so
-the acceptance list currently bound (3 items, after two 2026-09-17
-amendments removed accidental duplicate criteria) has no live perf
-criterion -- correct as scoped; the ticket body's original 3-criterion
-prose (docs/xref/perf) is superseded by the bound `acceptance:` list.
+I DID find and reproduce the real T-3259 root cause
+(/tmp/.../scratchpad/repro_drop3.py): the release gate is keyed on the
+CALLING worktree's own LOCAL `Ticket.state` before the transition, not
+on whether a cross-worktree lease file actually exists for the id. A
+ticket started IN_PROGRESS in worktree A (never merged/committed back to
+`main`) and then dropped from `main` (whose own ledger view still shows
+it PLANNED) never crosses the `from_state is IN_PROGRESS` check in
+`_sync_cross_worktree_lease`, so `release_lease` is never called even
+though A's lease file is sitting right there. This is the actual T-3259
+shape (a coordinator dropping from the primary checkout a ticket that
+was worked in a dispatched worktree).
 
-How each bound acceptance criterion is proven
------------------------------------------------
-[1] xref: property_declaration (SymbolKind.CONST) is a resolvable xref
-    definition, not just methods/classes.
-    -> test_csharp_finds_property_definition: xref("Total", ..., lang=
-       "csharp") on the fixture's `Total` property resolves a definition.
-    -> test_csharp_finds_const_field_definition: xref("MaxTotal", ...)
-       on the fixture's `const int MaxTotal` resolves a definition.
-    Both would have returned None before widening _DEFINITION_KINDS
-    (CONST was excluded).
+Fixing that root cause requires changing
+`frob.tickets._evidence._sync_cross_worktree_lease`, which is OUTSIDE
+this ticket's declared scope (src/frob/tickets/_leases.py,
+tests/unit/test_lease_lifecycle.py, docs/modules/tickets-lifecycle.md
+only). Per "never expand scope on your own", I filed T-draft-93f13817
+(kind=bug, priority=high, scope: src/frob/tickets/_evidence.py,
+tests/test_ticket_leases_cross_worktree.py, blocked_by: T-4659) with the
+full repro and fix direction, and documented the gap explicitly in
+docs/modules/tickets-lifecycle.md rather than leaving it silent.
 
-[2] xref: a class nested inside another class (csharp: Container.Inner)
-    resolves as an xref definition by its own bare name, same as a
-    top-level class.
-    -> test_csharp_finds_nested_type_definition: xref("Inner", ...)
-       resolves Inner (qualname Frob.Sample.Nested.Container.Inner) via
-       the existing CLASS branch -- _parsed_definition already matches
-       on the bare rightmost qualname segment, so no widening was needed
-       for this branch; the test proves that behavior, not a new fix.
+Within scope, I implemented the observability half of the plan (ERROR-
+level logging on a real release failure, the acquire/release table in
+docs) and wrote the same-worktree drop/fail/requeue positive controls
+the ticket's acceptance criteria describe (these already pass on dev,
+confirmed by direct repro before writing the tests -- they now stand as
+regression tests, not tests that flip red-to-green in this diff).
 
-[3] xref: csharp event_declaration members are NOT YET resolvable
-    (frob.lang._walk_csharp has no event_declaration case, out of
-    T-4519's scope) -- pinned by
-    test_csharp_event_declaration_is_not_yet_a_symbol; follow-up filed
-    as T-4679.
-    -> test_csharp_event_declaration_is_not_yet_a_symbol: xref("Changed",
-       ...) on the fixture's `event EventHandler Changed` returns
-       definition=None, is_ok. This PINS the current (missing) behavior
-       as a deliberate, visible assertion -- a future _walk_csharp.py
-       change that starts emitting an event_declaration RawSymbol will
-       break this test loudly instead of silently changing behavior.
-       Follow-up ticket T-4679 ("csharp event_declaration has
-       no RawSymbol (_walk_csharp.py)") already exists, filed by the
-       prior agent session (commit 098c940df), tracking the actual fix
-       -- correctly out of this ticket's scope
-       (src/frob/xref/__init__.py, src/frob/docs/__init__.py,
-       src/frob/perf/_collectors.py only, none of which own the walker).
+Scope conflict found (surfaced, not silently worked around)
+-------------------------------------------------------------
+The Description+Plan asked for release_lease to "surface a Result error"
+on a terminal transition that cannot release its lease, not just log.
+Implementing that means changing release_lease's Ok(None)-on-OSError
+contract to Err(...), which breaks
+tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::
+test_release_lease_degrades_on_unlink_failure (asserts result.is_ok).
+That test file is currently under a LIVE T-4625 lease
+(`frob ticket scope T-4659 --add tests/test_ticket_leases.py` refused
+with ScopeLeaseConflict: held by in-progress T-4625, measured
+2026-09-19). Per the playbook ("if a lease blocks you, name the holder
+and move on"), I did not force this: I implemented the ERROR-log
+hardening only (contract-preserving), and filed T-draft-e6324810
+(scope: src/frob/tickets/_leases.py, tests/test_ticket_leases.py,
+src/frob/tickets/_evidence.py; blocked_by: T-4625) to finish the
+Err-surfacing half once T-4625 releases that file.
 
-Docs criterion (bound as evidence, not in the current 3-item acceptance
-list, but proven anyway since the ticket's `evidence:` frontmatter names
-it and src/frob/docs/__init__.py is in scope):
-    -> test_extract_docstrings_csharp_class_and_method (pre-existing,
-       from T-3232): csharp XML `<summary>` doc comments on a class and
-       method resolve through extract_docstrings.
-    -> test_extract_docstrings_csharp_nested_class_is_skipped (new, this
-       ticket): proves extract_docstrings sees Container's own doc
-       comment on the new fixture, while disclosing (not fixing) that a
-       nested class's and a property's doc comments are currently
-       dropped -- pre-existing _class_qualnames/_docstring_for_symbol
-       gaps, out of scope for a re-design here.
+Filed
+-----
+- T-draft-e6324810 -- release_lease: surface a real unlink failure as
+  Err, not just an ERROR log (blocked_by: T-4625, the live lease holder
+  on tests/test_ticket_leases.py)
+- T-draft-93f13817 -- cross-worktree lease release must not gate on the
+  LOCAL ticket's prior state (kind=bug, priority=high, blocked_by:
+  T-4659) -- the actual T-3259 root cause, in src/frob/tickets/_evidence.py,
+  outside this ticket's scope.
 
-Test node ids (all pass)
--------------------------
-tests/unit/test_xref.py -- 22/22 pass, including:
-  tests/unit/test_xref.py::test_csharp_finds_property_definition
-  tests/unit/test_xref.py::test_csharp_finds_const_field_definition
-  tests/unit/test_xref.py::test_csharp_finds_nested_type_definition
-  tests/unit/test_xref.py::test_csharp_event_declaration_is_not_yet_a_symbol
-  tests/unit/test_xref.py::test_csharp_finds_definition_and_usage_with_explicit_lang
-tests/unit/test_docs_module.py -- 14/14 pass, including:
-  tests/unit/test_docs_module.py::test_extract_docstrings_csharp_class_and_method
-  tests/unit/test_docs_module.py::test_extract_docstrings_csharp_nested_class_is_skipped
-Combined suite run: 36/36 pass, exit 0.
+Evidence / acceptance binding
+------------------------------
+Acceptance items (1-based, per `frob ticket evidence`'s accepts index):
+  [1] drop releases the lease, sibling scope --add succeeds
+      -> tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
+  [2] positive control test_drop_releases_lease
+      -> same node id as [1] (this test IS the positive control)
+  [3] fail/requeue release the lease
+      -> tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
+      -> tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
+  [4] docs/modules/tickets-lifecycle.md acquire/release table
+      -> documented; supporting evidence:
+         tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
+         tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
+         tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
+         (pins the contract the docs table now describes)
 
-Evidence bound in tickets/T-4519/ticket.md (recorded by the prior agent
-session, still valid -- no node id renamed by my edit):
-  [1] test_csharp_finds_property_definition, test_csharp_finds_const_field_definition
-  [2] test_csharp_finds_nested_type_definition
-  [3] test_csharp_event_declaration_is_not_yet_a_symbol
-  (also on record: test_extract_docstrings_csharp_class_and_method,
-  test_extract_docstrings_csharp_nested_class_is_skipped,
-  test_csharp_finds_definition_and_usage_with_explicit_lang)
+Bound via: frob ticket evidence T-4659 <6 node ids> --accepts 1 --accepts 2
+--accepts 3 --accepts 4 --base-ref dev (ran AFTER the last content commit,
+per the close-dance ordering rule).
 
-Gate check
-----------
-`frob check --only gates --files src/frob/xref/__init__.py --files
-tests/unit/test_xref.py --files tests/unit/test_docs_module.py --files
-tests/fixtures/lang/csharp/nested_property_event.cs --base dev
---no-cache` (3 passes to converge, ~15-20 min wall time each under heavy
-fleet load):
+Commits
+-------
+af32dea94f6ff66af1eb327351ab96a954f2cb09 -- feat(tickets): document and
+  harden the lease release lifecycle (T-4659)
+2ab759c79fb38f0899a587b21628d19891844669 -- chore(tickets): record
+  evidence for T-4659 (auto-committed by `frob ticket evidence`)
 
-  Pass 1: 5x COV002 + 1x DUP002 in tests/unit/test_xref.py.
-  Pass 2 (after test_xref.py fix): DUP002 waived and gone; a further
-    COV002 surfaced in tests/unit/test_docs_module.py:86
-    (test_extract_docstrings_csharp_nested_class_is_skipped) -- missed
-    in my first pass because I had only diffed the ticket's declared
-    `scope:` paths plus test_xref.py against dev, not realizing commit
-    618a7cfad also touched test_docs_module.py.
-  Pass 3 (final, this commit): zero COV002/DUP002 findings across all
-    four --files targets. Remaining lines naming our files are two
-    warning-level gates that both PASS overall (gate:DOCARCH 0 errors/545
-    warnings, gate:NARR 0 errors/180 warnings) flagging pre-existing
-    style-only warnings on an untouched neighboring test
-    (test_extract_docstrings_non_python_file_returns_empty, not modified
-    by this ticket) -- not blocking, not new. PRE001/SCOPE001 on
-    xref/__init__.py are the same "no active ticket is derivable"
-    invocation artifact as T-4507 (branch is lowercase t-4519, and the
-    brief mandates `--only gates --files`, never `--ticket`). All other
-    FAIL rows (ARCH, DOC, DRIFT, DSL, LANG, PERF, REF, TICK, WIRE) are
-    pre-existing repo-wide findings confirmed (by grep) to name none of
-    this ticket's four touched files.
+Test node ids run and passing (local, this worktree)
+------------------------------------------------------
+PYTHONPATH=<worktree>/src python -m pytest \
+  tests/unit/test_lease_lifecycle.py \
+  tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure \
+  tests/test_ticket_leases_cross_worktree.py \
+  -p no:cacheprovider -q
+=> SUITE-RESULT: exitstatus=0 collected=35 failed=0
+(5 new + 1 pre-existing pinned-contract test + 29 cross-worktree suite,
+run in two batches; see the "Pre-READY checks" section below for the
+exact split.)
 
-Follow-up ticket: T-4679 -- "csharp event_declaration has no
-RawSymbol (_walk_csharp.py)" -- filed by the prior agent session
-(commit 098c940df) as the disclosed-gap follow-up for acceptance
-criterion [3] above. Not touched by this session; noted here per the
-coordinator's explicit instruction to record it.
+## Pre-READY checks
 
-Filed: T-4679 (pre-existing, filed by the prior session; no new
-tickets filed by this session).
+`frob check --only sys --files src/frob/tickets/_leases.py --files tests/unit/test_lease_lifecycle.py --files docs/modules/tickets-lifecycle.md --base dev`:
+  gate-summary: process exited 1, tool summary: '8 errors, 558 warnings, 0
+  unresolved, 5 waived [drift=0.16s, sys=88.00s]'. Every ERROR/WARNING
+  grepped against _leases.py/test_lease_lifecycle.py/tickets-lifecycle.md
+  is a pre-existing DOCARCH001 (change-narrative docstring) or DRIFT002
+  finding already present on dev's copy of _leases.py/test_ticket_leases.py,
+  none newly introduced by this diff. One SELFAUDIT001 line
+  (design node=testsuite fs.write/subprocess via-list "grew to 543
+  site(s), pending auto-accept") is expected/no manual action -- its own
+  message states only a land's composed-tree check writes the ratchet
+  file, a bare check never does.
 
-Commits:
-  82d39335f fix(tests): bind T-4519 coverage/dup gate findings on csharp proof tests
-  03ff1d373 Merge branch 'dev' into t-4519 (clean, no conflicts)
+`frob check --only arch --files src/frob/tickets/_leases.py --files tests/unit/test_lease_lifecycle.py --base dev`:
+  pass  frob-arch  19 warnings (36 waived), 546 suggestions. No ARCH001/
+  LARGE001 finding is new: _leases.py's large-file/high-coupling findings
+  are the pre-existing, already-waived (top-of-file frob:waive LARGE001)
+  3182(->4654)-line module; nothing in my diff moved it past a NEW
+  threshold.
+
+`frob check --only coverage --files src/frob/tickets/_leases.py --files tests/unit/test_lease_lifecycle.py --base dev`:
+  gate-summary: process exited 1, tool summary: '21 errors, 677 warnings,
+  0 unresolved, 290 waived [coverage=17.81s, drift=0.16s]'. No COV002 on
+  any new symbol I added (all new test-file helpers are `_`-private); the
+  9 gate:COV errors, 6 gate:DRIFT errors, 1 gate:DSL error and 5 gate:TODO
+  errors in this run's totals are all in files/symbols I did not touch
+  (grepped for _leases.py/test_lease_lifecycle.py/tickets-lifecycle.md
+  across every ERROR line: zero hits outside pre-existing WARNING-level
+  DOCARCH001/DRIFT001 entries already waived on dev).
+
+`ruff check src/frob/tickets/_leases.py tests/unit/test_lease_lifecycle.py`:
+  All checks passed!
+
+`ruff format --check src/frob/tickets/_leases.py tests/unit/test_lease_lifecycle.py`:
+  2 files already formatted (after one `ruff format` pass on the new test
+  file for whitespace-only reflow).
+
+`ty check src/frob/tickets/_leases.py tests/unit/test_lease_lifecycle.py`:
+  All checks passed!
+
+Cross-ticket scope note
+------------------------
+`git diff --name-only dev...HEAD` touches exactly: src/frob/tickets/_leases.py,
+tests/unit/test_lease_lifecycle.py, docs/modules/tickets-lifecycle.md,
+tickets/T-4659/ticket.md -- all inside this ticket's own lease
+(.git/frob-leases/T-4659.json). No cross-ticket file touched.
 
 ### Changed
 ```
@@ -195,7 +209,7 @@ Commits:
  .claude/hooks/frob-timeout-guard.py                | 127 ++-
  .frob-release.json                                 |   2 +-
  .github/workflows/ci.yml                           | 107 ++-
- CHANGELOG.md                                       |  66 ++
+ CHANGELOG.md                                       |  69 ++
  changelog.d/T-2965.md                              |   2 +
  changelog.d/T-3020.md                              |   2 +
  changelog.d/T-3232.md                              |   2 +
@@ -231,6 +245,7 @@ Commits:
  changelog.d/T-4512.md                              |   2 +
  changelog.d/T-4514.md                              |   2 +
  changelog.d/T-4517.md                              |   2 +
+ changelog.d/T-4519.md                              |   2 +
  changelog.d/T-4520.md                              |   2 +
  changelog.d/T-4521.md                              |   2 +
  changelog.d/T-4522.md                              |   2 +
@@ -259,7 +274,9 @@ Commits:
  changelog.d/T-4596.md                              |   2 +
  changelog.d/T-4607.md                              |   2 +
  changelog.d/T-4633.md                              |   2 +
+ changelog.d/T-4634.md                              |   2 +
  changelog.d/T-4642.md                              |   2 +
+ changelog.d/T-4646.md                              |   2 +
  changelog.d/T-4649.md                              |   2 +
  changelog.d/T-4650.md                              |   2 +
  design/frob.strata                                 | 167 ++--
@@ -285,6 +302,7 @@ Commits:
  docs/modules/testing.md                            |  37 +
  docs/modules/tickets-data-storage.md               |   8 +
  docs/modules/tickets-landing.md                    | 188 +++-
+ docs/modules/tickets-lifecycle.md                  |  58 ++
  docs/modules/tickets.md                            |  70 +-
  docs/strata/surface.md                             |  40 +
  frob.lock                                          |  42 +-
@@ -337,6 +355,7 @@ Commits:
  src/frob/graph/dsl.py                              | 185 +++-
  src/frob/lang/__init__.py                          |  17 +-
  src/frob/lang/_extract.py                          |  13 +
+ src/frob/lang/_nodes.py                            | 159 +++-
  src/frob/lang/_project_detect.py                   | 147 ++++
  src/frob/lang/_support.py                          |  23 +-
  src/frob/lang/_walk_csharp.py                      | 111 ++-
@@ -353,12 +372,12 @@ Commits:
  src/frob/testing/_stackdump.py                     |  68 +-
  src/frob/testing/_unity_batchmode.py               | 298 +++++++
  src/frob/tickets/__init__.py                       |   2 +
- src/frob/tickets/_land.py                          | 198 ++++-
+ src/frob/tickets/_land.py                          | 274 +++++-
  src/frob/tickets/_land_git_ops.py                  | 149 +++-
  src/frob/tickets/_land_queue.py                    | 151 +++-
  src/frob/tickets/_land_squash.py                   |  49 +-
- src/frob/tickets/_leases.py                        | 552 ++++++++----
- src/frob/tickets/_models.py                        |  66 +-
+ src/frob/tickets/_leases.py                        | 617 +++++++++----
+ src/frob/tickets/_models.py                        |  80 +-
  src/frob/tickets/_registry_files.py                | 145 ++++
  src/frob/tickets/_setters.py                       | 113 +--
  src/frob/tickets/_store.py                         | 120 ++-
@@ -444,6 +463,7 @@ Commits:
  tests/test_tickets_parent.py                       | 208 +++++
  tests/test_tickets_registry_files.py               | 206 +++++
  tests/test_waive_gate.py                           | 145 ++++
+ tests/ticket_land_suite/test_verify_intent.py      |  85 +-
  tests/unit/graph/test_dsl.py                       | 164 +++-
  tests/unit/graph/test_dsl_invariant_property.py    |  69 ++
  tests/unit/lang/test_csharp_directives.py          | 115 +++
@@ -473,8 +493,10 @@ Commits:
  tests/unit/test_land_queue.py                      | 114 +++
  tests/unit/test_land_stackdump.py                  | 321 +++++++
  tests/unit/test_lang_project_detect.py             | 108 +++
+ tests/unit/test_lease_lifecycle.py                 | 185 ++++
  tests/unit/test_leases_staleness_perf.py           | 310 +++++++
  tests/unit/test_lifecycle_work_base.py             | 217 +++++
+ tests/unit/test_pyproject_data_memoization.py      | 124 +++
  tests/unit/test_rel002_dev_suffix.py               | 113 +++
  tests/unit/test_scaffold_unity_project.py          | 128 +++
  tests/unit/test_store_mode_memoization.py          | 110 +++
@@ -508,8 +530,8 @@ Commits:
  tickets/T-3020/done-report.md                      | 578 +++++++++++++
  tickets/T-3020/ticket.md                           |  50 +-
  tickets/T-3022/ticket.md                           |  16 +-
- tickets/T-3032/ticket.md                           |  17 +-
- tickets/T-3053/ticket.md                           |  16 +-
+ tickets/T-3032/ticket.md                           |  83 +-
+ tickets/T-3053/ticket.md                           |  32 +-
  tickets/T-3063/ticket.md                           |  17 +-
  tickets/T-3067/ticket.md                           |  17 +-
  tickets/T-3082/ticket.md                           |  63 +-
@@ -545,6 +567,7 @@ Commits:
  tickets/T-3559/ticket.md                           |  17 +-
  tickets/T-3564/ticket.md                           |  17 +-
  tickets/T-3602/ticket.md                           |  16 +-
+ tickets/T-3611/ticket.md                           |   8 +-
  tickets/T-3612/done-report.md                      | 221 +++++
  tickets/T-3612/ticket.md                           | 156 +++-
  tickets/T-3613/done-report.md                      | 106 +++
@@ -567,8 +590,15 @@ Commits:
  tickets/T-3789/ticket.md                           |  17 +-
  tickets/T-3802/ticket.md                           |  27 +-
  tickets/T-3811/ticket.md                           |  16 +-
+ tickets/T-3821/ticket.md                           |  46 +-
+ tickets/T-3822/ticket.md                           |  45 +-
+ tickets/T-3823/ticket.md                           |  45 +-
+ tickets/T-3825/ticket.md                           |  49 +-
+ tickets/T-3832/ticket.md                           |  44 +-
+ tickets/T-3833/ticket.md                           |  44 +-
  tickets/T-3850/ticket.md                           |  17 +-
  tickets/T-3851/ticket.md                           |  26 +
+ tickets/T-3854/ticket.md                           |  21 +-
  tickets/T-3856/done-report.md                      | 247 ++++++
  tickets/T-3856/ticket.md                           |  60 +-
  tickets/T-3859/ticket.md                           |  17 +-
@@ -581,7 +611,10 @@ Commits:
  tickets/T-3917/ticket.md                           |  17 +-
  tickets/T-3918/ticket.md                           |  16 +-
  tickets/T-3919/ticket.md                           |  17 +-
+ tickets/T-3920/ticket.md                           |  87 +-
  tickets/T-3923/ticket.md                           |  17 +-
+ tickets/T-3927/ticket.md                           |  21 +-
+ tickets/T-3929/ticket.md                           |  21 +-
  tickets/T-3943/done-report.md                      | 626 ++++++++++++++
  tickets/T-3943/ticket.md                           |  49 +-
  tickets/T-3953/ticket.md                           |   9 +-
@@ -607,6 +640,7 @@ Commits:
  tickets/T-4116/done-report.md                      | 707 +++++++++++++++
  tickets/T-4116/ticket.md                           |  17 +-
  tickets/T-4118/ticket.md                           |  30 +-
+ tickets/T-4127/ticket.md                           |  55 +-
  tickets/T-4185/ticket.md                           |   7 +-
  tickets/T-4186/ticket.md                           |   7 +-
  tickets/T-4212/ticket.md                           |  16 +-
@@ -681,6 +715,7 @@ Commits:
  tickets/T-4517/done-report.md                      | 180 ++++
  tickets/T-4517/ticket.md                           |  94 ++
  tickets/T-4518/ticket.md                           |  34 +
+ tickets/T-4519/done-report.md                      | 869 +++++++++++++++++++
  tickets/T-4519/ticket.md                           |  79 ++
  tickets/T-4520/done-report.md                      | 163 ++++
  tickets/T-4520/ticket.md                           |  58 ++
@@ -743,7 +778,7 @@ Commits:
  tickets/T-4566/ticket.md                           | 154 ++++
  tickets/T-4567/ticket.md                           |  27 +
  tickets/T-4571/ticket.md                           |  43 +
- tickets/T-4572/ticket.md                           |  66 ++
+ tickets/T-4572/ticket.md                           |  81 ++
  tickets/T-4573/ticket.md                           |  27 +
  tickets/T-4574/ticket.md                           |  29 +
  tickets/T-4575/ticket.md                           |  38 +
@@ -762,7 +797,7 @@ Commits:
  tickets/T-4596/done-report.md                      | 640 ++++++++++++++
  tickets/T-4596/ticket.md                           |  43 +
  tickets/T-4597/ticket.md                           |  34 +
- tickets/T-4598/ticket.md                           |  29 +
+ tickets/T-4598/ticket.md                           |  46 +
  tickets/T-4599/ticket.md                           |  69 ++
  tickets/T-4600/ticket.md                           |  28 +
  tickets/T-4601/ticket.md                           |  27 +
@@ -796,7 +831,8 @@ Commits:
  tickets/T-4632/ticket.md                           |  41 +
  tickets/T-4633/done-report.md                      | 743 ++++++++++++++++
  tickets/T-4633/ticket.md                           |  86 ++
- tickets/T-4634/ticket.md                           |  46 +
+ tickets/T-4634/done-report.md                      | 851 ++++++++++++++++++
+ tickets/T-4634/ticket.md                           |  54 ++
  tickets/T-4635/ticket.md                           |  30 +
  tickets/T-4640/ticket.md                           |  30 +
  tickets/T-4641/ticket.md                           |  29 +
@@ -805,23 +841,58 @@ Commits:
  tickets/T-4643/ticket.md                           |  29 +
  tickets/T-4644/ticket.md                           |  29 +
  tickets/T-4645/ticket.md                           |  59 ++
- tickets/T-4646/ticket.md                           |  38 +
- tickets/T-4647/ticket.md                           |  34 +
+ tickets/T-4646/done-report.md                      | 914 ++++++++++++++++++++
+ tickets/T-4646/ticket.md                           |  43 +
+ tickets/T-4647/ticket.md                           |  49 ++
  tickets/T-4648/ticket.md                           |  28 +
  tickets/T-4649/done-report.md                      | 888 +++++++++++++++++++
  tickets/T-4649/ticket.md                           | 105 +++
  tickets/T-4650/done-report.md                      | 961 +++++++++++++++++++++
  tickets/T-4650/ticket.md                           | 166 ++++
- tickets/T-4651/ticket.md                           |  46 +
- tickets/T-4652/ticket.md                           |  37 +
- tickets/T-4653/ticket.md                           |  35 +
- tickets/T-4654/ticket.md                           |  39 +
- tickets/T-4655/ticket.md                           |  34 +
- tickets/T-4656/ticket.md                           |  38 +
+ tickets/T-4651/ticket.md                           |  55 ++
+ tickets/T-4652/ticket.md                           |  46 +
+ tickets/T-4653/ticket.md                           |  44 +
+ tickets/T-4654/ticket.md                           |  48 +
+ tickets/T-4655/ticket.md                           |  43 +
+ tickets/T-4656/ticket.md                           |  47 +
+ tickets/T-4657/ticket.md                           |  74 ++
+ tickets/T-4658/ticket.md                           |  56 ++
+ tickets/T-4659/ticket.md                           |  92 ++
+ tickets/T-4660/ticket.md                           |  60 ++
+ tickets/T-4661/ticket.md                           |  66 ++
+ tickets/T-4662/ticket.md                           |  85 ++
+ tickets/T-4663/ticket.md                           |  88 ++
+ tickets/T-4664/ticket.md                           |  68 ++
+ tickets/T-4665/ticket.md                           |  69 ++
+ tickets/T-4666/ticket.md                           |  72 ++
+ tickets/T-4667/ticket.md                           |  63 ++
+ tickets/T-4668/ticket.md                           |  93 ++
+ tickets/T-4669/ticket.md                           |  89 ++
+ tickets/T-4670/ticket.md                           |  86 ++
+ tickets/T-4671/ticket.md                           | 105 +++
+ tickets/T-4672/ticket.md                           |  89 ++
+ tickets/T-4673/ticket.md                           |  83 ++
+ tickets/T-4674/ticket.md                           |  77 ++
+ tickets/T-4675/ticket.md                           | 104 +++
+ tickets/T-4676/ticket.md                           |  85 ++
+ tickets/T-4677/ticket.md                           |  90 ++
+ tickets/T-4678/ticket.md                           | 110 +++
+ tickets/T-4679/ticket.md                           |  29 +
+ tickets/T-4680/ticket.md                           |  95 ++
+ tickets/T-4681/ticket.md                           |  96 ++
+ tickets/T-4684/ticket.md                           |  62 ++
+ tickets/T-4685/ticket.md                           |  52 ++
+ tickets/T-4686/ticket.md                           |  33 +
+ tickets/T-4687/ticket.md                           |  99 +++
+ tickets/T-4689/ticket.md                           |  83 ++
+ tickets/T-4690/ticket.md                           | 123 +++
+ tickets/T-4691/ticket.md                           |  88 ++
+ tickets/T-4692/ticket.md                           | 102 +++
  tickets/T-draft-31fbe483/ticket.md                 |  34 +
  tickets/T-4748/ticket.md                 |  53 ++
+ tickets/T-draft-7c1a586a/ticket.md                 | 131 +++
  tickets/T-4751/ticket.md                 |  35 +
- tickets/T-4679/ticket.md                 |  29 +
+ tickets/T-draft-ea93df7b/ticket.md                 | 127 +++
  tickets/archive/T-0090/ticket.md                   |  18 +
  tickets/archive/T-0240/ticket.md                   |  18 +
  tickets/archive/T-0292/ticket.md                   |  18 +
@@ -852,18 +923,13 @@ Commits:
  tickets/archive/T-3665/ticket.md                   |  10 +-
  tickets/archive/T-3667/ticket.md                   |  11 +-
  uv.lock                                            |   2 +-
- 662 files changed, 58298 insertions(+), 2104 deletions(-)
+ 719 files changed, 65200 insertions(+), 2188 deletions(-)
 ```
 
 ### Evidence
-- `tests/unit/test_xref.py::test_csharp_finds_property_definition` (pytest node id, verified passing when recorded)
-- `tests/unit/test_xref.py::test_csharp_finds_const_field_definition` (pytest node id, verified passing when recorded)
-- `tests/unit/test_xref.py::test_csharp_finds_nested_type_definition` (pytest node id, verified passing when recorded)
-- `tests/unit/test_xref.py::test_csharp_event_declaration_is_not_yet_a_symbol` (pytest node id, verified passing when recorded)
-- `tests/unit/test_docs_module.py::test_extract_docstrings_csharp_class_and_method` (pytest node id, verified passing when recorded)
-- `tests/unit/test_docs_module.py::test_extract_docstrings_csharp_nested_class_is_skipped` (pytest node id, verified passing when recorded)
-- `tests/unit/test_xref.py::test_csharp_finds_definition_and_usage_with_explicit_lang` (pytest node id, verified passing when recorded)
-
-### Acceptance amendments
-- [3] remove: removed 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition, not just methods/classes' (reason: duplicate criterion added by an accidental retry; logan, 2026-09-17)
-- [2] remove: removed 'xref: property_declaration (SymbolKind.CONST) is a resolvable xref definition, not just methods/classes' (reason: duplicate criterion added by an accidental retry; logan, 2026-09-17)
+- `tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure` (pytest node id, verified passing when recorded)

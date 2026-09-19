@@ -41,12 +41,12 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/_cli_parsers/_ops.py
-  reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
+  reason: T-4748 holds live lease on _ops.py; will re-add once it lands
   actor: logan
   at: '2026-09-19'
 - op: remove
   glob: src/frob/app/ops_runner.py
-  reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
+  reason: T-4748 holds live lease on _ops.py; will re-add once it lands
   actor: logan
   at: '2026-09-19'
 body_changes:

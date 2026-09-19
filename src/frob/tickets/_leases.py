@@ -572,6 +572,11 @@ class LeaseError(ErrorSet):
     NoLeaseForTicket = "the ticket has no recorded lease at all"
     LeaseWorktreeMismatch = "the ticket's recorded lease belongs to another worktree"
     CommitFailed = "committing the start transition into root's ledger failed"
+    # frob:ticket T-4659
+    # frob:todo T-4671 -- reserved for the hard-Err lease-release-failure
+    # variant once T-4671 (blocked on the T-4625 lease over
+    # tests/test_ticket_leases.py) can update that file's pinned
+    # degrade-to-Ok(None) assertion in the same change.
     # frob:ticket T-1619
     LandInProgress = (
         "a land is in progress for this repository; retry after it completes"
@@ -871,23 +876,75 @@ def record_lease(
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
+# frob:doc docs/modules/tickets-lifecycle.md#lease-lifecycle-acquire-and-release-table-t-4659  # noqa: E501
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_release_on_close_removes_the_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_release_lease_degrades_on_unlink_failure kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_drop_releases_lease kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_fail_releases_lease kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_requeue_releases_lease kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening.test_missing_lease_is_a_silent_ok kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening.test_real_unlink_failure_logs_at_error kind="unit"  # noqa: E501
+# frob:ticket T-4659
 def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """Remove `ticket_id`'s cross-worktree lease file, if any (T-0473) --
     called by `frob.tickets.transition` whenever a ticket LEAVES
-    `IN_PROGRESS` (closed, requeued, failed, blocked). A missing file (never
-    recorded, or already removed) is not an error -- `release_lease` is
-    always safe to call unconditionally on any exit from `IN_PROGRESS`."""
+    `IN_PROGRESS` (closed, requeued, failed, blocked, dropped -- see
+    docs/modules/tickets-lifecycle.md's acquire/release table, T-4659). A
+    missing file (never recorded, or already removed) is `Ok(None)`, not an
+    error -- `release_lease` is always safe to call unconditionally on any
+    exit from `IN_PROGRESS`, and is idempotent under a retry.
+
+    T-4659: a real removal failure (permission denied, a directory sitting
+    at the expected path, a read-only filesystem) now logs at ERROR
+    (previously WARNING) naming the exact path and ticket id, so a
+    terminal transition that cannot actually release its lease leaves an
+    unmistakable trail instead of the T-3259 measured incident (a stale
+    `.git/frob-leases/<id>.json` a human had to find and remove by hand
+    with no record of why). Still degrades to `Ok(None)` on that path --
+    `tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.
+    test_release_lease_degrades_on_unlink_failure` pins this best-effort
+    contract for the existing call site
+    (`frob.tickets._evidence._sync_cross_worktree_lease`, T-0473), which
+    must never turn a successful ledger transition into a reported
+    failure; T-4671 (filed alongside this ticket, blocked on the sibling
+    T-4625 lease over that same test file) tracks making a TERMINAL
+    transition's lease-release failure a hard `Err` the caller can act on,
+    once that lease is free to extend. `leases_dir(root)` itself failing
+    to resolve (no shared git common dir at all -- a test fixture with no
+    `.git`, or a root that predates `git init`) is also `Ok(None)`: there
+    is provably no lease side-channel to have left dangling in that
+    case."""
     resolved = leases_dir(root)
     if resolved.is_err:
+        _log.info(
+            "tickets: %s lease release skipped -- no shared git common dir "
+            "under %s (nothing to release)",
+            ticket_id,
+            root,
+        )
         return Ok(None)
     path = _lease_path(resolved.danger_ok, ticket_id)
+    if not path.exists():
+        _log.info(
+            "tickets: %s lease release: no lease file at %s (already released "
+            "or never recorded)",
+            ticket_id,
+            path,
+        )
+        return Ok(None)
     try:
         path.unlink(missing_ok=True)
     except OSError as exc:
-        _log.warning("tickets: could not remove lease for %s: %s", ticket_id, exc)
+        _log.error(
+            "tickets: %s lease release FAILED for %s: %s -- this lease will "
+            "keep blocking sibling scope/land work until removed by hand "
+            "(T-4671 tracks surfacing this as a hard Err)",
+            ticket_id,
+            path,
+            exc,
+        )
         return Ok(None)
+    _log.info("tickets: %s lease released (path=%s)", ticket_id, path)
     # T-0773 round 2: same as `record_lease` -- no explicit invalidation
     # needed, the next `read_all_leases` call (this process or a sibling
     # one) sees the path missing from the current directory listing and

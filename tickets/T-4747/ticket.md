@@ -1,5 +1,5 @@
 ---
-id: T-draft-1f0f55cb
+id: T-4747
 title: 'strata grammar: import/export/pub and the accepts clause on cross-module flows
   (parse-only)'
 state: queued
@@ -8,8 +8,8 @@ origin: human
 created: '2026-09-19'
 priority: critical
 blocked_by:
-- T-draft-0bcabfa4
-parent: T-draft-0a0c7b43
+- T-4745
+parent: T-4744
 tier: ticket
 sprint: null
 runs_last: false

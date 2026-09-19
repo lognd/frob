@@ -1,5 +1,5 @@
 ---
-id: T-draft-8c7e665d
+id: T-4752
 title: 'Claude Code hooks: 10% precision on frob-suggest, double registration doubles
   the attempt counter, blind FROB_SUGGEST_ACK on 97% of uses, no logging'
 state: queued

@@ -657,8 +657,8 @@ ty check src/frob/gates/_inv.py: All checks passed!
  tickets/T-4645/ticket.md                           |  59 ++
  tickets/T-4646/ticket.md                           |  31 +
  tickets/T-draft-31fbe483/ticket.md                 |  34 +
- tickets/T-draft-5658939f/ticket.md                 |  53 ++
- tickets/T-draft-8c1c8d09/ticket.md                 |  35 +
+ tickets/T-4748/ticket.md                 |  53 ++
+ tickets/T-4751/ticket.md                 |  35 +
  tickets/T-4650/ticket.md                 | 149 ++++
  tickets/T-4649/ticket.md                 |  94 +++
  tickets/archive/T-0090/ticket.md                   |  18 +
