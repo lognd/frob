@@ -346,9 +346,23 @@ triage_changes:
   at: '2026-09-16'
 designated_repro_test: null
 acceptance:
-- text: Given a full frob check on tests/ticket_land_suite and tests/gates_suite,
-    when DOCARCH001 is measured, then their combined finding count is 0
+- text: Given a frob check on tests/gates_suite's 13 files scoped to this ticket (test_sys.py/test_tick.py/test_invariant.py/test_fix_engine.py
+    excluded, leased by T-4622/T-draft-cdd5b1eb/T-4221/T-draft-ede38ca6), when DOCARCH001
+    is measured, then the count is 0
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: Given a full frob check on tests/ticket_land_suite and tests/gates_suite,
+    when DOCARCH001 is measured, then their combined finding count is 0
+  new_text: Given a frob check on tests/gates_suite's 13 files scoped to this ticket
+    (test_sys.py/test_tick.py/test_invariant.py/test_fix_engine.py excluded, leased
+    by T-4622/T-draft-cdd5b1eb/T-4221/T-draft-ede38ca6), when DOCARCH001 is measured,
+    then the count is 0
+  reason: Narrowed T-4420 to tests/gates_suite only; tests/ticket_land_suite split
+    to child T-draft-7bdec243 (42 findings there vs. this cluster's 33)
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
