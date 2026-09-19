@@ -2,7 +2,7 @@
 id: T-4113
 title: 'H3-3: an outbound flow''s destination must be constrained to its declared
   node, and every foreign flow needs a rate'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-06'
@@ -19,10 +19,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_outbound_destination.py
 - tests/unit/strata/test_outbound_destination.py
+- src/frob/strata/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_waive.py
+  reason: wiring SYS111/SYS112 into audit/waivers/docs
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
