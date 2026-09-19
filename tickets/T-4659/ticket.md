@@ -51,7 +51,13 @@ acceptance:
 - text: 'POSITIVE CONTROL: tests/unit/test_lease_lifecycle.py::test_drop_releases_lease
     starts a ticket, drops it, and asserts the lease file is gone. It FAILS on dev
     today (the file survives; measured 2026-09-19) and passes after this leaf.'
-  evidence: []
+  evidence:
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_drop_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_fail_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle::test_requeue_releases_lease
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_missing_lease_is_a_silent_ok
+  - tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening::test_real_unlink_failure_logs_at_error
+  - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 - text: 'Given the same, for `fail` and `requeue`: tests/unit/test_lease_lifecycle.py::test_fail_releases_lease
     and ::test_requeue_releases_lease each hold.'
   evidence: []
