@@ -58,6 +58,13 @@ scope_changes:
     and needs a SYS111 entry too
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve ratchet lock file path detail trimmed from _fix_engine_sync.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3471
+  new_length: 3908
 evidence:
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_leaves_a_pre_existing_breach_untouched
@@ -132,3 +139,12 @@ lock is the remaining sibling with no handler.
 3. Growth NOT attributable to the landing diff must still fail rather
    than be silently ratified -- assert this explicitly with a case where
    the ceiling is already exceeded before the land begins.
+
+
+T-4709 follow-up (condensed from the SYS111 comment block in
+src/frob/gates/_fix_engine_sync.py, trimmed for DOCARCH002's 12-line
+cap): the capability-via-ratchet lock file is
+docs/design/registry/capability-via-ratchet.lock.json. The deleted
+SYS100 handlers (T-1531/T-1545, removed by T-2922) widened a node's
+grant in design/frob.strata's own via-lists, satisfying SYS100/SYS104
+while leaving the ratchet's committed ceiling stale.
