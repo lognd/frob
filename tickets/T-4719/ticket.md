@@ -44,6 +44,14 @@ scope_changes:
   reason: leased by T-draft-ea93df7b, collision at start
   actor: logan
   at: '2026-09-19'
+body_changes:
+- mode: append
+  reason: condense two no-citation comment runs from strata/_threat_catalog_quality.py
+    per C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5384
+  new_length: 6324
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
@@ -161,3 +169,21 @@ collide with a live lease and be refused at land:
   src/frob/verify/_quarantine.py  -- leased by T-3082
 These are follow-up work once those leases release; they are deliberately not
 dropped, just deferred.
+
+
+
+## Narrative moved from strata/_threat_catalog_quality.py (no ticket cited, C5 sweep)
+
+- QUALITY_OUT_OF_SCOPE (around the out-of-scope tuple def): the remaining
+  anti-pattern table rows need genuinely new kernel detection (flow-attribute
+  predicates, CORS-specific boundary fields, endpoint/route concepts) that
+  charter law 1 (no new kernel primitive) forbids adding here -- cataloged as
+  an honest, reasoned out-of-scope rather than forced through a precondition
+  that does not exist yet.
+
+- QUALITY_VIEWS (baseline views for anti-pattern families): each view's
+  member set is the table's rows for that family, discharged by either
+  QUALITY_CATALOG or QUALITY_OUT_OF_SCOPE, reusing THREAT001's existing
+  per-family exhaustiveness check unmodified. No `compatibility`-family view
+  is stubbed because the charter's table names zero compatibility rows --
+  same "never stub an unshipped view" discipline VIEWS follows elsewhere.
