@@ -18,6 +18,7 @@ scope:
 - src/frob/verify/_quarantine.py
 - tests/unit/verify/test_quarantine.py
 - src/frob/app/verify_runner.py
+- tests/unit/verify/test_verify_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   glob: src/frob/app/verify_runner.py
   reason: 'T-3082: wire quarantine_status_marker into frob verify status output so
     a human reading the CLI (not just raw disk) also sees the tombstone distinction'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/verify/test_verify_runner.py
+  reason: 'T-3082: added TestBuildStatus coverage for the new quarantine_status_marker
+    field wired into frob verify status'
   actor: logan
   at: '2026-09-19'
 triage_changes:
