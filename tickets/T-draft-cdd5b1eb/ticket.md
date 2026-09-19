@@ -17,6 +17,7 @@ scope:
 - tests/gates_suite/test_tick.py
 - src/frob/tickets/_store.py
 - src/frob/tickets/_leases.py
+- tests/unit/test_store_mode_memoization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_leases.py
   reason: memoize _store_mode / fix per-call re-scan for TICK008 perf fix
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_store_mode_memoization.py
+  reason: new test file for _store_mode memoization fix (test_ticket_store.py is leased
+    by T-4632)
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
