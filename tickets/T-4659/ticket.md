@@ -2,7 +2,7 @@
 id: T-4659
 title: 'Lease lifecycle: release on every terminal transition; drop no longer leaves
   .git/frob-leases/<id>.json'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'

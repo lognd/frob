@@ -1,5 +1,5 @@
 ---
-id: T-draft-8608927d
+id: T-4769
 title: 'Rust base plus pyo3-bridge, cargo-bin and cargo-lib facets: rust-tool and
   rust-library become reachable'
 state: queued
