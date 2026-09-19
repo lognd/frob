@@ -1480,6 +1480,67 @@ no longer resolves against the current collected set fires -- the deleter
 sees the refusal in their OWN `frob check`/land, not six tickets down the
 line.
 
+### COV010: entrypoint coverage -- a `__main__` guard is not a symbol (T-4230)
+
+Consumer F-373/P7 (T-4175): every existing test for a module imports it
+in-process under pytest, where the repo root is already on `sys.path` --
+so the one thing that can genuinely be broken (the CLI entry point
+itself: `python -m pkg.module`) is the one thing no test's import path
+ever exercises. `build_app`, `schema`, `render`, `main` are all ordinary
+functions/symbols and get covered like any other; a module's `if
+__name__ == "__main__":` guard is NOT a symbol -- `GraphSnapshot.symbols`
+only ever holds functions/classes/module-level bindings a language
+adapter extracts, so `load_coverage`'s existing per-symbol/per-module
+machinery structurally cannot see a guard block at all, and neither
+COV001-COV008 nor TEST005/006 ever had a way to ask "did anything ever
+actually run this module as `__main__`?"
+
+`entrypoint_coverage_violations` (`frob.gates._coverage`) closes it:
+for every known `.py` module that DOES join against `coverage.xml`,
+`_main_guard_line_range` decides STRUCTURALLY (via `ast.parse`, walking
+`tree.body` for a top-level `ast.If` whose test is `ast.Compare` of
+exactly `__name__ == "__main__"` in either operand order) whether it
+declares a guard at all -- never a lexical/text scan, so a `__main__`
+substring sitting inside a string literal or a comment can never be
+mistaken for a real guard (measured directly:
+`TestEntrypointCoverage::test_guard_detection_is_structural_not_lexical`
+plants exactly that decoy and asserts silence). For a module that DOES
+have a guard, every line inside its body span is checked against the
+SAME raw per-line Cobertura hit map `load_coverage` itself parses
+(`_load_coverage_xml`/`_parse_classes`, called directly here since
+`CoverageData` only retains aggregated percentages, not the raw
+per-line hits this check needs) -- if not one line of the guard body was
+ever recorded as hit, `COV010` (WARN) reports the module by name and
+line range:
+
+```
+COV010: src/frob/pkg/tool.py declares an `if __name__ == "__main__":`
+guard (lines 5-6) that no test recorded as hit -- every existing test
+imports this module in-process, which covers its symbols but never
+actually runs it as a CLI entry point; add an e2e/system test that
+invokes it (e.g. `python -m src.frob.pkg.tool`) or a subprocess-level
+test that does
+```
+
+Silent (by design, mirroring T-3985's SUBJECT001 "unmeasured is not
+evidence of the defect" posture) for: a missing/malformed
+`coverage.xml` (nothing was measured this run -- COV010 never invents a
+finding from absent data), a module with no guard at all
+(`_main_guard_line_range` returns `None`), and a module whose file never
+joined against `coverage.xml` in the first place (a different,
+pre-existing finding's territory -- COV010 only ever judges modules it
+can actually see line-level data for).
+
+**Not yet wired into a live gate.** `entrypoint_coverage_violations` is
+built and unit-tested (`tests/gates_suite/test_coverage.py::
+TestEntrypointCoverage`) exactly like `resolve_ratchet_severity`/
+`baseline_overrun_violations` (T-4240, `frob.gates._ratchet`) were left
+self-contained -- registering `COV010` into `frob.gates.__init__`'s live
+gate dispatch and `frob.gates._waive`'s `_KNOWN_GATE_RULES` needs both
+files, and both were held by other in-progress tickets' scope leases at
+the time this was built. See the follow-up ticket filed for that wiring
+(parented under T-4230) once those leases clear.
+
 ### PLACE001 (T-0504)
 
 <!-- frob:describes src/frob/gates/_waive_comments.py::_place001_missed_symbol -->

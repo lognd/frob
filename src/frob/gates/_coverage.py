@@ -43,6 +43,7 @@ CI run cannot reproduce.
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import posixpath
@@ -56,6 +57,7 @@ from typani.result import Result
 from typani.unit import Unit
 
 from frob.excludes import is_excluded, load_exclude_globs
+from frob.findings import Severity, Violation
 from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import CoverageData, CoverageError, GateError
 from frob.graph import EdgeKind, GraphSnapshot
@@ -379,17 +381,13 @@ def _symbol_branch(
 
 # frob:ticket T-1824
 # frob:tests \
-# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_def_line_hit_body\
-# _zero_flagged
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_def_line_hit_body_zero_flagged  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_genuinely_dead_co\
-# de_not_flagged_without_tests_edge
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_genuinely_dead_code_not_flagged_without_tests_edge  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_uniformly_covered\
-# _symbol_not_flagged
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_uniformly_covered_symbol_not_flagged  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_single_line_symbo\
-# l_not_flagged
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_single_line_symbol_not_flagged  # noqa: E501
 def _suspect_deflated_symbols(
     snapshot: GraphSnapshot | None,
     hits_by_class_line: dict[str, dict[int, tuple[int, int]]],
@@ -845,8 +843,7 @@ _CANARY_MODULES: tuple[str, ...] = ("src/frob/__main__.py",)
 
 # frob:ticket T-1236
 # frob:tests \
-# tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_zero\
-# _canary_module
+# tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_zero_canary_module  # noqa: E501
 # frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_canary_check_skipped_when_module_unknown  # noqa: E501
 def _canary_deflation(module_line: Mapping[str, float]) -> str | None:
     """Name of the first known canary module reading exactly 0.0% coverage.
@@ -1155,8 +1152,7 @@ def _apply_lock_ratchet(root: Path, rounded: dict[str, float]) -> None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests \
-# tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refreshes_co\
-# mmitted_lock
+# tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock  # noqa: E501
 # frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
 # frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
 def write_coverage_lock(
@@ -1359,8 +1355,191 @@ def is_stamp_stale(root: Path, stamp: dict) -> bool:
     return False
 
 
+# frob:ticket T-4230
+def _main_guard_line_range(source: str) -> tuple[int, int] | None:
+    """The `(first_line, last_line)` inclusive body span of a top-level
+    `if __name__ == "__main__":` guard in `source` (T-4230), or `None` if
+    `source` has no such guard -- decided STRUCTURALLY from `ast.parse`,
+    never lexically: only a module-level `ast.If` whose test is an
+    `ast.Compare` of exactly `__name__ == "__main__"` (either operand
+    order) counts, so a `__main__` substring inside a string literal or a
+    comment (this ticket's own "not lexically" requirement) can never be
+    mistaken for one. A syntactically invalid `source` (parse failure) or
+    a guard with an empty body (never valid Python, but defensive) both
+    return `None` -- "cannot determine a guard exists" is not evidence of
+    absence, but this function's own contract is a plain optional value,
+    not a `Result`; its caller (`entrypoint_coverage_violations`) already
+    treats "no guard found" and "no guard present" identically (neither
+    is a COV010 subject)."""
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        return None
+
+    def _is_dunder_name(node: ast.expr) -> bool:
+        return isinstance(node, ast.Name) and node.id == "__name__"
+
+    def _is_main_literal(node: ast.expr) -> bool:
+        return isinstance(node, ast.Constant) and node.value == "__main__"
+
+    for node in tree.body:
+        if not isinstance(node, ast.If):
+            continue
+        test = node.test
+        if not isinstance(test, ast.Compare):
+            continue
+        if len(test.ops) != 1 or not isinstance(test.ops[0], ast.Eq):
+            continue
+        left, right = test.left, test.comparators[0]
+        matches = (_is_dunder_name(left) and _is_main_literal(right)) or (
+            _is_main_literal(left) and _is_dunder_name(right)
+        )
+        if not matches or not node.body:
+            continue
+        last_line = max(
+            getattr(stmt, "end_lineno", stmt.lineno) or stmt.lineno
+            for stmt in node.body
+        )
+        return node.body[0].lineno, last_line
+    return None
+
+
+# frob:ticket T-4230
+def _entrypoint_coverage_hits(
+    root: Path, snapshot: GraphSnapshot | None
+) -> tuple[frozenset[str], dict[str, dict[int, tuple[int, int]]]] | None:
+    """COV010 (T-4230): parsed `(known_paths, hits_by_class_line)` from
+    `coverage.xml`, or `None` when it is missing/malformed/unparseable --
+    split out of `entrypoint_coverage_violations` (ARCH001) so that
+    function stays a thin per-module loop; reuses this module's own
+    private Cobertura parsing exactly as before, no behavior change."""
+    xml_path = root / _COVERAGE_XML
+    loaded = _load_coverage_xml(xml_path)
+    if loaded.is_err:
+        _log.debug(
+            "entrypoint_coverage_violations: %s unavailable (%s), skipping",
+            xml_path,
+            loaded.danger_err,
+        )
+        return None
+    _source_sha, tree = loaded.danger_ok
+
+    known_paths = _known_repo_paths(root, snapshot)
+    try:
+        _module_line, hits_by_class_line, _join_ok, _tried_roots = _parse_classes(
+            tree.getroot(), root, known_paths
+        )
+    except Exception as exc:
+        _log.error(
+            "entrypoint_coverage_violations: %s malformed while mapping classes: %s",
+            xml_path,
+            exc,
+        )
+        return None
+    return known_paths, hits_by_class_line
+
+
+# frob:ticket T-4230
+def _entrypoint_violation_for_module(
+    root: Path, rel_path: str, hits_by_class_line: dict[str, dict[int, tuple[int, int]]]
+) -> Violation | None:
+    """COV010 (T-4230) verdict for one module: `None` when it has no
+    guard, was never joined against `coverage.xml`, or its guard was hit,
+    else the `Violation` to report -- split out of
+    `entrypoint_coverage_violations` (ARCH001) to keep that function a
+    thin loop, per-module logic unchanged."""
+    line_hits = hits_by_class_line.get(rel_path)
+    if not line_hits:
+        return None  # never joined against coverage.xml -- not this check's territory
+    try:
+        source = (root / rel_path).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    guard_range = _main_guard_line_range(source)
+    if guard_range is None:
+        return None
+    start, end = guard_range
+    covered = any(line_hits.get(line, (0, 0))[0] > 0 for line in range(start, end + 1))
+    if covered:
+        return None
+    _log.warning(
+        "entrypoint_coverage_violations: COV010 %s guard lines %d-%d never hit",
+        rel_path,
+        start,
+        end,
+    )
+    return Violation(
+        rule="COV010",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=start,
+        message=(
+            f"COV010: {rel_path} declares an `if __name__ == "
+            f'"__main__":` guard (lines {start}-{end}) that no test '
+            "recorded as hit -- every existing test imports this "
+            "module in-process, which covers its symbols but never "
+            "actually runs it as a CLI entry point; add an e2e/"
+            "system test that invokes it (e.g. `python -m "
+            f"{rel_path.removesuffix('.py').replace('/', '.')}`) or "
+            "a subprocess-level test that does"
+        ),
+    )
+
+
+# frob:ticket T-4230
+# frob:doc docs/modules/gates.md#cov010-entrypoint-coverage----a-__main__-guard-is-not-a-symbol-t-4230  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_uncovered_guard_fires_cov010  # noqa: E501
+# frob:todo T-draft-50806633 wire into gate pipeline once T-4540/T-4214 release their leases  # noqa: E501
+def entrypoint_coverage_violations(
+    root: Path, snapshot: GraphSnapshot | None = None
+) -> list[Violation]:
+    """COV010 (T-4230, consumer F-373/P7): a module whose `if __name__ ==
+    "__main__":` guard (`_main_guard_line_range`, AST-structural, not
+    lexical) exists but has NO line inside its body recorded as hit in
+    `coverage.xml` is reported by name -- the gap this ticket closes is
+    that a guard block is not a graph SYMBOL (`GraphSnapshot.symbols`
+    only ever holds functions/classes/module-level bindings the language
+    adapters extract), so `load_coverage`'s existing per-symbol/per-
+    module machinery structurally cannot see it: every pre-existing test
+    for a module imports it in-process under pytest (repo root already
+    on `sys.path`), which covers every symbol the module defines but
+    never actually executes the module AS `__main__` -- the one thing a
+    real CLI invocation needs.
+
+    Reuses this module's own private Cobertura parsing
+    (`_load_coverage_xml`/`_parse_classes`) directly rather than
+    `load_coverage`'s public `CoverageData`, which does not retain raw
+    per-line hit data (only aggregated per-symbol/per-module
+    percentages) -- the per-LINE hit map inside the guard's own body
+    span is exactly what this check needs and `CoverageData` was never
+    built to carry.
+
+    Silent (never a claim) when: `coverage.xml` is missing/malformed
+    (SUBJECT001's own "an unmeasured subject is not evidence of the
+    defect" lesson applied here -- this run measured nothing, so BASE001/
+    COV010 alike say nothing rather than invent a finding); a module has
+    no guard at all (`_main_guard_line_range` returns `None`); or a
+    module's coverage entry does not join at all (its file never
+    appeared in `coverage.xml`, e.g. genuinely dead code -- a different,
+    pre-existing finding's territory, not this one's)."""
+    loaded = _entrypoint_coverage_hits(root, snapshot)
+    if loaded is None:
+        return []
+    known_paths, hits_by_class_line = loaded
+
+    violations: list[Violation] = []
+    for rel_path in sorted(known_paths):
+        if not rel_path.endswith(".py"):
+            continue
+        v = _entrypoint_violation_for_module(root, rel_path, hits_by_class_line)
+        if v is not None:
+            violations.append(v)
+    return violations
+
+
 __all__ = [
     "coverage_lock_diff",
+    "entrypoint_coverage_violations",
     "exclude_filtered_coverage",
     "is_stamp_stale",
     "load_coverage",

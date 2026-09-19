@@ -1991,8 +1991,7 @@ class TestCoverageGate:
 
     # frob:ticket T-0783
     # frob:tests \
-    # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_tic\
-    # ket_closes
+    # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # noqa: E501
     def test_todo003_silent_when_ticket_closes(self, tmp_path: Path) -> None:
         """Acceptance (T-0783): once the deferred-to ticket closes, the
         finding clears -- `_todo003_long_deferred` only considers edges
@@ -3706,8 +3705,7 @@ class TestCov002StrataModuleCoverage:
         subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
 
     # frob:tests \
-    # tests/gates_suite/test_coverage.py::TestCov002StrataModuleCoverage.test_module_le\
-    # vel_ticket_edge_covers_nested_declaration
+    # tests/gates_suite/test_coverage.py::TestCov002StrataModuleCoverage.test_module_level_ticket_edge_covers_nested_declaration  # noqa: E501
     def test_module_level_ticket_edge_covers_nested_declaration(
         self, tmp_path: Path
     ) -> None:
@@ -3762,8 +3760,7 @@ class TestCov002StrataModuleCoverage:
         assert not [v for v in report.violations if v.rule == "COV002"]
 
     # frob:tests \
-    # tests/gates_suite/test_coverage.py::TestCov002StrataModuleCoverage.test_declarati\
-    # on_without_module_edge_still_fires
+    # tests/gates_suite/test_coverage.py::TestCov002StrataModuleCoverage.test_declaration_without_module_edge_still_fires  # noqa: E501
     def test_declaration_without_module_edge_still_fires(self, tmp_path: Path) -> None:
         """No `frob:ticket` anywhere in the `.strata` file -> COV002 still
         fires on the changed nested declaration (the escape hatch is not a
@@ -3826,3 +3823,126 @@ def test_gates_run_gates_integration(tmp_path: Path) -> None:
     cov001_symbols = {v.message.split()[1] for v in cov001}
     assert any("undocumented" in s for s in cov001_symbols)
     assert not any("::documented" in s for s in cov001_symbols)
+
+
+# frob:ticket T-4230
+class TestEntrypointCoverage:
+    """COV010 (T-4230, consumer F-373/P7): a module's `if __name__ ==
+    "__main__":` guard is not a symbol, so no existing coverage/test gate
+    sees whether the CLI entry path itself was ever actually exercised --
+    every in-process pytest import puts the repo root on sys.path and
+    covers everything BUT the guard body."""
+
+    _GUARDED_SOURCE = (
+        "def build_app():\n"
+        "    return object()\n"
+        "\n"
+        "\n"
+        'if __name__ == "__main__":\n'
+        "    build_app()\n"
+    )
+    _UNGUARDED_SOURCE = "def build_app():\n    return object()\n"
+
+    def _write_coverage_xml(
+        self, tmp_path: Path, rel_src_root: str, filename: str, line_hits: dict
+    ) -> None:
+        lines = "\n".join(
+            f'<line number="{n}" hits="{h}" branch="false"/>'
+            for n, h in sorted(line_hits.items())
+        )
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>{(tmp_path / rel_src_root).resolve()}</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="{filename}" line-rate="0.5">
+          <lines>
+            {lines}
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_uncovered_guard_fires_cov010  # noqa: E501
+    def test_uncovered_guard_fires_cov010(self, tmp_path: Path) -> None:
+        from frob.gates._coverage import entrypoint_coverage_violations
+
+        _write(tmp_path, "src/frob/pkg/tool.py", self._GUARDED_SOURCE)
+        snap = _snapshot(tmp_path)
+        # Every line hit EXCEPT the guard body (line 6) -- exactly what an
+        # in-process pytest import of `build_app` looks like: the module
+        # top-level executes (def line 1), the guard's own `if` line never
+        # runs true so its body (line 6) never does either.
+        self._write_coverage_xml(
+            tmp_path, "src/frob", "pkg/tool.py", {1: 1, 2: 1, 6: 0}
+        )
+        violations = entrypoint_coverage_violations(tmp_path, snap)
+        cov009 = [v for v in violations if v.rule == "COV010"]
+        assert len(cov009) == 1
+        assert cov009[0].file == "src/frob/pkg/tool.py"
+        assert "src/frob/pkg/tool.py" in cov009[0].message
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_covered_guard_is_silent  # noqa: E501
+    def test_covered_guard_is_silent(self, tmp_path: Path) -> None:
+        from frob.gates._coverage import entrypoint_coverage_violations
+
+        _write(tmp_path, "src/frob/pkg/tool.py", self._GUARDED_SOURCE)
+        snap = _snapshot(tmp_path)
+        # An e2e/system test actually ran this module as __main__: line 6
+        # (inside the guard) is hit.
+        self._write_coverage_xml(
+            tmp_path, "src/frob", "pkg/tool.py", {1: 1, 2: 1, 6: 1}
+        )
+        violations = entrypoint_coverage_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "COV010"] == []
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_module_with_no_guard_is_silent  # noqa: E501
+    def test_module_with_no_guard_is_silent(self, tmp_path: Path) -> None:
+        from frob.gates._coverage import entrypoint_coverage_violations
+
+        _write(tmp_path, "src/frob/pkg/tool.py", self._UNGUARDED_SOURCE)
+        snap = _snapshot(tmp_path)
+        self._write_coverage_xml(tmp_path, "src/frob", "pkg/tool.py", {1: 1, 2: 1})
+        violations = entrypoint_coverage_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "COV010"] == []
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_missing_coverage_xml_is_silent  # noqa: E501
+    def test_missing_coverage_xml_is_silent(self, tmp_path: Path) -> None:
+        """No coverage.xml at all means "not measured this run", never a
+        claim -- SUBJECT001's own silent-zero lesson applies symmetrically:
+        an unmeasured guard is not evidence it is uncovered."""
+        from frob.gates._coverage import entrypoint_coverage_violations
+
+        _write(tmp_path, "src/frob/pkg/tool.py", self._GUARDED_SOURCE)
+        snap = _snapshot(tmp_path)
+        violations = entrypoint_coverage_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "COV010"] == []
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_guard_detection_is_structural_not_lexical  # noqa: E501
+    def test_guard_detection_is_structural_not_lexical(self, tmp_path: Path) -> None:
+        """A `__main__` substring inside a string/comment (never a real
+        `ast.If` guard) must not be mistaken for one -- proving detection
+        is AST-structural, not a text/regex scan (T-4230's own "not
+        lexically" requirement)."""
+        from frob.gates._coverage import entrypoint_coverage_violations
+
+        source = (
+            "# this module has nothing to do with __name__ == '__main__'\n"
+            'NOTE = "if __name__ == \\"__main__\\": is just a string here"\n'
+            "def build_app():\n"
+            "    return object()\n"
+        )
+        _write(tmp_path, "src/frob/pkg/tool.py", source)
+        snap = _snapshot(tmp_path)
+        self._write_coverage_xml(
+            tmp_path, "src/frob", "pkg/tool.py", {2: 1, 3: 1, 4: 1}
+        )
+        violations = entrypoint_coverage_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "COV010"] == []
