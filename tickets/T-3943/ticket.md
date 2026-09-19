@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/config.py
 - src/frob/check/_python.py
+- src/frob/app/check_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,11 @@ scope_changes:
   glob: src/frob/check/_python.py
   reason: route bare frob check's diff base through the canonical current-branch/ticket_land_branch
     resolver instead of a literal main
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: same fix, Tier-C/census/daemon GateConfig base sites
   actor: logan
   at: '2026-09-19'
 body_changes:
