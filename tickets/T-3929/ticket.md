@@ -7,6 +7,8 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: high
+blocked_by:
+- T-4657
 parent: T-4652
 tier: ticket
 sprint: v0.535.0
