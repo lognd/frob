@@ -2,7 +2,7 @@
 id: T-4566
 title: 'post-land sweep regression from T-4550: 24 new (rule, file) identit(ies) (COV001,
   COV002, COV005, DOC005)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-19'
@@ -152,3 +152,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE002  tests/unit/test_land_merge_conflict_drop.py  -> attributed to T-4552 (commit 52166b6bd7d0, already closed/dropped -- filed below) via tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-09-19: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (COV001 src/frob/tickets/_leases.py, COV002 src/frob/_cli_parsers/_root.py, COV002 src/frob/app/ticket_runner/_verify.py, COV002 src/frob/tickets/_models.py, COV002 src/frob/vet/_capability_registry/_matrix.py, COV002 src/frob/vet/_capability_registry/_unity_api.py, COV002 tests/test_ticket_leases.py, COV002 tests/unit/test_land_in_progress_window.py, COV005 src/frob/tickets/_leases.py, DOC005 README.md, DOC007 src/frob/tickets/_leases.py, DOC012 docs/commands, DRIFT002 src/frob/app/ticket_runner/_verify.py, DRIFT002 src/frob/tickets/_leases.py, PERF004 tests/unit/test_cli_group_parity.py, REL002 .frob-release.json, TICK004 tickets.md, WIRE001 tests/unit/test_cli_group_parity.py, WIRE001 tests/unit/test_land_in_progress_window.py, WIRE002 tests/unit/test_land_merge_conflict_drop.py) is absent from a direct re-check of exactly the 824 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
