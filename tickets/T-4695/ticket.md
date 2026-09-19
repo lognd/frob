@@ -30,6 +30,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
+    the bodies were written against predicted ids)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1987
+  new_length: 1987
 designated_repro_test: null
 acceptance:
 - text: Given a fixture with one known definition site and two known use sites, when
@@ -52,7 +60,7 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-POINTS: 3. Parent story T-4687. blocked_by T-4689 and T-4690 -- it shares
+POINTS: 3. Parent story T-4687. blocked_by T-4690 and T-4692 -- it shares
 _core.py/_misc.py/_reporting.py/_explore.py/__main__.py with both, and a frob
 scope is a write lease that cannot be shared.
 
@@ -61,14 +69,14 @@ OWNER DECISION: "start removing subverbs and the read-only analysis."
 FOLD the read-only analysis surface into ONE verb with these subverbs:
   map, outline, xref, docs-search, gitlog, stats,
   and `graph query` / `graph why` / `graph affects`
-Delete the top-level duplicate of each, with a T-4689 shim for one minor
+Delete the top-level duplicate of each, with a T-4690 shim for one minor
 version.
 
 NAME: `explore`, not `show`. MEASURED by `git grep -c` over .claude/ docs/
 scripts/ src/ tests/: "frob explore" 95 citations, "frob show" 0. The name is
 chosen by existing citations, not taste.
 
-THIS IS NOT A REVIVAL OF THE T-1238 GROUP. T-4689 deletes the old `explore`,
+THIS IS NOT A REVIVAL OF THE T-1238 GROUP. T-4690 deletes the old `explore`,
 which was a pure alias mirror (`_mirror_subparser` aliased the flat parsers into
 a group and kept both spellings). The `explore` this ticket builds is the ONLY
 spelling: after this ticket `frob xref` is a shim, not a peer.
