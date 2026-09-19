@@ -2,7 +2,7 @@
 id: T-4116
 title: 'H3-4: a symbol docstring claiming never/always/idempotent with no bound invariant
   is an unverified claim'
-state: queued
+state: in-progress
 kind: invariant
 origin: human
 created: '2026-09-06'
