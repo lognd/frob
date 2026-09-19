@@ -18,6 +18,7 @@ scope:
 - src/frob/strata/_pii.py
 - tests/**/test_sys*.py
 - src/frob/gates/_sys_provenance.py
+- docs/strata/provenance-trust-identity.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   glob: src/frob/gates/_sys_provenance.py
   reason: new SYS10x consumer rule module for derived_from/trust_identity (avoids
     _sys.py lease held by T-4212)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/strata/provenance-trust-identity.md
+  reason: 'standalone doc row: docs/modules/gates.md is leased by T-4111'
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
