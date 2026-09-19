@@ -36,6 +36,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 0
   new_length: 1548
+- mode: append
+  reason: '2026-09-19: owner decision recorded -- the PARSER is incomplete, not the
+    prose wrong; this converts from a DECISION into an implementation leaf under story
+    B (T-4665), acceptance becomes ''the documented form parses and elaborates with
+    a litmus case'''
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1548
+  new_length: 4432
 designated_repro_test: null
 threat: null
 component: null
@@ -69,3 +78,52 @@ personally rethinking.
 Decide it together with T-3822 (same class, node grammar), T-4681 (DECISION:
 SF-21, same class at framing level) and T-4678 (DECISION: SF-09, which produces
 the keyword-to-surface table this answer depends on).
+
+
+## DECISION RECORDED -- owner, 2026-09-19 19:50 -- NOW AN IMPLEMENTATION LEAF
+
+**Decided: the PARSER IS INCOMPLETE. The prose is not wrong. Make the documented
+secret lifecycle forms (`rotate within ...`, `revoke via ...`) parse and
+elaborate, and give the revocation FLOW a way to be named.**
+
+Governing posture, in the owner's words: **"err on the side of adding
+capabilities; we originally had a good idea and then forgot to implement it."**
+This ticket's own finding said the charter prose "reads like syntax but impl is
+issued_by/lifetime/revoke" and that there is "no way to name the revocation
+FLOW". Under the decision that is not a documentation defect to be written down
+more carefully -- it is a designed capability that was never built.
+
+This reverses this ticket's ORIGINAL framing. Its title still says "reconcile
+grammar and prose", which reads as though either side could move. **Only the
+parser moves.** Read the title as the finding, not the remedy.
+
+CONVERTED FROM DECISION TO IMPLEMENTATION LEAF. Re-parented from story D
+(T-4667, decisions) to **story B (T-4665)**. Acceptance is replaced with: the
+documented forms parse AND elaborate, proven by a litmus case.
+
+CORROBORATING MEASUREMENT (SF-09): `revoke` and `within` are both in the list of
+19 keywords that appear ONLY in design/litmus fixtures and never in a real
+model, and `lifetime` and `issued_by` are in that same list. So the lexer
+already knows these words and the litmus corpus is the only thing keeping them
+alive -- which is consistent with "designed, half-built, then forgotten", and is
+why the deliverable here is a litmus case rather than only a unit test. Per
+SF-09's own boundary note, presence in the keyword list is a LOWER bound on what
+the grammar reaches, so establish what actually parses today before writing the
+fix.
+
+SCOPE AND DISJOINTNESS
+- `strata-core/src/parse/grammar_policy.rs` and `strata-core/src/parse/mod.rs`
+  -- confirmed by `git grep -ln '"secret"|"rotate"|"revoke"|"issued_by"|"lifetime"'
+  -- strata-core/src/parse/`, which ALSO names `grammar_node.rs`.
+- `design/litmus/secret_lifecycle.strata` -- a NEW litmus file, deliberately its
+  own file so this leaf stays scope-disjoint from T-3822.
+- **HARD SEQUENCING NOTE:** `grammar_node.rs` is T-3822's declared scope and is
+  deliberately NOT in this ticket's scope. If the secret lifecycle grammar
+  proves to live there, these two leaves are SEQUENCED, not parallel: coordinate
+  with T-3822 and `frob ticket scope --add` only after it lands, rather than
+  racing the lease. Per memory/leases-and-scope.md the lease file is the truth.
+
+WHY A LITMUS CASE: a documented form with no litmus case is how a construct
+becomes dead again -- SF-09 measured 19 constructs alive only because litmus
+exercises them. Per memory/positive-control-or-it-proves-nothing.md the litmus
+case must fail to parse at HEAD and pass after.
