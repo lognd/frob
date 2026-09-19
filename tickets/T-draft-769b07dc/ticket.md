@@ -17,6 +17,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_rapid_sweep.py
   reason: quarantine raise filtering, root-write fix
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: possible root ratchet-lock writer
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
