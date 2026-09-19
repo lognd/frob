@@ -18,7 +18,6 @@ scope:
 - tests/test_tickets.py
 - tests/test_gate_cache.py
 - tests/test_ticket_work_and_land_finish.py
-- tests/test_pii_structural_gate.py
 - tests/test_lang.py
 - tests/test_ci_workflow_matrix.py
 - tests/test_tickets_priority.py
@@ -26,6 +25,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/test_pii_structural_gate.py
+  reason: leased by in-progress T-4073, skip to avoid cross-ticket collision
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to these 7 files, when DOCARCH001 is measured, then
