@@ -1,5 +1,5 @@
 ---
-id: T-draft-53411437
+id: T-4741
 title: 'Trunk-assigned ticket numbers: a branch never owns a T-#### number; frob ticket
   sync --base main absorbs, renumbers and rewrites citations'
 state: queued
