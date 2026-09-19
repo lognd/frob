@@ -1,7 +1,7 @@
 ---
 id: T-3964
 title: dataset construct under store with append_only attribute
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -15,10 +15,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_models.py
+- src/frob/strata/_dataset.py
+- tests/test_dataset_construct.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_dataset.py
+  reason: 'new dataset construct module (parent_store=/append_only attrs + SYS118),
+    per accepted design: zero grammar/_models.py change needed'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_dataset_construct.py
+  reason: tests for dataset construct
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a design note describing the dataset construct's grammar, its own carries()
