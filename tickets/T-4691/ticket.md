@@ -19,6 +19,14 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'story tier: an umbrella over 11 leaves; all code scope
   lives on the leaves'
+body_changes:
+- mode: append
+  reason: 'owner decision: docstring half automated via the same Tier-A fix; record
+    the three new leaves and the relocate-vs-condense division'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3686
+  new_length: 6151
 designated_repro_test: null
 threat: null
 component: null
@@ -86,3 +94,43 @@ LEAF SHAPE: one GATE leaf (NARR001 coverage + frob.toml config), one TOOL leaf
 22 files (95 runs, ~2,288 lines) are EXCLUDED from every cluster because they are
 leased by in-progress tickets; they are listed in the cluster bodies and are
 follow-up work once those leases release.
+
+
+AMENDMENT 2026-09-19 -- THE DOCSTRING HALF IS NOW IN SCOPE, AND AUTOMATED.
+
+The story originally covered COMMENT-BLOCK narrative only, and left the docstring
+half (1,055 docstrings over 20 lines, 38,964 lines) as an open question for the
+ERROR-promotion leaf to decide. Owner decision: AUTOMATE IT, NO SEPARATE VERB.
+The docstring migration is the same `frob check --fix` Tier-A fix, not a new
+command. Three leaves added:
+
+- T-4807 (blocked_by T-4694) -- the docstring half of the Tier-A fix. Keep
+  paragraph 1 as the docstring; route the remainder by the same rule as comment
+  runs: to the cited ticket's body when a T-#### is cited, else to
+  docs/modules/<module>.md under a heading named for the symbol, leaving a
+  `frob:doc` pointer on the symbol. Idempotent. REFUSES when the target ticket
+  does not exist. Acceptance includes byte-for-byte identical COV/TEST findings
+  after -- docstrings feed COV002 and frob:doc edges feed DRIFT001/COV001, so a
+  sweep that shifts the finding set has moved the enforcement surface, not prose.
+  Split out of T-4694 because it adds a second destination type and would have
+  taken that leaf past three points.
+- T-4808 -- a docs/modules size lint: a per-symbol section over N lines is a
+  finding, N config in [gates.docs] beside comment_run_max and docstring_max.
+  This is the DESTINATION-SIDE half of the same ratchet: without it, relocating
+  38,964 lines into docs/modules is a relocation rather than a reduction, and
+  prose escapes one cap by moving under the other. N chosen from the measured
+  distribution of today's section lengths, recorded in the ticket.
+- T-4810 (blocked_by T-4807) -- run the fix repo-wide in a coordinator-declared
+  quiet window as ONE cross-ticket land. Acceptance is the count: 1,055 -> N,
+  re-measured, not the exit code. Agents review diffs per package.
+
+DIVISION OF LABOUR, recorded because it is what makes 38,964 lines tractable:
+the fix RELOCATES prose mechanically; agents CONDENSE the relocated prose when
+they review the diff. Agents do not hand-author the moves. T-4808's lint is what
+turns "condense in review" from an intention into a gate finding when it does not
+happen.
+
+T-4772 (ERROR promotion) is now also blocked by T-4807, T-4808 and T-4810. Its
+original acceptance asked for a decision on the docstring half "on the record" --
+this amendment IS that decision, and the leaf's job there is now to confirm the
+burn-down happened rather than to choose a policy.
