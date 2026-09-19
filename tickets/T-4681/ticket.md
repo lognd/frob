@@ -1,5 +1,5 @@
 ---
-id: T-draft-b8acb6e6
+id: T-4681
 title: 'DECISION: SF-21 -- kernel.md says ''six primitives'' while the parser accepts
   139 keywords; which one moves?'
 state: queued
