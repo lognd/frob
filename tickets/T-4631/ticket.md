@@ -15,7 +15,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/gates/test_lexical_selfcheck.py
-- tests/unit/gates/test_sys_selfaudit.py
 - tests/unit/graph/test_dsl.py
 - tests/unit/rapid_sweep_suite/test_baseline.py
 - tests/unit/rapid_sweep_suite/test_commit.py
@@ -51,6 +50,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/gates/test_sys_selfaudit.py
+  reason: collides with in-progress T-4615 lease on tests/**/test_sys*.py; deferred,
+    noted in why-file
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given a scoped frob check on cluster 4 files, when DOCARCH001 is measured,
