@@ -30,6 +30,14 @@ scope_changes:
     section -- freeing this file for T-1780's split, which it blocks live
   actor: logan
   at: '2026-08-16'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve BUG002 candidate-match narrative trimmed from _bug_repro.py
+    for the 12-line cap'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7359
+  new_length: 9003
 designated_repro_test: null
 threat: null
 component: null
@@ -122,3 +130,31 @@ What is NOT fixed, and should not be: the FIRST land of a stack still requires o
 Net: WANTED 1 done via T-1720/T-2173. WANTED 2 already available pre-ticket via T-1616's frob:no-behavior-change, demonstrated working in production today. WANTED 3 achieved in the form that does not conflict with T-1967 (one disclosed override on the series first land, zero on every subsequent one) -- not the literal zero-overrides-ever the title implies, which would require re-introducing a guard hole this repo already paid to close once.
 
 No code change filed. If a future incident shows the single first-land disclosure is still causing friction (a 3+-ticket stack where every member needs its own disclosure, not just the first), that is a different, narrower question and should be a fresh ticket citing the actual repro, not a reopening of this one.
+
+
+
+T-4709 follow-up (condensed from src/frob/gates/_bug_repro.py's
+_BUG002_WAIVER_CANDIDATE_RE / _bug002_malformed_waiver docstrings, trimmed
+to fit DOCARCH002's 12-line comment-run cap):
+
+- T-2870: _BUG002_WAIVER_CANDIDATE_RE is a looser "shape-like" match for
+  `frob:waive BUG002 reason=` (bare/unquoted or unterminated), used only so
+  `_bug002_malformed_waiver` can distinguish an ATTEMPTED-but-malformed
+  waiver (report loudly) from no waiver at all (_BUG002_WAIVER_RE simply
+  not matching, silent as before).
+- T-1748: requiring `reason=` itself to be present before treating a bare
+  `frob:waive BUG002` mention as an attempt was needed because this fix's
+  own repo-wide scan found tickets/T-1748/ticket.md discussing the
+  mechanism in plain prose ("...plus a frob:waive BUG002 on the second --
+  both checks disabled...") with no `reason=` and no quoting markup, so
+  _is_quoted's code-span/blockquote exclusion (T-2218) didn't apply either.
+  Left as "silently absent" until `reason=` appears, rather than risk a
+  false "malformed" warning against real ticket prose.
+- T-2857 mode 1 / T-2218: deliberately does not also catch a genuinely
+  unescaped internal `"` splitting an otherwise-quoted value mid-sentence.
+  Unlike a markdown anchor's single physical line bounded by a `-->`
+  terminator (frob.graph.dsl._md_waive_reason_tail_error), a ticket body's
+  `reason="..."` value legitimately spans multiple lines and parenthetical
+  asides, so there is no safe terminator to tail-check. If that shape is
+  ever measured for BUG002, reuse _MD_WAIVE_VALUE_RE's escape-aware
+  grammar rather than re-deriving a bespoke tail-check.
