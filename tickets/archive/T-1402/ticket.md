@@ -10,6 +10,10 @@ priority: high
 parent: null
 tier: epic
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_exhaustive_handling.py
 - docs/design/registry/check-coverage.yaml
@@ -52,6 +56,8 @@ scope:
 - docs/guides/install.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/gates/_tickets.py
@@ -1623,6 +1629,13 @@ scope_changes:
     touched'
   actor: logan
   at: '2026-08-01'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4152
+  new_length: 4783
 evidence:
 - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
 - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_ambiguous_bare_reraise_still_fires_exhaust001
@@ -1653,6 +1666,9 @@ acceptance:
   - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_recent_ticket_outside_old_window_still_fires_exactly_as_today
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Release bar for v1.0.0 is zero errors and zero warnings. A warning count in the thousands means either we were lazy or frob is too noisy. This ticket covers the second cause ONLY, and it is explicitly NOT a licence to delete capability. Every check exists for a reason. The north star stands: if frob passes, the code is good. A rule that is switched off cannot make that guarantee. The goal is to make each rule a precise strike -- fire on the thing it was built to catch, and stay silent otherwise -- so that a zero is honest rather than bought.
 
@@ -1687,3 +1703,5 @@ Tune, do not remove: keep full strength on reports for tickets in the active win
 NOT IN SCOPE, recorded so nobody mistakes them for noise: TEST005's 1444, DOC006's 55, LARGE001's 52, EXHAUST002's 37 and COV007's 22 are real work. They stay. TICK009's 82 clear themselves as tickets close and scopes narrow.
 
 ACCEPTANCE NOTE for whoever implements: do not satisfy this by adding blanket waivers, lowering a threshold, or deleting a rule. The measure of success is that the findings which disappear are ones that were never actionable, and that a deliberately-introduced real violation of each tuned rule is still caught. Prove that with a regression test per rule.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unresolvable_callee_fires_exhaust003_not_exhaust001 was originally named/documented as 'T-1402's own name for the same assertion test_unknown_without_catch_all_fires_exhaust001 above now makes' -- a second, descriptively-named copy of an existing test kept alongside the historically-evidenced original rather than renaming it, so this ticket's own frob:tests directive would name something describing current behavior. The test's docstring was rewritten to state only WHAT it verifies; this paragraph preserves that history.
