@@ -16,10 +16,19 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/unit/test_land_cas_ledger_retry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_cas_ledger_retry.py
+  reason: new unleased test file for T-4572 CAS-retry fast path (test_land_compose.py/test_land_stage_flip.py
+    both held by other in-progress tickets)
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: coordinator repro
