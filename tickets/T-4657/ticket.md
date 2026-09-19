@@ -2,7 +2,7 @@
 id: T-4657
 title: 'Typed ledger store API: one module every frob module reads and writes tickets
   through'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -29,12 +29,15 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_ledger_store_api.py::test_no_module_opens_ticket_md_directly
 designated_repro_test: null
 acceptance:
 - text: Given src/frob/tickets/_store_api.py exists, when another frob module needs
     to read or write a ticket, then it imports _store_api and never opens tickets/<id>/ticket.md
     itself.
-  evidence: []
+  evidence:
+  - tests/unit/test_ledger_store_api.py::test_no_module_opens_ticket_md_directly
 - text: 'POSITIVE CONTROL: tests/unit/test_ledger_store_api.py::test_no_module_opens_ticket_md_directly
     asserts that no src/frob module other than _store_api.py performs a read/write
     against a tickets/**/ticket.md path. This test FAILS on dev today (multiple such
@@ -47,6 +50,13 @@ acceptance:
 - text: docs/modules/tickets-data-storage.md names _store_api as the single entry
     point and is updated in this same change.
   evidence: []
+evidence_changes:
+- old_node: tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
+  new_node: ''
+  reason: was bound to the wrong acceptance index (positive control [2]); moving to
+    [3] (Result-error contract) which is what it actually proves
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
