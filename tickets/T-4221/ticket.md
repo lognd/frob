@@ -2,7 +2,7 @@
 id: T-4221
 title: 'frob:invariant time-stable kind: discharge a wall-clock-dependent predicate
   by re-running its bound test with the clock advanced across a declared horizon'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-07'
@@ -16,10 +16,51 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_inv.py
+- src/frob/graph/dsl.py
+- tests/unit/graph/test_dsl.py
+- tests/gates_suite/test_invariant.py
+- invariants/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: the frob:invariant kind=/horizon= attribute grammar (T-4221's own 'grammar
+    in the token parser') lives in frob.graph.dsl's _attrs_verb_error_invariant, the
+    same validator that already shapes no_import=/establishes= for this verb; the
+    runner itself and its tests stay in src/frob/gates/_inv.py per declared scope,
+    but the grammar cannot be added without touching its one existing home
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/unit/graph/test_dsl.py
+  reason: the frob:invariant kind=/horizon= attribute grammar (T-4221's own 'grammar
+    in the token parser') lives in frob.graph.dsl's _attrs_verb_error_invariant, the
+    same validator that already shapes no_import=/establishes= for this verb; the
+    runner itself and its tests stay in src/frob/gates/_inv.py per declared scope,
+    but the grammar cannot be added without touching its one existing home
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/gates_suite/test_invariant.py
+  reason: the frob:invariant kind=/horizon= attribute grammar (T-4221's own 'grammar
+    in the token parser') lives in frob.graph.dsl's _attrs_verb_error_invariant, the
+    same validator that already shapes no_import=/establishes= for this verb; the
+    runner itself and its tests stay in src/frob/gates/_inv.py per declared scope,
+    but the grammar cannot be added without touching its one existing home
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: invariants/
+  reason: the frob:invariant kind=/horizon= attribute grammar (T-4221's own 'grammar
+    in the token parser') lives in frob.graph.dsl's _attrs_verb_error_invariant, the
+    same validator that already shapes no_import=/establishes= for this verb; the
+    runner itself and its tests stay in src/frob/gates/_inv.py per declared scope,
+    but the grammar cannot be added without touching its one existing home
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
