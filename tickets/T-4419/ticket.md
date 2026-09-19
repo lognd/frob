@@ -69,6 +69,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 220
   new_length: 5983
+- mode: append
+  reason: record filed child ticket ids after split
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5983
+  new_length: 6321
 designated_repro_test: null
 acceptance:
 - text: Given a full frob check on tests/unit, when DOCARCH001 is measured, then its
@@ -220,3 +226,6 @@ Cluster 5 -- 14 findings, 14 files (all weight-1):
   tests/unit/test_waive_audit_watermark.py
   tests/unit/verify/test_backpressure.py
   tests/unit/vet/test_capability_modes.py
+
+
+Filed child tickets for clusters 1-5 (kind=docs, parent T-4419): T-draft-c59d62f0 (cluster 1), T-draft-a2f2c3f2 (cluster 2), T-draft-05ad774f (cluster 3), T-draft-be0fd2f1 (cluster 4), T-draft-283ebe53 (cluster 5, also carries the 2 leased-file deferrals). T-4419 itself is narrowed to cluster 0 (32 findings, 5 files, scope set above).
