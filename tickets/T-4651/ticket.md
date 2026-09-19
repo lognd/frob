@@ -19,6 +19,13 @@ no_scope_declared: true
 no_scope_declared_reason: 'tier=epic/story rollup for the kernel-decoupling epic:
   all file work lives in the leaf children; this ticket carries no write lease by
   design'
+triage_changes:
+- field: sprint
+  old_value: v0.535.0
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
