@@ -9,7 +9,6 @@ created: '2026-09-19'
 priority: critical
 blocked_by:
 - T-draft-0bcabfa4
-- T-4659
 parent: T-draft-0a0c7b43
 tier: ticket
 sprint: null
@@ -63,3 +62,6 @@ results using only export surfaces, and enforces:
     exhaustiveness conjunction can be scoped to one module's nodes instead of
     the whole design. src/frob/strata/_audit.py grows the module-scoped entry
     point.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4659 -- filing artifact: T-4659 is an unrelated in-flight land that was captured by a bad id extraction; the real blocker is the elaborator leaf T-draft-9d041fdf
