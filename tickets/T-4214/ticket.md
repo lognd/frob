@@ -2,7 +2,7 @@
 id: T-4214
 title: 'frob:waive premise-expiry: a waiver whose reason names a branch/tree condition
   must carry a checkable predicate and fail once it no longer holds'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-07'
@@ -16,10 +16,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
+- src/frob/graph/dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: the until= predicate DSL is validated (date-only) at parse time in dsl.py's
+    _attrs_verb_error_waive; the WAIVE012 evaluator in _waive.py cannot see a non-date
+    until= value at all unless dsl.py's own grammar check is relaxed to accept the
+    closed predicate vocabulary too
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
