@@ -1,0 +1,93 @@
+---
+id: T-draft-d9d005d8
+title: 'Nine ticket field-setters become one: frob ticket set field value (priority
+  kind component label tier milestone sprint accept body)'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: high
+blocked_by:
+- T-4690
+parent: T-4687
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_lifecycle.py
+- tests/unit/test_ticket_set.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: Given a fixture ledger, when frob ticket set priority high runs on a ticket,
+    then frob ticket show --json reports priority high -- one round-trip test per
+    folded field
+  evidence: []
+- text: Given the same fixture ledger and the same value, when the deprecated frob
+    ticket priority spelling and the new frob ticket set priority spelling each run,
+    then the resulting ledger bytes are identical
+  evidence: []
+- text: Given git grep over .claude/ docs/ scripts/ src/ tests/ for each of the nine
+    deleted spellings, when re-run at close, then every hit outside the shim definitions
+    has been updated; ~/.claude/refs/frob.md hits are listed in the Done report instead
+  evidence: []
+threat: null
+component: cli
+labels:
+- cli-debloat
+- points-2
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+POINTS: 2. Parent story T-4687. blocked_by T-4689 (needs the shim helper).
+File-disjoint from T-4690 and T-4691 (those touch _cli_parsers/*.py and
+__main__.py; this one touches only _cli_parsers/_ticket/** and
+app/ticket_runner/**), so it runs in parallel with them.
+
+MEASURED 2026-09-19: `frob ticket --help` lists 54 subverbs. Nine of them are
+one-field setters that differ only in which field they write:
+  priority  kind  component  label  tier  milestone  sprint  accept  body
+All nine live in src/frob/_cli_parsers/_ticket/_metadata.py (794 lines) and all
+nine have the same shape: resolve ticket, validate value, write field, commit.
+
+FOLD INTO: `frob ticket set <field> <value> <id>` (argument order to match the
+existing setters' order -- state the chosen signature in the Done report). One
+subverb replaces nine. Field validation stays per-field (kind, priority, tier
+and milestone have real enums/format rules; do not weaken them into free text).
+
+KEEP `body` SEPARATE if and only if it takes stdin or --body-file: a setter that
+streams a file is not the same shape as a one-token field write. Measure it and
+say which way it went.
+
+`set-parent` is NOT in this list -- it takes a second ticket id and maintains a
+graph edge, not a field. Leave it alone.
+
+Shims: each of the nine deleted names keeps the T-4689 shim for one minor
+version, printing `frob ticket set <field> ...`.
+
+POSITIVE CONTROL (acceptance): a round-trip test per field -- `frob ticket set
+priority high T-xxxx` followed by `frob ticket show T-xxxx --json` asserting the
+field actually changed; plus a test that the deprecated `frob ticket priority`
+spelling produces the identical ledger bytes as the new spelling on the same
+fixture ledger. Same-bytes is the control that proves the fold is behaviour-
+preserving rather than merely non-crashing.
+
+CITATION SWEEP: `git grep` for each deleted spelling across .claude/, docs/,
+scripts/, src/, tests/ -- the agent playbooks in .claude/ call these constantly
+and a missed citation is a broken fleet. ~/.claude/refs/frob.md is OUT OF SCOPE;
+report the edits it needs.
+
+FILES (declared scope):
+  src/frob/_cli_parsers/_ticket/__init__.py, _metadata.py
+  src/frob/app/ticket_runner/__init__.py, _lifecycle.py
+  tests/unit/test_ticket_set.py (new)
