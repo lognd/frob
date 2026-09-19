@@ -26,6 +26,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'read T-1608/T-1609/T-2202/T-3248: none is merge-driver renumbering work,
+    every overlap is a wildcard-glob artifact, so none is adopted as a child; recorded
+    as sequencing constraints instead'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2476
+  new_length: 4098
 designated_repro_test: null
 acceptance:
 - text: Given two branches off the same main, when each files one draft ticket and
@@ -94,3 +103,29 @@ SCOPE NOTES (planner):
   src/frob/app/ticket_runner/_land_cmd.py (7511 lines), deliberately NOT taken here: it is
   the hottest contended file in the repo and the T-3053 land leaves need it. Wire the CLI
   through the FEATURE-kind implicit CLI grant, or `scope --add` it only if genuinely needed.
+
+
+SCOPE-OVERLAP RESOLUTION (planner, 2026-09-19, superseding the "KNOWN OVERLAP" note above).
+
+The four queued tickets whose scopes this leaf's filing warned about were read. NONE of them
+is a merge-driver renumbering ticket; every overlap is a WILDCARD-GLOB artifact, not shared
+subject matter. None becomes a child of this leaf.
+
+  T-1608  "Cross-language inspection stress test: one repo, every supported language, one
+           obligation graph"  (feature, parent T-1597)  scope: tests/**, src/frob/**, docs/**
+  T-1609  "Tail-end repo hygiene: docs completeness, detector-gap audit, vestigial cleanup,
+           waiver audit"  (tier=epic)  scope: docs/**, src/frob/**, tests/**
+  T-2202  "frob check --only cycle genuinely fails on frob's own repo -- real cyclic-import
+           clusters"  (bug, tier=epic)  scope: src/frob/gates/**, src/frob/tickets/**, ...
+  T-3248  "Migrate docstring archaeology into cited tickets (DOCARCH001 findings)"  (docs)
+           scope: src/**/*.py
+
+They collide with this leaf only because they declare `src/frob/**`-class globs that swallow
+src/frob/tickets/_land_ledger_merge.py and docs/modules/tickets-merge-driver.md. They keep
+their own life; this leaf names them as SEQUENCING CONSTRAINTS only, not blockers:
+coordinate the write window on _land_ledger_merge.py if any of them is in progress
+simultaneously.
+
+NOTE FOR THE LAYERING STORY: T-2202 (cyclic-import clusters in src/frob/tickets) is the same
+underlying fact as T-4656's "frob cycle clean on src/frob/tickets" criterion. It is left
+under its own epic, but the two should be reconciled before T-4656 is called done.
