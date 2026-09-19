@@ -33,6 +33,13 @@ body_changes:
   at: '2026-08-27'
   old_length: 3167
   new_length: 3641
+- mode: append
+  reason: preserve land-commit forensics removed from TestWorktreeLeaseLeakClaim's
+    docstring for DOCARCH001
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3641
+  new_length: 4634
 evidence:
 - tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
 - tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
@@ -104,3 +111,24 @@ ACCEPTANCE
   loud.
 
 frob:waive BUG002 reason="fix already shipped to main via T-3139s land (shared worktree/branch, scripts/fleet_status.py touched by both tickets) -- the designated repro genuinely FAILED_AT_PARENT when originally designated (see Done report), but by the time this land runs separately the fix is already on main, so re-checking against current main necessarily reports PASSED_AT_PARENT; this is a land-ordering artifact of the shared branch, not a confirmatory-only defect"
+
+
+
+## Docstring narrative preserved (T-4421 debloat, 2026-09-19)
+
+From tests/system/test_fleet_status_ground_truth.py::TestWorktreeLeaseLeakClaim
+(the real-git repro for this defect's fallback-scan branch, (c) in the
+original triage):
+
+T-3128's own recorded land commit (dac790e6e) contains only
+CHANGELOG.md/changelog.d/T-3128.md/rapid-debt.jsonl -- zero code. The actual
+fix (the 'elif not _worktree_started_ticket_ids(path): matched =
+_worktree_matches_ticket_by_scope_only(...)' branch in
+worktrees_touching_ticket) was folded into sibling ticket T-3139's squash
+commit (6f04de4c8) because the two tickets shared a worktree and landed
+sequentially. The TRUE parent commit predating this fix is therefore
+6f04de4c8^ (= 4da2a85c2, the same commit
+TestOrphanedForkserverAgeFloorClaim uses as T-3139's own parent -- both
+tickets' fixes landed together), not T-3128's own recorded land commit. The
+must-fire fixture in that test class is verified by hand to fail at
+4da2a85c2 and pass at HEAD.
