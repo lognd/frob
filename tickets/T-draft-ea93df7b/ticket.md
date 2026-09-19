@@ -72,6 +72,8 @@ acceptance:
   evidence: []
 - text: one changed file between two get_snapshot calls triggers exactly one rebuild
   evidence: []
+- text: a never-built cache falls back to build_graph transparently via get_snapshot
+  evidence: []
 threat: null
 component: null
 anchor: false
