@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_lang_conformance.py
+- tests/test_lang_conformance_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_lang_conformance.py
   reason: add csharp test_discovery fixture builder
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: tests/test_lang_conformance_gate.py
+  reason: evidence test
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
