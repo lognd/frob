@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: '2026-09-19: story container under T-4662; its children
+  are decision records, which legitimately change no files'
 designated_repro_test: null
 acceptance:
 - text: Given six findings (SF-08, SF-09, SF-10, SF-12, SF-21, SF-22) whose fix surface
