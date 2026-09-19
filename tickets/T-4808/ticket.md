@@ -1,5 +1,5 @@
 ---
-id: T-draft-3397e6a1
+id: T-4808
 title: 'docs/modules size lint: a per-symbol section over N lines is a finding, so
   relocated prose cannot pile up at the destination'
 state: queued
