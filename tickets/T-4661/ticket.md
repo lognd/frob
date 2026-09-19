@@ -1,5 +1,5 @@
 ---
-id: T-draft-49b7f7dc
+id: T-4661
 title: 'Gate registration interface: job list, known-rule set and check-coverage derived
   from one registry'
 state: queued
