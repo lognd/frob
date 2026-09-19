@@ -20,6 +20,7 @@ scope:
 - docs/modules/tickets.md
 - tests/test_tickets_registry_files.py
 - src/frob/tickets/_models.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,12 @@ scope_changes:
 - op: remove
   glob: docs/design/registry/check-coverage.yaml
   reason: whole-file leased by in-progress T-4112/T-4113; same premise collision
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/modules/gates.md
+  reason: leases released (T-4116 landed); dogfood the additive-only registry-file
+    rule on this file now (check-coverage.yaml still leased by T-4112)
   actor: logan
   at: '2026-09-19'
 evidence:
