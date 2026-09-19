@@ -1,5 +1,5 @@
 ---
-id: T-draft-5b883e04
+id: T-4702
 title: Regenerate docs/commands from the final CLI surface (18 files for 51 verbs
   today) and report the drift in the owner-owned ~/.claude/refs/frob.md
 state: queued
