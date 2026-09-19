@@ -16,10 +16,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_config_path_defaults.py
 - tests/gates_suite/test_config_path_defaults.py
+- docs/modules/gate-config-path-defaults.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gate-config-path-defaults.md
+  reason: docs/modules/gates.md is leased by T-4111; CONFIGPATH001's frob:doc anchor
+    and docs row go in a new standalone doc file instead
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
