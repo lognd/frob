@@ -26,8 +26,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: flips a severity value in frob.toml/the rule registry; the
+  file is not knowable until T-4693 lands the rule
 designated_repro_test: null
 acceptance:
 - text: given a clean dev tree with all eight clusters landed, when DOCARCH002 is
