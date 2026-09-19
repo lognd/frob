@@ -1,5 +1,5 @@
 ---
-id: T-draft-1ad69c47
+id: T-4676
 title: 'SF-23: verify then scope COV002''s per-declaration frob:ticket demand inside
   .strata files (archive/T-0164''s boilerplate class)'
 state: queued
