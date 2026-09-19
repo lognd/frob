@@ -21,6 +21,7 @@ scope:
 - src/frob/strata/_effects.py
 - src/frob/tickets/_land_squash.py
 - docs/modules/gate-sys111-ratchet-auto-accept.md
+- tests/strata/test_sys111_auto_accept.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
 - op: add
   glob: docs/modules/gate-sys111-ratchet-auto-accept.md
   reason: standalone doc since docs/modules/gates.md is leased by T-4111
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/strata/test_sys111_auto_accept.py
+  reason: positive controls for auto-accept and undeclared-site refusal
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
