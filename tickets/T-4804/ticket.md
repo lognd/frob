@@ -1,5 +1,5 @@
 ---
-id: T-draft-aa0b055b
+id: T-4804
 title: 'DECISION: SF-01 -- what should the SYS/SELFAUDIT family measure so that zero
   fires means clean rather than measures-nothing?'
 state: queued
@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: '2026-09-19: DECISION ticket for SF-01 -- its deliverable
+  is an owner decision recorded in the body, which legitimately changes no files'
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which option or combination (run the
