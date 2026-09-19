@@ -6044,11 +6044,36 @@ def _uv_lock_version(root: Path) -> str | None:
     return None
 
 
+# frob:ticket T-4540
+# frob:tests tests/unit/test_rel002_dev_suffix.py
+def _rel002_dev_ahead_of_stamp(candidate: str, authoritative: str) -> bool:
+    """T-4540: True if `candidate` is a PEP 440 dev release (`X.Y.Z.devN`)
+    whose base release is strictly newer than `authoritative`'s -- the
+    T-4184 per-land dev counter's coherent in-between-cuts state, which
+    REL002 must not mistake for a hand-edited desync. Reuses `frob.release
+    ._parse` (the same `packaging.version.Version` parse REL001 already
+    keys its own dev-suffix awareness on, see docs/modules/release.md
+    "REL001 is orthogonal") rather than re-deriving PEP 440 ordering here.
+    A FINAL `candidate` (no `.dev`) always returns `False`, so a genuine
+    final-version mismatch still fires REL002 exactly as before."""
+    from frob.release import _parse
+
+    candidate_parsed = _parse(candidate)
+    authoritative_parsed = _parse(authoritative)
+    if candidate_parsed is None or authoritative_parsed is None:
+        return False
+    if candidate_parsed.dev is None:
+        return False
+    return candidate_parsed.release > authoritative_parsed.release
+
+
 # frob:ticket T-1009
+# frob:ticket T-4540
 # frob:invariant INV-044
 # invariant spec: [INV-044](invariants/INV-044.md)
 # frob:tests \
 # tests/test_release.py::TestReleaseGateCoherence.test_hand_edited_pyproject_fires_rel002  # noqa: E501
+# frob:tests tests/unit/test_rel002_dev_suffix.py
 # frob:enforces CHK-GATE-REL002
 def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # noqa: ANN001
     """REL002 (T-1009): `.frob-release.json`'s `version` is the ONE version
@@ -6056,16 +6081,29 @@ def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # no
     artifacts regenerated from it by `frob release sync`. Any artifact that
     disagrees is named in a single ERROR-severity finding -- born ERROR
     (DOC007 precedent, T-0986): a repo that has actually run `sync` has
-    zero disagreements, so this never fires on a clean tree."""
+    zero disagreements, so this never fires on a clean tree. T-4540: a
+    dev-suffixed artifact (`X.Y.Z.devN`) whose base is ahead of the
+    stamp is the T-4184 per-land counter's normal, coherent state between
+    release cuts, not a disagreement -- `_rel002_dev_ahead_of_stamp`
+    exempts exactly that case; a FINAL version that disagrees still
+    fires, unchanged."""
     authoritative = manifest.version
     disagreements: list[str] = []
 
     pyproject_version = _current_version(root)
-    if pyproject_version is not None and pyproject_version != authoritative:
+    if (
+        pyproject_version is not None
+        and pyproject_version != authoritative
+        and not _rel002_dev_ahead_of_stamp(pyproject_version, authoritative)
+    ):
         disagreements.append(f"pyproject.toml (version={pyproject_version})")
 
     lock_version = _uv_lock_version(root)
-    if lock_version is not None and lock_version != authoritative:
+    if (
+        lock_version is not None
+        and lock_version != authoritative
+        and not _rel002_dev_ahead_of_stamp(lock_version, authoritative)
+    ):
         disagreements.append(f"uv.lock (version={lock_version})")
 
     if not disagreements:

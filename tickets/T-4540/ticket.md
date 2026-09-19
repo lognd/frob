@@ -3,7 +3,7 @@ id: T-4540
 title: 'REL002 fires on every land while dev_version_bump is on: the release stamp
   cannot match a .devN version between cuts, raising quarantine and forcing synchronous
   verification'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-16'
@@ -31,15 +31,21 @@ scope_changes:
     a nonexistent gates/_release.py
   actor: logan
   at: '2026-09-16'
-designated_repro_test: null
+evidence:
+- tests/unit/test_rel002_dev_suffix.py::test_dev_version_ahead_of_stamp_does_not_fire_rel002
+- tests/unit/test_rel002_dev_suffix.py::test_final_version_mismatch_still_fires_rel002
+designated_repro_test: tests/unit/test_rel002_dev_suffix.py::test_dev_version_ahead_of_stamp_does_not_fire_rel002
 acceptance:
 - text: GIVEN pyproject version 0.531.1.devN with dev_version_bump = true and a release
     stamp at 0.531.0 WHEN REL002 runs THEN it reports no finding (a dev build ahead
     of the last stamp is coherent by construction)
-  evidence: []
+  evidence:
+  - tests/unit/test_rel002_dev_suffix.py::test_dev_version_ahead_of_stamp_does_not_fire_rel002
+  - tests/unit/test_rel002_dev_suffix.py::test_final_version_mismatch_still_fires_rel002
 - text: GIVEN a FINAL version that does not match the stamp WHEN REL002 runs THEN
     it still fires exactly as today
-  evidence: []
+  evidence:
+  - tests/unit/test_rel002_dev_suffix.py::test_final_version_mismatch_still_fires_rel002
 threat: null
 component: null
 anchor: false
