@@ -26,6 +26,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 2740
   new_length: 4298
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure decision record: the owner ruled on D-M9
+    (hierarchy, import up only, flows declared by the lower module, accept down) and
+    the ruling is recorded verbatim in the body; the behaviour changes land in the
+    grammar, linker and migration leaves'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4298
+  new_length: 4575
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
@@ -124,3 +133,6 @@ Migration order is unchanged and already top-down in STRATA-MODULES-TREE.md:
 platform first, then the leaf consumers, then the hubs.
 Option (a) of this ticket (accepts-by-reference without an import) is adopted as
 part of the hierarchy rule; options (b) and (c) are not taken.
+
+
+frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 (hierarchy, import up only, flows declared by the lower module, accept down) and the ruling is recorded verbatim in the body; the behaviour changes land in the grammar, linker and migration leaves"
