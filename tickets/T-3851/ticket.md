@@ -18,6 +18,7 @@ scope:
 - .claude/hooks/frob-suggest.py
 - tests/test_hook_frob_suggest.py
 - .claude/hooks/_shellscan.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: .claude/hooks/_shellscan.py
   reason: one home for the segmenter shared by ack detection and trigger scan (T-3851)
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: frob:doc coverage for split_segments (COV002)
   actor: logan
   at: '2026-09-19'
 triage_changes:
