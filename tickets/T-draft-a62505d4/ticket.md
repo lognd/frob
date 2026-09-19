@@ -81,9 +81,15 @@ evidence:
 - tests/test_tickets_registry_files.py::TestRegistryFiles::test_configured_override_replaces_default
 - tests/test_tickets_registry_files.py::TestRegistryFiles::test_malformed_value_falls_back_to_default
 - tests/test_tickets_registry_files.py::TestRegistryFiles::test_is_registry_file_membership
-- tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_deleted_line_is_not_additive
 - tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit::test_non_registry_file_still_requires_declared_scope
 - tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths::test_non_registry_path_is_never_exempt
+- tests/test_tickets_registry_files.py::TestIsAdditiveDiffText::test_pure_append_is_additive
+- tests/test_tickets_registry_files.py::TestIsAdditiveDiffText::test_deleted_line_is_not_additive
+- tests/test_tickets_registry_files.py::TestIsAdditiveDiffText::test_file_header_dashes_are_not_removed_lines
+- tests/test_tickets_registry_files.py::TestIsAdditiveDiffText::test_empty_diff_is_additive
+- tests/test_tickets_registry_files.py::TestRegistryFileDiffIsAdditive::test_pure_append_is_additive
+- tests/test_tickets_registry_files.py::TestRegistryFileDiffIsAdditive::test_deleted_line_is_not_additive
+- tests/test_tickets_registry_files.py::TestRegistryFileDiffIsAdditive::test_bad_ref_fails_closed
 designated_repro_test: null
 acceptance:
 - text: Given an in-progress ticket with no declared scope over docs/modules/gates.md,
@@ -113,6 +119,17 @@ evidence_changes:
 - old_node: tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_pure_append_is_additive
   new_node: ''
   reason: class renamed to TestIsAdditiveDiffText/TestRegistryFileDiffIsAdditive
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_deleted_line_is_not_additive
+  new_node: ''
+  reason: class renamed to TestIsAdditiveDiffText/TestRegistryFileDiffIsAdditive
+  actor: logan
+  at: '2026-09-19'
+- old_node: tests/test_tickets_registry_files.py::TestAdditiveOnlyDiff::test_deleted_line_is_not_additive
+  new_node: tests/test_tickets_registry_files.py::TestRegistryFileDiffIsAdditive::test_deleted_line_is_not_additive
+  reason: class renamed to TestRegistryFileDiffIsAdditive when subprocess call moved
+    to _land.py; duplicate node also exists under TestIsAdditiveDiffText
   actor: logan
   at: '2026-09-19'
 threat: null
