@@ -43,6 +43,13 @@ scope_changes:
     ticket cannot close'
   actor: logan
   at: '2026-08-16'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve must-still-pass rationale trimmed from _bug_repro.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 0
+  new_length: 832
 evidence:
 - tests/test_gates_mutation_evidence.py::TestMustStillPassIntegration::test_reconstructed_over_narrowed_matcher_fails_the_control
 - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_fails_at_fix_is_error_violation
@@ -101,3 +108,16 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+
+T-4709 follow-up (condensed from _MUST_STILL_PASS_RE's docstring in
+src/frob/gates/_bug_repro.py, trimmed for DOCARCH002's 12-line cap):
+BUG002/TEST016 both only ever prove a negative claim -- a repro test that
+failed before this ticket's change, or a mutant this ticket's evidence
+kills -- so a fix that narrows a decision rule (resolution, matching,
+filtering, gating) until it silently accepts/matches nothing passes both
+checks vacuously: no surviving false positive to find, and no proof the
+narrowed rule still accepts anything real. T-2156/T-2177/`frob cycle` (see
+this module's own docstring reference) had three measured instances of
+exactly this, all of which passed every existing gate. The NODE-ID scan
+mirrors _BUG002_WAIVER_RE/_NO_BEHAVIOR_CHANGE_RE's ticket.body-verbatim
+rationale immediately above it in the file.
