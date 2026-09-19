@@ -10,6 +10,10 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/**
 - src/frob/strata/**
@@ -20,6 +24,8 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/strata/test_native_staleness.py
@@ -44,6 +50,13 @@ scope_changes:
     ticket's scope
   actor: logan
   at: '2026-07-28'
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 595
+  new_length: 1049
 evidence:
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_reports_a_declared_native_that_fails_to_import
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_healthy_native_reports_nothing
@@ -63,5 +76,10 @@ acceptance:
   - tests/gates_suite/test_run.py::TestNativeAvailabilityGate::test_unimportable_native_short_circuits_run_gates_with_one_finding
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 2026-07-28 incident: a root uv sync reinstalled frob without the natives; the next check produced 43 DRIFT002 'no candidates' errors against every design/frob.strata node -- misattributed, alarming, and fixed only by coordinator memory of the worktree-natives artifact (this also recurs in fresh worktrees and sibling repos per the estate rollout T-1031/T-1071 work). The elaboration path knows when strata_core failed to import or its build stamp trails the native source tree; surface THAT, once, with the fix command. Pairs with the T-0864 natives build subcommand and the T-1031 estate shim.
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_run.py::TestNativeAvailabilityGate.test_every_native_importable_runs_the_normal_pipeline's docstring used to say: 'No [[native]] declared at all (the common case for a repo with no compiled extensions) must never trip the T-1148 short-circuit -- run_gates proceeds to its normal multi-gate pipeline exactly as before this ticket.' Moved here; the test docstring now states only what it verifies.
