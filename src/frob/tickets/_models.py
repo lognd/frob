@@ -845,9 +845,11 @@ OVER_BROAD_LITERAL_GLOBS = frozenset(
 
 
 # frob:ticket T-2771
+# frob:ticket T-4646
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
 # frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501
+# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_scales_across_many_candidates_and_leases  # noqa: E501
 def over_broad_literal_globs(root: Path) -> frozenset[str]:
     """`OVER_BROAD_LITERAL_GLOBS` (the repo-convention literals) UNIONED
     with `root`'s own package-prefix globs (`"<prefix>**"`/`"<prefix>"`
@@ -862,7 +864,17 @@ def over_broad_literal_globs(root: Path) -> frozenset[str]:
     identical to a project that genuinely has none -- an UNRESOLVED
     denominator is a different claim than a real empty result (T-2391
     fail-loudly doctrine, same discipline T-2772 used for this exact
-    resolver)."""
+    resolver).
+
+    T-4646: `declared_source_prefixes` (and the `declared_project_
+    package_name`/`pyproject.toml` parse it derives from) is now
+    memoized per-root behind `frob.lang._nodes._pyproject_data`
+    (mtime-invalidated), so this function no longer re-reads
+    `pyproject.toml` on every call -- previously `doable()`'s
+    `_leased_by_one_holder` called this once per (candidate ticket,
+    in-progress lease-holder) pair, an O(tickets x leases) storm of fresh
+    `tomllib.load()` calls, the same cost shape T-4649 fixed for
+    `_store_mode`."""
     from frob.lang import declared_source_prefixes
 
     prefixes = declared_source_prefixes(root)

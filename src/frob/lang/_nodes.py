@@ -13,13 +13,91 @@ this module is not meant to be imported directly by callers outside
 from __future__ import annotations
 
 import functools
+import threading
 from pathlib import Path
+from typing import cast
 
 from tree_sitter import Node, Tree
 
 from frob.lang._common import _child_text as _child_text
 from frob.lang._common import _iter_cpp_functions as _iter_cpp_functions
 from frob.lang._common import child_by_field as _child_by_field
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
+
+# T-4646: per-root memoization cache for this module's `pyproject.toml`
+# reads, keyed on the file's own mtime (-1.0 if missing) as the cheap
+# invalidation signal -- the same shape T-4649 used for `_store_mode`.
+# Before this, `declared_project_package_name` (and transitively
+# `declared_source_prefixes`/`frob.tickets.over_broad_literal_globs`) did
+# a fresh `tomllib.load()` on every call with NO caching at all, unlike
+# this file's own `_declared_python_source_roots` sibling three lines
+# below (which at least has an `lru_cache`, itself parsing pyproject.toml
+# a SECOND time independently of this one). `doable()`'s per-candidate x
+# per-lease-holder `_leased_by_one_holder` check calls
+# `over_broad_literal_globs(root)` once per (queued/planned ticket,
+# in-progress lease) pair -- O(tickets x leases) re-parses of the same
+# unchanged file, the identical cost shape T-4649 fixed for `_store_mode`.
+# Guarded by a lock since `doable()` can run under multi-threaded fleet
+# load same as `_store_mode`.
+_pyproject_data_cache: dict[Path, tuple[float, dict[str, object]]] = {}
+_pyproject_data_cache_lock = threading.Lock()
+
+
+# frob:ticket T-4646
+# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_memoized  # noqa: E501
+# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_invalidates_on_mtime_change  # noqa: E501
+def _pyproject_data(root: Path) -> dict[str, object]:
+    """Parsed `root/pyproject.toml` as a dict (`{}` if missing/unreadable/
+    invalid TOML), memoized per-root and invalidated by the file's own
+    mtime (T-4646) -- the single read `declared_project_package_name`,
+    `_declared_python_source_roots`, and (transitively)
+    `declared_source_prefixes`/`over_broad_literal_globs` now all share,
+    instead of each independently re-running `tomllib.load()`."""
+    pyproject = root / "pyproject.toml"
+    try:
+        signal = pyproject.stat().st_mtime
+    except OSError:
+        signal = -1.0
+    with _pyproject_data_cache_lock:
+        cached = _pyproject_data_cache.get(root)
+        if cached is not None and cached[0] == signal:
+            _log.debug(
+                "lang: _pyproject_data cache hit for %s (signal=%s)", root, signal
+            )
+            return cached[1]
+    data: dict[str, object] = {}
+    if signal != -1.0:
+        import tomllib
+
+        try:
+            with pyproject.open("rb") as fh:
+                loaded = tomllib.load(fh)
+        except (OSError, tomllib.TOMLDecodeError):
+            loaded = {}
+        if isinstance(loaded, dict):
+            data = loaded
+    with _pyproject_data_cache_lock:
+        _pyproject_data_cache[root] = (signal, data)
+    _log.debug(
+        "lang: _pyproject_data cache miss for %s -> reparsed (signal=%s)",
+        root,
+        signal,
+    )
+    return data
+
+
+# frob:ticket T-4646
+# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_memoized  # noqa: E501
+def _dict_or_empty(value: object) -> dict[str, object]:
+    """`value` if it is a `dict`, else `{}` -- the narrowing helper every
+    nested `pyproject.toml` table lookup below shares (T-4646), since a
+    malformed/unexpected TOML shape (a table declared as a list/scalar)
+    must fail closed to 'no such config', not raise."""
+    if not isinstance(value, dict):
+        return {}
+    return cast("dict[str, object]", value)
 
 
 @functools.lru_cache(maxsize=32)
@@ -43,42 +121,42 @@ def _declared_python_source_roots(root: Path) -> tuple[Path, ...]:
     (`lru_cache`) since `resolve_local_import` calls this once per
     specifier and a repo-wide scan calls it thousands of times per run;
     `root` is a stable identity for the lifetime of one such scan.
+
+    T-4646: the underlying `pyproject.toml` parse is now itself shared
+    via `_pyproject_data` (mtime-memoized) rather than re-run here with
+    its own independent `tomllib.load()` -- this `lru_cache` layer still
+    avoids repeating the dict-walk below thousands of times per scan.
     """
     roots: list[Path] = []
-    pyproject = root / "pyproject.toml"
-    if pyproject.exists():
-        import tomllib
-
-        try:
-            with pyproject.open("rb") as fh:
-                data = tomllib.load(fh)
-        except (OSError, tomllib.TOMLDecodeError):
-            data = {}
-        tool_cfg = data.get("tool", {}) if isinstance(data, dict) else {}
-        setuptools_cfg = tool_cfg.get("setuptools", {})
-        if isinstance(setuptools_cfg, dict):
-            packages_cfg = setuptools_cfg.get("packages")
-            if isinstance(packages_cfg, dict):
-                find_cfg = packages_cfg.get("find")
-                if isinstance(find_cfg, dict):
-                    for where in find_cfg.get("where") or []:
-                        if isinstance(where, str):
-                            roots.append(root / where)
+    data = _pyproject_data(root)
+    tool_cfg = _dict_or_empty(data.get("tool"))
+    if tool_cfg:
+        setuptools_cfg = _dict_or_empty(tool_cfg.get("setuptools"))
+        if setuptools_cfg:
+            packages_cfg = _dict_or_empty(setuptools_cfg.get("packages"))
+            if packages_cfg:
+                find_cfg = _dict_or_empty(packages_cfg.get("find"))
+                if find_cfg:
+                    where_list = find_cfg.get("where")
+                    if isinstance(where_list, list):
+                        for where in where_list:
+                            if isinstance(where, str):
+                                roots.append(root / where)
             package_dir = setuptools_cfg.get("package-dir")
             if isinstance(package_dir, dict):
                 for value in package_dir.values():
                     if isinstance(value, str) and value:
                         roots.append(root / value)
-        hatch_wheel_cfg = (
-            tool_cfg.get("hatch", {})
-            .get("build", {})
-            .get("targets", {})
-            .get("wheel", {})
-        )
-        if isinstance(hatch_wheel_cfg, dict):
-            for pkg in hatch_wheel_cfg.get("packages") or []:
-                if isinstance(pkg, str) and pkg:
-                    roots.append((root / pkg).parent)
+        hatch_build = _dict_or_empty(tool_cfg.get("hatch"))
+        hatch_targets = _dict_or_empty(hatch_build.get("build"))
+        hatch_wheel_targets = _dict_or_empty(hatch_targets.get("targets"))
+        hatch_wheel_cfg = _dict_or_empty(hatch_wheel_targets.get("wheel"))
+        if hatch_wheel_cfg:
+            hatch_packages = hatch_wheel_cfg.get("packages")
+            if isinstance(hatch_packages, list):
+                for pkg in hatch_packages:
+                    if isinstance(pkg, str) and pkg:
+                        roots.append((root / pkg).parent)
     roots.append(root)
     seen: set[str] = set()
     deduped: list[Path] = []
@@ -102,19 +180,20 @@ def declared_project_package_name(root: Path) -> str | None:
     duplication NO DUPLICATION forbids). Callers must treat `None` as
     UNRESOLVED, never as "assume some default name" -- a missing
     denominator is not the same claim as "this project is named X"
-    (T-2391 fail-loudly doctrine)."""
-    pyproject = root / "pyproject.toml"
-    if not pyproject.is_file():
-        return None
-    import tomllib
+    (T-2391 fail-loudly doctrine).
 
-    try:
-        with pyproject.open("rb") as fh:
-            data = tomllib.load(fh)
-    except (OSError, tomllib.TOMLDecodeError):
+    T-4646: reads through the shared `_pyproject_data` memoization cache
+    (mtime-invalidated) instead of its own independent `tomllib.load()`
+    -- previously this ran with NO caching at all, so `doable()`'s
+    per-candidate x per-lease-holder scope-overlap check
+    (`over_broad_literal_globs` -> `declared_source_prefixes` -> here)
+    re-parsed `pyproject.toml` fresh on every single pair, the same
+    O(tickets x leases) cost shape T-4649 fixed for `_store_mode`."""
+    data = _pyproject_data(root)
+    if not data:
         return None
-    project_cfg = data.get("project") if isinstance(data, dict) else None
-    name = project_cfg.get("name") if isinstance(project_cfg, dict) else None
+    project_cfg = _dict_or_empty(data.get("project"))
+    name = project_cfg.get("name")
     return name if isinstance(name, str) and name else None
 
 

@@ -1,5 +1,5 @@
 ---
-id: T-draft-d64ab8bb
+id: T-4686
 title: Orphaned check child after its sweep parent dies
 state: queued
 kind: bug
