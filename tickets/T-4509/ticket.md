@@ -7,7 +7,6 @@ origin: agent
 created: '2026-09-16'
 priority: medium
 blocked_by:
-- T-4518
 - T-4516
 parent: T-4513
 tier: story
@@ -47,3 +46,4 @@ GIVEN the fixture's NUnit and [UnityTest] tests, WHEN test evidence collection r
 - 2026-09-19: unblocked by T-4506 -- leaves landed or queued; capstone can proceed against dev
 - 2026-09-19: unblocked by T-4511 -- leaves landed or queued; capstone can proceed against dev
 - 2026-09-19: unblocked by T-4514 -- leaves landed or queued; capstone can proceed against dev
+- 2026-09-19: unblocked by T-4518 -- leaves landed or queued; capstone can proceed against dev
