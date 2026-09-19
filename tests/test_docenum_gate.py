@@ -9,6 +9,7 @@ list must fire, the corrected list must pass.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from frob.gates._docenum import docenum001_gate
@@ -300,3 +301,43 @@ class TestDocenum001HyphenatedLetterSuffixIds:
         assert len(undoc) == 1
         assert "PORT001-PATH" in undoc[0].message
         assert "PORT001-IDENT" not in undoc[0].message
+
+
+# frob:ticket T-4562
+class TestCommentDslDirectivesDocMatchesCommentTypes:
+    """T-4562: `docs/guides/extending/comment-dsl-directives.md`
+    used to hand-list "seven walkers" (python, cpp, c, typescript/tsx,
+    rust, kotlin, strata) while `frob.lang._extract.COMMENT_TYPES` had
+    grown to twelve real tree-sitter comment-node walkers (csharp, java,
+    bash, cuda, zig wired but never mentioned) -- prose that drifted
+    silently since nothing re-derived it against the real table. This
+    binds the doc's own `frob:enumerates ...::COMMENT_TYPES members="..."`
+    directive's claimed member set directly against the live
+    `COMMENT_TYPES` dict, so it fails the moment a future language addition
+    (or removal) makes the doc's claimed list stale again -- the same
+    invariant DOCENUM001 enforces at `frob check` time, exercised here as
+    a fast, targeted unit test rather than a full-repo graph build."""
+
+    # frob:tests tests/test_docenum_gate.py::TestCommentDslDirectivesDocMatchesCommentTypes.test_enumerates_directive_members_match_comment_types  # noqa: E501
+    def test_enumerates_directive_members_match_comment_types(self) -> None:
+        """The `frob:enumerates ...::COMMENT_TYPES members="..."` directive
+        in `comment-dsl-directives.md` claims exactly `COMMENT_TYPES`'s
+        real key set -- no more, no less."""
+        from frob.lang._extract import COMMENT_TYPES
+
+        doc_path = Path("docs/guides/extending/comment-dsl-directives.md")
+        text = doc_path.read_text(encoding="utf-8")
+        match = re.search(
+            r'frob:enumerates\s+\S*COMMENT_TYPES\s+members="([^"]*)"', text
+        )
+        assert match is not None, (
+            "expected a frob:enumerates directive targeting COMMENT_TYPES "
+            f"in {doc_path} -- none found"
+        )
+        claimed = frozenset(m.strip() for m in match.group(1).split(",") if m.strip())
+        actual = frozenset(COMMENT_TYPES.keys())
+        assert claimed == actual, (
+            f"doc claims {sorted(claimed)} but COMMENT_TYPES's real keys "
+            f"are {sorted(actual)} -- doc omits {sorted(actual - claimed)}, "
+            f"doc claims stale {sorted(claimed - actual)}"
+        )
