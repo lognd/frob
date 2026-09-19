@@ -12,7 +12,9 @@ from frob.gates import (
     invariant_gate,
     root_asset_dir_gate,
 )
+from frob.gates._inv import time_stable_gate
 from frob.gates.invariants import (
+    Invariant,
     InvariantError,
     InvariantLoadError,
     _Criticality,
@@ -1099,3 +1101,117 @@ class TestInvariantLoad:
         )
         loaded = load_invariants(tmp_path)
         assert loaded.errors[0].error == InvariantError.Malformed
+
+
+# frob:ticket T-4221
+class TestTimeStableGate:
+    """INV010 (T-4221, F-362/H4-1): a `frob:invariant ... kind="time-
+    stable" horizon="..."` anchor's bound test re-run with the clock
+    advanced. A real subprocess-spawning gate (`frob.process._pytest_
+    spawn`/`_guard`, the BUG002 repro-runner's own convention) -- these
+    tests are integration tests, not pure-function unit tests, and each
+    spawns 2-3 real `pytest` subprocesses of a tiny synthetic fixture
+    module under `tmp_path`."""
+
+    @staticmethod
+    def _anchor(tmp_path: Path, horizon: str) -> None:
+        """A source file anchoring INV-042 as `kind="time-stable"
+        horizon=horizon` -- the real `frob:invariant` directive,
+        real-parsed by `_snapshot` (T-4221's own "decided from parsed
+        symbols" posture, not a hand-built Edge)."""
+        _write(
+            tmp_path,
+            "src/anchor.py",
+            f'# frob:invariant INV-042 kind="time-stable" horizon="{horizon}"\n'
+            "def anchored_probe() -> None:\n    pass\n",
+        )
+
+    @staticmethod
+    def _invariant(evidence_node_id: str) -> Invariant:
+        return Invariant(
+            id="INV-042",
+            statement="the probe stays under its own drift budget",
+            criticality=_Criticality.HIGH,
+            evidence=(evidence_node_id,),
+            path="invariants/INV-042.md",
+        )
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_fails_once_clock_advances_past_horizon  # noqa: E501
+    def test_fails_once_clock_advances_past_horizon(self, tmp_path: Path) -> None:
+        """Must-fire: a synthetic time-dependent test that passes at
+        offset=0 (today) but fails once `FROB_TIME_STABLE_OFFSET_S`
+        advances it past its own hardcoded drift budget -- the exact
+        "passes today, fails tomorrow" class F-362/H4-1 names. `horizon=
+        "200d"` (~17.3M seconds) comfortably clears the 100s budget at
+        both the midpoint and full-horizon samples."""
+        self._anchor(tmp_path, "200d")
+        _write(
+            tmp_path,
+            "test_probe.py",
+            "from frob.gates._inv import time_stable_offset_s\n\n\n"
+            "def test_probe() -> None:\n"
+            "    assert time_stable_offset_s() < 100\n",
+        )
+        _git_init(tmp_path)
+        snap = _snapshot(tmp_path)
+        inv = self._invariant("test_probe.py::test_probe")
+        violations = time_stable_gate(tmp_path, (inv,), snap)
+        assert len(violations) == 1
+        assert violations[0].rule == "INV010"
+        assert violations[0].severity == Severity.WARN
+        assert "INV-042" in violations[0].message
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_stays_quiet_when_still_passing_at_horizon  # noqa: E501
+    def test_stays_quiet_when_still_passing_at_horizon(self, tmp_path: Path) -> None:
+        """Must-stay-quiet: a test that is genuinely time-stable (does
+        not consult `time_stable_offset_s()` at all) keeps passing at
+        every sampled offset -- no finding."""
+        self._anchor(tmp_path, "200d")
+        _write(
+            tmp_path,
+            "test_probe.py",
+            "def test_probe() -> None:\n    assert 1 + 1 == 2\n",
+        )
+        _git_init(tmp_path)
+        snap = _snapshot(tmp_path)
+        inv = self._invariant("test_probe.py::test_probe")
+        violations = time_stable_gate(tmp_path, (inv,), snap)
+        assert violations == ()
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_baseline_failure_is_skipped_not_double_reported  # noqa: E501
+    def test_baseline_failure_is_skipped_not_double_reported(
+        self, tmp_path: Path
+    ) -> None:
+        """A test that already fails at offset=0 (today) is not this
+        gate's concern -- INV001 already flags "no standing evidence"
+        for it; INV010 only discharges a test that passes today."""
+        self._anchor(tmp_path, "200d")
+        _write(
+            tmp_path,
+            "test_probe.py",
+            "def test_probe() -> None:\n    assert False\n",
+        )
+        _git_init(tmp_path)
+        snap = _snapshot(tmp_path)
+        inv = self._invariant("test_probe.py::test_probe")
+        violations = time_stable_gate(tmp_path, (inv,), snap)
+        assert violations == ()
+
+    def test_no_time_stable_anchor_is_silent(self, tmp_path: Path) -> None:
+        """An invariant with no `kind="time-stable"` anchor at all is not
+        this gate's concern (a bare `frob:invariant` anchor, or none)."""
+        _write(
+            tmp_path,
+            "src/anchor.py",
+            "# frob:invariant INV-042\ndef anchored_probe() -> None:\n    pass\n",
+        )
+        _write(
+            tmp_path,
+            "test_probe.py",
+            "def test_probe() -> None:\n    assert False\n",
+        )
+        _git_init(tmp_path)
+        snap = _snapshot(tmp_path)
+        inv = self._invariant("test_probe.py::test_probe")
+        violations = time_stable_gate(tmp_path, (inv,), snap)
+        assert violations == ()

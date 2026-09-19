@@ -243,6 +243,35 @@ _ATTR_ONLY_VERBS = frozenset({"transition", "requires"})
 #: the trimmed remainder as `attrs["note"]` when non-empty.
 _FREE_TEXT_NOTE_VERBS = frozenset({"todo"})
 
+#: `frob:invariant`'s optional `kind="time-stable" horizon="<N><unit>"`
+#: obligation attr pair (T-4221, F-362/H4-1): a check comparing a
+#: committed-artifact-derived value against wall-clock time passes today
+#: and fails tomorrow, and every existing test supplies "now" and the
+#: artifact's timestamp from the SAME instant, so that whole class is
+#: invisible until it actually rots. `kind="time-stable"` declares the
+#: invariant's bound test must still pass with the clock advanced across
+#: `horizon`; `frob.gates._inv.time_stable_gate` is the runner that
+#: actually re-executes the bound test under an advanced-clock env var
+#: and reports a finding if it fails at any sampled point. The two attrs
+#: are required TOGETHER: `kind=` with no `horizon=` has no horizon to
+#: advance across, and `horizon=` with no `kind=` (or a different kind)
+#: has no declared discharge mechanism to apply it to. Only one `kind`
+#: value exists so far (`"time-stable"`) -- `_INVARIANT_KIND_VALUES` is a
+#: closed set, not a free-text field, so a typo'd kind fails loudly at
+#: parse time instead of silently never being picked up by any runner.
+# frob:ticket T-4221
+_INVARIANT_KIND_VALUES = frozenset({"time-stable"})
+
+#: `horizon="<N><unit>"`: a positive integer followed by one of
+#: `d`(ays)/`w`(eeks)/`m`(onths, 30-day)/`y`(ears, 365-day) -- e.g.
+#: `horizon="180d"`, matching this ticket's own worked example. No
+#: fractional/compound values (`"1.5y"`, `"1y6m"`) -- a single-unit
+#: horizon is a deliberately simple grammar for a first cut of this
+#: invariant kind; a compound duration can be added later without
+#: breaking this shape.
+# frob:ticket T-4221
+_HORIZON_RE = re.compile(r"^\d+[dwmy]$")
+
 #: `frob:invariant`'s optional `no_import="pkg[,pkg2,...]"` obligation
 #: attr (T-0757): each comma-separated entry must be a dotted module path
 #: (matches a bare python identifier chain -- no wildcards, no leading/
@@ -1126,6 +1155,7 @@ def _tests_quoted_title_error(
 
 
 # frob:ticket T-0757
+# frob:ticket T-4221
 def _attrs_verb_error_invariant(
     attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:
@@ -1160,6 +1190,60 @@ def _attrs_verb_error_invariant(
             file=path,
             line=lineno,
             reason='frob:invariant establishes="..." must not be empty',
+        )
+    kind_error = _attrs_verb_error_invariant_time_stable(
+        attrs, path=path, lineno=lineno
+    )
+    if kind_error is not None:
+        return kind_error
+    return None
+
+
+# frob:ticket T-4221
+def _attrs_verb_error_invariant_time_stable(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:invariant`'s `kind="time-stable" horizon="<N><unit>"` pair
+    (T-4221): required TOGETHER (`_INVARIANT_KIND_VALUES`/`_HORIZON_RE`
+    above have the full rationale) -- `kind=` with any value outside the
+    closed `_INVARIANT_KIND_VALUES` set, `kind=` with no `horizon=`,
+    `horizon=` with no `kind=`, or a `horizon=` that doesn't match
+    `<N><unit>` are all malformed. Split out of `_attrs_verb_error_
+    invariant` (its own sibling checks are `no_import=`/`establishes=`,
+    unrelated obligation attrs) purely to keep that function's own body
+    from growing past a single obligation's worth of branching."""
+    kind = attrs.get("kind")
+    horizon = attrs.get("horizon")
+    if kind is None and horizon is None:
+        return None
+    if kind is not None and kind not in _INVARIANT_KIND_VALUES:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                f"frob:invariant kind={kind!r} is not a recognized kind "
+                f"(expected one of {sorted(_INVARIANT_KIND_VALUES)!r})"
+            ),
+        )
+    if kind is None or horizon is None:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                'frob:invariant kind="time-stable" and horizon="..." must '
+                "be given together -- kind with no horizon has nothing to "
+                "advance across, horizon with no kind has no declared "
+                "discharge mechanism"
+            ),
+        )
+    if _HORIZON_RE.match(horizon) is None:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                f"frob:invariant horizon={horizon!r} must be a positive "
+                'integer followed by one of d/w/m/y (e.g. horizon="180d")'
+            ),
         )
     return None
 

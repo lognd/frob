@@ -2,7 +2,7 @@
 id: T-4221
 title: 'frob:invariant time-stable kind: discharge a wall-clock-dependent predicate
   by re-running its bound test with the clock advanced across a declared horizon'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-07'

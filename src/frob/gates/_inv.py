@@ -43,6 +43,7 @@ module and a top-level import would be circular.
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -55,6 +56,8 @@ from frob.gates.invariants import (
 )
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
+from frob.process._guard import ProcessGuardError, guarded_subprocess_run
+from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.testing._models import CollectedTests
 
 _log = get_logger(__name__)
@@ -535,4 +538,360 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
             _log.debug("INV004: %s waived by markdown frob:waive marker", path)
             continue
         violations.extend(file_violations)
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
+# INV010: time-stable invariants (T-4221, F-362/H4-1)
+# ---------------------------------------------------------------------------
+
+#: The ONE shared contract between `time_stable_gate` and any test bound
+#: to a `frob:invariant ... kind="time-stable"` anchor: the runner sets
+#: this env var to an integer offset (seconds) before spawning the test,
+#: and the test itself must consult it -- via `time_stable_offset_s()`
+#: below, or by reading the env var directly -- when it computes "now",
+#: instead of calling `time.time()`/`datetime.now()` unconditionally. A
+#: test with no time-stable anchor never needs to read it at all.
+# frob:ticket T-4221
+# frob:doc docs/modules/gate-time-stable-invariant.md#inv010-t-4221
+TIME_STABLE_OFFSET_ENV = "FROB_TIME_STABLE_OFFSET_S"
+
+#: `horizon="<N><unit>"`'s unit-to-seconds table (T-4221) -- matches
+#: `frob.graph.dsl._HORIZON_RE`'s grammar exactly (that regex is this
+#: table's own validation; a unit accepted there and missing here would
+#: be a silent split-brain between the two).
+# frob:ticket T-4221
+_HORIZON_UNIT_SECONDS: dict[str, int] = {
+    "d": 86_400,
+    "w": 7 * 86_400,
+    "m": 30 * 86_400,
+    "y": 365 * 86_400,
+}
+
+#: Fraction of the declared horizon sampled at the MIDPOINT, in addition
+#: to 0 (today) and the full horizon itself (T-4221: "at any sampled
+#: point", plural) -- three points catch a predicate that only breaks
+#: partway across the horizon (e.g. a leap-year boundary), not only at
+#: its two ends, while staying a fixed, cheap, O(1) sample count per
+#: invariant rather than a sweep.
+# frob:ticket T-4221
+_TIME_STABLE_SAMPLE_FRACTIONS: tuple[float, ...] = (0.0, 0.5, 1.0)
+
+#: One time-stable test run's own subprocess budget (T-4221) -- mirrors
+#: `_bug_repro._BUG_REPRO_TIMEOUT_S`'s reasoning exactly: generous enough
+#: for a small bound-evidence test, bounded so a hang cannot stall a
+#: `frob check` run indefinitely.
+# frob:ticket T-4221
+_TIME_STABLE_TIMEOUT_S = 60.0
+
+
+# frob:ticket T-4221
+# frob:doc docs/modules/gate-time-stable-invariant.md#inv010-t-4221
+# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_fails_once_clock_advances_past_horizon  # noqa: E501
+def time_stable_offset_s() -> int:
+    """The current process's own time-stable clock offset, in seconds
+    (`TIME_STABLE_OFFSET_ENV`, default `0`) -- the one function a test
+    bound to a `frob:invariant ... kind="time-stable"` anchor calls
+    wherever it would otherwise call `time.time()`/`datetime.now()` for
+    "now", so `time_stable_gate` can advance its clock by re-spawning it
+    with the env var set, with no other coordination needed between the
+    runner and the test."""
+    raw = os.environ.get(TIME_STABLE_OFFSET_ENV, "0")
+    try:
+        return int(raw)
+    except ValueError:
+        _log.warning(
+            "time_stable: %s=%r is not an integer, treating as 0",
+            TIME_STABLE_OFFSET_ENV,
+            raw,
+        )
+        return 0
+
+
+# frob:ticket T-4221
+def _horizon_seconds(horizon: str) -> int | None:
+    """`horizon` (already grammar-checked by `frob.graph.dsl._HORIZON_RE`
+    at parse time -- this only re-derives the integer, it does not
+    re-validate the shape) converted to seconds, or `None` if it somehow
+    reaches here malformed (a directive `parse_directives` itself should
+    already have rejected; defensive, never a raise)."""
+    match = re.match(r"^(\d+)([dwmy])$", horizon)
+    if match is None:
+        return None
+    return int(match.group(1)) * _HORIZON_UNIT_SECONDS[match.group(2)]
+
+
+# frob:ticket T-4221
+def _time_stable_anchors(
+    snapshot: GraphSnapshot,
+) -> tuple[tuple[str, str, int], ...]:
+    """Every `(inv_id, anchor_symref, horizon_seconds)` triple for a
+    `frob:invariant ... kind="time-stable" horizon="..."` edge in
+    `snapshot` -- `EdgeKind.INVARIANT` edges whose `attrs` carry both
+    (the grammar in `frob.graph.dsl` guarantees they are either both
+    present and well-formed, or neither is present at all)."""
+    found: list[tuple[str, str, int]] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.INVARIANT:
+            continue
+        if edge.attrs.get("kind") != "time-stable":
+            continue
+        horizon = edge.attrs.get("horizon")
+        if horizon is None:
+            continue
+        seconds = _horizon_seconds(horizon)
+        if seconds is None:
+            _log.warning(
+                "time_stable: %s's horizon=%r failed to parse despite "
+                "passing grammar validation -- skipping",
+                edge.target,
+                horizon,
+            )
+            continue
+        found.append((edge.target, edge.src, seconds))
+    return tuple(found)
+
+
+# frob:ticket T-4221
+def _spawn_time_stable_test(
+    root: Path, test_id: str, offset_s: int
+) -> tuple[bool, str] | None:
+    """Run `test_id` under `root`'s own interpreter with
+    `TIME_STABLE_OFFSET_ENV=offset_s`, mirroring `frob.gates._bug_repro.
+    _spawn_designated_test`'s own `resolve_pytest_argv` +
+    `guarded_subprocess_run` shape (same one-convention-for-pytest-
+    spawning discipline, T-3311) but in-place (no worktree checkout --
+    this is advancing the CLOCK, not the git ref).
+
+    Returns `(passed, detail)` on any real exit, or `None` when no real
+    exit was ever reached (exec disabled, pytest not importable, or the
+    process hit its own timeout budget) -- `None` is `time_stable_gate`'s
+    own signal to report UNRESOLVED for that sample rather than treating
+    a could-not-run as either a pass or a fail."""
+    resolved = resolve_pytest_argv(test_id, "-q", "-p", "no:cacheprovider")
+    if resolved.is_err:
+        _log.warning(
+            "time_stable: %s -- no verdict for %s at offset=%ds",
+            resolved.danger_err,
+            test_id,
+            offset_s,
+        )
+        return None
+    env = dict(os.environ)
+    env[TIME_STABLE_OFFSET_ENV] = str(offset_s)
+    guarded = guarded_subprocess_run(
+        resolved.danger_ok,
+        cwd=str(root),
+        capture_output=True,
+        timeout=_TIME_STABLE_TIMEOUT_S,
+        text=True,
+        check=False,
+        env=env,
+    )
+    if guarded.is_err:
+        if guarded.danger_err is ProcessGuardError.Timeout:
+            _log.warning(
+                "time_stable: %s at offset=%ds exceeded its %gs budget -- no verdict",
+                test_id,
+                offset_s,
+                _TIME_STABLE_TIMEOUT_S,
+            )
+        else:
+            _log.warning(
+                "time_stable: %s at offset=%ds -- %s, no verdict",
+                test_id,
+                offset_s,
+                guarded.danger_err,
+            )
+        return None
+    proc = guarded.danger_ok
+    return (proc.returncode == 0, (proc.stdout or "") + (proc.stderr or ""))
+
+
+# frob:ticket T-4221
+def _time_stable_baseline_result(
+    root: Path, inv_path: str, inv_id: str, evidence_id: str
+) -> tuple[bool, Violation | None]:
+    """T-4221: the offset-0 (today) run for one evidence id -- `None`
+    means "skip this evidence id entirely" (could not measure at all,
+    already reported as UNRESOLVED, or genuinely failing today and
+    therefore not this gate's concern), else `(True, None)` meaning
+    proceed to the later samples (split out of `time_stable_gate` to
+    keep that function under ARCH001's long-AND-complex threshold,
+    behavior unchanged)."""
+    baseline = _spawn_time_stable_test(root, evidence_id, 0)
+    if baseline is None:
+        return False, Violation(
+            rule="INV010",
+            severity=Severity.UNRESOLVED,
+            file=inv_path,
+            line=0,
+            message=(
+                f"INV010: {inv_id}'s baseline run of "
+                f"{evidence_id} could not be measured at all "
+                f"(exec disabled, pytest not importable, or a "
+                f"timeout) -- not a clean pass"
+            ),
+        )
+    baseline_passed, _detail = baseline
+    if not baseline_passed:
+        _log.debug(
+            "time_stable: %s's %s does not pass at offset=0, nothing to discharge here",
+            inv_id,
+            evidence_id,
+        )
+        return False, None
+    return True, None
+
+
+# frob:ticket T-4221
+def _time_stable_sample_violation(
+    root: Path,
+    inv_path: str,
+    inv_id: str,
+    symref: str,
+    evidence_id: str,
+    horizon_s: int,
+    offset_s: int,
+) -> tuple[Violation | None, bool]:
+    """T-4221: one post-baseline sample re-run -- returns the `Violation`
+    to report (if any) and whether the sample run FAILED (so the caller's
+    sample loop should stop early, matching the original break-on-first-
+    failure behavior; split out of `time_stable_gate` to keep that
+    function under ARCH001's long-AND-complex threshold)."""
+    result = _spawn_time_stable_test(root, evidence_id, offset_s)
+    if result is None:
+        return (
+            Violation(
+                rule="INV010",
+                severity=Severity.UNRESOLVED,
+                file=inv_path,
+                line=0,
+                message=(
+                    f"INV010: {inv_id}'s run of {evidence_id} "
+                    f"at offset={offset_s}s (horizon={horizon_s}s) "
+                    f"could not be measured at all -- not a "
+                    f"clean pass"
+                ),
+            ),
+            False,
+        )
+    passed, _detail = result
+    if passed:
+        return None, False
+    _log.debug(
+        "INV010: %s's %s fails at offset=%ds (horizon=%ds)",
+        inv_id,
+        evidence_id,
+        offset_s,
+        horizon_s,
+    )
+    return (
+        Violation(
+            rule="INV010",
+            severity=Severity.WARN,
+            file=inv_path,
+            line=0,
+            message=(
+                f"INV010: {inv_id} (anchored at {symref}) "
+                f"passes today but {evidence_id} fails once "
+                f"the clock advances {offset_s}s into its "
+                f"declared horizon={horizon_s}s -- a "
+                f"wall-clock-dependent predicate that is "
+                f"passing only because every sample so far "
+                f"used the same instant for 'now' and the "
+                f"artifact's own timestamp"
+            ),
+        ),
+        True,
+    )
+
+
+# frob:ticket T-4221
+def _time_stable_evidence_violations(
+    root: Path,
+    inv_path: str,
+    inv_id: str,
+    symref: str,
+    evidence_id: str,
+    horizon_s: int,
+) -> list[Violation]:
+    """T-4221: every INV010 violation for one evidence id across the
+    baseline plus every post-baseline sampled offset (split out of
+    `time_stable_gate` to keep that function under ARCH001's long-AND-
+    complex threshold, per-evidence-id logic unchanged)."""
+    ok, baseline_violation = _time_stable_baseline_result(
+        root, inv_path, inv_id, evidence_id
+    )
+    if not ok:
+        return [baseline_violation] if baseline_violation is not None else []
+    found: list[Violation] = []
+    for fraction in _TIME_STABLE_SAMPLE_FRACTIONS[1:]:
+        offset_s = int(horizon_s * fraction)
+        v, failed = _time_stable_sample_violation(
+            root, inv_path, inv_id, symref, evidence_id, horizon_s, offset_s
+        )
+        if v is not None:
+            found.append(v)
+        if failed:
+            break
+    return found
+
+
+# frob:ticket T-4221
+# frob:enforces CHK-GATE-INV010
+# frob:doc docs/modules/gate-time-stable-invariant.md#inv010-t-4221
+# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_fails_once_clock_advances_past_horizon  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_stays_quiet_when_still_passing_at_horizon  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_baseline_failure_is_skipped_not_double_reported  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_no_time_stable_anchor_is_silent  # noqa: E501
+def time_stable_gate(
+    root: Path, invariants: tuple[Invariant, ...], snapshot: GraphSnapshot
+) -> tuple[Violation, ...]:
+    """INV010 (T-4221, F-362/H4-1): a `frob:invariant ... kind="time-
+    stable" horizon="..."` anchor whose bound test does not still pass
+    once the clock is advanced across the declared horizon.
+
+    For each time-stable anchor, every collected evidence id belonging
+    to the same invariant is re-run (`_spawn_time_stable_test`) at three
+    sampled offsets across the horizon (`_TIME_STABLE_SAMPLE_FRACTIONS`:
+    0, the midpoint, and the full horizon) with `TIME_STABLE_OFFSET_ENV`
+    set to each sample's second count. The offset-0 run is the BASELINE:
+    if it does not pass, this invariant has nothing to discharge here at
+    all (INV001 already flags "no standing evidence" separately) and is
+    skipped rather than double-reported. If the baseline passes but a
+    later sample fails, that is exactly the "passes today, fails
+    tomorrow" class this invariant kind exists to catch -- WARN severity
+    (advisory, matching this repo's posture for every other newly-
+    introduced, not-yet-repo-wide-calibrated gate this sprint), waivable
+    with the standard `frob:waive INV010 reason="..."` directive.
+
+    UNRESOLVED (not a silent pass) when a sample could not be measured
+    at all (`_spawn_time_stable_test` returning `None` -- exec disabled,
+    pytest not importable, or a subprocess timeout): the T-2391 fail-
+    loudly doctrine this repo already applies elsewhere (ENV001's
+    missing-pyproject case) -- a could-not-run answer is a different
+    claim than "ran and found nothing.\""""
+    known_ids = frozenset(inv.id for inv in invariants)
+    by_id = {inv.id: inv for inv in invariants}
+    violations: list[Violation] = []
+    for inv_id, symref, horizon_s in _time_stable_anchors(snapshot):
+        if inv_id not in known_ids:
+            _log.debug(
+                "time_stable: %s anchored at %s has no loaded invariant, skipping",
+                inv_id,
+                symref,
+            )
+            continue
+        inv = by_id[inv_id]
+        for evidence_id in inv.evidence:
+            if "::" not in evidence_id:
+                # T-4221: not a pytest node id (e.g. a POL-* policy rule
+                # id) -- nothing this runner can spawn.
+                continue
+            violations.extend(
+                _time_stable_evidence_violations(
+                    root, inv.path, inv_id, symref, evidence_id, horizon_s
+                )
+            )
     return tuple(violations)

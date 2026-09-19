@@ -96,9 +96,9 @@
       "ticket": "T-1628"
     },
     "gates::env.read": {
-      "accepted_count": 1,
-      "reason": "T-2871: first precise env.read grant for gates -- T-2851 split _bug_repro.py out of _mutation_evidence.py and declared env.read via _bug_repro.py alongside the pre-existing coarser bare 'env' grant, so SYS100's mode-precision check is satisfied; no prior ceiling existed for this pair, baselining it at the one genuine site.",
-      "ticket": "T-2871"
+      "accepted_count": 2,
+      "reason": "T-4221: adds src/frob/gates/_inv.py to gates's env.read via-list (_time_stable_offset_s reads TIME_STABLE_OFFSET_ENV for offset-driven time-stable invariant re-spawning). One new site over the T-2871 baseline.",
+      "ticket": "T-4221"
     },
     "gates::eval": {
       "accepted_count": 1,

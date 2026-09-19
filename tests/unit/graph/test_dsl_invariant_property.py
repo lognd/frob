@@ -135,3 +135,72 @@ class TestEstablishesAttr:
         assert not edges
         assert len(malformed) == 1
         assert "establishes" in malformed[0].reason
+
+
+class TestTimeStableAttrs:
+    """`frob:invariant INV-### kind="time-stable" horizon="..."` (T-4221,
+    INV010) -- required together, `horizon` grammar-checked."""
+
+    #: A valid horizon: 1-4 digits + one of d/w/m/y, matching
+    #: `frob.graph.dsl._HORIZON_RE` exactly.
+    _VALID_HORIZON = st.builds(
+        lambda n, unit: f"{n}{unit}",
+        st.integers(min_value=1, max_value=9999),
+        st.sampled_from(["d", "w", "m", "y"]),
+    )
+
+    # frob:tests tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs.test_valid_kind_and_horizon_always_parses_together  # noqa: E501
+    @given(_INV_ID, _VALID_HORIZON)
+    def test_valid_kind_and_horizon_always_parses_together(
+        self, inv_id: str, horizon: str
+    ) -> None:
+        src = (
+            f'# frob:invariant {inv_id} kind="time-stable" horizon="{horizon}"\n'
+            "def foo(): pass\n"
+        )
+        edges, malformed = _parse_src(src)
+        assert not malformed
+        assert edges[0].attrs["kind"] == "time-stable"
+        assert edges[0].attrs["horizon"] == horizon
+
+    # frob:tests tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs.test_kind_with_no_horizon_is_malformed  # noqa: E501
+    def test_kind_with_no_horizon_is_malformed(self, tmp_path: Path) -> None:
+        src = '# frob:invariant INV-042 kind="time-stable"\ndef foo(): pass\n'
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "kind" in malformed[0].reason and "horizon" in malformed[0].reason
+
+    # frob:tests tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs.test_horizon_with_no_kind_is_malformed  # noqa: E501
+    def test_horizon_with_no_kind_is_malformed(self, tmp_path: Path) -> None:
+        src = '# frob:invariant INV-042 horizon="180d"\ndef foo(): pass\n'
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "kind" in malformed[0].reason and "horizon" in malformed[0].reason
+
+    # frob:tests tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs.test_unknown_kind_is_malformed  # noqa: E501
+    def test_unknown_kind_is_malformed(self, tmp_path: Path) -> None:
+        src = (
+            '# frob:invariant INV-042 kind="not-a-real-kind" horizon="180d"\n'
+            "def foo(): pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "kind" in malformed[0].reason
+
+    # frob:tests tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs.test_malformed_horizon_is_rejected  # noqa: E501
+    def test_malformed_horizon_is_rejected(self, tmp_path: Path) -> None:
+        src = (
+            '# frob:invariant INV-042 kind="time-stable" horizon="six months"\n'
+            "def foo(): pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "horizon" in malformed[0].reason

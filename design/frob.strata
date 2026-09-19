@@ -475,6 +475,12 @@ node gates : trusted {
     // grant above already covers ambiently, but SYS100 wants the
     // precise mode declared where a via-list exists for it.
     may "env.read" via "src/frob/gates/_bug_repro.py";
+    // T-4221: `_inv.py`'s `_time_stable_offset_s` reads
+    // `TIME_STABLE_OFFSET_ENV` (`os.environ.get`) so `time_stable_gate`
+    // can advance a re-spawned check's clock for offset-driven time-
+    // stable invariant testing -- a genuinely new env.read site, no
+    // prior declaration on this node.
+    may "env.read" via "src/frob/gates/_inv.py";
     // T-0956/T-1146: same SYS203/tickets_ledger disposition as `cli`
     // above -- SYS203 now genuinely discharges live here too (the
     // `waive "SYS203:tickets_ledger" ...` clause this comment used to
