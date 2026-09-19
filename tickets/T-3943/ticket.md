@@ -20,10 +20,11 @@ scope:
 - src/frob/check/_python.py
 - src/frob/app/check_runner.py
 - src/frob/app/ticket_runner/_verify.py
+- tests/test_check_gate_base.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: new evidence test
 scope_changes:
 - op: remove
   glob: src/frob/app/ticket_runner/_query.py
@@ -66,6 +67,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_verify.py
   reason: done-report base site
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/test_check_gate_base.py
+  reason: new evidence test
   actor: logan
   at: '2026-09-19'
 body_changes:
