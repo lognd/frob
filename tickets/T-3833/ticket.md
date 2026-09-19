@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: medium
-parent: null
+parent: T-4664
 tier: ticket
 sprint: v1.1.0
 runs_last: false
@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4664
+  reason: '2026-09-19: SF-14 in the STRATA friction audit; joins story A of epic T-4662
+    because it is the degenerate case (ceiling 0) of the same hand-committed-ceiling
+    race T-4671 fixes'
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: '2026-09-19: attaching SF-14''s measured evidence from scratchpad/STRATA-FRICTION.md
