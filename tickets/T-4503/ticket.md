@@ -2,7 +2,7 @@
 id: T-4503
 title: Add unity-project scaffold type (starter frob.toml + design/*.strata for an
   existing Unity project)
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -20,10 +20,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/scaffold/data/types/unity-project/**
 - src/frob/scaffold/project.py
+- tests/unit/test_scaffold_unity_project.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_scaffold_unity_project.py
+  reason: unit tests for the new render_unity_project function and its three acceptance
+    criteria
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
