@@ -17,8 +17,6 @@ scope:
 - src/frob/tickets/_registry_files.py
 - src/frob/tickets/_land.py
 - frob.toml
-- design/frob.strata
-- docs/design/registry/capability-via-ratchet.lock.json
 - docs/modules/gates.md
 - docs/design/registry/check-coverage.yaml
 - docs/modules/tickets.md
@@ -41,6 +39,20 @@ scope_changes:
   glob: src/frob/tickets/_models.py
   reason: implement (a) via scope_matches's existing LEDGER_PATH-style always-implicit-scope
     mechanism, avoiding the _scope.py whole-file lease held by T-3412
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: design/frob.strata
+  reason: both whole-file leased by in-progress T-4221; land-side collision is the
+    exact premise this ticket fixes -- proceed without a via entry, waive SELFAUDIT001
+    if it fires citing T-4221, note the collision in the READY report for the coordinator
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: both whole-file leased by in-progress T-4221; land-side collision is the
+    exact premise this ticket fixes -- proceed without a via entry, waive SELFAUDIT001
+    if it fires citing T-4221, note the collision in the READY report for the coordinator
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
