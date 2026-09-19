@@ -40,24 +40,34 @@ class TestUnityApiRegistry:
         # src/frob/vet/_capability_registry/_unity_api.py::_UNITY_OPERATIONS kind="unit"
         # T-4514's own acceptance criterion: "GIVEN a call to
         # UnityEngine.Networking.UnityWebRequest.Get ... THEN it maps to
-        # the net capability."
-        assert "net" in _kinds_for("UnityWebRequest.Get(")
+        # the net capability." T-4554: the bare "net" capability_kind
+        # this asserted was a RETIRED scanner kind (T-0771's net-connect/
+        # net-listen split) that had slipped back in unnoticed, tripping
+        # TestExtendedKindsDriftLock on dev; recategorized to the precise
+        # "net-connect" kind, which a coarse `may "net"` declaration
+        # still covers (`_kinds.py`'s WIRED_MODE_FAMILIES) -- same
+        # capability, name unchanged (existing evidence citations point
+        # here), assertion updated to match.
+        assert "net-connect" in _kinds_for("UnityWebRequest.Get(")
 
     def test_legacy_www_maps_to_net(self) -> None:
         # frob:tests \
         # src/frob/vet/_capability_registry/_unity_api.py::_UNITY_OPERATIONS kind="unit"
-        assert "net" in _kinds_for("new WWW(")
+        # T-4554: net -> net-connect, see test_unity_web_request_maps_to_net above.
+        assert "net-connect" in _kinds_for("new WWW(")
 
     def test_network_manager_maps_to_net(self) -> None:
         # frob:tests \
         # src/frob/vet/_capability_registry/_unity_api.py::_UNITY_OPERATIONS kind="unit"
-        assert "net" in _kinds_for("NetworkManager.Singleton")
+        # T-4554: net -> net-connect, see test_unity_web_request_maps_to_net above.
+        assert "net-connect" in _kinds_for("NetworkManager.Singleton")
 
     def test_open_url_maps_to_both_net_and_exec(self) -> None:
         # frob:tests \
         # src/frob/vet/_capability_registry/_unity_api.py::_UNITY_OPERATIONS kind="unit"
+        # T-4554: net -> net-connect, see test_unity_web_request_maps_to_net above.
         kinds = _kinds_for("Application.OpenURL(")
-        assert "net" in kinds
+        assert "net-connect" in kinds
         assert "exec" in kinds
 
     def test_player_prefs_set_maps_to_fs_write(self) -> None:

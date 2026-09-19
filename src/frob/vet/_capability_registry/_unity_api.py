@@ -65,17 +65,33 @@ _UNITY_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("UnityWebRequest.Get(", "UnityWebRequest.Post(", "UnityWebRequest.Put("),
         (),
     ),
-    # T-4514's own acceptance criterion names "the net capability"
-    # specifically for `UnityWebRequest.Get` -- registered a second time
-    # under `net` (alongside the `fetch_url` entry above, the same
-    # "one API, two real risk-vocabulary entries" shape `Application.
-    # OpenURL` already uses below) so both the coarse network-capability
-    # signal and the precise HTTP-fetch signal are available.
+    # T-4554: the bare coarse "net" capability_kind these four entries
+    # used (T-4514's own acceptance criterion names "the net capability"
+    # specifically for `UnityWebRequest.Get`) is a RETIRED scanner kind
+    # (`_effects.py::_KIND_MAP`'s own module docstring: "the old bare
+    # `net`:`net` entry is retired since no registry entry emits the
+    # unqualified `net` vet-kind anymore" -- T-0771's precise net-connect/
+    # net-listen split). It slipped through unnoticed at T-4514 land time
+    # because nothing enforced that claim until
+    # `TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_
+    # kind_map` (tests/unit/strata/test_selfconform.py) started failing
+    # on dev: `all_pattern_kinds` (every kind any registry entry emits)
+    # then contained a bare "net" neither `_EXTENDED_KINDS` nor
+    # `_KIND_MAP` accounts for. Recategorized to `net-connect` -- the SAME
+    # precise kind `_dotnet_bcl.py`'s `Dns.GetHostAddresses`/etc already
+    # use for an outbound-network-reach signal with no listen-side
+    # semantics, and (`_kinds.py`'s `WIRED_MODE_FAMILIES`) a coarse
+    # `may "net"` declaration still covers `net-connect` exactly as it
+    # covered the retired bare `net`, so no resolver behavior change: a
+    # node that already declared `may "net"` for these call sites keeps
+    # passing; only the raw scanner-kind bucket these needles land in
+    # changes, from an unenforceable orphan to a normalized, drift-lock-
+    # accounted-for one.
     _op(
         "csharp",
         "UnityEngine.Networking",
         "UnityWebRequest.Get / .Post / .Put (net)",
-        "net",
+        "net-connect",
         "issues a network request through Unity's own web-request client",
         "validate the target host and enforce TLS certificate validation; "
         "never build the URL from unsanitized user input",
@@ -87,7 +103,7 @@ _UNITY_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "csharp",
         "UnityEngine",
         "WWW (legacy Unity web client)",
-        "net",
+        "net-connect",
         "issues a network request through Unity's deprecated WWW class",
         "migrate to UnityWebRequest, which supports TLS validation and "
         "streaming this legacy class does not",
@@ -99,7 +115,7 @@ _UNITY_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "csharp",
         "UnityEngine.Networking",
         "NetworkManager (Unity multiplayer/netcode)",
-        "net",
+        "net-connect",
         "starts or joins a multiplayer network session (host/client/"
         "server), opening inbound and/or outbound connections",
         "authenticate and validate every peer before trusting its "
@@ -114,14 +130,16 @@ _UNITY_OPERATIONS: tuple[_DangerousOperation, ...] = (
     # resolves and loads it) AND a process-launch surface (a custom URI
     # scheme, e.g. `myapp://...` or `file://...`, can hand off to an
     # arbitrary registered handler), so it is registered under BOTH
-    # `net` and `exec` rather than picking one -- mirrors this registry's
-    # existing "one API, two real risk axes -> two entries" precedent
-    # (bash's curl|pipe-to-shell splits into `fetch_url` vs `exec` rows).
+    # `net-connect` and `exec` rather than picking one -- mirrors this
+    # registry's existing "one API, two real risk axes -> two entries"
+    # precedent (bash's curl|pipe-to-shell splits into `fetch_url` vs
+    # `exec` rows). T-4554: `net` -> `net-connect`, same retired-bare-kind
+    # fix as the three entries above.
     _op(
         "csharp",
         "UnityEngine",
         "Application.OpenURL (network fetch)",
-        "net",
+        "net-connect",
         "opens a URL through the platform's default handler, an "
         "attacker-influenceable network fetch if the URL is not validated",
         "validate the URL's scheme and host against an allow-list before opening it",

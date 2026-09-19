@@ -1189,3 +1189,47 @@ class TestViaMatchingCompiledCachePerf:
             f"({naive_elapsed:.3f}s) on a 250-glob x 5000-site synthetic "
             f"input -- expected at least a 2x speedup"
         )
+
+
+# frob:ticket T-4554
+class TestNoRetiredBareKindEmitted:
+    """T-4554 regression: `_KIND_MAP` (THREAT004's tier-2-delegated raw
+    scanner kinds) retired its bare, unqualified `"net"` entry in favor
+    of the precise `net-connect`/`net-listen` split (T-0771) -- the
+    module docstring above `_KIND_MAP` claims "no registry entry emits
+    the unqualified `net` vet-kind anymore". Nothing enforced that claim:
+    T-4514's Unity API registry entries (`_unity_api.py`) landed four
+    `capability_kind="net"` rows unnoticed, an orphan kind neither
+    `_KIND_MAP` nor `_selfconform._selfconform_kinds._EXTENDED_KINDS`
+    accounts for, which is exactly what tripped
+    `tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock`
+    on dev. This test asserts the invariant directly against the live
+    registry, naming "net" explicitly in its failure message, so a
+    future registry entry reintroducing ANY retired bare kind fails
+    here first, with a clear pointer, rather than surfacing as an
+    opaque set-difference assertion three modules away."""
+
+    # frob:tests tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted.test_no_registry_entry_emits_a_retired_bare_kind  # noqa: E501
+    def test_no_registry_entry_emits_a_retired_bare_kind(self) -> None:
+        """No `_DangerousOperation` in the live registry may emit a bare
+        kind `_KIND_MAP` retired in favor of a precise split -- currently
+        just `"net"` (T-0771: split into `net-connect`/`net-listen`).
+        Fails loudly, naming `"net"` and every offending (language,
+        library, function_or_pattern) site, rather than a bare set
+        difference."""
+        from frob.vet._capability_registry import DANGEROUS_OPERATIONS
+
+        retired_bare_kinds = frozenset({"net"})
+        offenders = [
+            f"{op.language}/{op.library}: {op.function_or_pattern} "
+            f"(capability_kind={op.capability_kind!r})"
+            for op in DANGEROUS_OPERATIONS
+            if op.capability_kind in retired_bare_kinds
+        ]
+        assert not offenders, (
+            "the following registry entries emit a RETIRED bare kind "
+            f"({sorted(retired_bare_kinds)!r} -- _effects.py::_KIND_MAP's "
+            "own docstring: 'no registry entry emits the unqualified "
+            '"net" vet-kind anymore\'); use the precise net-connect/'
+            f"net-listen split instead: {offenders}"
+        )

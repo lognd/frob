@@ -2,7 +2,7 @@
 id: T-4554
 title: 'T-4536 regression: tests/unit/strata/test_effects.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
   fails on dev (_PATTERNS/_KIND_MAP/_EXTENDED_KINDS drift from the C# resolver)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-17'
@@ -27,7 +27,7 @@ scope_changes:
 - op: remove
   glob: src/frob/strata/_effects.py
   reason: fix confined to _dangerous_ops_bash_csharp.py and test_effects.py; _effects.py
-    leased by T-4563
+    leased by T-draft-d56bad34
   actor: logan
   at: '2026-09-17'
 - op: add
@@ -44,11 +44,16 @@ scope_changes:
     same behavior, no test rename/delete
   actor: logan
   at: '2026-09-17'
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+designated_repro_test: tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind
 acceptance:
 - text: GIVEN dev WHEN tests/unit/strata/test_effects.py runs THEN TestExtendedKindsDriftLock
     passes
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind
+  - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 threat: null
 component: null
 anchor: false
