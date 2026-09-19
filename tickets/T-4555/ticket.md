@@ -40,6 +40,11 @@ scope_changes:
   reason: frob:doc anchor for the new public TICKETS_LEDGER_LOCK_REL export
   actor: logan
   at: '2026-09-18'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: frob:doc anchor for the new public TICKETS_LEDGER_LOCK_REL export
+  actor: logan
+  at: '2026-09-19'
 evidence:
 - tests/unit/test_ticket_store.py::TestLockPath::test_public_lock_rel_matches_private_lock_path
 - tests/test_ticket_leases.py::TestTicketsLedgerLockRelSingleSource::test_leases_constant_is_the_store_constant
