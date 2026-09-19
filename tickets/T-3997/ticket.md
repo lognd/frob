@@ -1,7 +1,7 @@
 ---
 id: T-3997
 title: 'TESTMOCK001: fully-mocked subjects need a non-mocked companion'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -17,10 +17,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_coverage.py
+- docs/modules/gate-testmock001.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gate-testmock001.md
+  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-draft-a62505d4
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests-bound symbol whose only binding test mocks every collaborator,
