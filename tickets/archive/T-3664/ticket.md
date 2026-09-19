@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: moving DOCARCH001 change-narrative out of the test docstring per T-4420
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1981
+  new_length: 2877
 evidence:
 - tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_files_examined_entries_are_always_posix_shaped
 - tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_relative_to_as_posix_normalizes_a_windows_shaped_path
@@ -43,3 +50,5 @@ Fix direction (product, not test): src/frob/arch/__init__.py line ~722, change `
 Traceback evidence: scratchpad/win-33521-failures.txt lines 19784-20893 (examined_archgate_site_is_deleted) and lines 20896-22034 (original_55_waiver_incident_shape).
 
 References T-3659 (tracking ticket for this campaign).
+
+DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard.test_files_examined_entries_are_always_posix_shaped's docstring carried a long narrative (win32 gates_suite campaign T-3659: analyze_project's ArchResult.files_examined must never carry a native path separator; _drop_unexamined_archgate_candidates's site_examined membership test compares each entry against a WAIVE004 Violation.file which is always repo-relative POSIX; before this fix analyze_project built files_examined via bare str(path.relative_to(scan_root)) which renders native backslash separators on win32; this POSIX worktree cannot literally reproduce a backslash appearing, so this asserts the invariant the fix establishes, which CI's win32 leg is the real end-to-end verifier for). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
