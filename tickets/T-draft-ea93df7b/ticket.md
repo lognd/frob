@@ -66,6 +66,10 @@ scope_changes:
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
+acceptance:
+- text: two consecutive get_snapshot calls on an unchanged tree build the graph zero
+    additional times on the second call
+  evidence: []
 threat: null
 component: null
 anchor: false
