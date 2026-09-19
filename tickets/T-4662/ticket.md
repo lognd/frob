@@ -1,5 +1,5 @@
 ---
-id: T-draft-6bab81c9
+id: T-4662
 title: 'Strata: end the measured friction (ratchet churn, zero-signal gates, boilerplate
   assumes) before any grammar change'
 state: queued
