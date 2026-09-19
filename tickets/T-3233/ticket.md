@@ -1,7 +1,7 @@
 ---
 id: T-3233
 title: frob._cli_parsers --lang choices drifted narrower than frob.lang
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -17,6 +17,7 @@ scope:
 - src/frob/_cli_parsers/_check.py
 - src/frob/_cli_parsers/_core.py
 - docs/commands/check.md
+- tests/unit/test_cli_lang_choices_drift.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: docs/commands/check.md
   reason: 'close scope-closure warning: _add_check_parser''s frob:doc target'
+  actor: logan
+  at: '2026-09-18'
+- op: add
+  glob: tests/unit/test_cli_lang_choices_drift.py
+  reason: new drift-lock test for the shared _LANG_CHOICES derivation
   actor: logan
   at: '2026-09-18'
 designated_repro_test: null
