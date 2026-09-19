@@ -1,5 +1,5 @@
 ---
-id: T-draft-15749ed2
+id: T-4648
 title: 'frob ticket drop leaves .git/frob-leases/<id>.json in place: a dropped ticket
   keeps blocking sibling scope --add and PassengerTickets until someone deletes the
   lease by hand (T-3259, 2026-09-19)'

@@ -1,7 +1,7 @@
 ---
 id: T-4507
 title: 'C# comment DSL parity: frob:doc/frob:tests/frob:todo in // and ///'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -20,7 +20,27 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_slash_doc_directive_binds
+- tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_xml_doc_todo_free_text_note_is_accepted
+- tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_xml_doc_waive_directive_on_class_binds
 designated_repro_test: null
+acceptance:
+- text: 'GIVEN a C# method with ''// frob:doc docs/x.md#anchor'' above it, WHEN the
+    graph builds, THEN a doc edge is recorded for that symbol identically to a Python
+    # frob:doc edge.'
+  evidence:
+  - tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_slash_doc_directive_binds
+- text: GIVEN a C# method with '/// frob:todo T-#### some free-text note', WHEN DSL001
+    parses it, THEN the free-text note is accepted (not rejected as malformed attribute
+    syntax).
+  evidence:
+  - tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_xml_doc_todo_free_text_note_is_accepted
+- text: GIVEN a C# class with a frob:waive directive, WHEN frob check runs, THEN the
+    waiver is applied and appears in the waiver ledger the same as a Python-sourced
+    waiver.
+  evidence:
+  - tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_xml_doc_waive_directive_on_class_binds
 threat: null
 component: null
 anchor: false
