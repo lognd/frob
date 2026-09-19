@@ -17,11 +17,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
-- src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_land.py
 - tests/unit/rapid_sweep_suite/*
 - src/frob/gates/_fix_engine_sync.py
-- tests/gates_suite/test_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,11 +60,18 @@ scope_changes:
   reason: second unguarded writer of capability-via-ratchet.lock.json
   actor: logan
   at: '2026-09-19'
-- op: add
-  glob: tests/gates_suite/test_fix_engine.py
-  reason: positive control for land.lock gating on SYS111 write
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: unused in final diff -- freeing for T-draft-f5ac9ec0
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_drops_git_metadata_path_such_as_a_lease_file
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_leaves_a_real_tickets_dir_finding_alone
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_directory_shaped_finding_is_filed_but_not_quarantined
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_without_land_lock_reports_but_does_not_write
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 designated_repro_test: null
 threat: null
 component: null
