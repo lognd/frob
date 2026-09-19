@@ -663,6 +663,67 @@ def validate_evidence(entry: str) -> Result[str, TicketError]
 ```
 
 
+## Registry files (append-shared, T-draft-a62505d4)
+
+`design/frob.strata`, `docs/design/registry/capability-via-ratchet.lock.json`,
+`docs/modules/gates.md`, and `docs/design/registry/check-coverage.yaml` are
+append-shared registries that nearly every gate ticket must touch by adding
+one line. Treating a declared path as a whole-file exclusive lease (the
+ordinary scope-lease model -- see `docs/modules/tickets-lifecycle.md`'s
+scope-lease section) is the wrong fit for this narrow class: one
+in-progress ticket holding any of these four files made every sibling's
+`frob ticket scope --add` refuse with `ScopeLeaseConflict` and every
+sibling's land refuse with `CrossTicketLeakage`, forcing 5-8 agents to
+serialize on one file (measured: the coordinator hand-landing with
+`--allow-cross-ticket`).
+
+`frob.tickets._registry_files` is the single home for this class:
+
+- `registry_files(root)` -- the configured `[tickets].registry_files` set
+  from `frob.toml`, or `DEFAULT_REGISTRY_FILES` (the four paths above)
+  when unset/unreadable/malformed.
+- `is_registry_file(path, root)` -- membership test.
+- `additive_only_diff(worktree, base_ref, path)` -- `True` only when the
+  branch's diff of `path` against `base_ref` has no removed lines at all.
+
+Three effects, each with its own positive control in
+`tests/test_tickets_registry_files.py`:
+
+(a) **Always implicitly in scope.** `frob.tickets._models.scope_matches`
+treats every path in `DEFAULT_REGISTRY_FILES` the same way it already
+treats `LEDGER_PATH` (`tickets.md`) -- always a match, regardless of the
+ticket's own declared `scope`. No ticket ever needs `frob ticket scope
+--add` for a registry file, so the ordinary lease/`ScopeLeaseConflict`
+path is never even reached for the documented default four. (This one
+rule uses the fixed default set, not the `root`-configured override --
+`scope_matches` has ~30 existing call sites with no `root` to read a
+per-repo override from, and every one must keep seeing the same answer
+for an unconfigured repo.)
+
+(b) **CrossTicketLeakage exemption on an additive diff.**
+`frob.tickets._land._registry_leakage_exempt_paths` drops a changed path
+from the CrossTicketLeakage-relevant set when it is BOTH a configured
+registry file (per `registry_files(root)`, so a per-repo override IS
+honored here) AND `additive_only_diff` for it is `True` -- the same
+shape `_machinery_owned_leakage_exempt_paths` already uses for wholly
+land-owned files, except conditional on the diff instead of
+unconditional.
+
+(c) **Still refused on a destructive diff.** A registry-file change that
+deletes or rewrites a line the branch did not itself add is NEVER
+exempted -- it stays in the CrossTicketLeakage-relevant set and refuses
+exactly like any ordinary file, protecting whatever another ticket
+already appended.
+
+This ticket's own frob.toml change is itself the first repo to declare
+`[tickets].registry_files` explicitly (matching the in-code default), and
+its own commits to `docs/modules/gates.md`/`design/frob.strata`/etc. would
+be the first real-world use of the additive-only exemption -- deferred to
+whichever ticket lands next against those files, since T-4116/T-4221/
+T-4112/T-4113 held whole-file leases on them for the duration of this
+ticket's own work (see its Done report for the exact collision).
+
+
 ## Split files (T-1780)
 
 This document held the whole `frob.tickets` reference in one 545KB/11252-line file (originally; the doc-only file you are reading is smaller) until T-1780: 35+ open tickets named it, so any one ticket's lease on `docs/modules/tickets.md` blocked every other ticket that also needed to touch its own unrelated section. Split along the document's own subject boundaries (parsed heading structure), not arbitrary size chunks, so a ticket touching landing no longer leases the section about evidence or the merge driver:

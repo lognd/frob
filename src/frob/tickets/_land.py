@@ -6691,6 +6691,73 @@ def _machinery_owned_leakage_exempt_paths() -> frozenset[str]:
     )
 
 
+# frob:ticket T-4650
+# frob:doc docs/modules/tickets.md#registry-files-append-shared-t-draft-a62505d4
+def _registry_file_diff_is_additive(worktree: Path, base_ref: str, path: str) -> bool:
+    """`True` when `worktree`'s branch's diff of `path` against `base_ref`
+    is additive-only (`frob.tickets._registry_files.is_additive_diff_text`)
+    -- runs `git diff <base_ref>...HEAD -- <path>` via `frob.gitio.
+    run_argv` (the SAME already-`via`-declared exec capability
+    `_branch_changed_files` immediately above uses for its own
+    `git diff --name-only`, so this adds no new SELFAUDIT001 surface)
+    and hands the raw text to the pure line-scan. A diff invocation
+    failure (bad ref, not a git repo) is treated as NOT additive-only --
+    fail closed, refuse rather than silently exempt, the same
+    "unsure -> the safe default" shape `_branch_changed_files` itself
+    uses -- and logged at WARNING."""
+    from frob.tickets._registry_files import is_additive_diff_text
+
+    spawned = run_argv(
+        ["git", "-C", str(worktree), "diff", f"{base_ref}...HEAD", "--", path]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.warning(
+            "tickets: could not diff %s against %s in %s -- treating as "
+            "NOT additive-only (fail closed)",
+            path,
+            base_ref,
+            worktree,
+        )
+        return False
+    return is_additive_diff_text(spawned.danger_ok.stdout)
+
+
+# frob:ticket T-4650
+# frob:doc docs/modules/tickets.md#registry-files-append-shared-t-draft-a62505d4
+def _registry_leakage_exempt_paths(
+    worktree: Path, base_ref: str, changed_paths: frozenset[str]
+) -> frozenset[str]:
+    """The subset of `changed_paths` that is BOTH a configured registry
+    file (`frob.tickets._registry_files.registry_files`) AND whose diff
+    on this branch against `base_ref` is additive-only
+    (`_registry_file_diff_is_additive`) (T-4650 acceptance b):
+    `_check_cross_ticket_leakage`/`_cross_ticket_leakage_findings` drop
+    these from `relevant` the same way `_machinery_owned_leakage_exempt_
+    paths` drops a wholly land-owned path, so a ticket that only APPENDS
+    its own line to a registry file another in-progress sibling also
+    declares in scope never refuses.
+
+    Deliberately NOT unconditional like `_machinery_owned_leakage_exempt_
+    paths` (T-2121): a registry file whose diff on this branch deletes or
+    rewrites a line it did not itself add is NEVER included here, so it
+    stays in `relevant` and CrossTicketLeakage still refuses on it
+    (T-4650 acceptance c) -- the membership test alone is not
+    enough, unlike the machinery-owned family, where no ticket can ever
+    legitimately explain a change by hand at all."""
+    from frob.tickets._registry_files import registry_files
+
+    configured = registry_files(worktree)
+    return frozenset(
+        path
+        for path in changed_paths
+        if path in configured
+        and _registry_file_diff_is_additive(worktree, base_ref, path)
+    )
+
+
+# frob:ticket T-4650
+# frob:tests tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths.test_additive_registry_change_is_exempt  # noqa: E501
+# frob:tests tests/test_tickets_registry_files.py::TestRegistryLeakageExemptPaths.test_destructive_registry_change_is_not_exempt  # noqa: E501
 def _check_cross_ticket_leakage(
     root: Path,
     worktree: Path,
@@ -6753,10 +6820,12 @@ def _check_cross_ticket_leakage(
     # this check against every other open ticket in the worktree.
     archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
     # frob:ticket T-2121
+    changed_paths = frozenset(changed.danger_ok)
     relevant = (
-        frozenset(changed.danger_ok)
+        changed_paths
         - {LEDGER_PATH, archive_rel}
         - _machinery_owned_leakage_exempt_paths()
+        - _registry_leakage_exempt_paths(worktree, base_ref, changed_paths)
     )
     if not relevant:
         return Ok(None)
@@ -6776,6 +6845,7 @@ def _check_cross_ticket_leakage(
 
 
 # frob:ticket T-3466
+# frob:ticket T-4650
 def _cross_ticket_leakage_findings(
     root: Path, ticket_id: str
 ) -> tuple[dict[str, list[str]], dict[str, Ticket]]:
@@ -6800,10 +6870,12 @@ def _cross_ticket_leakage_findings(
     if changed.is_err:
         return {}, {}
     archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
+    changed_paths = frozenset(changed.danger_ok)
     relevant = (
-        frozenset(changed.danger_ok)
+        changed_paths
         - {LEDGER_PATH, archive_rel}
         - _machinery_owned_leakage_exempt_paths()
+        - _registry_leakage_exempt_paths(worktree, base_ref, changed_paths)
     )
     if not relevant:
         return {}, {}

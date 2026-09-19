@@ -1,7 +1,7 @@
 ---
-id: T-draft-a62505d4
+id: T-4650
 title: 'Registry-file class: append-shared, not whole-file leases'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'

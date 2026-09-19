@@ -1073,6 +1073,24 @@ override_ratchet = true
 [tickets]
 default_milestone = "1.0.0"
 
+# T-4650: the append-shared registry-file class
+# (frob.tickets._registry_files) -- paths nearly every gate ticket must
+# add exactly one line to, exempted from the whole-file exclusive scope
+# lease (implicitly in every in-progress ticket's scope, no --add/lease
+# ever needed) and from CrossTicketLeakage as long as a sibling's diff to
+# one is additive-only. Set explicitly here (matching `frob.tickets.
+# _registry_files.DEFAULT_REGISTRY_FILES`'s own fallback) so this repo's
+# own choice is visible in frob.toml rather than relying on the in-code
+# default alone -- and this line is itself an additive-only edit to this
+# repo's own frob.toml (not a registry file), so it needs no special
+# handling.
+registry_files = [
+    "design/frob.strata",
+    "docs/design/registry/capability-via-ratchet.lock.json",
+    "docs/modules/gates.md",
+    "docs/design/registry/check-coverage.yaml",
+]
+
 # T-3191: `ty check --python-platform` defaults to the host's own platform,
 # so a bare local `frob check` never typechecked Windows- or macOS-only code
 # paths at all -- CI run 33135896391 measured 4 such diagnostics (`os.

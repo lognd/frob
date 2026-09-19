@@ -23,7 +23,7 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/gate-race001.md
-  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-draft-a62505d4
+  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-4650
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null

@@ -1007,6 +1007,25 @@ the ENFORCING call sites, unchanged -- `cross_ticket_leakage_gate`'s job
 is making the same finding visible EARLIER, via plain `frob check
 --ticket <id>` in a ticket's own worktree.
 
+T-4650: a THIRD subtraction, `frob.tickets._land._registry_
+leakage_exempt_paths(worktree, base_ref, changed_paths)`, joins
+`_machinery_owned_leakage_exempt_paths()` in both `_check_cross_ticket_
+leakage`'s and `_cross_ticket_leakage_findings`'s `relevant` computation
+-- unlike the machinery-owned family (unconditional), this one drops a
+changed path only when it is BOTH a configured registry file
+(`frob.tickets._registry_files.registry_files`, default: `design/
+frob.strata`, `docs/design/registry/capability-via-ratchet.lock.json`,
+`docs/modules/gates.md`, `docs/design/registry/check-coverage.yaml`) AND
+its diff on this branch is additive-only (`additive_only_diff`) --
+append-shared registries nearly every gate ticket must add one line to,
+where the whole-file-lease model this check otherwise enforces was
+forcing 5-8 agents to serialize on one file. A destructive/rewriting
+diff to the same file stays in `relevant` and CROSSTICKET001 still fires
+on it exactly as before. See docs/modules/tickets.md#registry-files-
+append-shared-t-draft-a62505d4 for the full mechanism, including the
+matching `scope_matches` always-implicitly-in-scope rule that keeps
+SCOPE001 from ever needing a `--add` for these same four paths.
+
 ### SCOPE002 (T-0998)
 
 <!-- frob:describes src/frob/gates/__init__.py::_scope002_violations -->

@@ -34,6 +34,7 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.tickets._registry_files import DEFAULT_REGISTRY_FILES
 
 _log = get_logger(__name__)
 
@@ -569,6 +570,9 @@ def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_feature_kind_implies_cli_wiring_files_in_scope  # noqa: E501
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_own_shard_always_in_scope
 # frob:ticket T-1819
+# frob:ticket T-4650
+# frob:tests tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit.test_registry_file_matches_with_empty_scope  # noqa: E501
+# frob:tests tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit.test_registry_file_matches_with_unrelated_scope  # noqa: E501
 def scope_matches(
     path: str,
     scope: Sequence[str],
@@ -604,12 +608,30 @@ def scope_matches(
     T-1817 already closed for the unscoped B9 path (`frob.gates.
     _b9_exempt_file`), here closed for the per-ticket declared-scope
     check. `ticket_id=None` (the default, and every pre-T-1819 call site)
-    preserves the exact prior behavior unchanged."""
+    preserves the exact prior behavior unchanged.
+
+    T-4650: `DEFAULT_REGISTRY_FILES` (the append-shared
+    registry-file class -- design/frob.strata, docs/design/registry/
+    capability-via-ratchet.lock.json, docs/modules/gates.md, docs/design/
+    registry/check-coverage.yaml) is ALSO implicitly in scope, the same
+    `LEDGER_PATH`-always-in-scope shape: nearly every gate ticket must
+    add exactly one line to one of these, and treating them as an
+    ordinary whole-file lease target forced 5-8 agents to serialize on
+    one file every time. Fixed default set here (unlike `frob.tickets.
+    _land`'s CrossTicketLeakage additive-diff exemption, which IS
+    config-driven via `frob.tickets._registry_files.registry_files`,
+    this call site has no `root` to read a per-repo override from, and
+    every one of this function's ~30 existing callers must keep seeing
+    the exact same answer for an unconfigured repo) -- a repo that
+    overrides `[tickets].registry_files` gets the narrower/broader
+    CrossTicketLeakage exemption from the config, but this implicit-
+    scope rule always covers at least the documented default four."""
     globs = _scope_globs(_split_scope_entries(scope))
     if kind is TicketKind.FEATURE:
         globs = (*globs, *CLI_WIRING_FILES)
     if ticket_id is not None:
         globs = (*globs, f"tickets/{ticket_id}/**")
+    globs = (*globs, *DEFAULT_REGISTRY_FILES)
     return any(fnmatch.fnmatch(path, glob) for glob in globs)
 
 
