@@ -22,10 +22,19 @@ scope:
 - src/frob/tickets/_land_ledger_merge.py
 - tests/unit/test_ticket_sync_trunk_numbers.py
 - docs/modules/tickets-merge-driver.md
+- docs/guides/collaborating.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/collaborating.md
+  reason: owner addition 2026-09-19 ('make sure frob instructs people through it')
+    added an acceptance criterion requiring this new guide; leasing it now so the
+    leaf can write it without a mid-flight scope --add
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: 'read T-1608/T-1609/T-2202/T-3248: none is merge-driver renumbering work,
