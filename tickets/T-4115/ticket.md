@@ -2,7 +2,7 @@
 id: T-4115
 title: 'H3-7: a route returning a dict literal with no response model is invisible
   to every reference gate'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
