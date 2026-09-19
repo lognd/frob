@@ -1,5 +1,5 @@
 ---
-id: T-draft-f9e7f911
+id: T-4739
 title: 'Land phase (b): compose is pure over a snapshot, out of tree, no git or ledger
   writes'
 state: queued

@@ -44,6 +44,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 4265
   new_length: 6316
+- mode: set
+  reason: '2026-09-19 coordinator review: explore survives (no delete-then-rebuild);
+    pool/profile/debt/deprecated/parse reclassified out of the check --only fold;
+    exports split check/scaffold; story acceptance numbers; T-4689-before-hooks ordering'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6316
+  new_length: 6316
 designated_repro_test: null
 threat: null
 component: null
