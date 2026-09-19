@@ -1,7 +1,7 @@
 ---
 id: T-3995
 title: --only with a known stage name does not actually filter
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/check_runner.py
+- src/frob/_cli_parsers/_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_check.py
+  reason: document --only exclusion of deploy/claude-config-drift tail checks per
+    acceptance criterion 1
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given frob check --only ruff run against this repo, when it completes, then
