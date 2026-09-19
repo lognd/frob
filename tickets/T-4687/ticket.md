@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
-parent: null
+parent: T-2994
 tier: story
 sprint: null
 runs_last: false
@@ -19,6 +19,15 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: story tier; all files are declared by its seven
   leaves T-4688..T-4694, which are the write-lease holders'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-2994
+  reason: '2026-09-19: CLI verb reduction is a direct instance of the debloat doctrine
+    -- four grouping verbs added names and removed none; owner approved cutting the
+    surface'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
