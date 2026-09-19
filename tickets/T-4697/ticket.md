@@ -1,5 +1,5 @@
 ---
-id: T-draft-db370c5e
+id: T-4697
 title: 'frob narrative: bulk mode over a file or directory with --apply (today it
   is one block per invocation; 507 measured runs need a sweep)'
 state: queued
