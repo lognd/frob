@@ -40,6 +40,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 4957
   new_length: 7872
+- mode: append
+  reason: '2026-09-19: correcting the parent named in the SF-12 evidence block just
+    appended -- this ticket is tier=epic so it attaches to T-4662 directly, not to
+    story T-4667'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7872
+  new_length: 8327
 designated_repro_test: null
 threat: null
 component: null
@@ -172,3 +180,11 @@ waiver path) are NOT grammar and could be split into leaves at any time; item 1
 is now answered by discoverability work rather than new grammar. This ticket
 keeps its existing sprint v0.546.0 commitment; it is attached here so the
 decision it needs is visible in one place.
+
+
+CORRECTION to the SF-12 evidence block above (same day): this ticket is itself
+tier=epic, and frob refuses ParentTierInversion (a story cannot parent an epic,
+T-0715). It is therefore attached directly to epic T-4662, NOT to story T-4667.
+It is grouped WITH story D's decisions for all other purposes: no implementation
+ticket should be filed against its grammar-surface items (especially item 6,
+trust-as-identity) before the owner records a decision.
