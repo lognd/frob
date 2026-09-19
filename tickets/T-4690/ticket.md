@@ -18,7 +18,6 @@ scope:
 - src/frob/_cli_parsers/_explore.py
 - src/frob/_cli_parsers/_quality.py
 - src/frob/_cli_parsers/_design.py
-- src/frob/_cli_parsers/_ops.py
 - src/frob/_cli_parsers/_status.py
 - src/frob/_cli_parsers/_core.py
 - src/frob/_cli_parsers/_misc.py
@@ -29,7 +28,6 @@ scope:
 - src/frob/app/explore_runner.py
 - src/frob/app/quality_runner.py
 - src/frob/app/design_runner.py
-- src/frob/app/ops_runner.py
 - src/frob/app/status_runner.py
 - src/frob/app/fmt_runner.py
 - src/frob/app/docs_runner.py
@@ -40,6 +38,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_ops.py
+  reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/app/ops_runner.py
+  reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
