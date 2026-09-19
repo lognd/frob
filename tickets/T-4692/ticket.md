@@ -61,6 +61,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 2203
   new_length: 4434
+- mode: set
+  reason: 'DOC006: planned CLI forms written as prose so unrelated lands are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4434
+  new_length: 4506
 designated_repro_test: null
 acceptance:
 - text: Given a committed fixture tree containing a planted duplicate block, when
@@ -131,13 +137,13 @@ AMENDED 2026-09-19 (coordinator review): the first version of this ticket swept
 `pool`, `profile`, `debt`, `deprecated` and `parse` into `--only`. Measured,
 none of the five is a check stage. Corrected classification below.
 
-FOLD INTO `frob check --only <stage>` (these ARE stages -- read-only analyses
+FOLD INTO frob check --only <stage> (planned) (these ARE stages -- read-only analyses
 that `frob check` already runs and that emit findings):
   dup  arch  cycle  bind  perf  mutate  coverage  narrative
 Each keeps a one-minor-version shim (the T-4690 helper) that prints
-`frob check --only <stage>` and exits non-zero after the sunset date.
+frob check --only <stage> (planned) and exits non-zero after the sunset date.
 
-ADD `frob check --list-stages`: prints every stage name, one per line, so the
+ADD frob check --list-stages (planned): prints every stage name, one per line, so the
 shims' suggested spelling is discoverable and testable. `--only` already exists
 on `frob check`; verify it accepts every folded stage name before deleting the
 verb, and add the stage if it does not.
@@ -149,8 +155,8 @@ a state-mutating command behind `--only` would be a real footgun: `--only`
 reads as "run just this gate", and a reader reasonably expects `frob check
 --only pool` to REPORT, not to rewrite the baseline.
 DECISION (stated here as the ticket's reason, per the coordinator's "your call
-with a reason"): make them SUBVERBS of check -- `frob check pool <op>` and
-`frob check profile <op>` -- keeping their own flags and their mutating
+with a reason"): make them SUBVERBS of check -- frob check pool <op> (planned) and
+frob check profile <op> (planned) -- keeping their own flags and their mutating
 semantics intact. This removes two top-level names without lying about what
 they do. If the implementer finds the subverb form collides with `check`'s own
 positional/flag grammar, the fallback is to leave both as top-level verbs and
@@ -159,7 +165,7 @@ record that in the Done report; do NOT force them under `--only`.
 `debt` AND `deprecated` MOVE TO T-4695, NOT HERE. They are read-only listings
 ("list outstanding frob:debt entries", "list outstanding frob:deprecated
 entries") and belong with the rest of the read-only analysis surface under
-`frob explore`. Do not touch them in this ticket.
+frob explore (planned). Do not touch them in this ticket.
 
 `parse` MOVES TO T-4698's VERDICT TABLE, NOT HERE. It is a tool-output adapter
 (pytest/ruff/ty/clang/junit -> compact summary), not a gate stage and not
@@ -170,13 +176,13 @@ own doc page (docs/commands/parse.md, docs/design/cli-regrouping.md).
 .claude/ = 0 hits. scripts/ = 0 hits. No consumer outside itself.
 
 `exports` -- OWNER DECISION 2026-09-19: split it. The CHECK half folds into
-`frob check --only exports`. The GENERATE half ("generate __init__.py from
+frob check --only exports (planned). The GENERATE half ("generate __init__.py from
 public symbols in a package directory") moves under `scaffold`, NOT refactor.
 
 POSITIVE CONTROL (acceptance): a golden test on a committed fixture tree that
-plants a real duplicate block, asserts `frob dup` and `frob check --only dup`
+plants a real duplicate block, asserts `frob dup` and frob check --only dup (planned)
 produce IDENTICAL findings on it before the deletion, and after the deletion
-asserts `frob check --only dup` still reports the planted duplicate. A test that
+asserts frob check --only dup (planned) still reports the planted duplicate. A test that
 only asserts "no crash" does not close this ticket -- the fixture must contain a
 finding the tool is REQUIRED to report.
 
