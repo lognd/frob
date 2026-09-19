@@ -20,6 +20,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_land.py
 - tests/unit/rapid_sweep_suite/*
+- src/frob/gates/_fix_engine_sync.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +54,11 @@ scope_changes:
 - op: remove
   glob: docs/**
   reason: too broad, narrowing
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: second unguarded writer of capability-via-ratchet.lock.json
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
