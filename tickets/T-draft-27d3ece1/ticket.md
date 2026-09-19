@@ -43,6 +43,54 @@ acceptance:
     nodes -- positive control: a planted gap in module M is reported for M and not
     for a sibling.'
   evidence: []
+- text: Given a module importing a module BELOW it in the declared hierarchy, when
+    linked, then it is a compile error naming BOTH modules (the importer and the importee)
+    and their positions.
+  evidence: []
+- text: 'Given an `accepts f from <module>` naming a module ABOVE the declaring module,
+    when linked, then it is an error: accepts goes down only.'
+  evidence: []
+- text: 'Given the upward-only import rule, when the SCC check runs, then it is a
+    redundant assertion that never fires; positive control: a synthetic model with
+    a downward import is caught by the upward-only check FIRST, and a test asserts
+    the SCC assertion itself would also have fired on a hand-built cyclic import set.'
+  evidence: []
+- text: Given a cross-module flow, when linked, then it is declared by the LOWER module
+    (which alone can name both ends) and accepted by the upper one; a flow declared
+    by the upper module is an error.
+  evidence: []
+- text: Given a module importing a module BELOW it in the declared hierarchy, when
+    linked, then it is a compile error naming BOTH modules (the importer and the importee)
+    and their positions.
+  evidence: []
+- text: 'Given an `accepts f from <module>` naming a module ABOVE the declaring module,
+    when linked, then it is an error: accepts goes down only.'
+  evidence: []
+- text: 'Given the upward-only import rule, when the SCC check runs, then it is a
+    redundant assertion that never fires; positive control: a synthetic model with
+    a downward import is caught by the upward-only check FIRST, and a test asserts
+    the SCC assertion itself would also have fired on a hand-built cyclic import set.'
+  evidence: []
+- text: Given a cross-module flow, when linked, then it is declared by the LOWER module
+    (which alone can name both ends) and accepted by the upper one; a flow declared
+    by the upper module is an error.
+  evidence: []
+- text: Given a module importing a module BELOW it in the declared hierarchy, when
+    linked, then it is a compile error naming BOTH modules (the importer and the importee)
+    and their positions.
+  evidence: []
+- text: 'Given an `accepts f from <module>` naming a module ABOVE the declaring module,
+    when linked, then it is an error: accepts goes down only.'
+  evidence: []
+- text: 'Given the upward-only import rule, when the SCC check runs, then it is a
+    redundant assertion that never fires; positive control: a synthetic model with
+    a downward import is caught by the upward-only check FIRST, and a test asserts
+    the SCC assertion itself would also have fired on a hand-built cyclic import set.'
+  evidence: []
+- text: Given a cross-module flow, when linked, then it is declared by the LOWER module
+    (which alone can name both ends) and accepted by the upper one; a flow declared
+    by the upper module is an error.
+  evidence: []
 threat: null
 component: null
 anchor: false
