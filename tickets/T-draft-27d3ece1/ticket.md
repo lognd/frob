@@ -1,0 +1,65 @@
+---
+id: T-draft-27d3ece1
+title: 'strata linker: import-cycle detection with path (hard error), two-sided accepts
+  contract, per-module audit hook for the SYS gates'
+state: queued
+kind: feature
+origin: human
+created: '2026-09-19'
+priority: critical
+blocked_by:
+- T-draft-0bcabfa4
+- T-4659
+parent: T-draft-0a0c7b43
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/strata/_link.py
+- src/frob/strata/_audit.py
+- src/frob/gates/_sys.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: Given modules a, b, c where a imports b, b imports c and c imports a, when
+    linked, then linking fails with a hard error printing the path a -> b -> c ->
+    a.
+  evidence: []
+- text: Given a cross-module flow declared only by the importer, when linked, then
+    linking fails naming the flow, the exporting node and the missing `accepts`; and
+    likewise when only the exporter declares `accepts`.
+  evidence: []
+- text: Given a cross-module flow declared on both sides, when linked, then it passes
+    and the resulting fact base is equivalent to today's merged model modulo qualnames.
+  evidence: []
+- text: 'Given a module name, when the per-module audit hook is invoked via the SYS
+    gates, then the exhaustiveness conjunction is evaluated over exactly that module''s
+    nodes -- positive control: a planted gap in module M is reported for M and not
+    for a sibling.'
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+The link step. A new src/frob/strata/_link.py joins the per-module elaboration
+results using only export surfaces, and enforces:
+  - import cycle detection as a HARD error (D-M2) printing the full path
+    `a -> b -> c -> a`. Expect the 16 existing bidirectional module pairs to
+    fail; each is decided individually in its migration leaf, never bulk-waived.
+  - two-sided cross-module flow contract (D-M3): for every Flow whose src and
+    dst modules differ, the importer declares the `flow` AND the exporter
+    declares `accepts <flow> from <module>` on the exported node. Either side
+    missing is an error. Deny by default; this is a well-formedness predicate
+    over existing Flow facts, so no kernel primitive is added.
+  - a per-module audit hook that src/frob/gates/_sys.py calls, so the per-family
+    exhaustiveness conjunction can be scoped to one module's nodes instead of
+    the whole design. src/frob/strata/_audit.py grows the module-scoped entry
+    point.

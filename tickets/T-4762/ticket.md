@@ -1,5 +1,5 @@
 ---
-id: T-draft-47ac4ece
+id: T-4762
 title: 'Standing test: render every registered type, git init, and require a clean
   frob check'
 state: queued
