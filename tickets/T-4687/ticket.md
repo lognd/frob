@@ -36,6 +36,14 @@ body_changes:
   at: '2026-09-19'
   old_length: 3648
   new_length: 4265
+- mode: set
+  reason: '2026-09-19 coordinator review: explore survives (no delete-then-rebuild);
+    pool/profile/debt/deprecated/parse reclassified out of the check --only fold;
+    exports split check/scaffold; story acceptance numbers; T-4689-before-hooks ordering'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4265
+  new_length: 6316
 designated_repro_test: null
 threat: null
 component: null
@@ -114,3 +122,36 @@ LEAVES (filed 2026-09-19):
   T-4696  ticket field setters -> ticket set        2 pts  blocked_by [T-4690]
   T-4698  ticket subverb tail verdicts              3 pts  blocked_by [T-4690, T-4696]
   T-4702  regenerate docs/commands + refs drift     2 pts  blocked_by [T-4690, T-4692, T-4695, T-4696, T-4698]
+
+ACCEPTANCE NUMBERS (coordinator, owner-approved, 2026-09-19). The story is not
+done on vibes; it is done on counts.
+  BASELINE, measured 2026-09-19 before any leaf landed:
+    top-level verbs in `frob --help`      51
+    subverbs in `frob ticket --help`      54
+  TARGET, measured the same way after all seven leaves land:
+    top-level verbs in `frob --help`      12 or fewer
+    subverbs in `frob ticket --help`      25 or fewer
+  Deprecation shims do NOT count toward either target while they are live: a
+  shim is a name on its way out, and counting it would make the story
+  un-closable until the sunset date. Count them separately and report both
+  numbers (surface, and surface + live shims) at close.
+  The counting command is the same one that produced the baseline:
+    frob --help | sed -n '1,4p' | tr -d ' \n' | sed 's/.*{//;s/}.*//' | tr ',' '\n' | grep -c .
+  Re-run it verbatim at close so the before/after are commensurable.
+
+AMENDMENTS APPLIED 2026-09-19 after coordinator review:
+  - T-4690 KEEPS `explore` as the surviving verb (it deletes explore's
+    standalone mirrors outline/map/xref/docs-search and the quality/design/ops
+    groups). T-4695 no longer rebuilds explore; it only adds leaves to it. This
+    removes a delete-then-rebuild cycle on the same verb.
+  - T-4692 no longer folds `pool`, `profile`, `debt`, `deprecated` or `parse`
+    into `check --only`. `pool`/`profile` MUTATE state (T-4663 used `frob pool
+    snapshot` this sprint) and become `frob check pool|profile <op>` subverbs;
+    `debt`/`deprecated` are read-only listings and move to T-4695 under
+    `explore`; `parse` is a tool-output adapter and moves to T-4698's verdict
+    table (measured: zero consumers outside its own code, test and doc page).
+  - OWNER DECISION on `exports`: the check half folds into `frob check --only
+    exports`; the generate half moves under `scaffold`.
+  - T-4689 lands BEFORE the hooks story's telemetry-logging leaf
+    (T-draft-706ae266, scope `.claude/hooks/*`); both edit
+    .claude/hooks/tool-call-telemetry.py.
