@@ -2,7 +2,7 @@
 id: T-4254
 title: 'DRIFT/COV: symbols sharing one frob:doc anchor are one contract -- a ticket
   touching one should reopen review of all'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-07'
