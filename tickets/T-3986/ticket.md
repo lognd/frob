@@ -1,7 +1,7 @@
 ---
 id: T-3986
 title: 'POL000: policy.pattern matching zero nodes is a config error'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-09-06'
