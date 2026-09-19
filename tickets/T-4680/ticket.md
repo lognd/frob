@@ -54,6 +54,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 6592
   new_length: 6916
+- mode: append
+  reason: 'BUG002 front door (T-2393): 2026-09-19: DECISION ticket whose sole deliverable
+    is an owner decision recorded in the body. Owner recorded D-M6 (the monofile is
+    split module by module by hand; no split tool). Implementation belongs to the
+    module-system story, not here. No code, model or doc file changes under this id.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6916
+  new_length: 7240
 evidence:
 - cmd:git grep -n 'DECISION RECORDED -- owner, 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md
   exit=0 sha256=8e541b8832e8
@@ -69,8 +78,8 @@ acceptance:
   evidence:
   - cmd:git grep -n 'DECISION RECORDED -- owner
   - 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md exit=0 sha256=8e541b8832e8
-  - cmd:git grep -n 'DECISION RECORDED -- owner, 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md
-    exit=0 sha256=ed35a5e91432
+  - cmd:git grep -n 'DECISION RECORDED -- owner
+  - 2026-09-19 (D-M6)' -- tickets/T-4680/ticket.md exit=0 sha256=ed35a5e91432
 threat: null
 component: strata
 anchor: false
@@ -179,6 +188,8 @@ splits the lock per module.
 Closing with no behavior change: the deliverable of a DECISION ticket is the
 decision, now recorded above. The hand split itself belongs to the module-system
 story being filed by the other planner. No files change under this id.
+
+frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M6 (the monofile is split module by module by hand; no split tool). Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
 
 frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner recorded D-M6 (the monofile is split module by module by hand; no split tool). Implementation belongs to the module-system story, not here. No code, model or doc file changes under this id."
 
