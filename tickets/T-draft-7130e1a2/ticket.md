@@ -6,7 +6,7 @@ kind: docs
 origin: agent
 created: '2026-09-19'
 priority: medium
-parent: null
+parent: T-4421
 tier: ticket
 sprint: null
 runs_last: false
@@ -21,6 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4421
+  reason: child of T-4421 docarch debloat split
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to tests/test_ticket_leases.py, tests/test_hook_frob_suggest.py,
