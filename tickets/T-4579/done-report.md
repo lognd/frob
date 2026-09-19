@@ -1,75 +1,63 @@
 ## Done report
 
-T-4512 land repair -- done report
+T-4579: frob-exports residue -- Unity/C# public symbols not exported
 
 WHAT changed:
-1. Merged dev into t-4512 (commit 661272cbb). Auto-merge succeeded cleanly
-   for .frob-release.json, CHANGELOG.md, pyproject.toml, uv.lock,
-   docs/modules/tickets-data-storage.md, src/frob/tickets/_leases.py,
-   src/frob/tickets/_store.py, tests/test_ticket_leases.py,
-   tests/unit/test_ticket_store.py, tickets/T-3899/ticket.md,
-   tickets/T-4555/* (no conflict markers found -- verified with grep).
-   Three rename/rename conflicts on stale draft-ticket renumbers
-   (tickets/T-draft-7b4d432f, T-draft-998fc2ae, T-draft-fb5037fd, each
-   renamed to one id on this branch -- T-4568/4569/4570 -- and a
-   different id on dev -- T-4571/4572/4573): resolved by keeping dev's
-   ids (T-4571, T-4572, T-4573) and removing this branch's stale
-   T-4568/T-4569/T-4570 directories and the original draft dirs.
-   Verified with `git grep` that no file outside tickets/ referenced the
-   dropped ids, and that every tickets/T-*/ticket.md id line matches its
-   directory name.
+- src/frob/__init__.py: import `UnityEditorStatus` from `frob.doctor` and
+  add it to `__all__`.
+- src/frob/lang/__init__.py: import `UnityProjectDetectError`,
+  `UnityProjectInfo`, `detect_unity_project` from
+  `frob.lang._project_detect` (a module that was not wired into this
+  package's `__init__.py` at all) and add all three to `__all__`.
+- src/frob/testing/__init__.py: import `write_stack_dump` from
+  `frob.testing._stackdump` (module already partly imported, this name
+  was missing) and `parse_csharp` from `frob.testing._collect_csharp`
+  (not previously imported at all); add both to `__all__`.
 
-2. Fixed the two SELFAUDIT001/SYS111 findings that refused the land:
-   docs/design/registry/capability-via-ratchet.lock.json's
-   entries["stratamod::fs.read"].accepted_count raised 11 -> 12 and
-   entries["stratamod::fs.write"].accepted_count raised 6 -> 7, each
-   with a reason naming src/frob/strata/_unity_asmdef.py and T-4512 (the
-   ticket's own via-list growth: reading and writing .asmdef JSON as
-   part of the assembly-boundary parsing). Commit e0670cffa.
-   (Note: the same lock file also carries two flat legacy top-level keys
-   "stratamod::fs.read"/"stratamod::fs.write" outside "entries" with
-   stale counts (11/4) -- these are dead/unused by the current checker,
-   which reads CAPABILITY_RATCHET_LOCK_REL's "entries" dict per
-   src/frob/strata/_effects.py; left untouched, out of this repair's
-   scope.)
+WHY:
+CI's dev run 35223985836 failed (both ubuntu and windows) on
+tests/unit/test_exports.py::TestFrobExportsPolicyResidue::
+test_all_nine_packages_report_zero_missing_symbols with:
 
-3. Added docs/design/registry/capability-via-ratchet.lock.json to
-   T-4512's scope via `frob ticket scope T-4512 --add ... --reason ...`
-   -- the verb succeeded on this done ticket (no refusal), recorded in
-   scope_changes with actor logan / 2026-09-19.
+  AssertionError: frob-exports still reports missing symbols:
+  {'src/frob': ['doctor.UnityEditorStatus'],
+   'src/frob/lang': ['lang._project_detect.detect_unity_project',
+                      'lang._project_detect.UnityProjectDetectError',
+                      'lang._project_detect.UnityProjectInfo'],
+   'src/frob/testing': ['testing._collect_csharp.parse_csharp',
+                         'testing._stackdump.write_stack_dump']}
 
-WHY: the land was refused by two SELFAUDIT001/SYS111 findings reporting
-the ticket's via-list additions grew stratamod fs.read to 12 sites and
-fs.write to 7, above the committed lock ceilings of 11 and 6. The fix is
-exactly the documented remedy: raise accepted_count by the measured
-growth with a non-empty reason naming the new site's owning file and
-ticket.
+This test (T-0871's residue policy) asserts every public symbol in a
+covered package's modules is textually referenced in that package's own
+`__init__.py` -- the same substring check `frob check`'s `frob-exports`
+tool uses. All five symbols are recent Unity/C# landings (T-4501,
+T-4515, T-4517) that were never wired into their package's `__init__.py`
+import + `__all__` entry.
 
-Verification: `frob check --only sys --files src/frob/strata/_unity_asmdef.py
---base dev` (98s). No SELFAUDIT001/SYS111 finding present in the output
-(grepped for "SELFAUDIT001", "via-list", "ratchet ceiling" -- only an
-unrelated DOCARCH001 hit on a test docstring that happens to mention
-"selfaudit001" in its own name, pre-existing and outside this ticket's
-scope). Tool summary: gate:DOCARCH pass, gate:PROFILE pass, gate:WAIVE
-pass; gate:DRIFT and gate:DSL show pre-existing, already-waived findings
-unrelated to _unity_asmdef.py (repo-wide "sys" stage, not attributable
-to this ticket's files).
+How the acceptance criterion is proven:
+[1] bound(['tests/unit/test_exports.py::TestFrobExportsPolicyResidue::
+    test_all_nine_packages_report_zero_missing_symbols']):
+    Verified locally before (failing, same 5-symbol offenders dict as
+    CI) and after (passing) the fix:
+    `PYTHONPATH=$(pwd)/src python -m pytest tests/unit/test_exports.py
+    -p no:cacheprovider -q` -> SUITE-RESULT: exitstatus=0 collected=16
+    failed=0. Also ran
+    `python -c "import frob, frob.lang, frob.testing"` to confirm no
+    import cycle or shadowing was introduced.
 
-Acceptance criteria: unchanged from the original T-4512 done state (the
-land-repair added no new behavior, only fixed the ratchet ceiling and
-merge conflicts); the ticket's four existing evidence node ids in
-tickets/T-4512/ticket.md (test_two_asmdefs_two_distinct_nodes,
-test_reference_by_name_resolves_to_edge,
-test_reference_by_guid_resolves_to_edge,
-test_default_assembly_node_always_present) still apply -- no re-run
-needed since src/frob/strata/_unity_asmdef.py's logic was not touched by
-this repair, only the ratchet lock file.
+`frob check --only gates --files src/frob/__init__.py --files
+src/frob/lang/__init__.py --files src/frob/testing/__init__.py --files
+tests/unit/test_exports.py --base dev` was run in the worktree; no
+findings reference any of the four files -- every FAIL-state gate line
+in that run's summary belongs to other files across the shared root
+under concurrent fleet load.
 
-Commit shas:
-  661272cbb  Merge branch 'dev' into t-4512
-  e0670cffa  fix(strata): raise capability-via ratchet ceilings for T-4512 asmdef fs sites
+Commits (branch t-draft-4dd01faa, base dev):
+- e90940891 fix(exports): re-export Unity/C# public symbols from package __init__.py
+- c33f508a3 chore(tickets): accept T-4579
+- aff319738 chore(tickets): record evidence for T-4579
 
-HEAD: e0670cffa
+Tests skipped: none. Scope refusals: none. Waivers added: none.
 
 ### Changed
 ```
@@ -78,8 +66,9 @@ HEAD: e0670cffa
  .claude/hooks/frob-timeout-guard.py                | 127 +++--
  .frob-release.json                                 |   2 +-
  .github/workflows/ci.yml                           | 107 +++-
- CHANGELOG.md                                       |  42 ++
+ CHANGELOG.md                                       |  41 ++
  changelog.d/T-2965.md                              |   2 +
+ changelog.d/T-3020.md                              |   2 +
  changelog.d/T-3232.md                              |   2 +
  changelog.d/T-3612.md                              |   2 +
  changelog.d/T-3613.md                              |   2 +
@@ -99,6 +88,7 @@ HEAD: e0670cffa
  changelog.d/T-4502.md                              |   2 +
  changelog.d/T-4510.md                              |   2 +
  changelog.d/T-4511.md                              |   2 +
+ changelog.d/T-4512.md                              |   2 +
  changelog.d/T-4514.md                              |   2 +
  changelog.d/T-4517.md                              |   2 +
  changelog.d/T-4520.md                              |   2 +
@@ -120,6 +110,7 @@ HEAD: e0670cffa
  changelog.d/T-4563.md                              |   2 +
  design/frob.strata                                 | 118 +++--
  docs/commands/check.md                             |  15 +
+ docs/commands/narrative.md                         |   8 +
  docs/commands/scaffold.md                          |  15 +
  docs/commands/ticket.md                            |  72 +++
  docs/commands/xref.md                              |   4 +-
@@ -138,7 +129,8 @@ HEAD: e0670cffa
  docs/strata/surface.md                             |  40 ++
  frob.lock                                          |  20 +-
  pyproject.toml                                     |  22 +-
- src/frob/__main__.py                               |  16 +-
+ src/frob/__init__.py                               |   2 +
+ src/frob/__main__.py                               |  26 +-
  src/frob/_cli_parsers/_check.py                    |  16 +
  src/frob/_cli_parsers/_design.py                   |  24 +-
  src/frob/_cli_parsers/_explore.py                  | 102 ++--
@@ -148,7 +140,7 @@ HEAD: e0670cffa
  src/frob/_cli_parsers/_ticket/__init__.py          |  55 +-
  .../_cli_parsers/_ticket/_closeout_evidence.py     |  21 +
  src/frob/_cli_parsers/_ticket/_metadata.py         |  53 +-
- src/frob/_cli_parsers/_ticket/_progress.py         | 144 ++++--
+ src/frob/_cli_parsers/_ticket/_progress.py         | 144 +++--
  src/frob/app/_config_external.py                   |  19 +
  src/frob/app/check_runner.py                       |  23 +-
  src/frob/app/config.py                             |  92 +++-
@@ -156,7 +148,7 @@ HEAD: e0670cffa
  src/frob/app/ticket_runner/_land_cmd.py            | 480 ++++++++++++++++-
  src/frob/app/ticket_runner/_lifecycle.py           |  79 ++-
  src/frob/app/ticket_runner/_mutate.py              |  39 +-
- src/frob/app/ticket_runner/_rapid_sweep.py         | 568 ++++++++++++++++++++-
+ src/frob/app/ticket_runner/_rapid_sweep.py         | 568 +++++++++++++++++++-
  src/frob/app/ticket_runner/_verify.py              | 235 +++++++--
  src/frob/check/__init__.py                         | 244 +++++----
  src/frob/check/_python.py                          | 136 +++--
@@ -167,16 +159,18 @@ HEAD: e0670cffa
  src/frob/excludes.py                               |  83 ++-
  src/frob/gates/__init__.py                         | 213 ++++----
  src/frob/gates/_models.py                          |   7 +
+ src/frob/gates/_narrative_blocks.py                |  28 +-
  src/frob/gates/_suppress.py                        |  46 +-
  src/frob/graph/affects.py                          |  53 ++
  src/frob/graph/dsl.py                              |  69 ++-
+ src/frob/lang/__init__.py                          |  11 +
  src/frob/lang/_extract.py                          |  13 +
  src/frob/lang/_project_detect.py                   | 147 ++++++
  src/frob/lang/_support.py                          |  23 +-
  src/frob/lang/_walk_csharp.py                      | 111 +++-
  src/frob/strata/_effects.py                        | 409 +++++++++++++--
  src/frob/strata/_unity_asmdef.py                   | 412 +++++++++++++++
- src/frob/testing/__init__.py                       |   2 +
+ src/frob/testing/__init__.py                       |   9 +
  src/frob/testing/_collect.py                       |  21 +-
  src/frob/testing/_collect_csharp.py                | 327 ++++++++++++
  src/frob/testing/_stackdump.py                     |  68 ++-
@@ -184,7 +178,7 @@ HEAD: e0670cffa
  src/frob/tickets/_land.py                          | 122 ++++-
  src/frob/tickets/_land_git_ops.py                  | 149 ++++--
  src/frob/tickets/_land_queue.py                    | 151 +++++-
- src/frob/tickets/_leases.py                        | 518 +++++++++++++------
+ src/frob/tickets/_leases.py                        | 518 +++++++++++++-----
  src/frob/tickets/_models.py                        |  42 +-
  src/frob/tickets/_setters.py                       | 113 ++--
  src/frob/tickets/_store.py                         |  42 +-
@@ -249,16 +243,17 @@ HEAD: e0670cffa
  tests/test_hook_frob_timeout_guard.py              |  54 ++
  tests/test_hook_root_write_guard.py                |  89 ++++
  tests/test_lang.py                                 |  90 ++++
+ tests/test_narrative_blocks.py                     |  27 +
  tests/test_testing.py                              | 106 +++-
- tests/test_ticket_leases.py                        | 313 ++++++++----
+ tests/test_ticket_leases.py                        | 313 +++++++----
  tests/test_tickets_migration.py                    | 121 +++--
  tests/test_tickets_parent.py                       | 208 ++++++++
  tests/unit/graph/test_dsl.py                       | 164 +++++-
- tests/unit/rapid_sweep_suite/test_window.py        | 457 +++++++++++++++++
+ tests/unit/rapid_sweep_suite/test_window.py        | 457 ++++++++++++++++
  tests/unit/strata/test_effects.py                  |  44 ++
- tests/unit/strata/test_selfconform.py              | 202 +++++++-
+ tests/unit/strata/test_selfconform.py              | 202 ++++++-
  tests/unit/strata/test_unity_asmdef.py             | 160 ++++++
- ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 +++
+ ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |  57 ++
  tests/unit/test_app_runners_batch7.py              | 128 +++--
  tests/unit/test_check_scoped_files.py              | 566 ++++++++++++++++++++
  tests/unit/test_ci_self_gate_unscoped.py           | 189 +++++++
@@ -266,13 +261,13 @@ HEAD: e0670cffa
  tests/unit/test_cli_single_child_groups.py         | 106 ++++
  tests/unit/test_dev_branch_workflow.py             |  50 ++
  tests/unit/test_docs_module.py                     |  35 +-
- tests/unit/test_doctor.py                          | 115 +++++
+ tests/unit/test_doctor.py                          | 115 ++++
  tests/unit/test_done_report_check_scope.py         | 177 +++++++
  tests/unit/test_land_default_queue.py              | 128 +++++
  tests/unit/test_land_in_progress_window.py         | 227 ++++++++
  tests/unit/test_land_leaked_tickets_lease_hoist.py |  95 ++++
  tests/unit/test_land_merge_conflict_drop.py        | 198 +++++++
- tests/unit/test_land_queue.py                      | 114 +++++
+ tests/unit/test_land_queue.py                      | 114 ++++
  tests/unit/test_land_stackdump.py                  | 321 ++++++++++++
  tests/unit/test_lang_project_detect.py             | 108 ++++
  tests/unit/test_leases_staleness_perf.py           | 310 +++++++++++
@@ -303,7 +298,8 @@ HEAD: e0670cffa
  tickets/T-2965/done-report.md                      | 149 ++++++
  tickets/T-2965/ticket.md                           |  41 +-
  tickets/T-2994/ticket.md                           |  16 +-
- tickets/T-3020/ticket.md                           |  41 +-
+ tickets/T-3020/done-report.md                      | 578 +++++++++++++++++++++
+ tickets/T-3020/ticket.md                           |  50 +-
  tickets/T-3022/ticket.md                           |  16 +-
  tickets/T-3032/ticket.md                           |  17 +-
  tickets/T-3053/ticket.md                           |  16 +-
@@ -383,6 +379,11 @@ HEAD: e0670cffa
  tickets/T-4010/ticket.md                           |  17 +-
  tickets/T-4011/ticket.md                           |  16 +-
  tickets/T-4029/ticket.md                           |  16 +-
+ tickets/T-4185/ticket.md                           |   7 +-
+ tickets/T-4214/ticket.md                           |  31 +-
+ tickets/T-4230/ticket.md                           |  15 +-
+ tickets/T-4240/ticket.md                           |   2 +-
+ tickets/T-4254/ticket.md                           |  10 +-
  tickets/T-4365/ticket.md                           |   6 +-
  tickets/T-4413/done-report.md                      |  71 +++
  tickets/T-4413/ticket.md                           |  75 ++-
@@ -419,18 +420,18 @@ HEAD: e0670cffa
  tickets/T-4501/ticket.md                           |  81 +++
  tickets/T-4502/done-report.md                      |  19 +
  tickets/T-4502/ticket.md                           |  73 +++
- tickets/T-4503/ticket.md                           |  38 ++
+ tickets/T-4503/ticket.md                           |  74 +++
  tickets/T-4504/ticket.md                           |  69 +++
  tickets/T-4505/ticket.md                           |  38 ++
  tickets/T-4506/ticket.md                           |  40 ++
  tickets/T-4507/ticket.md                           |  37 ++
- tickets/T-4508/ticket.md                           |  98 ++++
+ tickets/T-4508/ticket.md                           | 114 ++++
  tickets/T-4509/ticket.md                           |  47 ++
  tickets/T-4510/done-report.md                      | 149 ++++++
  tickets/T-4510/ticket.md                           |  81 +++
  tickets/T-4511/done-report.md                      |  97 ++++
  tickets/T-4511/ticket.md                           | 103 ++++
- tickets/T-4512/done-report.md                      | 151 ++++++
+ tickets/T-4512/done-report.md                      | 524 +++++++++++++++++++
  tickets/T-4512/ticket.md                           | 102 ++++
  tickets/T-4513/ticket.md                           |  36 ++
  tickets/T-4514/done-report.md                      | 179 +++++++
@@ -444,7 +445,7 @@ HEAD: e0670cffa
  tickets/T-4519/ticket.md                           |  67 +++
  tickets/T-4520/done-report.md                      | 163 ++++++
  tickets/T-4520/ticket.md                           |  58 +++
- tickets/T-4521/done-report.md                      | 228 +++++++++
+ tickets/T-4521/done-report.md                      | 228 ++++++++
  tickets/T-4521/ticket.md                           | 125 +++++
  tickets/T-4522/done-report.md                      |  99 ++++
  tickets/T-4522/ticket.md                           |  49 ++
@@ -470,7 +471,7 @@ HEAD: e0670cffa
  tickets/T-4540/ticket.md                           |  49 ++
  tickets/T-4541/ticket.md                           | 112 ++++
  tickets/T-4542/ticket.md                           |  55 ++
- tickets/T-4543/done-report.md                      | 115 +++++
+ tickets/T-4543/done-report.md                      | 115 ++++
  tickets/T-4543/ticket.md                           |  79 +++
  tickets/T-4546/ticket.md                           |  38 ++
  tickets/T-4547/done-report.md                      | 137 +++++
@@ -478,13 +479,13 @@ HEAD: e0670cffa
  tickets/T-4548/done-report.md                      |  59 +++
  tickets/T-4548/ticket.md                           |  50 ++
  tickets/T-4549/ticket.md                           |  53 ++
- tickets/T-4550/done-report.md                      | 545 ++++++++++++++++++++
+ tickets/T-4550/done-report.md                      | 545 +++++++++++++++++++
  tickets/T-4550/ticket.md                           |  59 +++
  tickets/T-4552/done-report.md                      | 146 ++++++
  tickets/T-4552/ticket.md                           | 100 ++++
  tickets/T-4553/done-report.md                      | 501 ++++++++++++++++++
  tickets/T-4553/ticket.md                           |  55 ++
- tickets/T-4554/done-report.md                      | 541 ++++++++++++++++++++
+ tickets/T-4554/done-report.md                      | 541 +++++++++++++++++++
  tickets/T-4554/ticket.md                           |  63 +++
  tickets/T-4555/done-report.md                      | 556 ++++++++++++++++++++
  tickets/T-4555/ticket.md                           |  78 +++
@@ -501,24 +502,21 @@ HEAD: e0670cffa
  tickets/T-4571/ticket.md                           |  43 ++
  tickets/T-4572/ticket.md                           |  43 ++
  tickets/T-4573/ticket.md                           |  27 +
- tickets/T-4579/ticket.md                 |  65 +++
+ tickets/T-4574/ticket.md                           |  29 ++
+ tickets/T-4575/ticket.md                           |  38 ++
+ tickets/T-4579/ticket.md                 |  68 +++
+ tickets/T-4580/ticket.md                 |  46 ++
  tickets/T-draft-a06debc6/ticket.md                 |  41 ++
  tickets/T-4581/ticket.md                 |  47 ++
  tickets/T-draft-be56039a/ticket.md                 |  49 ++
+ tickets/T-draft-dfc98d31/ticket.md                 |  66 +++
  uv.lock                                            |   2 +-
- 433 files changed, 27328 insertions(+), 1614 deletions(-)
+ 450 files changed, 28655 insertions(+), 1642 deletions(-)
 ```
 
 ### Evidence
-- `tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes::test_two_asmdefs_two_distinct_nodes` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes::test_reference_by_name_resolves_to_edge` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes::test_reference_by_guid_resolves_to_edge` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes::test_default_assembly_node_always_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
+- tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
-
-### Acceptance amendments
-- [5] remove: removed 'GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor assemblies), WHEN strata elaborates the project, THEN it creates two distinct component nodes, one per asmdef.' (reason: duplicate criterion from a LandInProgress retry loop; logan, 2026-09-16)
-- [4] remove: removed 'GIVEN a Unity project with two .asmdef files (e.g. Runtime and Editor assemblies), WHEN strata elaborates the project, THEN it creates two distinct component nodes, one per asmdef.' (reason: duplicate criterion from a LandInProgress retry loop; logan, 2026-09-16)

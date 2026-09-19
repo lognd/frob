@@ -1,5 +1,5 @@
 ---
-id: T-draft-50806633
+id: T-4580
 title: wire COV009 entrypoint_coverage_violations into the gate pipeline (_ProcessJob
   registry in gates/__init__.py, _KNOWN_GATE_RULES in _waive.py) and the land pre-sweep
 state: queued

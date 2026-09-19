@@ -80,6 +80,14 @@ from frob.lang._nodes import (
     resolve_local_import,
 )
 
+# frob:ticket T-4579
+# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
+from frob.lang._project_detect import (
+    UnityProjectDetectError,
+    UnityProjectInfo,
+    detect_unity_project,
+)
+
 # frob:ticket T-3443
 # frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.lang._support import (
@@ -1034,11 +1042,9 @@ _parse_file_memoized: Callable[..., Result[ParsedFile, LangError]] | None = None
 # invariant spec: [INV-015](invariants/INV-015.md)
 # frob:tests tests/test_lang.py::TestErrors.test_syntax_error_yields_partial_symbols
 # frob:tests \
-# tests/test_lang.py::TestNativeIndependentParsing.test_corpus_parses_identically_with_\
-# and_without_natives
+# tests/test_lang.py::TestNativeIndependentParsing.test_corpus_parses_identically_with_and_without_natives  # noqa: E501
 # frob:tests \
-# tests/test_lang.py::TestKnownGrammarGaps.test_anonymous_bitfield_partial_parse_is_nat\
-# ive_independent
+# tests/test_lang.py::TestKnownGrammarGaps.test_anonymous_bitfield_partial_parse_is_native_independent  # noqa: E501
 def parse_file(
     path: Path, *, expect_heterogeneous: bool = False
 ) -> Result[ParsedFile, LangError]:
@@ -1252,4 +1258,7 @@ __all__ = [
     "symbol_tree",
     "TreeNode",
     "unfaceted_packages",
+    "UnityProjectDetectError",
+    "UnityProjectInfo",
+    "detect_unity_project",
 ]

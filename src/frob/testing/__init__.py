@@ -22,6 +22,10 @@ from frob.testing._collect import (
     python_collection_failure_detail,
     python_collection_missing_natives,
 )
+
+# frob:ticket T-4579
+# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
+from frob.testing._collect_csharp import parse_csharp
 from frob.testing._coverage_cache import (
     fill_from_cache,
     load_file_cache,
@@ -81,6 +85,7 @@ from frob.testing._stackdump import (
     STACKDUMP_ENV,
     dump_all_thread_stacks,
     install_stackdump_handler,
+    write_stack_dump,
 )
 
 __all__ = [
@@ -126,6 +131,7 @@ __all__ = [
     "load_runners",
     "load_stability",
     "native_coverage_refresh",
+    "parse_csharp",
     "python_collection_failure_detail",
     "python_collection_missing_natives",
     "python_coverage_targets",
@@ -141,4 +147,5 @@ __all__ = [
     "track_python_stability",
     "tree_digest",
     "update_file_cache",
+    "write_stack_dump",
 ]

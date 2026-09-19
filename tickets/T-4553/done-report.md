@@ -485,8 +485,8 @@ Filed: none -- no out-of-scope work discovered.
  tickets/T-4561/ticket.md                           |  38 ++
  tickets/T-4562/ticket.md                           |  35 ++
  tickets/T-4563/ticket.md                           |  42 ++
- tickets/T-draft-4dd01faa/ticket.md                 |  58 +++
- tickets/T-draft-a41256ad/ticket.md                 |  41 ++
+ tickets/T-4579/ticket.md                 |  58 +++
+ tickets/T-4581/ticket.md                 |  41 ++
  uv.lock                                            |   2 +-
  391 files changed, 22523 insertions(+), 1551 deletions(-)
 ```

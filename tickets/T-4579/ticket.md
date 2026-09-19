@@ -1,8 +1,8 @@
 ---
-id: T-draft-4dd01faa
+id: T-4579
 title: 'frob-exports residue: Unity/C# public symbols not exported from doctor/lang/testing
   __init__.py'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-18'
@@ -49,6 +49,8 @@ scope_changes:
   reason: evidence test
   actor: logan
   at: '2026-09-18'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 acceptance:
 - text: 'bound([''tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols'']):
@@ -56,7 +58,8 @@ acceptance:
     and testing._collect_csharp.parse_csharp/testing._stackdump.write_stack_dump are
     all textually referenced in their package''s __init__.py, and frob-exports reports
     zero missing symbols for all nine covered packages'
-  evidence: []
+  evidence:
+  - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 threat: null
 component: null
 anchor: false
