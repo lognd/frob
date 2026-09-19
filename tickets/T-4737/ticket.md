@@ -23,6 +23,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'coordinator supplied T-4663''s actual measurement (why-T-4663.txt): 27
+    gates->leases edges of 30 total, 1401 edges checked, ratcheted in frob-ratchet.lock.json;
+    reconcile against the planner''s different-denominator git grep count'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1307
+  new_length: 3469
 designated_repro_test: null
 acceptance:
 - text: Given the layering contract declares gates independent of ledger/leases/land,
@@ -69,3 +78,36 @@ exists, record the real edge count in the done report, and ratchet THAT number -
 not a number copied from this body.
 
 ARCH104 is the ratchet: set at the measured count, burned to zero by this leaf.
+
+
+MEASUREMENT RESOLVED (planner, 2026-09-19, superseding the "unverified 27" note above).
+
+The 27 IS measured. Agent E wired the layering checker in worktree t-4663 and ran it against
+dev + t-4657 with the kernel contract landed in frob.toml: 1401 edges checked, 30 violations,
+baselined into frob-ratchet.lock.json via `frob pool snapshot ARCH104` (ratcheted, NOT waived).
+Evidence: scratchpad/why-T-4663.txt.
+
+Breakdown of the 30:
+  27  src/frob/gates/*.py -> src/frob/tickets/_leases.py   <- THIS TICKET's burn-down
+      files: __init__.py, _debt_deprecated.py, _design_invariants.py, _docptr.py,
+      _empty_diff_close.py, _fix_engine.py, _fix_engine_scope.py, _fix_engine_sync.py,
+      _fix_engine_tier_b.py, _inv.py, _milestone.py, _negexist.py, _prework.py, _sys.py,
+      _tickets_gate.py, _todo_fmt.py, _waive.py, _waive_audit_watermark.py,
+      _waive_comments.py, _waive_lease.py, _wire.py (21 files), PLUS 3 fail-closed
+      dynamic-import flags on _docblocks_shared.py / _flag_coverage.py / _refs.py, which
+      count toward the 27 file-level findings but are the dynamic-import channel rather
+      than a resolved static edge -- treat those 3 separately when burning down.
+   3  src/frob/app/ticket_runner/_rapid_sweep.py -> src/frob/app/*  (land importing up into
+      app) -- T-4660's subject matter, NOT this ticket's.
+   1  src/frob/lang/_support.py -> src/frob/gates/_docblocks.py (+ a _walk_strata.py dynamic
+      flag) -- lang/gates coupling, outside the kernel chain proper; left in the same
+      ratchet pool.
+
+Reconciliation with the planner's earlier count: 80 import LINES matching frob.tickets in
+src/frob/gates, and 5 files matching a narrow `(from|import).*_leases` regex, is a DIFFERENT
+DENOMINATOR -- raw import statements found by git grep, versus layering EDGES the checker
+resolves (including dynamic-import channels and re-exports the regex misses). Both numbers
+are correct about different things. The checker's 27 is the number this ticket burns down.
+
+FIRST STEP UNCHANGED: re-measure with the LANDED checker before starting, and ratchet that
+number. Do not trust either figure in this body once T-4663 is on dev.
