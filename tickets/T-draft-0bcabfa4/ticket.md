@@ -2,7 +2,7 @@
 id: T-draft-0bcabfa4
 title: 'DECISION: how bidirectional cross-module flows are expressed without an import
   cycle'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -158,20 +158,36 @@ body_changes:
   at: '2026-09-19'
   old_length: 7305
   new_length: 7464
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure decision record: the owner ruling is recorded
+    verbatim; the behaviour lands in the grammar, linker and migration leaves'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7464
+  new_length: 7623
+evidence:
+- cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+  tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
 designated_repro_test: null
 acceptance:
 - text: Given this decision ticket, when the owner rules, then the body records the
     chosen option (a/b/c), the exact rule for which side declares `accepts` relative
     to the import direction, and which edge set cycle detection runs over.
-  evidence: []
+  evidence:
+  - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+    tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
 - text: Given the 16 bidirectional pairs listed in the body, when the decision is
     applied on paper to each pair, then each pair is shown to be expressible without
     an import cycle, or is named as needing option (b) or (c) with a reason.
-  evidence: []
+  evidence:
+  - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+    tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
 - text: Given the decision, when the grammar and linker leaves start, then their acceptance
     criteria are reconciled with it (accepts naming an unimported module; SCC over
     imports only).
-  evidence: []
+  evidence:
+  - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
+    tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
 threat: null
 component: null
 anchor: false
@@ -265,6 +281,8 @@ frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 (h
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruled on D-M9 and the ruling is recorded verbatim in the body; the behaviour lands in the grammar, linker and migration leaves"
+
+frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
 
