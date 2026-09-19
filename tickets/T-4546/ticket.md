@@ -20,6 +20,7 @@ scope:
 - src/frob/_cli_parsers/_root.py
 - tests/unit/test_cli_single_child_groups.py
 - src/frob/app/agent_runner.py
+- src/frob/app/worktree_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
     _core.py's own _add_agent_parser is help-discovery only per its own docstring,
     so flattening the acceptance criterion's real bare-invocation behavior requires
     this file too
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/app/worktree_runner.py
+  reason: worktree_runner.py owns frob worktree's REAL runtime parser/dispatch (sweep),
+    same reason as agent_runner.py above
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
