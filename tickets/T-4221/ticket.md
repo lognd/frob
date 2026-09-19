@@ -88,6 +88,16 @@ scope_changes:
     instead (added above)
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/gates_suite/test_invariant.py::TestTimeStableGate::test_fails_once_clock_advances_past_horizon
+- tests/gates_suite/test_invariant.py::TestTimeStableGate::test_stays_quiet_when_still_passing_at_horizon
+- tests/gates_suite/test_invariant.py::TestTimeStableGate::test_baseline_failure_is_skipped_not_double_reported
+- tests/gates_suite/test_invariant.py::TestTimeStableGate::test_no_time_stable_anchor_is_silent
+- tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs::test_valid_kind_and_horizon_always_parses_together
+- tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs::test_kind_with_no_horizon_is_malformed
+- tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs::test_horizon_with_no_kind_is_malformed
+- tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs::test_unknown_kind_is_malformed
+- tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs::test_malformed_horizon_is_rejected
 designated_repro_test: null
 threat: null
 component: null
