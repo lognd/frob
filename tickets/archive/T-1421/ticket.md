@@ -10,12 +10,26 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_mutation_evidence.py
 - tests/test_gates_mutation_evidence.py
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve graph-exclusion mechanism detail trimmed from _bug_repro.py
+    docstring for the 12-line cap'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3934
+  new_length: 4650
 evidence:
 - tests/test_gates_mutation_evidence.py::TestBugRepro::test_reconstructed_uncalled_guard_passes_at_both_is_refused
 - tests/test_gates_mutation_evidence.py::TestBugRepro::test_reconstructed_wired_guard_fails_at_parent_is_permitted
@@ -59,6 +73,9 @@ acceptance:
   - tests/test_gates_mutation_evidence.py::TestBugReproViolations::test_non_bug_kind_never_checked
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 A bug ticket must prove the defect it describes no longer reproduces -- not merely that new code exists and is tested.
 
@@ -85,3 +102,15 @@ Not every bug ticket can satisfy this honestly, and the design must say what hap
 Reuse rather than rebuild. frob already has the machinery: T-0754's ClaimDivergence re-evaluates captured claims post-merge, T-1410 runs a gate and filters findings by glob, and the mutation-evidence path already checks out and perturbs code. This should compose with those, not duplicate them -- the repo's no-duplication rule applies with force here.
 
 WHAT SUCCESS LOOKS LIKE. Reconstruct any one of the five tickets above as a fixture: a ticket whose bound evidence passes at BOTH the parent and the fix commit must be refused. A ticket whose evidence fails at the parent and passes at the fix must be permitted. Both directions need a regression test, or this gate is exactly the kind of unverified guard it exists to prevent.
+
+
+T-4709 follow-up (further condensation): _BUG002_WAIVER_RE's docstring in
+src/frob/gates/_bug_repro.py originally also spelled out *why* the ticket.body
+scan can't be a frob.graph WAIVE edge instead: frob.graph.build_graph excludes
+tickets.md from both its doc-file and source-file walks (frob.graph._collect_
+files's is_ledger exclusion) specifically so a Done report that quotes
+frob:waive/frob:describes verbatim does not resurrect a phantom graph edge --
+so a waiver comment physically placed in tickets.md can never reach
+_waive.py's _match_waiver/_apply_waivers spine that way. Kept in the ticket
+for the reader who needs the graph-exclusion mechanism, not just the
+consequence (scan ticket.body directly).
