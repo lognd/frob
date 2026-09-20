@@ -1,5 +1,5 @@
 ---
-id: T-draft-485649f8
+id: T-4997
 title: 'SYS design-quality rule: per-module audit findings reach the gate as findings,
   not as a report nobody reads'
 state: queued
