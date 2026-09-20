@@ -8,7 +8,7 @@ created: '2026-09-16'
 priority: medium
 parent: null
 tier: epic
-sprint: v0.533.0
+sprint: v0.534.0
 runs_last: false
 milestone: v0.533.0
 runs_last_parallel_safe: false
@@ -26,6 +26,12 @@ triage_changes:
   reason: epic for C#/Unity sprint v0.533.0 per owner directive
   actor: logan
   at: '2026-09-16'
+- field: sprint
+  old_value: v0.533.0
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 threat: null
 component: null
