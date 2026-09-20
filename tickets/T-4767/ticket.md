@@ -20,7 +20,6 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - src/frob/app/ticket_runner/_query.py
-- src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_waive_audit.py
 - src/frob/app/__init__.py
@@ -43,6 +42,11 @@ scope_changes:
 - op: remove
   glob: src/frob/app/ticket_runner/_new.py
   reason: leased by in-progress T-4805, deferred per BRIEF.md concurrency rule
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: leased by in-progress T-4660, deferred per BRIEF.md concurrency rule
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
