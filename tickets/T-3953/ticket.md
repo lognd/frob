@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: high
 parent: T-3942
 tier: ticket
-sprint: null
+sprint: v0.533.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -26,6 +26,13 @@ scope_changes:
   reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-4650
   actor: logan
   at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.533.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: given a function with an unlocked read of a value followed by a write derived
