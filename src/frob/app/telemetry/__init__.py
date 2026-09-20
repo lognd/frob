@@ -170,6 +170,7 @@ def estimate_tokens(text: str) -> int:
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:tests tests/test_telemetry.py::test_record_cli_event_shape
+# frob:tests tests/unit/test_telemetry_verb_recording.py::test_record_cli_event_carries_verb_and_subverb  # noqa: E501
 def record_cli_event(
     root: Path,
     *,
@@ -177,8 +178,21 @@ def record_cli_event(
     args_head: str,
     duration_ms: float,
     exit_code: int,
+    subverb: str | None = None,
 ) -> None:
     """Append one `kind=\"cli\"` event for a completed `frob` invocation.
+
+    `subcommand` is kept verbatim for back-compat: `_footguns.py` dedups on
+    the `(subcommand, args_head)` key, and `frob.stats._agentic*` already
+    reads it, so its meaning never changes here (T-4689). `verb` mirrors
+    `subcommand` under an unambiguous name, and `subverb` (T-4689) is the
+    group-parser's own sub-dispatch value -- e.g. `ticket_command` for
+    `frob ticket show` -- read directly off the already-parsed `AppConfig`
+    the caller holds, never re-lexed out of `args_head`, so it can never
+    disagree with what argparse actually resolved. `None` means the verb
+    has no sub-dispatch field (a leaf command like `frob dup`), not that
+    parsing failed -- that is the deliberate "record nothing rather than a
+    guess" contract this ticket exists to enforce.
 
     Runs under `frob.logging.quiet.quiet_stdout_logs()` -- `tree_hash`
     spawns `git` via `frob.gitio.run_argv`, which logs at INFO/DEBUG (the
@@ -190,11 +204,19 @@ def record_cli_event(
     """
     from frob.logging.quiet import quiet_stdout_logs
 
+    _log.debug(
+        "telemetry: cli event verb=%r subverb=%r exit=%d",
+        subcommand,
+        subverb,
+        exit_code,
+    )
     with quiet_stdout_logs():
         record = {
             "iso_ts": iso_now(),
             "kind": "cli",
             "subcommand": subcommand,
+            "verb": subcommand,
+            "subverb": subverb,
             "args_head": redact_command(args_head),
             "duration_ms": round(duration_ms, 3),
             "exit": exit_code,
@@ -297,6 +319,7 @@ def _finish_timed_call(
     args_head: str,
     duration_ms: float,
     exit_code: int,
+    subverb: str | None = None,
 ) -> None:
     """`timed_call`'s `finally`-block work: record the CLI event, then run
     footgun detection and print any tips (T-1360). Detection runs BEFORE
@@ -336,6 +359,7 @@ def _finish_timed_call(
         args_head=args_head,
         duration_ms=duration_ms,
         exit_code=exit_code,
+        subverb=subverb,
     )
     # T-1360 delivery requirement: tips must be machine-readable when the
     # invocation itself asked for `--json` -- an agent parsing stdout as
@@ -359,12 +383,30 @@ def _finish_timed_call(
 # docs/modules/stats.md need no update"
 # frob:tests tests/test_telemetry.py::test_timed_call_records_event_and_returns_value  # noqa: E501
 def timed_call(
-    root: Path, *, subcommand: str, args_head: str, fn: Callable[[], T]
+    root: Path,
+    *,
+    subcommand: str,
+    args_head: str,
+    fn: Callable[[], T],
+    subverb: str | None = None,
 ) -> T:
     """Run `fn()`, recording a `record_cli_event` regardless of outcome
     (including a `SystemExit`, which argparse-style CLI handlers raise for
     non-zero exits) -- the caller's exception/SystemExit still propagates
-    unchanged after the event is written.
+    unchanged after the event is written. Every error exit RAISED BY
+    `fn()` itself (a runner's own non-zero `sys.exit`, an uncaught
+    exception) is recorded with `subcommand`/`subverb` (T-4689): both are
+    already resolved from the parsed `AppConfig` before `fn` ever runs, so
+    they are known regardless of how `fn` exits. `argparse`'s OWN
+    `--help`/usage-error exits happen earlier, inside `parser.parse_args`,
+    before `App` is even constructed -- this function is never entered for
+    those, and no verb is recorded for them (out of this ticket's scope;
+    see T-4689's Done report).
+
+    `subverb` (T-4689) is passed straight through to `record_cli_event`
+    unexamined -- this function does no parsing of its own, by design; see
+    `record_cli_event`'s docstring for the "record nothing rather than a
+    guess" contract.
 
     T-1360: also runs footgun detection AFTER recording and prints any tips
     to stderr (`_log.warning`, never stdout -- a `--json` command's own
@@ -390,6 +432,7 @@ def timed_call(
             args_head=args_head,
             duration_ms=duration_ms,
             exit_code=exit_code,
+            subverb=subverb,
         )
 
 

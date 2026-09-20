@@ -277,6 +277,7 @@ def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | Non
 # -- docs/modules/app.md is not in T-1808's declared scope and adding it opened the \
 # same scope-closure cascade those tickets' own waiver text describes; disclosed \
 # deferral, not a convention change"
+# frob:ticket T-4689
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:
@@ -312,14 +313,26 @@ class App:
             )
             sys.exit(1)
         # frob:ticket T-0178
+        # frob:ticket T-4689
         from pathlib import Path
 
         from frob.app.telemetry import timed_call
 
         root = Path(".").resolve()
+        verb = subcommand.value if subcommand else ""
+        # T-4689: every group verb's own sub-dispatch field is named
+        # `<verb>_command` on AppConfig (e.g. `ticket_command`,
+        # `explore_command`) -- read it back by that convention rather
+        # than re-lexing argv, so the recorded subverb can never disagree
+        # with what argparse actually resolved. A leaf verb with no such
+        # field (e.g. `frob dup`) has nothing to read: `getattr` returns
+        # `None`, and `None` is recorded verbatim rather than guessed at.
+        subverb = getattr(self._cfg, f"{verb}_command", None) if verb else None
+        _log.debug("dispatch: verb=%r subverb=%r", verb, subverb)
         timed_call(
             root,
-            subcommand=subcommand.value if subcommand else "",
+            subcommand=verb,
+            subverb=subverb,
             args_head=" ".join(sys.argv[1:])[:512],
             fn=lambda: handler(self._cfg),
         )

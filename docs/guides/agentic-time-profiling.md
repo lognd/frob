@@ -15,6 +15,17 @@ entry, never committed, never networked):
    wired into `App.__call__`, appends one `kind="cli"` record per
    invocation: ISO timestamp, subcommand, a redacted args head, duration
    in ms, exit code, and the repo's current short git sha (`tree_hash`).
+   T-4689 added `verb` (the same value as `subcommand`, kept for
+   back-compat) and `subverb`: for a group verb (`frob ticket show`,
+   `frob explore xref`, ...) `subverb` is the group's own sub-dispatch
+   value, read straight off the already-parsed `AppConfig`'s
+   `<verb>_command` field -- e.g. `ticket_command` -- never re-lexed out
+   of argv, so it can never disagree with what argparse actually
+   resolved. A leaf verb with no such field (`frob dup`) records
+   `subverb=None`. Before this, `subcommand` was the FIRST WORD ONLY, so
+   `frob ticket show` and `frob ticket land` were indistinguishable in
+   this stream -- see T-4689's Done report for the measured 91%-empty
+   figure this fixes.
 2. **Every ticket state transition** (`created`/`started`/`done`) --
    `frob.app.telemetry.record_ticket_event`, called from
    `frob.app.ticket_runner`'s `new`/`start`/`close` handlers, appends one
@@ -188,6 +199,17 @@ text (a `Bash` command can carry secrets, tokens, or file contents inline
 additionally carries `output_tokens_est`, sized the same `len/4` way
 `estimate_tokens` already does.
 
+T-4689 added `verb`/`subverb` to this side too: when a `Bash` call's
+command actually invokes `frob` -- frob (any verb), `uv run frob ...`,
+`.venv/bin/frob ...`, `python -m frob ...`, or `nice -n 10 ... frob ...`,
+including a compound command with several `frob` calls in it (the FIRST
+resolvable one wins) -- `_frob_verb_subverb` extracts the verb and, when
+adjacent, its subverb, lexically (this side has no parsed `AppConfig` to
+read, unlike `record_cli_event`'s `kind="cli"` side). A command that does
+not resolve to a frob invocation at all records neither field, never a
+guess; both fields are omitted entirely from the row rather than written
+as `null`/empty-string.
+
 `frob.stats._agentic._tool_call_histogram` aggregates both phases into a
 `ToolCallShape` per `(tool, command_shape)`: `call_count` (which shapes
 dominate call COUNT), `blocked_count` (a `phase="pre"` attempt with no
@@ -263,10 +285,10 @@ def redact_command(text) -> str
 def append_event(root, record) -> None
 def tree_hash(root) -> str
 def estimate_tokens(text) -> int
-def record_cli_event(root, *, subcommand, args_head, duration_ms, exit_code) -> None
+def record_cli_event(root, *, subcommand, args_head, duration_ms, exit_code, subverb=None) -> None
 def record_ticket_event(root, *, ticket_id, event, extra=None) -> None
 def record_dispatch_event(root, *, dispatch_id, event, worktree=None, branch=None, cold_start=None) -> None
-def timed_call(root, *, subcommand, args_head, fn) -> T
+def timed_call(root, *, subcommand, args_head, fn, subverb=None) -> T
 class Tip(BaseModel): rule_id, message, suggested_command
 def tips_disabled() -> bool
 def detect_footguns(root, *, subcommand, args_head, duration_ms, exit_code, tree_hash_value) -> list[Tip]

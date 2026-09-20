@@ -1,6 +1,12 @@
 """PreToolUse/PostToolUse hooks: record one `kind="tool"` telemetry event
 per Claude Code tool call (T-2912).
 
+T-4689: also parses the frob verb/subverb out of a `Bash` tool call's
+command, when that command actually invokes `frob` (see
+`_frob_verb_subverb`) -- this closes the 91%-empty-`subcommand` gap on
+the `kind="tool"` side of the stream (the `kind="cli"` side is
+`frob.app.telemetry.record_cli_event`, fixed in the same ticket).
+
 WHY THIS EXISTS. `frob.stats._agentic.dispatch_cost_report` (T-1724) and
 `agentic_report`'s `tool_tokens` field have both read `kind="tool"` events
 since they were built, but no caller ever wrote one -- T-1724 shipped the
@@ -84,11 +90,22 @@ hook exits 0 silently, same posture as `dispatch-telemetry.py`.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Stdlib-only module logger (no `frob` import -- see the module docstring's
+# "NO `frob` IMPORT" note). T-4689: every classification decision this
+# hook makes is worth a DEBUG line, and a frob-shaped command this hook
+# could not classify is worth an INFO line -- that is the exact
+# silent-zero (91% empty `subcommand`) this ticket exists to remove, so it
+# must not happen quietly a second time inside the hook path. This hook's
+# own writes are to stderr only, never stdout, matching its "never blocks,
+# never corrupts stdout" posture.
+_log = logging.getLogger("frob.hooks.tool_call_telemetry")
 
 # Recognized standalone-flag shape: `-x`, `--foo`, `--foo-bar`. Anything with
 # an `=`, a quote, a `/`, or a digit-only body is assumed to carry a VALUE
@@ -241,6 +258,89 @@ def _bash_command_shape(command: str) -> str | None:
     return " ".join([*chain, *ordered_flags])
 
 
+# T-4689: any token whose basename (after the last `/`) is exactly
+# `frob` is treated as the frob invocation itself -- this one check
+# covers `frob`, `.venv/bin/frob`, and any other absolute/relative path
+# ending in `/frob`, without needing separate cases for each wrapper that
+# might precede it (`uv run`, `nice -n 10`, ...): those wrapper tokens are
+# simply skipped over because none of them match this basename test, so
+# the scan finds the real `frob` token regardless of what wraps it.
+def _is_frob_token(tok: str) -> bool:
+    """`True` if `tok` (a single whitespace-split command token) is the
+    `frob` executable itself, by exact basename match -- never a
+    substring/prefix match, so `frobnicate` or `frobisher.sh` never false-
+    positive as a frob invocation."""
+    return tok.rsplit("/", 1)[-1] == "frob"
+
+
+def _extract_verb_subverb(tokens: list[str]) -> tuple[str | None, str | None]:
+    """Given the tokens immediately AFTER a resolved `frob` invocation,
+    return `(verb, subverb)`. `verb` is `tokens[0]` itself, required to
+    match `_CHAIN_WORD_RE` (purely alphabetic/hyphenated, no digits) --
+    the same "chain word" test `_bash_command_shape` already uses to keep
+    a ticket id (`T-4689`) or other value-shaped token from being mistaken
+    for a verb. `subverb` is `tokens[1]`, but ONLY when it sits in that
+    exact adjacent position (no flag in between) and is itself a chain
+    word: this deliberately does NOT skip over flags the way
+    `_bash_command_shape`'s flag collection does, because a flag's VALUE
+    (`--only dup`'s `dup`) sits in exactly that same "next bare token"
+    position and is not a subverb -- skipping the flag would silently
+    misclassify `dup` (a check stage) as `check`'s subverb. Requiring
+    strict adjacency is the conservative "record nothing rather than a
+    guess" choice for the one shape (a flag immediately after the verb)
+    where a lexical scan genuinely cannot tell a subverb from a flag's
+    value, unlike the `kind="cli"` side (`record_cli_event`), which reads
+    the real parsed-namespace field and never has this ambiguity."""
+    if not tokens or not _CHAIN_WORD_RE.match(tokens[0]):
+        return None, None
+    verb = tokens[0]
+    if len(tokens) > 1 and _CHAIN_WORD_RE.match(tokens[1]):
+        return verb, tokens[1]
+    return verb, None
+
+
+def _frob_verb_subverb(command: str) -> tuple[str, str | None] | None:
+    """Scan `command` -- a possibly compound shell command with several
+    `&&`/`;`/`|`-separated pipeline segments and several `frob` calls
+    among them -- for the FIRST (leftmost) resolvable `frob <verb>
+    [<subverb>]` invocation and return `(verb, subverb)`, or `None` if no
+    segment contains a recognizable `frob` invocation at all.
+
+    Handles `uv run frob ...`, `.venv/bin/frob ...`, `python -m frob ...`
+    /`python3 -m frob ...`, and `nice -n 10 ... frob ...` uniformly through
+    `_is_frob_token`'s basename match -- none of `uv`, `run`, `python`,
+    `-m`, `nice`, `-n`, `10` ever matches it, so the scan simply passes
+    over them and finds the real `frob` token whatever precedes it; no
+    per-wrapper special case is needed. A `frob` token found but followed
+    by nothing `_extract_verb_subverb` can resolve as a verb is logged at
+    INFO and the scan continues to the NEXT segment (a second `frob` call
+    later in a compound command may still be classifiable) rather than
+    giving up on the whole command.
+    """
+    for segment in _SEGMENT_END_RE.split(command):
+        tokens = segment.split()
+        for i, tok in enumerate(tokens):
+            if not _is_frob_token(tok):
+                continue
+            verb, subverb = _extract_verb_subverb(tokens[i + 1 :])
+            if verb is None:
+                _log.info(
+                    "tool-call-telemetry: frob-looking command could not be "
+                    "classified: segment=%r",
+                    segment,
+                )
+                continue
+            _log.debug(
+                "tool-call-telemetry: classified frob invocation verb=%r "
+                "subverb=%r from segment=%r",
+                verb,
+                subverb,
+                segment,
+            )
+            return verb, subverb
+    return None
+
+
 def _output_tokens_est(tool_response: object) -> int:
     """Rough `len(text) / 4` estimate of a tool response's size, mirroring
     `frob.app.telemetry.estimate_tokens`'s exact heuristic (re-derived here
@@ -276,10 +376,17 @@ def _build_record(payload: dict, *, phase: str, root: Path) -> dict:
     tool = str(payload.get("tool_name", "unknown"))
     tool_input = payload.get("tool_input")
     command_shape = None
+    verb_subverb: tuple[str, str | None] | None = None
     if tool == "Bash" and isinstance(tool_input, dict):
         command = tool_input.get("command")
         if isinstance(command, str):
             command_shape = _bash_command_shape(command)
+            # T-4689: a non-frob Bash command records neither field rather
+            # than a guess -- `_frob_verb_subverb` returns `None` for a
+            # command with no recognizable `frob` invocation at all, and
+            # the two fields below are simply omitted from the record in
+            # that case (never written as e.g. empty strings).
+            verb_subverb = _frob_verb_subverb(command)
     record: dict = {
         "iso_ts": _iso_now(),
         "kind": "tool",
@@ -290,6 +397,8 @@ def _build_record(payload: dict, *, phase: str, root: Path) -> dict:
     }
     if command_shape is not None:
         record["command_shape"] = command_shape
+    if verb_subverb is not None:
+        record["verb"], record["subverb"] = verb_subverb
     return record
 
 

@@ -2,7 +2,7 @@
 id: T-4689
 title: Telemetry records the verb and subverb of every frob invocation (91% of rows
   carry none today)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -38,15 +38,30 @@ body_changes:
   at: '2026-09-19'
   old_length: 2411
   new_length: 2411
+evidence:
+- tests/unit/test_telemetry_verb_recording.py::TestAppDispatchRecordsSubverb::test_ticket_show_records_verb_ticket_subverb_show
+- tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_uv_run_frob
+- tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_dot_venv_bin_frob
+- tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_python_dash_m_frob
+- tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_nice_wrapped_frob
+- tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_compound_command_several_frob_calls
+- tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_non_frob_bash_command_records_neither
 designated_repro_test: null
 acceptance:
 - text: Given a fixture telemetry root, when frob ticket show T-xxxx runs, then the
     appended .frob/telemetry.jsonl row carries verb=ticket and subverb=show
-  evidence: []
+  evidence:
+  - tests/unit/test_telemetry_verb_recording.py::TestAppDispatchRecordsSubverb::test_ticket_show_records_verb_ticket_subverb_show
 - text: Given a kind=tool hook payload whose Bash command invokes frob, when the hook
     records it, then the row carries the same verb/subverb fields; a non-frob Bash
     command records neither rather than a guess
-  evidence: []
+  evidence:
+  - tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_uv_run_frob
+  - tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_dot_venv_bin_frob
+  - tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_python_dash_m_frob
+  - tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_nice_wrapped_frob
+  - tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_compound_command_several_frob_calls
+  - tests/unit/test_telemetry_verb_recording.py::TestHookParsesFrobVerbFromBash::test_non_frob_bash_command_records_neither
 threat: null
 component: cli
 labels:
