@@ -1,7 +1,7 @@
 ---
 id: T-5092
 title: 'cli-regrouping: ops natives group leaf missing --path (parity drift)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -58,3 +58,6 @@ anchor_reason: null
 land_commit: null
 ---
 CI run 35448990233 (dev tip beedd71c4) failed all 3 platforms: tests/unit/test_cli_group_parity.py::TestOpsGroupParity::test_every_ops_leaf_matches_its_flat_twin[natives]. frob ops natives option strings {--help,-h} vs frob natives {--help,--path,-h}. The group-parser generator (T-4520) is not copying every flat-parser option onto the generated leaf. Fix generator + add a parity drift-lock test. Repro: tests/unit/test_cli_group_parity.py::TestOpsGroupParity::test_every_ops_leaf_matches_its_flat_twin[natives]
+
+## Failure log
+- 2026-09-20 attempt 1: coordinator: in-progress with no worktree or branch carrying work; requeued for a fresh agent
