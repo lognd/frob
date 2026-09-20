@@ -102,6 +102,13 @@ scope_changes:
     discovered when frob ticket land's out-of-scope waive-deletion check refused
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_core.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2528
+  new_length: 3764
 evidence:
 - tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_generate_windows_no_longer_imports_generate
 - tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_capability_scan_no_longer_imports_capability
@@ -215,3 +222,24 @@ so the fix did not simply blind the detector (this repo has already been
 burned once by a "clean" cycle verdict that came from a detector that could
 not see the planted case); (3) the full test suite for the touched packages
 passes, since breaking a cycle usually means moving symbols.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_core.py, the
+`SCANNED_LANGUAGES` block, trimmed for DOCARCH002's 12-line cap): the
+trimmed block's full original text, kept verbatim below.
+
+#: Every language bucket `_EXT_LANGUAGE` maps at least one extension to --
+#: i.e. every language a capability-scan CALLER (self-conformance's
+#: `_selfconform.py::_sorted_capability_files`, `vet`'s dependency scan)
+#: actually reaches via `language_for`/`scan_file_capabilities`. Exists so
+#: a drift-lock test can assert this set equals
+#: `_capability_registry.LANGUAGES` (the registry's claimed-supported set)
+#: without either side hand-duplicating the other's language list -- a new
+#: registry language with no `_EXT_LANGUAGE` extension entry (or vice
+#: versa) fails that test loudly instead of silently going unscanned
+#: (T-0169: this exact class of gap is what let TS/JS self-conformance
+#: scanning go dark in the logand.app pilot).
+#:
+#: T-2358: moved here (from `_capability.py`) alongside `language_for` --
+#: `_capability_core.py` already defines `_EXT_LANGUAGE` both symbols are
+#: derived from, so this was the natural home once `_capability_scan.py`
+#: needed `language_for` back (see `language_for`'s own T-2358 note).
