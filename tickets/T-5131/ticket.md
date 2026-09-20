@@ -2,7 +2,7 @@
 id: T-5131
 title: 'perf: frob ticket flow hangs 10+ minutes, one git log --follow -p subprocess
   per ticket over 11k commits'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_flow.py
 - src/frob/app/ticket_runner/_mutate.py
+- tests/test_tickets_velocity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_velocity.py
+  reason: T-5131 needs a repro test for the N+1 git-spawn regression (BUG002 evidence
+    requirement)
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: milestone
   old_value: null
@@ -35,11 +43,14 @@ body_changes:
   at: '2026-09-20'
   old_length: 784
   new_length: 1509
+evidence:
+- tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions
 designated_repro_test: null
 acceptance:
 - text: given the dev ledger at HEAD, when frob ticket flow runs cold, then it prints
     the table in under 10 s wall
-  evidence: []
+  evidence:
+  - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions
 - text: given a warm cache and one new land commit, when frob ticket flow runs, then
     it mines only the new commit and finishes in under 2 s
   evidence: []
