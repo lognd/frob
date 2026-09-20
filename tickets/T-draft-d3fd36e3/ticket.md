@@ -9,7 +9,7 @@ kind: security
 origin: human
 created: '2026-09-20'
 priority: critical
-parent: T-draft-09897a86
+parent: T-5140
 tier: story
 sprint: v0.534.0
 runs_last: false
