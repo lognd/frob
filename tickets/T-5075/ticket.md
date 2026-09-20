@@ -51,6 +51,11 @@ scope_changes:
   reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
   actor: logan
   at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: test_real_repo_ledger_is_tick008_clean completes well within its Windows CI
