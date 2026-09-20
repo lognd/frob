@@ -453,6 +453,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 326
   new_length: 1455
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1455
+  new_length: 1458
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to scripts/fleet_status.py, scripts/verify_lands.py,
@@ -499,4 +506,4 @@ Measured denominator for the narrowed scope: ~15-20 (scripts/fleet_status.py
 file's lease status).
 
 The remainder is being split into child tickets in clusters of ~30 findings
-each, parented to this ticket via `frob ticket set-parent`.
+each, parented to this ticket via the planned ticket set form.
