@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: critical
-blocked_by:
-- T-draft-a693d397
 parent: T-draft-0a0c7b43
 tier: ticket
 sprint: null
@@ -68,3 +66,6 @@ with its detector in a new src/frob/strata/_assume_template.py.
 POSITIVE CONTROL, mandatory: the gate must be RED on today's design/frob.strata,
 reporting the 33 boilerplate CWE assumes. A green run against the current
 monolith means the gate does not work and the leaf is not done.
+
+## Unblock log
+- 2026-09-19: unblocked by T-draft-a693d397 -- the gate groups by file until the kernel module attribute lands; owner wants the gate red on today's design now, the kernel leaf is itself blocked by T-3964
