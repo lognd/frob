@@ -28,7 +28,6 @@ scope:
 - src/frob/refactor/_verify.py
 - src/frob/release/__init__.py
 - src/frob/release/_cli.py
-- src/frob/scaffold/_managed.py
 - src/frob/scaffold/project.py
 - src/frob/security/_redact.py
 - src/frob/serve/_daemon.py
@@ -40,6 +39,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/scaffold/_managed.py
+  reason: leased by T-4760, collision at start
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
