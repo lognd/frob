@@ -30,6 +30,12 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3234
+- mode: append
+  reason: 'T-4770: preserve dispatch-chain cross-reference trimmed from _wire.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3233
+  new_length: 3806
 evidence:
 - tests/gates_suite/test_wire.py::TestWireGate::test_wire003_direct_dispatch_verb_refactor_is_not_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_wire003_still_flags_a_verb_shaped_like_the_hidden_set
@@ -99,3 +105,14 @@ ACCEPTANCE
 - `frob --help` lists `refactor`, or the deliberate omission is documented and
   WIRE003 knows about it.
 - The audit of missing verbs and of `move-module`'s existence is reported.
+
+
+T-4770 follow-up (condensed from _WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS's
+docstring in src/frob/gates/_wire.py, trimmed for DOCARCH002's 12-line
+cap): see _add_workflow_subparsers/_add_analysis_subparsers in
+frob.__main__ for where bind/agent/worktree/sync-skills register.
+refactor/narrative build their argparse tree inside their own
+_dispatch_* helper. Update this tuple if the dispatch chain adds or
+removes a raw-dispatch-only branch; the frob:tests below cover a
+must-fire case so a forgotten update still shows up as a stale-verb
+false-negative gap, not silently.
