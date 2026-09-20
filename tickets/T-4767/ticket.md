@@ -28,7 +28,6 @@ scope:
 - src/frob/app/config.py
 - src/frob/app/parse_runner.py
 - src/frob/app/pyfmt_runner.py
-- src/frob/app/telemetry/_state.py
 - src/frob/lang/__init__.py
 - src/frob/lang/_models.py
 - src/frob/lang/_nodes.py
@@ -47,6 +46,12 @@ scope_changes:
 - op: remove
   glob: src/frob/app/ticket_runner/_rapid_sweep.py
   reason: leased by in-progress T-4660, deferred per BRIEF.md concurrency rule
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/app/telemetry/_state.py
+  reason: leased by in-progress T-4689 (src/frob/app/telemetry/**), deferred per BRIEF.md
+    concurrency rule
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
