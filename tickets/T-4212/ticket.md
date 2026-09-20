@@ -9,7 +9,7 @@ created: '2026-09-07'
 priority: high
 parent: T-4135
 tier: ticket
-sprint: null
+sprint: v0.538.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,6 +32,13 @@ scope_changes:
   glob: src/frob/gates/_sys_branch.py
   reason: split sys_gate_for_branch out to fix LARGE001 on _sys.py (885 > 800 lines),
     same T-1420 split-family precedent
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
