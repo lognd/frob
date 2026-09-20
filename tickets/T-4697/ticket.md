@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4691
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -49,6 +49,13 @@ scope_changes:
     wiring deferred to Done report
   actor: logan
   at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: given a fixture directory of three files citing a live ticket, an archived
