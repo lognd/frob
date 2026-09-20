@@ -24,6 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve per-toolchain cost detail trimmed from _lang_conformance.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1316
+  new_length: 2682
 evidence:
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-test_discovery]
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust
@@ -64,3 +71,27 @@ availability (this gate runs in every frob check invocation, in every
 adopter repo, so a slow/toolchain-fragile addition here has a much
 wider blast radius than one repo's own test suite) -- flag that
 tradeoff explicitly rather than just building it.
+
+
+T-4709 follow-up (condensed from _BEHAVIORALLY_CHECKED_CAPABILITIES's
+comment block in src/frob/gates/_lang_conformance.py, trimmed for
+DOCARCH002's 12-line cap): measured directly while building this
+(T-2682's own Done report has the numbers) -- `uv run pytest
+--collect-only` on a throwaway fixture is ~10ms, cheap enough to run on
+every `frob check` invocation the same way the other six capabilities
+already do. cpp's collector only ever lists an ALREADY-CONFIGURED cmake
+build directory (never invokes cmake itself) -- exercising it
+behaviorally would mean this gate running `cmake` configure itself, a
+second, heavier toolchain step. typescript's collector needs a `vitest`
+dependency resolvable via `npx`; `npm install` in a tmp dir is a NETWORK
+call, unacceptable for a gate that must stay fast and offline-safe.
+kotlin's collector reads ALREADY-PRODUCED gradle JUnit reports (never
+invokes gradle itself) -- producing one means a cold JVM + gradle
+build, the heaviest of the four remaining.
+
+`_BEHAVIORAL_CAPABILITY_LANGUAGES` is the language-scoped restriction
+this required: `_BEHAVIORALLY_CHECKED_CAPABILITIES` alone means "check
+this capability for every language with an IMPLEMENTED cell" (true and
+fine for the other six, single-file-fixture-cheap regardless of
+language) -- test_discovery is the first capability where that blanket
+rule is wrong.
