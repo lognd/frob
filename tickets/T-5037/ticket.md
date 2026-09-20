@@ -1,5 +1,5 @@
 ---
-id: T-draft-89793871
+id: T-5037
 title: 'DECISION: kernel extension domain 2/8 -- capability via-lists (may/via/of/exclusive):
   desugar to the six primitives, or record as an extension?'
 state: queued
