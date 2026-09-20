@@ -4,39 +4,21 @@ title: 'F-017: docs/strata/surface.md + threat.md node grammar shows attr IDENT 
   but the real form needs STRING (attr "privacy-policy"; retention=90d) -- fix the
   docs to show the STRING attr form'
 state: queued
-kind: feature
+kind: bug
 origin: human
 created: '2026-09-05'
 priority: medium
-parent: T-4665
+parent: T-4667
 tier: ticket
 sprint: v1.1.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- strata-core/src/parse/grammar_node.rs
-- design/litmus/attr_ident.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: strata-core/src/parse/grammar_node.rs
-  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
-    the documented attr IDENT form, proven by its own new litmus file (kept separate
-    from T-3823''s so the two parser leaves stay scope-disjoint)'
-  actor: logan
-  at: '2026-09-19'
-- op: add
-  glob: design/litmus/attr_ident.strata
-  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
-    the documented attr IDENT form, proven by its own new litmus file (kept separate
-    from T-3823''s so the two parser leaves stay scope-disjoint)'
-  actor: logan
-  at: '2026-09-19'
 triage_changes:
 - field: parent
   old_value: null
@@ -44,21 +26,6 @@ triage_changes:
   reason: '2026-09-19: SF-22 in the STRATA friction audit; joins story D (DECISIONS)
     of epic T-4662 -- docs-vs-parser disagreement is a question about which artifact
     is the specification, which the owner is rethinking'
-  actor: logan
-  at: '2026-09-19'
-- field: parent
-  old_value: T-4667
-  new_value: T-4665
-  reason: '2026-09-19: owner decided the parser is incomplete rather than the docs
-    wrong, converting this from a DECISION into implementation work; it moves from
-    story D (T-4667) to story B (T-4665)'
-  actor: logan
-  at: '2026-09-19'
-- field: kind
-  old_value: bug
-  new_value: feature
-  reason: '2026-09-19: converted from a docs decision into implementation work on
-    the parser (owner decision: the parser is incomplete, not the docs wrong)'
   actor: logan
   at: '2026-09-19'
 body_changes:
@@ -80,18 +47,6 @@ body_changes:
   old_length: 1398
   new_length: 3835
 designated_repro_test: null
-acceptance:
-- text: Given docs/strata/surface.md and docs/strata/threat.md document an 'attr IDENT'
-    node form that strata-core's parser does not accept, and the owner decided the
-    PARSER is incomplete rather than the docs wrong, when this lands, then the documented
-    attr IDENT form PARSES and ELABORATES, proven by design/litmus/attr_ident.strata
-    -- a litmus case that fails to parse at HEAD c8f56ef10 and passes after.
-  evidence: []
-- text: Given the existing STRING attr form is in live use across design/frob.strata
-    (162 attr lines), when the IDENT form is added, then a test asserts the STRING
-    form still parses and elaborates unchanged -- the negative control against fixing
-    this by swapping one form for the other.
-  evidence: []
 threat: null
 component: null
 anchor: false
