@@ -8,7 +8,7 @@ created: '2026-08-30'
 priority: medium
 parent: T-0969
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,6 +32,12 @@ triage_changes:
   reason: child of the WARN-tier burn-down epic, sibling of T-2378/T-2955/T-2970
   actor: logan
   at: '2026-08-30'
+- field: sprint
+  old_value: null
+  new_value: v0.541.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: record the src/ frob-dup triage findings from T-2957 and the detector-scope
