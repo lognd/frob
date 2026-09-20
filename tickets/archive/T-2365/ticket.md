@@ -65,6 +65,12 @@ body_changes:
   at: '2026-08-19'
   old_length: 3644
   new_length: 4811
+- mode: append
+  reason: 'T-4709: preserve embedded-token detail trimmed from _lang_conformance.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4810
+  new_length: 5278
 evidence:
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_covers_every_supported_language
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_every_language_declares_every_capability
@@ -173,3 +179,12 @@ this ticket originally claimed, and binding to it would misrepresent
 this ticket as still proving a gap that no longer exists. This COV003
 finding is accepted, permanent, disclosed residue: the capability
 this ticket declared missing has since shipped.
+
+
+T-4709 follow-up (condensed from a fixture comment in
+src/frob/gates/_lang_conformance.py, trimmed for DOCARCH002's 12-line
+cap): the backslash-newline is literally still embedded in the merged
+comment node text (`// frob:tests \\\n// <target>` as one token, not
+two lines `_fold_continuations` can walk). python/typescript/rust/
+kotlin/strata all exercise the real continuation fold in this same
+fixture set; only C/C++ needed the single-physical-line workaround.
