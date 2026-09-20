@@ -8,7 +8,7 @@ created: '2026-09-19'
 priority: medium
 parent: T-4419
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -38,6 +38,13 @@ scope_changes:
   glob: tests/unit/test_cli_group_parity.py
   reason: leased by in-progress T-draft-5658939f (cli-regrouping parity fix); deferred,
     pick up once that lease releases
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
