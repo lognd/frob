@@ -11,7 +11,7 @@ parent: T-2994
 tier: story
 sprint: v0.533.0
 runs_last: false
-milestone: null
+milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -38,6 +38,12 @@ triage_changes:
   old_value: v0.534.0
   new_value: v0.533.0
   reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
+- field: milestone
+  old_value: null
+  new_value: 1.0.0
+  reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
 body_changes:
