@@ -357,14 +357,37 @@ NET_KILL_SWITCH_ENV = "FROB_DISABLE_NET"   # mechanism built; no real net call s
 
 class ProcessGuardError(ErrorSet):
     ExecDisabled  # exec capability disabled via kill switch
+    Timeout       # subprocess exceeded its timeout= budget (T-3015)
+    SpawnFailed   # subprocess could not be spawned: executable not found or not launchable (T-3797)
 
 def exec_enabled() -> bool
     # False exactly when FROB_DISABLE_EXEC is set truthy ("1"/"true"/"yes"/"on").
 def net_enabled() -> bool
     # False exactly when FROB_DISABLE_NET is set truthy.
 def guarded_subprocess_run(args, **kwargs) -> Result[subprocess.CompletedProcess, ProcessGuardError]
-    # subprocess.run(args, **kwargs), gated by exec_enabled(); Err(ExecDisabled) without spawning when disabled.
+    # subprocess.run(args, **kwargs), gated by exec_enabled(); Err(ExecDisabled) without spawning when
+    # disabled, Err(Timeout) when timeout= expires, Err(SpawnFailed) when the executable itself cannot
+    # be launched at all -- never raises any of the three, always a Result.
 ```
+
+`guarded_subprocess_run` never lets `subprocess.run`'s own exceptions
+escape uncaught -- every one of `ProcessGuardError`'s three members maps
+to a specific failure this function catches and converts to a `Result`,
+per this repo's house error-handling rule (recoverable conditions are
+values, never bare exceptions): `Err(ExecDisabled)` before ever spawning
+when the kill switch above is flipped; `Err(Timeout)` (T-3015) when a
+caller-supplied `timeout=` kwarg actually expires (`subprocess.
+TimeoutExpired` caught and converted -- this crashed `move-module`'s own
+Verify phase mid-transaction before the fix); and `Err(SpawnFailed)`
+(T-3797) when the executable itself cannot be launched at all --
+`Popen`/`CreateProcess` raises `FileNotFoundError`/`PermissionError`/
+`NotADirectoryError` (all `OSError` subclasses; on win32 this surfaces as
+`FileNotFoundError: [WinError 2]`) for a missing binary, a non-executable
+file, or a directory where an executable was expected, and this function
+catches all three and returns `Err(SpawnFailed)` instead of letting the
+exception propagate. Callers such as `doctor.py::_probe_binary_version`
+depend on this: they document "never raises (missing binary...)" and
+rely on `guarded_subprocess_run` actually honoring that contract.
 
 Set `FROB_DISABLE_EXEC=1` in the environment to stop every `frob check`
 tool-runner subprocess (ruff/ty/cmake/cargo/clang-tidy/clang-format/ctest/

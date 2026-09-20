@@ -18,7 +18,7 @@ waivers: each migration leaf decides which module is lower and moves the flow
 declarations there.
 
 WHERE THE BEHAVIOUR LANDS: no file changes belong to this ticket. The grammar
-leaf T-draft-1f0f55cb gained two acceptance criteria (the hierarchy declaration
+leaf T-5125 gained two acceptance criteria (the hierarchy declaration
 form; `accepts` takes a module reference, never an import alias). The linker
 leaf T-5087 gained four (upward-only import check naming both modules,
 accepts-direction check, the SCC assertion that must never fire, flows declared

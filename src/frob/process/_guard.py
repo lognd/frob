@@ -112,9 +112,6 @@ _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:waive AFFECT001 reason="T-3797's scope is restricted to \
-# src/frob/process/_guard.py + tests/unit/test_process_guard.py only; \
-# docs/modules/process.md update filed as follow-up T-3802"
 class ProcessGuardError(ErrorSet):
     """Recoverable `guarded_subprocess_run` failures: a kill-switch
     refusal before ever spawning (`ExecDisabled`), a spawned process

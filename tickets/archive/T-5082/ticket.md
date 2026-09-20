@@ -291,7 +291,7 @@ module is lower and moves the flow declarations there.
 
 ## Consequences filed against the leaves
 
-Grammar leaf T-draft-1f0f55cb: `accepts` takes a module REFERENCE, not an
+Grammar leaf T-5125: `accepts` takes a module REFERENCE, not an
 import; the hierarchy declaration form is part of the grammar.
 Linker leaf T-5087: upward-only import check with BOTH module names
 in the error; accepts-direction check (an accepts naming a module above is an
