@@ -10,7 +10,7 @@ blocked_by:
 - T-4016
 parent: T-4016
 tier: ticket
-sprint: v0.548.0
+sprint: v0.540.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
@@ -30,6 +30,12 @@ triage_changes:
     T-4016 keeps the dependency and the milestones consistent'
   actor: logan
   at: '2026-09-12'
+- field: sprint
+  old_value: v0.548.0
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests directive waived for a tooling reason, when the waiver
