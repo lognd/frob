@@ -8,6 +8,7 @@ origin: human
 created: '2026-09-19'
 priority: critical
 blocked_by:
+- T-draft-0bcabfa4
 - T-draft-9d041fdf
 parent: T-draft-0a0c7b43
 tier: ticket
@@ -113,4 +114,3 @@ results using only export surfaces, and enforces:
 
 ## Unblock log
 - 2026-09-19: unblocked by T-4659 -- filing artifact: T-4659 is an unrelated in-flight land that was captured by a bad id extraction; the real blocker is the elaborator leaf T-draft-9d041fdf
-- 2026-09-19: unblocked by T-draft-0bcabfa4 -- D-M9 decided 2026-09-19 19:30; the linker leaf's acceptance now carries the upward-only import check, the accepts-direction check and the redundant SCC assertion
