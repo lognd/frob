@@ -9,7 +9,7 @@ created: '2026-09-05'
 priority: medium
 parent: T-3927
 tier: ticket
-sprint: v0.554.0
+sprint: v0.536.0
 runs_last: false
 milestone: v0.554.0
 runs_last_parallel_safe: false
@@ -27,6 +27,12 @@ triage_changes:
   reason: 'pass2 backlog org: theme bucket consumer-audit'
   actor: logan
   at: '2026-09-11'
+- field: sprint
+  old_value: v0.554.0
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: four independent sightings today (FA, FI, FE, consumer); records the ratchet
