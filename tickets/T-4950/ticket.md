@@ -1,5 +1,5 @@
 ---
-id: T-draft-3ff6fa5c
+id: T-4950
 title: Legacy indirect-call WIRE001 waivers are permanent by design (WIRE001 follow_up
   anchor)
 state: queued

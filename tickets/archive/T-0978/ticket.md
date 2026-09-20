@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/gates/__init__.py
@@ -17,6 +21,8 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/_secrets.py
@@ -54,6 +60,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-07-27'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve test-literal false-positive example trimmed from _secrets.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1517
+  new_length: 2155
 evidence:
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_stale_marker_fires_waive004
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_stale_marker_on_line_above_fires_waive004
@@ -64,6 +77,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0968 shipped requiring `reason="..."` on `frob:secret-fake`/PII011's shared
 marker (mirroring WAIVE001) and added SEC004 for a bare marker, but the
@@ -89,3 +105,15 @@ non-graph waiver source specifically for this marker family (scan tracked
 text directly for `frob:secret-fake reason="..."` sites the way
 `_bare_fake_marker_violations` already does, then check each site still
 has >=1 real SEC00x/PII011 hit).
+
+
+T-4770 follow-up (condensed from _REAL_FAKE_MARKER_REASON_RE's
+docstring in src/frob/gates/_secrets.py, trimmed for DOCARCH002's
+12-line cap): see _BARE_FAKE_DIRECTIVE_RE's comment for the same
+docstring-mention hazard on the bare form. Changing
+_FAKE_MARKER_REASON_RE's matching behavior is outside this ticket's
+scope. The second false-positive class was found while writing this
+ticket's own tests, not theoretical: this module's own test suite
+writes '# frob:secret-fake reason="..."\n' as one argument to
+write_text -- the whole line IS that string literal, so every such
+literal would misread as a stale marker without this fix.
