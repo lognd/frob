@@ -28,6 +28,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006: a rejected CLI form must not appear in backticks in a ticket body;
+    the sys-split tool does not exist and was refused by the owner'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1455
+  new_length: 1472
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/test.strata exists with its
@@ -57,7 +65,7 @@ land_commit: null
 Migration leaf for module `test` (members: testsuite). Pure consumer: out-degree 10, fan-in 0 -- the one module that trivially satisfies any layering rule.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is NO `frob sys split` tool). Write design/test.strata with:
+there is no sys-split tool; the owner rejected one). Write design/test.strata with:
   - `module test` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
