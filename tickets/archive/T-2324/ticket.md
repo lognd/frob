@@ -44,6 +44,13 @@ scope_changes:
   reason: 'T-2324 fix: red-but-owned findings advance the watermark'
   actor: logan
   at: '2026-08-17'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _worker.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3199
+  new_length: 4684
 evidence:
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_filed_to_a_real_ticket_still_advance
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_that_cannot_be_filed_still_do_not_advance
@@ -126,3 +133,27 @@ watermark past the green prefix before it; (2) must-still-pass -- a commit
 with an UNATTRIBUTED finding is NOT silently certified as verified;
 (3) run against this repo's real 570-commit backlog, not a synthetic
 two-commit gap -- the failure only appears at depth.
+
+T-4718 sweep (condensed from src/frob/verify/_worker.py:493-511, trimmed
+for DOCARCH002's 12-line cap): the trimmed block's full original text,
+kept verbatim below.
+
+    #: "empty" (nothing queued, verify_fn never called), "baseline-
+    #: established" (first-ever run, no prior baseline to compare against
+    #: -- NOT a proven-green claim, so the watermark is deliberately left
+    #: untouched here too), "red" (new findings vs the rolling baseline,
+    #: filed/disposed to `filed_ticket`, or genuinely ownerless with
+    #: `filed_ticket=None`), "vanished" (T-3464: every new finding was
+    #: unfileable ONLY because none of them reproduced any more by T-3222's
+    #: file-time recheck -- there is nothing durable to own and nothing
+    #: real left to pin on, so this advances like green despite
+    #: `filed_ticket=None`), or "green" (no new findings).
+    #: T-2324: "red" no longer implies `advanced_watermark=False` -- check
+    #: that field directly, never infer it from `status`. A red result
+    #: whose findings got a durable owner (`filed_ticket` is not `None`)
+    #: still advances the watermark and compacts the queue, exactly like
+    #: green; only a red result that could not even be FILED
+    #: (`filed_ticket is None`) leaves the watermark untouched -- see
+    #: `_resolve_verification_outcome`'s own docstring for why. "vanished"
+    #: is the one exception to THAT rule too: `filed_ticket=None` there
+    #: as well, but `advanced_watermark=True`.
