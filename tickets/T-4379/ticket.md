@@ -2,14 +2,14 @@
 id: T-4379
 title: T-2104's IN_PROGRESS scope-narrowing self-heal releases blocked_by on ANY empty-scope
   ticket, not just narrowed scope
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-09'
 priority: medium
 parent: null
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -20,13 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.535.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals::test_never_scoped_container_blocker_does_not_self_heal
+- tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals::test_genuinely_narrowed_to_empty_blocker_still_self_heals
 designated_repro_test: null
 threat: null
 component: null

@@ -16,6 +16,8 @@ from frob.tickets import (
     AttachmentSource,
     FailureEntry,
     Origin,
+    ScopeChangeEntry,
+    ScopeChangeOp,
     Ticket,
     TicketError,
     TicketKind,
@@ -1022,6 +1024,70 @@ class TestDoableStaleBlockedBySelfHeals:
 
         result = doable(queue, tmp_path)
         assert "T-0001" not in {t.id for t in result}
+
+    # frob:ticket T-4379
+    def test_never_scoped_container_blocker_does_not_self_heal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_never_scoped_container_blocker_does_not_self_heal  # noqa: E501
+        """(MUST FAIL FIRST on main): a container/rollup blocker that
+        DECLARED no scope at all (`no_scope_declared=True`, `scope=()`,
+        never any `scope_changes` entry) must NOT self-heal the instant it
+        goes IN_PROGRESS -- `scope_overlap_globs` returns `None` for an
+        EMPTY lease scope unconditionally, which is not evidence the
+        container's own scope was ever narrowed. T-4379: pre-fix, this
+        empty-scope case was indistinguishable from a genuine T-2104
+        narrowing and dropped the block immediately."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, title="Container"
+        ).model_copy(update={"scope": (), "no_scope_declared": True})
+        _write(tmp_path, holder, slug="holder")
+        queue = load_queue(tmp_path).danger_ok
+
+        result = doable(queue, tmp_path)
+        assert "T-0001" not in {t.id for t in result}
+
+    # frob:ticket T-4379
+    def test_genuinely_narrowed_to_empty_blocker_still_self_heals(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_genuinely_narrowed_to_empty_blocker_still_self_heals  # noqa: E501
+        """MUST-STILL-PASS control: a blocker whose scope genuinely
+        narrowed AWAY TO EMPTY (a real `scope_changes` `REMOVE` audit
+        entry) still self-heals -- T-4379's fix distinguishes "never had
+        scope" from "had it and gave it up," it does not disable the
+        empty-scope self-heal outright."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, title="Holder"
+        ).model_copy(
+            update={
+                "scope": (),
+                "scope_changes": (
+                    ScopeChangeEntry(
+                        op=ScopeChangeOp.REMOVE,
+                        glob="src/frob/tickets/_y.py",
+                        reason="narrowed off mid-work",
+                        actor="agent",
+                        at=date(2026, 9, 1),
+                    ),
+                ),
+            }
+        )
+        _write(tmp_path, holder, slug="holder")
+        queue = load_queue(tmp_path).danger_ok
+
+        result = doable(queue, tmp_path)
+        assert "T-0001" in {t.id for t in result}
 
     # frob:ticket T-2104
     def test_queued_blocker_never_self_heals_on_scope(self, tmp_path: Path) -> None:

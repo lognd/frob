@@ -46,6 +46,7 @@ from frob.tickets._models import (
     LEDGER_PATH,
     OVER_BROAD_LITERAL_GLOBS,
     Priority,
+    ScopeChangeOp,
     Ticket,
     TicketQueue,
     TicketState,
@@ -1375,6 +1376,27 @@ def already_landed_markers(
     return tuple(sorted(hits, key=lambda t: t.id))
 
 
+# frob:ticket T-4379
+def _scope_removed(blocker: Ticket) -> bool:
+    """Whether `blocker`'s append-only `scope_changes` audit (T-0455)
+    records at least one real `REMOVE` -- proof its scope was actually
+    narrowed away, not merely never declared (T-4379)."""
+    return any(entry.op is ScopeChangeOp.REMOVE for entry in blocker.scope_changes)
+
+
+# frob:ticket T-4379
+def _blocker_scope_narrowed_away(
+    ticket: Ticket, blocker: Ticket, lease_scope: tuple[str, ...]
+) -> bool:
+    """Whether `blocker`'s `lease_scope` has genuinely narrowed away from
+    `ticket`'s own scope (T-4379): disjoint AND (nonempty, the ordinary
+    T-2104 case, OR `_scope_removed` proves an empty scope was actually
+    taken away rather than never declared)."""
+    return (bool(lease_scope) or _scope_removed(blocker)) and (
+        scope_overlap_globs(ticket.scope, lease_scope) is None
+    )
+
+
 def _open_blockers(
     queue: TicketQueue, ticket: Ticket, root: Path | None = None
 ) -> tuple[str, ...]:
@@ -1431,7 +1453,7 @@ def _open_blockers(
                 if all_leases is None:
                     all_leases = dict(_all_leases(queue, root))
                 lease_scope = all_leases.get(blocker_id, blocker.scope)
-                if scope_overlap_globs(ticket.scope, lease_scope) is None:
+                if _blocker_scope_narrowed_away(ticket, blocker, lease_scope):
                     continue
             open_ids.append(blocker_id)
     return tuple(open_ids)
