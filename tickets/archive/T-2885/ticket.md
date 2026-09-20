@@ -28,6 +28,13 @@ scope_changes:
     fix
   actor: logan
   at: '2026-08-28'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_core.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4748
+  new_length: 6900
 evidence:
 - tests/test_vet_capability.py::TestLeadingCommentDoesNotDefeatDocstringExclusion::test_leading_comment_then_docstring_prose_stays_quiet
 - tests/test_vet_capability.py::TestLeadingCommentDoesNotDefeatDocstringExclusion::test_leading_comment_then_real_call_still_fires
@@ -123,3 +130,36 @@ positive/negative fixtures named above before landing.
 T-2879's own follow-up dispatch waived the single _refs.py:31 OPAQUE001
 finding directly (citing this ticket by id) rather than touching the
 shared query -- see that finding's own frob:waive reason for detail.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_core.py, the
+python docstring Query source block, trimmed for DOCARCH002's 12-line
+cap): the trimmed block's full original text, kept verbatim below.
+
+#: The python docstring Query source (T-1223): every module/class/function
+#: body whose FIRST named child (after skipping any leading `comment`
+#: nodes, T-2885) is a bare `string` node, or an `expression_statement`
+#: wrapping one -- mirrors the exact shape `_py_leading_docstring_node`
+#: (pre-T-1223) tested node-by-node in Python.
+#: NOTE: `expression_statement` is a tree-sitter-python SUPERTYPE, not a
+#: concrete node kind -- it also matches concrete nodes like `assignment`
+#: (verified: `(expression_statement (string) @doc)` alone spuriously
+#: captured an enum member's VALUE string, e.g. `NotADirectory = "..."`,
+#: because `assignment` conforms to the `expression_statement` supertype
+#: and its own `string` child satisfies the inner pattern). `_PY_DOC_CAPTURE
+#: _FILTER` below is the required post-filter closing that gap: a capture
+#: only counts as a real docstring if its immediate parent's own `.type` is
+#: literally `"module"`, `"block"` (the bare-string case), or
+#: `"expression_statement"` (the wrapped case) -- never `"assignment"` or
+#: any other expression_statement-conforming concrete kind.
+#: T-2885: the `.` anchor requires the docstring to be tree-sitter's
+#: IMMEDIATE first named child -- this project's tree-sitter-python
+#: grammar does NOT mark `comment` as an `extra` node the query engine
+#: treats as anchor-transparent (confirmed empirically), so a file that
+#: opens with a `#`-comment (e.g. any `frob:waive`/`frob:ticket` header
+#: block, common repo-wide) silently defeated the anchor and the "real"
+#: docstring was reported as unstarted, exposing every needle-shaped
+#: substring in its prose to the needle-scan gates it should have been
+#: excluded from (OPAQUE001, the `sys` capability scanner). Each pattern
+#: now explicitly tolerates zero-or-more leading `(comment)*` nodes
+#: before the anchored string/expression_statement, so a header comment
+#: no longer breaks docstring-span detection.
