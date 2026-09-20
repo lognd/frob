@@ -9,7 +9,7 @@ created: '2026-09-20'
 priority: high
 parent: null
 tier: epic
-sprint: v0.534.0
+sprint: v1.1.0
 runs_last: false
 milestone: 1.1.0
 runs_last_parallel_safe: false
@@ -23,6 +23,12 @@ triage_changes:
   old_value: null
   new_value: 1.1.0
   reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
+- field: sprint
+  old_value: v0.534.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
 body_changes:
