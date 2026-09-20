@@ -31,6 +31,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 2756
   new_length: 3158
+- mode: append
+  reason: 'T-4770: preserve reference-shape example detail trimmed from _refs.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3157
+  new_length: 3449
 evidence:
 - tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
 - tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
@@ -75,3 +81,10 @@ was a reviewer-caught false NEGATIVE (T-0396 round-3). Example orphan:
 tests/fixtures/orphan_helper.py. Deliberately not reusing is_test_file
 per the repo's playbook precedent -- do not weaken/duplicate a shared
 predicate for one caller's narrower need.
+
+
+T-4770 follow-up (condensed from a comment in src/frob/gates/_refs.py,
+trimmed for DOCARCH002's 12-line cap): the example prose is `patterns.
+yaml` / "the docs/design/registry/*.yaml manifests"; see this module's
+own Done report for the false-2+-refs-PASS evidence this was filed
+against.
