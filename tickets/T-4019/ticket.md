@@ -118,6 +118,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 4125
   new_length: 4567
+- mode: append
+  reason: 'T-4770: preserve dsl-parsing-context detail trimmed from invariants.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4567
+  new_length: 5094
 evidence:
 - tests/gates_suite/test_invariant.py::TestInvariantLoad::test_malformed_bad_id
 - tests/gates_suite/test_invariant.py::TestInvariantLoad::test_duplicate_id
@@ -210,3 +216,13 @@ ACCEPTANCE
 - All four fixtures committed.
 
 DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius's class docstring used to say: 'T-4019: this repo's own invariants/ is empty (T-3928), so nothing here previously proved this code path -- these fixtures build a real invariants/*.md file, including a malformed one, rather than relying on this repo's vacuous invariant gate.' Moved here; the class docstring now states only what its tests verify.
+
+
+T-4770 follow-up (condensed from _ID_RE's comment in
+src/frob/gates/invariants.py, trimmed for DOCARCH002's 12-line cap):
+frob.graph.dsl's target parsing takes any bare token, so the directive
+side had no format restriction to begin with. The regex covers both
+the original convention (INV-045) and a descriptive id
+(INV-ADMIN-DATA-001, INV-RENDER-SOLE-STDOUT), matching a directive's
+own de-facto shape: real ids are always dash-separated shouting-case
+tokens. The concrete example lives in src/frob/gates/_render_lint.py.
