@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
-blocked_by:
-- T-4759
 parent: T-4757
 tier: ticket
 sprint: null
@@ -91,3 +89,6 @@ Positive controls:
    file bytes, not on the report string;
 4. the generated make.bat and Makefile expose the same target set, asserted
    as a set equality.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4759 -- T-4759 READY and queued; wave-2 builds on branch t-4759; land order only
