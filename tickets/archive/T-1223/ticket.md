@@ -10,12 +10,18 @@ priority: medium
 parent: T-1219
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/vet/_capability.py
 - src/frob/vet/_capability_core.py
 - tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/vet/_capability_core.py
@@ -33,6 +39,13 @@ scope_changes:
     as T-1210's own Done report; tests/test_vet.py added for new-evidence node ids
   actor: logan
   at: '2026-08-03'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_core.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 749
+  new_length: 1901
 evidence:
 - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_does_not_treat_enum_value_as_docstring
 - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
@@ -58,5 +71,26 @@ acceptance:
   - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Root cause and target: this is the interim zero-Rust step noted under Rust-migration candidate #1 ('use tree-sitter Query captures (C speed) for comment/docstring/identifier extraction from Python'), and it is the mechanism half of PERF-epic child T-1210 (report candidate #5). Split of ownership: this ticket owns the span-EXTRACTION mechanism (Query captures replacing Python recursion) since it is the natural home for a tree-sitter-API-level change; T-1210 owns the sort+bisect containment fix and the per-run cache for the resulting spans, and its acceptance criteria explicitly defer the mechanism to this ticket to avoid two owners writing to the same function. Do not duplicate the containment/caching acceptance criteria here -- see T-1210.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_core.py, the
+`_comment_query_cache` block, trimmed for DOCARCH002's 12-line cap): the
+trimmed block's full original text, kept verbatim below.
+
+#: Process-lifetime memo of compiled `(comment-type) @c` alternation Queries,
+#: keyed by `language_label` (T-1223: the interim zero-Rust half of the
+#: report's Rust-migration candidate #1 -- replace the Python-recursion span
+#: walk with a tree-sitter Query captured in C). A `Query` is bound to the
+#: `tree_sitter.Language` instance it was compiled against, but two
+#: `Language` instances for the SAME grammar/ABI are interchangeable for
+#: `QueryCursor.captures` purposes (verified: compiling against one file's
+#: `tree.language` and running the cursor over an unrelated file's tree of
+#: the same grammar returns identical results) -- so the first tree seen for
+#: a given `language_label` compiles the Query once, and every later file of
+#: that language reuses it. Not keyed by `id(tree.language)`: `frob.lang`
+#: does not itself cache `Language` objects across `_parse` calls, so a
+#: per-instance cache would never hit past the first file.
