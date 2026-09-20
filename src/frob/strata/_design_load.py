@@ -23,6 +23,7 @@ finding 1).
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 from dataclasses import dataclass, field
@@ -476,16 +477,60 @@ def _parse_one_design_file(
     return rel, parsed.danger_ok, None
 
 
+#: T-4669 (SF-20): per-process cache for `load_design_ids`, keyed by
+#: `(str(root), design_dir, digest)` where `digest` is a content hash of
+#: every `.strata` file under `root/design_dir` (NOT mtime -- same
+#: rewritten-on-checkout reasoning as `_effects.py`'s capability-scan
+#: cache). Planner-verified call sites, one re-parse+re-elaborate each
+#: per run: src/frob/app/sys_runner.py:319,446,824,
+#: src/frob/app/deploy_runner.py:84,
+#: src/frob/app/ticket_runner/_land_cmd.py:900,
+#: src/frob/gates/_fix_engine_sync.py:1197 -- SF-11's `require_analyzable`
+#: WARNING fires once per elaboration, so this cache is also why that
+#: warning stops firing ~12.7 times per land and starts firing once per
+#: process. Measured cost is small on its own (0.026s cold, 0.022s warm)
+#: but shared with the far more expensive `_effects.py` cache as one
+#: mechanism per the ticket's "one per-process cache ... shared by every
+#: call site" requirement.
+# frob:ticket T-4669
+_DESIGN_IDS_CACHE: dict[tuple[str, str, str], DesignIds] = {}
+
+
+# frob:ticket T-4669
+def _design_load_digest(paths: list[Path], root: Path) -> str:
+    """SHA-256 over `(rel-to-root, content)` for every path in `paths`
+    (already deterministically ordered by `_strata_files`), so the digest
+    changes iff a design file's CONTENT changes -- see `_DESIGN_IDS_CACHE`
+    for why this is not mtime-keyed. A file that vanishes or cannot be
+    read still contributes its path to the digest so a delete still
+    invalidates instead of silently reusing a stale hit."""
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+        try:
+            digest.update(path.read_bytes())
+        except OSError as exc:
+            _log.debug(
+                "load_design_ids: cache digest: could not read %s: %s", path, exc
+            )
+    return digest.hexdigest()
+
+
 # frob:doc docs/strata/surface.md#directives-t-0080
 # frob:doc \
 # docs/strata/entity_architecture.md#scope-of-this-first-slice-deliberately-narrow
 # frob:ticket T-0080
 # frob:ticket T-3529
+# frob:ticket T-4669
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_merges_ids
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_no_dir_empty
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_bad_file_reported
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_excluded_no_ids
 # frob:tests tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution.test_architecture_resolves_against_a_sibling_files_entity  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache.test_second_call_in_process_is_a_cache_hit  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache.test_changed_design_file_invalidates_the_cache  # noqa: E501
 def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignIds:
     """Parse+elaborate every `.strata` file under `root/design_dir` and merge
     their Flow/Boundary/Secret-clearance-Node ids into one `DesignIds`.
@@ -493,10 +538,36 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     A per-file parse/elaborate failure is collected into `.errors` rather
     than aborting the whole load -- one malformed design file must not hide
     every other file's valid constructs from the gate.
+
+    T-4669 (SF-20): cached per-process, keyed on a content digest of every
+    `.strata` file under `root/design_dir` -- see `_DESIGN_IDS_CACHE`. A
+    cache hit returns the SAME `DesignIds` instance a prior call returned
+    for this root/design_dir/digest, never a stale one: any content
+    change to any scanned file changes the digest and forces a rescan.
     """
     root = Path(root)
     exclude_globs = load_exclude_globs(root)
     paths = _strata_files(root, root / design_dir, exclude_globs)
+    digest = _design_load_digest(paths, root)
+    cache_key = (str(root), design_dir, digest)
+    cached = _DESIGN_IDS_CACHE.get(cache_key)
+    if cached is not None:
+        _log.debug(
+            "load_design_ids: cache HIT (root=%s design_dir=%s digest=%s, %d file(s))",
+            root,
+            design_dir,
+            digest,
+            len(paths),
+        )
+        return cached
+    _log.debug(
+        "load_design_ids: cache MISS (root=%s design_dir=%s digest=%s, "
+        "%d file(s)) -- reparsing+reelaborating",
+        root,
+        design_dir,
+        digest,
+        len(paths),
+    )
     channels, boundaries, secrets, store_ids, resources, errors, models, policies = (
         _load_all_design_files(root, paths)
     )
@@ -511,7 +582,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
         len(resources),
         len(errors),
     )
-    return DesignIds(
+    ids = DesignIds(
         channels=frozenset(channels),
         boundaries=frozenset(boundaries),
         secrets=frozenset(secrets),
@@ -521,6 +592,8 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
         resources=tuple(resources),
         policies=tuple(policies),
     )
+    _DESIGN_IDS_CACHE[cache_key] = ids
+    return ids
 
 
 # frob:doc docs/strata/surface.md#directives-t-0080

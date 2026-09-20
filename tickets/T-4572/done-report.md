@@ -930,9 +930,9 @@ evidence`, HEAD now 260aa911f). Root and worktree both confirmed clean
  tickets/T-4681/ticket.md                           |  96 ++
  tickets/T-4684/ticket.md                           |  62 ++
  tickets/T-4685/ticket.md                           |  52 ++
- tickets/T-draft-31fbe483/ticket.md                 |  34 +
- tickets/T-draft-5658939f/ticket.md                 |  53 ++
- tickets/T-draft-8c1c8d09/ticket.md                 |  35 +
+ tickets/T-5089/ticket.md                 |  34 +
+ tickets/T-5092/ticket.md                 |  53 ++
+ tickets/T-5100/ticket.md                 |  35 +
  tickets/archive/T-0090/ticket.md                   |  18 +
  tickets/archive/T-0240/ticket.md                   |  18 +
  tickets/archive/T-0292/ticket.md                   |  18 +

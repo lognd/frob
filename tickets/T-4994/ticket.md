@@ -8,7 +8,7 @@ origin: agent
 created: '2026-09-19'
 priority: medium
 blocked_by:
-- T-draft-0a0c7b43
+- T-5081
 parent: T-4804
 tier: ticket
 sprint: v0.536.0
@@ -48,7 +48,7 @@ Design-quality leaf under T-4804's decision (SF-01): SYS grows from a
 self-conformance-only gate into a DESIGN-QUALITY gate. A decision turned into a
 leaf -- the owner has decided the SUBJECT; the rule design is the work.
 
-BLOCKED BY the module-system story (T-draft-0a0c7b43, "Strata module system:
+BLOCKED BY the module-system story (T-5081, "Strata module system:
 imports, export surfaces, two-sided contracts, per-module elaboration and link").
 Per-module contracts change what this rule can see and what it should assert, so
 designing it against today's monolith would be designing against a moving

@@ -80,7 +80,7 @@ Fix, in the templates:
    carries the block; shared/cpp, types/web-app, types/pyo3-library and
    types/pybind11-library each forked the python file and silently dropped
    it, which alone accounts for 11-12 REF001 per non-python type. With
-   T-draft-538a0625 landing conventional-file defaults in the refs gate, the
+   T-5090 landing conventional-file defaults in the refs gate, the
    right fix is that the rendered frob.toml needs ZERO refs rows, not four
    more copies of the block.
 2. docs/index.md has no Public API heading, so the frob:doc anchors the

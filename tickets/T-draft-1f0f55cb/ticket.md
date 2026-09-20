@@ -8,8 +8,8 @@ origin: human
 created: '2026-09-19'
 priority: critical
 blocked_by:
-- T-draft-0bcabfa4
-parent: T-draft-0a0c7b43
+- T-5082
+parent: T-5081
 tier: ticket
 sprint: null
 runs_last: false

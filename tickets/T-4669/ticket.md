@@ -2,7 +2,7 @@
 id: T-4669
 title: 'SF-04/SF-20: digest-keyed cache for capability_via_site_counts and load_design_ids
   -- 17.8s warm per call, no memoization'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-19'
@@ -22,17 +22,26 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache::test_second_call_in_process_is_a_cache_hit_under_one_second
+- tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache::test_changed_tracked_file_invalidates_the_cache
+- tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache::test_second_call_in_process_is_a_cache_hit
+- tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache::test_changed_design_file_invalidates_the_cache
 designated_repro_test: null
 acceptance:
 - text: Given capability_via_site_counts measured 23.03s cold and 17.83s on a second
     call in the SAME process at HEAD c8f56ef10, when this lands, then a test calling
     it twice in one process asserts the second call completes in under 1 second --
     a positive control that fails today at 17.83s.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache::test_second_call_in_process_is_a_cache_hit_under_one_second
+  - tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache::test_second_call_in_process_is_a_cache_hit
 - text: Given the cache must never serve a stale scan as a clean one, when a tracked
     source file under src/ changes, then a test asserts the next lookup MISSES and
     rescans, and the lookup logs its digest and hit/miss at every call.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache::test_changed_tracked_file_invalidates_the_cache
+  - tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache::test_changed_design_file_invalidates_the_cache
 threat: null
 component: strata
 anchor: false

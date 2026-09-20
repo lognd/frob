@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import fnmatch
 import functools
+import hashlib
 import json
 import os
 import re
@@ -1145,12 +1146,199 @@ def _glob_via_observed_site_count(
     return count
 
 
+#: T-4669 (SF-04): per-process cache for `capability_via_site_counts`,
+#: keyed by `(str(root), digest)` where `digest` is a content hash of
+#: every file `_glob_via_observed_site_count` would actually read for
+#: `model` -- NOT mtime (worktrees and git checkouts rewrite mtimes on a
+#: checkout with unchanged content, which would defeat the cache exactly
+#: when it matters most: right after a land/rebase). Measured at HEAD
+#: c8f56ef10: the uncached call costs 23.03s cold, 17.83s again on a
+#: second call in the SAME process -- SYS111, the land pre-commit check,
+#: the composed-tree check and the detached post-land sweep each pay
+#: this per call, and `_fix_engine_sync.py:1313` pays it TWICE per call
+#: (`current_counts` and `before_counts`). Never cleared explicitly: a
+#: process-lifetime cache is exactly what "one scan per process" (the
+#: ticket's acceptance criterion) means, and a stale hit is impossible by
+#: construction since a change to any scanned file changes the digest.
+# frob:ticket T-4669
+_CAPABILITY_SITE_COUNT_CACHE: dict[tuple[str, str], dict[str, int]] = {}
+
+#: T-4669: per-process cache of one file's content hash, keyed by absolute
+#: path, valued `(size, mtime_ns, sha256_hex)`. `_capability_scan_digest`
+#: trusts a cached hash WITHOUT re-reading the file's bytes only when
+#: `size` AND `mtime_ns` still match what was stat'd last time -- `mtime`
+#: is a FAST-PATH invalidation hint here, never the source of truth: a
+#: `size`/`mtime_ns` mismatch always falls back to re-reading and
+#: re-hashing that one file (never trusts a stale hash), so the only
+#: thing this buys is skipping a re-read of a file whose stat is
+#: unchanged since the last digest -- it cannot produce a false content
+#: match. Needed because `capability_via_site_counts`'s candidate set can
+#: run to hundreds of test files: re-reading every one of them on every
+#: call (even a cache HIT on the outer `_CAPABILITY_SITE_COUNT_CACHE`)
+#: was measured to cost ~1.3s by itself, well over the ticket's <0.5s
+#: warm-call target -- this cache is what gets a warm call from "read
+#: every candidate file's bytes" down to "stat every candidate file".
+# frob:ticket T-4669
+_FILE_CONTENT_HASH_CACHE: dict[str, tuple[int, int, str]] = {}
+
+
+# frob:ticket T-4669
+def _cached_file_sha256(path: Path) -> str:
+    """`path`'s content SHA-256, reusing `_FILE_CONTENT_HASH_CACHE`'s
+    entry when `path`'s current `(size, mtime_ns)` still matches the
+    stat this process last hashed it at -- see that cache's docstring
+    for why a stat mismatch always re-reads rather than ever trusting a
+    stale hash. Returns the empty-string digest (`hashlib.sha256(b"")`)
+    for a path that cannot be stat'd/read, exactly matching the
+    unreadable-file case the direct read/hash loop used before this
+    helper existed."""
+    key = str(path)
+    try:
+        st = path.stat()
+    except OSError as exc:
+        _log.debug(
+            "strata effects: capability scan digest: could not stat %s: %s", path, exc
+        )
+        return hashlib.sha256(b"").hexdigest()
+    cached = _FILE_CONTENT_HASH_CACHE.get(key)
+    if cached is not None and cached[0] == st.st_size and cached[1] == st.st_mtime_ns:
+        return cached[2]
+    try:
+        content_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as exc:
+        _log.debug(
+            "strata effects: capability scan digest: could not read %s: %s", path, exc
+        )
+        content_hash = hashlib.sha256(b"").hexdigest()
+    _FILE_CONTENT_HASH_CACHE[key] = (st.st_size, st.st_mtime_ns, content_hash)
+    return content_hash
+
+
+# frob:ticket T-4669
+def _bind_code_or_none(model: KernelModel, root: Path | None) -> CodeBinding | None:
+    """`bind_code(model, root)`'s `Ok` value, or `None` when `root` is
+    `None` or binding failed (logged) -- hoisted out of
+    `capability_via_site_counts` so that function stays under the
+    long-function threshold (ARCH001) now that it also has cache-lookup
+    logic to run."""
+    if root is None:
+        return None
+    bound = bind_code(model, root)
+    if bound.is_err:
+        _log.warning(
+            "strata effects: capability via-site count: bind_code failed "
+            "(%s) -- falling back to via-list length for every grant",
+            bound.danger_err,
+        )
+        return None
+    return bound.danger_ok
+
+
+# frob:ticket T-4669
+def _capability_site_count_cache_lookup(
+    model: KernelModel, root: Path | None, binding: CodeBinding | None
+) -> tuple[tuple[str, str] | None, dict[str, int] | None]:
+    """`(cache_key, cached_result)` for `capability_via_site_counts`:
+    `cache_key` is `None` when there is nothing to key a cache entry on
+    (no `root`/no successful `binding`, matching the pre-T-4669 always-
+    rescan behavior for that shape); `cached_result` is the previously
+    cached `dict` (a fresh copy, safe for the caller to return directly)
+    on a cache HIT, `None` on a MISS -- the caller must run the real scan
+    and store it under `cache_key` itself. Hoisted out of `capability_
+    via_site_counts` for the same ARCH001 reason `_bind_code_or_none`
+    was."""
+    if binding is None:
+        return None, None
+    assert root is not None
+    candidates = _capability_scan_candidates(model, binding)
+    digest = _capability_scan_digest(model, root, candidates)
+    cache_key = (str(root), digest)
+    cached = _CAPABILITY_SITE_COUNT_CACHE.get(cache_key)
+    if cached is not None:
+        _log.debug(
+            "strata effects: capability via-site count: cache HIT "
+            "(root=%s digest=%s, %d candidate file(s))",
+            root,
+            digest,
+            len(candidates),
+        )
+        return cache_key, dict(cached)
+    _log.debug(
+        "strata effects: capability via-site count: cache MISS "
+        "(root=%s digest=%s, %d candidate file(s)) -- rescanning",
+        root,
+        digest,
+        len(candidates),
+    )
+    return cache_key, None
+
+
+# frob:ticket T-4669
+def _capability_scan_candidates(model: KernelModel, binding: CodeBinding) -> list[str]:
+    """Every `rel` path `capability_via_site_counts` would hand to
+    `_glob_via_observed_site_count` for `model` against `binding` --
+    the exact file set whose CONTENT the cache digest must cover, in
+    deterministic order. Kept as its own function so the digest and the
+    real scan can never drift onto two different predicates (the same
+    single-join discipline `unbound_constructs`'s docstring names)."""
+    candidates: list[str] = []
+    for node in model.nodes:
+        if node.id != "testsuite":
+            continue
+        for grant in node.may_grants:
+            if not grant.via or not _via_is_bare_glob_only(grant.via):
+                continue
+            for rel, owner in binding.owner.items():
+                if owner == node.id and _via_matches(rel, grant.via):
+                    candidates.append(rel)
+    return sorted(set(candidates))
+
+
+# frob:ticket T-4669
+def _capability_scan_digest(
+    model: KernelModel, root: Path, candidates: list[str]
+) -> str:
+    """SHA-256 over `model`'s own grant signature (every `node.id`,
+    `grant.atom`, `grant.via` triple, in declaration order) followed by
+    `(rel, content)` for every path in `candidates` (already
+    sorted+deduped by `_capability_scan_candidates`). `model`'s own
+    signature must be IN the digest, not just the candidate files: two
+    calls sharing one `root` but different `via`-list lengths on a
+    non-`testsuite` (or non-glob) grant produce different `counts` from
+    an IDENTICAL candidate file set (`_capability_scan_candidates` only
+    covers the `testsuite`-bare-glob scan path), so the file-content hash
+    alone cannot tell those two calls apart -- caught by a real test
+    regression (`TestCapabilityRatchet.
+    test_growth_beyond_justified_ceiling_fails_even_after_a_prior_shrink`)
+    reusing one `tmp_path` across a shrunk and a regrown model. Digest
+    changes iff `model`'s grant shape OR a scanned file's CONTENT
+    changes -- a checkout that only touches mtimes (the reason this is
+    not mtime-keyed, see `_CAPABILITY_SITE_COUNT_CACHE`) leaves it
+    unchanged. A candidate file that vanishes or cannot be read still
+    contributes its path to the digest (the loop below reads nothing
+    further on `OSError`) so a delete still invalidates instead of
+    silently reusing a stale hit."""
+    digest = hashlib.sha256()
+    for node in model.nodes:
+        for grant in node.may_grants:
+            digest.update(f"{node.id}\0{grant.atom}\0{grant.via}\0".encode("utf-8"))
+    for rel in candidates:
+        digest.update(rel.encode("utf-8"))
+        digest.update(_cached_file_sha256(root / rel).encode("ascii"))
+    return digest.hexdigest()
+
+
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1628
 # frob:ticket T-4495
+# frob:ticket T-4669
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
 # frob:tests \
 # tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_is_silent
+# frob:tests \
+# tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache.test_second_call_in_process_is_a_cache_hit_under_one_second  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache.test_changed_tracked_file_invalidates_the_cache  # noqa: E501
 def capability_via_site_counts(
     model: KernelModel, root: Path | None = None
 ) -> dict[str, int]:
@@ -1172,17 +1360,11 @@ def capability_via_site_counts(
     a `bind_code` failure is logged and this call falls back to `len(via)`
     for every grant rather than raising, matching this module's existing
     best-effort-on-binding-failure posture elsewhere."""
-    binding: CodeBinding | None = None
-    if root is not None:
-        bound = bind_code(model, root)
-        if bound.is_err:
-            _log.warning(
-                "strata effects: capability via-site count: bind_code failed "
-                "(%s) -- falling back to via-list length for every grant",
-                bound.danger_err,
-            )
-        else:
-            binding = bound.danger_ok
+    binding = _bind_code_or_none(model, root)
+    cache_key, cached = _capability_site_count_cache_lookup(model, root, binding)
+    if cached is not None:
+        return cached
+
     counts: dict[str, int] = {}
     for node in model.nodes:
         for grant in node.may_grants:
@@ -1199,6 +1381,8 @@ def capability_via_site_counts(
             else:
                 count = len(grant.via)
             counts[key] = counts.get(key, 0) + count
+    if cache_key is not None:
+        _CAPABILITY_SITE_COUNT_CACHE[cache_key] = dict(counts)
     return counts
 
 

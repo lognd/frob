@@ -221,5 +221,5 @@ AMENDMENTS APPLIED 2026-09-19 after coordinator review:
   - OWNER DECISION on `exports`: the check half folds into frob check --only
     exports (planned); the generate half moves under `scaffold`.
   - T-4689 lands BEFORE the hooks story's telemetry-logging leaf
-    (T-draft-706ae266, scope `.claude/hooks/*`); both edit
+    (T-5098, scope `.claude/hooks/*`); both edit
     .claude/hooks/tool-call-telemetry.py.

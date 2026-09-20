@@ -91,7 +91,7 @@ like a task list.
 
 Scope note: the closed top-level frob.toml schema and the
 conventional-files-referenced-by-default change are NOT in this leaf -- they
-are already filed as T-draft-538a0625, which this story blocks the scaffold
+are already filed as T-5090, which this story blocks the scaffold
 frob.toml leaf on.
 
 Positive controls (each an assert, not a smoke test):

@@ -6,7 +6,7 @@ kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: T-draft-8c7e665d
+parent: T-5101
 tier: ticket
 sprint: null
 runs_last: false
@@ -65,4 +65,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Leaf 1 of T-draft-8c7e665d. See scratchpad/HOOK-AUDIT.md section 0b.
+Leaf 1 of T-5101. See scratchpad/HOOK-AUDIT.md section 0b.

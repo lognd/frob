@@ -8,7 +8,7 @@ origin: agent
 created: '2026-09-19'
 priority: medium
 blocked_by:
-- T-draft-0a0c7b43
+- T-5081
 parent: T-4681
 tier: ticket
 sprint: v0.536.0
@@ -66,7 +66,7 @@ DELIVERABLE: the decision recorded in this body, plus -- if "recorded extension"
 "desugar" -- the mapping from the domain's constructs onto the six primitives
 and what is lost.
 
-BLOCKED BY the module-system story (T-draft-0a0c7b43): per-module contracts
+BLOCKED BY the module-system story (T-5081): per-module contracts
 change what several of these domains must express, so deciding against today's
 monolith would be deciding against a moving target.
 
