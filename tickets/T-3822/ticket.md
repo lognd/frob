@@ -15,10 +15,28 @@ runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- strata-core/src/parse/grammar_node.rs
+- design/litmus/attr_ident.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/parse/grammar_node.rs
+  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
+    the documented attr IDENT form, proven by its own new litmus file (kept separate
+    from T-3823''s so the two parser leaves stay scope-disjoint)'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: design/litmus/attr_ident.strata
+  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
+    the documented attr IDENT form, proven by its own new litmus file (kept separate
+    from T-3823''s so the two parser leaves stay scope-disjoint)'
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: parent
   old_value: null
