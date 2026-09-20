@@ -4,60 +4,27 @@ title: 'F-018: docs/strata secret grammar vs charter prose mismatch (rotate with
   via ... within reads like syntax but impl is issued_by/lifetime/revoke; no way to
   name the revocation FLOW) -- reconcile grammar and prose'
 state: queued
-kind: feature
+kind: bug
 origin: human
 created: '2026-09-05'
 priority: medium
-parent: T-4665
+parent: T-4667
 tier: ticket
 sprint: v1.1.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- strata-core/src/parse/grammar_policy.rs
-- design/litmus/secret_lifecycle.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: strata-core/src/parse/grammar_policy.rs
-  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
-    the documented secret rotate-within/revoke forms, proven by its own new litmus
-    file; grammar_node.rs is deliberately excluded because T-3822 holds it'
-  actor: logan
-  at: '2026-09-19'
-- op: add
-  glob: design/litmus/secret_lifecycle.strata
-  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
-    the documented secret rotate-within/revoke forms, proven by its own new litmus
-    file; grammar_node.rs is deliberately excluded because T-3822 holds it'
-  actor: logan
-  at: '2026-09-19'
 triage_changes:
 - field: parent
   old_value: null
   new_value: T-4667
   reason: '2026-09-19: SF-22 in the STRATA friction audit; joins story D (DECISIONS)
     of epic T-4662 alongside T-3822 -- same docs-vs-parser class at statement level'
-  actor: logan
-  at: '2026-09-19'
-- field: parent
-  old_value: T-4667
-  new_value: T-4665
-  reason: '2026-09-19: owner decided the parser is incomplete rather than the prose
-    wrong, converting this from a DECISION into implementation work; it moves from
-    story D (T-4667) to story B (T-4665)'
-  actor: logan
-  at: '2026-09-19'
-- field: kind
-  old_value: bug
-  new_value: feature
-  reason: '2026-09-19: converted from a docs decision into implementation work on
-    the parser (owner decision: the parser is incomplete, not the prose wrong)'
   actor: logan
   at: '2026-09-19'
 body_changes:
@@ -79,22 +46,6 @@ body_changes:
   old_length: 1548
   new_length: 4432
 designated_repro_test: null
-acceptance:
-- text: Given docs/strata's secret grammar and the charter prose describe 'rotate
-    within ...' and 'revoke via ...' forms that strata-core's parser does not accept,
-    and the owner decided the PARSER is incomplete rather than the prose wrong, when
-    this lands, then the documented forms PARSE and ELABORATE, proven by design/litmus/secret_lifecycle.strata
-    -- a litmus case that fails to parse at HEAD c8f56ef10 and passes after.
-  evidence: []
-- text: Given this ticket's finding is that there is no way to NAME the revocation
-    flow, when this lands, then a revocation flow can be named in the model and the
-    elaborator reports it, exercised by the same litmus case.
-  evidence: []
-- text: Given revoke, within, lifetime and issued_by already appear in the lexer but
-    only inside design/litmus fixtures (SF-09), when this ticket starts, then what
-    actually parses today is established first and recorded, since the keyword list
-    is only a lower bound on what the grammar reaches.
-  evidence: []
 threat: null
 component: null
 anchor: false
