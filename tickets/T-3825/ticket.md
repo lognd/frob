@@ -10,7 +10,7 @@ created: '2026-09-05'
 priority: medium
 parent: T-4665
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
@@ -26,6 +26,12 @@ triage_changes:
   reason: '2026-09-19: SF-17 in the STRATA friction audit; joins story B of epic T-4662
     -- a false positive that blocks green and whose stale-cache half interacts with
     T-4669'
+  actor: logan
+  at: '2026-09-19'
+- field: sprint
+  old_value: v1.1.0
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 body_changes:
