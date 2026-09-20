@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: medium
 parent: T-4036
 tier: ticket
-sprint: v0.538.0
+sprint: v1.1.0
 runs_last: false
 milestone: v0.548.0
 runs_last_parallel_safe: false
@@ -33,6 +33,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: sprint
+  old_value: v0.538.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: set
   reason: 'F-267 sharpens this ticket: the same undischargeable doc obligation fires
