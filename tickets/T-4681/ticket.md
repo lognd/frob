@@ -29,6 +29,16 @@ body_changes:
   at: '2026-09-19'
   old_length: 3425
   new_length: 6683
+- mode: append
+  reason: '2026-09-19: the keyword audit establishes that kernel.md:29''s ''no other
+    kernel extension exists or is planned'' is FALSE -- ~79 of 139 keywords are not
+    sugar and span eight extra domains; recording that plus the follow-up shape (a
+    docs leaf rewriting kernel.md, and one decision-turned-leaf per domain blocked_by
+    the module-system story)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6683
+  new_length: 10316
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (headline
@@ -162,3 +172,55 @@ and the removal.
 
 NEXT ACTION (not this ticket's): land scratchpad/STRATA-KEYWORDS.md, then file
 the per-group leaves against this id.
+
+
+## AMENDMENT 2026-09-19 -- kernel.md:29 is FALSE, and by how much
+
+The pessimistic keyword audit (scratchpad/STRATA-KEYWORDS.md) landed and
+sharpens SF-21 from a headline-level finding into a specific false claim.
+
+**docs/strata/kernel.md:29 reads, verbatim (planner-verified at HEAD):**
+
+    reduce to this; no other kernel extension exists or is planned.
+
+**That is false.** Roughly **79 of 139 keywords are not sugar** over the six
+primitives. They are eight additional domains the six-primitive charter does not
+cover and never claimed to:
+
+| # | domain | why it is not sugar |
+|---|---|---|
+| 1 | code binding (`code`) | _code_binding.py gives a Node a source-glob binding; kernel.md:13's Node has no such attribute. The whole tier-2 SYS100-103 surface. |
+| 2 | capability via-lists (`may`/`via`/`of`/`exclusive`) | _effects.py. kernel.md:13 lists "capabilities (`may` set)", but the via-list and exclusivity are NOT in the kernel at all -- and SYS111's ratchet reads them directly. |
+| 3 | waivers (`waive`/`reason`/`ticket`) | _waive.py. Not a fact; a meta-fact about findings. |
+| 4 | entity/architecture (`entity`/`architecture`/`obligation`/`binds`/`configuration`) | _design_load.py:289,374-429. SYS300-303 are structural refusals at parse and load time, not Datalog conclusions. A second type system. |
+| 5 | vmodel (`vmodel_node`/`vmodel_edge`/`kind`/`level`/`runnable`/`code_ref`/`src`/`dst`) | gates/_vmodel.py:159-162, an entirely separate spec graph. grammar_core.rs:76-92 says so: "new, independent top-level statement kinds". |
+| 6 | policy (`policy`/`forbid`/`confine`/`mediate`/`require`/`call`/`import`/...) | _policy.py -- lexical/AST rules over Python source, evaluated by a refinement-monotonicity checker. Not graph facts. |
+| 7 | host/ACL (`runs_as`/`unit`/`owns`/`listens`/`acl`/`sudoers`/...) | _host.py + _host_isolation*.py. HOST001/002 are Python joins, not Datalog. |
+| 8 | kerberos (`realm`/`kdc`/`spn`/`delegation`/`trusts`/...) | _krb.py -- a Kerberos trust graph, a THIRD graph beside Node/Flow and vmodel. |
+
+The audit's conclusion, which is the direct answer to this ticket's question:
+kernel.md:9-21's "six primitives" is **accurate about the PROVER's fact language
+and misleading about the SURFACE language**. That is why the decision recorded
+above takes kernel.md as the spec and treats the extensions as deliberate rather
+than as drift -- but the sentence at line 29 has to go, because it denies the
+existence of eight domains that are shipped, parsed and enforced today.
+
+Note also that `carries` (PII, _pii.py -- a tag lattice parallel to the label
+lattice) and the observability family (`observe`/`log`/`errors_total`) are
+likewise listed as law-1-bearing by the audit; whether they fold into one of the
+eight or stand alone is for the per-domain leaves to settle.
+
+### FOLLOW-UP SHAPE (filed under this ticket)
+
+1. **A docs leaf** rewriting docs/strata/kernel.md to name the eight domains as
+   DELIBERATE extensions, each with a law-1 record, replacing the false
+   "no other kernel extension exists or is planned". Filed now -- it does not
+   wait on the module system, because the sentence is false today.
+2. **One decision-turned-leaf per domain**, each deciding either "desugar this
+   domain to the six primitives" or "declare it a recorded extension", **blocked
+   by the module-system story** -- per-module contracts change what several of
+   these domains have to express, so deciding them before that lands would be
+   deciding against a moving target.
+
+This ticket stays OPEN as the tracking record for both, alongside the per-group
+keyword WIRE leaves it already tracks.
