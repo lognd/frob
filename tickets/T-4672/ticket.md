@@ -43,50 +43,19 @@ body_changes:
   new_length: 2542
 designated_repro_test: null
 acceptance:
-- text: Given no 'check --only sys' timing row exists in 31,459 telemetry entries
-    and the strata slice has only ever been inferred from an in-process capability_via_site_counts
-    measurement, when this lands, then a real end-to-end 'frob check --only sys' wall-clock
-    is recorded with more than one sample, with the fleet-load conditions stated alongside
-    it and the spread reported rather than a single figure.
-  evidence: []
-acceptance_amendments:
-- op: replace
-  index: 1
-  old_text: Given .frob/telemetry.jsonl records 614,294 rule fires across 82 rule
-    ids of which ZERO start with SYS and SELFAUDIT001 appears once, when this lands,
-    then a test running the SYS slice over a fixture tree asserts the emitted telemetry
+- text: Given .frob/telemetry.jsonl records 614,294 rule fires across 82 rule ids
+    of which ZERO start with SYS and SELFAUDIT001 appears once, when this lands, then
+    a test running the SYS slice over a fixture tree asserts the emitted telemetry
     names at least one SYS rule id -- a positive control that fails at HEAD c8f56ef10.
-  new_text: Given no 'check --only sys' timing row exists in 31,459 telemetry entries
-    and the strata slice has only ever been inferred from an in-process capability_via_site_counts
-    measurement, when this lands, then a real end-to-end 'frob check --only sys' wall-clock
-    is recorded with more than one sample, with the fleet-load conditions stated alongside
-    it and the spread reported rather than a single figure.
-  reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); this ticket keeps
-    only the measurement half, so criterion 1 is amended from ''telemetry names a
-    SYS rule id'' to the missing wall-clock'
-  actor: logan
-  at: '2026-09-19'
-- op: remove
-  index: 3
-  old_text: Given there is no 'check --only sys' timing row in 31,459 telemetry rows,
-    when the slice runs, then it records a timing row and the done-report states the
-    measured wall-clock the epic has been missing.
-  new_text: null
-  reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); the timing criterion
-    is now criterion 1, so this duplicate timing criterion is removed'
-  actor: logan
-  at: '2026-09-19'
-- op: remove
-  index: 2
-  old_text: Given a zero can mean clean, could-not-run, nothing-to-measure or matcher-never-fired,
+  evidence: []
+- text: Given a zero can mean clean, could-not-run, nothing-to-measure or matcher-never-fired,
     when a SYS violation is PLANTED in the fixture, then a test asserts the runner
     reports it -- so a future zero is provably a clean zero.
-  new_text: null
-  reason: '2026-09-19: SF-01 re-classified as a DECISION (T-4804); planting a positive-control
-    SYS violation is instrumentation work that waits on T-4804''s decision about what
-    the family should measure, so it is withdrawn from this measurement-only ticket'
-  actor: logan
-  at: '2026-09-19'
+  evidence: []
+- text: Given there is no 'check --only sys' timing row in 31,459 telemetry rows,
+    when the slice runs, then it records a timing row and the done-report states the
+    measured wall-clock the epic has been missing.
+  evidence: []
 threat: null
 component: gates
 anchor: false
