@@ -11,6 +11,10 @@ blocked_by:
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/**
 - src/frob/vet/_capability.py
@@ -22,6 +26,15 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1380
+  new_length: 2632
 evidence:
 - tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_has_at_least_one_cve_citation
 - tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_has_at_least_one_needle
@@ -45,5 +58,30 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Extend the standard library beyond CWE entries with CVE FINGERPRINTS: code-level patterns for canonical vulnerable-usage classes, so the scanner can flag the pattern in our own code and in vetted dependency source -- not just match dependency versions against the mirror (T-0146/T-0147 handle that). Model: CveFingerprint entries (id, title, cve cite(s), linked cwe id joining the existing catalogs, language, detection needles following vet _capability's recall-over-precision substring philosophy including the T-0151 dot-exclusion lessons, remediation guidance). Curated starter set of 10-15 canonical classes with REAL citations, e.g.: pickle.loads on untrusted data, yaml.load without SafeLoader, subprocess shell=True with interpolation, requests verify=False, weak-hash password storage, jndi-style lookup injection (Log4Shell class), eval on request data, tarfile extractall path traversal, xml external entities. Each fingerprint drift-locked to the CWE catalog (unknown cwe id fails loudly) and exercised by fire/discharge fixtures in the litmus style. Wire into vet scan output and into the threat catalog views as a separate table following the CWE_TOP_25_VIEWS precedent (do not silently widen default views). Honest limits documented: substring fingerprints have false-positive classes -- document them per T-0151's precedent rather than half-building AST precision.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_scan.py:305-326,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+# The CVE-fingerprint sibling of `_scan_file_operations` (T-0153): a
+# fingerprint's `language` must match `path`'s scanned language bucket AND
+# at least one of its `needles` must appear in the file's text, the SAME
+# recall-over-precision substring philosophy `_matched_capabilities`
+# already uses (module docstring). Imports `frob.strata` LAZILY (not at
+# module scope): `frob.strata._effects` imports THIS module for its own
+# `_PATTERNS`/`language_for` join, so a top-level `frob.strata` import
+# here would be a genuine import cycle -- deferred until call time, when
+# both packages have finished initializing.
+#
+# T-0380: lexical needle-matching alone lets an aliased import evade a
+# fingerprint (`import pickle as p; p.loads(...)` never contains the
+# literal text `pickle.loads(`) even where capability scanning is already
+# binding-aware for the same module. `_binding_fingerprints` folds in
+# every fingerprint the file's binding tables resolve to, unioned with the
+# existing lexical result by `id` (a fingerprint caught either way is
+# reported once, not twice).
