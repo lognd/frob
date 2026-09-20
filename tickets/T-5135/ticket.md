@@ -1,5 +1,5 @@
 ---
-id: T-draft-bbd4f5a9
+id: T-5135
 title: N+1 git spawns and discarded caches on the doable, check, land, doctor and
   explore hot paths (perf audit 2026-09-20)
 state: queued
