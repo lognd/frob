@@ -7,6 +7,8 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: critical
+blocked_by:
+- T-draft-0bcabfa4
 parent: T-draft-0a0c7b43
 tier: ticket
 sprint: null
@@ -61,6 +63,3 @@ Dotted module names accepted in the `module` header. Parse-only: the AST/py
 bridge carries the new nodes through, nothing checks them yet. All 7 existing
 design/litmus/*.strata files and design/frob.strata must still parse unchanged,
 because none of them use the new syntax.
-
-## Unblock log
-- 2026-09-19: unblocked by T-draft-0bcabfa4 -- D-M9 decided 2026-09-19 19:30 (hierarchy, import up only, flows declared by the lower module, accept down); the grammar leaf's acceptance is updated and it is free to start
