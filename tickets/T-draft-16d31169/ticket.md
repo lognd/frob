@@ -15,9 +15,9 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
+- tests/test_hook_frob_suggest.py
 - .claude/hooks/frob-suggest.py
 - .claude/hooks/_shellscan.py
-- tests/test_hook_frob_suggest_rules.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,18 +45,6 @@ scope_changes:
   glob: tests/test_hook_frob_suggest.py
   reason: avoid lease collision with T-4689 on tool-call-telemetry.py; scope only
     to rule logic files
-  actor: logan
-  at: '2026-09-19'
-- op: remove
-  glob: tests/test_hook_frob_suggest.py
-  reason: T-draft-36c347fe leases this test file and hasn't landed yet; will re-add
-    once it lands
-  actor: logan
-  at: '2026-09-19'
-- op: add
-  glob: tests/test_hook_frob_suggest_rules.py
-  reason: golden tests for narrowed rule verdicts, in a new file to avoid lease collision
-    with T-draft-36c347fe's tests/test_hook_frob_suggest.py
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
