@@ -25,6 +25,12 @@ triage_changes:
   reason: T-3004 decomposition per the owner design decision
   actor: logan
   at: '2026-08-26'
+- field: milestone
+  old_value: 1.1.0
+  new_value: 1.1.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 threat: null
 component: null
