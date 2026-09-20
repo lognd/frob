@@ -76,6 +76,13 @@ body_changes:
   at: '2026-09-08'
   old_length: 2322
   new_length: 3629
+- mode: append
+  reason: 'T-4770: preserve waiver-discharge and verb-list cross-reference detail
+    trimmed from _wire.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3628
+  new_length: 4570
 evidence:
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_inside_appconfig_bypass_parser_func_is_not_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_outside_appconfig_bypass_parser_func_still_flagged
@@ -137,3 +144,19 @@ fix and is NOT among the remaining two.
 
 Once T-4325 lands, retry:
   uv run frob ticket land T-4303 --worktree /home/logan/projects/frob/.claude/worktrees/t-4303
+
+
+T-4770 follow-up (condensed from _WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS's
+docstring in src/frob/gates/_wire.py, trimmed for DOCARCH002's 12-line
+cap): flagging every dest= in one of these functions every time trained
+the exact "waive it, it's always this" reflex a per-verb
+`frob:waive WIRE001 follow_up="T-####"` was standing in for (see
+_add_whereis_parser's own T-4299 waiver, now dischargeable once this
+landed). The real invocation path is frob.__main__._dispatch's raw
+argv[0] scan. The same reasoning that leaves bind/agent/worktree/
+sync-skills off _WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS applies here:
+those verbs (whereis included, T-4299) still register their OWN
+_add_*_parser on the real _build_parser() tree, so they are visible to
+frob --help and to this WIRE001 check's _CLI_PARSER_DIR_PREFIX file
+filter -- only refactor/narrative build a throwaway local parser
+instead (_dispatch_refactor/_dispatch_narrative's own shape).
