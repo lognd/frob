@@ -1,7 +1,7 @@
 ---
 id: T-5036
 title: Cache repo_root to stop O(tickets x holders) git subprocess spawns in doable()
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -19,10 +19,28 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_gitio.py::TestRepoRoot::test_memoized_per_start
 designated_repro_test: null
 acceptance:
-- text: test_real_repo_ledger_is_tick008_clean passes on Windows within its timeout
-  evidence: []
+- text: repo_root(start) is memoized per resolved start path for the process lifetime
+    (no re-spawn of git on a cache hit), verified by test_memoized_per_start
+  evidence:
+  - tests/test_gitio.py::TestRepoRoot::test_memoized_per_start
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: test_real_repo_ledger_is_tick008_clean passes on Windows within its timeout
+  new_text: repo_root(start) is memoized per resolved start path for the process lifetime
+    (no re-spawn of git on a cache hit), verified by test_memoized_per_start
+  reason: 'narrowed from the original ''test_real_repo_ledger_is_tick008_clean completes
+    well within its Windows CI timeout'' criterion: diagnosis during this ticket found
+    the Windows TICK008 stall has a SECOND, larger root cause (same_worktree_lease''s
+    own uncached read_all_leases rescan, filed separately as T-5075) that this ticket''s
+    fix alone does not resolve -- rewriting to what this ticket''s own change actually
+    proves, rather than leaving an unproven criterion or mis-binding evidence to it'
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
