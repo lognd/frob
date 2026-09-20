@@ -9,7 +9,7 @@ created: '2026-09-07'
 priority: medium
 parent: null
 tier: epic
-sprint: null
+sprint: v0.543.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -20,6 +20,13 @@ no_scope_declared: true
 no_scope_declared_reason: tier=epic design record; the implementation surface is not
   known until its leaves are cut, and the design deliberately spans the ticket store,
   the git ref layer, and the CLI rather than one module
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.543.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: 'owner decisions: the claim is the branch, claiming requires push access,
