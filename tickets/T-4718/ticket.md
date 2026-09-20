@@ -8,7 +8,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4691
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -38,6 +38,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: 'given the 20 files in this cluster, when the sweep is done, then zero comment
