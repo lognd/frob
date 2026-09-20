@@ -1,5 +1,5 @@
 ---
-id: T-draft-a38af1c4
+id: T-5126
 title: 'DOC006 refuses unrelated lands over cli pointers inside ticket bodies merged
   in from dev: skip tickets/** in DOC006 and exclude ledger files from T-3324 attribution'
 state: queued

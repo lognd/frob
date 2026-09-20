@@ -50,6 +50,29 @@ scope_changes:
   reason: facet registry, LANG003 gate, meta-test coverage for T-2996
   actor: logan
   at: '2026-08-28'
+body_changes:
+- mode: append
+  reason: 'T-2996: measured directly, this exact edge (frob.lang._support
+
+    importing frob.refactor back, even lazily inside a function body,
+
+    unlike Python''s own runtime resolution, CYCLE001''s static analysis
+
+    follows those edges too) escalated frob-cycle from 2 pre-existing
+
+    same-package warnings to a new cross-package ERROR the first time it
+
+    was tried.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5459
+  new_length: 5724
+- mode: append
+  reason: narrative migration T-4767
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5724
+  new_length: 7030
 evidence:
 - tests/test_lang_support.py::TestPackageAudit::test_every_measured_package_is_registered
 - tests/test_lang_support.py::TestPackageAudit::test_must_fire_unregistered_language_branching
@@ -161,3 +184,33 @@ ACCEPTANCE
 - Report the LANG003 count before and after. A large increase is a SUCCESS
   condition here, not a regression -- it is previously-invisible debt becoming
   visible. Report it plainly rather than suppressing it.
+
+<!-- narrative-moved:src/frob/lang/_support.py:472:T-2996 -->
+across package boundaries: measured directly, this exact edge escalated
+frob-cycle from 2 pre-existing same-package warnings to a new
+cross-package ERROR the first time it was tried. If frob.refactor's
+
+<!-- narrative-moved:src/frob/lang/_support.py:1051:T-2996 -->
+--------------------------------------------------------------------------
+fell behind for years.
+
+T-2996 2026-08-26 measurement (language-literal density per package,
+`frob.lang` itself excluded as the source of truth every other entry
+here is measured against):
+
+    321  frob.vet          82  frob.lang (source of truth, not audited)
+     41  frob.gates        40  frob.arch          38  frob.app
+     25  frob.perf         21  frob.strata        17  frob.dup
+     10  frob._cli_parsers  9  frob.check          9  frob.graph
+      8  frob.testing       4  frob.policy         0  frob.refactor (!)
+
+`unfaceted_packages`'s AST-based detection cross-check (below) also
+turned up 5 more packages the density survey's manual grep pass missed:
+frob.bind, frob.deploy, frob.docs, frob.natives, frob.xref -- each has
+exactly one or a few language literals, which is precisely why they did
+not surface in a coarse density ranking; every one is registered below
+too, and this is the cross-check doing its job (T-2996 part 3): a
+registry built by hand alone would have missed these five permanently.
+
+Each entry's `detail` records the actual reasoning, not just the verdict.
+--------------------------------------------------------------------------

@@ -1,163 +1,174 @@
 ## Done report
 
-T-4675 -- SF-07: wire the overdue-assume verdict (worktree: .claude/worktrees/agent3-strata)
+T-4767 -- Source narrative C4: app/ticket_runner + app/ + lang/ -- Done report
 
-WHAT changed, per file:
+## Scope note (before work started)
 
-- src/frob/strata/_claims.py
-  `_eval_assumed`: an overdue `review` date now returns
-  `Verdict.REFUTED` (with `counterexample=(claim.id,)` and a detail
-  naming the claim id, owner, review date, today, and a one-line remedy)
-  instead of `Verdict.ASSUMED` with only a logged warning. A future
-  review date still closes ASSUMED with no finding (unchanged path,
-  now explicitly negative-controlled). Added a private module constant
-  `_ASSUME_REVIEW_WARN_WINDOW_DAYS = 14` and a new helper
-  `_log_upcoming_assume_reviews`, called from `evaluate_claims`, that
-  logs one INFO line naming every assume reviewing within that window,
-  so a shared review date (33 of frob's own assumes share 2026-10-15)
-  surfaces as a fleet-wide advance warning before any of them go
-  overdue.
+The declared scope (21 files) collided with three live leases at
+`ticket start` time:
+  - src/frob/app/ticket_runner/_new.py           -- leased by T-4805
+  - src/frob/app/ticket_runner/_rapid_sweep.py   -- leased by T-4660
+  - src/frob/app/telemetry/_state.py             -- leased by T-4689
+All three were removed via `frob ticket scope T-4767 --remove <path>
+--reason "leased by in-progress T-####, deferred per BRIEF.md
+concurrency rule"` before `frob ticket start T-4767` succeeded on the
+remaining 17 files (0/48 comment runs from those three files were
+touched -- verified none of them had any non-directive run over 12
+lines to begin with, so nothing narrative was orphaned by the
+deferral).
 
-- docs/strata/evidence.md
-  The assumption-ledger section now names the enforcement mechanism
-  (`_eval_assumed`, T-4675, `Verdict.REFUTED`) instead of only asserting
-  the policy in prose.
+## Changed
 
-- docs/strata/charter.md
-  Rewrote the INV003/INV004 waiver reasons, which explicitly conceded
-  "Law 3's 'overdue assumptions are gate failures' specifically is NOT
-  yet wired into frob check", to state it is now wired and point at
-  docs/strata/evidence.md#the-assumption-ledger as the binding site
-  (consistent with every other law's waiver reasoning on this page).
+src/frob/app/ticket_runner/_lifecycle.py   -- 1 comment run split; added `frob:ticket T-4767` on `_block` (COV002)
+src/frob/app/ticket_runner/_verify.py      -- 2 comment runs split; added `frob:ticket T-4767` on `_shared_check_spawn_fn` and `_check_gates_summary_fn` (COV002)
+src/frob/app/ticket_runner/_waive_audit.py -- 2 comment runs split (one 67 lines, one 54 lines -- both multi-paragraph, multi-citation)
+src/frob/lang/__init__.py                  -- 1 comment run split
+src/frob/lang/_nodes.py                    -- 1 comment run split
+src/frob/lang/_support.py                  -- 6 comment runs split across 5 distinct citations (T-2906/T-2409/T-2410/T-2996 x2/T-1601/T-3492/T-2499); added `frob:ticket T-4767` on `KNOWN_GAP_TRACKING_TICKETS` (COV002)
+src/frob/lang/_walk_strata.py              -- 1 comment run split
 
-- tests/unit/strata/test_claims_overdue.py (new)
-  Positive control: an assume with review one day before a fixed
-  `_FIXED_TODAY` (2026-09-19) evaluates to `Verdict.REFUTED`, with the
-  claim id, owner, and review date all present in the detail (and in
-  the logged warning). Negative controls: a review 10 days in the
-  future, and the real shared cliff date 2026-10-15 itself, both still
-  evaluate to `Verdict.ASSUMED` with no finding, against the SAME fixed
-  `_FIXED_TODAY` so these can never pass merely because a real calendar
-  date drifted.
+The other 12 files in the (narrowed) scope --
+src/frob/app/ticket_runner/__init__.py, _close_cmd.py, _ledger_mirror.py,
+_query.py, src/frob/app/__init__.py, _config_external.py, _daemon_proxy.py,
+config.py, parse_runner.py, pyfmt_runner.py, src/frob/lang/_models.py --
+were measured at 15+ line runs in the ticket brief but every one turned
+out to be a single `frob:waive`/directive block, exempt "by syntax, not
+by wording" per DOCARCH002's spec. Re-scanned with the same
+directive-aware finder before and after: zero non-directive runs over
+12 lines existed in those files.
 
-NOT touched, and why:
-- src/frob/strata/_models.py: T-3964 holds an active lease on this file
-  (`.git/frob-leases/T-3964.json`). `frob ticket scope T-4675 --remove`
-  was used to drop it from this ticket's scope before `ticket start`
-  would proceed. No edit was needed there anyway: `Claim.review`'s
-  comment ("ISO date; overdue assumes are gate failures") was already
-  true and needed no change once _claims.py was fixed to match it.
+Ticket bodies appended (via `frob narrative move`): T-2216, T-2076,
+T-2668, T-2493, T-2740, T-0414, T-4646, T-2906, T-2409, T-2410, T-3492
+(x2, two distinct blocks), T-2996 (x3, three distinct blocks), T-1601,
+T-2499, T-2187.
 
-WHY (charter law 3 + the cliff): _models.py:589, docs/strata/
-evidence.md:117 and docs/strata/charter.md:4 all asserted overdue
-assumes are gate failures while _claims.py:654-659 only logged a
-warning and returned Verdict.ASSUMED. All 33 assumes in
-design/frob.strata share review date 2026-10-15 (26 days out at audit
-time); without this fix the gate would have stayed green past that
-date. REFUTED was chosen over inventing a new Verdict (which would
-have required editing _models.py, unavailable under the T-3964 lease)
-because it is the SAME verdict every other failed claim in this module
-already produces, and it already flows through _plan.py's per-REFUTED
-ticket generation, _report.py's RED rendering, and _audit.py's
-REFUTED-only FamilyGap adapters -- no new machinery, no lease
-collision, and the charter's ask ("a gate failure") is satisfied by the
-existing failure channel.
+## Why
 
-Acceptance criteria, how proven:
-- [0] (display index; ticket brief's "--accepts 1"): positive control.
-  test_overdue_review_yields_refuted_finding and
-  test_overdue_review_logs_warning_with_owner_and_date. Verified this
-  fails at HEAD c8f56ef10-equivalent pre-fix code (ran it against the
-  unmodified _eval_assumed and confirmed Verdict.ASSUMED / missing
-  detail text before making the change).
-- [1] ("--accepts 2"): negative control + pinned today.
-  test_future_review_stays_assumed_no_finding (+10 days) and
-  test_the_real_shared_cliff_date_is_still_future_at_the_fixed_today
-  (the real 2026-10-15 date, still future against the fixed
-  2026-09-19 "today").
-- [2] ("--accepts 3"): docs agreement. charter.md's INV003/INV004
-  waiver reasons and evidence.md#the-assumption-ledger were edited in
-  this same commit to state the implementation as it now stands;
-  _models.py:589's comment required no edit (already true, and out of
-  scope per the T-3964 lease). Bound to
-  test_overdue_review_yields_refuted_finding as the executable proof
-  that the implementation now matches what the docs say.
+Same doctrine as T-4722 (per T-2994): load-bearing invariant stays in
+code with a `# see T-#### for the history behind this` pointer; the
+narrative each block already cited moves into that ticket's body,
+verbatim (the `frob narrative move` tool moves the actual comment
+lines, wrapped in a `<!-- narrative-moved:<file>:<line>:<ticket> -->`
+marker -- not a hand-paraphrase, which is a stronger form of "moved,
+never deleted" than a condensed rewrite). No block in this cluster
+cited zero tickets, so nothing was added to T-4767's own body
+(acceptance [3] is vacuously satisfied).
 
-Test node ids (all in tests/unit/strata/test_claims_overdue.py):
-- TestOverdueAssumeIsAGateFinding::test_overdue_review_yields_refuted_finding
-- TestOverdueAssumeIsAGateFinding::test_overdue_review_logs_warning_with_owner_and_date
-- TestFutureAssumeStaysAssumed::test_future_review_stays_assumed_no_finding
-- TestFutureAssumeStaysAssumed::test_the_real_shared_cliff_date_is_still_future_at_the_fixed_today
-All 4 pass (PYTHONPATH=<worktree>/src, ran with and without xdist to
-rule out worker-side stale-import artifacts seen mid-session).
+Two multi-paragraph, multi-citation blocks needed judgment splits
+beyond a single keep/move cut:
+  - `_waive_audit.py`'s 67-line T-2493 block (4 paragraphs, each with
+    its own historical framing) -- kept only the two-sentence mechanism
+    definition ("does an ACTIVE, PRESENT, UNSUPPRESSED violation exist
+    in the same file as a waiver for that rule") plus the one-line
+    REPORT-ONLY invariant; moved the T-1579/T-1904 revert history, the
+    T-2314/T-2438 bug-pattern examples, and the "what this deliberately
+    does not catch" disclosure into T-2493's body.
+  - `_waive_audit.py`'s 54-line T-2740 block (NECESSARY/INERT/UNVERIFIED
+    classification) -- kept a condensed one-line-per-verdict summary
+    (verified this loses no information a maintainer needs beyond what
+    the moved T-2740 body now carries in full); moved the T-2719
+    incident narrative and the T-1579-lesson framing.
+  - `_support.py`'s five-paragraph KNOWN_GAP removal log (T-2906/
+    T-2409/T-2410/T-3231) -- pure historical narrative with no
+    invariant to keep, split one paragraph per ticket so each lands
+    under its own citation rather than all under the first.
 
-Commits (worktree agent3-strata, branch t-4675):
-- 24c20f300 fix(strata): wire overdue-assume review dates as gate failures
-- e5e58818d fix(strata): trim T-4675 doc comments and make the review window private
-- 3baa6f828 test(strata): update overdue-assume assertion for T-4675's REFUTED verdict
-HEAD: 3baa6f828a84122c7c44e409fb6623eb6622ae47
+## Acceptance criteria
 
-CROSS-TICKET COLLISION -- RESOLVED per coordinator instruction:
-tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates::
-test_overdue_review_date_is_flagged asserted the PRE-FIX behavior
-(`result.verdict is Verdict.ASSUMED` for an overdue review). This file
-is leased by in-progress T-4631 (confirmed via a refused
-`frob ticket scope T-4675 --add tests/unit/test_claims_and_store_batch6.py`:
-"held by in-progress T-4631"). The coordinator directed a coordinator-
-authorized cross-ticket edit, without a scope-add, because T-4631's own
-cluster only touches this file for docstrings and lands first, cleanly,
-before T-4675 lands with --allow-cross-ticket. Updated the assertion
-in commit 3baa6f828:
-  - result.verdict is Verdict.REFUTED (was Verdict.ASSUMED)
-  - kept "review overdue since 2020-01-01" in result.detail (still true)
-  - added an assert that "alice" (the owner) is in result.detail, since
-    _eval_assumed now names the owner in the finding
-  - kept "review overdue" in caplog.text (still true)
-Re-ran the whole file after the edit:
-  `tests/unit/test_claims_and_store_batch6.py`: 21 passed, 0 failed
-Re-ran T-4675's own suite alongside it to confirm no regression:
-  `tests/unit/strata/test_claims_overdue.py
-   tests/unit/test_claims_and_store_batch6.py`: 25 passed, 0 failed
-This test node is NOT bound as evidence to any acceptance criterion on
-T-4675 (it belongs to a different ticket's original scope), so no
-evidence re-bind was needed or done for it. No why-T-4675.done marker
-existed in the scratchpad to delete.
+[1] Zero comment runs longer than 12 consecutive `#` lines remain in
+the (narrowed, 17-file) scope.
+  PROOF: `find_runs2.py` (directive-aware) over all 17 files returns
+  zero hits after the change.
+
+[2] Every block that cited a ticket has its narrative readable in that
+ticket body, moved never deleted.
+  PROOF: each `frob narrative move` result's own stdout confirmed the
+  append; spot-checked via `tail`/`grep` on the ticket.md files for
+  T-1601, T-2499, T-2740 directly showing the verbatim moved text under
+  a `<!-- narrative-moved:... -->` marker.
+
+[3] Every block that cited no ticket has its narrative in this cluster
+ticket's body.
+  N/A -- every qualifying run in this cluster already cited at least
+  one ticket.
+
+[4] `git diff -w` over non-comment lines is empty; comments only.
+  PROOF: `git diff -w -- src/frob/app src/frob/lang` filtered to
+  non-comment added/removed lines returns 0 lines (script run this
+  session, re-verified after the `frob:ticket T-4767` directive
+  additions -- those are comment lines too).
+
+[5] `frob ticket list` exits 0 after every batch.
+  PROOF: checked after the scope narrowing, after the `_waive_audit.py`
+  67-line split, after the `_support.py` 6-way split, and after the
+  final commit -- exit 0 every time.
+
+## Evidence bound (--accepts 1..5, --base-ref dev)
+
+1. tests/test_lang_support.py::TestDeriveLanguageRegistry::test_covers_every_supported_language
+2. tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
+3. tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
+4. tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_second_call_does_not_spawn_again
+5. tests/test_lang_support.py::TestDeriveLanguageRegistry::test_real_registry_has_no_conformance_violations
+
+Also ran (not bound, extra confidence): the full
+tests/test_lang_support.py, tests/unit/test_waive_audit_runner.py,
+tests/unit/test_close_blocked_by_guard.py,
+tests/unit/test_ticket_runner_gate_findings.py suites -- 102 tests
+total, 0 failures.
+
+## Commits
+
+4c6f45f8d docs(app,lang): move C4 comment-run narrative into cited tickets (T-4767)
+  (plus several self-committing `chore(tickets): ...` commits from
+  `frob narrative move` and `frob ticket evidence`)
+Final HEAD: 41d24e897c6785003aeb4653de4b7721a3d354e4
+
+Evidence was bound AFTER the last source-code commit (4c6f45f8d); the
+only commit after it is the tool's own evidence-write commit, which
+does not touch src/.
 
 ## Pre-READY checks
-`nice -n 10 uv run frob check --only sys --files src/frob/strata/_claims.py --files docs/strata/evidence.md --files docs/strata/charter.md --files tests/unit/strata/test_claims_overdue.py --base dev`
-  -> exit 1 overall (gate:DRIFT 6 errors, gate:DSL 1 error), but ZERO
-  findings attributable to any of my 4 files -- all findings are in
-  tests/test_app.py, src/frob/app/ticket_runner/_rapid_sweep.py,
-  src/frob/gates/invariants.py, src/frob/tickets/_evidence.py
-  (pre-existing, unrelated).
 
-`nice -n 10 uv run frob check --only arch --files src/frob/strata/_claims.py --files docs/strata/evidence.md --files docs/strata/charter.md --files tests/unit/strata/test_claims_overdue.py --base dev`
-  -> exit 0, pass. Only note on my files: `_claims.py` "large-file"
-  SUGGESTION (839 lines, threshold 800; not a warning/error, tool
-  summary counted 19 warnings/547 suggestions and this is among the
-  latter) -- trimmed comments once already to shrink it from 848; a
-  further ~40-line cut was judged not worth the churn for a
-  suggestion-tier, non-blocking finding shared by dozens of other files
-  in this repo.
+`nice -n 10 frob check --only sys --files <7 touched .py> --base dev`:
+exit 1 overall, but zero SELFAUDIT001 or new findings attributable to
+the 7 touched files (the DOCARCH001 warnings shown on
+_waive_audit.py::complete_pass, lang/__init__.py::iter_identifiers,
+_nodes.py::declared_project_package_name/declared_source_prefixes and
+_walk_strata.py::walk_strata are pre-existing DOCSTRING findings --
+this ticket only touches `#` comment runs, never docstrings; the
+DRIFT001/DRIFT002/DSL findings are pre-existing, on files outside this
+ticket's scope).
 
-`nice -n 10 uv run frob check --only coverage --files src/frob/strata/_claims.py --files docs/strata/evidence.md --files docs/strata/charter.md --files tests/unit/strata/test_claims_overdue.py --base dev`
-  -> exit 1 overall (9 pre-existing COV errors elsewhere), but ZERO
-  COV findings on my 4 files after renaming the new constant to
-  `_ASSUME_REVIEW_WARN_WINDOW_DAYS` (private) to clear the COV001 it
-  originally tripped as a public symbol with no frob:doc edge. The only
-  remaining COV hits naming _claims.py (COV006 x2, COV007 x5) are
-  pre-existing, waived, and on lines I did not touch.
+`nice -n 10 frob check --only arch --files <7 touched .py> --base dev`:
+`pass frob-arch 21 warnings (36 waived), 546 suggestions` -- no
+ARCH001/LARGE001 on any touched file.
 
-`ruff check src/frob/strata/_claims.py tests/unit/strata/test_claims_overdue.py docs` -> All checks passed!
-`ruff format --check src/frob/strata/_claims.py tests/unit/strata/test_claims_overdue.py` -> 2 files already formatted
-`ty check src/frob/strata/_claims.py tests/unit/strata/test_claims_overdue.py` (PYTHONPATH=<worktree>/src) -> All checks passed!
+`nice -n 10 frob check --only coverage --files <7 touched .py> --base dev`:
+first pass surfaced 4 real COV002 findings (`_lifecycle.py::_block`,
+`_verify.py::_shared_check_spawn_fn`, `_verify.py::_check_gates_summary_fn`,
+`_support.py::KNOWN_GAP_TRACKING_TICKETS` -- each "changed with no
+frob:ticket edge to an open ticket", since a comment-only edit still
+moves the symbol's digest); fixed by adding a `frob:ticket T-4767`
+directive to each (comment-only, `git diff -w` re-verified empty
+afterward). Second pass: zero COV002 on any touched file (remaining
+COV007/DRIFT/DSL/TODO findings are pre-existing, on files outside this
+ticket's scope).
 
-Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
-`SUITE-RESULT: exitstatus=0 collected=1559 failed=0`
+`ruff check <7 touched .py>`: All checks passed! (re-verified after the
+directive additions)
 
-`ruff check tests/unit/test_claims_and_store_batch6.py` -> All checks passed!
-`ruff format --check tests/unit/test_claims_and_store_batch6.py` -> 1 file already formatted
-`ty check tests/unit/test_claims_and_store_batch6.py` (PYTHONPATH=<worktree>/src) -> All checks passed!
+`ty check <7 touched .py>`: All checks passed! (re-verified after the
+directive additions)
+
+## Mid-flight coordinator request (T-4722, not this ticket)
+
+While working T-4767, the coordinator asked (on T-4722's worktree) to
+release `src/frob/tickets/_land_squash.py` from T-4722's scope for a
+critical land-blocking fix (T-3324). Confirmed T-4722 never edited that
+file, ran the scope removal from the T-4722 worktree, and (after an
+in-flight land cleared) confirmed the removal mirrored onto main. Noted
+in why-T-4722.txt; no effect on T-4767's own files or evidence.
 
 ### Changed
 ```
@@ -166,25 +177,32 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  .claude/hooks/frob-timeout-guard.py                |  127 +-
  .frob-release.json                                 |    2 +-
  .github/workflows/ci.yml                           |  107 +-
- CHANGELOG.md                                       |   79 +
+ CHANGELOG.md                                       |   93 +
  changelog.d/T-2965.md                              |    2 +
  changelog.d/T-3020.md                              |    2 +
+ changelog.d/T-3082.md                              |    2 +
  changelog.d/T-3232.md                              |    2 +
  changelog.d/T-3233.md                              |    2 +
+ changelog.d/T-3412.md                              |    2 +
  changelog.d/T-3612.md                              |    2 +
  changelog.d/T-3613.md                              |    2 +
  changelog.d/T-3615.md                              |    2 +
+ changelog.d/T-3802.md                              |    2 +
  changelog.d/T-3856.md                              |    2 +
  changelog.d/T-3943.md                              |    2 +
  changelog.d/T-3961.md                              |    2 +
  changelog.d/T-4111.md                              |    2 +
  changelog.d/T-4116.md                              |    2 +
+ changelog.d/T-4118.md                              |    2 +
+ changelog.d/T-4212.md                              |    2 +
  changelog.d/T-4214.md                              |    2 +
  changelog.d/T-4221.md                              |    2 +
  changelog.d/T-4230.md                              |    2 +
+ changelog.d/T-4240.md                              |    2 +
  changelog.d/T-4413.md                              |    2 +
  changelog.d/T-4414.md                              |    2 +
  changelog.d/T-4415.md                              |    2 +
+ changelog.d/T-4419.md                              |    2 +
  changelog.d/T-4491.md                              |    2 +
  changelog.d/T-4492.md                              |    2 +
  changelog.d/T-4493.md                              |    2 +
@@ -231,6 +249,10 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  changelog.d/T-4588.md                              |    2 +
  changelog.d/T-4596.md                              |    2 +
  changelog.d/T-4607.md                              |    2 +
+ changelog.d/T-4623.md                              |    2 +
+ changelog.d/T-4624.md                              |    2 +
+ changelog.d/T-4625.md                              |    2 +
+ changelog.d/T-4627.md                              |    2 +
  changelog.d/T-4628.md                              |    2 +
  changelog.d/T-4629.md                              |    2 +
  changelog.d/T-4630.md                              |    2 +
@@ -245,8 +267,11 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  changelog.d/T-4659.md                              |    2 +
  changelog.d/T-4669.md                              |    2 +
  changelog.d/T-4673.md                              |    2 +
+ changelog.d/T-4675.md                              |    2 +
+ changelog.d/T-4688.md                              |    2 +
+ changelog.d/T-4722.md                              |    2 +
  changelog.d/T-5036.md                              |    2 +
- design/frob.strata                                 |  167 ++-
+ design/frob.strata                                 |  167 +-
  docs/commands/check.md                             |   88 +-
  docs/commands/narrative.md                         |    8 +
  docs/commands/scaffold.md                          |   50 +-
@@ -254,21 +279,23 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  docs/commands/xref.md                              |   16 +-
  docs/design/cli-regrouping.md                      |   73 +
  .../registry/capability-via-ratchet.lock.json      |   87 +-
- docs/design/registry/check-coverage.yaml           |    7 +-
+ docs/design/registry/check-coverage.yaml           |   37 +-
  docs/guides/extending/comment-dsl-directives.md    |   13 +-
+ .../failure-injection-acceptance-criteria.md       |   79 +
  docs/guides/install.md                             |   40 +
  docs/guides/release.md                             |   37 +
- docs/guides/unity.md                               |   83 ++
+ docs/guides/unity.md                               |   83 +
  docs/modules/app.md                                |   20 +
  docs/modules/dup.md                                |   12 +
- docs/modules/gate-sys111-ratchet-auto-accept.md    |   95 ++
+ docs/modules/gate-sys111-ratchet-auto-accept.md    |   95 +
  docs/modules/gate-time-stable-invariant.md         |   74 +
- docs/modules/gates.md                              |  165 +-
- docs/modules/graph.md                              |   39 +
+ docs/modules/gates.md                              |  218 +-
+ docs/modules/graph.md                              |   52 +
  docs/modules/lang.md                               |   33 +
+ docs/modules/process.md                            |   25 +-
  docs/modules/testing.md                            |   37 +
  docs/modules/tickets-data-storage.md               |    8 +
- docs/modules/tickets-landing.md                    |  239 ++-
+ docs/modules/tickets-landing.md                    |  239 +-
  docs/modules/tickets-lifecycle.md                  |   58 +
  docs/modules/tickets.md                            |   70 +-
  docs/strata/charter.md                             |    4 +-
@@ -281,7 +308,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  src/frob/__init__.py                               |    2 +
  src/frob/__main__.py                               |   26 +-
  src/frob/_cli_parsers/__init__.py                  |    2 +
- src/frob/_cli_parsers/_check.py                    |  295 +++-
+ src/frob/_cli_parsers/_check.py                    |  295 ++-
  src/frob/_cli_parsers/_core.py                     |   33 +-
  src/frob/_cli_parsers/_design.py                   |   24 +-
  src/frob/_cli_parsers/_explore.py                  |  102 +-
@@ -293,76 +320,94 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  src/frob/_cli_parsers/_ticket/_metadata.py         |   53 +-
  src/frob/_cli_parsers/_ticket/_progress.py         |  144 +-
  src/frob/app/_config_external.py                   |   19 +
+ src/frob/app/ack_runner.py                         |   15 +-
  src/frob/app/check_runner.py                       |  154 +-
  src/frob/app/config.py                             |   92 +-
+ src/frob/app/coverage_runner.py                    |    7 +-
+ src/frob/app/dup_runner.py                         |    6 +-
+ src/frob/app/graph_runner.py                       |   14 +-
  src/frob/app/ticket_runner/__init__.py             |  125 +-
  src/frob/app/ticket_runner/_close_cmd.py           |   10 +-
- src/frob/app/ticket_runner/_land_cmd.py            |  532 ++++++-
- src/frob/app/ticket_runner/_lifecycle.py           |   79 +-
+ src/frob/app/ticket_runner/_land_cmd.py            |  532 ++++-
+ src/frob/app/ticket_runner/_lifecycle.py           |   88 +-
  src/frob/app/ticket_runner/_mutate.py              |   39 +-
- src/frob/app/ticket_runner/_rapid_sweep.py         |  664 ++++++++-
- src/frob/app/ticket_runner/_verify.py              |  245 ++-
- src/frob/check/__init__.py                         |  244 +--
+ src/frob/app/ticket_runner/_rapid_sweep.py         |  664 +++++-
+ src/frob/app/ticket_runner/_verify.py              |  280 ++-
+ src/frob/app/ticket_runner/_waive_audit.py         |  127 +-
+ src/frob/app/verify_runner.py                      |   40 +-
+ src/frob/check/__init__.py                         |  244 +-
  src/frob/check/_python.py                          |  152 +-
  src/frob/docs/__init__.py                          |   64 +-
- src/frob/doctor.py                                 |  227 ++-
+ src/frob/doctor.py                                 |  227 +-
  src/frob/dup/_legacy.py                            |   60 +-
- src/frob/dup/_legacy_cs.py                         |  207 +++
+ src/frob/dup/_legacy_cs.py                         |  207 ++
  src/frob/excludes.py                               |   83 +-
- src/frob/gates/__init__.py                         |  263 ++--
- src/frob/gates/_claim_lint.py                      |  202 +++
- src/frob/gates/_coverage.py                        |  203 ++-
+ src/frob/gates/__init__.py                         |  263 ++-
+ src/frob/gates/_claim_lint.py                      |  202 ++
+ src/frob/gates/_coverage.py                        |  203 +-
  src/frob/gates/_fix_engine.py                      |   94 +-
  src/frob/gates/_fix_engine_sync.py                 |   69 +-
- src/frob/gates/_guard_closure.py                   |  301 ++++
- src/frob/gates/_inv.py                             |  359 +++++
+ src/frob/gates/_guard_closure.py                   |  301 +++
+ src/frob/gates/_inv.py                             |  359 +++
  src/frob/gates/_lang_conformance.py                |   36 +-
  src/frob/gates/_models.py                          |    7 +
  src/frob/gates/_narrative_blocks.py                |   28 +-
+ src/frob/gates/_prework.py                         |    9 +-
+ src/frob/gates/_ratchet.py                         |   91 +-
  src/frob/gates/_suppress.py                        |   46 +-
- src/frob/gates/_waive.py                           |  170 ++-
+ src/frob/gates/_sys_branch.py                      |  122 +
+ src/frob/gates/_waive.py                           |  176 +-
  src/frob/gitio.py                                  |   68 +-
- src/frob/graph/affects.py                          |   53 +
- src/frob/graph/dsl.py                              |  185 ++-
- src/frob/lang/__init__.py                          |   17 +-
+ src/frob/graph/__init__.py                         |   97 +-
+ src/frob/graph/affects.py                          |   88 +-
+ src/frob/graph/dsl.py                              |  185 +-
+ src/frob/lang/__init__.py                          |   24 +-
  src/frob/lang/_extract.py                          |   13 +
- src/frob/lang/_nodes.py                            |  159 +-
+ src/frob/lang/_nodes.py                            |  150 +-
  src/frob/lang/_project_detect.py                   |  147 ++
- src/frob/lang/_support.py                          |   23 +-
+ src/frob/lang/_support.py                          |  116 +-
  src/frob/lang/_walk_csharp.py                      |  111 +-
- src/frob/scaffold/_unity_project.py                |  193 +++
+ src/frob/lang/_walk_strata.py                      |   10 +-
+ src/frob/process/_guard.py                         |    3 -
+ src/frob/scaffold/_unity_project.py                |  193 ++
  .../scaffold/data/types/unity-project/frob.toml.j2 |   64 +
  src/frob/scaffold/project.py                       |    6 +-
  src/frob/strata/_claims.py                         |   61 +-
  src/frob/strata/_design_load.py                    |   75 +-
- src/frob/strata/_effects.py                        |  964 +++++++++++-
+ src/frob/strata/_effects.py                        |  964 +++++++-
  src/frob/strata/_packs.py                          |   30 +-
- src/frob/strata/_unity_asmdef.py                   |  412 +++++
+ src/frob/strata/_unity_asmdef.py                   |  412 ++++
  src/frob/testing/__init__.py                       |    9 +
  src/frob/testing/_collect.py                       |   21 +-
- src/frob/testing/_collect_csharp.py                |  327 ++++
- src/frob/testing/_dotnet_runner.py                 |  251 ++++
+ src/frob/testing/_collect_csharp.py                |  327 +++
+ src/frob/testing/_dotnet_runner.py                 |  251 +++
  src/frob/testing/_runners.py                       |   10 +
  src/frob/testing/_stackdump.py                     |   68 +-
- src/frob/testing/_unity_batchmode.py               |  298 ++++
+ src/frob/testing/_unity_batchmode.py               |  298 +++
  src/frob/tickets/__init__.py                       |    2 +
- src/frob/tickets/_land.py                          |  274 +++-
- src/frob/tickets/_land_compose.py                  |  209 ++-
+ src/frob/tickets/_land.py                          |  409 ++--
+ src/frob/tickets/_land_compose.py                  |  209 +-
+ src/frob/tickets/_land_finalize.py                 |   12 +-
  src/frob/tickets/_land_git_ops.py                  |  149 +-
  src/frob/tickets/_land_queue.py                    |  151 +-
- src/frob/tickets/_land_squash.py                   |  263 +++-
- src/frob/tickets/_leases.py                        |  617 ++++++--
- src/frob/tickets/_models.py                        |   80 +-
+ src/frob/tickets/_land_release.py                  |   75 +-
+ src/frob/tickets/_land_squash.py                   |  263 ++-
+ src/frob/tickets/_leases.py                        |  617 +++--
+ src/frob/tickets/_live_tracker.py                  |   35 +-
+ src/frob/tickets/_models.py                        |  102 +-
+ src/frob/tickets/_mutation_evidence.py             |   11 +-
  src/frob/tickets/_registry_files.py                |  145 ++
+ src/frob/tickets/_reporting.py                     |   96 +-
  src/frob/tickets/_setters.py                       |  113 +-
- src/frob/tickets/_store.py                         |  120 +-
+ src/frob/tickets/_store.py                         |  129 +-
  src/frob/tickets/_worktree_sweep.py                |   17 +-
+ src/frob/verify/_quarantine.py                     |   69 +
  src/frob/vet/_capability.py                        |   10 +-
- src/frob/vet/_capability_csharp.py                 |  465 ++++++
+ src/frob/vet/_capability_csharp.py                 |  465 ++++
  .../_dangerous_ops_bash_csharp.py                  |   17 +
- src/frob/vet/_capability_registry/_dotnet_bcl.py   |  214 +++
+ src/frob/vet/_capability_registry/_dotnet_bcl.py   |  214 ++
  src/frob/vet/_capability_registry/_matrix.py       |   13 +-
- src/frob/vet/_capability_registry/_unity_api.py    |  305 ++++
+ src/frob/vet/_capability_registry/_unity_api.py    |  305 +++
  src/frob/vet/_capability_scan.py                   |   13 +-
  src/frob/xref/__init__.py                          |   75 +-
  .../csharp_dup_docblock/Sample/Dup/Duplicate.cs    |   37 +
@@ -418,27 +463,64 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  .../ProjectSettings/ProjectVersion.txt             |    2 +
  tests/gates_suite/test_claim_lint.py               |  163 ++
  tests/gates_suite/test_coverage.py                 |  132 +-
- tests/gates_suite/test_fix_engine.py               |  123 ++
- tests/gates_suite/test_guard_closure.py            |  228 +++
- tests/gates_suite/test_invariant.py                |  116 ++
+ tests/gates_suite/test_fix_engine.py               |  123 +
+ tests/gates_suite/test_guard_closure.py            |  228 ++
+ tests/gates_suite/test_invariant.py                |  116 +
+ tests/gates_suite/test_sys.py                      |  100 +-
+ tests/test_arch_gate.py                            |   25 +-
+ tests/test_cache_gate.py                           |   12 +-
  tests/test_check_gate_base.py                      |   54 +
+ tests/test_check_runner.py                         |   36 +-
+ tests/test_ci_workflow_matrix.py                   |   54 +-
+ tests/test_coverage.py                             |   36 +-
  tests/test_docenum_gate.py                         |   41 +
- tests/test_excludes.py                             |   75 +
- tests/test_gates_suppress.py                       |   34 +-
+ tests/test_docptr_gate.py                          |   47 +-
+ tests/test_evidence_integrity.py                   |  112 +-
+ tests/test_excludes.py                             |   91 +-
+ tests/test_gate_cache.py                           |   62 +-
+ tests/test_gates_fmt_directives.py                 |   38 +-
+ tests/test_gates_ratchet.py                        |   53 +
+ tests/test_gates_suppress.py                       |   47 +-
  tests/test_gitio.py                                |   56 +
- tests/test_hook_frob_suggest.py                    |   47 +
- tests/test_hook_frob_timeout_guard.py              |   54 +
- tests/test_hook_root_write_guard.py                |   89 ++
- tests/test_lang.py                                 |   90 ++
+ tests/test_graph.py                                |   94 +-
+ tests/test_graph_affects.py                        |   54 +
+ tests/test_hook_frob_suggest.py                    |  112 +-
+ tests/test_hook_frob_timeout_guard.py              |   65 +-
+ tests/test_hook_root_write_guard.py                |  129 +-
+ tests/test_land_verify_claims_outcome.py           |   31 +-
+ tests/test_lang.py                                 |  142 +-
  tests/test_lang_conformance_gate.py                |   81 +-
+ tests/test_lang_support.py                         |    8 +-
  tests/test_narrative_blocks.py                     |   27 +
+ tests/test_perf.py                                 |   25 +-
+ tests/test_refactor.py                             |  273 +--
+ tests/test_refs_gate.py                            |   59 +-
+ tests/test_release.py                              |   72 +-
+ tests/test_scaffold_worktree_lease_hook.py         |   20 +-
+ tests/test_serve_daemon.py                         |   52 +-
  tests/test_testing.py                              |  106 +-
- tests/test_ticket_leases.py                        |  313 ++--
- tests/test_ticket_work_and_land_finish.py          |  206 +--
+ tests/test_ticket_evidence.py                      |   40 +-
+ tests/test_ticket_land_proof_claims.py             |   18 +-
+ tests/test_ticket_leases.py                        |  452 ++--
+ tests/test_ticket_reconcile.py                     |   80 +-
+ tests/test_ticket_store_stale_snapshot.py          |   18 +-
+ tests/test_ticket_work_and_land_finish.py          |  248 +-
+ tests/test_tickets.py                              |  171 +-
+ tests/test_tickets_acceptance.py                   |   32 +-
+ tests/test_tickets_cmd_evidence.py                 |    9 +-
+ tests/test_tickets_collision.py                    |   28 +-
+ tests/test_tickets_evidence_cli.py                 |   46 +-
+ tests/test_tickets_lease.py                        |   44 +-
+ tests/test_tickets_leases.py                       |   18 +-
+ tests/test_tickets_live_tracker.py                 |   29 +-
  tests/test_tickets_migration.py                    |  121 +-
- tests/test_tickets_parent.py                       |  208 +++
- tests/test_tickets_registry_files.py               |  206 +++
- tests/test_waive_gate.py                           |  145 ++
+ tests/test_tickets_organization.py                 |   24 +-
+ tests/test_tickets_parent.py                       |  223 +-
+ tests/test_tickets_priority.py                     |   42 +-
+ tests/test_tickets_registry_files.py               |  206 ++
+ tests/test_tickets_triage_dates.py                 |    8 +-
+ tests/test_tickets_velocity.py                     |   12 +-
+ tests/test_waive_gate.py                           |  154 +-
  tests/ticket_land_suite/test_verify_intent.py      |   85 +-
  tests/unit/arch_suite/test_concurrency.py          |   27 +-
  tests/unit/arch_suite/test_dispatch.py             |    7 +-
@@ -447,7 +529,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tests/unit/coordinator_suite/test_fleet_land.py    |   17 +-
  tests/unit/coordinator_suite/test_fleet_report.py  |   77 +-
  .../unit/coordinator_suite/test_fleet_worktrees.py |   54 +-
- .../unit/gates/test_cov002_strata_declarations.py  |  133 ++
+ .../unit/gates/test_cov002_strata_declarations.py  |  131 ++
  tests/unit/gates/test_deprecated_baseline.py       |   22 +-
  tests/unit/gates/test_detector_scope.py            |   10 +-
  tests/unit/gates/test_examined_sites.py            |   19 +-
@@ -458,7 +540,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tests/unit/graph/test_dsl.py                       |  156 +-
  tests/unit/graph/test_dsl_invariant_property.py    |   69 +
  tests/unit/graph/test_dsl_markdown_waive.py        |   46 +-
- tests/unit/lang/test_csharp_directives.py          |  115 ++
+ tests/unit/lang/test_csharp_directives.py          |  115 +
  tests/unit/perf/test_hotpath_smells.py             |   24 +-
  tests/unit/rapid_sweep_suite/test_attribution.py   |   33 +-
  tests/unit/rapid_sweep_suite/test_baseline.py      |   10 +-
@@ -466,10 +548,10 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tests/unit/rapid_sweep_suite/test_dispose.py       |   57 +-
  tests/unit/rapid_sweep_suite/test_filing.py        |   74 +-
  tests/unit/rapid_sweep_suite/test_sweep_run.py     |   26 +-
- tests/unit/rapid_sweep_suite/test_window.py        |  457 ++++++
+ tests/unit/rapid_sweep_suite/test_window.py        |  457 ++++
  tests/unit/strata/test_audit.py                    |    8 +-
  tests/unit/strata/test_claims.py                   |   13 +-
- tests/unit/strata/test_claims_overdue.py           |  114 ++
+ tests/unit/strata/test_claims_overdue.py           |  110 +
  tests/unit/strata/test_contention.py               |   59 +-
  tests/unit/strata/test_cve_fingerprint.py          |   16 +-
  tests/unit/strata/test_effects.py                  |   63 +-
@@ -477,68 +559,74 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tests/unit/strata/test_fragments.py                |   59 +-
  tests/unit/strata/test_mode_conformance.py         |   65 +-
  tests/unit/strata/test_native_staleness.py         |   66 +-
- tests/unit/strata/test_packs_analyzable_warning.py |   87 ++
+ tests/unit/strata/test_packs_analyzable_warning.py |   87 +
  tests/unit/strata/test_parse.py                    |   12 +-
- tests/unit/strata/test_selfconform.py              |  460 +++++-
+ tests/unit/strata/test_selfconform.py              |  460 +++-
  tests/unit/strata/test_strata_core_gil.py          |    6 +-
- tests/unit/strata/test_strata_scan_cache.py        |  207 +++
+ tests/unit/strata/test_strata_scan_cache.py        |  207 ++
+ tests/unit/strata/test_threat.py                   |   67 +-
  tests/unit/strata/test_unity_asmdef.py             |  160 ++
  tests/unit/strata/test_vmodel_authoring.py         |   41 +-
  ...t_app_config_pyproject_root_t_draft_1f1ae69b.py |   57 +
+ tests/unit/test_app_runners_batch5.py              |    3 +
  tests/unit/test_app_runners_batch6.py              |   31 +-
- tests/unit/test_app_runners_batch7.py              |  186 +--
+ tests/unit/test_app_runners_batch7.py              |  186 +-
  tests/unit/test_app_runners_json_guard_t2492.py    |    7 +-
  tests/unit/test_arch_srp.py                        |   32 +-
  tests/unit/test_artifact_smoke_script.py           |    6 +-
  tests/unit/test_check.py                           |   64 +-
  tests/unit/test_check_budget.py                    |   43 +-
- tests/unit/test_check_scoped_files.py              |  566 +++++++
- tests/unit/test_check_skip_flag.py                 |  192 +++
+ tests/unit/test_check_scoped_files.py              |  566 +++++
+ tests/unit/test_check_skip_flag.py                 |  192 ++
  tests/unit/test_check_tool_unavailable.py          |   14 +-
- tests/unit/test_ci_self_gate_unscoped.py           |  189 +++
+ tests/unit/test_ci_self_gate_unscoped.py           |  189 ++
  tests/unit/test_claims_and_store_batch6.py         |   76 +-
- tests/unit/test_cli_group_parity.py                |  220 +++
- tests/unit/test_cli_lang_choices_drift.py          |  113 ++
- tests/unit/test_cli_single_child_groups.py         |  106 ++
+ tests/unit/test_cli_group_parity.py                |  220 ++
+ tests/unit/test_cli_lang_choices_drift.py          |  113 +
+ tests/unit/test_cli_single_child_groups.py         |  106 +
+ tests/unit/test_conftest_sigbreak_faulthandler.py  |   14 +-
  tests/unit/test_conftest_stackdump.py              |  139 +-
  tests/unit/test_conftest_suite_result_status.py    |   16 +-
  tests/unit/test_cycle_runner_doc_waiver_t2598.py   |    7 +-
  tests/unit/test_cycle_waiver.py                    |    9 +-
  tests/unit/test_dev_branch_workflow.py             |   50 +
  tests/unit/test_docs_module.py                     |   59 +-
- tests/unit/test_doctor.py                          |  116 ++
+ tests/unit/test_doctor.py                          |  116 +
  tests/unit/test_doctor_runner_t1276.py             |   51 +-
- tests/unit/test_done_report_check_scope.py         |  177 +++
- tests/unit/test_dotnet_runner.py                   |  194 +++
+ tests/unit/test_done_report_check_scope.py         |  177 ++
+ tests/unit/test_dotnet_runner.py                   |  194 ++
  tests/unit/test_dup_cache.py                       |   15 +-
  tests/unit/test_dup_legacy_cpp.py                  |   35 +-
  tests/unit/test_findings_severity_pinned.py        |   15 +-
  tests/unit/test_frob_core_gil.py                   |    6 +-
  .../unit/test_gitattributes_crlf_normalization.py  |   11 +-
  tests/unit/test_gitattributes_merge.py             |   42 +-
+ tests/unit/test_graph_cache.py                     |  166 +-
+ tests/unit/test_graph_get_snapshot.py              |   94 +
  tests/unit/test_graph_ingest_batching.py           |   28 +-
  tests/unit/test_graph_stat_trust_margin.py         |   15 +-
- tests/unit/test_land_cas_ledger_retry.py           |  312 ++++
+ tests/unit/test_land_cas_ledger_retry.py           |  312 +++
  tests/unit/test_land_compose.py                    |   12 +-
  tests/unit/test_land_default_queue.py              |  128 ++
  .../test_land_dirty_main_orphaned_ticket_t2026.py  |   21 +-
- tests/unit/test_land_in_progress_window.py         |  349 +++++
- tests/unit/test_land_leaked_tickets_lease_hoist.py |   95 ++
- tests/unit/test_land_merge_conflict_drop.py        |  198 +++
- tests/unit/test_land_queue.py                      |  114 ++
+ tests/unit/test_land_in_progress_window.py         |  349 +++
+ tests/unit/test_land_leaked_tickets_lease_hoist.py |   95 +
+ tests/unit/test_land_merge_conflict_drop.py        |  198 ++
+ tests/unit/test_land_queue.py                      |  114 +
  tests/unit/test_land_sibling_regression.py         |   47 +-
  tests/unit/test_land_squash_residue_reclaim.py     |   13 +-
- tests/unit/test_land_stackdump.py                  |  321 ++++
+ tests/unit/test_land_stackdump.py                  |  321 +++
  tests/unit/test_land_stage_flip.py                 |   12 +-
  .../test_land_verify_claim_divergence_sentinel.py  |   13 +-
  tests/unit/test_lang_parse_guard.py                |   26 +-
- tests/unit/test_lang_project_detect.py             |  108 ++
+ tests/unit/test_lang_project_detect.py             |  108 +
  tests/unit/test_lang_strata.py                     |   26 +-
- tests/unit/test_lease_lifecycle.py                 |  180 +++
- tests/unit/test_leases_staleness_perf.py           |  310 ++++
- tests/unit/test_lifecycle_work_base.py             |  217 +++
+ tests/unit/test_lease_lifecycle.py                 |  180 ++
+ tests/unit/test_leases_staleness_perf.py           |  310 +++
+ tests/unit/test_lifecycle_work_base.py             |  217 ++
  tests/unit/test_logging_quiet.py                   |   11 +-
  tests/unit/test_main_entry.py                      |   26 +-
+ tests/unit/test_makefile_coverage.py               |   61 +-
  tests/unit/test_memo.py                            |   13 +-
  .../unit/test_new_ticket_scope_overlap_warning.py  |   16 +-
  tests/unit/test_policy_weakening_gate.py           |   25 +-
@@ -546,32 +634,36 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tests/unit/test_process_pid_liveness.py            |   18 +-
  tests/unit/test_process_reap.py                    |   13 +-
  tests/unit/test_pyfmt_runner.py                    |    6 +-
- tests/unit/test_pyproject_data_memoization.py      |  124 ++
- tests/unit/test_rel002_dev_suffix.py               |  114 ++
+ tests/unit/test_pyproject_data_memoization.py      |  124 +
+ tests/unit/test_rel002_dev_suffix.py               |  114 +
  tests/unit/test_release_workflow_gate.py           |   32 +-
  tests/unit/test_scaffold_natives_shim.py           |    5 +-
  tests/unit/test_scaffold_project.py                |   43 +-
  tests/unit/test_scaffold_unity_project.py          |  128 ++
  tests/unit/test_skills_sync.py                     |   17 +-
- tests/unit/test_store_mode_memoization.py          |  110 ++
- tests/unit/test_support_csharp.py                  |  190 +++
- tests/unit/test_suppress_worktree_path.py          |   87 ++
- tests/unit/test_ticket_cli_surface.py              |  182 +++
+ tests/unit/test_store_mode_memoization.py          |  110 +
+ tests/unit/test_support_csharp.py                  |  190 ++
+ tests/unit/test_suppress_worktree_path.py          |   87 +
+ tests/unit/test_ticket_cli_surface.py              |  182 ++
  tests/unit/test_ticket_new_related.py              |   10 +-
+ tests/unit/test_ticket_runner_gate_findings.py     |  106 +-
  tests/unit/test_ticket_runner_land_cmd_flags.py    |    5 +-
  tests/unit/test_ticket_runner_land_release.py      |   25 +-
  tests/unit/test_ticket_runner_ledger_mirror.py     |   75 +-
  tests/unit/test_ticket_store.py                    |   91 +-
- tests/unit/test_unity_batchmode.py                 |  194 +++
+ tests/unit/test_unity_batchmode.py                 |  194 ++
  tests/unit/test_unlanded_branch_work.py            |  102 +-
  tests/unit/test_waive_audit_watermark.py           |    9 +-
- tests/unit/test_xref.py                            |  118 ++
+ tests/unit/test_xref.py                            |  118 +
  tests/unit/verify/test_backpressure.py             |   11 +-
+ tests/unit/verify/test_quarantine.py               |   78 +
+ tests/unit/verify/test_verify_runner.py            |   45 +
  tests/unit/verify/test_worker.py                   |   30 +-
  tests/unit/vet/test_capability_modes.py            |   14 +-
  tests/vet_suite/test_capability_registry_unity.py  |  130 ++
- tests/vet_suite/test_capability_scan_csharp.py     |   84 ++
- tests/vet_suite/test_capability_scan_dotnet_bcl.py |  119 ++
+ tests/vet_suite/test_capability_scan_csharp.py     |   84 +
+ tests/vet_suite/test_capability_scan_dotnet_bcl.py |  119 +
+ tests/vet_suite/test_scan_tree.py                  |   14 +-
  tickets/T-0969/ticket.md                           |    9 +-
  tickets/T-1273/ticket.md                           |    9 +-
  tickets/T-1382/ticket.md                           |    8 +-
@@ -615,6 +707,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-3067/ticket.md                           |   23 +-
  tickets/T-3073/ticket.md                           |    9 +-
  tickets/T-3076/ticket.md                           |    8 +-
+ tickets/T-3082/done-report.md                      | 2328 +++++++++++++++++++
  tickets/T-3082/ticket.md                           |   69 +-
  tickets/T-3083/ticket.md                           |   23 +-
  tickets/T-3091/ticket.md                           |    9 +-
@@ -672,7 +765,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-3377/ticket.md                           |   23 +-
  tickets/T-3381/ticket.md                           |    9 +-
  tickets/T-3405/ticket.md                           |    9 +-
- tickets/T-3412/ticket.md                           |   40 +-
+ tickets/T-3412/done-report.md                      | 2262 +++++++++++++++++++
+ tickets/T-3412/ticket.md                           |   41 +-
  tickets/T-3415/ticket.md                           |   23 +-
  tickets/T-3418/ticket.md                           |    9 +-
  tickets/T-3459/ticket.md                           |   23 +-
@@ -686,7 +780,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-3573/ticket.md                           |    9 +-
  tickets/T-3602/ticket.md                           |   16 +-
  tickets/T-3611/ticket.md                           |    8 +-
- tickets/T-3612/ticket.md                           |  107 --
+ tickets/T-3612/ticket.md                           |  107 -
  tickets/T-3613/ticket.md                           |   49 -
  tickets/T-3614/ticket.md                           |  117 +-
  tickets/T-3620/ticket.md                           |   22 +-
@@ -709,7 +803,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-3758/ticket.md                           |   23 +-
  tickets/T-3783/ticket.md                           |   22 +-
  tickets/T-3789/ticket.md                           |   23 +-
- tickets/T-3802/ticket.md                           |   33 +-
+ tickets/T-3802/done-report.md                      | 2260 +++++++++++++++++++
+ tickets/T-3802/ticket.md                           |   32 +-
  tickets/T-3803/ticket.md                           |    9 +-
  tickets/T-3804/ticket.md                           |    9 +-
  tickets/T-3805/ticket.md                           |    9 +-
@@ -906,7 +1001,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4114/ticket.md                           |   18 +-
  tickets/T-4115/ticket.md                           |   18 +-
  tickets/T-4117/ticket.md                           |    8 +-
- tickets/T-4118/ticket.md                           |   38 +-
+ tickets/T-4118/done-report.md                      | 2241 ++++++++++++++++++
+ tickets/T-4118/ticket.md                           |   33 +-
  tickets/T-4119/ticket.md                           |    9 +-
  tickets/T-4120/ticket.md                           |    9 +-
  tickets/T-4123/ticket.md                           |    9 +-
@@ -956,7 +1052,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4206/ticket.md                           |    9 +-
  tickets/T-4209/ticket.md                           |    9 +-
  tickets/T-4211/ticket.md                           |    9 +-
- tickets/T-4212/ticket.md                           |   25 +-
+ tickets/T-4212/done-report.md                      | 2299 +++++++++++++++++++
+ tickets/T-4212/ticket.md                           |   20 +-
  tickets/T-4213/ticket.md                           |    9 +-
  tickets/T-4214/ticket.md                           |   37 -
  tickets/T-4215/ticket.md                           |    9 +-
@@ -980,7 +1077,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4237/ticket.md                           |    9 +-
  tickets/T-4238/ticket.md                           |    9 +-
  tickets/T-4239/ticket.md                           |    9 +-
- tickets/T-4240/ticket.md                           |   11 +-
+ tickets/T-4240/done-report.md                      | 2300 +++++++++++++++++++
+ tickets/T-4240/ticket.md                           |    7 +-
  tickets/T-4242/ticket.md                           |    9 +-
  tickets/T-4245/ticket.md                           |    9 +-
  tickets/T-4248/ticket.md                           |    9 +-
@@ -1007,9 +1105,10 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4413/ticket.md                           |   43 -
  tickets/T-4416/ticket.md                           |   65 +-
  tickets/T-4418/ticket.md                           |   17 +-
- tickets/T-4419/ticket.md                           |  242 ++-
- tickets/T-4420/ticket.md                           |  382 ++++-
- tickets/T-4421/ticket.md                           |  490 +++++-
+ tickets/T-4419/done-report.md                      | 2345 +++++++++++++++++++
+ tickets/T-4419/ticket.md                           |  242 +-
+ tickets/T-4420/ticket.md                           |  382 +++-
+ tickets/T-4421/ticket.md                           |  490 +++-
  tickets/T-4422/ticket.md                           |   17 +-
  tickets/T-4423/ticket.md                           |   17 +-
  tickets/T-4437/ticket.md                           |   23 +-
@@ -1025,8 +1124,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4518/ticket.md                           |   34 +
  tickets/T-4530/ticket.md                           |   71 +
  tickets/T-4533/ticket.md                           |   42 +
- tickets/T-4541/ticket.md                           |  119 ++
- tickets/T-4546/ticket.md                           |   91 ++
+ tickets/T-4541/ticket.md                           |  119 +
+ tickets/T-4546/ticket.md                           |   91 +
  tickets/T-4558/ticket.md                           |   37 +
  tickets/T-4560/ticket.md                           |   48 +
  tickets/T-4561/ticket.md                           |   38 +
@@ -1043,23 +1142,27 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4600/ticket.md                           |   35 +
  tickets/T-4601/ticket.md                           |   34 +
  tickets/T-4603/ticket.md                           |   37 +
- tickets/T-4605/ticket.md                           |   89 ++
+ tickets/T-4605/ticket.md                           |   89 +
  tickets/T-4606/ticket.md                           |   34 +
  tickets/T-4608/ticket.md                           |   48 +
  tickets/T-4609/ticket.md                           |   34 +
  tickets/T-4610/ticket.md                           |   35 +
  tickets/T-4611/ticket.md                           |   28 +
- tickets/T-4612/ticket.md                           |  122 ++
- tickets/T-4616/ticket.md                           |   49 +
+ tickets/T-4612/ticket.md                           |  122 +
+ tickets/T-4616/ticket.md                           |   52 +
  tickets/T-4617/ticket.md                           |   34 +
- tickets/T-4618/ticket.md                           |   58 +
- tickets/T-4619/ticket.md                           |   70 +
- tickets/T-4620/ticket.md                           |   58 +
- tickets/T-4623/ticket.md                           |   70 +
- tickets/T-4624/ticket.md                           |   52 +
- tickets/T-4625/ticket.md                           |   43 +
+ tickets/T-4618/ticket.md                           |   61 +
+ tickets/T-4619/ticket.md                           |   73 +
+ tickets/T-4620/ticket.md                           |   61 +
+ tickets/T-4623/done-report.md                      | 2348 +++++++++++++++++++
+ tickets/T-4623/ticket.md                           |   69 +
+ tickets/T-4624/done-report.md                      | 2322 +++++++++++++++++++
+ tickets/T-4624/ticket.md                           |   55 +
+ tickets/T-4625/done-report.md                      | 2221 ++++++++++++++++++
+ tickets/T-4625/ticket.md                           |   46 +
  tickets/T-4626/ticket.md                           |   27 +
- tickets/T-4627/ticket.md                           |   58 +
+ tickets/T-4627/done-report.md                      | 2243 ++++++++++++++++++
+ tickets/T-4627/ticket.md                           |   55 +
  tickets/T-4640/ticket.md                           |   37 +
  tickets/T-4641/ticket.md                           |   29 +
  tickets/T-4643/ticket.md                           |   29 +
@@ -1077,192 +1180,201 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/T-4658/ticket.md                           |   65 +
  tickets/T-4660/ticket.md                           |   60 +
  tickets/T-4661/ticket.md                           |   66 +
- tickets/T-4662/ticket.md                           |   85 ++
- tickets/T-4663/ticket.md                           |   88 ++
+ tickets/T-4662/ticket.md                           |   85 +
+ tickets/T-4663/ticket.md                           |   88 +
  tickets/T-4664/ticket.md                           |   68 +
  tickets/T-4665/ticket.md                           |   69 +
  tickets/T-4666/ticket.md                           |   72 +
  tickets/T-4667/ticket.md                           |   63 +
  tickets/T-4668/ticket.md                           |  146 ++
- tickets/T-4670/ticket.md                           |   86 ++
- tickets/T-4671/ticket.md                           |  105 ++
+ tickets/T-4670/ticket.md                           |   86 +
+ tickets/T-4671/ticket.md                           |  105 +
  tickets/T-4672/ticket.md                           |  139 ++
- tickets/T-4674/ticket.md                           |   90 ++
- tickets/T-4675/ticket.md                           |  116 ++
- tickets/T-4676/ticket.md                           |   97 ++
+ tickets/T-4674/ticket.md                           |   90 +
+ tickets/T-4675/done-report.md                      | 2275 +++++++++++++++++++
+ tickets/T-4675/ticket.md                           |  116 +
+ tickets/T-4676/done-report.md                      | 2225 ++++++++++++++++++
+ tickets/T-4676/ticket.md                           |  105 +
  tickets/T-4679/ticket.md                           |   36 +
- tickets/T-4681/ticket.md                           |  226 +++
+ tickets/T-4681/ticket.md                           |  226 ++
  tickets/T-4684/ticket.md                           |   65 +
  tickets/T-4685/ticket.md                           |   59 +
  tickets/T-4686/ticket.md                           |   40 +
- tickets/T-4687/ticket.md                           |  225 +++
- tickets/T-4688/ticket.md                           |  149 ++
- tickets/T-4689/ticket.md                           |   99 ++
- tickets/T-4690/ticket.md                           |  214 +++
+ tickets/T-4687/ticket.md                           |  225 ++
+ tickets/T-4688/done-report.md                      | 1048 +++++++++
+ tickets/T-4688/ticket.md                           |  162 ++
+ tickets/T-4689/ticket.md                           |   99 +
+ tickets/T-4690/ticket.md                           |  214 ++
  tickets/T-4691/ticket.md                           |  143 ++
- tickets/T-4692/ticket.md                           |  208 +++
+ tickets/T-4692/ticket.md                           |  208 ++
  tickets/T-4693/ticket.md                           |  138 ++
  tickets/T-4694/ticket.md                           |  127 ++
- tickets/T-4695/ticket.md                           |  181 +++
+ tickets/T-4695/ticket.md                           |  181 ++
  tickets/T-4696/ticket.md                           |  162 ++
- tickets/T-4697/ticket.md                           |  120 ++
+ tickets/T-4697/ticket.md                           |  120 +
  tickets/T-4698/ticket.md                           |  165 ++
- tickets/T-4702/ticket.md                           |  104 ++
- tickets/T-4703/ticket.md                           |  122 ++
+ tickets/T-4702/ticket.md                           |  104 +
+ tickets/T-4703/ticket.md                           |  122 +
  tickets/T-4709/ticket.md                           |  158 ++
- tickets/T-4710/ticket.md                           |  116 ++
+ tickets/T-4710/ticket.md                           |  116 +
  tickets/T-4711/ticket.md                           |   80 +
  tickets/T-4712/ticket.md                           |   78 +
- tickets/T-4713/ticket.md                           |   90 ++
- tickets/T-4714/ticket.md                           |   86 ++
- tickets/T-4715/ticket.md                           |  175 +++
+ tickets/T-4713/ticket.md                           |   90 +
+ tickets/T-4714/ticket.md                           |   86 +
+ tickets/T-4715/ticket.md                           |  175 ++
  tickets/T-4716/ticket.md                           |   47 +
- tickets/T-4717/ticket.md                           |   85 ++
+ tickets/T-4717/ticket.md                           |   85 +
  tickets/T-4718/ticket.md                           |  163 ++
- tickets/T-4719/ticket.md                           |  189 +++
+ tickets/T-4719/ticket.md                           |  189 ++
  tickets/T-4720/ticket.md                           |   36 +
  tickets/T-4721/ticket.md                           |   36 +
- tickets/T-4722/ticket.md                           |  183 +++
- tickets/T-4723/ticket.md                           |  191 +++
+ tickets/T-4722/done-report.md                      | 2383 ++++++++++++++++++++
+ tickets/T-4722/ticket.md                           |  183 ++
+ tickets/T-4723/ticket.md                           |  191 ++
  tickets/T-4724/ticket.md                           |   42 +
  tickets/T-4735/ticket.md                           |   62 +
  tickets/T-4736/ticket.md                           |   63 +
- tickets/T-4737/ticket.md                           |  113 ++
+ tickets/T-4737/ticket.md                           |  113 +
  tickets/T-4738/ticket.md                           |   62 +
  tickets/T-4739/ticket.md                           |   58 +
  tickets/T-4740/ticket.md                           |   60 +
- tickets/T-4741/ticket.md                           |  179 +++
+ tickets/T-4741/ticket.md                           |  179 ++
  tickets/T-4742/ticket.md                           |   79 +
  tickets/T-4743/ticket.md                           |   80 +
- tickets/T-4757/ticket.md                           |   87 ++
- tickets/T-4758/ticket.md                           |   94 ++
- tickets/T-4759/ticket.md                           |  106 ++
- tickets/T-4760/ticket.md                           |  116 ++
+ tickets/T-4757/ticket.md                           |   87 +
+ tickets/T-4758/ticket.md                           |   94 +
+ tickets/T-4759/ticket.md                           |  106 +
+ tickets/T-4760/ticket.md                           |  116 +
  tickets/T-4761/ticket.md                           |  126 ++
  tickets/T-4762/ticket.md                           |   69 +
  tickets/T-4763/ticket.md                           |   64 +
  tickets/T-4764/ticket.md                           |   79 +
- tickets/T-4765/ticket.md                           |  108 ++
- tickets/T-4766/ticket.md                           |   84 ++
- tickets/T-4767/ticket.md                           |  173 +++
- tickets/T-4768/ticket.md                           |   84 ++
+ tickets/T-4765/ticket.md                           |  108 +
+ tickets/T-4766/ticket.md                           |   84 +
+ tickets/T-4767/ticket.md                           |  184 ++
+ tickets/T-4768/ticket.md                           |   84 +
  tickets/T-4769/ticket.md                           |   74 +
  tickets/T-4770/ticket.md                           |  157 ++
  tickets/T-4771/ticket.md                           |   77 +
- tickets/T-4772/ticket.md                           |   97 ++
- tickets/T-4773/ticket.md                           |  109 ++
+ tickets/T-4772/ticket.md                           |   97 +
+ tickets/T-4773/ticket.md                           |  109 +
  tickets/T-4774/ticket.md                           |   82 +
- tickets/T-4804/ticket.md                           |  180 +++
- tickets/T-4805/ticket.md                           |  114 ++
+ tickets/T-4804/ticket.md                           |  180 ++
+ tickets/T-4805/ticket.md                           |  114 +
  tickets/T-4806/ticket.md                           |   53 +
- tickets/T-4807/ticket.md                           |  108 ++
+ tickets/T-4807/ticket.md                           |  108 +
  tickets/T-4808/ticket.md                           |  155 ++
  tickets/T-4809/ticket.md                           |   75 +
- tickets/T-4810/ticket.md                           |   92 ++
+ tickets/T-4810/ticket.md                           |   92 +
  tickets/T-4811/ticket.md                           |   31 +
- tickets/T-4848/ticket.md                           |   84 ++
- tickets/T-4853/ticket.md                           |   96 ++
- tickets/T-4855/ticket.md                           |   84 ++
- tickets/T-4856/ticket.md                           |   97 ++
- tickets/T-4857/ticket.md                           |   84 ++
- tickets/T-4863/ticket.md                           |   84 ++
- tickets/T-4869/ticket.md                           |   84 ++
- tickets/T-4870/ticket.md                           |   84 ++
- tickets/T-4871/ticket.md                           |   85 ++
- tickets/T-4874/ticket.md                           |   84 ++
+ tickets/T-4848/ticket.md                           |   84 +
+ tickets/T-4853/ticket.md                           |   96 +
+ tickets/T-4855/ticket.md                           |   84 +
+ tickets/T-4856/ticket.md                           |   97 +
+ tickets/T-4857/ticket.md                           |   84 +
+ tickets/T-4863/ticket.md                           |   84 +
+ tickets/T-4869/ticket.md                           |   84 +
+ tickets/T-4870/ticket.md                           |   84 +
+ tickets/T-4871/ticket.md                           |   85 +
+ tickets/T-4874/ticket.md                           |   84 +
  tickets/T-4910/ticket.md                           |   31 +
- tickets/T-4911/ticket.md                           |  114 ++
+ tickets/T-4911/ticket.md                           |  114 +
  tickets/T-4912/ticket.md                           |   42 +
  tickets/T-4913/ticket.md                           |   34 +
  tickets/T-4950/ticket.md                           |   34 +
  tickets/T-4951/ticket.md                           |  128 ++
- tickets/T-4952/ticket.md                           |  122 ++
+ tickets/T-4952/ticket.md                           |  122 +
  tickets/T-4953/ticket.md                           |   47 +
  tickets/T-4989/ticket.md                           |   30 +
  tickets/T-4990/ticket.md                           |   34 +
  tickets/T-4991/ticket.md                           |   33 +
  tickets/T-4992/ticket.md                           |   37 +
- tickets/T-4993/ticket.md                           |  110 ++
- tickets/T-4994/ticket.md                           |   93 ++
- tickets/T-4995/ticket.md                           |   91 ++
- tickets/T-4996/ticket.md                           |   90 ++
- tickets/T-4997/ticket.md                           |   86 ++
+ tickets/T-4993/ticket.md                           |  110 +
+ tickets/T-4994/ticket.md                           |   93 +
+ tickets/T-4995/ticket.md                           |   91 +
+ tickets/T-4996/ticket.md                           |   90 +
+ tickets/T-4997/ticket.md                           |   86 +
  tickets/T-5033/ticket.md                           |   75 +
  tickets/T-5034/ticket.md                           |   35 +
  tickets/T-5035/ticket.md                           |   44 +
  tickets/T-5037/ticket.md                           |   75 +
  tickets/T-5074/ticket.md                           |   75 +
- tickets/T-5075/ticket.md                           |  101 ++
+ tickets/T-5075/ticket.md                           |  101 +
  tickets/T-5076/ticket.md                           |   75 +
  tickets/T-5077/ticket.md                           |   76 +
  tickets/T-5078/ticket.md                           |   75 +
  tickets/T-5079/ticket.md                           |   75 +
  tickets/T-5080/ticket.md                           |   76 +
- tickets/T-5081/ticket.md                           |  125 ++
- tickets/T-5083/ticket.md                           |   90 ++
+ tickets/T-5081/ticket.md                           |  125 +
+ tickets/T-5083/ticket.md                           |   90 +
  tickets/T-5084/ticket.md                           |   29 +
- tickets/T-5085/ticket.md                           |   99 ++
- tickets/T-5086/ticket.md                           |   99 ++
- tickets/T-5087/ticket.md                           |  123 ++
+ tickets/T-5085/ticket.md                           |   99 +
+ tickets/T-5086/ticket.md                           |   99 +
+ tickets/T-5087/ticket.md                           |  123 +
  tickets/T-5088/ticket.md                           |   36 +
  tickets/T-5089/ticket.md                           |   37 +
  tickets/T-5090/ticket.md                           |   38 +
- tickets/T-5091/ticket.md                           |   99 ++
+ tickets/T-5091/ticket.md                           |   99 +
  tickets/T-5092/ticket.md                           |   63 +
- tickets/T-5093/ticket.md                           |   99 ++
- tickets/T-5094/ticket.md                           |  107 ++
+ tickets/T-5093/ticket.md                           |   99 +
+ tickets/T-5094/ticket.md                           |  107 +
  tickets/T-5095/ticket.md                           |   30 +
  tickets/T-5096/ticket.md                           |   35 +
- tickets/T-5097/ticket.md                           |  106 ++
+ tickets/T-5097/ticket.md                           |  106 +
  tickets/T-5098/ticket.md                           |   52 +
  tickets/T-5099/ticket.md                           |   52 +
  tickets/T-5100/ticket.md                           |   38 +
  tickets/T-5101/ticket.md                           |   45 +
  tickets/T-5102/ticket.md                           |   74 +
- tickets/T-5103/ticket.md                           |  120 ++
+ tickets/T-5103/ticket.md                           |  120 +
  tickets/T-5104/ticket.md                           |   61 +
  tickets/T-5105/ticket.md                           |   78 +
  tickets/T-5106/ticket.md                           |   37 +
  tickets/T-5107/ticket.md                           |   37 +
  tickets/T-5108/ticket.md                           |   35 +
- tickets/T-5109/ticket.md                           |   99 ++
- tickets/T-5110/ticket.md                           |   99 ++
- tickets/T-5111/ticket.md                           |   99 ++
- tickets/T-5112/ticket.md                           |  100 ++
+ tickets/T-5109/ticket.md                           |   99 +
+ tickets/T-5110/ticket.md                           |   99 +
+ tickets/T-5111/ticket.md                           |   99 +
+ tickets/T-5112/ticket.md                           |  100 +
  tickets/T-5113/ticket.md                           |   50 +
  tickets/T-5114/ticket.md                           |   68 +
- tickets/T-5115/ticket.md                           |  106 ++
+ tickets/T-5115/ticket.md                           |  106 +
  tickets/T-5116/ticket.md                           |   73 +
  tickets/T-5117/ticket.md                           |   38 +
- tickets/T-5125/ticket.md                 |   65 +
- tickets/T-draft-36c347fe/ticket.md                 |   68 +
+ tickets/T-5120/ticket.md                           |   32 +
+ tickets/T-5121/ticket.md                           |   34 +
+ tickets/T-5122/ticket.md                           |   31 +
+ tickets/T-5123/ticket.md                           |   33 +
+ tickets/T-5124/ticket.md                           |   68 +
+ tickets/T-5125/ticket.md                           |   65 +
  tickets/T-5126/ticket.md                 |   77 +
  tickets/archive/T-0090/ticket.md                   |   18 +
  tickets/archive/T-0151/ticket.md                   |   63 +
- tickets/archive/T-0153/ticket.md                   |   91 ++
+ tickets/archive/T-0153/ticket.md                   |   91 +
  tickets/archive/T-0158/ticket.md                   |   63 +
  tickets/archive/T-0169/ticket.md                   |   39 +-
  tickets/archive/T-0201/ticket.md                   |   63 +
- tickets/archive/T-0208/ticket.md                   |   90 ++
- tickets/archive/T-0209/ticket.md                   |   88 ++
+ tickets/archive/T-0208/ticket.md                   |   90 +
+ tickets/archive/T-0209/ticket.md                   |   88 +
  tickets/archive/T-0240/ticket.md                   |   18 +
  tickets/archive/T-0244/ticket.md                   |   35 +
- tickets/archive/T-0253/ticket.md                   |  117 ++
+ tickets/archive/T-0253/ticket.md                   |  117 +
  tickets/archive/T-0292/ticket.md                   |   18 +
- tickets/archive/T-0328/ticket.md                   |  378 +++++
+ tickets/archive/T-0328/ticket.md                   |  378 ++++
  tickets/archive/T-0336/ticket.md                   |   18 +
  tickets/archive/T-0337/ticket.md                   |  152 ++
- tickets/archive/T-0339/ticket.md                   |  123 ++
+ tickets/archive/T-0339/ticket.md                   |  123 +
  tickets/archive/T-0364/ticket.md                   |   24 +
- tickets/archive/T-0377/ticket.md                   |  300 ++++
- tickets/archive/T-0378/ticket.md                   |  378 +++++
- tickets/archive/T-0379/ticket.md                   |  111 ++
+ tickets/archive/T-0377/ticket.md                   |  300 +++
+ tickets/archive/T-0378/ticket.md                   |  378 ++++
+ tickets/archive/T-0379/ticket.md                   |  111 +
  tickets/archive/T-0380/ticket.md                   |   38 +
  tickets/archive/T-0396/ticket.md                   |   39 +-
  tickets/archive/T-0403/ticket.md                   |   18 +
  tickets/archive/T-0414/ticket.md                   |   36 +-
  tickets/archive/T-0432/ticket.md                   |  152 ++
  tickets/archive/T-0441/ticket.md                   |   26 +-
+ tickets/archive/T-0458/ticket.md                   |   42 +-
  tickets/archive/T-0467/ticket.md                   |   24 +
  tickets/archive/T-0470/ticket.md                   |   35 +
  tickets/archive/T-0525/ticket.md                   |   18 +
@@ -1270,6 +1382,8 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-0553/ticket.md                   |   18 +
  tickets/archive/T-0557/ticket.md                   |   18 +
  tickets/archive/T-0576/ticket.md                   |   29 +
+ tickets/archive/T-0577/ticket.md                   |   76 +
+ tickets/archive/T-0605/ticket.md                   |   34 +
  tickets/archive/T-0639/ticket.md                   |   25 +
  tickets/archive/T-0660/ticket.md                   |  152 ++
  tickets/archive/T-0661/ticket.md                   |   81 +
@@ -1281,19 +1395,23 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-0730/ticket.md                   |   18 +
  tickets/archive/T-0731/ticket.md                   |   27 +
  tickets/archive/T-0747/ticket.md                   |   27 +
+ tickets/archive/T-0754/ticket.md                   |  135 ++
  tickets/archive/T-0771/ticket.md                   |  114 +-
  tickets/archive/T-0779/ticket.md                   |   53 +-
  tickets/archive/T-0794/ticket.md                   |  142 ++
  tickets/archive/T-0808/ticket.md                   |   31 +-
  tickets/archive/T-0814/ticket.md                   |   26 +
+ tickets/archive/T-0821/ticket.md                   |   39 +
  tickets/archive/T-0907/ticket.md                   |   90 +-
- tickets/archive/T-0910/ticket.md                   |   91 ++
+ tickets/archive/T-0910/ticket.md                   |   91 +
  tickets/archive/T-0968/ticket.md                   |   25 +
  tickets/archive/T-0971/ticket.md                   |   45 +-
  tickets/archive/T-0978/ticket.md                   |   48 +-
+ tickets/archive/T-1003/ticket.md                   |   34 +
  tickets/archive/T-1075/ticket.md                   |   36 +-
  tickets/archive/T-1095/ticket.md                   |   45 +-
  tickets/archive/T-1126/ticket.md                   |   45 +-
+ tickets/archive/T-1132/ticket.md                   |   36 +-
  tickets/archive/T-1148/ticket.md                   |   18 +
  tickets/archive/T-1210/ticket.md                   |   58 +
  tickets/archive/T-1211/ticket.md                   |   36 +-
@@ -1310,13 +1428,16 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-1516/ticket.md                   |   45 +-
  tickets/archive/T-1523/ticket.md                   |   39 +
  tickets/archive/T-1548/ticket.md                   |   30 +-
+ tickets/archive/T-1559/ticket.md                   |   55 +-
  tickets/archive/T-1599/ticket.md                   |   22 +-
  tickets/archive/T-1600/ticket.md                   |   39 +-
+ tickets/archive/T-1601/ticket.md                   |   32 +-
  tickets/archive/T-1606/ticket.md                   |   23 +-
  tickets/archive/T-1614/ticket.md                   |   16 +-
  tickets/archive/T-1616/ticket.md                   |   29 +-
  tickets/archive/T-1620/ticket.md                   |  137 +-
- tickets/archive/T-1626/ticket.md                   |  242 ++-
+ tickets/archive/T-1626/ticket.md                   |  242 +-
+ tickets/archive/T-1633/ticket.md                   |   86 +-
  tickets/archive/T-1651/ticket.md                   |   11 +-
  tickets/archive/T-1659/ticket.md                   |   34 +
  tickets/archive/T-1665/ticket.md                   |   17 +-
@@ -1327,18 +1448,25 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-1700/ticket.md                   |   26 +
  tickets/archive/T-1703/ticket.md                   |   37 +-
  tickets/archive/T-1725/ticket.md                   |  104 +-
+ tickets/archive/T-1727/ticket.md                   |   39 +-
  tickets/archive/T-1746/ticket.md                   |   94 +-
  tickets/archive/T-1748/ticket.md                   |   36 +
+ tickets/archive/T-1760/ticket.md                   |  197 +-
+ tickets/archive/T-1805/ticket.md                   |   87 +-
  tickets/archive/T-1870/ticket.md                   |   26 +-
  tickets/archive/T-1886/ticket.md                   |   24 +
  tickets/archive/T-1916/ticket.md                   |   19 +-
+ tickets/archive/T-1932/ticket.md                   |   34 +-
  tickets/archive/T-2001/ticket.md                   |   16 +
  tickets/archive/T-2011/ticket.md                   |   19 +-
  tickets/archive/T-2025/ticket.md                   |   26 +-
  tickets/archive/T-2069/ticket.md                   |   23 +-
+ tickets/archive/T-2076/ticket.md                   |   59 +
  tickets/archive/T-2087/ticket.md                   |   50 +-
  tickets/archive/T-2131/ticket.md                   |   17 +-
+ tickets/archive/T-2187/ticket.md                   |   15 +
  tickets/archive/T-2193/ticket.md                   |   20 +
+ tickets/archive/T-2216/ticket.md                   |   27 +
  tickets/archive/T-2231/ticket.md                   |   19 +-
  tickets/archive/T-2284/ticket.md                   |   16 +
  tickets/archive/T-2314/ticket.md                   |    9 +
@@ -1348,18 +1476,25 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-2365/ticket.md                   |   17 +-
  tickets/archive/T-2374/ticket.md                   |   18 +-
  tickets/archive/T-2400/ticket.md                   |   18 +
+ tickets/archive/T-2409/ticket.md                   |   26 +-
+ tickets/archive/T-2410/ticket.md                   |   21 +-
  tickets/archive/T-2438/ticket.md                   |    9 +
  tickets/archive/T-2454/ticket.md                   |    9 +
  tickets/archive/T-2457/ticket.md                   |   28 +-
  tickets/archive/T-2464/ticket.md                   |   62 +-
  tickets/archive/T-2479/ticket.md                   |   35 +-
  tickets/archive/T-2480/ticket.md                   |   20 +-
+ tickets/archive/T-2493/ticket.md                   |  153 +-
+ tickets/archive/T-2499/ticket.md                   |   22 +-
  tickets/archive/T-2532/ticket.md                   |   18 +-
+ tickets/archive/T-2638/ticket.md                   |   27 +-
+ tickets/archive/T-2668/ticket.md                   |   33 +-
  tickets/archive/T-2682/ticket.md                   |   33 +-
  tickets/archive/T-2688/ticket.md                   |    9 +
  tickets/archive/T-2698/ticket.md                   |   27 +-
  tickets/archive/T-2703/ticket.md                   |   20 +-
  tickets/archive/T-2710/ticket.md                   |    9 +
+ tickets/archive/T-2740/ticket.md                   |  106 +
  tickets/archive/T-2885/ticket.md                   |   42 +-
  tickets/archive/T-2906/ticket.md                   |   29 +
  tickets/archive/T-2922/ticket.md                   |   43 +
@@ -1368,17 +1503,18 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-2935/ticket.md                   |   20 +-
  tickets/archive/T-2965/done-report.md              |  149 ++
  tickets/{ => archive}/T-2965/ticket.md             |   52 +-
+ tickets/archive/T-2996/ticket.md                   |   55 +-
  tickets/archive/T-3019/ticket.md                   |   23 +-
- tickets/archive/T-3020/done-report.md              |  578 +++++++
- tickets/archive/T-3020/ticket.md                   |   92 ++
+ tickets/archive/T-3020/done-report.md              |  578 +++++
+ tickets/archive/T-3020/ticket.md                   |   92 +
  tickets/archive/T-3104/ticket.md                   |   39 +-
  tickets/archive/T-3115/ticket.md                   |   17 +
  tickets/archive/T-3128/ticket.md                   |   28 +
  tickets/archive/T-3222/ticket.md                   |   31 +
- tickets/archive/T-3232/done-report.md              |  179 +++
- tickets/archive/T-3232/ticket.md                   |  116 ++
- tickets/archive/T-3233/done-report.md              |  606 ++++++++
- tickets/archive/T-3233/ticket.md                   |   87 ++
+ tickets/archive/T-3232/done-report.md              |  179 ++
+ tickets/archive/T-3232/ticket.md                   |  116 +
+ tickets/archive/T-3233/done-report.md              |  606 +++++
+ tickets/archive/T-3233/ticket.md                   |   87 +
  tickets/archive/T-3255/ticket.md                   |    9 +
  tickets/{ => archive}/T-3259/ticket.md             |   24 +-
  tickets/archive/T-3275/ticket.md                   |   28 +-
@@ -1390,16 +1526,18 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-3489/ticket.md                   |   18 +-
  tickets/archive/T-3492/ticket.md                   |   28 +
  tickets/archive/T-3493/ticket.md                   |   28 +
+ tickets/archive/T-3496/ticket.md                   |   34 +
  tickets/{ => archive}/T-3512/done-report.md        |    0
  tickets/{ => archive}/T-3512/ticket.md             |    0
  tickets/archive/T-3541/ticket.md                   |   20 +-
  tickets/{ => archive}/T-3548/ticket.md             |    0
- tickets/archive/T-3612/done-report.md              |  221 +++
- tickets/archive/T-3612/ticket.md                   |  255 ++++
- tickets/archive/T-3613/done-report.md              |  106 ++
- tickets/archive/T-3613/ticket.md                   |  253 ++++
+ tickets/archive/T-3612/done-report.md              |  221 ++
+ tickets/archive/T-3612/ticket.md                   |  255 +++
+ tickets/archive/T-3613/done-report.md              |  106 +
+ tickets/archive/T-3613/ticket.md                   |  253 +++
  tickets/archive/T-3615/done-report.md              |   33 +
  tickets/{ => archive}/T-3615/ticket.md             |   30 +-
+ tickets/archive/T-3618/ticket.md                   |   37 +
  tickets/archive/T-3664/ticket.md                   |   11 +-
  tickets/archive/T-3665/ticket.md                   |   10 +-
  tickets/archive/T-3667/ticket.md                   |   28 +-
@@ -1568,7 +1706,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/{ => archive}/T-3848/ticket.md             |    0
  tickets/{ => archive}/T-3852/done-report.md        |    0
  tickets/{ => archive}/T-3852/ticket.md             |    0
- tickets/archive/T-3856/done-report.md              |  247 +++
+ tickets/archive/T-3856/done-report.md              |  247 ++
  tickets/{ => archive}/T-3856/ticket.md             |   60 +-
  tickets/{ => archive}/T-3857/done-report.md        |    0
  tickets/{ => archive}/T-3857/ticket.md             |    0
@@ -1623,14 +1761,14 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/{ => archive}/T-3940/ticket.md             |    0
  tickets/{ => archive}/T-3941/done-report.md        |    0
  tickets/{ => archive}/T-3941/ticket.md             |    0
- tickets/archive/T-3943/done-report.md              |  626 ++++++++
+ tickets/archive/T-3943/done-report.md              |  626 +++++
  tickets/{ => archive}/T-3943/ticket.md             |   49 +-
  tickets/{ => archive}/T-3947/done-report.md        |    0
  tickets/{ => archive}/T-3947/ticket.md             |    0
  tickets/{ => archive}/T-3948/done-report.md        |    0
  tickets/{ => archive}/T-3948/ticket.md             |    0
  tickets/{ => archive}/T-3956/ticket.md             |    0
- tickets/archive/T-3961/done-report.md              |  701 +++++++++
+ tickets/archive/T-3961/done-report.md              |  701 ++++++
  tickets/{ => archive}/T-3961/ticket.md             |   47 +-
  tickets/{ => archive}/T-3979/done-report.md        |    0
  tickets/{ => archive}/T-3979/ticket.md             |   39 +-
@@ -1682,9 +1820,9 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/{ => archive}/T-4108/ticket.md             |    0
  tickets/{ => archive}/T-4110/done-report.md        |    0
  tickets/{ => archive}/T-4110/ticket.md             |    0
- tickets/archive/T-4111/done-report.md              |  726 +++++++++
+ tickets/archive/T-4111/done-report.md              |  726 ++++++
  tickets/{ => archive}/T-4111/ticket.md             |   29 +-
- tickets/archive/T-4116/done-report.md              |  707 +++++++++
+ tickets/archive/T-4116/done-report.md              |  707 ++++++
  tickets/{ => archive}/T-4116/ticket.md             |   17 +-
  tickets/{ => archive}/T-4121/ticket.md             |    0
  tickets/{ => archive}/T-4122/ticket.md             |    0
@@ -1755,27 +1893,27 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/{ => archive}/T-4207/ticket.md             |    0
  tickets/{ => archive}/T-4208/ticket.md             |    0
  tickets/{ => archive}/T-4210/ticket.md             |    0
- tickets/archive/T-4214/done-report.md              |  667 +++++++++
+ tickets/archive/T-4214/done-report.md              |  667 ++++++
  tickets/archive/T-4214/ticket.md                   |   81 +
  tickets/{ => archive}/T-4219/done-report.md        |    0
  tickets/{ => archive}/T-4219/ticket.md             |    0
- tickets/archive/T-4221/done-report.md              |  706 +++++++++
- tickets/archive/T-4221/ticket.md                   |  120 ++
- tickets/archive/T-4230/done-report.md              |  723 +++++++++
+ tickets/archive/T-4221/done-report.md              |  706 ++++++
+ tickets/archive/T-4221/ticket.md                   |  120 +
+ tickets/archive/T-4230/done-report.md              |  723 ++++++
  tickets/{ => archive}/T-4230/ticket.md             |   15 +-
  tickets/{ => archive}/T-4234/done-report.md        |    0
  tickets/{ => archive}/T-4234/ticket.md             |    0
  tickets/{ => archive}/T-4236/done-report.md        |    0
  tickets/{ => archive}/T-4236/ticket.md             |    0
  tickets/{ => archive}/T-4243/done-report.md        |    0
- tickets/{ => archive}/T-4243/ticket.md             |    0
+ tickets/{ => archive}/T-4243/ticket.md             |   36 +-
  tickets/{ => archive}/T-4244/done-report.md        |    0
  tickets/{ => archive}/T-4244/ticket.md             |    0
  tickets/{ => archive}/T-4246/ticket.md             |    0
  tickets/{ => archive}/T-4255/done-report.md        |    0
  tickets/{ => archive}/T-4255/ticket.md             |    0
  tickets/{ => archive}/T-4257/done-report.md        |    0
- tickets/{ => archive}/T-4257/ticket.md             |    0
+ tickets/{ => archive}/T-4257/ticket.md             |   63 +-
  tickets/{ => archive}/T-4258/done-report.md        |    0
  tickets/{ => archive}/T-4258/ticket.md             |    0
  tickets/{ => archive}/T-4260/done-report.md        |    0
@@ -1853,7 +1991,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/{ => archive}/T-4310/done-report.md        |    0
  tickets/{ => archive}/T-4310/ticket.md             |    0
  tickets/{ => archive}/T-4312/done-report.md        |    0
- tickets/{ => archive}/T-4312/ticket.md             |    0
+ tickets/{ => archive}/T-4312/ticket.md             |   74 +-
  tickets/{ => archive}/T-4314/done-report.md        |    0
  tickets/{ => archive}/T-4314/ticket.md             |    0
  tickets/{ => archive}/T-4315/ticket.md             |    0
@@ -2009,7 +2147,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/{ => archive}/T-4412/done-report.md        |    0
  tickets/{ => archive}/T-4412/ticket.md             |    0
  tickets/archive/T-4413/done-report.md              |   71 +
- tickets/archive/T-4413/ticket.md                   |  108 ++
+ tickets/archive/T-4413/ticket.md                   |  108 +
  tickets/archive/T-4414/done-report.md              |   21 +
  tickets/{ => archive}/T-4414/ticket.md             |   23 +-
  tickets/archive/T-4415/done-report.md              |   25 +
@@ -2122,7 +2260,7 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-4493/ticket.md                   |   61 +
  tickets/archive/T-4494/done-report.md              |  138 ++
  tickets/archive/T-4494/ticket.md                   |   73 +
- tickets/archive/T-4495/done-report.md              |  197 +++
+ tickets/archive/T-4495/done-report.md              |  197 ++
  tickets/archive/T-4495/ticket.md                   |   64 +
  tickets/archive/T-4496/done-report.md              |   23 +
  tickets/archive/T-4496/ticket.md                   |   56 +
@@ -2133,41 +2271,41 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-4501/ticket.md                   |   81 +
  tickets/archive/T-4502/done-report.md              |   19 +
  tickets/archive/T-4502/ticket.md                   |   73 +
- tickets/archive/T-4503/done-report.md              |  592 ++++++++
- tickets/archive/T-4503/ticket.md                   |   94 ++
+ tickets/archive/T-4503/done-report.md              |  592 +++++
+ tickets/archive/T-4503/ticket.md                   |   94 +
  tickets/archive/T-4505/ticket.md                   |   38 +
- tickets/archive/T-4507/done-report.md              |  793 ++++++++++
+ tickets/archive/T-4507/done-report.md              |  793 +++++++
  tickets/archive/T-4507/ticket.md                   |   57 +
- tickets/archive/T-4508/done-report.md              |  689 +++++++++
- tickets/archive/T-4508/ticket.md                   |  114 ++
+ tickets/archive/T-4508/done-report.md              |  689 ++++++
+ tickets/archive/T-4508/ticket.md                   |  114 +
  tickets/archive/T-4510/done-report.md              |  149 ++
  tickets/archive/T-4510/ticket.md                   |   81 +
- tickets/archive/T-4511/done-report.md              |   97 ++
- tickets/archive/T-4511/ticket.md                   |  103 ++
- tickets/archive/T-4512/done-report.md              |  524 +++++++
- tickets/archive/T-4512/ticket.md                   |  102 ++
- tickets/archive/T-4514/done-report.md              |  179 +++
- tickets/archive/T-4514/ticket.md                   |  169 +++
+ tickets/archive/T-4511/done-report.md              |   97 +
+ tickets/archive/T-4511/ticket.md                   |  103 +
+ tickets/archive/T-4512/done-report.md              |  524 +++++
+ tickets/archive/T-4512/ticket.md                   |  102 +
+ tickets/archive/T-4514/done-report.md              |  179 ++
+ tickets/archive/T-4514/ticket.md                   |  169 ++
  tickets/archive/T-4515/done-report.md              |   24 +
  tickets/archive/T-4515/ticket.md                   |   62 +
- tickets/archive/T-4517/done-report.md              |  180 +++
- tickets/archive/T-4517/ticket.md                   |   94 ++
- tickets/archive/T-4519/done-report.md              |  869 +++++++++++
+ tickets/archive/T-4517/done-report.md              |  180 ++
+ tickets/archive/T-4517/ticket.md                   |   94 +
+ tickets/archive/T-4519/done-report.md              |  869 +++++++
  tickets/archive/T-4519/ticket.md                   |   79 +
  tickets/archive/T-4520/done-report.md              |  163 ++
  tickets/archive/T-4520/ticket.md                   |   58 +
- tickets/archive/T-4521/done-report.md              |  228 +++
- tickets/archive/T-4521/ticket.md                   |  125 ++
- tickets/archive/T-4522/done-report.md              |   99 ++
+ tickets/archive/T-4521/done-report.md              |  228 ++
+ tickets/archive/T-4521/ticket.md                   |  125 +
+ tickets/archive/T-4522/done-report.md              |   99 +
  tickets/archive/T-4522/ticket.md                   |   49 +
- tickets/archive/T-4523/done-report.md              |  104 ++
+ tickets/archive/T-4523/done-report.md              |  104 +
  tickets/archive/T-4523/ticket.md                   |   40 +
- tickets/archive/T-4524/done-report.md              |  209 +++
+ tickets/archive/T-4524/done-report.md              |  209 ++
  tickets/archive/T-4524/ticket.md                   |   52 +
  tickets/archive/T-4526/ticket.md                   |   45 +
  tickets/archive/T-4529/ticket.md                   |   76 +
  tickets/archive/T-4531/done-report.md              |   21 +
- tickets/archive/T-4531/ticket.md                   |  110 ++
+ tickets/archive/T-4531/ticket.md                   |  110 +
  tickets/archive/T-4532/done-report.md              |   24 +
  tickets/archive/T-4532/ticket.md                   |   66 +
  tickets/archive/T-4534/ticket.md                   |   69 +
@@ -2178,98 +2316,99 @@ Full tests/unit/strata/ suite (1559 tests) re-run clean after the fix:
  tickets/archive/T-4537/ticket.md                   |   33 +
  tickets/archive/T-4538/ticket.md                   |   63 +
  tickets/archive/T-4539/ticket.md                   |   29 +
- tickets/archive/T-4540/done-report.md              |  543 +++++++
+ tickets/archive/T-4540/done-report.md              |  543 +++++
  tickets/archive/T-4540/ticket.md                   |   55 +
  tickets/archive/T-4542/ticket.md                   |   58 +
- tickets/archive/T-4543/done-report.md              |  115 ++
+ tickets/archive/T-4543/done-report.md              |  115 +
  tickets/archive/T-4543/ticket.md                   |   79 +
  tickets/archive/T-4547/done-report.md              |  137 ++
  tickets/archive/T-4547/ticket.md                   |   45 +
  tickets/archive/T-4548/done-report.md              |   59 +
  tickets/archive/T-4548/ticket.md                   |   50 +
  tickets/archive/T-4549/ticket.md                   |   53 +
- tickets/archive/T-4550/done-report.md              |  545 +++++++
+ tickets/archive/T-4550/done-report.md              |  545 +++++
  tickets/archive/T-4550/ticket.md                   |   59 +
  tickets/archive/T-4552/done-report.md              |  146 ++
- tickets/archive/T-4552/ticket.md                   |  100 ++
- tickets/archive/T-4553/done-report.md              |  501 +++++++
+ tickets/archive/T-4552/ticket.md                   |  100 +
+ tickets/archive/T-4553/done-report.md              |  501 ++++
  tickets/archive/T-4553/ticket.md                   |   55 +
- tickets/archive/T-4554/done-report.md              |  541 +++++++
- tickets/archive/T-4554/ticket.md                   |  166 +++
- tickets/archive/T-4555/done-report.md              |  556 +++++++
+ tickets/archive/T-4554/done-report.md              |  541 +++++
+ tickets/archive/T-4554/ticket.md                   |  166 ++
+ tickets/archive/T-4555/done-report.md              |  556 +++++
  tickets/archive/T-4555/ticket.md                   |   78 +
- tickets/archive/T-4556/done-report.md              |  602 ++++++++
+ tickets/archive/T-4556/done-report.md              |  602 +++++
  tickets/archive/T-4556/ticket.md                   |   46 +
  tickets/archive/T-4559/ticket.md                   |   57 +
- tickets/archive/T-4562/done-report.md              |  665 +++++++++
+ tickets/archive/T-4562/done-report.md              |  665 ++++++
  tickets/archive/T-4562/ticket.md                   |   54 +
- tickets/archive/T-4563/done-report.md              |  556 +++++++
+ tickets/archive/T-4563/done-report.md              |  556 +++++
  tickets/archive/T-4563/ticket.md                   |   47 +
  tickets/archive/T-4566/ticket.md                   |  157 ++
- tickets/archive/T-4572/done-report.md              |  972 ++++++++++++
+ tickets/archive/T-4572/done-report.md              |  972 ++++++++
  tickets/archive/T-4572/ticket.md                   |   73 +
- tickets/archive/T-4579/done-report.md              |  522 +++++++
+ tickets/archive/T-4579/done-report.md              |  522 +++++
  tickets/archive/T-4579/ticket.md                   |   68 +
- tickets/archive/T-4582/done-report.md              |  551 +++++++
+ tickets/archive/T-4582/done-report.md              |  551 +++++
  tickets/archive/T-4582/ticket.md                   |   56 +
- tickets/archive/T-4583/done-report.md              |  620 ++++++++
- tickets/archive/T-4583/ticket.md                   |   87 ++
- tickets/archive/T-4588/done-report.md              |  715 +++++++++
+ tickets/archive/T-4583/done-report.md              |  620 +++++
+ tickets/archive/T-4583/ticket.md                   |   87 +
+ tickets/archive/T-4588/done-report.md              |  715 ++++++
  tickets/archive/T-4588/ticket.md                   |   67 +
  tickets/archive/T-4589/ticket.md                   |   56 +
- tickets/archive/T-4596/done-report.md              |  640 ++++++++
+ tickets/archive/T-4596/done-report.md              |  640 ++++++
  tickets/archive/T-4596/ticket.md                   |   43 +
  tickets/archive/T-4597/ticket.md                   |   34 +
  tickets/archive/T-4602/ticket.md                   |   44 +
- tickets/archive/T-4607/done-report.md              |  803 ++++++++++
- tickets/archive/T-4607/ticket.md                   |   96 ++
- tickets/archive/T-4615/ticket.md                   |  107 ++
- tickets/archive/T-4622/ticket.md                   |  107 ++
- tickets/archive/T-4628/done-report.md              | 1530 +++++++++++++++++++
+ tickets/archive/T-4607/done-report.md              |  803 +++++++
+ tickets/archive/T-4607/ticket.md                   |   96 +
+ tickets/archive/T-4615/ticket.md                   |  107 +
+ tickets/archive/T-4622/ticket.md                   |  107 +
+ tickets/archive/T-4628/done-report.md              | 1530 +++++++++++++
  tickets/archive/T-4628/ticket.md                   |   58 +
- tickets/archive/T-4629/done-report.md              | 1550 +++++++++++++++++++
+ tickets/archive/T-4629/done-report.md              | 1550 +++++++++++++
  tickets/archive/T-4629/ticket.md                   |   49 +
- tickets/archive/T-4630/done-report.md              | 1508 +++++++++++++++++++
+ tickets/archive/T-4630/done-report.md              | 1508 +++++++++++++
  tickets/archive/T-4630/ticket.md                   |   59 +
- tickets/archive/T-4631/done-report.md              | 1577 ++++++++++++++++++++
+ tickets/archive/T-4631/done-report.md              | 1577 +++++++++++++
  tickets/archive/T-4631/ticket.md                   |   74 +
- tickets/archive/T-4632/done-report.md              | 1478 ++++++++++++++++++
+ tickets/archive/T-4632/done-report.md              | 1478 ++++++++++++
  tickets/archive/T-4632/ticket.md                   |   46 +
- tickets/archive/T-4633/done-report.md              |  743 +++++++++
- tickets/archive/T-4633/ticket.md                   |   86 ++
- tickets/archive/T-4634/done-report.md              |  851 +++++++++++
- tickets/archive/T-4634/ticket.md                   |   54 +
+ tickets/archive/T-4633/done-report.md              |  743 ++++++
+ tickets/archive/T-4633/ticket.md                   |   86 +
+ tickets/archive/T-4634/done-report.md              |  851 +++++++
+ tickets/archive/T-4634/ticket.md                   |   97 +
  tickets/archive/T-4635/ticket.md                   |   30 +
- tickets/archive/T-4642/done-report.md              |  671 +++++++++
+ tickets/archive/T-4642/done-report.md              |  671 ++++++
  tickets/archive/T-4642/ticket.md                   |   52 +
- tickets/archive/T-4646/done-report.md              |  914 ++++++++++++
- tickets/archive/T-4646/ticket.md                   |   43 +
- tickets/archive/T-4649/done-report.md              |  888 +++++++++++
- tickets/archive/T-4649/ticket.md                   |  105 ++
- tickets/archive/T-4650/done-report.md              |  961 ++++++++++++
- tickets/archive/T-4650/ticket.md                   |  166 +++
- tickets/archive/T-4659/done-report.md              |  962 ++++++++++++
- tickets/archive/T-4659/ticket.md                   |   92 ++
- tickets/archive/T-4669/done-report.md              | 1464 ++++++++++++++++++
- tickets/archive/T-4669/ticket.md                   |   98 ++
- tickets/archive/T-4673/done-report.md              | 1447 ++++++++++++++++++
- tickets/archive/T-4673/ticket.md                   |   88 ++
+ tickets/archive/T-4646/done-report.md              |  914 ++++++++
+ tickets/archive/T-4646/ticket.md                   |   82 +
+ tickets/archive/T-4649/done-report.md              |  888 ++++++++
+ tickets/archive/T-4649/ticket.md                   |  105 +
+ tickets/archive/T-4650/done-report.md              |  961 ++++++++
+ tickets/archive/T-4650/ticket.md                   |  166 ++
+ tickets/archive/T-4659/done-report.md              |  962 ++++++++
+ tickets/archive/T-4659/ticket.md                   |   92 +
+ tickets/archive/T-4669/done-report.md              | 1464 ++++++++++++
+ tickets/archive/T-4669/ticket.md                   |   98 +
+ tickets/archive/T-4673/done-report.md              | 1447 ++++++++++++
+ tickets/archive/T-4673/ticket.md                   |   88 +
  tickets/archive/T-4677/done-report.md              |   40 +
- tickets/archive/T-4677/ticket.md                   |  173 +++
+ tickets/archive/T-4677/ticket.md                   |  173 ++
  tickets/archive/T-4678/done-report.md              |   48 +
- tickets/archive/T-4678/ticket.md                   |  201 +++
+ tickets/archive/T-4678/ticket.md                   |  201 ++
  tickets/archive/T-4680/done-report.md              |   55 +
- tickets/archive/T-4680/ticket.md                   |  211 +++
- tickets/archive/T-5036/done-report.md              | 1432 ++++++++++++++++++
+ tickets/archive/T-4680/ticket.md                   |  211 ++
+ tickets/archive/T-5036/done-report.md              | 1432 ++++++++++++
  tickets/archive/T-5036/ticket.md                   |   50 +
  tickets/archive/T-5082/done-report.md              |   38 +
- tickets/archive/T-5082/ticket.md                   |  345 +++++
+ tickets/archive/T-5082/ticket.md                   |  345 +++
  uv.lock                                            |    2 +-
- 2104 files changed, 105369 insertions(+), 5017 deletions(-)
+ 2231 files changed, 142324 insertions(+), 7469 deletions(-)
 ```
 
 ### Evidence
-- `tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_future_review_stays_assumed_no_finding` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_the_real_shared_cliff_date_is_still_future_at_the_fixed_today` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_yields_refuted_finding` (pytest node id, verified passing when recorded)
-- `tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_logs_warning_with_owner_and_date` (pytest node id, verified passing when recorded)
+- `tests/test_lang_support.py::TestDeriveLanguageRegistry::test_covers_every_supported_language` (pytest node id, verified passing when recorded)
+- `tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup` (pytest node id, verified passing when recorded)
+- `tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_second_call_does_not_spawn_again` (pytest node id, verified passing when recorded)
+- `tests/test_lang_support.py::TestDeriveLanguageRegistry::test_real_registry_has_no_conformance_violations` (pytest node id, verified passing when recorded)

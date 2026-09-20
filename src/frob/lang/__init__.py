@@ -381,12 +381,6 @@ def _run_parse_with_timeout(
         return Err(LangError.ParseTimedOut)
 
 
-# T-0414: process-lifetime, content-hash-keyed memo for `_parse` -- the
-# single read+tree-sitter-parse chokepoint every `frob.lang` entry point
-# funnels through (see docs/audits/perf.md H4). Before this cache, a 213-
-# file source tree was independently re-read and re-parsed by every stage
-# that touches source (arch 2x, vet 3x, selfconform 6x via vet) -- ~2000-
-# 2500 tree-sitter parses per `frob check` where ~213 would suffice. Keyed
 # on `(path, sha256(content))`, NEVER on mtime/size alone (T-0414's
 # correctness mandate: a stale or wrong cached tree would silently corrupt
 # every gate that reads it) -- a content change always misses the cache and
@@ -394,6 +388,7 @@ def _run_parse_with_timeout(
 # identical content always hits, even across two different calling stages.
 # Guarded by a lock since `frob check`'s gate stages run concurrently in a
 # `ThreadPoolExecutor` (`frob.check._run_tasks_concurrently`).
+# see T-0414 for the history behind this
 _parse_cache_lock = threading.Lock()
 _parse_cache: dict[str, Result[tuple[Tree, bytes, str], LangError]] = {}
 _parse_cache_hits = 0

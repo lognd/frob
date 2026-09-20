@@ -83,6 +83,66 @@ scope_changes:
     directly instead of deferring via AFFECT001/T-2752
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'T-2740: waiver LIVENESS, distinct from T-2493''s collision-suspect
+
+    honesty signal. WHY THIS IS A DIFFERENT QUESTION: T-1614''s audit (and
+
+    T-2493''s collision check) both judge a waiver''s REASON or its
+
+    collision with an ACTIVE violation -- neither establishes that the
+
+    waiver''s own RULE ever looks at the FILE the waiver sits in at all.
+
+    T-2719 found 11 frob:waive RENDER001 directives in .claude/hooks/ and
+
+    scripts/fleet_status.py that were individually honest AND
+
+    collision-free (nothing to collide with, because RENDER001''s scan
+
+    pathspec was hardcoded to src/frob and never reached those files) --
+
+    T-1614''s audit classified all 100 directives it reviewed as "still
+
+    necessary and honest", 11 of which were provably doing nothing.
+
+
+    THE SOUNDNESS LINE is drawn deliberately narrow (same posture as
+
+    T-2493''s own docstring, and the same lesson the reverted T-1579
+
+    _rule_has_live_finding incident taught this repo once already).
+
+    UNVERIFIED is deliberately NOT "OBSOLETE" -- claiming a finding "no
+
+    longer reproduces" from one run''s absence is exactly the T-1579
+
+    reasoning that deleted 55 live waivers, and this module does not
+
+    repeat it. A caller wanting a real OBSOLETE verdict must do what T-2739
+
+    did: construct an actual synthetic diff/measurement for that specific
+
+    rule and site, by hand, per this repo''s own waiver-removal discipline
+
+    -- this classifier reports a LEAD, never a verdict strong enough to
+
+    justify removal on its own. An INERT verdict is ALSO evidence about the
+
+    GATE, not only the waiver -- see _run_scan_subcommand''s own liveness
+
+    section render for the prompt this is meant to leave a human/agent
+
+    with: an unscanned path someone is writing waivers for is exactly how
+
+    T-2719 found RENDER001''s own pathspec bug, one level up from any
+
+    individual waiver.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3204
+  new_length: 5823
 evidence:
 - tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_necessary_when_waived_this_run
 - tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_inert_when_rule_does_not_scan_the_file
@@ -170,3 +230,49 @@ PORT001 class: LANG004 emitting frob's own `src/frob/` paths into consumer
 repos (T-2706), `fleet_status.py` resolving its repo root via `__file__`
 and reporting 0 leases from a worktree (T-2677), and now RENDER001's
 scan pathspec. Declare, never hardcode.
+
+<!-- narrative-moved:src/frob/app/ticket_runner/_waive_audit.py:867:T-2740 -->
+---------------------------------------------------------------------------
+T-2740: waiver LIVENESS, distinct from T-2493's collision-suspect honesty
+signal above.
+
+WHY THIS IS A DIFFERENT QUESTION. T-1614's audit (and T-2493's collision
+check) both judge a waiver's REASON or its collision with an ACTIVE
+violation -- neither establishes that the waiver's own RULE ever looks at
+the FILE the waiver sits in at all. T-2719 found 11 `frob:waive RENDER001`
+directives in `.claude/hooks/` and `scripts/fleet_status.py` that were
+individually honest AND collision-free (nothing to collide with, because
+RENDER001's scan pathspec was hardcoded to `src/frob` and never reached
+those files) -- T-1614's audit classified all 100 directives it reviewed
+as "still necessary and honest", 11 of which were provably doing nothing.
+
+THE SOUNDNESS LINE, drawn deliberately narrow (same posture as T-2493's
+own docstring above, and the same lesson the reverted T-1579
+`_rule_has_live_finding` incident taught this repo once already):
+
+    suppressed. Sound: this is not "the rule fired somewhere", it is
+    "this exact waiver suppressed this exact violation just now".
+
+    says the waiver's file falls OUTSIDE the rule's scan set. This is a
+    structural fact about what the rule enumerates, not an inference
+    from a run finding nothing -- sound for the same reason
+    `frob.gates._coverage_sites.site_examined`'s POSITIVE membership
+    claims are sound, applied here to a NEGATIVE (not-in-scope) claim
+    instead.
+
+  UNVERIFIED -- neither of the above could be established: the rule has
+    no registered checker, or the checker says the file IS in scope but
+    this run's `waived` set does not confirm active suppression. This is
+    the HONEST default. It is deliberately NOT "OBSOLETE" -- claiming a
+    finding "no longer reproduces" from one run's absence is exactly the
+    T-1579 reasoning that deleted 55 live waivers, and this module does
+    not repeat it. A caller wanting a real OBSOLETE verdict must do what
+    T-2739 did: construct an actual synthetic diff/measurement for that
+    specific rule and site, by hand, per this repo's own waiver-removal
+    discipline -- this classifier reports a LEAD, never a verdict
+    strong enough to justify removal on its own.
+
+see `_run_scan_subcommand`'s own liveness section render for the prompt
+this is meant to leave a human/agent with: an unscanned path someone is
+writing waivers for is exactly how T-2719 found RENDER001's own pathspec
+bug, one level up from any individual waiver.

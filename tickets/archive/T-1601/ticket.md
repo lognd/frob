@@ -146,6 +146,21 @@ scope_changes:
     of collected as a test file, same shape as the T-1600 csharp entry
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'T-3492 (java''s own prior entry here) removed -- the gap is closed: java
+
+    is a real LANGUAGES entry in frob.vet._capability_registry and
+
+    frob.dup._exhaustiveness, and a real fenced-block bucket in
+
+    frob.gates._docblocks (_JAVA_LANGS, _java_import_violations); no detail
+
+    string cites T-3492 any more.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1274
+  new_length: 2188
 evidence:
 - tests/test_lang.py::TestJava::test_walks_class_and_method
 - tests/test_lang.py::TestJava::test_package_private_method_is_not_public
@@ -182,3 +197,18 @@ Required for done:
 - A fixture repo (or fixture files) exercising the awkward cases named above.
 
 If shared code needs a special case to accommodate this language, STOP and file that as a separate finding against the shared layer. A special case is evidence the abstraction is wrong, and absorbing it quietly is how the shared layer becomes Python-shaped by accretion.
+
+<!-- narrative-moved:src/frob/lang/_support.py:492:T-1601 -->
+T-1601/T-1602: java and cuda each registered a real frob.lang grammar/
+walker but are not yet wired into the three OTHER FACETS-axis subsystems
+(frob.vet._capability_registry, frob.dup._exhaustiveness, frob.gates.
+_docblocks) -- mirrors `_NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING`'s
+prior bash/csharp shape (T-2906, now closed and removed) exactly, widened
+from T-1601's single-language `_JAVA_PENDING_FACET_WIRING` set to a
+language -> tracking-ticket MAPPING once a second pending adapter showed
+up needing its own distinct ticket: a small, explicit membership mapping
+naming exactly which pending adapter each citation covers and which
+ticket tracks it, so a future language added to the three facet
+dispatches without going through this same mapping stays a genuinely
+unreasoned (loud) gap, not silently absorbed into this citation by
+accident.

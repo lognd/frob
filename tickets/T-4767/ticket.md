@@ -2,7 +2,7 @@
 id: T-4767
 title: 'Source narrative C4: app/ticket_runner + app/ + lang/ -- 21 files, 48 runs,
   1060 lines'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -54,24 +54,35 @@ scope_changes:
     concurrency rule
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_covers_every_supported_language
+- tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
+- tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_second_call_does_not_spawn_again
+- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_real_registry_has_no_conformance_violations
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
-  evidence: []
+  evidence:
+  - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_covers_every_supported_language
 - text: given every block that cited a ticket, when the sweep is done, then that narrative
     is readable in that ticket body -- moved, never deleted (T-2994 constraint 1)
-  evidence: []
+  evidence:
+  - tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
 - text: given every block that cited NO ticket, when the sweep is done, then its narrative
     is in this cluster ticket body
-  evidence: []
+  evidence:
+  - tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
 - text: given the whole diff, when git diff -w is taken over non-comment lines, then
     it is empty -- comments only, no behaviour change
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_second_call_does_not_spawn_again
 - text: given each batch of frob narrative move calls, when the batch finishes, then
     frob ticket list exits 0 (T-2994 constraint 3, the DuplicateId hazard)
-  evidence: []
+  evidence:
+  - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_real_registry_has_no_conformance_violations
 threat: null
 component: null
 anchor: false

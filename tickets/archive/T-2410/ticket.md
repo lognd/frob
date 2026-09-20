@@ -48,6 +48,19 @@ scope_changes:
     now produce
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-2410 (_capability_publicness_status''s prior strata KNOWN_GAP)
+
+    removed -- the gap is closed, _walk_strata.py now derives a real
+
+    clearance-based public value; no live tracking ticket references it
+
+    here any more.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 866
+  new_length: 1147
 evidence:
 - tests/unit/test_lang_strata.py::TestParseStrata::test_publicness_is_derived_from_clearance_not_a_blanket_true
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[strata-publicness]
@@ -61,3 +74,9 @@ anchor_reason: null
 land_commit: d857690f0bf31ed22cc93060cc0ae60ce1789a39
 ---
 T-2365's behavioral capability conformance suite (tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck) caught this: frob.lang._walk_strata.py:277 sets public=True unconditionally for every strata symbol, regardless of the construct's real clearance/visibility (design/litmus/chirp.strata's own fixtures declare 'clearance Public' on some nodes, implying a real visibility concept exists in the surface syntax that the walker does not read). This makes CAPABILITY_PUBLICNESS a KNOWN_GAP for strata (frob.lang._support._capability_publicness_status), not IMPLEMENTED -- a placeholder True is not language-correct publicness the way T-0841's per-grammar rule is for every other adapter. Wire a real publicness rule (likely keyed on clearance/visibility surface syntax) or make the KNOWN_GAP explicit and permanent if strata genuinely has no such concept.
+
+<!-- narrative-moved:src/frob/lang/_support.py:437:T-2410 -->
+T-2410 (`_capability_publicness_status`'s prior strata KNOWN_GAP)
+removed -- the gap is closed, `_walk_strata.py` now derives a real
+clearance-based `public` value; no live tracking ticket references
+it here any more.

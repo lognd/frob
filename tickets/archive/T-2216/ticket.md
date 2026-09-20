@@ -43,6 +43,25 @@ scope_changes:
     shape the warning names.
   actor: logan
   at: '2026-08-16'
+body_changes:
+- mode: append
+  reason: 'T-2216: _block is the ONE CLI verb that appends to an EXISTING ticket''s
+
+    blocked_by post-creation, and the append used to be unconditional --
+
+    two successive block calls with the SAME --by (the real incident: a
+
+    coordinator "restoring" an edge that was never actually lost) wrote a
+
+    duplicate entry (blocked_by=[T-2211, T-2211]) that survives the first
+
+    blocker being cleared, since blocked_by.remove / whatever eventually
+
+    clears one blocker only removes ONE occurrence.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 0
+  new_length: 542
 evidence:
 - tests/test_tickets.py::TestBlockCliValidatesBy::test_blocking_by_a_different_second_id_still_appends
 - tests/test_tickets.py::TestBlockCliValidatesBy::test_cli_refuses_empty_string_by
@@ -56,3 +75,11 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+<!-- narrative-moved:src/frob/app/ticket_runner/_lifecycle.py:1465:T-2216 -->
+T-2216: `_block` is the ONE CLI verb that appends to an EXISTING
+ticket's `blocked_by` post-creation (see this function's own T-1132
+comment above), and the append below was unconditional -- two
+successive `block` calls with the SAME `--by` (the real incident: a
+coordinator "restoring" an edge that was never actually lost) wrote
+a duplicate entry (`blocked_by=[T-2211, T-2211]`) that survives the
+first blocker being cleared, since `blocked_by.remove` / whatever

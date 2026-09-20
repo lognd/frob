@@ -951,6 +951,7 @@ def _extract_lock_holder(combined: str) -> str | None:
 
 # frob:ticket T-0919
 # frob:ticket T-4550
+# frob:ticket T-4767
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
 # kind="unit"
 # frob:tests tests/unit/test_done_report_check_scope.py::TestSharedCheckSpawnFnTimeout \
@@ -1127,25 +1128,7 @@ def _shared_check_spawn_fn(  # noqa: ANN201
             return cache["result"]
         from frob.app import ticket_runner as _ticket_runner
 
-        # T-2076: this spawn carries no `--only`/`--budget` selection, so
-        # `frob.app.check_runner._refuse_full_check_for_agent` (T-0627)
-        # refuses it outright -- exit 1, EMPTY stdout -- whenever
-        # `FROB_AGENT` is set in the environment. `frob ticket land`
-        # inherits its own caller's shell env unchanged, and every
-        # dispatched worktree agent carries `FROB_AGENT=1` (playbook
-        # section 1b), so in that (extremely common) case this spawn used
-        # to refuse silently every time: `_parse_check_json` cannot parse
-        # empty stdout, this closure returns `None` ("unmeasured"), and
-        # `_reverify_done_report_claims_post_merge`
-        # (`frob.tickets._land_verify`) treats an unmeasured `check_gates()`
-        # as "nothing to compare, permissive skip" by design (T-0832) --
-        # so a branch that introduced a brand-new error-severity gate
-        # finding after done-report capture landed completely unblocked.
-        # Confirmed directly against a real fixture repo (T-2076
-        # investigation) -- this is the actual escape mechanism T-1584's
-        # Done report divergence traces to, not a stale/pre-merge `cwd`
-        # (a direct probe on this checkout confirmed this spawn's `cwd`
-        # is already the correctly-merged worktree tree). This spawn is
+        # T-2076: this spawn is
         # frob's OWN internal, machinery-driven re-verification step, not
         # a sub-agent's discretionary "bare `frob check`" call -- T-0627's
         # actual target -- so it must run to completion regardless of the
@@ -1154,6 +1137,7 @@ def _shared_check_spawn_fn(  # noqa: ANN201
         # environment unconditionally, overriding just that one var on
         # top of the caller's real environment (never a wholesale env
         # wipe -- PATH, venv vars, etc. all still pass through).
+        # see T-2076 for the history behind this
         child_env = {**os.environ, "FROB_ALLOW_FULL_CHECK": "1"}
         argv = [
             _python_for_tree(root),
@@ -1200,6 +1184,7 @@ def _shared_check_spawn_fn(  # noqa: ANN201
 # frob:ticket T-0846
 # frob:ticket T-0850
 # frob:ticket T-0919
+# frob:ticket T-4767
 # frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
 # kind="unit"
@@ -1288,20 +1273,12 @@ def _check_gates_summary_fn(  # noqa: ANN201
         summary_text = gate_summary.get("summary", "") if gate_summary else ""
         match = _GATE_SUMMARY_COUNTS_ONLY_RE.search(summary_text)
         if match is None:
-            # T-2668: the `## Errors` identity set (`findings`, above) DID
-            # parse -- this run is genuinely measured, it is only the
-            # aggregate `gate-summary` totals line that failed to parse
-            # (missing entirely, or in a shape this regex still does not
-            # recognize). Discarding a real, already-in-hand error count
-            # here because a SEPARATE formatter/parser pair drifted is the
-            # exact "unmeasured is not nothing found" failure T-2668 exists
-            # to close (T-2503's live incident: `error-findings` populated,
-            # `gates: unmeasured` recorded right next to it). `errors` is
-            # still reported, real and comparable at land
+            # T-2668: `errors` is still reported, real and comparable at land
             # (`_reverify_gate_state_claim` only ever compares
             # `gate_errors`); `warnings`/`waived` genuinely have no other
             # source in this branch and stay `None` (T-0832: an
             # unmeasured half must never render as a fabricated zero).
+            # see T-2668 for the history behind this
             _log.warning(
                 "ticket %s: `frob check --ticket %s --json` produced no "
                 "parsable gate-summary totals line (exit=%d), but its "

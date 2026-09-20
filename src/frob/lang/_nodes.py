@@ -29,18 +29,9 @@ _log = get_logger(__name__)
 # T-4646: per-root memoization cache for this module's `pyproject.toml`
 # reads, keyed on the file's own mtime (-1.0 if missing) as the cheap
 # invalidation signal -- the same shape T-4649 used for `_store_mode`.
-# Before this, `declared_project_package_name` (and transitively
-# `declared_source_prefixes`/`frob.tickets.over_broad_literal_globs`) did
-# a fresh `tomllib.load()` on every call with NO caching at all, unlike
-# this file's own `_declared_python_source_roots` sibling three lines
-# below (which at least has an `lru_cache`, itself parsing pyproject.toml
-# a SECOND time independently of this one). `doable()`'s per-candidate x
-# per-lease-holder `_leased_by_one_holder` check calls
-# `over_broad_literal_globs(root)` once per (queued/planned ticket,
-# in-progress lease) pair -- O(tickets x leases) re-parses of the same
-# unchanged file, the identical cost shape T-4649 fixed for `_store_mode`.
 # Guarded by a lock since `doable()` can run under multi-threaded fleet
 # load same as `_store_mode`.
+# see T-4646 for the history behind this
 _pyproject_data_cache: dict[Path, tuple[float, dict[str, object]]] = {}
 _pyproject_data_cache_lock = threading.Lock()
 

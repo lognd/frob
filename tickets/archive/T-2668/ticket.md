@@ -48,6 +48,27 @@ scope_changes:
     mismatch across the same call chain this ticket's fix touches
   actor: logan
   at: '2026-08-19'
+body_changes:
+- mode: append
+  reason: 'T-2668: the ## Errors identity set (findings) DID parse -- this run is
+
+    genuinely measured, it is only the aggregate gate-summary totals line
+
+    that failed to parse (missing entirely, or in a shape this regex still
+
+    does not recognize). Discarding a real, already-in-hand error count
+
+    here because a SEPARATE formatter/parser pair drifted is the exact
+
+    "unmeasured is not nothing found" failure T-2668 exists to close
+
+    (T-2503''s live incident: error-findings populated, gates: unmeasured
+
+    recorded right next to it).'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4098
+  new_length: 4652
 evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn::test_real_gates_summary_shape_with_unresolved_term_is_measured
 designated_repro_test: null
@@ -143,3 +164,13 @@ one.
   tell which of the three happened
 - reproduce the parse failure deliberately and confirm the new behavior;
   a fix validated only against a working check has not been tested
+
+<!-- narrative-moved:src/frob/app/ticket_runner/_verify.py:1274:T-2668 -->
+T-2668: the `## Errors` identity set (`findings`, above) DID
+parse -- this run is genuinely measured, it is only the
+aggregate `gate-summary` totals line that failed to parse
+(missing entirely, or in a shape this regex still does not
+recognize). Discarding a real, already-in-hand error count
+here because a SEPARATE formatter/parser pair drifted is the
+exact "unmeasured is not nothing found" failure T-2668 exists
+to close (T-2503's live incident: `error-findings` populated,

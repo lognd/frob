@@ -40,6 +40,13 @@ scope_changes:
     doc touched'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: narrative migration T-4767
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1528
+  new_length: 2364
 evidence:
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_kotlin_test_discovery_is_implemented
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_test_discovery_known_gap_tracks_a_language_absent_from_registry
@@ -76,3 +83,16 @@ that both `_capability_test_discovery_status` and any future dispatch
 site can read, mirroring `_IMPORT_WALKERS`'s role for the import_graph
 capability. Also retire the stale `KNOWN_GAP_TRACKING_TICKETS["T-2409"]`
 entry once the registry reflects reality (same T-2494 pattern).
+
+<!-- narrative-moved:src/frob/lang/_support.py:906:T-2499 -->
+T-2499: unlike `_capability_import_graph_status` above, there was no
+: existing single-source-of-truth table this status function could
+: import and derive from -- `frob.testing` exports `collect_python_
+: tests`/`collect_rust_tests`/`collect_ts_tests`/`collect_cpp_tests`/
+: `collect_kotlin_tests` as five independent module-level functions with
+: no language-keyed dispatch dict joining them (confirmed: no caller in
+: this repo dispatches a collector by language string). This is that
+: exact T-2408 incident class repeating -- `collect_kotlin_tests` landed
+: (T-2409) and this function's own hardcoded `{"python", "rust",
+: "typescript", "c", "cpp"}` set silently did not know about it, reading
+: kotlin as `KNOWN_GAP` the same day its real collector shipped. Building

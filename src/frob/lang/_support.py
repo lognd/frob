@@ -410,6 +410,7 @@ def _cap_known_gap(requirement: CapabilityRequirement, detail: str) -> Capabilit
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:ticket T-0823
 # frob:ticket T-2996
+# frob:ticket T-4767
 #: Every ticket id ever cited by a `_known_gap` `detail` string in this
 #: module, mapped to whether FROB'S OWN tracking still considers it open
 #: (T-0823). These ids are frob-internal (e.g. `T-0329`, frob's own
@@ -434,35 +435,14 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # unrecognized by frob.graph.callgraph's shared token-adjacency call
     # detector -- cited by `_capability_call_graph_status`'s bash branch.
     "T-2901": True,
-    # T-2906 (bash/csharp not yet wired into the capability/dup/docblock
-    # FACETS, `_NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING`'s prior
-    # KNOWN_GAP) removed -- the gap is closed: bash/csharp are real
-    # LANGUAGES entries in frob.vet._capability_registry and frob.dup.
-    # _exhaustiveness, and real fenced-block buckets in frob.gates.
-    # _docblocks (_CONSOLE_LANGS for bash, the new _CSHARP_LANGS for
-    # csharp); no detail string cites T-2906 any more.
-    # T-2409 (`_capability_test_discovery_status`'s prior kotlin
-    # KNOWN_GAP) removed -- the gap is closed, T-2409 landed a real
-    # `frob.testing.collect_kotlin_tests` collector and T-2499's
-    # `_TEST_DISCOVERY_COLLECTORS` registry now derives kotlin as
-    # IMPLEMENTED from that live entry; no detail string cites T-2409
-    # any more.
-    # T-2410 (`_capability_publicness_status`'s prior strata KNOWN_GAP)
-    # removed -- the gap is closed, `_walk_strata.py` now derives a real
-    # clearance-based `public` value; no live tracking ticket references
-    # it here any more.
     # T-3231: EPIC refactor multi-language: per-language reference
     # scanners -- cited by `_refactor_status`'s known-gap detail for
     # every language `frob.refactor._module_lang._MODULE_LANGUAGE_
     # ADAPTERS` has no entry for yet (T-2996 found this is every
     # language except python).
+    # see T-2409 for the history behind this
+    # see T-2410 for the history behind this
     "T-3231": True,
-    # T-3492 (java's prior KNOWN_GAP citation, T-1601's own filed
-    # finding) removed -- the gap is closed the same way T-2906's
-    # bash/csharp entries were: java is a real LANGUAGES entry in
-    # frob.vet._capability_registry and frob.dup._exhaustiveness, and a
-    # real fenced-block bucket (_JAVA_LANGS) in frob.gates._docblocks;
-    # no detail string cites T-3492 any more.
     # T-3493 (cuda's prior KNOWN_GAP citation, T-1602's own filed
     # finding) removed -- the gap is closed the same way T-3492's java
     # entry was: cuda is a real LANGUAGES entry in
@@ -474,6 +454,7 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # frob.lang grammar/walker but is not yet wired into the
     # capability/dup/docblock FACETS -- same shared
     # `_PENDING_FACET_WIRING_TICKETS` mapping.
+    # see T-3492 for the history behind this
     "T-3513": True,
 }
 
@@ -493,17 +474,14 @@ _ARCH_DISPATCHED_LANGUAGES = frozenset({"python", "cpp"})
 # mirrored the same way `_ARCH_DISPATCHED_LANGUAGES` mirrors frob.arch's
 # dispatch above -- NOT a lazy import of `frob.refactor`, deliberately.
 # `frob.refactor._module_resolve` imports `frob.lang` at module level, so
-# `frob.lang._support` importing `frob.refactor` back (even lazily, inside
-# a function body -- CYCLE001's static analysis follows those edges too,
-# unlike Python's own runtime resolution) would close a real import cycle
-# across package boundaries: measured directly, this exact edge escalated
-# frob-cycle from 2 pre-existing same-package warnings to a new
-# cross-package ERROR the first time it was tried. If frob.refactor's
-# adapter registry changes, `tests/test_lang_support.py`'s fixture-driven
-# assertions on `derive_language_registry()` catch the drift the same way
-# the arch mirror's comment above describes.
+# importing it back (even lazily, inside a function body -- CYCLE001's
+# static analysis follows those edges too) would close a real import
+# cycle. `tests/test_lang_support.py`'s fixture-driven assertions on
+# `derive_language_registry()` catch drift the same way the arch mirror
+# above describes.
 # frob:ticket T-2996
 # frob:tests tests/test_lang_support.py::test_refactor_adapter_languages_matches_live_registry  # noqa: E501
+# see T-2996 for the history behind this
 _REFACTOR_ADAPTER_LANGUAGES = frozenset({"python"})
 
 # The bare `LANGUAGES` capability-registry bucket "c-cpp" covers both
@@ -512,25 +490,12 @@ _REFACTOR_ADAPTER_LANGUAGES = frozenset({"python"})
 # `("c", "cpp")` pair a second time.
 _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
 
-# T-1601/T-1602: java and cuda each registered a real frob.lang grammar/
-# walker but are not yet wired into the three OTHER FACETS-axis subsystems
-# (frob.vet._capability_registry, frob.dup._exhaustiveness, frob.gates.
-# _docblocks) -- mirrors `_NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING`'s
-# prior bash/csharp shape (T-2906, now closed and removed) exactly, widened
-# from T-1601's single-language `_JAVA_PENDING_FACET_WIRING` set to a
-# language -> tracking-ticket MAPPING once a second pending adapter showed
-# up needing its own distinct ticket: a small, explicit membership mapping
-# naming exactly which pending adapter each citation covers and which
-# ticket tracks it, so a future language added to the three facet
-# dispatches without going through this same mapping stays a genuinely
-# unreasoned (loud) gap, not silently absorbed into this citation by
-# accident.
-#
 # T-3492 (java's own prior entry here) removed -- the gap is closed: java
 # is a real LANGUAGES entry in frob.vet._capability_registry and frob.dup.
 # _exhaustiveness, and a real fenced-block bucket in frob.gates._docblocks
 # (`_JAVA_LANGS`, `_java_import_violations`); no detail string cites
 # T-3492 any more.
+# see T-1601 for the history behind this
 _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
     "zig": "T-3513",
 }
@@ -939,17 +904,6 @@ def _capability_import_graph_status(language: str) -> CapabilityStatus:
     )
 
 
-# T-2499: unlike `_capability_import_graph_status` above, there was no
-#: existing single-source-of-truth table this status function could
-#: import and derive from -- `frob.testing` exports `collect_python_
-#: tests`/`collect_rust_tests`/`collect_ts_tests`/`collect_cpp_tests`/
-#: `collect_kotlin_tests` as five independent module-level functions with
-#: no language-keyed dispatch dict joining them (confirmed: no caller in
-#: this repo dispatches a collector by language string). This is that
-#: exact T-2408 incident class repeating -- `collect_kotlin_tests` landed
-#: (T-2409) and this function's own hardcoded `{"python", "rust",
-#: "typescript", "c", "cpp"}` set silently did not know about it, reading
-#: kotlin as `KNOWN_GAP` the same day its real collector shipped. Building
 #: the missing registry (rather than just adding "kotlin" to the hardcoded
 #: set, which only fixes today's drift and repeats the identical failure
 #: on the NEXT new collector) is the actual fix: this dict's own KEYS are
@@ -957,6 +911,7 @@ def _capability_import_graph_status(language: str) -> CapabilityStatus:
 #: derives from, so a future collector only needs one new entry here, in
 #: the same table any other caller wanting a by-language collector
 #: dispatch would also want -- not a second hardcoded set to forget.
+# see T-2499 for the history behind this
 _TEST_DISCOVERY_COLLECTORS: dict[str, str] = {
     "python": "frob.testing.collect_python_tests",
     "rust": "frob.testing.collect_rust_tests",
@@ -1094,7 +1049,6 @@ def capability_conformance_violations(
     return tuple(violations)
 
 
-# --------------------------------------------------------------------------
 # T-2996 part 2/3: the PACKAGE axis -- registers which `frob.*` packages
 # carry per-language specialisation at all, and whether that specialisation
 # is already accounted for by FACETS/ADAPTER_CAPABILITIES, or is a reasoned
@@ -1106,28 +1060,7 @@ def capability_conformance_violations(
 # a cross-check that fails when a package acquires language-literal
 # branching the registry does not yet know about, so the registry cannot
 # silently fall behind reality the way `refactor`'s Python-only assumption
-# fell behind for years.
-#
-# T-2996 2026-08-26 measurement (language-literal density per package,
-# `frob.lang` itself excluded as the source of truth every other entry
-# here is measured against):
-#
-#     321  frob.vet          82  frob.lang (source of truth, not audited)
-#      41  frob.gates        40  frob.arch          38  frob.app
-#      25  frob.perf         21  frob.strata        17  frob.dup
-#      10  frob._cli_parsers  9  frob.check          9  frob.graph
-#       8  frob.testing       4  frob.policy         0  frob.refactor (!)
-#
-# `unfaceted_packages`'s AST-based detection cross-check (below) also
-# turned up 5 more packages the density survey's manual grep pass missed:
-# frob.bind, frob.deploy, frob.docs, frob.natives, frob.xref -- each has
-# exactly one or a few language literals, which is precisely why they did
-# not surface in a coarse density ranking; every one is registered below
-# too, and this is the cross-check doing its job (T-2996 part 3): a
-# registry built by hand alone would have missed these five permanently.
-#
-# Each entry's `detail` records the actual reasoning, not just the verdict.
-# --------------------------------------------------------------------------
+# see T-2996 for the history behind this
 
 
 # frob:doc docs/modules/lang.md#package-language-axis-t-2996

@@ -31,6 +31,13 @@ scope_changes:
     walker test
   actor: logan
   at: '2026-08-16'
+body_changes:
+- mode: append
+  reason: narrative migration T-4767
+  actor: logan
+  at: '2026-09-19'
+  old_length: 0
+  new_length: 542
 evidence:
 - tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_quoted_string_claim_id_is_extracted
 - tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_resource_declaration_is_extracted
@@ -69,3 +76,11 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+<!-- narrative-moved:src/frob/lang/_walk_strata.py:114:T-2187 -->
+identifier-capture group. The pre-T-2187 `_HEADER_RE` captured an
+identifier via `[A-Za-z_][A-Za-z0-9_]*` right after the keyword, which
+is wrong for any construct whose grammar-declared `id` is a quoted
+string literal -- `assume "weakness:CWE-78:claude_hooks" noflow ...`
+(real syntax, design/frob.strata) never matched at all, since `"` is
+not in the identifier character class. That silent miss, not a rare
+edge case, was the majority of the T-2187 measured drift (32 of 34

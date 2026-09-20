@@ -112,14 +112,7 @@ NATIVE_UNAVAILABLE_MESSAGE = (
 )
 
 # T-2187: recognizes ONLY the leading keyword token, deliberately with NO
-# identifier-capture group. The pre-T-2187 `_HEADER_RE` captured an
-# identifier via `[A-Za-z_][A-Za-z0-9_]*` right after the keyword, which
-# is wrong for any construct whose grammar-declared `id` is a quoted
-# string literal -- `assume "weakness:CWE-78:claude_hooks" noflow ...`
-# (real syntax, design/frob.strata) never matched at all, since `"` is
-# not in the identifier character class. That silent miss, not a rare
-# edge case, was the majority of the T-2187 measured drift (32 of 34
-# `assert`/`assume` constructs in design/frob.strata alone). Per T-2187's
+# identifier-capture group. Per T-2187's
 # own prohibition ("do NOT fix this by tightening _HEADER_RE"), the fix
 # is not a smarter identifier regex -- it is demoting this pattern to a
 # pure keyword RECOGNIZER: `_locate_declared_items` below matches the
@@ -127,6 +120,7 @@ NATIVE_UNAVAILABLE_MESSAGE = (
 # strata-core's structured parse), whatever shape that text has (bare
 # ident or quoted literal), rather than re-deriving an id from the line
 # via regex.
+# see T-2187 for the history behind this
 _KEYWORD_ONLY_RE = re.compile(
     r"^(module|node|store|queue|cache|cdn|balancer|resource|boundary|flow"
     r"|assert|assume|refine|policy|operation|scenario)\b"

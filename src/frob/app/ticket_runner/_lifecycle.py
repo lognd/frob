@@ -1431,6 +1431,7 @@ def _attach(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-0081
 # frob:ticket T-1132
+# frob:ticket T-4767
 def _block(root: Path, cfg: AppConfig) -> None:
     from frob.tickets import _load_one, is_valid_ticket_ref
     from frob.tickets._store import write_ticket
@@ -1462,13 +1463,6 @@ def _block(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     ticket = loaded.danger_ok
 
-    # T-2216: `_block` is the ONE CLI verb that appends to an EXISTING
-    # ticket's `blocked_by` post-creation (see this function's own T-1132
-    # comment above), and the append below was unconditional -- two
-    # successive `block` calls with the SAME `--by` (the real incident: a
-    # coordinator "restoring" an edge that was never actually lost) wrote
-    # a duplicate entry (`blocked_by=[T-2211, T-2211]`) that survives the
-    # first blocker being cleared, since `blocked_by.remove` / whatever
     # eventually clears one blocker only removes ONE occurrence. Compared
     # as a STRUCTURED value (`cfg.ticket_by in ticket.blocked_by`, a
     # membership check against the already-parsed `tuple[str, ...]` this
@@ -1480,6 +1474,7 @@ def _block(root: Path, cfg: AppConfig) -> None:
     # was lost, which is the more useful answer to "did my restore work".
     # A genuinely DIFFERENT second `--by` is untouched by this check and
     # still appends normally (multi-blocker tickets are legitimate).
+    # see T-2216 for the history behind this
     if cfg.ticket_by in ticket.blocked_by:
         _log.error(
             "frob ticket block: %s is already blocked by %s (blocked_by=%s) "

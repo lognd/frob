@@ -71,6 +71,21 @@ scope_changes:
     already declare on the same node'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-2409 (_capability_test_discovery_status''s prior kotlin KNOWN_GAP)
+
+    removed -- the gap is closed, T-2409 landed a real
+
+    frob.testing.collect_kotlin_tests collector and T-2499''s
+
+    _TEST_DISCOVERY_COLLECTORS registry now derives kotlin as IMPLEMENTED
+
+    from that live entry; no detail string cites T-2409 any more.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 450
+  new_length: 866
 evidence:
 - tests/test_testing.py::TestCollectKotlinTests::test_collect_kotlin_tests_parses_and_caches
 - tests/test_testing.py::TestCollectKotlinTests::test_collect_kotlin_tests_groovy_plugin_form
@@ -87,3 +102,12 @@ anchor_reason: null
 land_commit: b6440bcea6869a208994c3d57c31362558c620bb
 ---
 T-2365's adapter-capability conformance axis (frob.lang._support.derive_capability_registry) marks test_discovery KNOWN_GAP for kotlin: frob.testing has collect_python_tests/collect_rust_tests/collect_ts_tests/collect_cpp_tests but no kotlin collector, even though frob.lang has a real kotlin grammar (T-0723). Add collect_kotlin_tests mirroring collect_ts_tests's shape (or the closest JVM-toolchain analogue) and wire it into frob.testing.__init__.
+
+<!-- narrative-moved:src/frob/lang/_support.py:437:T-2409 -->
+T-2409 (`_capability_test_discovery_status`'s prior kotlin
+KNOWN_GAP) removed -- the gap is closed, T-2409 landed a real
+`frob.testing.collect_kotlin_tests` collector and T-2499's
+`_TEST_DISCOVERY_COLLECTORS` registry now derives kotlin as
+IMPLEMENTED from that live entry; no detail string cites T-2409
+any more.
+see T-2906 for the history behind this

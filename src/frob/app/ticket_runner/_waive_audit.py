@@ -127,8 +127,7 @@ class AuditVerdict(str, Enum):
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_reviewed_count_mismatch_\
-# refuses kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_reviewed_count_mismatch_refuses kind="unit"  # noqa: E501
 class WaiveAuditError(ErrorSet):
     """Fallible outcomes of running a scan or recording completion."""
 
@@ -293,14 +292,11 @@ def _waiver_identity(waiver: ScannedWaiver) -> str:
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_watermark_bounds_catchup \
 # kind="unit"
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestRunScan.test_watermark_malformed_is_unread\
-# able kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestRunScan.test_watermark_malformed_is_unreadable kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_new_waivers_when_nothing_c\
-# hanged_since_watermark kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_new_waivers_when_nothing_changed_since_watermark kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_next_scan_skips_alread\
-# y_banked_waivers kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_next_scan_skips_already_banked_waivers kind="unit"  # noqa: E501
 def run_scan(root: Path) -> WaiveAuditScanReport:
     """The `scan` subcommand's core logic -- read-only, safe to run as
     often as wanted. See the module docstring for the outcomes this
@@ -388,23 +384,17 @@ def run_scan(root: Path) -> WaiveAuditScanReport:
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_reviewed_count_mismatch_\
-# refuses kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_reviewed_count_mismatch_refuses kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_catchup_incomplete_refus\
-# es_full_completion kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_catchup_incomplete_refuses_full_completion kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_matching_reviewed_count_\
-# advances_watermark kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCompletePass.test_matching_reviewed_count_advances_watermark kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_partial_without_flag_s\
-# till_refuses kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_partial_without_flag_still_refuses kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_partial_banks_batch_an\
-# d_advances_watermark kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_partial_banks_batch_and_advances_watermark kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_banking_the_final_batc\
-# h_clears_catchup_state kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_banking_the_final_batch_clears_catchup_state kind="unit"  # noqa: E501
 def complete_pass(
     root: Path, *, reviewed_count: int, cop_outs_found: int, partial: bool = False
 ) -> Result[WaiveAuditWatermark, WaiveAuditError]:
@@ -753,79 +743,23 @@ def _run_complete_subcommand(root: Path, cfg: AppConfig) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# T-2493: collision-based INERT-waiver detection.
-#
-# READ THIS BEFORE TOUCHING ANYTHING BELOW. T-1579 asked for exactly this
-# shape of feature once already -- "let the audit tell us a waiver is
-# doing nothing" -- and the version that shipped
-# (`_rule_has_live_finding`, `frob.gates._fix_engine_sync`) reasoned "the
-# rule fired somewhere in this run, so the detector is healthy, so a
-# waiver of that rule matching nothing here is provably stale." That
-# reasoning is UNSOUND: it proves the detector produced output
-# SOMEWHERE, never that it re-examined the ONE site a given waiver
-# covers. It shipped, and during a real land it deleted 55 LIVE waivers
-# during a partially-degraded run that still found some instances of a
-# rule while missing the exact sites those waivers covered. Reverted;
-# `tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::
-# test_mass_invalidation_with_live_finding_elsewhere_still_refuses` locks
-# against reintroducing it. T-1904 (successor) established that a SOUND
-# escape needs per-site analysis-coverage proof, which is a materially
-# larger capability than a guard tweak -- built later as T-1921/T-1943's
-# `frob.gates._coverage_sites`, and even THAT substrate was deliberately
-# shipped wired to nothing (its own module docstring: "NOT WIRED INTO
-# WAIVE004 (or any other auto-fix/waiver-retirement path) by this
-# ticket").
-#
 # `find_collision_suspects` below does NOT use an absence signal ("0
-# findings for this waiver") at all -- that signal is exactly what
-# failed. It uses the OPPOSITE, STRONGER signal: does an ACTIVE, PRESENT,
-# UNSUPPRESSED (`GateReport.violations`, i.e. `kept` in
-# `frob.gates._apply_waivers`'s own naming) violation of the SAME rule
-# exist in the SAME repo-relative file as a `frob:waive` directive for
-# that rule? If so, that waiver PROVABLY failed to suppress a violation
-# it names -- not an inference from silence, a direct, present
-# counter-example. This is the general form of the two REAL matching
-# bugs this repo has actually found and fixed this way already: T-2314
-# (`gate:PERF` emitted absolute file paths, so `_match_waiver`'s
-# file-equality check silently never matched -- caught because a
-# KNOWN-waived site's finding kept showing up unsuppressed) and T-2438
-# (a hand-rolled C++ symref spelling differed from the DSL's own
-# qualname join, so the symbol-exact match silently missed -- same
-# shape: a violation persisted despite a waiver that should have covered
-# it). Both were found by noticing presence, never absence.
-#
-# WHAT THIS DELIBERATELY DOES NOT CATCH, disclosed rather than hidden: a
-# waiver whose site has ZERO current violations of its rule ANYWHERE in
-# the tree -- the "hardened guard, currently quiet" case a real load-
-# bearing waiver looks exactly like. `find_collision_suspects` cannot
-# tell that case apart from a genuinely-inert waiver, and does not try
-# to -- it reports NOTHING for either, by construction, because there is
-# no active violation to collide with in either case. Closing that gap
-# requires the per-site analysis-coverage proof T-1904 named as the
-# missing capability (confirm the exact site was actually re-examined
-# this run before treating its silence as meaningful), which
-# `frob.gates._coverage_sites` (T-1921/T-1943) only provides for five
-# gate families and was explicitly left unwired everywhere -- extending
-# it into a general per-waiver inertness verdict is a materially larger,
-# multi-file capability outside this ticket's single-file scope, not
-# something safe to approximate here with a heuristic.
+# findings for this waiver") -- it uses the OPPOSITE, STRONGER signal:
+# does an ACTIVE, PRESENT, UNSUPPRESSED (`GateReport.violations`, i.e.
+# `kept` in `frob.gates._apply_waivers`'s own naming) violation of the
+# SAME rule exist in the SAME repo-relative file as a `frob:waive`
+# directive for that rule? If so, that waiver PROVABLY failed to
+# suppress a violation it names -- a direct, present counter-example.
 #
 # REPORT-ONLY, on purpose: this returns data, never mutates a waiver,
 # never gates `frob check`/`frob ticket land`, and is not wired to any
 # CLI subcommand by this ticket -- a caller (a human, or a future ticket
-# with its own scope and its own review) decides what to do with a
-# reported collision. The `AuditVerdict.CLEAN` reachability rule
-# elsewhere in this module (only `complete`, never `scan`, can claim
-# CLEAN) applies here too, transitively: a collision-suspect report is
-# evidence for a human/agent classifying per T-1614's rubric, not itself
-# a verdict.
+# see T-2493 for the history behind this
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed\
-# _violation_in_same_rule_and_file_is_flagged kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged kind="unit"  # noqa: E501
 class CollisionSuspect(BaseModel):
     """One `frob:waive` directive that, in a specific `GateReport`, coexists
     with an ACTIVE, UNSUPPRESSED violation of the same rule in the same
@@ -865,18 +799,14 @@ def _repo_relative(path: str, root: Path) -> str:
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed\
-# _violation_in_same_rule_and_file_is_flagged kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_correctly_matchin\
-# g_live_waiver_is_not_flagged kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_correctly_matching_live_waiver_is_not_flagged kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_quiet_hardened_si\
-# te_with_zero_violations_anywhere_is_not_flagged kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_quiet_hardened_site_with_zero_violations_anywhere_is_not_flagged kind="unit"  # noqa: E501
 # frob:ticket T-2496
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestCheckCollisionsWiring.test_check_collision\
-# s_renders_suspects kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestCheckCollisionsWiring.test_check_collisions_renders_suspects kind="unit"  # noqa: E501
 def find_collision_suspects(
     waivers: Sequence[ScannedWaiver],
     kept_violations: Sequence[Violation],
@@ -919,69 +849,25 @@ def find_collision_suspects(
     return tuple(suspects)
 
 
-# ---------------------------------------------------------------------------
-# T-2740: waiver LIVENESS, distinct from T-2493's collision-suspect honesty
-# signal above.
-#
-# WHY THIS IS A DIFFERENT QUESTION. T-1614's audit (and T-2493's collision
-# check) both judge a waiver's REASON or its collision with an ACTIVE
-# violation -- neither establishes that the waiver's own RULE ever looks at
-# the FILE the waiver sits in at all. T-2719 found 11 `frob:waive RENDER001`
-# directives in `.claude/hooks/` and `scripts/fleet_status.py` that were
-# individually honest AND collision-free (nothing to collide with, because
-# RENDER001's scan pathspec was hardcoded to `src/frob` and never reached
-# those files) -- T-1614's audit classified all 100 directives it reviewed
-# as "still necessary and honest", 11 of which were provably doing nothing.
-#
-# THE SOUNDNESS LINE, drawn deliberately narrow (same posture as T-2493's
-# own docstring above, and the same lesson the reverted T-1579
-# `_rule_has_live_finding` incident taught this repo once already):
-#
-#   NECESSARY -- the CURRENT run's `GateReport.waived` (the exact set
-#     `_apply_waivers` computed THIS run, a direct observation, never an
-#     inference from absence) contains a violation this waiver actually
-#     suppressed. Sound: this is not "the rule fired somewhere", it is
-#     "this exact waiver suppressed this exact violation just now".
-#
+#   NECESSARY -- this run's `GateReport.waived` contains a violation this
+#     waiver actually suppressed (a direct observation, never inference).
 #   INERT -- the waiver's rule has a REGISTERED, structural scan-membership
-#     predicate (`_LIVENESS_SCAN_CHECKERS`, e.g. RENDER001's own
-#     `render001_scans`, itself derived from the gate's real pathspec/
-#     exemption logic, never a second hardcoded copy) and that predicate
-#     says the waiver's file falls OUTSIDE the rule's scan set. This is a
-#     structural fact about what the rule enumerates, not an inference
-#     from a run finding nothing -- sound for the same reason
-#     `frob.gates._coverage_sites.site_examined`'s POSITIVE membership
-#     claims are sound, applied here to a NEGATIVE (not-in-scope) claim
-#     instead.
-#
-#   UNVERIFIED -- neither of the above could be established: the rule has
-#     no registered checker, or the checker says the file IS in scope but
-#     this run's `waived` set does not confirm active suppression. This is
-#     the HONEST default. It is deliberately NOT "OBSOLETE" -- claiming a
-#     finding "no longer reproduces" from one run's absence is exactly the
-#     T-1579 reasoning that deleted 55 live waivers, and this module does
-#     not repeat it. A caller wanting a real OBSOLETE verdict must do what
-#     T-2739 did: construct an actual synthetic diff/measurement for that
-#     specific rule and site, by hand, per this repo's own waiver-removal
-#     discipline -- this classifier reports a LEAD, never a verdict
-#     strong enough to justify removal on its own.
+#     predicate (`_LIVENESS_SCAN_CHECKERS`) and that predicate says the
+#     waiver's file falls outside the rule's scan set (a structural fact,
+#     never inference from a run finding nothing).
+#   UNVERIFIED -- neither of the above could be established; the honest
+#     default, never "OBSOLETE".
 #
 # REPORT-ONLY, same as T-2493: never mutates a waiver, never gates
 # `frob check`/`frob ticket land`, not wired to any auto-removal path.
-# An INERT verdict is ALSO evidence about the GATE, not only the waiver --
-# see `_run_scan_subcommand`'s own liveness section render for the prompt
-# this is meant to leave a human/agent with: an unscanned path someone is
-# writing waivers for is exactly how T-2719 found RENDER001's own pathspec
-# bug, one level up from any individual waiver.
+# see T-2740 for the history behind this
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when\
-# _waived_this_run kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when_waived_this_run kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rul\
-# e_does_not_scan_the_file kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rule_does_not_scan_the_file kind="unit"  # noqa: E501
 class WaiverLiveness(str, Enum):
     """T-2740: the three-way answer `classify_waiver_liveness` gives for a
     single scanned waiver -- see this module's own T-2740 section docstring
@@ -1025,17 +911,13 @@ def _load_liveness_scan_checkers() -> "dict[str, Callable[[Path, str], bool]]":
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when\
-# _waived_this_run kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when_waived_this_run kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rul\
-# e_does_not_scan_the_file kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rule_does_not_scan_the_file kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_unverified_whe\
-# n_no_checker_registered kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_unverified_when_no_checker_registered kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_neve\
-# r_inert_even_with_a_registered_checker kind="unit"
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_never_inert_even_with_a_registered_checker kind="unit"  # noqa: E501
 def classify_waiver_liveness(
     waiver: ScannedWaiver, report: GateReport, root: Path
 ) -> WaiverLiveness:

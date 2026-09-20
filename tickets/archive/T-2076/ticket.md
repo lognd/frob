@@ -24,6 +24,45 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-2076: this spawn carries no --only/--budget selection, so
+
+    frob.app.check_runner._refuse_full_check_for_agent (T-0627) refuses it
+
+    outright -- exit 1, EMPTY stdout -- whenever FROB_AGENT is set in the
+
+    environment. frob ticket land inherits its own caller''s shell env
+
+    unchanged, and every dispatched worktree agent carries FROB_AGENT=1
+
+    (playbook section 1b), so in that (extremely common) case this spawn
+
+    used to refuse silently every time: _parse_check_json cannot parse
+
+    empty stdout, this closure returns None ("unmeasured"), and
+
+    _reverify_done_report_claims_post_merge
+
+    (frob.tickets._land_verify) treats an unmeasured check_gates() as
+
+    "nothing to compare, permissive skip" by design (T-0832) -- so a branch
+
+    that introduced a brand-new error-severity gate finding after
+
+    done-report capture landed completely unblocked. Confirmed directly
+
+    against a real fixture repo (T-2076 investigation) -- this is the
+
+    actual escape mechanism T-1584''s Done report divergence traces to, not
+
+    a stale/pre-merge cwd (a direct probe on this checkout confirmed this
+
+    spawn''s cwd is already the correctly-merged worktree tree).'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1663
+  new_length: 2823
 evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_env_survives_caller_frob_agent_flag
 - tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
@@ -61,3 +100,23 @@ run after `_land_squash_apply` means it now checks the SQUASHED commit,
 which may need its own care around dry-run unwind semantics). Not a
 mechanical fix -- read T-2064's full body and `_shared_check_spawn_fn`'s
 docstring before starting.
+
+<!-- narrative-moved:src/frob/app/ticket_runner/_verify.py:1130:T-2076 -->
+T-2076: this spawn carries no `--only`/`--budget` selection, so
+`frob.app.check_runner._refuse_full_check_for_agent` (T-0627)
+refuses it outright -- exit 1, EMPTY stdout -- whenever
+`FROB_AGENT` is set in the environment. `frob ticket land`
+inherits its own caller's shell env unchanged, and every
+dispatched worktree agent carries `FROB_AGENT=1` (playbook
+section 1b), so in that (extremely common) case this spawn used
+to refuse silently every time: `_parse_check_json` cannot parse
+empty stdout, this closure returns `None` ("unmeasured"), and
+`_reverify_done_report_claims_post_merge`
+(`frob.tickets._land_verify`) treats an unmeasured `check_gates()`
+as "nothing to compare, permissive skip" by design (T-0832) --
+so a branch that introduced a brand-new error-severity gate
+finding after done-report capture landed completely unblocked.
+Confirmed directly against a real fixture repo (T-2076
+investigation) -- this is the actual escape mechanism T-1584's
+Done report divergence traces to, not a stale/pre-merge `cwd`
+(a direct probe on this checkout confirmed this spawn's `cwd`
