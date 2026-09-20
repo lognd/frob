@@ -57,6 +57,31 @@ scope_changes:
     zero new Flow declarations needed)
   actor: logan
   at: '2026-09-02'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1970
+  new_length: 3619
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3618
+  new_length: 5267
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5266
+  new_length: 6915
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6914
+  new_length: 8563
 evidence:
 - tests/test_lang.py::TestSizeCapAndTimeout::test_timed_out_worker_is_daemon_not_registered
 - tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout::test_timed_out_worker_is_daemon_not_registered
@@ -74,3 +99,111 @@ This does not actually free the interpreter from the worker: concurrent.futures.
 This is the most likely real cause of the win32 CI ~120s post-check-pipeline gap (T-3692/T-3707): FROB_CHECK_TIMING breadcrumbs prove the check pipeline itself (including frob.gates' ProcessPoolExecutor, ruled out in T-3707) returns in ~1s, then something blocks interpreter shutdown for ~120s before the atexit-registered breadcrumb prints -- exactly the CPython concurrent.futures.thread global-join gotcha's signature.
 
 Fix: replace the abandon-via-shutdown(wait=False) pattern in both call sites with a primitive that cannot block process exit -- e.g. spawn the worker as an explicit daemon=True threading.Thread (never registered with concurrent.futures.thread's global join registry) instead of a ThreadPoolExecutor, or otherwise ensure an abandoned worker cannot be joined at interpreter shutdown. Add a regression test for at least one of the two sites proving process exit is not blocked by a genuinely-hung abandoned worker (e.g. spawn one with a fn that sleeps far longer than the test, assert the test process/fixture completes promptly). Reference T-3707's Done report for the narrowing evidence.
+
+T-4718 sweep (condensed from src/frob/vet/_scan.py:477-499, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+# CORRECTNESS NOTE (review round 1 of T-0794 caught the predecessor issue,
+# preserved and updated here): the original shape used a `with
+# ThreadPoolExecutor(...)` block, whose `__exit__` calls `shutdown(wait=
+# True)` unconditionally, including when the body returns early on a
+# timeout -- so a naive `with pool: ... except FutureTimeoutError: return
+# ...` blocks the caller for the FULL underlying task duration, not
+# `timeout`, defeating the entire point of this function. T-0794 fixed
+# that by constructing the pool WITHOUT a `with` and explicitly calling
+# `shutdown(wait=False)` on the timeout path. T-3708 found that fix
+# incomplete: `shutdown(wait=False)` does not actually free the abandoned
+# worker from the interpreter -- `concurrent.futures.thread` keeps a
+# process-global registry of every worker thread any `ThreadPoolExecutor`
+# has created and its own atexit handler unconditionally joins all of them
+# at interpreter shutdown, so a genuinely-still-blocked abandoned worker
+# hangs process exit (this was the win32 CI ~120s teardown gap). This
+# function now runs `_process_dependency` via
+# `frob._daemon_timeout.run_bounded`, a plain `daemon=True` thread that
+# `concurrent.futures.thread` never registers -- an abandoned worker keeps
+# running in the background for as long as `_process_dependency` takes
+# (Python cannot preempt a running thread; same disclosed trade-off as
+# `_scan_dependencies`' docstring) but can no longer block interpreter
+# shutdown.
+
+T-4718 sweep (condensed from src/frob/vet/_scan.py:477-499, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+# CORRECTNESS NOTE (review round 1 of T-0794 caught the predecessor issue,
+# preserved and updated here): the original shape used a `with
+# ThreadPoolExecutor(...)` block, whose `__exit__` calls `shutdown(wait=
+# True)` unconditionally, including when the body returns early on a
+# timeout -- so a naive `with pool: ... except FutureTimeoutError: return
+# ...` blocks the caller for the FULL underlying task duration, not
+# `timeout`, defeating the entire point of this function. T-0794 fixed
+# that by constructing the pool WITHOUT a `with` and explicitly calling
+# `shutdown(wait=False)` on the timeout path. T-3708 found that fix
+# incomplete: `shutdown(wait=False)` does not actually free the abandoned
+# worker from the interpreter -- `concurrent.futures.thread` keeps a
+# process-global registry of every worker thread any `ThreadPoolExecutor`
+# has created and its own atexit handler unconditionally joins all of them
+# at interpreter shutdown, so a genuinely-still-blocked abandoned worker
+# hangs process exit (this was the win32 CI ~120s teardown gap). This
+# function now runs `_process_dependency` via
+# `frob._daemon_timeout.run_bounded`, a plain `daemon=True` thread that
+# `concurrent.futures.thread` never registers -- an abandoned worker keeps
+# running in the background for as long as `_process_dependency` takes
+# (Python cannot preempt a running thread; same disclosed trade-off as
+# `_scan_dependencies`' docstring) but can no longer block interpreter
+# shutdown.
+
+T-4718 sweep (condensed from src/frob/vet/_scan.py:477-499, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+# CORRECTNESS NOTE (review round 1 of T-0794 caught the predecessor issue,
+# preserved and updated here): the original shape used a `with
+# ThreadPoolExecutor(...)` block, whose `__exit__` calls `shutdown(wait=
+# True)` unconditionally, including when the body returns early on a
+# timeout -- so a naive `with pool: ... except FutureTimeoutError: return
+# ...` blocks the caller for the FULL underlying task duration, not
+# `timeout`, defeating the entire point of this function. T-0794 fixed
+# that by constructing the pool WITHOUT a `with` and explicitly calling
+# `shutdown(wait=False)` on the timeout path. T-3708 found that fix
+# incomplete: `shutdown(wait=False)` does not actually free the abandoned
+# worker from the interpreter -- `concurrent.futures.thread` keeps a
+# process-global registry of every worker thread any `ThreadPoolExecutor`
+# has created and its own atexit handler unconditionally joins all of them
+# at interpreter shutdown, so a genuinely-still-blocked abandoned worker
+# hangs process exit (this was the win32 CI ~120s teardown gap). This
+# function now runs `_process_dependency` via
+# `frob._daemon_timeout.run_bounded`, a plain `daemon=True` thread that
+# `concurrent.futures.thread` never registers -- an abandoned worker keeps
+# running in the background for as long as `_process_dependency` takes
+# (Python cannot preempt a running thread; same disclosed trade-off as
+# `_scan_dependencies`' docstring) but can no longer block interpreter
+# shutdown.
+
+T-4718 sweep (condensed from src/frob/vet/_scan.py:477-499, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+# CORRECTNESS NOTE (review round 1 of T-0794 caught the predecessor issue,
+# preserved and updated here): the original shape used a `with
+# ThreadPoolExecutor(...)` block, whose `__exit__` calls `shutdown(wait=
+# True)` unconditionally, including when the body returns early on a
+# timeout -- so a naive `with pool: ... except FutureTimeoutError: return
+# ...` blocks the caller for the FULL underlying task duration, not
+# `timeout`, defeating the entire point of this function. T-0794 fixed
+# that by constructing the pool WITHOUT a `with` and explicitly calling
+# `shutdown(wait=False)` on the timeout path. T-3708 found that fix
+# incomplete: `shutdown(wait=False)` does not actually free the abandoned
+# worker from the interpreter -- `concurrent.futures.thread` keeps a
+# process-global registry of every worker thread any `ThreadPoolExecutor`
+# has created and its own atexit handler unconditionally joins all of them
+# at interpreter shutdown, so a genuinely-still-blocked abandoned worker
+# hangs process exit (this was the win32 CI ~120s teardown gap). This
+# function now runs `_process_dependency` via
+# `frob._daemon_timeout.run_bounded`, a plain `daemon=True` thread that
+# `concurrent.futures.thread` never registers -- an abandoned worker keeps
+# running in the background for as long as `_process_dependency` takes
+# (Python cannot preempt a running thread; same disclosed trade-off as
+# `_scan_dependencies`' docstring) but can no longer block interpreter
+# shutdown.
