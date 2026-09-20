@@ -2,7 +2,7 @@
 id: T-4620
 title: 'Clean docstrings: test_tickets_acceptance/refs_gate/hook_root_write_guard/docptr/check_runner/scan_tree/etc
   (DOCARCH001)'
-state: queued
+state: dropped
 kind: docs
 origin: agent
 created: '2026-09-19'
@@ -56,3 +56,6 @@ anchor_reason: null
 land_commit: null
 ---
 Child of T-4421 (debloat sprint v0.534.0). Measured 2026-09-19: DOCARCH001 finding count for these 12 files was 29 (3+3+3+3+3+2+2+2+2+2+2+2) on a truncated repo-wide check; re-measure per-file before starting, the run that produced this count did not finish and may be an undercount. Rewrite each flagged docstring to state WHAT the symbol/test does; move any narrative worth keeping into the ticket that made the change via 'frob ticket body <id> --append'. Do not touch files leased by another in-progress ticket.
+
+## Drop reason
+- 2026-09-20: exact duplicate DOCARCH001 cluster filing; the leased copy T-4624 carries the work (sprint triage drop, direction corrected) (absorbed by T-4624)
