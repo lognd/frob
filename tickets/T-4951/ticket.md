@@ -1,5 +1,5 @@
 ---
-id: T-draft-52295143
+id: T-4951
 title: 'WIRE forbid call / forbid import: parsed and declared by the built-in analyzable
   pack, enforced by no gate, while its auto-injection warns on every design load'
 state: queued
