@@ -1,5 +1,5 @@
 ---
-id: T-draft-10480aa6
+id: T-5146
 title: 'A11Y: WCAG 2.2 Level A and AA static rules over HTML/JSX/TSX/Vue/templates
   plus accessibility statement page (42 criteria, 40 static)'
 state: queued
