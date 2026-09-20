@@ -111,7 +111,7 @@ def v2_repo(tmp_path: Path) -> Path:
 
 
 # frob:ticket T-4552
-# frob:waive WIRE001 reason="test-only fixture helper (T-4552 DUP001 extraction), called by both TestCapabilityRatchetConflictRefused methods in this same file -- same shape as tests/unit/test_leases_staleness_perf.py's own _write_lease_for, no production caller expected"  # noqa: E501
+# frob:waive WIRE001 follow_up="T-4950" reason="test-only fixture helper (T-4552 DUP001 extraction), called by both TestCapabilityRatchetConflictRefused methods in this same file -- same shape as tests/unit/test_leases_staleness_perf.py's own _write_lease_for, no production caller expected"  # noqa: E501
 def _seed_widget_worktree(
     v2_repo: Path, wt_name: str, branch: str, title: str, scope: tuple[str, ...]
 ) -> tuple[Path, str]:

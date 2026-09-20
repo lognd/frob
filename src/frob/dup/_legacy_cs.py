@@ -33,7 +33,7 @@ from frob.lang import node_text as _node_text
 
 
 # frob:ticket T-4543
-# frob:waive WIRE001 reason="passed as a callable argument to _index_function in _legacy.py._scan_cs_file (same indirect-call shape as the pre-existing _collect_locals_cpp/_collect_locals_py siblings, which WIRE001 does not flag only because they are not new in this diff)"  # noqa: E501
+# frob:waive WIRE001 follow_up="T-4950" reason="passed as a callable argument to _index_function in _legacy.py._scan_cs_file (same indirect-call shape as the pre-existing _collect_locals_cpp/_collect_locals_py siblings, which WIRE001 does not flag only because they are not new in this diff)"  # noqa: E501
 def _collect_locals_cs(func_node: Node) -> set[str]:
     """Collect identifiers local to a C# method (params + declarations)."""
     locals_: set[str] = set()
@@ -128,7 +128,7 @@ _CS_LITERAL_COLLAPSE_TYPES = frozenset(
 
 
 # frob:ticket T-4543
-# frob:waive WIRE001 reason="passed as a callable argument to _index_function in _legacy.py._scan_cs_file (same indirect-call shape as the pre-existing _serialize_cpp_body/_serialize_py_body siblings, which WIRE001 does not flag only because they are not new in this diff)"  # noqa: E501
+# frob:waive WIRE001 follow_up="T-4950" reason="passed as a callable argument to _index_function in _legacy.py._scan_cs_file (same indirect-call shape as the pre-existing _serialize_cpp_body/_serialize_py_body siblings, which WIRE001 does not flag only because they are not new in this diff)"  # noqa: E501
 def _serialize_cs_body(body: Node, locals_: set[str]) -> str:
     """Serialize a C# body node to a normalized token string."""
     mapping: dict[str, str] = {}
