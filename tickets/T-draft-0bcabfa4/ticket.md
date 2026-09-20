@@ -172,12 +172,6 @@ body_changes:
   at: '2026-09-19'
   old_length: 7623
   new_length: 7782
-- mode: append
-  reason: absorb a partial write left by a LandInProgress refusal
-  actor: logan
-  at: '2026-09-19'
-  old_length: 7782
-  new_length: 7929
 evidence:
 - cmd:grep -n -E 'IMPORT UP ONLY|ACCEPT DOWN|FLOWS ARE DECLARED BY THE LOWER MODULE'
   tickets/T-draft-0bcabfa4/ticket.md exit=0 sha256=efc42d35643f
@@ -334,5 +328,3 @@ frob:no-behavior-change reason="pure decision record: the owner ruling is record
 frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
 
 frob:no-behavior-change reason="pure decision record: the owner ruling is recorded verbatim; the behaviour lands in the grammar, linker and migration leaves"
-
-Decision D-M9 recorded by the owner on 2026-09-19 19:30: hierarchy; import up only; flows declared by the lower module; accept down by reference.
