@@ -1,7 +1,7 @@
 ---
 id: T-5089
 title: 'test_drain: stale _fake_probe after T-4556 added whole_land kwarg'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -32,3 +32,6 @@ anchor_reason: null
 land_commit: null
 ---
 CI run 35448990233 (dev tip beedd71c4) failed all 3 platforms: TestRunDrainAsync::test_excludes_its_own_originating_land_pid. TypeError: _fake_probe() got an unexpected keyword argument whole_land. T-4556 (landed) added a whole_land bool param to _probe_land_once (src/frob/tickets/_leases.py) but this test file's local _fake_probe was never updated to accept it. Update the fake signature to match production.
+
+## Failure log
+- 2026-09-20 attempt 1: coordinator: in-progress with no worktree or branch carrying work; requeued for a fresh agent
