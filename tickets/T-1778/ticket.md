@@ -8,7 +8,7 @@ created: '2026-08-07'
 priority: low
 parent: null
 tier: ticket
-sprint: backlog
+sprint: v0.544.0
 runs_last: false
 milestone: 1.0.0
 runs_last_parallel_safe: false
@@ -32,6 +32,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+- field: sprint
+  old_value: backlog
+  new_value: v0.544.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
