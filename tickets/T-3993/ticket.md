@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: high
 parent: null
 tier: ticket
-sprint: v0.535.0
+sprint: v0.533.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
@@ -27,6 +27,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: sprint
+  old_value: v0.535.0
+  new_value: v0.533.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 threat: null
 component: null
