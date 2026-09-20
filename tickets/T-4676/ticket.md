@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: low
 parent: T-4666
 tier: ticket
-sprint: v0.536.0
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -27,6 +27,13 @@ scope_changes:
     rule
   actor: logan
   at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: v0.536.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 evidence:
 - tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStandingRegression::test_module_edge_covers_several_declarations_no_per_decl_edges
 - tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStillFiresWithNoEdgeAtAll::test_no_ticket_edge_anywhere_still_fires
