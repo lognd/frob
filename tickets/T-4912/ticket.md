@@ -2,14 +2,14 @@
 id: T-4912
 title: Fix stale DOC006 pointers accumulated in ticket bodies (CI doc004/doc006 live-repo
   gate)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-19'
 priority: medium
 parent: T-4806
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -25,21 +25,25 @@ scope:
 - tickets/T-4741/ticket.md
 - tickets/T-4742/ticket.md
 - tickets/T-4808/ticket.md
+- tickets/T-5135/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
+scope_changes:
+- op: add
+  glob: tickets/T-5135/ticket.md
+  reason: stale DOC006 pointer surfaced by the post-merge live-repo test; same class
+    as the ticket's other bodies
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
 designated_repro_test: null
 acceptance:
 - text: test_doc004_doc006_zero_against_live_repo passes with zero DOC004/DOC006 findings
-  evidence: []
+  evidence:
+  - tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
 threat: null
 component: null
 anchor: false
