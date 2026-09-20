@@ -368,6 +368,7 @@ class TestSprintVelocityV2Mode:
 # frob:ticket T-1100
 # frob:ticket T-1151
 # frob:ticket T-2834
+# frob:ticket T-4623
 class TestTicketFlow:
     """`ticket_flow` (T-1100): filed/day (from `created`) vs landed/day
     (mined the same way `sprint_velocity` is, over the WHOLE queue) vs
@@ -555,13 +556,12 @@ class TestTicketFlow:
         assert report.median_cycle_days is None
 
     # frob:ticket T-1142
+    # frob:ticket T-4623
     def test_archived_ticket_still_counts_toward_landed(self, tmp_path: Path) -> None:
-        """T-1142 (the exact incident): a ticket that has since been moved
-        out of tickets.md into tickets-archive.md by `frob ticket archive`
-        must still show up in `landed` for the day it actually landed --
-        its done-transition commit is still readable in tickets.md's own
-        git history (from before the archive-sweep commit removed it),
-        `_mine_done_transitions` just needs to be asked to look for it."""
+        """Asserts a ticket moved from tickets.md into
+        tickets-archive.md by `frob ticket archive` still counts toward
+        `landed` for the day it landed, by reading its done-transition
+        commit from tickets.md's git history."""
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True

@@ -55,8 +55,7 @@ def _queue(*tickets: Ticket) -> TicketQueue:
 class TestGlobsIntersect:
     def test_wildcard_prefix_overlaps_literal(self) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps\
-        # _literal
+        # tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal  # noqa: E501
         assert _globs_intersect("tests/**", "tests/test_gates.py") is True
 
     def test_disjoint_literal_siblings(self) -> None:
@@ -144,8 +143,7 @@ class TestScopeOverlap:
 class TestLeasedBy:
     def test_precise_in_progress_does_not_hide_disjoint(self) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_h\
-        # ide_disjoint
+        # tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint  # noqa: E501
         holder_a = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -165,8 +163,7 @@ class TestLeasedBy:
 
     def test_real_source_scope_collision_is_hidden(self) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is\
-        # _hidden
+        # tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden  # noqa: E501
         holder = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -184,8 +181,7 @@ class TestLeasedBy:
     # frob:ticket T-2771
     def test_over_broad_lease_demotes_to_warn_only(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_wa\
-        # rn_only
+        # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only  # noqa: E501
         holder = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -326,8 +322,7 @@ class TestShowBlocked:
 class TestLargeGlobWarnings:
     def test_fires_on_broad_tests_glob(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_\
-        # glob
+        # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob  # noqa: E501
         ticket = _ticket(ticket_id="T-2000", scope=("tests/**",))
         warnings = large_glob_warnings(ticket, tmp_path)
         assert warnings
@@ -335,8 +330,7 @@ class TestLargeGlobWarnings:
 
     def test_silent_on_precise_test_file(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_tes\
-        # t_file
+        # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file  # noqa: E501
         ticket = _ticket(ticket_id="T-2001", scope=("tests/test_x.py",))
         assert large_glob_warnings(ticket, tmp_path) == ()
 
@@ -374,18 +368,17 @@ class TestLargeGlobWarnings:
 
 
 # frob:ticket T-2771
+# frob:ticket T-4623
 class TestOverBroadLiteralGlobs:
-    """T-2771: `OVER_BROAD_LITERAL_GLOBS` used to hardcode `src/frob/**`/
-    `src/frob/` -- silently inert in any sibling repo whose own package
-    is not named `frob`. `over_broad_literal_globs(root)` derives the
-    package-prefix entries per-project instead."""
+    """Asserts `over_broad_literal_globs(root)` derives its
+    package-prefix entries from the project's own package name, instead
+    of a hardcoded `src/frob/**`."""
 
     def test_derives_package_prefix_for_a_differently_named_project(
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_p\
-        # refix_for_a_differently_named_project
+        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "lograder"\n\n'
             '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n',
@@ -403,8 +396,7 @@ class TestOverBroadLiteralGlobs:
 
     def test_this_repos_own_src_frob_globs_are_unchanged(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_sr\
-        # c_frob_globs_are_unchanged
+        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "frob"\n\n'
             '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n',
@@ -421,8 +413,7 @@ class TestOverBroadLiteralGlobs:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_unresolved_packag\
-        # e_name_falls_back_to_repo_convention_literals
+        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_unresolved_package_name_falls_back_to_repo_convention_literals  # noqa: E501
         from frob.tickets._models import (
             OVER_BROAD_LITERAL_GLOBS,
             over_broad_literal_globs,
@@ -444,8 +435,7 @@ class TestBreadthPerf:
 
     def test_computed_once_per_doable_call(self, tmp_path: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_ca\
-        # ll
+        # tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call  # noqa: E501
         (tmp_path / "pkg").mkdir()
         for i in range(3):
             (tmp_path / "pkg" / f"mod_{i}.py").write_text("x = 1\n")
@@ -515,8 +505,7 @@ class TestBreadthPerf:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestBreadthPerf.test_breadth_context_uses_git_ls\
-        # _files_when_available
+        # tests/test_tickets_lease.py::TestBreadthPerf.test_breadth_context_uses_git_ls_files_when_available  # noqa: E501
         import subprocess
 
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
@@ -532,8 +521,7 @@ class TestBreadthPerf:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_lease.py::TestBreadthPerf.test_repo_files_git_kill_switch_\
-        # refuses_without_spawning
+        # tests/test_tickets_lease.py::TestBreadthPerf.test_repo_files_git_kill_switch_refuses_without_spawning  # noqa: E501
         # T-0803: FROB_DISABLE_EXEC=1 must make `_repo_files_git`'s `git
         # ls-files` spawn refuse (via `frob.gitio.run_argv` ->
         # `guarded_subprocess_run`) instead of bypassing the T-0200/T-0778

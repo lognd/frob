@@ -136,8 +136,7 @@ class TestArchGateCppThrow:
     that channels at Severity.ERROR, not Severity.WARN."""
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppth\
-    # row001_error
+    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppthrow001_error  # noqa: E501
     def test_noexcept_may_throw_fires_cppthrow001_error(self, tmp_path: Path) -> None:
         """A noexcept function calling a same-file throwing function with
         no catch fires CPPTHROW001 at Severity.ERROR, naming the site."""
@@ -169,8 +168,7 @@ class TestArchGateCppThrow:
         assert any(v.line == 5 for v in hits)
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_n\
-    # ot_fire_cppthrow001
+    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
     def test_noexcept_with_catch_all_does_not_fire_cppthrow001(
         self, tmp_path: Path
     ) -> None:
@@ -197,8 +195,7 @@ class TestArchGateCppThrow:
         assert not [v for v in violations if v.rule == "CPPTHROW001"]
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateCppThrow.test_cppthrow001_is_waivable_with_r\
-    # eason
+    # tests/test_arch_gate.py::TestArchGateCppThrow.test_cppthrow001_is_waivable_with_reason  # noqa: E501
     def test_cppthrow001_is_waivable_with_reason(self, tmp_path: Path) -> None:
         """CPPTHROW001 still goes through the ordinary frob:waive path
         (ERROR severity does not make it unwaivable) -- a reasoned waiver
@@ -239,10 +236,10 @@ def _big_python_source(n_lines: int) -> str:
 # epic's 9 split/waive children were all terminal and re-measurement
 # showed zero unwaived findings -- single-file-mode parity with the
 # directory walk (frob.arch.analyze_project) is unaffected by severity.
+# frob:ticket T-4623
 class TestArchGateLargeFile:
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_err\
-    # or
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_error  # noqa: E501
     def test_large_file_fires_large001_error(self, tmp_path: Path) -> None:
         """A production python file over max_file_lines fires LARGE001 at
         Severity.ERROR (T-2831 promotion, post T-2375 epic burn-down)."""
@@ -269,14 +266,12 @@ class TestArchGateLargeFile:
         assert not [v for v in violations if v.rule == "LARGE001"]
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_dire\
-    # ctory_walk
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
+    # frob:ticket T-4623
     def test_single_file_mode_matches_directory_walk(self, tmp_path: Path) -> None:
-        """T-1102 acceptance [1]: `analyze_project` invoked directly on a
-        single over-threshold file reports the exact same large-file
-        finding (category/message shape) as a directory walk over its
-        parent that happens to contain just this one file -- single-file
-        mode used to silently report zero findings instead."""
+        """Asserts `analyze_project` invoked directly on a single
+        over-threshold file reports the same large-file finding (category
+        and message) as a directory walk over its containing folder."""
         from frob.arch import analyze_project
 
         big_path = _write(tmp_path, "big.py", _big_python_source(900))

@@ -176,8 +176,7 @@ class TestSetComponent:
     # frob:ticket T-2353
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refu\
-        # ses
+        # tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refuses  # noqa: E501
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -439,6 +438,7 @@ class TestForceOverrideAudit:
 
 
 # frob:ticket T-1750
+# frob:ticket T-4623
 class TestArchiveRefusesLiveWorktrees:
     """T-1750: `archive` (v1 monofile path) refuses when another linked
     git worktree exists, naming it -- the belt-and-braces guard the
@@ -477,8 +477,7 @@ class TestArchiveRefusesLiveWorktrees:
     # frob:ticket T-1750
     def test_refuses_when_another_worktree_exists(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refu\
-        # ses_when_another_worktree_exists
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refuses_when_another_worktree_exists  # noqa: E501
         from frob.tickets import archive
 
         root = self._repo(tmp_path)
@@ -501,8 +500,7 @@ class TestArchiveRefusesLiveWorktrees:
     # frob:ticket T-1750
     def test_force_overrides_the_live_worktree_refusal(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_forc\
-        # e_overrides_the_live_worktree_refusal
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_force_overrides_the_live_worktree_refusal  # noqa: E501
         from frob.tickets import archive
 
         root = self._repo(tmp_path)
@@ -521,8 +519,7 @@ class TestArchiveRefusesLiveWorktrees:
     # frob:ticket T-1750
     def test_no_other_worktree_archives_normally(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_o\
-        # ther_worktree_archives_normally
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_other_worktree_archives_normally  # noqa: E501
         from frob.tickets import archive
 
         root = self._repo(tmp_path)
@@ -533,16 +530,15 @@ class TestArchiveRefusesLiveWorktrees:
         assert result.danger_ok == 1
 
     # frob:ticket T-3230
+    # frob:ticket T-4623
     def test_unmeasurable_worktree_list_refuses_not_allows(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-3230: a `git worktree list` spawn failure must fail CLOSED
-        (refuse the archive with `GitFailed`), never fail open into
-        `ArchiveLiveLeaseExists`'s `not live` == `()` == "measured, no
-        worktrees" path a prior version collapsed it into."""
+        """Asserts a `git worktree list` spawn failure fails closed:
+        the archive is refused with `GitFailed` rather than falling open
+        into "measured, no worktrees"."""
         # frob:tests \
-        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_unme\
-        # asurable_worktree_list_refuses_not_allows
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_unmeasurable_worktree_list_refuses_not_allows  # noqa: E501
         from typani import Nothing
 
         from frob.tickets import _reconcile as reconcile_module

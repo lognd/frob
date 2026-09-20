@@ -310,19 +310,15 @@ class TestLandProofOrphanEvidenceOutcome:
 
 # frob:ticket T-4281
 # frob:tests \
-# tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured.test_infra_unmea\
-# sured_prints_distinct_token_and_names_the_cause
+# tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured.test_infra_unmeasured_prints_distinct_token_and_names_the_cause  # noqa: E501
 # frob:tests \
-# tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured.test_skipped_unm\
-# easured_prints_no_reason
+# tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured.test_skipped_unmeasured_prints_no_reason  # noqa: E501
+# frob:ticket T-4623
 class TestLandProofInfraUnmeasured:
-    """T-4281: `_print_land_proof` must print `INFRA_UNMEASURED` as a
-    token DISTINCT from `SKIPPED_UNMEASURED`'s `SKIPPED-UNMEASURED`, and
-    name the cause (`claims_reverify_reason=`) whenever `_LAST_CLAIMS_
-    INFRA_REASON` carries one -- the exact ambiguity this ticket exists
-    to close: an infra failure (a graph-cache lock, a crash) used to
-    print the identical line a deliberate rapid-profile/budget skip
-    does."""
+    """Asserts `_print_land_proof` prints `INFRA_UNMEASURED` as a token
+    distinct from `SKIPPED_UNMEASURED`'s `SKIPPED-UNMEASURED`, and names
+    the cause via `claims_reverify_reason=` whenever
+    `_LAST_CLAIMS_INFRA_REASON` carries one."""
 
     def test_infra_unmeasured_prints_distinct_token_and_names_the_cause(
         self,

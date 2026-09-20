@@ -462,8 +462,7 @@ class TestLeaseShapeValidation:
 
     # frob:ticket T-3661
     # frob:tests \
-    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_read_all_leases_admit\
-    # s_a_windows_style_worktree_path kind="unit"
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_read_all_leases_admits_a_windows_style_worktree_path kind="unit"  # noqa: E501
     def test_read_all_leases_admits_a_windows_style_worktree_path(
         self, repo: Path
     ) -> None:
@@ -498,8 +497,7 @@ class TestLeaseShapeValidation:
 
     # frob:ticket T-3661
     # frob:tests \
-    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_read_all_leases_still\
-    # _drops_a_dash_prefixed_windows_style_worktree kind="unit"
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_read_all_leases_still_drops_a_dash_prefixed_windows_style_worktree kind="unit"  # noqa: E501
     def test_read_all_leases_still_drops_a_dash_prefixed_windows_style_worktree(
         self, repo: Path
     ) -> None:
@@ -513,8 +511,7 @@ class TestLeaseShapeValidation:
 
     # frob:ticket T-3661
     # frob:tests \
-    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_worktree_operand_chec\
-    # k_admits_windows_paths_directly kind="unit"
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_worktree_operand_check_admits_windows_paths_directly kind="unit"  # noqa: E501
     def test_worktree_operand_check_admits_windows_paths_directly(self) -> None:
         """`_looks_like_a_safe_worktree_path_operand` (T-3661) directly:
         admits a Windows drive-letter/backslash path, still rejects a
@@ -568,12 +565,11 @@ class TestLeaseTtl:
         assert is_lease_ttl_expired(record, ttl_seconds=1) is False
 
 
+# frob:ticket T-4623
 class TestOpportunisticUnlink:
-    """T-0782: `read_all_leases` now opportunistically unlinks a lease file
-    whose worktree path no longer exists (the deferred T-0476 reconcile),
-    instead of only skipping it in-memory -- `.git/frob-leases/` used to
-    grow monotonically since a crashed/removed worktree never runs
-    `release_lease` (audit M2)."""
+    """Asserts `read_all_leases` unlinks from disk a lease file whose
+    worktree path no longer exists, instead of only skipping it
+    in-memory."""
 
     def test_stale_path_lease_is_unlinked_from_disk(
         self, repo: Path, tmp_path: Path

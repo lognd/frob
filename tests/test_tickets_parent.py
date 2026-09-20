@@ -394,17 +394,12 @@ class TestSetParentNoOp:
         assert entry.new_value == "T-0003"
 
 
+# frob:ticket T-4623
 class TestSetParentLandInProgressGuard:
-    """T-2785: `set_parent` must refuse BEFORE writing anything while a
-    `frob ticket land` holds `.frob/land.lock` -- previously the
-    equivalent guard only ever fired later, at the CLI's post-dispatch
-    ledger auto-commit step (outside this module), so the write already
-    landed on disk and was then stranded uncommitted the moment the
-    commit was refused (the real reported incident: `git status` came
-    back dirty after a reported success). Mirrors `frob.tickets.
-    _reconcile`'s T-2291 guard test shape (`TestReconcileApplyLandInProgressGuard`)
-    -- a must-now-refuse and a must-still-pass case are both required so
-    the guard cannot regress into over-refusing."""
+    """Asserts `set_parent` refuses before writing anything while
+    `.frob/land.lock` is held, and still succeeds normally when no lock
+    is held, mirroring `_reconcile`'s land-in-progress guard test shape
+    (`TestReconcileApplyLandInProgressGuard`)."""
 
     def test_refuses_and_writes_nothing_while_land_lock_held(
         self, tmp_path: Path, monkeypatch

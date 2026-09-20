@@ -101,12 +101,11 @@ def test_required_version_and_satisfies():
 
 
 # frob:ticket T-4270
+# frob:ticket T-4623
 def test_dev_prerelease_and_final_sort_in_pep440_order():
-    """T-4270: verify by ORDERING, not by parsing -- a development build, a
-    pre-release, and the final release of the same version must sort in
-    the order PEP 440 requires (dev < pre-release < final), which a
-    truncate-to-three-integers parser could never distinguish since all
-    three used to parse to the identical (1, 2, 3) tuple."""
+    """Asserts a dev build, a pre-release, and the final release of the
+    same version sort in PEP 440 order (dev < pre-release < final) by
+    comparing `packaging.version.Version` instances directly."""
     from packaging.version import Version
 
     versions = ["1.2.3", "1.2.3.dev1", "1.2.3rc1"]
@@ -345,8 +344,7 @@ class TestChangelogFragments:
 
     def test_read_with_no_directory_is_empty_ok(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_read_with_no_directory_is_\
-        # empty_ok
+        # tests/test_release.py::TestChangelogFragments.test_read_with_no_directory_is_empty_ok  # noqa: E501
         from frob.release._fragments import read_changelog_fragments
 
         fragments = read_changelog_fragments(tmp_path)
@@ -355,8 +353,7 @@ class TestChangelogFragments:
 
     def test_read_sorts_numerically_not_lexically(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_read_sorts_numerically_not\
-        # _lexically
+        # tests/test_release.py::TestChangelogFragments.test_read_sorts_numerically_not_lexically  # noqa: E501
         from frob.release._fragments import (
             read_changelog_fragments,
             write_changelog_fragment,
@@ -371,8 +368,7 @@ class TestChangelogFragments:
 
     def test_read_fails_closed_on_a_malformed_fragment(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_read_fails_closed_on_a_mal\
-        # formed_fragment
+        # tests/test_release.py::TestChangelogFragments.test_read_fails_closed_on_a_malformed_fragment  # noqa: E501
         from frob.release import ReleaseError
         from frob.release._fragments import fragment_dir, read_changelog_fragments
 
@@ -385,8 +381,7 @@ class TestChangelogFragments:
 
     def test_assemble_is_a_noop_with_no_fragments(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_assemble_is_a_noop_with_no\
-        # _fragments
+        # tests/test_release.py::TestChangelogFragments.test_assemble_is_a_noop_with_no_fragments  # noqa: E501
         from frob.release._fragments import assemble_changelog_from_fragments
 
         (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
@@ -397,8 +392,7 @@ class TestChangelogFragments:
 
     def test_assemble_writes_every_fragment_as_a_bullet(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_frag\
-        # ment_as_a_bullet
+        # tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_fragment_as_a_bullet  # noqa: E501
         from frob.release._fragments import (
             assemble_changelog_from_fragments,
             write_changelog_fragment,
@@ -420,8 +414,7 @@ class TestChangelogFragments:
 
     def test_assemble_is_idempotent_and_picks_up_new_fragments(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_assemble_is_idempotent_and\
-        # _picks_up_new_fragments
+        # tests/test_release.py::TestChangelogFragments.test_assemble_is_idempotent_and_picks_up_new_fragments  # noqa: E501
         from frob.release._fragments import (
             assemble_changelog_from_fragments,
             write_changelog_fragment,
@@ -452,8 +445,7 @@ class TestChangelogFragments:
 
     def test_assemble_renders_the_ticket_id_exactly_once(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_assemble_renders_the_ticke\
-        # t_id_exactly_once
+        # tests/test_release.py::TestChangelogFragments.test_assemble_renders_the_ticket_id_exactly_once  # noqa: E501
         # T-2615: the generator used to prefix `f.ticket_id` onto a
         # `note` that already started with it (`write_changelog_fragment`
         # always writes `note` as `f"{ticket_id}: {title}"`), duplicating
@@ -476,8 +468,7 @@ class TestChangelogFragments:
 
     def test_write_refuses_for_a_dropped_ticket(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_write_refuses_for_a_droppe\
-        # d_ticket
+        # tests/test_release.py::TestChangelogFragments.test_write_refuses_for_a_dropped_ticket  # noqa: E501
         # T-2615, defect 1: a ticket that is DROPPED at write time must
         # not get a changelog fragment at all -- a real incident landed a
         # ticket moments after it had been dropped on main and its
@@ -507,8 +498,7 @@ class TestChangelogFragments:
 
     def test_write_still_succeeds_for_a_done_ticket(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_write_still_succeeds_for_a\
-        # _done_ticket
+        # tests/test_release.py::TestChangelogFragments.test_write_still_succeeds_for_a_done_ticket  # noqa: E501
         # Positive control for the DROPPED refusal above: a DONE ticket
         # must still produce exactly one fragment -- without this the
         # fix would be indistinguishable from disabling the changelog
@@ -538,8 +528,7 @@ class TestChangelogFragments:
 
     def test_assemble_excludes_a_dropped_tickets_fragment(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_assemble_excludes_a_droppe\
-        # d_tickets_fragment
+        # tests/test_release.py::TestChangelogFragments.test_assemble_excludes_a_dropped_tickets_fragment  # noqa: E501
         # End-to-end: a DROPPED ticket produces NEITHER a fragment nor a
         # CHANGELOG.md entry, and its bump class never reaches the
         # assembled section (the version-bump-excludes-dropped-fragments
@@ -587,8 +576,7 @@ class TestChangelogFragments:
 
     def test_assemble_missing_changelog_is_an_error(self, tmp_path):
         # frob:tests \
-        # tests/test_release.py::TestChangelogFragments.test_assemble_missing_changelog\
-        # _is_an_error
+        # tests/test_release.py::TestChangelogFragments.test_assemble_missing_changelog_is_an_error  # noqa: E501
         from frob.release import ReleaseError
         from frob.release._fragments import (
             assemble_changelog_from_fragments,
@@ -675,8 +663,7 @@ class TestCrashSafeReleaseWrites:
         self, tmp_path, monkeypatch: pytest.MonkeyPatch
     ):
         # frob:tests \
-        # tests/test_release.py::TestCrashSafeReleaseWrites.test_stamp_leaves_original_\
-        # manifest_on_replace_failure
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_stamp_leaves_original_manifest_on_replace_failure  # noqa: E501
         _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
         stamp(tmp_path, _snap(tmp_path), "1.0.0")
         original = manifest_path(tmp_path).read_text(encoding="utf-8")
@@ -697,8 +684,7 @@ class TestCrashSafeReleaseWrites:
         self, tmp_path, monkeypatch: pytest.MonkeyPatch
     ):
         # frob:tests \
-        # tests/test_release.py::TestCrashSafeReleaseWrites.test_rewrite_pyproject_vers\
-        # ion_leaves_original_on_replace_failure
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_rewrite_pyproject_version_leaves_original_on_replace_failure  # noqa: E501
         path = tmp_path / "pyproject.toml"
         path.write_text('[project]\nname = "p"\nversion = "1.0.0"\n', encoding="utf-8")
 
@@ -718,8 +704,7 @@ class TestCrashSafeReleaseWrites:
         self, tmp_path, monkeypatch: pytest.MonkeyPatch
     ):
         # frob:tests \
-        # tests/test_release.py::TestCrashSafeReleaseWrites.test_changelog_skeleton_ent\
-        # ry_leaves_original_on_replace_failure
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_changelog_skeleton_entry_leaves_original_on_replace_failure  # noqa: E501
         path = tmp_path / "CHANGELOG.md"
         original = "# Changelog\n\n## [1.0.0] - unreleased\n"
         path.write_text(original, encoding="utf-8")
@@ -739,8 +724,7 @@ class TestCrashSafeReleaseWrites:
         self, tmp_path, monkeypatch: pytest.MonkeyPatch
     ):
         # frob:tests \
-        # tests/test_release.py::TestCrashSafeReleaseWrites.test_set_manifest_version_l\
-        # eaves_original_on_replace_failure
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_set_manifest_version_leaves_original_on_replace_failure  # noqa: E501
         _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
         stamp(tmp_path, _snap(tmp_path), "1.0.0")
         original = manifest_path(tmp_path).read_text(encoding="utf-8")
@@ -893,8 +877,7 @@ class TestPublish:
         self, tmp_path, monkeypatch
     ):
         # frob:tests \
-        # tests/test_release.py::TestPublish.test_step_failure_stops_the_sequence_and_r\
-        # eports_the_error
+        # tests/test_release.py::TestPublish.test_step_failure_stops_the_sequence_and_reports_the_error  # noqa: E501
         _write_pyproject(tmp_path, "1.0.0")
 
         def _stub_run_argv(argv, *, cwd=None, timeout_s=60.0, env=None):  # noqa: ANN001
@@ -959,8 +942,7 @@ class TestRunReleasePublishCommand:
 
     def test_dry_run_prints_the_plan_and_exits_0(self, tmp_path, monkeypatch, capsys):
         # frob:tests \
-        # tests/test_release.py::TestRunReleasePublishCommand.test_dry_run_prints_the_p\
-        # lan_and_exits_0
+        # tests/test_release.py::TestRunReleasePublishCommand.test_dry_run_prints_the_plan_and_exits_0  # noqa: E501
         import argparse
 
         from frob.release._cli import run_release_publish_command
@@ -976,8 +958,7 @@ class TestRunReleasePublishCommand:
 
     def test_publish_failure_exits_nonzero(self, tmp_path, monkeypatch, capsys):
         # frob:tests \
-        # tests/test_release.py::TestRunReleasePublishCommand.test_publish_failure_exit\
-        # s_nonzero
+        # tests/test_release.py::TestRunReleasePublishCommand.test_publish_failure_exits_nonzero  # noqa: E501
         import argparse
 
         from frob.release._cli import run_release_publish_command
@@ -997,8 +978,7 @@ class TestAddReleasePublishParser:
     parser from."""
 
     # frob:tests \
-    # tests/test_release.py::TestAddReleasePublishParser.test_registers_release_publish\
-    # _with_dry_run_flag
+    # tests/test_release.py::TestAddReleasePublishParser.test_registers_release_publish_with_dry_run_flag  # noqa: E501
     def test_registers_release_publish_with_dry_run_flag(self):
         import argparse
 
@@ -1045,8 +1025,7 @@ class TestRunReleaseStatusCommand:
 
     # frob:ticket T-4301
     # frob:tests \
-    # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_bump_required_whe\
-    # n_gate_refuses
+    # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_bump_required_when_gate_refuses  # noqa: E501
     def test_reports_bump_required_when_gate_refuses(self, tmp_path, capsys):
         import argparse
 
@@ -1077,8 +1056,7 @@ class TestRunReleaseStatusCommand:
 
     # frob:ticket T-4301
     # frob:tests \
-    # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_ok_and_dev_bump_t\
-    # oggle_state
+    # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_ok_and_dev_bump_toggle_state  # noqa: E501
     def test_reports_ok_and_dev_bump_toggle_state(self, tmp_path, capsys):
         import argparse
 

@@ -2,14 +2,14 @@
 id: T-4623
 title: 'Clean docstrings: test_tickets_velocity/triage_dates/parent/organization/etc,
   24 misc files (DOCARCH001)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-09-19'
 priority: medium
 parent: T-4421
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -50,17 +50,16 @@ triage_changes:
   reason: child of T-4421 docarch debloat split
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to these 24 files, when DOCARCH001 is measured,
     then the combined finding count is 0
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
 threat: null
 component: null
 anchor: false

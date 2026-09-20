@@ -130,13 +130,13 @@ class TestT1454RegressionShape:
 
 
 # frob:ticket T-1659
+# frob:ticket T-4623
 class TestCache001Symref:
-    """CACHE001's `Violation` used to leave `symref` unset (the DEAD001/
-    T-1652 hole this ticket audits every gate for): a `frob:waive CACHE001`
-    written above one `@memoize_per_run` function in a multi-function file
-    would silently forgive every CACHE001 finding in that file via
-    `_match_waiver`'s file-scope fallback. Fixed to set
-    `symref=f"{rel_path}::{site.func_name}"`."""
+    """Asserts every CACHE001 `Violation` carries `symref=
+    f"{rel_path}::{func_name}"`, so a `frob:waive CACHE001` above one
+    `@memoize_per_run` function cannot forgive another function's
+    finding in the same file via `_match_waiver`'s file-scope
+    fallback."""
 
     # frob:tests \
     # tests/test_cache_gate.py::TestCache001Symref.test_violation_carries_symref

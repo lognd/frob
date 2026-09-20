@@ -107,8 +107,7 @@ class TestPollVerifyWorker:
 
     def test_head_moved_notifies_the_worker(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the\
-        # _worker
+        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker  # noqa: E501
         worker = _daemon._get_verify_worker(repo)
         notified: list[None] = []
         worker.notify = lambda: notified.append(None)  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
@@ -122,8 +121,7 @@ class TestPollVerifyWorker:
 
     def test_head_unchanged_still_ticks(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ti\
-        # cks
+        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks  # noqa: E501
         worker = _daemon._get_verify_worker(repo)
         tick_calls: list[None] = []
         worker.tick = lambda: tick_calls.append(None) or None  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
@@ -136,8 +134,7 @@ class TestPollVerifyWorker:
 
     def test_tick_result_is_returned_when_a_run_happens(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned\
-        # _when_a_run_happens
+        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens  # noqa: E501
         from typani.result import Ok
 
         from frob.verify._worker import WorkerOutcome
@@ -151,12 +148,12 @@ class TestPollVerifyWorker:
 
 
 # frob:ticket T-1737
+# frob:ticket T-4623
 class TestWatchThreadNotifiesVerifyWorker:
-    """`run_socket_daemon` wires its `WatchThread` FS-watch `on_change`
-    callback to also `notify()` the T-1688 coalescing verify worker for
-    the same root (`src/frob/serve/_socketd.py`), not just the
-    `graph-changed` event publish -- closing the scope cut
-    `_poll_verify_worker`'s own docstring used to disclose."""
+    """Asserts `run_socket_daemon` wires its `WatchThread` FS-watch
+    `on_change` callback to also call `notify()` on the coalescing verify
+    worker for the same root, not only publish the `graph-changed`
+    event."""
 
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -164,8 +161,7 @@ class TestWatchThreadNotifiesVerifyWorker:
     )
     def test_fs_change_notifies_the_cached_verify_worker(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestWatchThreadNotifiesVerifyWorker.test_fs_chang\
-        # e_notifies_the_cached_verify_worker
+        # tests/test_serve_daemon.py::TestWatchThreadNotifiesVerifyWorker.test_fs_change_notifies_the_cached_verify_worker  # noqa: E501
         cfg = SocketDaemonConfig(root=repo, idle_timeout_s=10.0)
         thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
         thread.start()
@@ -272,8 +268,7 @@ class TestPollRebaseBot:
         must skip re-simulating it (never conflict-warn for it) and log
         the skip exactly once across repeated poll cycles."""
         # frob:tests \
-        # tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_\
-        # and_logged_once
+        # tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once  # noqa: E501
         import logging
 
         from frob.tickets._leases import _LeaseRecord, leases_dir
@@ -331,8 +326,7 @@ class TestPollRebaseBotLeaseInjectionGuard:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard.test_evil_le\
-        # ase_branch_never_reaches_git_argv
+        # tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard.test_evil_lease_branch_never_reaches_git_argv  # noqa: E501
         import logging
 
         from frob.tickets._leases import _LeaseRecord, leases_dir
@@ -377,8 +371,7 @@ class TestPollRebaseBotLeaseInjectionGuard:
 class TestRunDaemonCycle:
     def test_runs_both_jobs_and_returns_status(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_return\
-        # s_status
+        # tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status  # noqa: E501
         _warm._invalidate(repo)
         status = _daemon._run_daemon_cycle(repo, run_tests=False)
         assert status.post_land is not None
@@ -391,8 +384,7 @@ class TestStartDaemon:
         self, repo: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle\
-        # _then_stops
+        # tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops  # noqa: E501
         import threading
 
         _warm._invalidate(repo)
@@ -427,8 +419,7 @@ class TestIdleSelfTermination:
 
     def test_record_useful_work_updates_the_timestamp(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_u\
-        # pdates_the_timestamp
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_the_timestamp  # noqa: E501
         clock = [100.0]
         _daemon._record_useful_work(repo, now_fn=lambda: clock[0])
         idle = _daemon._idle_seconds(
@@ -438,8 +429,7 @@ class TestIdleSelfTermination:
 
     def test_never_having_worked_is_measured_from_start_time(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_\
-        # is_measured_from_start_time
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_is_measured_from_start_time  # noqa: E501
         # A root this process has never recorded work for reads as idle
         # since the DAEMON'S OWN start time, not since epoch zero -- a
         # fresh daemon over a quiet repo must not read as already-idle-
@@ -452,8 +442,7 @@ class TestIdleSelfTermination:
 
     def test_idle_under_one_hour_is_not_terminal(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_\
-        # is_not_terminal
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_terminal  # noqa: E501
         clock = [0.0]
         _daemon._record_useful_work(repo, now_fn=lambda: clock[0])
         idle = _daemon._idle_seconds(
@@ -463,8 +452,7 @@ class TestIdleSelfTermination:
 
     def test_idle_over_one_hour_is_terminal(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_i\
-        # s_terminal
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_is_terminal  # noqa: E501
         clock = [0.0]
         _daemon._record_useful_work(repo, now_fn=lambda: clock[0])
         idle = _daemon._idle_seconds(
@@ -476,8 +464,7 @@ class TestIdleSelfTermination:
         self, repo: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates\
-        # _after_the_idle_ceiling
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates_after_the_idle_ceiling  # noqa: E501
         # MUST-FIRE: a daemon whose jobs never record useful work (main
         # never moves, no live leases, no verify tick) self-terminates
         # once the injected clock crosses the idle ceiling -- a real hour
@@ -507,8 +494,7 @@ class TestIdleSelfTermination:
         self, repo: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_termin\
-        # ate_while_work_keeps_happening
+        # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_terminate_while_work_keeps_happening  # noqa: E501
         # MUST-STAY-QUIET: a daemon whose cycles keep recording useful
         # work never crosses the idle ceiling, however many cycles run.
         clock = [0.0]

@@ -829,19 +829,13 @@ class TestNoqaSuffixPragmaT0985:
 
 
 # frob:ticket T-1987
+# frob:ticket T-4623
 class TestNoqaAlwaysPreservedT1987:
-    """T-1987: a `noqa`-suffixed `frob:` directive run is left byte-
-    identical UNCONDITIONALLY, even when the reason text (minus the
-    pragma) has a clean word-boundary wrap available. T-1605 previously
-    made this "self-retiring" (dropped the pragma and took the clean wrap
-    whenever one existed) -- reverted because land's Tier-A fmt auto-fix
-    used exactly that path to rewrap an already-noqa-suppressed single-
-    line WALK001 waiver into four physical lines during the T-1970 and
-    T-1968 lands, growing the enclosing function past ARCH001's line
-    threshold. Whether a clean wrap exists says nothing about whether
-    growing the physical line count is safe, so a wrappable reason with a
-    `noqa` pragma must now behave identically to an unwrappable one
-    (`TestNoqaSuffixPragmaT0985`)."""
+    """Asserts a `noqa`-suffixed `frob:` directive run is preserved
+    byte-identical unconditionally, even when the reason text (minus the
+    pragma) has a clean word-boundary wrap available -- a wrappable
+    reason with a `noqa` pragma must behave identically to an
+    unwrappable one."""
 
     # frob:ticket T-1987
     def test_wrappable_reason_keeps_its_noqa(self) -> None:
@@ -1103,21 +1097,13 @@ class TestUnbreakableTokenGetsNoqaE501T4475:
 
 
 # frob:ticket T-4477
+# frob:ticket T-4623
 class TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477:
-    """T-4477 (T-4475 follow-up): T-4475's own noqa fix only landed on the
-    FINAL physical line of a directive run. A run whose unsplittable
-    token is immediately followed by a trailing `kind=`/`reason=`
-    attribute -- `# frob:tests \\` / `# <139-char node id> \\` /
-    `# kind="integration"` -- used to keep the token on a MIDDLE physical
-    line with no noqa of its own; the land's own pre-land `ruff check`
-    then refused it as a NEW E501 finding (T-4474's own incident, 7 such
-    lines in src/frob/tickets/_land.py and
-    src/frob/tickets/_land_passenger_identity.py). Fix: once one token in
-    a run does not fit the wrap budget, the ENTIRE remainder (attrs
-    included) joins it on that one final physical line instead of being
-    wrapped further -- reusing T-4475's already-idempotent end-of-run
-    noqa contract unchanged, rather than embedding a marker mid-run
-    (round-trip-unsafe: see `_wrap_cut_point`'s own docstring)."""
+    """Asserts that when an unsplittable token in a directive run is
+    immediately followed by a trailing `kind=`/`reason=` attribute, the
+    entire remainder (attributes included) joins that token on one final
+    physical line carrying a noqa, instead of leaving the token on an
+    un-suppressed middle line."""
 
     #: The exact T-4474 incident shape: a 135-char node id (longer than
     #: any reasonable wrap budget on its own) immediately followed by a

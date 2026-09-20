@@ -505,16 +505,12 @@ class TestTransitionRefusesOnLiveTrackerCitation:
 
 
 # frob:ticket T-1853
+# frob:ticket T-4623
 class TestLandCheckSkipsNonTerminalAnchor:
-    """T-1853: `frob.tickets._land._check_live_tracker_citations` -- the
-    LAND-time precheck, distinct from `transition`'s close-time refusal
-    above -- must only fire when the land would move the ticket to a
-    TERMINAL state (`done`/`dropped`). An anchor ticket cited by a
-    permanent `frob:waive ... follow_up="<id>"` is cited by design and
-    never stops being cited; before this fix, landing ANY ledger record
-    for it (a scope change, a fail attempt, evidence) was permanently
-    refused. This test is written to FAIL against the pre-T-1853
-    behavior (which refused regardless of state) and PASS after it."""
+    """Asserts `_check_live_tracker_citations` only refuses a land when
+    it would move the ticket to a terminal state (`done`/`dropped`); a
+    scope change, fail attempt, or evidence record on a cited anchor
+    ticket is not refused."""
 
     def test_in_progress_land_not_blocked_by_citation(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor.test_in_progress_land_not_blocked_by_citation  # noqa: E501
@@ -557,8 +553,7 @@ class TestAnchorMarker:
 
     def test_terminal_land_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_terminal_land_refus\
-        # ed
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_terminal_land_refused  # noqa: E501
         from frob.tickets._land import LandError, _refuse_anchor_terminal_land
 
         anchor = _ticket(ticket_id="T-1820", state=TicketState.DONE)
@@ -571,8 +566,7 @@ class TestAnchorMarker:
 
     def test_non_terminal_land_not_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_non_terminal_land_n\
-        # ot_refused
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_non_terminal_land_not_refused  # noqa: E501
         from frob.tickets._land import _refuse_anchor_terminal_land
 
         anchor = _ticket(ticket_id="T-1820", state=TicketState.IN_PROGRESS)
@@ -584,8 +578,7 @@ class TestAnchorMarker:
 
     def test_non_anchor_terminal_land_not_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_non_anchor_terminal\
-        # _land_not_refused
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_non_anchor_terminal_land_not_refused  # noqa: E501
         from frob.tickets._land import _refuse_anchor_terminal_land
 
         ordinary = _ticket(ticket_id="T-0001", state=TicketState.DONE)
@@ -595,8 +588,7 @@ class TestAnchorMarker:
 
     def test_set_anchor_requires_reason(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_requires\
-        # _reason
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_requires_reason  # noqa: E501
         from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
         from frob.tickets._land import set_anchor
         from frob.tickets._models import TicketError
@@ -613,8 +605,7 @@ class TestAnchorMarker:
 
     def test_set_anchor_round_trips(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_round_tr\
-        # ips
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_round_trips  # noqa: E501
         from frob.tickets import Origin, TicketKind, TicketSpec, load_queue, new_ticket
         from frob.tickets._land import set_anchor
 

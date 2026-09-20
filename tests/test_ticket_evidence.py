@@ -108,32 +108,13 @@ class TestSetKind:
         assert result.danger_err is TicketError.TriageReasonMissing
 
 
+# frob:ticket T-4623
 class TestKindCliInvalidKind:
-    """`frob ticket kind` refuses a value outside the real `TicketKind`
-    enum (T-0834: "kind must still validate strictly against the real
-    enum").
-
-    T-1594: this used to assert the refusal happens INSIDE `_kind()`
-    (a downstream `SystemExit`) -- but `AppConfig`'s own
-    `_check_ticket_kind_value` field_validator (`src/frob/app/config.py`)
-    already refuses an unrecognized `ticket_kind_value` at CONSTRUCTION
-    time, strictly before `_kind()` (or anything else) ever runs. That
-    validator is not a bug to remove: it is the SAME pattern this repo
-    already applies to every other enum-shaped CLI value
-    (`ticket_state`/`ticket_kind`/`ticket_tier`/`ticket_tier_value`, all
-    validated the identical way in `AppConfig`, all with their own
-    `test_app_config.py::TestEnumFieldValidation` coverage) -- removing it
-    only for this one field would make `ticket_kind_value` the
-    inconsistent one, not the other way around. `_kind()`'s own
-    `TicketKind(...)` try/except is genuinely unreachable for a value that
-    has already passed `AppConfig` construction (defense in depth against
-    a caller that builds a `TicketKind`-typed value some other way), which
-    is exactly why the real CLI (`src/frob/__main__.py`'s top-level
-    `except Exception` boundary) already turns this `ValidationError` into
-    a clean one-line `frob: ...` stderr message and `exit(1)` -- a
-    directly-constructed `AppConfig(...)`, as this test does, is the one
-    caller that sees the raw exception instead of that clean CLI-boundary
-    rendering, which is what this test now asserts on directly."""
+    """Asserts constructing `AppConfig` directly with an out-of-enum
+    `ticket_kind_value` raises `ValidationError` at construction time,
+    via `AppConfig`'s `_check_ticket_kind_value` field_validator, before
+    `_kind()` runs -- the same enum-validation pattern `AppConfig` applies
+    to `ticket_state`/`ticket_kind`/`ticket_tier`/`ticket_tier_value`."""
 
     def test_invalid_kind_refused(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindCliInvalidKind.test_invalid_kind_refused  # noqa: E501
@@ -379,8 +360,7 @@ class TestSetDesignatedReproTest:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_des\
-        # ignation_appends_no_audit_entry
+        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_designation_appends_no_audit_entry  # noqa: E501
         tid = _seed_ticket(tmp_path)
         add_evidence(tmp_path, tid, ["tests/test_a.py::test_a"])
 
@@ -391,8 +371,7 @@ class TestSetDesignatedReproTest:
 
     def test_redesignation_appends_an_audit_entry(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_\
-        # appends_an_audit_entry
+        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_appends_an_audit_entry  # noqa: E501
         tid = _seed_ticket(tmp_path)
         add_evidence(
             tmp_path, tid, ["tests/test_a.py::test_a", "tests/test_b.py::test_b"]
@@ -416,8 +395,7 @@ class TestSetDesignatedReproTest:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_\
-        # the_same_id_appends_no_audit_entry
+        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_the_same_id_appends_no_audit_entry  # noqa: E501
         tid = _seed_ticket(tmp_path)
         add_evidence(tmp_path, tid, ["tests/test_a.py::test_a"])
         set_designated_repro_test(tmp_path, tid, "tests/test_a.py::test_a")

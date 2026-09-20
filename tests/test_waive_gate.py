@@ -648,13 +648,10 @@ class TestWaive006RealRepo:
         )
 
 
+# frob:ticket T-4623
 class TestWaive007RealRepo:
-    """The calibration proof T-0808 demanded: WAIVE007 must find ZERO
-    findings against this repo's own real waivers -- run against the live
-    ledger, not a fixture. Main currently has no dangling binding refs
-    after the T-0803 draft-id retarget (the four `design/frob.strata`
-    waivers that used to cite the dead `T-draft-8cd37914` were fixed to
-    cite `T-0803` directly)."""
+    """Asserts WAIVE007 finds zero findings when run against this
+    repo's own live ticket ledger and waivers, not a fixture."""
 
     def test_zero_findings_on_real_repo(self) -> None:
         from frob.gates import _load_inputs

@@ -844,8 +844,7 @@ class TestRenumberOneV2:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_collision.py::TestRenumberOneV2.test_unrewritten_docstring\
-        # _prose_citation_is_surfaced
+        # tests/test_tickets_collision.py::TestRenumberOneV2.test_unrewritten_docstring_prose_citation_is_surfaced  # noqa: E501
         """T-2096 (MUST FAIL FIRST on main): a plain-prose citation of the
         renumbered id in an ordinary source file -- NOT a `frob:` directive
         line, NOT `tickets/**/*.md` -- is never rewritten (by design: see
@@ -883,8 +882,7 @@ class TestRenumberOneV2:
         self, tmp_path: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_collision.py::TestRenumberOneV2.test_fully_rewritten_renum\
-        # ber_surfaces_nothing
+        # tests/test_tickets_collision.py::TestRenumberOneV2.test_fully_rewritten_renumber_surfaces_nothing  # noqa: E501
         """MUST-STILL-PASS control: a renumber whose only citations are the
         renamed ticket's own `id:` field plus a sibling's `tickets/**/*.md`
         prose (both fully rewritten by the existing mechanism) surfaces NO
@@ -906,19 +904,15 @@ class TestRenumberOneV2:
 
 
 # frob:ticket T-2197
+# frob:ticket T-4623
 class TestPromoteFromWorktreeCommitsAndWarns:
-    """T-2197: `frob ticket promote` (`finalize_draft`) run inside a real
-    git worktree used to leave its whole rename UNCOMMITTED -- not merely
-    invisible on `main` until a later land, but genuinely dirty working-
-    tree state liable to be swept into an unrelated ticket's next `frob
-    ticket land`. Reproduces the exact real-world shape (a `git worktree
-    add` off a primary checkout, a draft filed and finalized inside it)
-    and proves both halves of the fix: the rename is committed, and a
-    loud warning names the not-yet-visible-on-main gap."""
+    """Asserts `frob ticket promote` (`finalize_draft`) run inside a
+    git worktree (via `git worktree add` off a primary checkout) commits
+    its rename and prints a warning naming the not-yet-visible-on-main
+    gap."""
 
     # frob:tests \
-    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_fina\
-    # lize_draft_commits_the_full_rename_in_a_worktree
+    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_finalize_draft_commits_the_full_rename_in_a_worktree  # noqa: E501
     def test_finalize_draft_commits_the_full_rename_in_a_worktree(
         self, tmp_path: Path
     ) -> None:
@@ -958,8 +952,7 @@ class TestPromoteFromWorktreeCommitsAndWarns:
         assert draft.id not in loaded.danger_ok
 
     # frob:tests \
-    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_fina\
-    # lize_draft_warns_when_root_is_not_the_primary_checkout
+    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_finalize_draft_warns_when_root_is_not_the_primary_checkout  # noqa: E501
     def test_finalize_draft_warns_when_root_is_not_the_primary_checkout(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -997,8 +990,7 @@ class TestPromoteFromWorktreeCommitsAndWarns:
         )
 
     # frob:tests \
-    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_fina\
-    # lize_draft_in_the_primary_checkout_itself_does_not_warn
+    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_finalize_draft_in_the_primary_checkout_itself_does_not_warn  # noqa: E501
     def test_finalize_draft_in_the_primary_checkout_itself_does_not_warn(
         self, tmp_path: Path, caplog
     ) -> None:

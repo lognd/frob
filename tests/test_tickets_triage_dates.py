@@ -31,11 +31,11 @@ def _init_repo(tmp_path: Path) -> None:
 
 
 # frob:ticket T-4427
+# frob:ticket T-4623
 class TestSetSprintRecordsTriageChange:
-    """`set_sprint` must append a `TriageChangeEntry` (field="sprint")
-    exactly the way `set_priority`/`set_kind`/`set_component`/`set_tier`
-    already do -- T-4424's TICK004 rot-clock restart reads this entry's
-    `at` and had no date to read before this fix."""
+    """Asserts `set_sprint` appends a `TriageChangeEntry`
+    (field="sprint") carrying an `at` date, the same way
+    `set_priority`/`set_kind`/`set_component`/`set_tier` do."""
 
     # frob:tests \
     # tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_assigni\

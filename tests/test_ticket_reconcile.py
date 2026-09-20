@@ -90,8 +90,7 @@ def repo(tmp_path: Path) -> Path:
 class TestReconcileStaleHold:
     def test_dry_run_reports_but_does_not_requeue(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_dry_run_reports_b\
-        # ut_does_not_requeue
+        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_dry_run_reports_but_does_not_requeue  # noqa: E501
         created = new_ticket(repo, _spec("Stale", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -122,8 +121,7 @@ class TestReconcileStaleHold:
 
     def test_apply_requeues_stale_hold_and_releases_lease(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_st\
-        # ale_hold_and_releases_lease
+        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease  # noqa: E501
         created = new_ticket(repo, _spec("Stale2", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -152,8 +150,7 @@ class TestReconcileStaleHold:
         be reported as a stale hold -- reconcile only judges absence of a
         live lease, not the mere fact of being in-progress."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_live_in_progress_\
-        # ticket_with_lease_is_untouched
+        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_live_in_progress_ticket_with_lease_is_untouched  # noqa: E501
         created = new_ticket(repo, _spec("Alive", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -177,14 +174,11 @@ class TestReconcileStaleHold:
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
 
 
+# frob:ticket T-4623
 class TestReconcileApplyLandInProgressGuard:
-    """T-2291: `reconcile(apply=True)` must refuse BEFORE writing anything
-    while a `frob ticket land` holds `.frob/land.lock` -- previously the
-    equivalent guard fired only later, at the ledger-commit step, after
-    `_requeue_stale_holds` had already mutated ticket.md on disk (the real
-    9246d4b5a/2d854269c incident). Both a must-now-fail (refused, tree
-    untouched) and a must-still-pass (no lock held, behaviour unchanged)
-    case are required so the guard cannot regress into over-refusing."""
+    """Asserts `reconcile(apply=True)` refuses before writing anything
+    while `.frob/land.lock` is held, and still succeeds normally when no
+    lock is held."""
 
     def test_apply_refuses_and_writes_nothing_while_land_lock_held(
         self, repo: Path, caplog
@@ -192,8 +186,7 @@ class TestReconcileApplyLandInProgressGuard:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_ap\
-        # ply_refuses_and_writes_nothing_while_land_lock_held
+        # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
         import fcntl
         import json
         import os as _os
@@ -245,8 +238,7 @@ class TestReconcileApplyLandInProgressGuard:
         performs the ordinary requeue -- the new guard must not weaken the
         original T-0476 behaviour for the common, no-land-running case."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_ap\
-        # ply_still_requeues_when_no_land_in_progress
+        # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_still_requeues_when_no_land_in_progress  # noqa: E501
         created = new_ticket(repo, _spec("Stale4", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -285,8 +277,7 @@ class TestReconcileLiveWorktreeShield:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield.test_live_def\
-        # ault_worktree_with_no_lease_is_never_requeued
+        # tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield.test_live_default_worktree_with_no_lease_is_never_requeued  # noqa: E501
         from frob.tickets._leases import release_lease
 
         created = new_ticket(repo, _spec("LiveNoLease", scope=("src/feature.py",)))
@@ -325,8 +316,7 @@ class TestReconcileLiveWorktreeShield:
         exactly as before -- the new worktree-branch shield does not
         widen into "never requeue a default-branch-named ticket"."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield.test_still_re\
-        # queues_a_genuinely_gone_worktree
+        # tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield.test_still_requeues_a_genuinely_gone_worktree  # noqa: E501
         created = new_ticket(repo, _spec("LiveThenGone", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -365,8 +355,7 @@ class TestReconcileWorktreeMeasurementFailure:
         non-git directory must yield `Nothing()`, never `Some(())` -- the
         two are NOT the same "no worktrees" answer."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
-        # live_worktrees_returns_nothing_on_a_real_spawn_failure
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_live_worktrees_returns_nothing_on_a_real_spawn_failure  # noqa: E501
         from frob.tickets._reconcile import _live_worktrees
 
         not_a_repo = tmp_path / "not-a-repo"
@@ -383,8 +372,7 @@ class TestReconcileWorktreeMeasurementFailure:
         must yield `Some(())`, not `Nothing()` -- a genuinely measured
         empty result is not the same case as an unmeasurable one."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
-        # live_worktrees_returns_some_empty_on_a_real_clean_measurement
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_live_worktrees_returns_some_empty_on_a_real_clean_measurement  # noqa: E501
         from frob.tickets._reconcile import _live_worktrees
 
         result = _live_worktrees(repo)
@@ -399,8 +387,7 @@ class TestReconcileWorktreeMeasurementFailure:
         would have requeued it (empty set collapsed with "no live
         worktree"); post-fix it must be left untouched."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
-        # unmeasurable_worktree_signal_is_never_requeued
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_unmeasurable_worktree_signal_is_never_requeued  # noqa: E501
         from typani import Nothing
 
         from frob.tickets import _reconcile as reconcile_module
@@ -431,8 +418,7 @@ class TestReconcileWorktreeMeasurementFailure:
         before -- the fix narrows exactly the unmeasurable case, not the
         ordinary "measured, confirmed no live worktree" case."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
-        # measured_signal_still_requeues_normally
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_measured_signal_still_requeues_normally  # noqa: E501
         from typani import Some
 
         from frob.tickets import _reconcile as reconcile_module
@@ -463,8 +449,7 @@ class TestReconcileOrphanWorktree:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_live_worktre\
-        # e_with_no_lease_is_flagged_not_removed
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_live_worktree_with_no_lease_is_flagged_not_removed  # noqa: E501
         wt = repo.parent / "orphan-wt"
         _run(["git", "worktree", "add", "-b", "feature-orphan", str(wt)], repo)
 
@@ -480,8 +465,7 @@ class TestReconcileOrphanWorktree:
 
     def test_apply_and_remove_orphans_actually_removes_it(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_re\
-        # move_orphans_actually_removes_it
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it  # noqa: E501
         wt = repo.parent / "orphan-wt2"
         _run(["git", "worktree", "add", "-b", "feature-orphan2", str(wt)], repo)
 
@@ -494,8 +478,7 @@ class TestReconcileOrphanWorktree:
 
     def test_worktree_holding_a_live_lease_is_not_orphan(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_worktree_hol\
-        # ding_a_live_lease_is_not_orphan
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_worktree_holding_a_live_lease_is_not_orphan  # noqa: E501
         created = new_ticket(repo, _spec("Held", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -522,8 +505,7 @@ class TestReconcileOrphanedLandIntent:
 
     def test_dry_run_reports_but_does_not_clear(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_dry_run_\
-        # reports_but_does_not_clear
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_dry_run_reports_but_does_not_clear  # noqa: E501
         _write_intent(repo, "T-crashed", repo)
 
         result = reconcile(repo)
@@ -535,8 +517,7 @@ class TestReconcileOrphanedLandIntent:
 
     def test_apply_clears_the_orphaned_intent(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_apply_cl\
-        # ears_the_orphaned_intent
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_apply_clears_the_orphaned_intent  # noqa: E501
         _write_intent(repo, "T-crashed", repo)
 
         result = reconcile(repo, apply=True)
@@ -548,8 +529,7 @@ class TestReconcileOrphanedLandIntent:
 
     def test_no_intents_reports_empty(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_no_inten\
-        # ts_reports_empty
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_no_intents_reports_empty  # noqa: E501
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.orphaned_land_intents == ()
@@ -625,8 +605,7 @@ class TestReconcileUnlandedBranchWork:
 
     def test_reports_the_confirmed_leak_shape(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_\
-        # the_confirmed_leak_shape
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape  # noqa: E501
         _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
 
         result = reconcile(repo)
@@ -637,8 +616,7 @@ class TestReconcileUnlandedBranchWork:
         """Report-only by design (T-1934's DO-NOT-auto-land requirement):
         `apply=True` must still just report, never touch the branch."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_apply_ne\
-        # ver_heals_this_anomaly_class
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_apply_never_heals_this_anomaly_class  # noqa: E501
         _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
 
         result = reconcile(repo, apply=True)
@@ -650,8 +628,7 @@ class TestReconcileUnlandedBranchWork:
 
     def test_no_unlanded_work_reports_empty(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_no_unlan\
-        # ded_work_reports_empty
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_no_unlanded_work_reports_empty  # noqa: E501
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.unlanded_branch_work == ()
@@ -665,8 +642,7 @@ class TestReconcileUnlandedBranchWork:
         precondition every real frob-managed repo already meets, unlike
         this bare fixture's default) -- set that up explicitly here."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populate\
-        # s_the_doable_summary_cache
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache  # noqa: E501
         from frob.app.ticket_runner._query import _load_unlanded_summary_cache
 
         _gitignore_frob_dir(repo)
@@ -686,8 +662,7 @@ class TestReconcileUnlandedBranchWork:
         dry-run leaves untouched. T-3567: same `.frob/`-gitignored
         precondition as the sibling test above."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populate\
-        # s_the_cache_even_on_a_dry_run
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_cache_even_on_a_dry_run  # noqa: E501
         from frob.app.ticket_runner._query import _load_unlanded_summary_cache
 
         _gitignore_frob_dir(repo)
@@ -711,8 +686,7 @@ class TestReconcileUnlandedBranchWork:
         existing log-and-swallow posture -- `reconcile` itself still
         succeeds."""
         # frob:tests \
-        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_skips_th\
-        # e_cache_write_when_frob_dir_is_not_gitignored
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_skips_the_cache_write_when_frob_dir_is_not_gitignored  # noqa: E501
         from frob.app.ticket_runner._query import _load_unlanded_summary_cache
 
         _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")

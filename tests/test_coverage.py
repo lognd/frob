@@ -233,6 +233,7 @@ class TestPythonCoverageTargets:
         assert targets == ()
 
 
+# frob:ticket T-4623
 class TestCoverageTargetNativesGuard:
     """T-0538: `make coverage`/`make coverage-fast` both depend on
     `$(STAMP)` (`uv sync`), which silently removes the editable
@@ -301,16 +302,13 @@ class TestCoverageTargetNativesGuard:
             f"{coverage_idx} in:\n{output}"
         )
 
+    # frob:ticket T-4623
     def test_coverage_target_restores_and_verifies_natives_before_pytest(
         self,
     ) -> None:
-        """`make coverage`'s dry-run recipe restores natives (`frob natives
-        build`) and verifies them (`frob doctor`) before the delegated
-        `frob coverage --full` run. T-2269: T-2240 moved this target's own
-        coverage orchestration off a literal `pytest --cov`/`make core`
-        Makefile line and onto `frob coverage --full`, the same shape
-        `coverage-fast` already used -- this test asserted on the retired
-        text and is rewritten to match, not restoring the old shell."""
+        """Asserts `make coverage`'s dry-run recipe restores natives
+        (`frob natives build`) and verifies them (`frob doctor`) before
+        invoking `frob coverage --full`."""
         self._assert_guard_precedes_coverage_cli(
             self._dry_run("coverage"), "frob coverage --full"
         )
@@ -376,20 +374,12 @@ class TestMakefileNoCompoundRecursiveMake:
         )
 
 
+# frob:ticket T-4623
 class TestMakeDryRunDoesNotExecuteMutatingCommands:
-    """T-2098: GNU make executes any recipe line containing the literal
-    `$(MAKE)` EVEN UNDER `make -n` (a dry run), so the sub-make call
-    itself can be traced -- documented, intended behaviour. But
-    `coverage-fast`'s recipe used to put `$(MAKE) core` on the SAME
-    compound `&&` shell line as `uv run frob ticket reconcile --apply`
-    (a MUTATING ledger write) and `uv run frob doctor`, so `make -n
-    coverage-fast` genuinely ran the whole chain, not just the intended
-    sub-make trace. A real dry run performs no slow, blocking, or
-    mutating work, so it must complete near-instantly; a dry run that
-    actually spawns `frob ticket reconcile --apply` can hang (observed:
-    it blocks inside `refuse_if_land_in_progress`, T-2093) or mutate a
-    shared checkout's ticket ledger -- either way, `make -n` no longer
-    behaves like a dry run at all."""
+    """Asserts `make -n coverage-fast` performs no mutating or blocking
+    work: it must not spawn `frob ticket reconcile --apply` or
+    `frob doctor`, even when a `$(MAKE)` sub-call shares their compound
+    `&&` shell line, and must complete near-instantly."""
 
     #: Comfortably above what a genuine dry run (no subprocess actually
     #: spawned beyond `make` itself tracing its own recipe) should ever
@@ -620,8 +610,7 @@ class TestComputeWorkerCount:
 
     def test_pytest_argv_routes_through_project_env(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_routes_throug\
-        # h_project_env
+        # tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_routes_through_project_env  # noqa: E501
         """T-4148 (F-017): argv[0] must be `uv`, spawning `pytest` via
         `uv run --project <root>` -- never a bare `"pytest"` argv[0],
         which resolves through the SPAWNING process's own PATH (a global
@@ -642,8 +631,7 @@ class TestComputeWorkerCount:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_off_repo_proj\
-        # ect_not_importable_from_frob
+        # tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_off_repo_project_not_importable_from_frob  # noqa: E501
         """T-4148's own off-repo doctrine, applied directly against the
         real bug T-3887 F-017 reported three times: a genuine `uv`
         project (real `uv sync`, real `.venv`) whose own package

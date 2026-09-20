@@ -370,20 +370,12 @@ class TestWriteAllRefusesAStaleSnapshotV2:
         assert result.is_ok, result.err
 
 
+# frob:ticket T-4623
 class TestRenumberV2StaleSnapshotGuard:
-    """T-1630: `renumber(root)` (the plain contiguous-renumber path in
-    `frob.tickets._new_renumber`, distinct from `renumber_one`) previously
-    always captured a v1 monofile `ledger_digest(ledger_path(root))`
-    snapshot before its `write_all` call, even in v2 mode -- where
-    `ledger_path(root)` does not exist and `write_all` (T-1588) treats a
-    bare `str` digest in v2 mode as "no check requested". That left
-    `renumber(root)` with NO stale-snapshot protection in v2 mode: a
-    sibling process's write between this function's `load_all` and its
-    `write_all` was silently clobbered by the wholesale rewrite, the same
-    T-0680 shape T-1588 already closed for `write_all`'s own primitive.
-    `renumber` now snapshots via `ledger_digest_map(root)` in v2 mode
-    instead, mirroring how `renumber_one` already dispatches on
-    `_store_mode`."""
+    """Asserts `renumber(root)` snapshots via `ledger_digest_map(root)`
+    in v2 mode and refuses when a sibling process wrote between its
+    `load_all` and `write_all` calls, mirroring `renumber_one`'s v2-mode
+    dispatch."""
 
     def test_renumber_root_refuses_when_a_ticket_changes_under_it(
         self, tmp_path: Path, monkeypatch

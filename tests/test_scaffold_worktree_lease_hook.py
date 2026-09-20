@@ -573,23 +573,11 @@ class TestInstallWorktreeLeaseHook:
 
 
 # frob:ticket T-2556
+# frob:ticket T-4623
 class TestFrobAgentGuardIsLocationAware:
-    """T-2556: the FROB_AGENT guard refuses based on WHERE the commit
-    lands, not on the variable alone.
-
-    Before this ticket the guard was `if [ -n "$FROB_AGENT" ]` with no
-    location test at all, so a commit inside the correctly-leased
-    worktree -- including `frob ticket land`'s own pre-land wip commit --
-    was refused exactly as hard as one against the shared root, and the
-    printed remedy ("run from the leased worktree") could not work
-    because the guard never looked at the path.
-
-    The must-fire direction had a test
-    (`test_installed_hook_aborts_commit_under_frob_agent`); the must-NOT-
-    fire direction had none, in EITHER location, which is precisely how
-    an unconditional guard passed review. Both directions are pinned
-    here.
-    """
+    """Asserts the FROB_AGENT commit guard refuses based on where the
+    commit lands: it refuses a commit against the shared root and allows
+    one inside the correctly-leased worktree, in both directions."""
 
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     # frob:ticket T-2556

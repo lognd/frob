@@ -123,8 +123,7 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample") -> Path:
 class TestD01PassVerification:
     def test_red_evidence_rejected_when_passed_supplied(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD01PassVerification.test_red_evidence_r\
-        # ejected_when_passed_supplied
+        # tests/test_evidence_integrity.py::TestD01PassVerification.test_red_evidence_rejected_when_passed_supplied  # noqa: E501
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         _write(tmp_path, ticket)
         node = "tests/test_x.py::test_it"
@@ -141,8 +140,7 @@ class TestD01PassVerification:
 
     def test_green_evidence_recorded_when_passed_supplied(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD01PassVerification.test_green_evidence\
-        # _recorded_when_passed_supplied
+        # tests/test_evidence_integrity.py::TestD01PassVerification.test_green_evidence_recorded_when_passed_supplied  # noqa: E501
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         _write(tmp_path, ticket)
         node = "tests/test_x.py::test_it"
@@ -160,8 +158,7 @@ class TestD01PassVerification:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD01PassVerification.test_passed_none_pr\
-        # eserves_old_permissive_behavior
+        # tests/test_evidence_integrity.py::TestD01PassVerification.test_passed_none_preserves_old_permissive_behavior  # noqa: E501
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         _write(tmp_path, ticket)
         node = "tests/test_x.py::test_it"
@@ -176,8 +173,7 @@ class TestD01PassVerification:
 class TestD02ScopeBinding:
     def test_transition_rejects_when_covers_scope_false(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_rejects\
-        # _when_covers_scope_false
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_rejects_when_covers_scope_false  # noqa: E501
         ticket = _ticket(
             state=TicketState.IN_PROGRESS,
             evidence=("tests/test_unrelated.py::test_x",),
@@ -190,14 +186,12 @@ class TestD02ScopeBinding:
 
     def test_transition_allows_when_covers_scope_true(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_\
-        # when_covers_scope_true
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_when_covers_scope_true  # noqa: E501
         _assert_transition_to_done_allows(tmp_path, covers_scope=True)
 
     def test_evidence_covers_scope_true_for_bound_test(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
-        # ope_true_for_bound_test
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bound_test  # noqa: E501
         ticket = _ticket(
             scope=("src/pkg/",),
             evidence=("tests/test_thing.py::test_it",),
@@ -218,8 +212,7 @@ class TestD02ScopeBinding:
 
     def test_evidence_covers_scope_false_for_unrelated_test(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
-        # ope_false_for_unrelated_test
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_unrelated_test  # noqa: E501
         ticket = _ticket(
             scope=("src/pkg/",),
             evidence=("tests/test_logging.py::test_levels",),
@@ -242,8 +235,7 @@ class TestD02ScopeBinding:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
-        # ope_true_for_docs_kind_with_cmd_evidence
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_docs_kind_with_cmd_evidence  # noqa: E501
         # frob:ticket T-0444
         # A docs-kind ticket scoped to doc files has no coverable code
         # symbol; T-0215 sanctions it closing on a --evidence-cmd exit
@@ -261,8 +253,7 @@ class TestD02ScopeBinding:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
-        # ope_false_for_code_kind_with_cmd_shaped_evidence
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_code_kind_with_cmd_shaped_evidence  # noqa: E501
         # frob:ticket T-0444
         # The docs exemption must NOT loophole a code-kind ticket: even a
         # cmd-shaped evidence entry on a bug ticket does not satisfy
@@ -280,8 +271,7 @@ class TestD02ScopeBinding:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
-        # ope_true_for_bug_kind_with_no_python_surface
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bug_kind_with_no_python_surface  # noqa: E501
         # T-3156: a `bug`-kind ticket whose ENTIRE declared scope is a real,
         # existing non-Python file (a docs/ledger-only investigation, the
         # T-3147-audit shape) has no OTHER legitimate D-02 route -- cmd:
@@ -301,8 +291,7 @@ class TestD02ScopeBinding:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
-        # ope_false_for_bug_kind_with_real_python_surface
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_bug_kind_with_real_python_surface  # noqa: E501
         # Must-stay-quiet: a `bug`-kind ticket whose scope has a REAL,
         # existing Python file must NOT get the new exemption -- cmd:
         # evidence still cannot loophole an actual code change, exactly
@@ -560,8 +549,7 @@ class TestT0417ReverifyEvidenceOnClose:
 class TestD03SubstantiveDoneReport:
     def test_empty_section_rejected(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_sec\
-        # tion_rejected
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected  # noqa: E501
         assert (
             has_substantive_done_report("## Description\nx\n\n## Done report\n")
             is False
@@ -569,22 +557,19 @@ class TestD03SubstantiveDoneReport:
 
     def test_blank_lines_only_rejected(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_blank_lin\
-        # es_only_rejected
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_blank_lines_only_rejected  # noqa: E501
         body = "## Description\nx\n\n## Done report\n\n   \n\n"
         assert has_substantive_done_report(body) is False
 
     def test_real_content_accepted(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_real_cont\
-        # ent_accepted
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_real_content_accepted  # noqa: E501
         body = "## Description\nx\n\n## Done report\nAll good.\n"
         assert has_substantive_done_report(body) is True
 
     def test_close_rejects_empty_done_report(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_close_rej\
-        # ects_empty_done_report
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_close_rejects_empty_done_report  # noqa: E501
         # T-4167: this ticket HAS evidence -- an empty Done report is the
         # ONLY missing precondition, so the refusal must name THAT
         # (`MissingDoneReport`), not the unrelated `MissingEvidence` the
@@ -792,8 +777,7 @@ class TestDoneReportHeadingImpersonation:
 class TestD04UnknownLanguageFallback:
     def test_config_file_change_selects_something(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD04UnknownLanguageFallback.test_config_\
-        # file_change_selects_something
+        # tests/test_evidence_integrity.py::TestD04UnknownLanguageFallback.test_config_file_change_selects_something  # noqa: E501
         snapshot = GraphSnapshot(
             root=".",
             symbols={
@@ -817,8 +801,7 @@ class TestD04UnknownLanguageFallback:
 class TestD06ModuleLevelEdits:
     def test_module_level_edit_forces_selection_under_warn(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_module_level_e\
-        # dit_forces_selection_under_warn
+        # tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_module_level_edit_forces_selection_under_warn  # noqa: E501
         snapshot = GraphSnapshot(
             root=".",
             symbols={
@@ -839,8 +822,7 @@ class TestD06ModuleLevelEdits:
 
     def test_symbol_touched_still_respects_warn(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_symbol_touched\
-        # _still_respects_warn
+        # tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_symbol_touched_still_respects_warn  # noqa: E501
         snapshot = GraphSnapshot(
             root=".",
             symbols={
@@ -863,8 +845,7 @@ class TestD06ModuleLevelEdits:
 class TestD07RippleHorizon:
     def test_two_hop_dependent_is_selected(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD07RippleHorizon.test_two_hop_dependent\
-        # _is_selected
+        # tests/test_evidence_integrity.py::TestD07RippleHorizon.test_two_hop_dependent_is_selected  # noqa: E501
         # C is touched; B uses-contract C; A uses-contract B; a test covers A.
         snapshot = GraphSnapshot(
             root=".",
@@ -906,8 +887,7 @@ class TestD07RippleHorizon:
 class TestD08UnresolvedMarking:
     def test_new_ticket_resolves_when_collected_supplied(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_re\
-        # solves_when_collected_supplied
+        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_resolves_when_collected_supplied  # noqa: E501
         spec = TicketSpec(
             title="t",
             kind=TicketKind.FEATURE,
@@ -922,8 +902,7 @@ class TestD08UnresolvedMarking:
 
     def test_new_ticket_accepts_resolving_evidence(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_ac\
-        # cepts_resolving_evidence
+        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_accepts_resolving_evidence  # noqa: E501
         spec = TicketSpec(
             title="t",
             kind=TicketKind.FEATURE,
@@ -939,8 +918,7 @@ class TestD08UnresolvedMarking:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_co\
-        # llected_none_still_stores_schema_valid_evidence
+        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_collected_none_still_stores_schema_valid_evidence  # noqa: E501
         spec = TicketSpec(
             title="t",
             kind=TicketKind.FEATURE,
@@ -958,8 +936,7 @@ class TestD08UnresolvedMarking:
 class TestD09EvidenceUnionOnSplice:
     def test_newer_unions_disjoint_evidence_on_tie(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_newer_uni\
-        # ons_disjoint_evidence_on_tie
+        # tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_newer_unions_disjoint_evidence_on_tie  # noqa: E501
         common_body = "## Description\nx\n\n## Done report\nDone.\n"
         a = _ticket(
             state=TicketState.DONE,
@@ -977,8 +954,7 @@ class TestD09EvidenceUnionOnSplice:
 
     def test_splice_ledger_preserves_both_sides_evidence(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_splice_le\
-        # dger_preserves_both_sides_evidence
+        # tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_splice_ledger_preserves_both_sides_evidence  # noqa: E501
         common_body = "## Description\nx\n\n## Done report\nDone.\n"
         ours = _ticket(
             state=TicketState.DONE,
@@ -1008,8 +984,7 @@ class TestD09EvidenceUnionOnSplice:
 class TestD10CmdEvidenceReverify:
     def test_reverify_true_when_command_still_reproduces(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_tr\
-        # ue_when_command_still_reproduces
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_true_when_command_still_reproduces  # noqa: E501
         recorded = run_cmd_evidence("echo hello")
         assert recorded.is_ok
         result = reverify_cmd_evidence(recorded.danger_ok)
@@ -1018,8 +993,7 @@ class TestD10CmdEvidenceReverify:
 
     def test_reverify_false_when_output_changed(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_fa\
-        # lse_when_output_changed
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_false_when_output_changed  # noqa: E501
         # Fabricate an entry claiming a digest the command will never produce.
         entry = "cmd:echo hello exit=0 sha256=000000000000"
         result = reverify_cmd_evidence(entry)
@@ -1028,8 +1002,7 @@ class TestD10CmdEvidenceReverify:
 
     def test_reverify_false_when_command_now_fails(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_fa\
-        # lse_when_command_now_fails
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_false_when_command_now_fails  # noqa: E501
         entry = "cmd:exit 1 exit=0 sha256=aaaaaaaaaaaa"
         result = reverify_cmd_evidence(entry)
         assert result.is_ok
@@ -1037,8 +1010,7 @@ class TestD10CmdEvidenceReverify:
 
     def test_reverify_rejects_malformed_entry(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_re\
-        # jects_malformed_entry
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_rejects_malformed_entry  # noqa: E501
         result = reverify_cmd_evidence("not-a-cmd-entry")
         assert result.is_err
         assert result.danger_err == TicketError.MalformedEvidence
@@ -1050,8 +1022,7 @@ class TestD10CmdEvidenceReverify:
 class TestD11DedupedMatchRule:
     def test_tickets_and_gates_share_matches_collected(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_ga\
-        # tes_share_matches_collected
+        # tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_gates_share_matches_collected  # noqa: E501
         import frob.gates as gates_mod
         import frob.tickets._models as tickets_models
 
@@ -1061,19 +1032,18 @@ class TestD11DedupedMatchRule:
 # ---------------------------------------------------------------------------
 # D-12: deletion filter must not trust an over-broad scope
 # ---------------------------------------------------------------------------
+# frob:ticket T-4623
 class TestD12DeletionFilterBroadScope:
     def test_deletion_owned_rejects_bare_top_level_scope(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
-        # on_owned_rejects_bare_top_level_scope
+        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deletion_owned_rejects_bare_top_level_scope  # noqa: E501
         from frob.tickets._land_merge import _deletion_owned
 
         assert _deletion_owned("src/frob/other/mod.py", ("src/",)) is False
 
     def test_deletion_owned_accepts_narrow_scope(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
-        # on_owned_accepts_narrow_scope
+        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deletion_owned_accepts_narrow_scope  # noqa: E501
         from frob.tickets._land_merge import _deletion_owned
 
         assert (
@@ -1082,22 +1052,17 @@ class TestD12DeletionFilterBroadScope:
 
     def test_deletion_owned_rejects_whole_tree_scope(self) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
-        # on_owned_rejects_whole_tree_scope
+        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deletion_owned_rejects_whole_tree_scope  # noqa: E501
         from frob.tickets._land_merge import _deletion_owned
 
         assert _deletion_owned("anything/at/all.py", (".",)) is False
 
     # frob:ticket T-1680
+    # frob:ticket T-4623
     def test_exact_root_level_file_authorizes_its_own_deletion(self) -> None:
-        """T-1680 REGRESSION LOCK: an exact literal path is the NARROWEST
-        authorization there is and must be trusted, at the repo root as
-        much as anywhere else.
-
-        The old rule asked whether the pattern contained a '/', so every
-        root-level file read as an over-broad glob. That made deleting any
-        root-level file unlandable, and the refusal printed the scope entry
-        that already authorized the file while insisting it was missing."""
+        """Asserts an exact literal scope path authorizes deleting that
+        same root-level file, independent of whether the pattern contains
+        a '/'."""
         from frob.tickets._land_merge import _deletion_owned
 
         assert _deletion_owned("FROBLEMS.md", ("FROBLEMS.md",)) is True
@@ -1130,8 +1095,7 @@ class TestD05LandReverification:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_evidence_integrity.py::TestD05LandReverification.test_land_rejects\
-        # _evidence_that_no_longer_resolves_post_merge
+        # tests/test_evidence_integrity.py::TestD05LandReverification.test_land_rejects_evidence_that_no_longer_resolves_post_merge  # noqa: E501
         import subprocess
 
         def git(root: Path, *args: str) -> None:

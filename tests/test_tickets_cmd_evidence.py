@@ -481,12 +481,11 @@ def _raw_ticket(
     )
 
 
+# frob:ticket T-4623
 class TestCov003CmdEvidence:
-    """COV003 (`frob.gates.coverage_gate`) must format+kind check `cmd:`
-    evidence, not silently fail every docs ticket closed via
-    `--evidence-cmd` (T-0215 review round 2 -- the reviewer reproduced this
-    end to end: `_evidence_collected` never matches a `cmd:` string, so
-    every such close used to trip an unconditional COV003 ERROR)."""
+    """Asserts COV003 (`frob.gates.coverage_gate`) accepts a correctly
+    formatted `cmd:` evidence string on a docs ticket closed via
+    `--evidence-cmd`, instead of unconditionally erroring on it."""
 
     def test_docs_ticket_closed_via_evidence_cmd_is_gate_clean(
         self, tmp_path: Path
