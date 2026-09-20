@@ -10,6 +10,10 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/ticket_runner/_land_cmd.py
@@ -33,6 +37,8 @@ scope:
 - tests/unit/test_profile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/tickets.md
@@ -176,6 +182,14 @@ scope_changes:
     recorded commit="" instead of "unknown"), test_profile.py gains TestRatchetOverride'
   actor: logan
   at: '2026-08-06'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve concrete examples for the 4 by-reference wiring shapes
+    trimmed from _wire.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1002
+  new_length: 1841
 evidence:
 - tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
 - tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_unmeasurable_check_leaves_the_baseline_untouched
@@ -185,6 +199,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Under rapid, land waits ~5 minutes on a synchronous full-repo unscoped
 frob check (plus the T-1463 baseline snapshot check, joined just before
@@ -205,3 +222,18 @@ pays two full checks (baseline + post), rapid pays zero in the
 foreground and one in the background.
 
 standard/fortress paths are untouched.
+
+
+T-4770 follow-up (condensed from a comment above keyword_arg_pattern in
+src/frob/gates/_wire.py, trimmed for DOCARCH002's 12-line cap): the
+T-1684 example is "sweep-async": _sweep_async, in
+_ticket_dispatch_table. The T-1807 module-qualified example is
+"frob_map": _tools.frob_map, -- every row of _TOOL_DISPATCH in
+src/frob/serve/_socketd.py uses this exact shape. The T-2778 example is
+on_tick=_print_tick, scripts/wait_for_land_slot.py's own _print_tick
+passed to wait_for_slot's on_tick= parameter -- none of the wrapper-
+marker/job-table/dict-table alternatives name a fixed marker function,
+a job-table constructor, or a dict literal; this is just an ordinary
+call passing the symbol by name as one of its OTHER arguments. T-1831's
+anchor is formatter_class=_GroupedHelpFormatter, whose own docstring
+says "must never be closed".
