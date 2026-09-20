@@ -10,6 +10,10 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_dead_symbols.py
 - tests/test_gates.py
@@ -23,6 +27,8 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
@@ -106,6 +112,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-02'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve per-shape ticket attribution trimmed from _wire.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4173
+  new_length: 5030
 evidence:
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
@@ -171,6 +184,9 @@ acceptance:
   - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 New code that nothing reaches is the single most repeated defect in this repo's recent history. Five clean instances landed in one session, every one of them disclosed honestly, every one with passing tests, and every one leaving the feature or guard completely inert on main.
 
@@ -193,3 +209,18 @@ Cases it must catch, drawn from the five above: a new function with no non-test 
 Cases it must NOT catch, or it will be waived into uselessness: a genuine public API addition intended for downstream consumers; a parameter with a default that existing callers are meant to keep using; an interface implemented for a protocol that is dispatched dynamically. The escape hatch should require naming WHO is expected to call it and by when -- a frob:until-style binding to the follow-up ticket, so an intentional two-phase landing is recorded rather than forgotten. That converts today's honest-but-invisible disclosure into an enforced obligation.
 
 ACCEPTANCE MUST BE SELF-DEMONSTRATING. Reconstruct T-1384 or T-1421 as a fixture: a guard parameter added with no caller, unit-tested, passing every existing gate, must be REFUSED by this rule. And a properly wired change must be permitted. Without both directions this becomes another guard that ships inert -- which would be a genuinely absurd outcome for this particular ticket.
+
+
+T-4770 follow-up (condensed from the WIRE001/WIRE002 module comment in
+src/frob/gates/_wire.py, trimmed for DOCARCH002's 12-line cap): DEAD001
+exempts every public symbol by design, which is why WIRE001 needs its
+own PUBLIC-inclusive check. The four shapes' owning tickets: (1) a new
+function/method/class with no non-test caller is T-1421; (2) a new gate
+rule id literal absent from _KNOWN_GATE_RULES is T-1421's BUG002; (3)
+the CLI flag dest= shape is T-1422; (4) the new keyword-only parameter
+shape is T-1384/T-1399/T-1391/T-1430 --
+_wire001_new_kwonly_param_violations diffs the function's keyword-only
+parameter set at the diff's merge-base against its current set (stdlib
+ast, not the token-stream digest machinery T-1431's relocation check
+uses -- a plain name-set diff is exact here, no false-positive-from-
+body-rewrite risk to guard against).
