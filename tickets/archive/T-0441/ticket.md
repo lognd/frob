@@ -10,6 +10,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/gates/
@@ -20,6 +24,8 @@ scope:
 - README.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_gates_fmt_directives.py
@@ -38,6 +44,13 @@ scope_changes:
   reason: DOC005 requires the frob fmt command-table row + count bump in README.md
   actor: logan
   at: '2026-07-23'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve strata-fallback rationale trimmed from _fmt_directives.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2795
+  new_length: 3173
 evidence:
 - tests/test_gates_fmt_directives.py::TestMarkerFor::test_python_uses_hash
 - tests/test_gates_fmt_directives.py::TestMarkerFor::test_rust_uses_slash_slash
@@ -73,6 +86,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Friction hit by hand 2026-07-20: a `frob:waive` reason long enough to be
 useful overflows ruff's E501, so `frob check` (ruff) and the waive author
@@ -116,3 +132,11 @@ round-trip join(split(x)) == canonical(x). This shares the fold logic with
 T-0286's `_fold_continuations` (reuse, do not duplicate) -- fmt's job is to
 choose the canonical physical-line layout, folding to normalize then
 re-splitting only where a physical line would exceed the limit.
+
+
+T-4709 follow-up (condensed from the T-1606 design-decision comment in
+src/frob/gates/_fmt_directives.py, trimmed for DOCARCH002's 12-line
+cap): `.strata` keeps the ruff-derived default because, unlike Go/Zig/
+Bash, it has no formatter of its own to defer to, so preserving the
+original repo-wide behavior is the least-surprising default rather than
+an unstated policy call.
