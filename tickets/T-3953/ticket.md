@@ -1,7 +1,7 @@
 ---
 id: T-3953
 title: 'RACE001: concurrent read-then-write test obligation'
-state: in-progress
+state: queued
 kind: security
 origin: agent
 created: '2026-09-06'
