@@ -43,6 +43,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 1510
   new_length: 1510
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1510
+  new_length: 1504
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/tickets.strata exists with
@@ -73,7 +80,7 @@ land_commit: null
 Migration leaf for module `tickets` (members: tickets_ledger (store, design/frob.strata:1432), fleet, narrative). Hub: fan-in 8; bidirectional with app, gates, graph, platform and strata.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is no sys-split tool; the owner rejected one). Write design/tickets.strata with:
+there is NO a sys-split tool (rejected) tool). Write design/tickets.strata with:
   - `module tickets` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
