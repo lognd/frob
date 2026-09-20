@@ -35,6 +35,18 @@ body_changes:
   at: '2026-09-19'
   old_length: 1493
   new_length: 1491
+- mode: set
+  reason: 'DOC006: drop the rejected split-verb spelling entirely (D-M6)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1491
+  new_length: 1493
+- mode: set
+  reason: 'DOC006: drop the rejected split-verb spelling (D-M6)'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1493
+  new_length: 1493
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/tickets.strata exists with
@@ -65,7 +77,7 @@ land_commit: null
 Migration leaf for module `tickets` (members: tickets_ledger (store, design/frob.strata:1432), fleet, narrative). Hub: fan-in 8; bidirectional with app, gates, graph, platform and strata.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is NO frob sys split tool). Write design/tickets.strata with:
+there is NO a sys-split verb tool). Write design/tickets.strata with:
   - `module tickets` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
