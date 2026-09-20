@@ -9,7 +9,7 @@ created: '2026-08-27'
 priority: medium
 parent: null
 tier: ticket
-sprint: v0.534.0
+sprint: v0.540.0
 runs_last: false
 milestone: 0.534.0
 runs_last_parallel_safe: false
@@ -55,6 +55,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+- field: sprint
+  old_value: v0.534.0
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 evidence:
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_none_when_never_raised
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_raised_after_raise
