@@ -13,7 +13,19 @@ Deliberately additive and self-contained: nothing in `frob.gates.__init__`
 is modified to consume this yet (owned by a concurrent wave this ticket
 does not touch) -- `resolve_ratchet_severity` is the integration point a
 future change wires a real gate's severity resolution through, opt-in per
-rule via `[gates.ratchet]` in `frob.toml`."""
+rule via `[gates.ratchet]` in `frob.toml`.
+
+T-4240 (consumer F-326/H2-3): `baseline_overrun_violations` is the SAME
+kind of additive, self-contained addition -- it reports BASE001 (a
+tracked pool whose caller-measured current count exceeds its committed
+baseline, named by rule id and both counts) but is not itself wired into
+`frob check`'s land pre-sweep the way `SELFAUDIT001`
+(`frob.gates._sys_selfaudit`) is; that wiring lives in `frob.gates.
+__init__`'s `_ProcessJob` pipeline, which this ticket's declared scope
+does not cover and which T-4540 held an in-progress lease over at the
+time this was written (`frob ticket scope T-4240 --add
+src/frob/gates/__init__.py` was refused: ScopeLeaseConflict). A follow-up
+ticket must add the `_ProcessJob` wiring once that lease clears."""
 
 from __future__ import annotations
 
@@ -26,6 +38,8 @@ from pydantic import BaseModel, ConfigDict
 from typani import Err, Ok
 from typani.error_set import ErrorSet
 from typani.result import Result
+
+from frob.findings import Severity, Violation
 
 _LOCK_REL = Path("frob-ratchet.lock.json")
 
@@ -258,3 +272,78 @@ def ratchet_enabled_rules(root: Path) -> frozenset[str]:
         # `gates`/`ratchet` table, a non-list `rules`), not just the two
         # named load failures (EXHAUST001, T-1371).
         return frozenset()
+
+
+# frob:ticket T-4240
+# frob:doc docs/modules/gates.md#base001-a-baseline-overrun-blocks-land-reported-by-name-t-4240  # noqa: E501
+# frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_current_count_exceeding_baseline_fires_base001  # noqa: E501
+# frob:todo T-draft-daef879a wire into gate pipeline once T-4540/T-4214 release their leases  # noqa: E501
+def baseline_overrun_violations(
+    root: Path, current_counts: dict[str, int]
+) -> list[Violation]:
+    """BASE001 (T-4240, consumer F-326/H2-3): a tracked
+    `frob-ratchet.lock.json` pool whose CALLER-measured current live
+    finding count (`current_counts[rule_id]`, the caller's own honest
+    count for `rule_id` -- this function takes no opinion on how it was
+    produced, the SAME "caller decides, this function only judges"
+    contract `resolve_ratchet_severity` already uses one call above)
+    exceeds that pool's committed baseline size (`len(pool.entries)`) is
+    reported as ONE named `BASE001` finding per over-baseline rule,
+    naming the lock file, the rule id, and both counts -- the pool-level
+    sibling `resolve_ratchet_severity`'s per-finding-key warn/error
+    resolution does not itself surface: a caller could apply
+    `resolve_ratchet_severity` to every current key and still never emit
+    a single finding that says "this rule's baseline no longer holds",
+    if every new key happened to individually recover to warn by some
+    other path (config drift, a partial re-snapshot) -- BASE001 is the
+    aggregate fact a red ratchet exists at all, named so a land-time
+    reader does not have to re-derive it from a raw count delta
+    (T-3985's own SUBJECT001 "silent zero"/silent-drift lesson, applied
+    here to "silent growth" instead).
+
+    A rule absent from `current_counts` is not judged (the caller did
+    not measure it this run). A rule present in `current_counts` but
+    with NO committed pool at all (`pool_for` returns `None`, i.e.
+    `frob pool snapshot` has never run for it) is likewise silent here
+    -- an un-ratcheted rule has no "accepted_count" to exceed, and
+    forcing one into existence is `frob pool snapshot`'s job, not this
+    finding's (mirrors this module's own `resolve_ratchet_severity`,
+    which only ever applies to a rule with a real pool; a rule with no
+    pool is simply not opted into ratcheting yet, `ratchet_enabled_
+    rules`'s territory, not BASE001's)."""
+    lock = load_ratchet_lock(root)
+    violations: list[Violation] = []
+    for rule_id in sorted(current_counts):
+        pool = lock.pool_for(rule_id)
+        if pool is None:
+            continue
+        current = current_counts[rule_id]
+        baseline = len(pool.entries)
+        if current <= baseline:
+            continue
+        from frob.logging import get_logger
+
+        get_logger(__name__).warning(
+            "ratchet: BASE001 %s current %d exceeds baseline %d in %s",
+            rule_id,
+            current,
+            baseline,
+            _LOCK_REL,
+        )
+        violations.append(
+            Violation(
+                rule="BASE001",
+                severity=Severity.ERROR,
+                file=str(_LOCK_REL),
+                line=1,
+                message=(
+                    f"BASE001: {_LOCK_REL} rule={rule_id} current {current} "
+                    f"exceeds baseline {baseline} -- this ratchet pool has "
+                    "grown past its committed baseline; snapshot the new "
+                    f"findings deliberately (`frob pool snapshot {rule_id}`) "
+                    "or fix them before landing"
+                ),
+                symref=rule_id,
+            )
+        )
+    return violations

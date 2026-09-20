@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates._ratchet import (
     RatchetError,
+    baseline_overrun_violations,
     clear_ratchet_entry,
     load_ratchet_lock,
     ratchet_enabled_rules,
@@ -178,6 +180,57 @@ class TestRatchetEnabledRules:
             "[arch]\nmax_file_lines = 800\n", encoding="utf-8"
         )
         assert ratchet_enabled_rules(tmp_path) == frozenset()
+
+
+# frob:ticket T-4240
+class TestBaselineOverrunViolations:
+    """BASE001 (T-4240/F-326/H2-3): a ratcheted rule's CURRENT live finding
+    count exceeding its committed `frob-ratchet.lock.json` baseline count
+    is its own, named, land-blocking finding -- distinct from
+    `resolve_ratchet_severity`'s per-finding warn/error resolution, which
+    never surfaces the pool-level "this baseline no longer holds" fact by
+    itself."""
+
+    # frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_current_count_exceeding_baseline_fires_base001  # noqa: E501
+    def test_current_count_exceeding_baseline_fires_base001(
+        self, tmp_path: Path
+    ) -> None:
+        snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1", "b.py:2"])
+        violations = baseline_overrun_violations(tmp_path, {"DEAD001": 3})
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == "BASE001"
+        assert v.severity == Severity.ERROR
+        assert "frob-ratchet.lock.json" in v.message
+        assert "DEAD001" in v.message
+        assert "baseline 2" in v.message
+        assert "current 3" in v.message
+
+    # frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_current_count_at_or_below_baseline_is_silent  # noqa: E501
+    def test_current_count_at_or_below_baseline_is_silent(self, tmp_path: Path) -> None:
+        snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1", "b.py:2"])
+        assert baseline_overrun_violations(tmp_path, {"DEAD001": 2}) == []
+        assert baseline_overrun_violations(tmp_path, {"DEAD001": 1}) == []
+
+    # frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_rule_never_baselined_is_silent  # noqa: E501
+    def test_rule_never_baselined_is_silent(self, tmp_path: Path) -> None:
+        """A rule with no baseline entry at all (never snapshotted) is not
+        this check's concern -- SUBJECT001's own T-3985 lesson applies
+        symmetrically here (an absent baseline is silence about the
+        defect shape, not evidence of it); some other gate owns whether
+        an un-ratcheted rule should even be reporting yet."""
+        assert baseline_overrun_violations(tmp_path, {"NEVER001": 5}) == []
+
+    # frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_names_the_lock_file_and_both_counts_for_multiple_rules  # noqa: E501
+    def test_names_the_lock_file_and_both_counts_for_multiple_rules(
+        self, tmp_path: Path
+    ) -> None:
+        snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1"])
+        snapshot_ratchet(tmp_path, "PII010", ["b.py:2", "c.py:3"])
+        violations = baseline_overrun_violations(tmp_path, {"DEAD001": 4, "PII010": 2})
+        assert len(violations) == 1
+        assert violations[0].rule == "BASE001"
+        assert "DEAD001" in violations[0].message
 
 
 # T-1620: `_mass_invalidation_rules` (`frob.gates._fix_engine_sync`) is the

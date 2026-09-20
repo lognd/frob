@@ -2,14 +2,14 @@
 id: T-4240
 title: 'BASE001: a tracked ratchet/baseline file whose current violation count exceeds
   its baseline blocks land, reported by name'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-07'
 priority: high
 parent: T-4135
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -20,13 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.535.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/test_gates_ratchet.py::TestBaselineOverrunViolations::test_current_count_exceeding_baseline_fires_base001
+- tests/test_gates_ratchet.py::TestBaselineOverrunViolations::test_current_count_at_or_below_baseline_is_silent
+- tests/test_gates_ratchet.py::TestBaselineOverrunViolations::test_rule_never_baselined_is_silent
+- tests/test_gates_ratchet.py::TestBaselineOverrunViolations::test_names_the_lock_file_and_both_counts_for_multiple_rules
 designated_repro_test: null
 threat: null
 component: null

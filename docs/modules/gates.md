@@ -6179,6 +6179,59 @@ rules`, baseline its current findings with `frob pool snapshot`, and call
 `resolve_ratchet_severity` at that gate's own severity-decision call
 site -- no new mechanism needed.
 
+### BASE001: a baseline overrun blocks land, reported by name (T-4240)
+
+Consumer F-326/H2-3 (second half; the sibling TESTRUN001 half -- "`frob
+check --ticket` does not run the repo's own test suite" -- is tracked by
+open ticket T-3988, not here) found a gap one level ABOVE
+`resolve_ratchet_severity`'s per-finding warn/error resolution: nothing
+ever asked, in aggregate, "does any tracked pool's CURRENT live count
+exceed what got committed as its baseline?" A caller could resolve every
+individual finding's severity correctly and still never surface the
+single aggregate fact that a ratchet has gone red -- exactly the kind of
+silent-growth gap T-3985's SUBJECT001 already closed for
+"an enforcing check examined zero subjects", applied here to its mirror
+image, "a ratcheted pool's committed baseline no longer holds".
+
+`baseline_overrun_violations(root, current_counts)`
+(`frob.gates._ratchet`) closes it: given the caller's own honest
+per-rule current live counts (the same "caller decides how a count is
+measured, this function only judges the number" contract
+`resolve_ratchet_severity` already uses), it reports ONE named `BASE001`
+error per rule whose `current_counts[rule_id]` exceeds
+`len(pool.entries)` for that rule's committed `RatchetPool` --  naming
+the lock file (`frob-ratchet.lock.json`), the rule id, and both counts,
+e.g.:
+
+```
+BASE001: frob-ratchet.lock.json rule=DEAD001 current 3 exceeds
+baseline 2 -- this ratchet pool has grown past its committed baseline;
+snapshot the new findings deliberately (`frob pool snapshot DEAD001`)
+or fix them before landing
+```
+
+Silent (by design, mirroring `resolve_ratchet_severity`'s own scope) for:
+a rule absent from `current_counts` (the caller did not measure it this
+run -- BASE001 never invents a count), and a rule with NO committed pool
+at all (`pool_for` returns `None`, i.e. `frob pool snapshot` has never
+run for it) -- an un-ratcheted rule has no accepted baseline to exceed,
+and forcing one into existence belongs to `frob pool snapshot`/
+`ratchet_enabled_rules`, not to this finding.
+
+**Not yet wired into a live gate.** `frob.gates.__init__`'s `_ProcessJob`
+pipeline is where `SELFAUDIT001` (`sys_gate`) is registered, and BASE001
+should be registered the same way once a rule is actually ratcheted
+(`[gates.ratchet] rules`, currently empty -- see the Ratchet pools
+section above) -- but `src/frob/gates/__init__.py` was held by another
+in-progress ticket's scope lease (T-4540) when this was built, so this
+ticket's own declared scope (`src/frob/gates/_ratchet.py` only) stops at
+the finding-producing function itself, tested directly in
+`tests/test_gates_ratchet.py::TestBaselineOverrunViolations`. A follow-up
+ticket wires `baseline_overrun_violations` into the gate pipeline (and,
+per this consumer's own ask, into the land pre-sweep the same way
+`SELFAUDIT001`'s findings already re-verify post-merge, `frob.tickets.
+_land.land`) once that lease clears.
+
 ## `--fix` Tier-A deterministic auto-fix handlers (T-1138)
 
 <!-- frob:describes src/frob/gates/_fix_engine.py::apply_tier_a_fixes -->
