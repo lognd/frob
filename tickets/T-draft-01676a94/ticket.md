@@ -19,6 +19,10 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
+attachments:
+- path: T-draft-01676a94/attachments/01-untitled.md
+  caption: ''
+  sha256: 36bf676a8ecff02829fe5d2bf2d8e50874036895a86966819d181bf329561761
 threat: tampering
 component: gates
 anchor: false
