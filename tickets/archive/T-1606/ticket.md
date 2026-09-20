@@ -95,6 +95,14 @@ scope_changes:
     this ticket changed (canonicalize_text, _format_one_path)'
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve per-run-callers and future-language guidance trimmed from
+    _fmt_directives.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2536
+  new_length: 3314
 evidence:
 - tests/test_gates_fmt_directives.py::TestResolveLineLength::test_python_uses_ruff_config
 - tests/test_gates_fmt_directives.py::TestResolveLineLength::test_rust_uses_rustfmt_toml
@@ -137,3 +145,16 @@ Deliverables:
 - Tests per language: config present, config absent (tool default), and no-limit languages.
 
 Do not change the Python path's behavior: ruff stays the owner there, and the existing ruff-derived value must keep coming out unchanged.
+
+
+T-4709 follow-up (condensed from the T-1606 design-decision comment in
+src/frob/gates/_fmt_directives.py, trimmed for DOCARCH002's 12-line
+cap): the pre-ticket callers were `format_paths`/`_fix_engine_text`/
+`_land_cmd`/`_todo_fmt`, each calling `read_line_length(root)` exactly
+ONCE per run (ruff owns Python's width, and a noqa suppression for E501
+is what a directive wrap stands in for there). Go/Zig/Bash are not yet
+entries in `_MARKERS` (no adapter registers `.go`/`.zig`/`.sh` today) --
+when one is added, its `_LANGUAGE_WIDTH_SOURCES` entry should be `None`
+outright (no config lookup at all), exercising the same "no width
+limit" contract `TestResolveLineLength.test_no_limit_language_never_
+wraps` proves at the `canonicalize_text`/`_canonical_lines` level today.
