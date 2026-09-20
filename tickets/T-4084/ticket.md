@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: medium
 parent: null
 tier: epic
-sprint: v0.556.0
+sprint: v0.538.0
 runs_last: false
 milestone: v0.556.0
 runs_last_parallel_safe: false
@@ -20,6 +20,13 @@ no_scope_declared: true
 no_scope_declared_reason: 'tier=epic: collects a tenth consumer''s ten findings; most
   are corroboration routed to existing tickets, and the two genuinely new items (docs
   absent from the wheel, graph cache stale mid-check) need their own scoped children'
+triage_changes:
+- field: sprint
+  old_value: v0.556.0
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: 'measured the packaging question item 4 raised: pyproject packages only
