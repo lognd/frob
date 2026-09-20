@@ -91,6 +91,14 @@ scope_changes:
   reason: follow-up ticket filed from this ticket's own work
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: archive-write hazard proof (T-2994 constraint 3) before batch
+    work'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4230
+  new_length: 5270
 evidence:
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_is_now_scanned_t3275
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_legitimate_self_reference_stays_quiet_t3275
@@ -187,3 +195,21 @@ ACCEPTANCE
 - The scanned-scope log line preserved.
 - A stated count of real violations found by the widened scope, filed
   separately.
+
+T-4718 sweep (condensed from src/frob/testing/_coverage_refresh.py:96-110,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's historical
+framing, kept verbatim below.
+
+#: LAST-RESORT fallback only (T-3275): the package this repo's own
+#: coverage recipe measures (mirrors `Makefile`'s `--cov=src/frob`).
+#: `native_coverage_refresh`'s default now RESOLVES the real target from
+#: the scanned repo's own `pyproject.toml` `[project].name` via
+#: `_resolve_cov_target` below, so a consumer repo whose package is not
+#: literally `frob` measures its own code instead of silently measuring
+#: frob's (T-3275, FROBLEMS.md F-011: a consumer's `frob coverage` run
+#: measured `src/frob`, got "No data was collected", and was marked
+#: DEGRADED). This literal is now reached only when that resolution
+#: cannot determine an answer (missing/malformed pyproject.toml, or a
+#: declared name whose src-layout directory does not exist) -- an
+#: explicit `cov_target=` caller (both existing call sites pass none
+#: today) always wins over both.
