@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-2964
 tier: story
-sprint: null
+sprint: v0.537.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'tier=story rollup: all file scope lives in the 14 child
   leaves (T-4759..T-4809); this ticket carries the decision record only'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.537.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: Given the 14 child leaves are closed, when a fresh project of every registered
