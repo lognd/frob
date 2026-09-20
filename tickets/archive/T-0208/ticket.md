@@ -30,6 +30,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 662
   new_length: 3016
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _obfuscation.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3015
+  new_length: 4823
 evidence:
 - tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_high_entropy_string_flagged
 - tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_plain_string_not_flagged
@@ -86,3 +92,34 @@ kept verbatim below.
 # "string". The candidate-COUNT cap remains a distinct, still-needed
 # safety valve against files with huge numbers of small quoted tokens
 # (generated data tables).
+
+T-4718 sweep (condensed from src/frob/vet/_obfuscation.py:78-103,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+# Escapes (`\\x`) are skipped as a pair. Entropy is computed over the FULL
+# literal, never truncated (review round 2 -- see the T-0208 note above:
+# truncating changes the entropy score and can hide a real hit).
+# `_MAX_CANDIDATE_LEN` is a 1MB memory-safety ceiling, not a normal-path
+# cap; the file is capped at `_MAX_CANDIDATES_PER_FILE` literals.
+#
+# UNTERMINATED CANDIDATES (review round 1 caught this): a quote char with
+# no matching close anywhere later in the file is NOT a literal -- it
+# matches the OLD regex's actual behavior (a failed match attempt at that
+# start position, retried one char later), not "run to end of text".
+# Treating it as a literal was an undisclosed behavior change: after a
+# mismatched-quote region consumes the file's last `'`, the old regex
+# gives up on that open quote and correctly re-syncs on the next
+# docstring's triple-quote; the old (buggy) version of this function
+# instead swallowed that docstring into one giant unterminated "literal",
+# silently DROPPING it from the entropy check -- a detection gap, not a
+# disclosed false-positive tradeoff.
+#
+# Detecting "no closing quote anywhere later" naively (scan-to-EOF, then
+# discard and retry one char over) reintroduces the exact quadratic
+# blowup T-0208 fixed, for a file with many trailing unmatched quote
+# chars. Fixed with an O(1) reject: `last_single`/`last_double` are each
+# quote type's LAST raw occurrence in the text, computed once; if a
+# candidate opens at or after that position, it can never close and is
+# rejected without scanning -- one linear pre-pass plus O(1) per
+# rejection keeps the whole function O(len(text)).
