@@ -10,6 +10,10 @@ priority: medium
 parent: T-0576
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/**
 - src/frob/gates/**
@@ -19,6 +23,8 @@ scope:
 - tests/unit/gates/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/gates.md
@@ -48,6 +54,13 @@ scope_changes:
     and gate tests
   actor: logan
   at: '2026-07-27'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve DEPR005 baseline detail trimmed from _debt_deprecated.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1276
+  new_length: 1741
 evidence:
 - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_new_caller_errors
 - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_no_baseline_entry_is_silent
@@ -70,7 +83,19 @@ acceptance:
   - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_symbol_no_longer_deprecated_is_dropped
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-0639 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
 
 Coordinator design decision 2026-07-27: baseline-ratchet, not callgraph extension. Record each DEPR003-deprecated symbol's current caller/reference set (file-level references via the exports --consumers machinery from T-0876 plus textual symbol references, same resolution the DEPR scan already trusts) into a committed .frob baseline (baseline-chunks.json precedent, T-0751). New rule DEPR004 fires at ERROR when a deprecated symbol's reference set gains a member absent from the baseline; shrinkage auto-tightens the baseline at land (PERF009 ratchet precedent). No general public-symbol callgraph work in this ticket -- that cost/precision investigation stays out of scope. This makes the ticket implementable as scoped.
+
+
+T-4709 follow-up (condensed from the deprecated-symbol-gate comment
+block in src/frob/gates/_debt_deprecated.py, trimmed for DOCARCH002's
+12-line cap): DEPR005's baseline is the committed
+frob-deprecated-baseline.lock.json (frob.gates._deprecated_baseline) --
+a fresh adopter of a symbol already declared on its way out, distinct
+from DEPR003/004's sunset-clock states and orthogonal to them (a
+symbol can be both in-window/past-sunset AND gaining new callers).
