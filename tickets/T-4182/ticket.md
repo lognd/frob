@@ -9,7 +9,7 @@ created: '2026-09-07'
 priority: critical
 parent: null
 tier: epic
-sprint: v0.539.0
+sprint: v0.538.0
 runs_last: false
 milestone: 0.539.0
 runs_last_parallel_safe: false
@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'tier=epic: a decomposition container; scope belongs on
   the leaves'
+triage_changes:
+- field: sprint
+  old_value: v0.539.0
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given the findings in this epic, when it is decomposed, then each has its
