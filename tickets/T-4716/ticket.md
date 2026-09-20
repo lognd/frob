@@ -11,7 +11,7 @@ blocked_by:
 - T-4661
 parent: T-4655
 tier: ticket
-sprint: null
+sprint: v0.535.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -29,6 +29,12 @@ triage_changes:
   new_value: T-4655
   reason: 'T-3032 dispatch: DOCENUM002 lint follow-up belongs under the GATES story
     alongside T-4661'
+  actor: logan
+  at: '2026-09-19'
+- field: sprint
+  old_value: null
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
