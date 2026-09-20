@@ -44,6 +44,25 @@ scope_changes:
     same behavior, no test rename/delete
   actor: logan
   at: '2026-09-17'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _unity_api.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 396
+  new_length: 2082
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _unity_api.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2081
+  new_length: 3767
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _unity_api.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3766
+  new_length: 5452
 evidence:
 - tests/unit/strata/test_effects.py::TestNoRetiredBareKindEmitted::test_no_registry_entry_emits_a_retired_bare_kind
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
@@ -61,3 +80,87 @@ anchor_reason: null
 land_commit: null
 ---
 Measured 2026-09-17 by the T-4495 implementer: 1 failure in tests/unit/strata/test_effects.py, TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map, traced to T-4536 (C# capability resolver) adding entries to _PATTERNS whose kinds overlap _EXTENDED_KINDS and _KIND_MAP. Fix the registry entries (or the drift lock) so the invariant holds; no behaviour change to the resolver.
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_unity_api.py:68-89, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+    # T-4554: the bare coarse "net" capability_kind these four entries
+    # used (T-4514's own acceptance criterion names "the net capability"
+    # specifically for `UnityWebRequest.Get`) is a RETIRED scanner kind
+    # (`_effects.py::_KIND_MAP`'s own module docstring: "the old bare
+    # `net`:`net` entry is retired since no registry entry emits the
+    # unqualified `net` vet-kind anymore" -- T-0771's precise net-connect/
+    # net-listen split). It slipped through unnoticed at T-4514 land time
+    # because nothing enforced that claim until
+    # `TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_
+    # kind_map` (tests/unit/strata/test_selfconform.py) started failing
+    # on dev: `all_pattern_kinds` (every kind any registry entry emits)
+    # then contained a bare "net" neither `_EXTENDED_KINDS` nor
+    # `_KIND_MAP` accounts for. Recategorized to `net-connect` -- the SAME
+    # precise kind `_dotnet_bcl.py`'s `Dns.GetHostAddresses`/etc already
+    # use for an outbound-network-reach signal with no listen-side
+    # semantics, and (`_kinds.py`'s `WIRED_MODE_FAMILIES`) a coarse
+    # `may "net"` declaration still covers `net-connect` exactly as it
+    # covered the retired bare `net`, so no resolver behavior change: a
+    # node that already declared `may "net"` for these call sites keeps
+    # passing; only the raw scanner-kind bucket these needles land in
+    # changes, from an unenforceable orphan to a normalized, drift-lock-
+    # accounted-for one.
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_unity_api.py:68-89, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+    # T-4554: the bare coarse "net" capability_kind these four entries
+    # used (T-4514's own acceptance criterion names "the net capability"
+    # specifically for `UnityWebRequest.Get`) is a RETIRED scanner kind
+    # (`_effects.py::_KIND_MAP`'s own module docstring: "the old bare
+    # `net`:`net` entry is retired since no registry entry emits the
+    # unqualified `net` vet-kind anymore" -- T-0771's precise net-connect/
+    # net-listen split). It slipped through unnoticed at T-4514 land time
+    # because nothing enforced that claim until
+    # `TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_
+    # kind_map` (tests/unit/strata/test_selfconform.py) started failing
+    # on dev: `all_pattern_kinds` (every kind any registry entry emits)
+    # then contained a bare "net" neither `_EXTENDED_KINDS` nor
+    # `_KIND_MAP` accounts for. Recategorized to `net-connect` -- the SAME
+    # precise kind `_dotnet_bcl.py`'s `Dns.GetHostAddresses`/etc already
+    # use for an outbound-network-reach signal with no listen-side
+    # semantics, and (`_kinds.py`'s `WIRED_MODE_FAMILIES`) a coarse
+    # `may "net"` declaration still covers `net-connect` exactly as it
+    # covered the retired bare `net`, so no resolver behavior change: a
+    # node that already declared `may "net"` for these call sites keeps
+    # passing; only the raw scanner-kind bucket these needles land in
+    # changes, from an unenforceable orphan to a normalized, drift-lock-
+    # accounted-for one.
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_unity_api.py:68-89, trimmed for
+DOCARCH002's 12-line cap): the trimmed block's full original text, kept
+verbatim below.
+
+    # T-4554: the bare coarse "net" capability_kind these four entries
+    # used (T-4514's own acceptance criterion names "the net capability"
+    # specifically for `UnityWebRequest.Get`) is a RETIRED scanner kind
+    # (`_effects.py::_KIND_MAP`'s own module docstring: "the old bare
+    # `net`:`net` entry is retired since no registry entry emits the
+    # unqualified `net` vet-kind anymore" -- T-0771's precise net-connect/
+    # net-listen split). It slipped through unnoticed at T-4514 land time
+    # because nothing enforced that claim until
+    # `TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_
+    # kind_map` (tests/unit/strata/test_selfconform.py) started failing
+    # on dev: `all_pattern_kinds` (every kind any registry entry emits)
+    # then contained a bare "net" neither `_EXTENDED_KINDS` nor
+    # `_KIND_MAP` accounts for. Recategorized to `net-connect` -- the SAME
+    # precise kind `_dotnet_bcl.py`'s `Dns.GetHostAddresses`/etc already
+    # use for an outbound-network-reach signal with no listen-side
+    # semantics, and (`_kinds.py`'s `WIRED_MODE_FAMILIES`) a coarse
+    # `may "net"` declaration still covers `net-connect` exactly as it
+    # covered the retired bare `net`, so no resolver behavior change: a
+    # node that already declared `may "net"` for these call sites keeps
+    # passing; only the raw scanner-kind bucket these needles land in
+    # changes, from an unenforceable orphan to a normalized, drift-lock-
+    # accounted-for one.
