@@ -2,7 +2,7 @@
 id: T-4722
 title: 'Source narrative C3: tickets/ (land pipeline, models, store) -- 19 files,
   61 runs, 1388 lines'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -24,7 +24,6 @@ scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land_queue.py
 - src/frob/tickets/_land_release.py
-- src/frob/tickets/_land_squash.py
 - src/frob/tickets/_land_verify.py
 - src/frob/tickets/_live_tracker.py
 - src/frob/tickets/_models.py
@@ -34,28 +33,52 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/tickets/_unlanded.py
 - src/frob/tickets/_worktree_sweep.py
+- src/frob/tickets/_land_squash.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_land_squash.py
+  reason: released to the critical DOC006/T-3324 fix; its comment runs go to the ninth
+    narrative cluster
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: no-op retry to force mirror sync
+  actor: logan
+  at: '2026-09-19'
+evidence:
+- tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder::test_land_lock_reclaims_promptly_after_sigkill
+- tests/unit/test_ticket_store.py::TestSlugify::test_lowercases_and_hyphenates
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_reworded_heading_still_flagged_structurally
+- tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_non_marker_first_arg_is_not_stripped
+- tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_pyproject_version_from_disk
 designated_repro_test: null
 acceptance:
 - text: 'given the 19 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
-  evidence: []
+  evidence:
+  - tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder::test_land_lock_reclaims_promptly_after_sigkill
 - text: given every block that cited a ticket, when the sweep is done, then that narrative
     is readable in that ticket body -- moved, never deleted (T-2994 constraint 1)
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestSlugify::test_lowercases_and_hyphenates
 - text: given every block that cited NO ticket, when the sweep is done, then its narrative
     is in this cluster ticket body
-  evidence: []
+  evidence:
+  - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_reworded_heading_still_flagged_structurally
 - text: given the whole diff, when git diff -w is taken over non-comment lines, then
     it is empty -- comments only, no behaviour change
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_non_marker_first_arg_is_not_stripped
 - text: given each batch of frob narrative move calls, when the batch finishes, then
     frob ticket list exits 0 (T-2994 constraint 3, the DuplicateId hazard)
-  evidence: []
+  evidence:
+  - tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_pyproject_version_from_disk
 threat: null
 component: null
 anchor: false
