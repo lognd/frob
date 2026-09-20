@@ -235,6 +235,60 @@ class TestScopeDocCodeGaps:
         gaps = scope_doc_code_gaps(snap, ("a.py", "docs/x.md"))
         assert gaps == ()
 
+    # frob:ticket T-3412
+    def test_scoping_the_whole_doc_file_subsumes_its_own_anchors(self) -> None:
+        """T-3412 REPRO: a `DESCRIBES` edge whose "code" side is ANOTHER
+        anchor in the SAME doc file (docs commonly cross-reference their
+        own sections this way) used to compute that side's file via
+        `edge.target.split("::", 1)[0]` alone -- a no-op on an anchor
+        string (no `::` to split on), leaving the `#anchor` suffix
+        attached. `scope_matches` then compared that un-stripped
+        `'docs/x.md#bar'` against a scope entry of bare `'docs/x.md'`
+        and never matched, so scoping the WHOLE doc file still produced
+        a closure warning for every one of its own anchors -- T-3412's
+        "drowning closure warnings" (272 of them on `--add
+        docs/guides/coordinator-scripts.md`). Scoping the file must
+        subsume every `#anchor` within it: `gaps` must be empty."""
+        # frob:tests src/frob/graph/affects.py::scope_doc_code_gaps
+        from frob.graph.affects import scope_doc_code_gaps
+
+        edges = (
+            Edge(
+                src="docs/x.md#foo",
+                kind=EdgeKind.DESCRIBES,
+                target="docs/x.md#bar",
+                origin="docs/x.md:3",
+            ),
+        )
+        snap = _snapshot((), edges)
+        gaps = scope_doc_code_gaps(snap, ("docs/x.md",))
+        assert gaps == ()
+
+    # frob:ticket T-3412
+    def test_scoping_the_whole_doc_file_still_flags_a_genuinely_unscoped_anchor(
+        self,
+    ) -> None:
+        """Control for the fix above: a `DESCRIBES` edge whose "code" side
+        is an anchor in a DIFFERENT doc file must still be flagged --
+        the fix subsumes a doc file's OWN anchors, it must not blanket-
+        suppress cross-file anchor gaps."""
+        # frob:tests src/frob/graph/affects.py::scope_doc_code_gaps
+        from frob.graph.affects import scope_doc_code_gaps
+
+        edges = (
+            Edge(
+                src="docs/x.md#foo",
+                kind=EdgeKind.DESCRIBES,
+                target="docs/y.md#bar",
+                origin="docs/x.md:3",
+            ),
+        )
+        snap = _snapshot((), edges)
+        gaps = scope_doc_code_gaps(snap, ("docs/x.md",))
+        assert len(gaps) == 1
+        assert gaps[0].direction == "doc_missing_code"
+        assert gaps[0].missing_file == "docs/y.md"
+
 
 # frob:ticket T-0998
 class TestScopeTestGaps:

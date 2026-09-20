@@ -2,14 +2,14 @@
 id: T-3412
 title: 'frob ticket scope: adding a doc FILE to scope does not subsume its own anchors,
   drowning closure warnings'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
 priority: medium
 parent: null
 tier: ticket
-sprint: v0.536.0
+sprint: v0.534.0
 runs_last: false
 milestone: 0.534.0
 runs_last_parallel_safe: false
@@ -48,13 +48,10 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
-- field: sprint
-  old_value: v0.534.0
-  new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
-designated_repro_test: null
+evidence:
+- tests/test_graph_affects.py::TestScopeDocCodeGaps::test_scoping_the_whole_doc_file_subsumes_its_own_anchors
+- tests/test_graph_affects.py::TestScopeDocCodeGaps::test_scoping_the_whole_doc_file_still_flags_a_genuinely_unscoped_anchor
+designated_repro_test: tests/test_graph_affects.py::TestScopeDocCodeGaps::test_scoping_the_whole_doc_file_subsumes_its_own_anchors
 threat: null
 component: null
 anchor: false

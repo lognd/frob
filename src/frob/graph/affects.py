@@ -262,11 +262,34 @@ def _add_scope_gap(
     )
 
 
+# frob:ticket T-3412
+def _ref_file(ref: str) -> str:
+    """The bare file path underneath a symref/anchor `ref` (T-3412): strips
+    a code symref's `::qualname` suffix AND a doc anchor's `#anchor`
+    suffix, whichever is present -- so a scope glob covering the whole
+    file (`'docs/x.md'`) matches consistently regardless of whether `ref`
+    names a code symbol (`'a.py::foo'`), a doc anchor
+    (`'docs/x.md#foo'`), or a code-side ref that happens to itself be
+    ANOTHER doc anchor (a `DESCRIBES`/`DOC` edge between two anchors in
+    the same guide, common in self-referencing docs). Before this, only
+    `::` or only `#` was stripped depending on which side of the edge
+    `ref` came from, so an anchor-shaped ref reaching the `::`-only split
+    (or vice versa) kept its suffix and never matched a whole-file scope
+    entry -- the root cause of T-3412's "adding a doc FILE to scope does
+    not subsume its own anchors" (272 closure warnings on one `--add`)."""
+    return ref.split("::", 1)[0].split("#", 1)[0]
+
+
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 # frob:ticket T-0998
+# frob:ticket T-3412
 # frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_code_in_scope_doc_target_unscoped  # noqa: E501
 # frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_doc_in_scope_code_target_unscoped  # noqa: E501
 # frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_clean_when_both_sides_in_scope  # noqa: E501
+# frob:tests \
+# tests/test_graph_affects.py::TestScopeDocCodeGaps.test_scoping_the_whole_doc_file_subsumes_its_own_anchors  # noqa: E501
+# frob:tests \
+# tests/test_graph_affects.py::TestScopeDocCodeGaps.test_scoping_the_whole_doc_file_still_flags_a_genuinely_unscoped_anchor  # noqa: E501
 def scope_doc_code_gaps(
     snapshot: GraphSnapshot, scope: tuple[str, ...] | list[str]
 ) -> tuple[ScopeClosureGap, ...]:
@@ -284,21 +307,21 @@ def scope_doc_code_gaps(
     seen: set[tuple[str, str, str]] = set()
 
     scoped_symbols = sorted(
-        ref for ref in snapshot.symbols if scope_matches(ref.split("::", 1)[0], scope)
+        ref for ref in snapshot.symbols if scope_matches(_ref_file(ref), scope)
     )
     for ref in scoped_symbols:
         for target in sorted(_doc_targets_for(snapshot, ref)):
-            doc_file = target.split("#", 1)[0]
+            doc_file = _ref_file(target)
             if not scope_matches(doc_file, scope):
                 _add_scope_gap(gaps, seen, "code_missing_doc", ref, target, doc_file)
 
     for edge in snapshot.edges:
         if edge.kind == EdgeKind.DOC:
-            doc_file = edge.target.split("#", 1)[0]
-            code_file = edge.src.split("::", 1)[0]
+            doc_file = _ref_file(edge.target)
+            code_file = _ref_file(edge.src)
         elif edge.kind == EdgeKind.DESCRIBES:
-            doc_file = edge.src.split("#", 1)[0]
-            code_file = edge.target.split("::", 1)[0]
+            doc_file = _ref_file(edge.src)
+            code_file = _ref_file(edge.target)
         else:
             continue
         if scope_matches(doc_file, scope) and not scope_matches(code_file, scope):
