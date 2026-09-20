@@ -8,7 +8,7 @@ created: '2026-09-07'
 priority: high
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.540.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -29,6 +29,12 @@ triage_changes:
     the medium-priority cleanup this was filed as
   actor: logan
   at: '2026-09-07'
+- field: sprint
+  old_value: null
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: 'carries forward two facts from T-4138''s implementation that cannot be
