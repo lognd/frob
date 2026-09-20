@@ -143,6 +143,12 @@ body_changes:
   at: '2026-08-31'
   old_length: 402
   new_length: 1057
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _kinds.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1056
+  new_length: 2356
 evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_cuda_capability_dup_docblock_are_implemented
@@ -159,3 +165,25 @@ land_commit: 4b566117b4049574f15ca2a303ba26168413dbba
 found while working T-1602: cuda gets a real frob.lang grammar/walker but the capability dangerous-op registry, dup clone-detection exhaustiveness table, and DOC004 fenced-code-block bucket have no cuda entry yet -- mirrors T-2906's bash/csharp and T-1601's java facet-wiring follow-ups exactly (T-3492). frob.lang._support marks these three facets KNOWN_GAP for cuda citing this ticket in the interim.
 
 <!-- frob:waive BUG002 reason="facet-wiring/feature ticket (mirrors T-3492's identical java precedent and its own accepted BUG002 waiver), not a defect with a pre-existing failing behavior -- at the parent commit cuda simply had zero cells in the capability/dup/docblock matrices (no LANGUAGES entry existed yet), so test_no_unexcused_empty_cells trivially holds at parent (nothing to be unexcused when the language does not exist in the matrix at all) and again at the fix (every new cell is now patterned or excused). No failing-at-parent state exists to reproduce because the gap being closed is an absence of entries, not a wrong existing one." -->
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_kinds.py:9-25, the LANGUAGES block,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full
+original text, kept verbatim below.
+
+#: every language the matrix reasons about. C and C++ share one bucket
+#: (`c-cpp`) since the dangerous idioms -- `system`/`popen`/`exec*`/
+#: `dlopen`/`strcpy`-family -- are identical C ABI surface in both.
+#: T-2906: bash and csharp added -- each gets real `_DangerousOperation`
+#: patterns for its highest-value idioms (exec/eval/fetch_url/env/fs) in
+#: `_dangerous_ops_other.py`, plus generated `CAPABILITY_MATRIX_EXCUSES`
+#: cells (`_new_adapter_matrix_excuses` in `_matrix.py`, mirrors `frob.
+#: dup._exhaustiveness._non_python_excuses`'s generated-not-hand-copied
+#: shape) for every kind that genuinely has no idiom in that language.
+#: T-3492: java added, same discipline -- real patterns for its
+#: highest-value idioms (net/env-read/exec/deserialize) in the new
+#: `_dangerous_ops_java.py`, generated excuses for the rest.
+#: T-3493: cuda added, same discipline -- a `.cu`/`.cuh` file compiles
+#: with a HOST C/C++ compiler, so its real patterns in the new
+#: `_dangerous_ops_cuda.py` mirror c-cpp's own exec/fs/ffi/net entries
+#: verbatim (same C ABI), generated excuses for the rest.
