@@ -2,14 +2,14 @@
 id: T-4118
 title: 'H3-6: a failure-injection test must assert on every response field, not only
   the field the test-plan row named'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-09-06'
 priority: critical
 parent: T-4109
 tier: ticket
-sprint: v0.538.0
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -52,12 +52,9 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-13'
-- field: sprint
-  old_value: v0.541.0
-  new_value: v0.538.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- cmd:grep -n "^\*\*GOOD\*\*\|^\*\*BAD\*\*\|roll-up" docs/guides/extending/failure-injection-acceptance-criteria.md
+  exit=0 sha256=bd63b2c2a141
 designated_repro_test: null
 threat: null
 component: null
