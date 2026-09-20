@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-draft-8c7e665d
 tier: ticket
-sprint: null
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -57,6 +57,13 @@ scope_changes:
   glob: tests/test_hook_frob_suggest_rules.py
   reason: golden tests for narrowed rule verdicts, in a new file to avoid lease collision
     with T-draft-36c347fe's tests/test_hook_frob_suggest.py
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
