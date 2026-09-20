@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: high
 parent: T-3928
 tier: ticket
-sprint: null
+sprint: v0.539.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -27,6 +27,13 @@ scope_changes:
     was picked from a plausible module name, not the real parse site
   actor: logan
   at: '2026-09-06'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.539.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: T-4036 item 3 is the fourth arrival of docstring-claims-as-obligations;
