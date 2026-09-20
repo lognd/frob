@@ -9,6 +9,7 @@ created: '2026-09-19'
 priority: high
 blocked_by:
 - T-4760
+- T-4989
 parent: T-4757
 tier: ticket
 sprint: v0.537.0
