@@ -368,12 +368,9 @@ class TestWriteTicket:
     # frob:ticket T-1679
     def test_content_loss_refuses_by_default(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_refuses_by_default  # noqa: E501
-        """T-1679 flipped the T-1637 guard's default: a write that would
-        replace an existing evidence list AND Done report with nothing now
-        REFUSES by default, not just warns -- the whole point of a guard
-        is to prevent the thing it detects, and the old warn-only default
-        would still have let the T-1636 field incident (12 evidence ids +
-        a 12KB Done report discarded) happen today, just with a log line."""
+        """Asserts a write that would replace an existing evidence list
+        and Done report with nothing refuses by default, rather than only
+        warning. See T-1679/T-1637 for the design rationale."""
         done = _ticket().model_copy(
             update={
                 "evidence": ("tests/test_x.py::test_ok",),
@@ -402,11 +399,9 @@ class TestWriteTicket:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_non_strict_opt_out_warns_loudly_instead_of_refusing  # noqa: E501
-        """`strict_no_content_loss=False` is the explicit, disclosed opt-
-        out (T-1679) for a caller with a specific reason to want the OLD
-        T-1637 warn-and-proceed behavior instead of the new strict
-        default -- still logs the same loud warning, just does not
-        refuse."""
+        """Asserts `strict_no_content_loss=False` is an explicit,
+        disclosed opt-out that still logs the same loud warning but does
+        not refuse. See T-1679/T-1637 for the design rationale."""
         done = _ticket().model_copy(
             update={
                 "evidence": ("tests/test_x.py::test_ok",),
@@ -550,15 +545,11 @@ class TestV2WriteTicket:
 
     # frob:ticket T-2270
     def test_write_all_v2_keeps_done_report_split_out(self, tmp_path: Path) -> None:
-        """T-2270: `write_all`'s v2 branch used to write `ticket.body`
-        (already carrying any sibling `done-report.md` merged in by
-        `load_all`) straight to `ticket.md`, silently re-embedding the
-        report -- exactly the bulk-write path a land-time ledger-wide
-        rewrite (e.g. the draft-id-reference rewrite) drives on every
-        ticket, not just the ones it actually changes. A round trip
-        through `load_all` -> `write_all` must leave `ticket.md`
-        report-free and `done-report.md` as the one on-disk copy, same as
-        a single-ticket `write_ticket` already guarantees."""
+        """Asserts a round trip through `load_all` -> `write_all` (the
+        bulk-write path a land-time ledger-wide rewrite drives on every
+        ticket) leaves `ticket.md` report-free and `done-report.md` as
+        the one on-disk copy, the same as a single-ticket `write_ticket`
+        already guarantees. See T-2270 for the design rationale."""
         # frob:tests \
         # tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_all_v2_keeps_done_report_split_out kind="unit"  # noqa: E501
         (tmp_path / "tickets" / "T-0001").mkdir(parents=True)
@@ -672,16 +663,12 @@ class TestWriteArchivedTicket:
     def test_v2_write_archived_ticket_keeps_done_report_split_out(
         self, tmp_path: Path
     ) -> None:
-        """T-2270: `write_archived_ticket`'s v2 branch used to write
-        `ticket.body` straight to the archive's `ticket.md` verbatim --
-        if that body had already been merged with a sibling
-        `done-report.md` (`load_archive`'s `_merge_sibling_done_report`,
-        exactly what `--replace --archived` loads through), the report
-        was silently re-embedded in `ticket.md`, duplicating it. This is
-        the acceptance-1 repro for the archive side: a ticket that HAS a
-        Done report body, round-tripped through `write_archived_ticket`,
-        must keep `ticket.md` report-free and `done-report.md` as the one
-        on-disk copy, byte for byte."""
+        """Asserts a ticket with a Done report body, round-tripped
+        through `write_archived_ticket` (after `load_archive`'s
+        `_merge_sibling_done_report` merges it in, as `--replace
+        --archived` does), keeps `ticket.md` report-free and
+        `done-report.md` as the one on-disk copy, byte for byte. See
+        T-2270 for the design rationale."""
         # frob:tests \
         # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archived_ticket_keeps_done_report_split_out kind="unit"  # noqa: E501
         from frob.tickets._store import v2_archive_dir, write_archived_ticket

@@ -23,9 +23,8 @@ from frob.app.ticket_runner._rapid_sweep import (
 
 # frob:ticket T-4335
 class TestPersistBaseline:
-    """`_persist_baseline` -- the extracted, caller-controlled write half
-    of what used to be `_measure_fresh_and_write_baseline`'s unconditional
-    write (T-4335)."""
+    """Covers `_persist_baseline`, the caller-controlled write half of
+    baseline persistence. See T-4335 for the design rationale."""
 
     # frob:ticket T-4335
     def test_writes_and_logs_survival_warning_on_loss(
@@ -221,11 +220,10 @@ class TestDeferredSweepRun:
     def test_fresh_baseline_files_normally_no_new_noise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-2929 must-stay-quiet case: `rapid_soft_warning` returning
-        `None` (a fresh, current verification window) means the sweep
-        files exactly as it did before this change -- no new refusal, no
-        new debt line, identical behavior to `test_new_findings_file_a_
-        ticket_and_rebaseline`."""
+        """Asserts a fresh, current verification window (`rapid_soft_
+        warning` returning `None`) files with no refusal and no debt
+        line, identical to `test_new_findings_file_a_ticket_and_
+        rebaseline`. See T-2929 for the design rationale."""
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
         # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
@@ -567,13 +565,11 @@ class TestDeferredSweepSpawn:
     def test_spawn_pins_frob_root_env_not_bare_os_environ(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-2030's own repro: watch this FAIL first against the unfixed
-        code -- `Popen` used to be called with no `env=` kwarg at all
-        (bare inherited `os.environ`), so an ambient stale `FROB_ROOT` in
-        the landing process's own shell silently overrode the correctly
-        resolved `cwd=root` in the detached child's OWN root resolution.
-        This asserts the actual `Popen` call always pins `FROB_ROOT` to
-        `root`, regardless of what `os.environ` already contains."""
+        """Asserts the `Popen` call always pins `FROB_ROOT` to `root` in
+        its `env=` kwarg, regardless of what `os.environ` already
+        contains, so an ambient stale `FROB_ROOT` in the landing
+        process's own shell cannot override the detached child's
+        resolved root. See T-2030 for the design rationale."""
         # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn.test_spawn_pins_frob_root_env_not_bare_os_environ  # noqa: E501
         import subprocess as subprocess_mod
 

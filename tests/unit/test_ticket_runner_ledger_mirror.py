@@ -372,33 +372,14 @@ class TestVerbStrategy:
     # frob:ticket T-2603
     # frob:ticket T-2675
     def test_derived_sets_track_the_live_strategy_table(self) -> None:
-        """T-2675: this used to be `test_derived_match`, hardcoding
-        T-2603 migration-day's verb membership as two literal frozensets
-        (`OWN_TRANSACTION_VERBS == frozenset({"land", "merge-driver", ...})`,
-        `MIRRORED_LEDGER_VERBS == frozenset({"accept", "anchor", ...})`) --
-        a snapshot valid only at T-2603 landing time, guaranteed to go
-        stale on every later verb addition, and it DID: T-2624 added
-        `"runs-last-parallel-safe"` to `LEDGER_VERB_STRATEGY` and this
-        test silently kept asserting the pre-T-2624 15-verb list, catching
-        nothing, until T-2675 found it.
-
-        `OWN_TRANSACTION_VERBS`/`MIRRORED_LEDGER_VERBS` are already
-        DERIVED filters over `LEDGER_VERB_STRATEGY` (see those constants'
-        own docstrings just above their definitions) -- there was never a
-        reason to also hand-maintain their CURRENT contents as a second
-        literal in this test; that duplication is exactly the "must be
-        hand-updated on every verb addition" failure shape this repo's
-        own doctrine calls a bug waiting to recur (NO DUPLICATION: config/
-        constants included, not just code). This recomputes the identical
-        filter fresh from the LIVE table on every run instead of a frozen
-        list, so it can never desync from a real verb addition/removal
-        again -- it protects the ALIASING invariant (these two exported
-        names really do stay a live filter over `LEDGER_VERB_STRATEGY`,
-        not a name that quietly regresses back to a hand-maintained set,
-        and any future `LedgerWriteStrategy` member missing from the
+        """Asserts `OWN_TRANSACTION_VERBS`/`MIRRORED_LEDGER_VERBS` equal a
+        filter recomputed fresh from the live `LEDGER_VERB_STRATEGY` table
+        on every run, rather than a hand-maintained literal frozenset that
+        would desync on a future verb addition/removal (any
+        `LedgerWriteStrategy` member missing from the
         `OWN_TRANSACTION`/`OWN_TRANSACTION_LEDGER_MIRROR` filter tuple
-        below would show up as a mismatch here too), not a fixed verb
-        count."""
+        below would show up as a mismatch here too). See T-2675 for the
+        design rationale."""
         assert OWN_TRANSACTION_VERBS == frozenset(
             verb
             for verb, strategy in LEDGER_VERB_STRATEGY.items()
@@ -416,11 +397,11 @@ class TestVerbStrategy:
 
     # frob:ticket T-2603
     def test_missing_raises(self) -> None:
-        """The whole point: a verb `_ticket_dispatch_table()` knows about
-        but `LEDGER_VERB_STRATEGY` does not raises `KeyError` naming the
-        gap, rather than silently taking the old code's implicit default
-        (generic-commit-but-never-mirror) -- the exact quiet-default shape
-        that produced the T-2197 bug this ticket cites."""
+        """Asserts a verb `_ticket_dispatch_table()` knows about but
+        `LEDGER_VERB_STRATEGY` does not raises `KeyError` naming the gap,
+        rather than silently defaulting to
+        generic-commit-but-never-mirror. See T-2603/T-2197 for the design
+        rationale."""
         with pytest.raises(KeyError, match="hypothetical-new-verb"):
             ledger_write_strategy_for("hypothetical-new-verb")
 
@@ -990,12 +971,13 @@ class TestEvidenceRebindMirror:
     def test_prior_scope_mirror_then_replace_does_not_leave_the_old_id_resurrectable(
         self, tmp_path: Path
     ) -> None:
-        """The exact T-4143 sequence: a `scope` mirror runs first (as it
-        would for any dispatched ticket that also narrows/widens scope
-        before rebinding evidence), then `replace_evidence` runs. The
-        worktree's later `git merge main` -- picking up sibling tickets'
-        own mirrored commits, as happens at `frob ticket work` warm-up --
-        must not resurrect the OLD id nor conflict on the ticket file."""
+        """Asserts that after a `scope` mirror runs (for a ticket that
+        narrows/widens scope before rebinding evidence) followed by
+        `replace_evidence`, the worktree's later `git merge main` (picking
+        up sibling tickets' own mirrored commits, as at `frob ticket
+        work` warm-up) does not resurrect a stale evidence id nor
+        conflict on the ticket file. See T-4267/T-4143 for the design
+        rationale."""
         from frob.tickets import replace_evidence
 
         primary, worktree = _setup(tmp_path)
@@ -1093,18 +1075,13 @@ class TestEvidenceRebindMirror:
 
 # frob:ticket T-3892
 class TestMirrorPreservesEvidence:
-    """T-3892 part A (F-048/F-068, logand.app-v2): the mirror must not
-    write a partial record that silently drops an evidence id the OTHER
-    side of the ticket's own file already carries. Reproduces F-068's
-    root cause directly: the COORDINATOR runs a `GENERIC_COMMIT_MIRRORED`
-    verb straight against the primary checkout (never touching the
-    worktree at all) while the worktree independently binds evidence, so
-    by the time the worktree's own next mirror runs, primary's copy and
-    the worktree's copy have each accumulated content the other lacks.
-    Before this fix, `_copy_ledger_paths`'s blind overwrite would drop
-    whichever side wrote last; a later `git merge main` in the worktree
-    would then either conflict on the overlapping frontmatter lines, or
-    (F-068's quieter failure mode) silently union stale content back in.
+    """Asserts a mirror never writes a partial record that drops an
+    evidence id the other side of the ticket's own file already carries,
+    covering the case where the coordinator runs a
+    `GENERIC_COMMIT_MIRRORED` verb against the primary checkout while the
+    worktree independently binds evidence, so each side accumulates
+    content the other lacks before the next mirror runs. See T-3892 for
+    the design rationale.
     """
 
     def _seed_ticket_with_evidence(

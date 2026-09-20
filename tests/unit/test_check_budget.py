@@ -99,10 +99,9 @@ class TestDerivePostLandSweepBudget:
     against the repo's real measured total (T-2715)."""
 
     def test_derives_from_measured_timing_with_headroom(self, tmp_path: Path) -> None:
-        """T-2715's own live incident, reproduced: a recorded total of
-        492.18s (gates-fast 168.49 + gates-native 88.48 + gates-security
-        135.35 + lint 3.69 + static 96.17) must derive a budget that
-        actually COVERS that total -- the old hardcoded 480 did not."""
+        """Asserts a budget derived from a recorded total of 492.18s
+        across five measured stage groups covers that total, unlike a
+        fixed 480s ceiling. See T-2715 for the design rationale."""
         check_chunking_mod._save_budget_timing(
             tmp_path,
             {
@@ -298,16 +297,11 @@ class TestRunBudgetedCheck:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_budget_json_stdout_is_pure_parsable_json  # noqa: E501
-        """T-1703: `--budget SECONDS --json`'s stdout must be valid JSON
-        end to end, no leading/trailing prose. Before this fix,
-        `_run_budgeted_check`'s own progress `_log.info` lines (`"running
-        N stage group(s)..."`, `"stage group %r done in %.1fs"`) printed
-        UNCONDITIONALLY, ahead of the JSON payload `_report_check_result`
-        emits -- `run`'s `quiet_stdout_logs` `--json` wrap only covers the
-        setup calls AFTER `_handle_early_exit_modes` dispatches here, so
-        those two lines corrupted every `--budget --json` caller's stdout
-        (the live break: `_unscoped_error_findings`,
-        `frob.app.ticket_runner._land_cmd`, spawns exactly this shape).
+        """Asserts `--budget SECONDS --json`'s stdout is valid JSON end
+        to end, with no leading/trailing prose from
+        `_run_budgeted_check`'s own progress `_log.info` lines, which must
+        not print ahead of the JSON payload `_report_check_result` emits.
+        See T-1703 for the design rationale.
         A caller monkeypatching `--budget`'s own selection to defer one
         group proves the SAME contract holds even on a partial run.
 
@@ -421,14 +415,11 @@ class TestRunBudgetedCheck:
     def test_json_reports_universe_skip_despite_narrow_resume(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        """(MUST FAIL FIRST, T-2235 acceptance 1/2) Reproduces the measured
-        incident: a resume file already trimmed to ONE stage group (from
-        some earlier, unrelated invocation) means this run's own local
-        `deferred` list is empty -- nothing left in `remaining` to defer --
-        so the old code reported nothing skipped and exited clean, having
-        silently never touched the other four groups. The `--json` payload
-        must name every stage group `available_stages()` knows about that
-        this call did not itself execute, not just `deferred`."""
+        """Asserts the `--json` payload names every stage group
+        `available_stages()` knows about that this call did not itself
+        execute (not just `deferred`), even when a resume file already
+        trimmed to one stage group leaves `deferred` empty. See T-2235
+        for the design rationale."""
         import json
 
         monkeypatch.setattr(
@@ -525,11 +516,9 @@ class TestRunBudgetedCheck:
     def test_only_scoped_budget_runs_exactly_the_named_group(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        """(MUST FAIL FIRST, T-2250 acceptance 1) `--only lint --budget N`
-        must run `lint` and report it as executed, never silently run a
-        DIFFERENT stage group and report `lint` as skipped. Reproduces the
-        measured incident on `e02bf61b20be`: `--only lint --budget 120`
-        used to execute `gates-fast` and report `lint` skipped."""
+        """Asserts `--only lint --budget N` runs `lint` and reports it as
+        executed, never a different stage group with `lint` reported
+        skipped. See T-2250 for the design rationale."""
         import json
 
         monkeypatch.setattr(

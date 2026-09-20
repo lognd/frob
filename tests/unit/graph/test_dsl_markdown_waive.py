@@ -205,12 +205,11 @@ class TestMarkdownDirectiveMentionVsUse:
 
 # frob:ticket T-2857
 class TestWaiveReasonUnescapedQuoteIsLoud:
-    """T-2857 mode 1: a `frob:waive` in markdown whose `reason="..."` value
-    contains a bare, unescaped `"` used to be silently accepted -- the old
-    `_MD_WAIVE_RE` only checked for the OPENING `reason="`, never that the
-    value actually closed before `-->`. Two agents hit this for real on
-    different tickets tonight: the target rule stayed unwaived and NOTHING
-    said why."""
+    """Asserts a `frob:waive` in markdown whose `reason="..."` value
+    contains a bare, unescaped `"` is reported rather than silently
+    accepted -- `_MD_WAIVE_RE` must confirm the value actually closes
+    before `-->`, not just that it opened. See T-2857 for the design
+    rationale."""
 
     # frob:ticket T-2857
     def test_unescaped_internal_quote_is_reported_not_silently_accepted(
@@ -269,16 +268,13 @@ class TestWaiveReasonUnescapedQuoteIsLoud:
 
 # frob:ticket T-2857
 class TestBrokenDirectEdgeVerbIsLoud:
-    """T-2857 mode 4: `describes`/`enumerates`/`until`/`ticket`/`doc` used
-    to be unconditionally treated as "already handled" the moment their
-    verb shape-matched, even when the strict per-verb regex had already
-    failed to parse them into a real edge -- e.g. a `frob:describes`
-    symref broken by an embedded space (a bad continuation line-wrap
-    leaving a stray trailing space, T-2857's own measured incident while
-    splitting `_host_isolation.py`). `markdown_anchors` only reaches this
+    """Asserts a `describes`/`enumerates`/`until`/`ticket`/`doc` directive
+    that verb-shape-matches but fails the strict per-verb regex (e.g. a
+    `frob:describes` symref broken by an embedded space) is reported, not
+    treated as already handled -- `markdown_anchors` only reaches this
     check after `_directive_edge` has already failed on the same line, so
-    surfacing these five verbs here can never false-positive on anything
-    that still parses."""
+    it can never false-positive on anything that still parses. See
+    T-2857 for the design rationale."""
 
     # frob:ticket T-2857
     def test_describes_with_a_broken_symref_is_reported_not_silently_dropped(
@@ -321,19 +317,13 @@ class TestBrokenDirectEdgeVerbIsLoud:
 
 # frob:ticket T-1994
 class TestChangelogMultiLineCodeSpanMention:
-    """T-1994: `_blank_code_spans` only masks a SAME-LINE inline-code
-    span (its own docstring, and T-1989's own investigation into why a
-    whole-file multi-line pairing regex is unsafe -- docs/modules/
-    gates.md alone carries an odd total backtick count, so non-greedy
-    file-wide pairing silently mispairs everything downstream of one
-    stray backtick). CHANGELOG.md's T-0509 entry used to quote a
-    `frob:waive`-verb HTML-comment example as prose, wrapped across two
-    physical lines by prose-wrapping -- invisible to the same-line-only
-    mask, so it was reported as a live, unhandled directive (DSL001).
-    Fixed by rewrapping the example onto one physical line rather than
-    teaching the masker to span lines. This reads the REAL repo
-    `CHANGELOG.md` (not a fixture) so a future reflow/rewrap regressing
-    this back onto two lines is caught."""
+    """Asserts the real repo `CHANGELOG.md` (not a fixture) carries no
+    prose-wrapped, multi-line mention of a `frob:waive`-verb HTML-comment
+    example, since `_blank_code_spans` only masks a same-line inline-code
+    span and a multi-line mention would misreport as a live, unhandled
+    DSL001 directive. Reading the real file catches a future
+    reflow/rewrap regression directly. See T-1994 for the design
+    rationale."""
 
     # frob:ticket T-1994
     def test_real_changelog_has_no_malformed_markdown_directive(self) -> None:

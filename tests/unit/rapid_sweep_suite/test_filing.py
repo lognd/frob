@@ -73,12 +73,10 @@ class TestRelativizeRegressionScopeFile:
     # frob:ticket T-2352
     # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_filed_ticket_scope_is_relative_end_to_end  # noqa: E501
     def test_filed_ticket_scope_is_relative_end_to_end(self, tmp_path: Path) -> None:
-        """Positive control 3 (T-2352): a ticket filed by
-        `_file_regression_ticket` with an ABSOLUTE finding path gets a
-        RELATIVE `scope:` entry -- the actual T-2308 incident shape,
-        exercised end-to-end through the real filer, not just the helper
-        in isolation. This MUST FAIL before this ticket's fix (scope would
-        carry the raw absolute path)."""
+        """Asserts a ticket filed by `_file_regression_ticket` with an
+        absolute finding path gets a relative `scope:` entry, exercised
+        end-to-end through the real filer rather than the helper in
+        isolation. See T-2352 for the design rationale."""
         from frob.tickets._store import load_all
 
         abs_file = str(tmp_path / "src" / "frob" / "x.py")
@@ -243,11 +241,9 @@ class TestRaiseQuarantineForRedBatch:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_closed_ticket_attribution_still_raises  # noqa: E501
-        """T-2604: a pair attributed to a CLOSED/DROPPED ticket is a real
-        regression against work believed finished -- it must still trip
-        quarantine, exactly as before this ticket. Without this case the
-        fix would be indistinguishable from disabling quarantine
-        outright."""
+        """Asserts a pair attributed to a closed/dropped ticket still
+        trips quarantine, since it is a real regression against work
+        believed finished. See T-2604 for the design rationale."""
         from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
         from frob.tickets._models import TicketState
@@ -989,21 +985,14 @@ class TestFileRegressionTicket:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping  # noqa: E501
-        """T-3051 (H4) acceptance [0] (must-work): the routine, encouraged
-        workflow of a fix ticket declaring the finding it fixes must not
-        deadlock a later sweep's re-measurement of that SAME finding. An
-        open ticket with a DIFFERENT title (so `_find_exact_duplicate`'s
-        title+scope check does not fire at all) that already declares
-        `("RULE1", "a.py")` in its structured `findings` field reproduces
-        the real T-2977 incident directly: `_file_regression_ticket`'s own
-        `new_ticket(...)` call is refused with `DuplicateFinding`
-        (T-2760), and before this fix that refusal fell through to the
-        generic ERROR branch and returned `None` -- an unfiled regression
-        with no owner, which pins the watermark (T-2324) and leaves
-        quarantine undisposable (T-2744) even though the finding already
-        has a perfectly good owner. The fix must resolve that owner via
-        `_find_finding_duplicate` and dispose to it, exactly as the
-        DuplicateTicket branch already does."""
+        """Asserts a fix ticket declaring the finding it fixes (via its
+        structured `findings` field, under a different title so
+        `_find_exact_duplicate`'s title+scope check does not fire) does
+        not deadlock a later sweep's re-measurement of that same finding:
+        `_file_regression_ticket` resolves the owner via
+        `_find_finding_duplicate` and disposes to it, the same as the
+        DuplicateTicket branch, rather than leaving an unfiled regression
+        with no owner. See T-3051 (H4) for the design rationale."""
         from frob.graph import CallGraph, GraphSnapshot
         from frob.tickets import TicketSpec, new_ticket
         from frob.tickets._models import Origin, TicketKind

@@ -413,14 +413,10 @@ class TestTicketMigrate:
 class TestTicketRenumber:
     # frob:ticket T-2633
     def test_dry_run_without_old_new_exits_1(self, tmp_path: Path, caplog) -> None:
-        """T-1882 (real incident: bare `frob ticket renumber` used to
-        perform the whole-ledger bulk rewrite and renumbered all 273
-        tickets in one shot) made `--dry-run` with no `<old> <new>` the
-        ONLY surviving no-argument form, deliberately read-only and
-        deliberately non-fatal (`_renumber`'s own docstring: 'harmless').
-        This replaces a stale pre-T-1882 expectation that this exact
-        invocation raised `SystemExit` -- it logs a contiguity report and
-        returns normally instead."""
+        """Asserts `frob ticket renumber --dry-run` with no `<old> <new>`
+        logs a contiguity report and returns normally rather than raising
+        `SystemExit`, the only surviving no-argument form (deliberately
+        read-only and non-fatal). See T-1882 for the design rationale."""
         cfg = AppConfig(
             ticket_command="renumber", ticket_path=tmp_path, ticket_dry_run=True
         )
@@ -430,13 +426,9 @@ class TestTicketRenumber:
 
     # frob:ticket T-2633
     def test_whole_ledger_already_contiguous(self, tmp_path: Path, caplog) -> None:
-        """T-1882 removed the CLI's ability to reach the whole-ledger bulk
-        renumber for real (it had no legitimate caller and one real
-        incident): `frob ticket renumber` with neither `<old> <new>` nor
-        `--dry-run` now refuses outright with `SystemExit(1)` and points
-        at the two remaining forms, instead of performing the old bulk
-        rewrite and logging 'already contiguous'. This replaces the
-        pre-T-1882 test of the now-deleted behavior."""
+        """Asserts `frob ticket renumber` with neither `<old> <new>` nor
+        `--dry-run` refuses outright with `SystemExit(1)` and points at
+        the two remaining forms. See T-1882 for the design rationale."""
         cfg = AppConfig(ticket_command="renumber", ticket_path=tmp_path)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit):
             ticket_run(cfg)
@@ -560,20 +552,12 @@ class TestTicketLand:
     def test_land_success_prints_files(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        """T-2633: `_land` (src/frob/app/ticket_runner/_land_cmd.py) now
-        runs T-1175's `LAND-PROOF:` verification after every real
-        (non-dry-run) `land()` call and `sys.exit(1)`s when it does not
-        verify (T-1910) -- this was added after this test was first
-        written, and `tmp_path` here is not a real git repo, so the
-        real `_land_proof_checks` (which shells out to `git merge-base
-        --is-ancestor`) genuinely reports `ancestor_ok=False` and the
-        test's mocked `land()` success used to read as an overall
-        failure. `land()` itself is still exactly what this test cares
-        about (does it print the landed-as/files-changed lines), so
-        `_land_proof_checks` is mocked out here to report a clean verify,
-        matching the sibling `test_land_dry_run_success` case above,
-        which never reaches this check at all (it returns before it, on
-        `report.dry_run`)."""
+        """Asserts a real (non-dry-run) `_land` prints the landed-as/
+        files-changed lines on a successful `land()` call, with
+        `_land_proof_checks` mocked to report a clean verify since
+        `tmp_path` is not a real git repo for its `git merge-base
+        --is-ancestor` check. See T-2633/T-1175/T-1910 for the design
+        rationale."""
         from frob.tickets._models import LandReport
 
         report = LandReport(
@@ -867,16 +851,12 @@ class TestTicketStart:
     ) -> None:
         # frob:tests \
         # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_titles_are_not_flagged_as_related  # noqa: E501
-        """T-2455 regression, locked in directly at `related_tickets`
-        rather than duplicating the full `new`+`start` flow the test
-        immediately above already exercises for the same "holder"/
-        "collider" pair (DUP002): those two short, GENUINELY unrelated
-        single-word titles scored 0.714 on `related_tickets`' character-
-        level `SequenceMatcher.ratio()` at the old 0.6 threshold -- above
-        the old cutoff, which refused the second `frob ticket new` call
-        in `test_start_refuses_scope_colliding_with_other_in_progress_
-        lease` before that test's own scope-collision assertion ever
-        ran. Must return no match at the CURRENT threshold."""
+        """Asserts `related_tickets` returns no match, at the current
+        threshold, for the "holder"/"collider" pair -- two short,
+        genuinely unrelated single-word titles whose character-level
+        `SequenceMatcher.ratio()` (0.714) exceeds a looser threshold.
+        Exercises `related_tickets` directly rather than the full
+        `new`+`start` flow. See T-2455 for the design rationale."""
         from frob.app.ticket_runner._new import related_tickets
 
         cfg = AppConfig(

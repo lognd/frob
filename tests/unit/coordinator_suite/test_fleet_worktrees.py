@@ -141,11 +141,10 @@ class TestInProgressTicketScopeLeases:
     def test_no_worktree_flagged_as_leak(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """An in-progress ticket with declared scope and NO resolvable
-        worktree (no lease file, no scope-correlated worktree) appears,
-        flagged `leaked=True` -- the missing case T-2651 exists to catch:
-        T-2377 sat in-progress for nine hours after its worktree was
-        removed and was invisible to the old, file-based reporter."""
+        """Asserts an in-progress ticket with declared scope and no
+        resolvable worktree (no lease file, no scope-correlated worktree)
+        is reported with `leaked=True`. See T-2651 for the design
+        rationale."""
         tickets_dir = tmp_path / "tickets"
         self._write_ticket(tickets_dir, "T-0001", "in-progress", ["src/a.py"])
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
@@ -754,8 +753,7 @@ class TestTicketFrontmatterOnMain:
 
     # frob:ticket T-2196
     # frob:tests \
-    # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain\
-    # .test_reads_blocked_by
+    # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_reads_blocked_by  # noqa: E501
     def test_reads_blocked_by(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """The `blocked_by:` list block parses the same way `scope:` does."""
         text = (
@@ -1079,11 +1077,11 @@ class TestWorktreesTouchingTicket:
     def test_series_worktree_matches_sibling_ticket_via_start_transition(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-2747 positive control 2: a worktree named for ticket A
-        (`t2738-t2737`, named after T-2738) that ALSO started sibling
-        ticket B (T-2737, the standard series-dispatch pattern) resolves
-        B too -- the real shape the old `t-<id>`-regex fast path could
-        never see, since the name only ever resolves to one id."""
+        """Asserts a worktree named for ticket A (`t2738-t2737`, named
+        after T-2738) that also started sibling ticket B (T-2737, the
+        series-dispatch pattern) resolves B too, since a name-regex match
+        can only ever resolve to one id. See T-2747 for the design
+        rationale."""
         worktrees_dir = tmp_path / "worktrees"
         (worktrees_dir / "t2738-t2737").mkdir(parents=True)
         monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
@@ -1418,18 +1416,13 @@ class TestWorktreeStartedTicketIds:
 
 # frob:ticket T-2755
 class TestWorktreeContentClassificationLiveGit:
-    """T-2617: `worktree_content_classification` run UNMOCKED against a
-    real git repository built from real commits -- `_git` itself is not
-    monkeypatched here, only `fleet_status.REPO` (so `ticket_frontmatter_
-    on_main`'s ticket-ledger lookups resolve against the fixture repo
-    instead of this actual project). T-2617's own root cause was that
-    `TestWorktreeContentClassification`'s string-fixture mocks never
-    constructed the SUPERSEDED-symbol case (a function renamed by the
-    code that replaced it has no byte-identical counterpart line, so the
-    old exact-line-text check misread real landed work as stranded) --
-    these tests reproduce that shape with genuine `git diff`/`git show`/
-    `git merge-base` output, not hand-written diff text, closing exactly
-    the gap T-2617 found."""
+    """Runs `worktree_content_classification` unmocked against a real git
+    repository built from real commits (only `fleet_status.REPO` is
+    monkeypatched, not `_git` itself), against genuine `git diff`/`git
+    show`/`git merge-base` output rather than hand-written diff text --
+    covering the case of a renamed symbol with no byte-identical
+    counterpart line under its new name. See T-2617 for the design
+    rationale."""
 
     # frob:ticket T-2755
     def test_superseded_symbol_with_landed_terminal_ticket_is_stale(
@@ -1609,14 +1602,11 @@ class TestWorktreeContentClassificationLiveGit:
     def test_non_conventionally_named_worktree_classifies_active_via_structural_ids(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-2755 must-now-fire, end to end: a subject-named worktree
-        (`waive-liveness`-shaped) holding an in-progress ticket must
-        classify ACTIVE when its ids are resolved structurally
-        (`_worktree_started_ticket_ids`) instead of via the old `t-<id>`
-        naming convention (`_worktree_ticket_id("waive-liveness")` is
-        `None`, which is exactly why this used to fall through to the
-        raw content diff and could misreport STRANDED/STALE for
-        genuinely active work).
+        """Asserts a subject-named worktree (`waive-liveness`-shaped,
+        where `_worktree_ticket_id` returns `None`) holding an
+        in-progress ticket classifies ACTIVE when its ids are resolved
+        structurally via `_worktree_started_ticket_ids`, end to end. See
+        T-2755 for the design rationale.
         frob:tests scripts/fleet_status.py::worktree_content_classification"""
         repo = tmp_path / "repo"
         repo.mkdir()

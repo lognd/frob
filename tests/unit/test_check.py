@@ -387,19 +387,16 @@ class TestRunCheckTs:
 
 # frob:ticket T-0608
 class TestDispatchCheckThreadsGateSelectors:
-    """T-0608: `_dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts`
-    used to drop `cfg.check_skip_gates`/`check_ticket`/`check_base`/
-    `check_delta` on the floor -- only `_dispatch_check_python` threaded
-    them through, even though `run_check_cpp/rust/ts` (T-0554) all accept
-    them. This left CLI-level `--ticket`/`--base`/`--delta`/`--skip-gates`
-    scoping silently ignored for non-Python repos. These tests fail
-    against the pre-fix dispatchers (which omit the four kwargs from their
-    `run_check_*` calls entirely) and pass once threaded through.
+    """Asserts `_dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts`
+    thread `cfg.check_skip_gates`/`check_ticket`/`check_base`/`check_delta`
+    through to `run_check_cpp/rust/ts`, the same as
+    `_dispatch_check_python` does, so CLI-level `--ticket`/`--base`/
+    `--delta`/`--skip-gates` scoping applies to non-Python repos too. See
+    T-0608 for the design rationale.
     """
 
     # frob:tests \
-    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch\
-    # _threads_selectors kind="unit"
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch_threads_selectors kind="unit"  # noqa: E501
     def test_cpp_dispatch_threads_selectors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -428,8 +425,7 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["skip_gates"] is True
 
     # frob:tests \
-    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch\
-    # _default_selectors_unchanged kind="unit"
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch_default_selectors_unchanged kind="unit"  # noqa: E501
     def test_cpp_dispatch_default_selectors_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -451,8 +447,7 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["skip_gates"] is False
 
     # frob:tests \
-    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatc\
-    # h_threads_selectors kind="unit"
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatch_threads_selectors kind="unit"  # noqa: E501
     def test_rust_dispatch_threads_selectors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -481,8 +476,7 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["skip_gates"] is True
 
     # frob:tests \
-    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatc\
-    # h_default_selectors_unchanged kind="unit"
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatch_default_selectors_unchanged kind="unit"  # noqa: E501
     def test_rust_dispatch_default_selectors_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -504,8 +498,7 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["skip_gates"] is False
 
     # frob:tests \
-    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_\
-    # threads_selectors kind="unit"
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_threads_selectors kind="unit"  # noqa: E501
     def test_ts_dispatch_threads_selectors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -534,8 +527,7 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["skip_gates"] is True
 
     # frob:tests \
-    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_\
-    # default_selectors_unchanged kind="unit"
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_default_selectors_unchanged kind="unit"  # noqa: E501
     def test_ts_dispatch_default_selectors_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -806,9 +798,9 @@ class TestRunGatesDelta:
 
 # frob:ticket T-1346
 class TestRunGatesCacheWiring:
-    """T-1346: `_run_gates` now defaults `run_gates`'s `use_cache` to True
-    (previously T-0602 built the cache but no `frob check` call site ever
-    opted in) and `no_cache=True`/`FROB_NO_GATE_CACHE` forces it back off."""
+    """Asserts `_run_gates` defaults `run_gates`'s `use_cache` to True, and
+    that `no_cache=True`/`FROB_NO_GATE_CACHE` forces it back off. See
+    T-1346 for the design rationale."""
 
     def test_gate_cache_enabled_default_true(self) -> None:
         # frob:tests src/frob/check/_python.py::_gate_cache_enabled kind="unit"
@@ -1539,8 +1531,7 @@ class TestCollectResultsProgressCallback:
 
     def test_on_task_done_fires_once_per_task_with_final_total(self) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_on_task_don\
-        # e_fires_once_per_task_with_final_total
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_on_task_done_fires_once_per_task_with_final_total  # noqa: E501
         calls: list[tuple[str, int, int]] = []
         tasks: list[_NamedTask] = [
             ("a", lambda: ToolResult(tool="a")),
@@ -1557,8 +1548,7 @@ class TestCollectResultsProgressCallback:
 
     def test_results_stay_in_submission_order_regardless_of_callback(self) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_results_sta\
-        # y_in_submission_order_regardless_of_callback
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_results_stay_in_submission_order_regardless_of_callback  # noqa: E501
         # "b" finishes fastest (no sleep), "a" slowest -- a completion-
         # order bug would put "b" before "a" in the returned list.
         tasks: list[_NamedTask] = [
@@ -1571,8 +1561,7 @@ class TestCollectResultsProgressCallback:
 
     def test_no_callback_matches_pre_t2978_behavior_exactly(self) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_no_callback\
-        # _matches_pre_t2978_behavior_exactly
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_no_callback_matches_pre_t2978_behavior_exactly  # noqa: E501
         tasks: list[_NamedTask] = [
             ("a", lambda: ToolResult(tool="a")),
             ("b", lambda: None),
@@ -2040,8 +2029,7 @@ class TestRunRuffRealPaths:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestRunRuffRealPaths.test_invokes_ruff_via_project_\
-        # tool_argv_not_bare_ruff
+        # tests/unit/test_check.py::TestRunRuffRealPaths.test_invokes_ruff_via_project_tool_argv_not_bare_ruff  # noqa: E501
         """T-4125 SUPERSEDES T-3019's bare-`ruff` choice: T-3019 avoided
         `uv run ruff` because an UNSCOPED `uv run ruff <target>` resolves
         its "project" from the subprocess cwd and can silently create an
@@ -3145,14 +3133,12 @@ class TestGatesErrorResultQueueUnavailable:
 
 # frob:ticket T-4019
 class TestGatesErrorResultTotalAbort:
-    """T-4019 FOURTH FIXTURE: a stage that did not execute must never
-    report pass. `ConfigMalformed`/`GraphUnavailable` are the two
-    sentinels `frob.gates._load_graph_queue_lock`/`_load_required_state`
-    return when `run_gates` could not assemble its required state at all
-    -- NO gate ran. Measured end to end before this fix: one malformed
-    `invariants/*.md` file made `frob check` print "gates skipped: ..."
-    at `exit_code=0`, a total enforcement failure rendered as a clean
-    pass -- the largest-blast-radius silent zero this repo has measured."""
+    """Asserts a stage that did not execute never reports pass:
+    `ConfigMalformed`/`GraphUnavailable` (the sentinels
+    `frob.gates._load_graph_queue_lock`/`_load_required_state` return
+    when `run_gates` could not assemble its required state, so no gate
+    ran) must surface as a hard error, not `exit_code=0`. See T-4019 for
+    the design rationale."""
 
     def test_config_malformed_is_a_hard_error_not_a_pass(self) -> None:
         from frob.check._python import _gates_error_result
