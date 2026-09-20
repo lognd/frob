@@ -1,5 +1,5 @@
 ---
-id: T-draft-e094271d
+id: T-4996
 title: 'SYS design-quality rule: contract drift (a declared contract that no longer
   matches what the code does; 45 units of ratchet slack and 3 dead entries today)'
 state: queued
