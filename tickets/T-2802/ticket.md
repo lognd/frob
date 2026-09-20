@@ -8,7 +8,7 @@ created: '2026-08-21'
 priority: medium
 parent: T-2359
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -55,6 +55,13 @@ scope_changes:
   reason: swap-in to keep batch 11 at 13 files
   actor: logan
   at: '2026-08-21'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.541.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
