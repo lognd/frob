@@ -4,7 +4,7 @@ title: 'F-018: docs/strata secret grammar vs charter prose mismatch (rotate with
   via ... within reads like syntax but impl is issued_by/lifetime/revoke; no way to
   name the revocation FLOW) -- reconcile grammar and prose'
 state: queued
-kind: bug
+kind: feature
 origin: human
 created: '2026-09-05'
 priority: medium
@@ -15,10 +15,28 @@ runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- strata-core/src/parse/grammar_policy.rs
+- design/litmus/secret_lifecycle.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/parse/grammar_policy.rs
+  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
+    the documented secret rotate-within/revoke forms, proven by its own new litmus
+    file; grammar_node.rs is deliberately excluded because T-3822 holds it'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: design/litmus/secret_lifecycle.strata
+  reason: '2026-09-19: converted to an implementation leaf -- the parser must accept
+    the documented secret rotate-within/revoke forms, proven by its own new litmus
+    file; grammar_node.rs is deliberately excluded because T-3822 holds it'
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: parent
   old_value: null
@@ -33,6 +51,13 @@ triage_changes:
   reason: '2026-09-19: owner decided the parser is incomplete rather than the prose
     wrong, converting this from a DECISION into implementation work; it moves from
     story D (T-4667) to story B (T-4665)'
+  actor: logan
+  at: '2026-09-19'
+- field: kind
+  old_value: bug
+  new_value: feature
+  reason: '2026-09-19: converted from a docs decision into implementation work on
+    the parser (owner decision: the parser is incomplete, not the prose wrong)'
   actor: logan
   at: '2026-09-19'
 body_changes:
