@@ -39,12 +39,6 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: v0.535.0
-  new_value: v0.535.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: record the full per-worktree audit measured across all 39 .claude/worktrees/
