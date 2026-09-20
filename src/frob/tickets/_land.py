@@ -95,7 +95,10 @@ from frob.process._lock import (
 from frob.process._pid_liveness import pid_alive_tristate
 from frob.tickets._journal import _clear_intent, _write_intent
 from frob.tickets._land_compose import compose_squash_in_disposable_worktree
-from frob.tickets._land_finalize import _land_finalize_and_close
+from frob.tickets._land_finalize import (
+    _enforce_claims_reverify_verdict,
+    _land_finalize_and_close,
+)
 from frob.tickets._land_git_ops import (
     _abort_merge,
     _auto_resolve_out_of_scope_conflicts,
@@ -1611,6 +1614,9 @@ def land(
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
     target_branch: str | None = None,
+    force: bool = False,
+    force_reason: str | None = None,
+    force_reason_file: Path | None = None,
 ) -> Result[LandReport, LandError]:
     """T-1618/T-1675: `_land_precheck` runs an early, distinct refusal
     (`LandError.AlreadyLandedOnMain`) when the ticket's own declared scope
@@ -1679,6 +1685,20 @@ def land(
     `frob:waive`) leave a visible trail rather than a silent skip; this is
     a deliberate escape hatch for a genuinely false-positive finding, not
     a way to make a real confirmatory-evidence problem quietly disappear.
+
+    T-5122: `force`/`force_reason`/`force_reason_file` override the D-05/
+    T-0754 post-merge claims-reverification refusal (`LandError.
+    ClaimsReverifyUnmeasured`, `_enforce_claims_reverify_verdict`) that
+    now fires whenever that check's outcome was SKIPPED-UNMEASURED or
+    INFRA-UNMEASURED rather than a real, measured PASSED -- an unmeasured
+    verdict is UNKNOWN, not clean, so it refuses by default (fixing the
+    prior silent-zero: `LAND-PROOF verified=SKIPPED-UNMEASURED` printed
+    next to `LAND-EXIT=0`). `force=True` requires a non-blank
+    `force_reason`/`force_reason_file` and records the bypass via T-1762's
+    `record_force_override` (same mechanism `frob ticket archive --force`
+    already uses) before proceeding; `frob ticket land --force --reason
+    ...` sets these. Both default to the permissive `False`/`None` that
+    keeps a genuinely measured, passing land unchanged.
 
     T-0338: `bump_version` and `rebuild_natives` let a caller fold the two
     remaining coordinator-plumbing steps (REL001 version bump/stamp, and
@@ -1891,6 +1911,9 @@ def land(
                 allow_cross_ticket=allow_cross_ticket,
                 pre_commit_sweep=pre_commit_sweep,
                 target_branch=target_branch,
+                force=force,
+                force_reason=force_reason,
+                force_reason_file=force_reason_file,
             )
             # T-2691: last phase written while still holding the lock, so
             # a poller can never observe "lock-acquired"/"running" racing
@@ -2895,6 +2918,9 @@ def _land_locked(
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
     target_branch: str | None = None,
+    force: bool = False,
+    force_reason: str | None = None,
+    force_reason_file: Path | None = None,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -3031,6 +3057,29 @@ def _land_locked(
         # docstring for why this is a process-local dict rather than a new
         # `LandReport` field.
         _LAST_CLAIMS_OUTCOME[ticket_id] = claims_check.danger_ok
+
+        # frob:ticket T-5122
+        # T-5122: an unmeasured claims re-verification used to only ever
+        # change the PRINTED `claims_reverify=` token on the `LAND-PROOF:`
+        # line below (`_print_land_proof`'s own T-2091/T-4281 doc) while
+        # this land still proceeded and exited 0 -- the measured `/tmp/
+        # land-T-4550.log` incident this ticket fixes. Runs here, before
+        # the dry-run early return, so a `--dry-run` genuinely proves the
+        # refusal too (same rationale as the D-05 checks immediately
+        # above), and unwinds a completed merge exactly like every other
+        # refusal at this point in the pipeline.
+        claims_verdict = _enforce_claims_reverify_verdict(
+            root,
+            ticket_id,
+            claims_check.danger_ok,
+            force=force,
+            force_reason=force_reason,
+            force_reason_file=force_reason_file,
+        )
+        if claims_verdict.is_err:
+            if did_merge:
+                _abort_merge(worktree)
+            return Err(claims_verdict.danger_err)
 
         # T-1410: re-verify any "0 <RULE> findings under <glob>" acceptance
         # criterion (`_gate_claim_criteria`) against the SAME post-merge

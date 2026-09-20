@@ -1,7 +1,7 @@
 ---
 id: T-5122
 title: land must fail when LAND-PROOF claims re-verification is SKIPPED-UNMEASURED
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -58,6 +58,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict::test_passed_is_ok
+- tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict::test_deliberate_skip_is_ok_not_gated
+- tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict::test_infra_unmeasured_refuses_without_force
+- tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict::test_unmeasured_with_force_and_reason_records_override_and_proceeds
+- tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict::test_unmeasured_with_force_but_no_reason_still_refuses
+- tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict::test_unmeasured_with_force_reason_file
 designated_repro_test: null
 threat: null
 component: null

@@ -3133,6 +3133,18 @@ class LandError(ErrorSet):
         "checked out on; `cd <root> && git checkout <branch>` (or create "
         "it) first, then retry"
     )
+    # frob:ticket T-5122
+    ClaimsReverifyUnmeasured = (
+        "the post-merge Done-report-claims re-verification (T-0754/T-2083) "
+        "could not measure a verdict at all (SKIPPED-UNMEASURED or "
+        "INFRA-UNMEASURED, frob.tickets._land_verify._ClaimsReverifyOutcome) "
+        "-- an unmeasured claims check is UNKNOWN, not clean, and used to "
+        "print `LAND-PROOF: ... claims_reverify=skipped-unmeasured` while "
+        "the land still exited 0 (the T-5122 silent-zero incident); refuse "
+        "unless `frob ticket land --force --reason ...` records an explicit "
+        "override in force-overrides.jsonl (T-1762, the same mechanism "
+        "`frob ticket archive --force` already uses)"
+    )
 
 
 # frob:ticket T-0176

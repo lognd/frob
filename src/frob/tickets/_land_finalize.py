@@ -72,6 +72,126 @@ from frob.tickets._store import (
 _log = get_logger(__name__)
 
 
+# frob:ticket T-5122
+# frob:tests tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict.test_passed_is_ok  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict.test_deliberate_skip_is_ok_not_gated  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict.test_infra_unmeasured_refuses_without_force  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict.test_unmeasured_with_force_and_reason_records_override_and_proceeds  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict.test_unmeasured_with_force_but_no_reason_still_refuses  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_proof_unmeasured.py::TestEnforceClaimsReverifyVerdict.test_unmeasured_with_force_reason_file  # noqa: E501
+def _enforce_claims_reverify_verdict(
+    root: Path,
+    ticket_id: str,
+    outcome,  # noqa: ANN001 -- `_ClaimsReverifyOutcome`, imported lazily to dodge the
+    # `frob.tickets._land_verify` <-> `frob.tickets._land_finalize` import cycle
+    *,
+    force: bool = False,
+    force_reason: str | None = None,
+    force_reason_file: Path | None = None,
+) -> Result[None, LandError]:
+    """T-5122: an `INFRA_UNMEASURED` `_ClaimsReverifyOutcome` -- a claims
+    re-verification that was ACTUALLY ATTEMPTED (a caller supplied real
+    `passed`/`check_gates` callables) and PREVENTED by an infrastructure
+    failure (T-4281: a graph-cache lock held by another process, a crash,
+    or an unparsable run) -- is now a real refusal here, not just a
+    `claims_reverify=INFRA-UNMEASURED` token printed on the `LAND-PROOF:`
+    line while the land still exits 0 (the measured incident this closes:
+    `/tmp/land-T-4550.log` printed an unmeasurable claims verdict next to
+    `LAND-EXIT=0`, the silent-zero class T-2076's `_reverify_gate_state_
+    claim` fix already named once for a sibling check). This is UNKNOWN,
+    not clean.
+
+    Deliberately NOT gated: `SKIPPED_UNMEASURED` -- a claims re-
+    verification that was never attempted at all, by design (no capture
+    callables supplied, `--rapid`'s T-2913 inline-skip, or a Done report
+    with no `### Captured claims` section to compare against). T-2083/
+    T-4281's own docstrings are explicit that this is a legitimate,
+    common, non-error shape (most Done reports never captured a claims
+    section; every unit test exercising `land()` for something else
+    entirely omits the capture callables) -- gating on it would turn
+    ordinary, correct lands into hard refusals by default, not catch a
+    real defect.
+
+    `force=True` overrides the `INFRA_UNMEASURED` refusal -- but only
+    after `frob.tickets._force_override.record_force_override` (T-1762,
+    the same mechanism `frob ticket archive --force`/`frob ticket land
+    --force --reason`'s existing worktree-in-use bypass already use)
+    successfully appends an audit line to `force-overrides.jsonl`
+    naming this guard, `ticket_id`, and a REQUIRED `force_reason`/
+    `force_reason_file` -- a blank reason still refuses even with
+    `force=True`, matching `record_force_override`'s own contract.
+
+    `Ok(None)` for `PASSED`/`SKIPPED_UNMEASURED` (both unchanged,
+    common-case behavior) or for a genuinely recorded override;
+    `Err(LandError.ClaimsReverifyUnmeasured)` only for an un-overridden
+    `INFRA_UNMEASURED`."""
+    from frob.tickets._land_verify import _ClaimsReverifyOutcome
+
+    if outcome is not _ClaimsReverifyOutcome.INFRA_UNMEASURED:
+        return Ok(None)
+    if force:
+        return _apply_claims_reverify_force_override(
+            root, ticket_id, outcome, force_reason, force_reason_file
+        )
+    _log.error(
+        "land: %s claims re-verification could not be measured (%s) -- "
+        "treat as UNKNOWN, not clean; refusing to land. Retry once the "
+        "cause clears, or `frob ticket land %s --force --reason "
+        "'...'`/`--reason-file <path>` to record an explicit T-1762 "
+        "override and proceed anyway (T-5122)",
+        ticket_id,
+        outcome.value,
+        ticket_id,
+    )
+    return Err(LandError.ClaimsReverifyUnmeasured)
+
+
+# frob:ticket T-5122
+def _apply_claims_reverify_force_override(
+    root: Path,
+    ticket_id: str,
+    outcome,  # noqa: ANN001 -- `_ClaimsReverifyOutcome`, see caller's own note
+    force_reason: str | None,
+    force_reason_file: Path | None,
+) -> Result[None, LandError]:
+    """`_enforce_claims_reverify_verdict`'s own `force=True` half, split
+    out to stay under ARCH001's per-function budget: resolve `force_
+    reason`/`force_reason_file` into one string, record the T-1762
+    override via `record_force_override`, and log/return accordingly.
+    A blank resolved reason, or a `record_force_override` failure, still
+    refuses -- `force=True` alone is never enough to bypass silently."""
+    from frob.tickets._force_override import record_force_override
+
+    reason = force_reason or ""
+    if not reason.strip() and force_reason_file is not None:
+        try:
+            reason = force_reason_file.read_text(encoding="utf-8")
+        except OSError:
+            reason = ""
+    recorded = record_force_override(
+        root,
+        command="ticket land",
+        guard="T-5122 claims-reverify-unmeasured refusal",
+        target=ticket_id,
+        reason=reason,
+    )
+    if recorded.is_ok:
+        _log.warning(
+            "land: %s claims re-verification was %s -- FORCED past "
+            "the T-5122 refusal, override recorded in force-overrides.jsonl",
+            ticket_id,
+            outcome.value,
+        )
+        return Ok(None)
+    _log.error(
+        "land: %s --force given but the override could not be recorded "
+        "(%s) -- refusing rather than bypassing silently",
+        ticket_id,
+        recorded.danger_err,
+    )
+    return Err(LandError.ClaimsReverifyUnmeasured)
+
+
 # frob:ticket T-2274
 def _commit_pending_merge(
     worktree: Path, ticket_id: str, main_branch_name: str

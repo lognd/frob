@@ -6936,6 +6936,14 @@ def _land_core_invoke(
         # ticket_land_branch config default, else `None` (root's current
         # branch, the historical default).
         target_branch=cfg.ticket_land_branch,
+        # T-5122: the pre-existing `--force`/`--reason`/`--reason-file`
+        # flags (T-1715/T-1762, previously only overriding --finish's
+        # worktree-in-use refusal) now ALSO override `land()`'s own new
+        # unmeasured-claims-reverify refusal -- same flags, same audit
+        # trail, one more guard named.
+        force=cfg.ticket_force,
+        force_reason=cfg.ticket_force_reason,
+        force_reason_file=cfg.ticket_force_reason_file,
     )
 
 

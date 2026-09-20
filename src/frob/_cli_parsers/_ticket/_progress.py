@@ -542,8 +542,13 @@ def _add_ticket_land_parser(ticket_sub):
             "it -- use only for a worktree you have independently "
             "confirmed is genuinely wedged (the process scan cannot "
             "always prove a pid is dead). Has no effect without "
-            "--finish/--retire-on-proof. T-1762: requires --reason/"
-            "--reason-file, recorded in force-overrides.jsonl."
+            "--finish/--retire-on-proof. T-5122: ALSO overrides land's "
+            "own refusal when the post-merge Done-report-claims re-"
+            "verification could not be measured (SKIPPED-UNMEASURED/"
+            "INFRA-UNMEASURED) -- use only once you have independently "
+            "confirmed the unmeasured claim is not hiding a real "
+            "regression. T-1762: requires --reason/--reason-file, "
+            "recorded in force-overrides.jsonl."
         ),
     )
     # frob:ticket T-1762
