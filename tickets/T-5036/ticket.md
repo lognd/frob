@@ -1,5 +1,5 @@
 ---
-id: T-draft-33a5e084
+id: T-5036
 title: Cache repo_root to stop O(tickets x holders) git subprocess spawns in doable()
 state: queued
 kind: bug
