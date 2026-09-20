@@ -59,6 +59,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 1836
   new_length: 3410
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _kinds.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3409
+  new_length: 4633
 evidence:
 - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_requests_post_reports_net_mutate_and_net_connect
 - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_httpx_delete_reports_net_mutate
@@ -155,3 +161,24 @@ original text, kept verbatim below.
     # exhaustive, mutating-verb list for each -- a full per-service survey
     # across boto3's ~350 services is out of scope here (filed as a
     # follow-up, see T-2479's Done report).
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_kinds.py:69-83, the "net-mutate"
+block, trimmed for DOCARCH002's 12-line cap): the trimmed block's full
+original text, kept verbatim below.
+
+    #: T-2464: mutating-VERB signal for the highest-precision HTTP client
+    #: libraries (`requests`/`httpx` module-level `post(`/`put(`/
+    #: `delete(`/`patch(` convenience calls) -- a DIFFERENT axis from
+    #: connect-vs-listen (socket ROLE): this is read-vs-write over an
+    #: already-connected client, the network-capability analog of
+    #: `fs-write`/`fs-read`. Deliberately UNWIRED (module docstring's
+    #: "Wiring status" section in `frob.vet._capability_modes` -- same
+    #: posture as `proc`/`ffi`): no `FAMILY_MODES`/`WIRED_MODE_FAMILIES`
+    #: entry exists for it yet, so a coarse `may "net"` declaration does
+    #: NOT yet expand to cover it and no SYS100/SYS101 join reads it --
+    #: this is a SCANNER-only signal for now, additive to (never
+    #: replacing) the existing coarse `net-connect` observation. Building
+    #: the tier-2 join, and covering more libraries than requests/httpx,
+    #: is real follow-up work (see T-2464's own Done report for what is
+    #: and is not covered).
