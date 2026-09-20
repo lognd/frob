@@ -9,7 +9,7 @@ created: '2026-09-07'
 priority: critical
 parent: null
 tier: epic
-sprint: v0.542.0
+sprint: v0.538.0
 runs_last: false
 milestone: v0.542.0
 runs_last_parallel_safe: false
@@ -21,6 +21,13 @@ no_scope_declared_reason: 'tier=epic: a decomposition container for 24 consumer 
   spanning gates, the ticket runner, the comment DSL, the call graph and four whole
   verbatim audits; scope belongs on the leaves where it can be disjoint enough to
   dispatch in parallel'
+triage_changes:
+- field: sprint
+  old_value: v0.542.0
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: 'adds F-339, which arrived after filing: a doc-pointer rule that is silent
