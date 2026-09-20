@@ -2,7 +2,7 @@
 id: T-4951
 title: 'WIRE forbid call / forbid import: parsed and declared by the built-in analyzable
   pack, enforced by no gate, while its auto-injection warns on every design load'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-19'
@@ -18,10 +18,25 @@ scope:
 - src/frob/gates/_forbid_rules_gate.py
 - design/litmus/forbid_rules.strata
 - tests/gates_suite/test_forbid_rules.py
+- design/litmus/fixtures/forbid_rules/violation.py
+- design/litmus/fixtures/forbid_rules/clean.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/litmus/fixtures/forbid_rules/violation.py
+  reason: litmus module needs bound code fixtures for the forbid_rules_gate positive/negative
+    controls
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: design/litmus/fixtures/forbid_rules/clean.py
+  reason: litmus module needs bound code fixtures for the forbid_rules_gate positive/negative
+    controls
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: 'Given forbid call / forbid import are parsed at grammar_policy.rs:129-140
