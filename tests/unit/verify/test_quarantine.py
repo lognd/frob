@@ -14,6 +14,7 @@ from frob.verify._quarantine import (
     clear_quarantine,
     is_quarantined,
     load_quarantine,
+    quarantine_status_marker,
     raise_quarantine,
     retire_unidentifiable_findings,
 )
@@ -151,6 +152,83 @@ class TestIsQuarantined:
         result = is_quarantined(tmp_path)
         assert result.is_ok
         assert result.danger_ok is False
+
+
+# frob:ticket T-3082
+class TestQuarantineStatusMarker:
+    """`quarantine_status_marker`/`.frob/quarantine.status`: the T-3082
+    tombstone marker that lets a human tell raised from cleared without
+    parsing `.frob/quarantine.json`'s `cleared_at` field -- the live
+    incident this ticket fixes was exactly that misread."""
+
+    def test_none_when_never_raised(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::quarantine_status_marker kind="unit"  # noqa: E501
+        assert quarantine_status_marker(tmp_path) is None
+
+    def test_raised_after_raise(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::quarantine_status_marker kind="unit"  # noqa: E501
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
+        ).is_ok
+        assert quarantine_status_marker(tmp_path) == "raised"
+
+    def test_cleared_after_clear(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::quarantine_status_marker kind="unit"  # noqa: E501
+        finding = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        assert raise_quarantine(
+            tmp_path, batch_commit_shas=("deadbeef",), findings=(finding,)
+        ).is_ok
+        assert quarantine_status_marker(tmp_path) == "raised"
+        real_id = _seed_real_ticket(tmp_path)
+        cleared = clear_quarantine(
+            tmp_path,
+            dispositions={
+                (finding.rule_id, finding.file, finding.line): ("filed", real_id)
+            },
+            reason=f"filed as {real_id}",
+            actor="test",
+        )
+        assert cleared.is_ok
+        # The marker flips to "cleared" even though `.frob/quarantine.json`
+        # itself is kept (T-3082's own constraint: the record's SHAPE must
+        # stay byte-identical, only this second file distinguishes them).
+        assert quarantine_status_marker(tmp_path) == "cleared"
+        loaded = load_quarantine(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok is not None
+        assert loaded.danger_ok.cleared_at is not None
+
+    def test_cleared_after_retire_unidentifiable_findings(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::quarantine_status_marker kind="unit"  # noqa: E501
+        _seed_stuck_store(tmp_path)
+        # A record seeded directly on disk (bypassing raise_quarantine)
+        # never wrote a status marker -- the marker is None until the
+        # first mutation through this module's own write paths touches it.
+        assert quarantine_status_marker(tmp_path) is None
+        retired = retire_unidentifiable_findings(
+            tmp_path, reason="T-3082 test cleanup", actor="test"
+        )
+        assert retired.is_ok
+        assert quarantine_status_marker(tmp_path) == "cleared"
+
+    def test_stays_raised_when_retire_leaves_a_sibling_undisposed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::quarantine_status_marker kind="unit"  # noqa: E501
+        sibling = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        _seed_stuck_store(tmp_path, extra=(sibling,))
+        retired = retire_unidentifiable_findings(
+            tmp_path, reason="T-3082 test cleanup", actor="test"
+        )
+        assert retired.is_err
+        assert retired.danger_err is QuarantineError.FindingsNotDisposed
+        # The identity-less finding was retired but the well-formed
+        # sibling still blocks the actual clear -- quarantine is still
+        # raised, and the marker (once one exists) must say so, never
+        # "cleared" for a partial retire.
+        assert quarantine_status_marker(tmp_path) in (None, "raised")
 
 
 # frob:ticket T-1693

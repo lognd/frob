@@ -80,6 +80,20 @@ SCHEMA_VERSION = 1
 _QUARANTINE_REL = Path(".frob") / "quarantine.json"
 _QUARANTINE_LOCK_REL = Path(".frob") / "quarantine.lock"
 
+# frob:ticket T-3082
+#: T-3082: a companion tombstone marker, written alongside
+#: `.frob/quarantine.json` on every `raise_quarantine`/`clear_quarantine`
+#: mutation -- see `_write_quarantine_status`'s own docstring for why a
+#: SECOND, deliberately trivial file exists next to a record whose SHAPE
+#: is, by design, byte-identical whether raised or cleared.
+_QUARANTINE_STATUS_REL = Path(".frob") / "quarantine.status"
+
+#: `_QUARANTINE_STATUS_REL`'s two possible contents (plus a trailing
+#: newline) -- exactly one bare word, never JSON, so a human `cat`-ing it
+#: needs no parsing to tell raised from cleared.
+_STATUS_RAISED = "raised"
+_STATUS_CLEARED = "cleared"
+
 # frob:ticket T-2132
 #: T-2132: gate rules whose finding is a statement about ELAPSED TIME or
 #: repo/queue STATE, never about a commit's diff -- structurally
@@ -390,6 +404,58 @@ def _save_quarantine(root: Path, record: QuarantineRecord) -> None:
     path.write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
+def _quarantine_status_path(root: Path) -> Path:
+    """The `.frob/quarantine.status` tombstone-marker path for a checkout
+    rooted at `root` -- see `_write_quarantine_status`'s own docstring
+    for what this file is for."""
+    return root / _QUARANTINE_STATUS_REL
+
+
+def _write_quarantine_status(root: Path, *, raised: bool) -> None:
+    """T-3082: overwrite `.frob/quarantine.status` with the single bare
+    word `"raised"` or `"cleared"` (per `raised`) -- the fix for this
+    ticket's own live incident: `.frob/quarantine.json`'s cleared and
+    raised shapes are byte-identical (only `cleared_at` differs), a
+    deliberate, TESTED contract (`load_quarantine` must keep returning
+    the full cleared record as an audit trail -- see this module's own
+    docstring) that this ticket must not silently regress. Rather than
+    changing that shape, this writes a SECOND, trivial file next to it
+    that a human reading disk state directly (the exact failure mode
+    that motivated this ticket: `cat`-ing `quarantine.json`, seeing a
+    populated record, and assuming it was live) can trust without
+    parsing JSON or knowing `cleared_at`'s meaning. Called from inside
+    the same `_quarantine_lock_path` critical section as `_save_
+    quarantine`, immediately after it, so the two files are never
+    observably out of sync with each other."""
+    path = _quarantine_status_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        (_STATUS_RAISED if raised else _STATUS_CLEARED) + "\n", encoding="utf-8"
+    )
+
+
+# frob:ticket T-3082
+# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_none_when_never_raised kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_raised_after_raise kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_cleared_after_clear kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_cleared_after_retire_unidentifiable_findings kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_stays_raised_when_retire_leaves_a_sibling_undisposed kind="unit"  # noqa: E501
+# frob:waive COV001 reason="T-3082: this marker is a plain-text disk read explained fully by its own docstring (raised/cleared/None, same convention load_quarantine's Ok(None) already establishes) -- docs/modules/tickets-verify-sweep.md's Quarantine circuit breaker section is a many-symbol shared doc file this ticket's scope (src/frob/verify/_quarantine.py, tests/unit/verify/test_quarantine.py) does not include, and a disproportionate scope-closure pull for one small companion accessor, the same T-1010/T-3534 precedent this module's own COV001 waivers already establish elsewhere"  # noqa: E501
+def quarantine_status_marker(root: Path) -> str | None:
+    """T-3082: the current `.frob/quarantine.status` tombstone marker for
+    `root` -- `"raised"`, `"cleared"`, or `None` if quarantine has never
+    been raised (the file does not exist yet, matching `load_quarantine`'s
+    own `Ok(None)` convention for a fresh/absent store). This is a plain
+    disk read with no locking and no validation against `.frob/
+    quarantine.json`'s own record: it exists so a human or a script can
+    answer "raised or cleared?" without parsing the JSON record at all,
+    not to replace `is_quarantined` as the programmatic source of truth."""
+    path = _quarantine_status_path(root)
+    if not path.exists():
+        return None
+    return path.read_text(encoding="utf-8").strip() or None
+
+
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests \
 # tests/unit/verify/test_quarantine.py::TestIsQuarantined.test_false_when_never_raised \
@@ -595,6 +661,7 @@ def raise_quarantine(
             findings=findings,
         )
         _save_quarantine(root, record)
+        _write_quarantine_status(root, raised=True)
 
     _log.error(
         "quarantine: RAISED for batch %s -- %d finding(s): %s -- deferred landing "
@@ -836,6 +903,7 @@ def clear_quarantine(
             }
         )
         _save_quarantine(root, cleared)
+        _write_quarantine_status(root, raised=False)
 
     _log.warning(
         "quarantine: CLEARED for batch %s by %s -- reason: %s -- deferred "
@@ -986,6 +1054,7 @@ def retire_unidentifiable_findings(
             }
         )
         _save_quarantine(root, cleared)
+        _write_quarantine_status(root, raised=False)
 
     _log.warning(
         "quarantine: CLEARED for batch %s by %s -- reason: %s (retired %d "

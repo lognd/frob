@@ -32,6 +32,7 @@ from tests.unit.verify.conftest import make_queue_entry, make_symbol
 from tests.unit.verify.test_watermark import _init_git_repo_with_commits
 
 
+# frob:ticket T-3082
 class TestBuildStatus:
     """`build_status`: the whole `frob verify status` payload."""
 
@@ -84,6 +85,50 @@ class TestBuildStatus:
         finding = status.quarantine_findings[0]
         assert finding.key == "unresolved-import:tests/x.py:"
         assert finding.disposition == ""
+
+    # frob:ticket T-3082
+    def test_quarantine_status_marker_none_when_never_raised(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.quarantine_status_marker is None
+
+    # frob:ticket T-3082
+    def test_quarantine_status_marker_reflects_raise_and_clear(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        # T-3082: `frob verify status` surfaces the same tombstone marker
+        # a human reading disk state directly would see, so it never
+        # needs its own independently-computed answer to "raised or
+        # cleared?" -- this is that consistency, exercised end to end.
+        finding = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        raise_quarantine(tmp_path, batch_commit_shas=("deadbeef",), findings=(finding,))
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.quarantine_status_marker == "raised"
+
+        from frob.tickets import Origin, TicketKind, new_ticket
+        from frob.tickets._models import TicketSpec
+
+        spec = TicketSpec(title="seed", kind=TicketKind.BUG, origin=Origin.AGENT)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        real_id = created.danger_ok.id
+        clear_quarantine(
+            tmp_path,
+            dispositions={
+                (finding.rule_id, finding.file, finding.line): ("filed", real_id)
+            },
+            reason=f"filed as {real_id}",
+            actor="test",
+        )
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.quarantine_raised is False
+        assert status.quarantine_status_marker == "cleared"
 
     def test_watermark_reported_when_present(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"

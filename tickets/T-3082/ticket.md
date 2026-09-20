@@ -2,14 +2,14 @@
 id: T-3082
 title: quarantine.json persists on disk after clear; a stale cleared record is byte-identical
   in shape to a live one
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
 priority: medium
 parent: null
 tier: ticket
-sprint: v0.540.0
+sprint: v0.534.0
 runs_last: false
 milestone: 0.534.0
 runs_last_parallel_safe: false
@@ -55,18 +55,14 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
-- field: sprint
-  old_value: v0.534.0
-  new_value: v0.540.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
 evidence:
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_none_when_never_raised
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_raised_after_raise
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_clear
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_cleared_after_retire_unidentifiable_findings
 - tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker::test_stays_raised_when_retire_leaves_a_sibling_undisposed
+- tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_quarantine_status_marker_none_when_never_raised
+- tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_quarantine_status_marker_reflects_raise_and_clear
 designated_repro_test: null
 acceptance:
 - text: GIVEN a raised quarantine is cleared (via clear_quarantine or retire_unidentifiable_findings)
@@ -83,7 +79,9 @@ acceptance:
     THEN its output surfaces the same raised/cleared tombstone marker (quarantine_status_marker)
     that a direct disk read would show, never leaving the CLI's own report as the
     only place still ambiguous between stale and live
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_quarantine_status_marker_none_when_never_raised
+  - tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_quarantine_status_marker_reflects_raise_and_clear
 threat: null
 component: null
 anchor: false

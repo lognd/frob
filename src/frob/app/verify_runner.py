@@ -88,6 +88,17 @@ class VerifyStatus(BaseModel):
     quarantine_raised: bool
     quarantine_batch_commit_shas: tuple[str, ...]
     quarantine_findings: tuple[VerifyQuarantineFindingView, ...]
+    #: T-3082: `frob.verify._quarantine.quarantine_status_marker`'s bare
+    #: `"raised"`/`"cleared"`/`None` -- the CLI's own defense against this
+    #: ticket's live incident (a human reading `.frob/quarantine.json`
+    #: directly and mistaking a stale cleared record for a live one):
+    #: `frob verify status` now surfaces the SAME tombstone marker a
+    #: script or an operator checking disk state directly would see,
+    #: rather than requiring either to independently re-derive `raised`
+    #: from `cleared_at`. Always consistent with `quarantine_raised`
+    #: (both come from the same `build_status` call), never a second,
+    #: independently-computed source of truth.
+    quarantine_status_marker: str | None
     #: T-2406: `DrainRefusalRecord.refused_since_watermark` -- how many
     #: deferred-drain attempts have refused (a genuinely different land
     #: was still running after the full wait budget) since the watermark
@@ -158,6 +169,9 @@ def _load_status_inputs(root: Path):  # noqa: ANN201
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_depth_age_and_quarantine kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_clean_when_nothing_queued_and_no_quarantine kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_drains_refused_since_watermark kind="unit"  # noqa: E501
+# frob:ticket T-3082
+# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_quarantine_status_marker_none_when_never_raised kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_quarantine_status_marker_reflects_raise_and_clear kind="unit"  # noqa: E501
 def build_status(root: Path) -> VerifyStatus | None:
     """Assemble one `VerifyStatus` snapshot for `root`, or `None` on an
     unreadable queue/quarantine store -- "cannot verify is never verified"
@@ -187,6 +201,10 @@ def build_status(root: Path) -> VerifyStatus | None:
 
     rapid_debt_live = _live_deferred_sweep_debt(root)
 
+    from frob.verify._quarantine import quarantine_status_marker
+
+    status_marker = quarantine_status_marker(root)
+
     return VerifyStatus(
         watermark_commit=wm.commit_sha if wm else None,
         watermark_age_s=watermark_age_s,
@@ -199,6 +217,7 @@ def build_status(root: Path) -> VerifyStatus | None:
         quarantine_raised=raised,
         quarantine_batch_commit_shas=batch_shas,
         quarantine_findings=findings,
+        quarantine_status_marker=status_marker,
         drains_refused_since_watermark=refused_count,
         last_drain_refused_at=refused_at,
         rapid_debt_live=rapid_debt_live,
@@ -304,7 +323,17 @@ def _print_status_human(r: Renderer, status: VerifyStatus) -> None:
                 f"  - [{disp}] {f.key} (commit={f.commit_sha}, ticket={f.ticket_id})"
             )
     else:
-        r.line("quarantine:       clear")
+        marker = status.quarantine_status_marker
+        # T-3082: name the tombstone marker explicitly on a "clear"
+        # report -- `marker == "cleared"` means a raise happened and was
+        # cleared (the audit-trail record on disk); `marker is None`
+        # means quarantine has never been raised at all. Both render as
+        # "clear" above, but this line is what stops an operator from
+        # having to `cat .frob/quarantine.json` to tell which.
+        if marker is not None:
+            r.line(f"quarantine:       clear ({marker})")
+        else:
+            r.line("quarantine:       clear")
     if status.rapid_debt_live:
         n_debt = len(status.rapid_debt_live)
         r.line(f"rapid-debt (deferred sweep, unverified): {n_debt}")
@@ -599,8 +628,7 @@ def _collect_dispositions(
 
 # frob:ticket T-2217
 # frob:tests \
-# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
-# rejects_combination_with_dismiss
+# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_rejects_combination_with_dismiss  # noqa: E501
 def _retire_unidentifiable_dispose(cfg: AppConfig, root: Path, reason: str, actor: str):  # noqa: ANN201
     """T-2217: `--retire-unidentifiable`'s own branch of `_run_dispose`,
     split out (ARCH001) so that function's own body stays the
@@ -632,11 +660,9 @@ def _retire_unidentifiable_dispose(cfg: AppConfig, root: Path, reason: str, acto
 
 # frob:ticket T-2217
 # frob:tests \
-# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
-# retires_and_clears
+# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_retires_and_clears  # noqa: E501
 # frob:tests \
-# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
-# still_blocks_on_a_well_formed_sibling
+# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_still_blocks_on_a_well_formed_sibling  # noqa: E501
 # frob:tests tests/unit/verify/test_verify_runner.py::TestDispose.test_dismiss_with_relative_path_matches_a_finding_stored_absolute kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-3065 threads root through to _collect_dispositions/_parse_dispose_entry so a --file-ticket/--dismiss key is normalized (_normalize_finding_path) before lookup -- an implementation-level identity-matching fix, not a change to the RULE:FILE:LINE addressing/clear_quarantine-delegation behavior docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697 describes; re-verified accurate via frob ack rather than an edit to that shared, many-symbol doc section"  # noqa: E501
 def _run_dispose(cfg: AppConfig) -> None:
