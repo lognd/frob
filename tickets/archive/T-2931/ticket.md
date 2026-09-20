@@ -43,6 +43,13 @@ scope_changes:
     its successor before close (LiveTrackerCited)
   actor: logan
   at: '2026-08-28'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve regex-lookbehind detail trimmed from _wire.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 876
+  new_length: 1604
 evidence:
 - tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister::test_function_registered_via_atexit_is_not_flagged
 - tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister::test_function_with_no_caller_anywhere_still_flagged_positive_control
@@ -59,3 +66,16 @@ land_commit: 0e3a0c5eba169046c1cb63f685496059a60ad133
 Generalize that exemption (or add a sibling one) to recognize `atexit.register(<callback>, ...)` as a valid dynamic-dispatch pattern, so a genuinely-only-atexit-called private function does not need a per-site `frob:waive WIRE001 follow_up=...` that requires perpetually pointing at SOME open ticket forever.
 
 Scope: src/frob/gates/_waive.py (the exemption predicate), src/frob/gates/_wire.py (the WIRE001 gate itself, if the exemption needs to be consulted there instead).
+
+
+T-4770 follow-up (condensed from _DOTTED_WRAPPER_MARKERS's docstring in
+src/frob/gates/_wire.py, trimmed for DOCARCH002's 12-line cap): the
+concrete example is _scratch_file_for_suffix's registration of
+_remove_scratch_file. _WRAPPER_MARKER_NAMES covers
+memoize_per_run(_target)-shaped wrapper markers; _wire_reach_patterns'
+wrapper_pattern matches them as a BARE name immediately before `(` --
+(?<![A-Za-z0-9_.])'s negative lookbehind explicitly excludes a
+dot-preceded match, so a bare "register" alternative would either miss
+atexit.register( entirely or false-positive on any OTHER object's
+unrelated .register( method sharing the bare name. The qualifier is
+"atexit", producing the exact alternative atexit\.register\(.
