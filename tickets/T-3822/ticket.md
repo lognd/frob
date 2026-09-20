@@ -80,6 +80,18 @@ body_changes:
   old_length: 1398
   new_length: 3835
 designated_repro_test: null
+acceptance:
+- text: Given docs/strata/surface.md and docs/strata/threat.md document an 'attr IDENT'
+    node form that strata-core's parser does not accept, and the owner decided the
+    PARSER is incomplete rather than the docs wrong, when this lands, then the documented
+    attr IDENT form PARSES and ELABORATES, proven by design/litmus/attr_ident.strata
+    -- a litmus case that fails to parse at HEAD c8f56ef10 and passes after.
+  evidence: []
+- text: Given the existing STRING attr form is in live use across design/frob.strata
+    (162 attr lines), when the IDENT form is added, then a test asserts the STRING
+    form still parses and elaborates unchanged -- the negative control against fixing
+    this by swapping one form for the other.
+  evidence: []
 threat: null
 component: null
 anchor: false
