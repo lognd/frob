@@ -181,26 +181,15 @@ class TestArtifactSmokeMustStayQuiet:
     @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
     # frob:ticket T-4378
     def test_current_pin_passes_serve_extra_check(self, tmp_path: Path) -> None:
-        """The repo's OWN current `pyproject.toml` (bounded `mcp<2`)
-        must pass the smoke script's serve-extra check cleanly.
-
-        T-4378: deliberately checks the serve-extra VERDICT, not the
-        smoke script's overall exit code. `check_base_install` (the
-        OTHER check this invocation runs) shells out to `frob doctor`
-        inside a bare, fresh venv, and doctor's external-tool inventory
-        (T-3276) reports unhealthy whenever `ruff`/`ty` are not resolvable
-        on the AMBIENT PATH of whatever machine happens to run this test
-        -- an environment fact about the runner, unrelated to whether
-        THIS test's own subject (the `[serve]` extra against the repo's
-        current mcp pin) installs and imports cleanly. Measured on macOS
-        CI (run 34358765772): base-install failed with "ruff not found"/
-        "ty not found" while serve-extra passed outright -- the prior
-        `result.returncode == 0` assertion conflated the two, failing a
-        serve-extra-named test over a base-install-only, PATH-dependent
-        finding `check_base_install`'s own docstring already disclaims
-        responsibility for (it deliberately scopes itself to entry-point
-        wiring and native-extension import status, not ambient toolchain
-        presence)."""
+        """The repo's own current `pyproject.toml` (bounded `mcp<2`) must
+        pass the smoke script's serve-extra check cleanly. Asserts the
+        serve-extra verdict specifically, not the smoke script's overall
+        exit code, since `check_base_install` (the other check this
+        invocation runs) reports unhealthy whenever `ruff`/`ty` are not on
+        the ambient PATH of whatever machine runs this test -- an
+        environment fact unrelated to whether this test's own subject
+        (the `[serve]` extra against the repo's current mcp pin) installs
+        and imports cleanly."""
         core_core = _REPO_ROOT / "frob-core" / "target" / "wheels"
         core_strata = _REPO_ROOT / "strata-core" / "target" / "wheels"
         if not list(core_core.glob("frob_core-*.whl")) or not list(

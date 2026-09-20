@@ -245,13 +245,11 @@ VERIFY_WATERMARK = REPO / ".frob" / "verify-watermark.json"
 # frob:doc docs/guides/coordinator-scripts.md#leases
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_reads_lease_rec\
-# ords
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_reads_lease_records  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_no_lease_dir
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_unreadable_leas\
-# e_file
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_unreadable_lease_file  # noqa: E501
 def leases() -> list[dict]:
     """Every held scope lease, as parsed lease records."""
     if not LEASES.is_dir():
@@ -300,51 +298,23 @@ def _iter_in_progress_ticket_frontmatter():
 # frob:ticket T-2651
 # frob:ticket T-2654
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# .test_no_worktree_flagged_as_leak
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_no_worktree_flagged_as_leak  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# .test_live_worktree_named_not_leaked
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_live_worktree_named_not_leaked  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# .test_queued_ticket_excluded
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_queued_ticket_excluded  # noqa: E501
+# frob:ticket T-4421
 def in_progress_ticket_scope_leases() -> list[dict]:
-    """T-2651: every `state: in-progress` ticket under `TICKETS_DIR`, read
-    directly from its own local ledger file, as `{"ticket_id", "scope",
-    "worktree", "leaked"}`.
-
-    THE authoritative source: `leases()` above enumerates `.git/frob-
-    leases/*.json` files, which frob's own `read_all_leases` opportunis-
-    tically UNLINKS the moment ANY OTHER ticket's lease scan confirms the
-    file's recorded `worktree` path no longer exists on disk
-    (`frob.tickets._leases._live_leases_pruning_stale`) -- correct for the
-    ordinary case (an agent finished and its worktree was removed), but
-    silently wrong for a ticket that is still `in-progress` with nobody
-    working it (blocked-and-abandoned, or a worktree removed by hand
-    without releasing the lease first). That is precisely the leak this
-    exists to surface: T-2377 sat `in-progress` holding
-    `docs/modules/gates.md` for nine hours after its own worktree was
-    removed, and `leases()` never listed it at all because the file was
-    already gone -- while `frob ticket start`'s own collision check (which
-    reads ticket state/scope directly off the ledger, never the lease
-    file, `frob.tickets._scope._scope_add_queue_conflict`) refused for
-    real on exactly this ticket.
-
-    A lease is a property of an in-progress ticket's declared scope
-    (T-0453) -- a worktree is merely where the work usually happens, so
-    this reads scope/state from the ledger FIRST and treats a worktree as
-    an annotation, not the trigger. `worktree` is populated best-effort
-    (`ticket_lease`'s own file, if it still exists and resolves to a live
-    path, else a `worktrees_touching_ticket` scope-correlated scan) --
-    `None` (and `leaked=True`) only when NEITHER source can name one, the
-    exact 'in-progress with no worktree anywhere' shape that was
-    previously invisible.
-
-    Deliberately does NOT call the O(n^2) start-time collision check
-    (`scope_lease_conflict`) per ticket pair -- this just enumerates the
-    same underlying fact (in-progress ticket + declared scope) the
-    collision check already reads, once per ticket, linear in the number
-    of in-progress tickets."""
+    """Every `state: in-progress` ticket under `TICKETS_DIR`, read directly
+    from its own local ledger file (the authoritative source for
+    state/scope, unlike `leases()` which only sees a lease file that gets
+    unlinked once its worktree is gone), as `{"ticket_id", "scope",
+    "worktree", "leaked"}`. `worktree` is populated best-effort (a live
+    `ticket_lease` file, else a `worktrees_touching_ticket` scope-
+    correlated scan); `leaked=True` and `worktree=None` mean neither
+    source could name one -- an in-progress ticket with no worktree
+    anywhere. Linear in the number of in-progress tickets; does not run
+    the O(n^2) start-time collision check."""
     entries: list[dict] = []
     for ticket_dir, parsed in _iter_in_progress_ticket_frontmatter():
         ticket_id = ticket_dir.name
@@ -364,48 +334,28 @@ def in_progress_ticket_scope_leases() -> list[dict]:
 # frob:doc docs/guides/coordinator-scripts.md#blocked_in_progress_leases
 # frob:ticket T-2654
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.tes\
-# t_in_progress_with_open_blocker_flagged
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_in_progress_with_open_blocker_flagged  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.tes\
-# t_in_progress_with_no_blockers_not_flagged
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_in_progress_with_no_blockers_not_flagged  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.tes\
-# t_in_progress_with_only_terminal_blockers_not_flagged
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_in_progress_with_only_terminal_blockers_not_flagged  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.tes\
-# t_queued_ticket_with_open_blocker_not_flagged
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_queued_ticket_with_open_blocker_not_flagged  # noqa: E501
+# frob:ticket T-4421
 def blocked_in_progress_leases() -> list[dict]:
-    """T-2654: every `state: in-progress` ticket under `TICKETS_DIR` whose
-    `blocked_by` still names an OPEN blocker -- distinct from (and cheaper
-    to detect than) the no-worktree leak `in_progress_ticket_scope_leases`
-    (T-2651) already reports, since this does not depend on worktree
-    liveness at all. A ticket that is both `in-progress` and blocked by an
-    open blocker cannot proceed by definition (a blocker gate refuses its
-    own close/land until the blocker resolves) -- any lease it holds is
-    pure waste for as long as that holds. This is exactly the T-2377
-    shape T-2651's own body flagged as a related-but-distinct check: that
-    ticket sat `in-progress`, `blocked_by=[T-2568]` (still `queued`), for
-    nine hours, holding a live write lease on `docs/modules/gates.md` the
-    entire time -- discoverable here without ever needing its worktree to
-    be removed first.
-
-    Shares `in_progress_ticket_scope_leases`'s own ledger-read loop via
-    `_iter_in_progress_ticket_frontmatter` (DUP001, T-2654: the two used
-    to duplicate this walk directly at 95% similarity) plus
-    `_classify_blockers_local` (T-2449, the local-disk blocker classifier
-    already used by `_rotting_entry`) so 'still open' here means the same
-    thing it means everywhere else in this script: a blocker whose own
-    local ledger state exists and is not `done`/`dropped`. An UNRESOLVED
-    blocker (id does not resolve on local disk at all) is deliberately
-    NOT flagged here -- that is a different failure mode (a typo or a
-    blocker filed but never a real ticket) with its own detector
-    (`TICK004`-adjacent rot checks); conflating it here would blur two
-    distinct fix actions into one line. `state: queued`/`planned`
-    tickets are never flagged regardless of their own `blocked_by` -- a
-    lease binds only at `in-progress` (T-0453), so a queued ticket
-    blocked by something open holds no lease yet and has nothing to
-    flag."""
+    """Every `state: in-progress` ticket under `TICKETS_DIR` whose
+    `blocked_by` still names an open blocker -- a lease held by a ticket
+    that cannot proceed until that blocker resolves is pure waste. Shares
+    `in_progress_ticket_scope_leases`'s ledger-read loop
+    (`_iter_in_progress_ticket_frontmatter`) and reuses
+    `_classify_blockers_local` so "still open" means the same thing it
+    means everywhere else in this script: a blocker whose local ledger
+    state exists and is not `done`/`dropped`. An unresolved blocker (id
+    does not resolve on local disk at all) is not flagged here -- that is
+    a different failure mode with its own rot-check detector. Only
+    `state: in-progress` tickets are ever flagged; a lease binds only at
+    that state (T-0453), so a queued ticket blocked by something open
+    holds no lease yet."""
     entries: list[dict] = []
     for ticket_dir, parsed in _iter_in_progress_ticket_frontmatter():
         open_blockers, _unresolved = _classify_blockers_local(
@@ -426,11 +376,9 @@ def blocked_in_progress_leases() -> list[dict]:
 # frob:ticket T-2651
 # frob:ticket T-2655
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# .test_no_worktree_flagged_as_leak
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_no_worktree_flagged_as_leak  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# .test_live_worktree_named_not_leaked
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_live_worktree_named_not_leaked  # noqa: E501
 def _resolve_worktree_for_in_progress_ticket(
     ticket_id: str, scope: Sequence[str]
 ) -> str | None:
@@ -488,11 +436,9 @@ def _resolve_worktree_for_in_progress_ticket(
 # frob:doc docs/guides/coordinator-scripts.md#worktrees
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktrees.test_reports_idle\
-# _age
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktrees.test_reports_idle_age  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktrees.test_no_worktree_\
-# dir
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktrees.test_no_worktree_dir  # noqa: E501
 def worktrees(idle_seconds: int) -> list[tuple[str, int, bool]]:
     """Return (name, seconds-since-last-commit, looks_idle) per worktree."""
     if not WORKTREES.is_dir():
@@ -583,30 +529,23 @@ _DELETION_DOMINANT_RATIO = 3.0
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificati\
 # on.test_active_ticket_never_stranded_or_stale  # noqa: E501
+# frob:ticket T-4421
 def worktree_content_classification(
     path: Path, *, ticket_ids: Sequence[str] = ()
 ) -> tuple[str, list[str]]:
     """Classify one worktree at `path` as `"STRANDED"`, `"STALE"`, or
-    `"ACTIVE"` against `main` (T-2599, refined T-2617, generalized to
-    multiple ids T-2755), returning `(verdict, samples)` where `samples`
-    is up to 5 example added lines backing a `STRANDED` verdict (empty
-    otherwise). Full rationale -- the three measured-wrong naive tests,
-    T-2617's real-data false-positive finding, the T-2625 queued-vs-
-    active distinction, and T-2755's multi-id generalization -- lives at
+    `"ACTIVE"` against `main`, returning `(verdict, samples)` where
+    `samples` is up to 5 example added lines backing a `STRANDED` verdict
+    (empty otherwise). `ticket_ids`' state resolves to
+    `"ACTIVE"`/`"STALE"`/`None` via `_ticket_ids_state_verdict`; `None`
+    falls through to the content-diff test below (a deletion-dominant
+    diff, or the per-line presence check deciding `STRANDED` vs `STALE`,
+    deliberately conservative toward over-reporting `STRANDED` since this
+    never deletes anything itself). An empty `ticket_ids` skips ticket
+    correlation entirely and falls straight to the content-diff test.
+    Full design rationale lives at
     `docs/guides/coordinator-scripts.md#worktree_content_classification`
-    (`frob:doc` below), not duplicated here: `ticket_ids` state resolves
-    to `"ACTIVE"`/`"STALE"`/`None` via `_ticket_ids_state_verdict`
-    (ARCH001 split); `None` falls through to the content-diff test below
-    (a deletion-dominant diff, or the per-line presence check deciding
-    `STRANDED` vs `STALE`, deliberately conservative toward over-
-    reporting `STRANDED` since this never deletes anything itself).
-
-    T-2755: `ticket_ids` (plural) replaces the old single `ticket_id:
-    str | None` -- the old `_worktree_ticket_id` `t-<id>`-name resolver
-    silently returned nothing for a subject-named or series worktree;
-    `_worktree_started_ticket_ids` (structural) is the intended resolver
-    now, and an empty `ticket_ids` behaves identically to the old
-    `ticket_id=None`."""
+    (`frob:doc` below)."""
     ticket_verdict = _ticket_ids_state_verdict(path, ticket_ids)
     if ticket_verdict is not None:
         return ticket_verdict, []
@@ -759,14 +698,11 @@ def _lines_absent_from_main(
 # frob:doc docs/guides/coordinator-scripts.md#ticket_lease
 # frob:ticket T-2133
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_reads_a_li\
-# ve_lease
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_reads_a_live_lease  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_no_lease_f\
-# ile
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_no_lease_file  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_unreadable\
-# _lease_file
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_unreadable_lease_file  # noqa: E501
 def ticket_lease(ticket_id: str) -> dict | None:
     """The single live lease record for `ticket_id` (`.git/frob-leases/
     <id>.json`), or `None` if no lease file exists at all -- the SAME file
@@ -855,50 +791,24 @@ def _parse_ticket_frontmatter_text(text: str) -> dict:
 # frob:ticket T-2133
 # frob:ticket T-2449
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.tes\
-# t_reads_state_and_scope
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_reads_state_and_scope  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.tes\
-# t_missing_ticket_returns_none
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_missing_ticket_returns_none  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.tes\
-# t_falls_back_to_archive_when_active_ledger_has_no_such_ticket
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_falls_back_to_archive_when_active_ledger_has_no_such_ticket  # noqa: E501
+# frob:ticket T-4421
 def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
     """`{"state": ..., "scope": [...], "blocked_by": [...], "land_commit":
     ...}` parsed from `main:tickets/<id>/ticket.md`'s YAML frontmatter,
-    falling back to
-    `main:tickets/archive/<id>/ticket.md` (T-2449) when the active path
-    resolves to nothing, or `None` if the ticket exists in NEITHER
-    location. T-2449's own measured incident: a ticket whose blockers had
-    been completed AND ARCHIVED read as permanently blocked forever --
-    this function used to only ever look in the active ledger directory,
-    so a completed-and-archived blocker was indistinguishable from a
-    missing one, and `_open_blocker_ids` resolved that ambiguity as
-    'still blocking'. `frob.tickets.load_queue` (the real ledger resolver,
-    pinned by `tests/ticket_land_suite/test_archive.py::TestArchiveV2::
-    test_archived_v2_ticket_still_resolves_as_blocker`) already merges
-    both locations -- this mirrors that exact two-location resolution
-    order in plain form rather than `import frob` (this script's own 'no
-    frob import' module-docstring contract, load-bearing: the script must
-    stay usable under any `python3` on PATH, not just this project's own
-    built venv/editable install -- verified via `scripts/
-    _require_python.py`'s own module docstring, which requires this
-    script run correctly even under an interpreter far older than what
-    `frob` itself needs).
-
-    T-2133's own incident: a coordinator read `main:tickets/<id>/
-    ticket.md`'s scope twice believing it was the ticket's LIVE scope,
-    when the authoritative live value (if a lease is held) is the lease
-    record's own `scope` field, which can have diverged via `frob ticket
-    scope` inside a worktree that has not landed yet -- this function
-    reads the STATIC, main-committed side of that comparison;
-    `ticket_readiness` below is what actually compares the two.
-
-    T-2196: `blocked_by` is read here (not just `state`/`scope`) so
-    `ticket_readiness` can factor open blockers into its `dispatchable`
-    verdict -- previously this function never even looked at the field,
-    so a blocked ticket's own edges were invisible to the readiness
-    check no matter what."""
+    falling back to `main:tickets/archive/<id>/ticket.md` when the active
+    path resolves to nothing, or `None` if the ticket exists in neither
+    location. Mirrors `frob.tickets.load_queue`'s two-location resolution
+    order in plain form rather than `import frob`, so this script stays
+    usable under any `python3` on PATH (see `scripts/_require_python.py`'s
+    own module docstring). Reads the STATIC, main-committed side of a
+    ticket's scope/state -- `ticket_readiness` below is what compares it
+    against a live lease's own `scope`, which can have diverged inside an
+    unlanded worktree."""
     text = _git(["show", f"main:tickets/{ticket_id}/ticket.md"], REPO)
     if not text:
         text = _git(["show", f"main:tickets/archive/{ticket_id}/ticket.md"], REPO)
@@ -977,23 +887,17 @@ def _scan_for_live_worktree_process(
 # frob:doc docs/guides/coordinator-scripts.md#lease_classification
 # frob:ticket T-2222
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_li\
-# ve_lease_stays_live
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_live_lease_stays_live  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_ho\
-# lder_dead_is_reclaimable
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_holder_dead_is_reclaimable  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_ti\
-# cket_terminal_is_reclaimable
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_ticket_terminal_is_reclaimable  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_pa\
-# th_gone_is_reclaimable
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_path_gone_is_reclaimable  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_ro\
-# ot_worktree_is_structurally_unreclaimable
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_root_worktree_is_structurally_unreclaimable  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_cl\
-# assification_is_strictly_read_only
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_classification_is_strictly_read_only  # noqa: E501
 def lease_classification(record: dict) -> str:
     """T-2222: classify one held lease record as `"live"`, `"reclaimable"`,
     or `"root-resident"` -- the missing distinction `leases()` never made,
@@ -1048,8 +952,7 @@ def lease_classification(record: dict) -> str:
 # frob:doc docs/guides/coordinator-scripts.md#live_lease_count
 # frob:ticket T-2222
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_li\
-# ve_lease_stays_live
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_live_lease_stays_live  # noqa: E501
 def live_lease_count(held: Sequence[dict]) -> int:
     """How many of `held` (`leases()`'s own records) classify as `"live"`
     (`lease_classification`) -- the number a concurrency GUIDANCE clause
@@ -1133,11 +1036,9 @@ def _worktree_matches_ticket_by_dual_correlation(
 # frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket
 # frob:ticket T-2747
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicket.test_\
-# true_when_start_transition_commit_present
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicket.test_true_when_start_transition_commit_present  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicket.test_\
-# false_when_absent
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicket.test_false_when_absent  # noqa: E501
 def _worktree_started_ticket(path: Path, ticket_id: str) -> bool:
     """`True` if `path`'s unlanded history (`main..HEAD`) carries the
     canonical start-transition commit `frob.tickets._leases.
@@ -1189,14 +1090,11 @@ _START_TRANSITION_SUBJECT_RE = re.compile(
 # frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket_ids
 # frob:ticket T-2755
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.te\
-# st_non_conventionally_named_worktree_resolves
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.test_non_conventionally_named_worktree_resolves  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.te\
-# st_no_start_transition_commits_resolves_empty
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.test_no_start_transition_commits_resolves_empty  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.te\
-# st_series_worktree_resolves_every_started_id
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.test_series_worktree_resolves_every_started_id  # noqa: E501
 def _worktree_started_ticket_ids(path: Path) -> list[str]:
     """Every ticket id `path`'s own unlanded history (`main..HEAD`)
     structurally started (T-2755), in commit order (most recent last is
@@ -1244,26 +1142,20 @@ def _worktree_started_ticket_ids(path: Path) -> list[str]:
 # frob:ticket T-2665
 # frob:ticket T-2747
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.tes\
-# t_finds_a_branch_with_unlanded_commits
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_finds_a_branch_with_unlanded_commits  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.tes\
-# t_empty_when_nothing_touches_it
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_empty_when_nothing_touches_it  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.tes\
-# t_ledger_only_churn_is_not_reported
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_ledger_only_churn_is_not_reported  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.tes\
-# t_non_conventionally_named_worktree_matches_via_start_transition
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_non_conventionally_named_worktree_matches_via_start_transition  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.tes\
-# t_series_worktree_matches_sibling_ticket_via_start_transition
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_series_worktree_matches_sibling_ticket_via_start_transition  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# LiveGit.test_live_worktree_with_lease_file_removed_is_not_leaked
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit.test_live_worktree_with_lease_file_removed_is_not_leaked  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases\
-# LiveGit.test_no_worktree_and_no_lease_is_still_leaked
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit.test_no_worktree_and_no_lease_is_still_leaked  # noqa: E501
+# frob:ticket T-4421
 def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> list[str]:
     """Names of live worktrees whose branch carries an unlanded commit
     that, in that SAME commit's own diff, BOTH (a) touches
@@ -1271,41 +1163,16 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
     touches at least one file matching `scope_globs` (the ticket's own
     declared scope) -- genuine implementation evidence, not merely a
     ledger edit that happens to share a branch history with unrelated
-    scope-touching commits.
-
-    T-2172 follow-up (the coordinator's own incident): the original
-    version reported ANY worktree with a `tickets/<id>/`-touching commit
-    as "already implemented" -- `--ticket T-2114` printed SEVEN branches
-    (t-2071, t-2099, t-2105, t-2107, t-2109, t-2110, t2049-series), none
-    of which had implemented T-2114 at all. T-2114 briefly collided with a
-    different ticket id before being renumbered to T-2140, so every one of
-    those branches had touched `tickets/T-2114/ticket.md` purely as
-    collision-recovery renumbering churn -- never the ticket's own scope.
-    T-2179 narrowed this from "any commit touches the ticket dir" AND
-    "the WHOLE branch diff touches scope" to the same two conditions
-    checked at the WHOLE-BRANCH level, which fixed the T-2114 case but
-    left a second false-positive shape open (T-2181, this ticket's own
-    residue): whole-branch correlation still credits a branch whose
-    ticket-dir-touching commit and its scope-touching commit are two
-    DIFFERENT commits for two DIFFERENT tickets that merely happen to
-    share a branch -- measured for real, `--ticket T-2114` reported
-    `t-2107` and `t2049-series`, which each touched
-    `src/frob/app/ticket_runner/_land_cmd.py` for their OWN ticket
-    (T-2108, T-2049) in a commit that never touches `tickets/T-2114/` at
-    all, alongside a SEPARATE bookkeeping commit that touches
-    `tickets/T-2114/` (e.g. a `blocked_by`/renumbering edit) and never
-    touches `_land_cmd.py`. Whole-branch overlap of the two conditions is
-    exactly file-overlap reasoning at branch granularity -- correlation
-    now happens PER COMMIT (`git show --name-only` on each commit that
-    itself touches `tickets/<id>/`) so a commit must carry BOTH signals
-    together to count as evidence, never two unrelated commits stitched
-    together by sharing a branch.
-
-    An empty `scope_globs` (ticket not on `main` yet, or `main` records no
-    scope at all) can never satisfy condition (b), so it always reports
-    empty rather than falling back to the old any-`tickets/<id>/`-commit
-    behavior -- "no known scope to check against" must read as "cannot
-    confirm implementation", not as "implementation confirmed"."""
+    scope-touching commits. Correlation happens PER COMMIT (`git show
+    --name-only` on each commit that touches `tickets/<id>/`), not at
+    whole-branch granularity, so a commit must carry both signals
+    together to count; two unrelated commits that merely share a branch
+    never do. An empty `scope_globs` (ticket not on `main` yet, or `main`
+    records no scope at all) can never satisfy condition (b), so it
+    always reports empty rather than falling back to any-
+    `tickets/<id>/`-commit matching -- "no known scope to check against"
+    reads as "cannot confirm implementation", never as "implementation
+    confirmed"."""
     if not WORKTREES.is_dir() or not scope_globs:
         return []
     hits = []
@@ -1360,33 +1227,25 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
 # frob:ticket T-2133
 # frob:ticket T-2179
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_dispatcha\
-# ble_when_no_lease_no_commits_no_divergence
+# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_dispatchable_when_no_lease_no_commits_no_divergence  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispa\
-# tchable_when_a_live_lease_exists
+# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispatchable_when_a_live_lease_exists  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispa\
-# tchable_when_another_branch_already_has_commits
+# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispatchable_when_another_branch_already_has_commits  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_flags_sco\
-# pe_divergence_between_the_live_lease_and_main
+# tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_flags_scope_divergence_between_the_live_lease_and_main  # noqa: E501
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_classify_blockers
 # frob:ticket T-2449
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_done_\
-# blocker_is_closed
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_done_blocker_is_closed  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_archi\
-# ved_done_blocker_is_closed
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_archived_done_blocker_is_closed  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_in_pr\
-# ogress_blocker_is_open
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_in_progress_blocker_is_open  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_missi\
-# ng_blocker_is_unresolved_not_open
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_missing_blocker_is_unresolved_not_open  # noqa: E501
 def _classify_blockers(blocked_by: Sequence[str]) -> tuple[list[str], list[str]]:
     """`(open_ids, unresolved_ids)` -- T-2449's replacement for the old
     `_open_blocker_ids`, which collapsed two distinct facts into one
@@ -1456,17 +1315,13 @@ def _expand_scope_globs_to_paths(root: Path, globs: Sequence[str]) -> set[Path]:
 # frob:doc docs/guides/coordinator-scripts.md#_land_ticket_collisions
 # frob:ticket T-2281
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land\
-# _in_progress_ticket_with_no_lease_still_collides
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land_in_progress_ticket_with_no_lease_still_collides  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land\
-# _ticket_disjoint_scope_is_not_a_collision
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land_ticket_disjoint_scope_is_not_a_collision  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land\
-# _ticket_id_matching_a_live_lease_is_not_double_reported
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land_ticket_id_matching_a_live_lease_is_not_double_reported  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_the_\
-# ticket_s_own_id_in_land_ticket_ids_is_never_self_collision
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_the_ticket_s_own_id_in_land_ticket_ids_is_never_self_collision  # noqa: E501
 def _land_ticket_collisions(
     my_files: set[Path],
     land_ticket_ids: Sequence[str],
@@ -1498,14 +1353,11 @@ def _land_ticket_collisions(
 # frob:ticket T-2225
 # frob:ticket T-2281
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_glob\
-# _scope_collides_with_a_literal_lease_file
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_glob_scope_collides_with_a_literal_lease_file  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_no_c\
-# ollision_when_files_are_disjoint
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_no_collision_when_files_are_disjoint  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_a_re\
-# claimable_lease_is_never_a_collision
+# tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_a_reclaimable_lease_is_never_a_collision  # noqa: E501
 def scope_lease_collisions(
     ticket_id: str,
     effective_scope: Sequence[str],
@@ -1742,14 +1594,11 @@ def _globs_overlap(a: str, b: str) -> bool:
 # frob:doc docs/guides/coordinator-scripts.md#scope_intersections
 # frob:ticket T-2180
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_rep\
-# orts_overlapping_pair
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_reports_overlapping_pair  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_no_\
-# overlap_reports_empty
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_no_overlap_reports_empty  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_che\
-# cks_against_a_held_lease_outside_the_requested_set
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_checks_against_a_held_lease_outside_the_requested_set  # noqa: E501
 def scope_intersections(ticket_ids: Sequence[str]) -> list[dict]:
     """PAIRWISE scope-glob intersection across every id in `ticket_ids`,
     using each ticket's EFFECTIVE scope (`_effective_scope`) -- compared
@@ -2009,17 +1858,13 @@ def _land_row_is_out_of_scope(
 # of large, incident-provenance-carrying docstrings on every public function, not a \
 # function that has grown genuinely harder to read"
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_parses_matc\
-# hing_rows_and_skips_others
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_parses_matching_rows_and_skips_others  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_watcher_pgr\
-# ep_pattern_is_not_counted_as_a_land
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_watcher_pgrep_pattern_is_not_counted_as_a_land  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_a_land_in_a\
-# _different_repo_is_not_counted
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_a_land_in_a_different_repo_is_not_counted  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_own_ancesto\
-# r_process_is_not_counted_as_a_land
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_own_ancestor_process_is_not_counted_as_a_land  # noqa: E501
 def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
     """Every live process whose argv contains a `ticket land` invocation,
     parsed from `ps -eo pid,etimes,time,args`'s own structured columns:
@@ -2192,14 +2037,11 @@ def _descendant_cpu_seconds(
 # frob:ticket T-2180
 # frob:ticket T-2193
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_collapses_p\
-# rocess_fan_out_by_ticket_id
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_collapses_process_fan_out_by_ticket_id  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_must_pass_c\
-# ontrol_one_land_many_processes_reports_one
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_must_pass_control_one_land_many_processes_reports_one  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_rows_with_n\
-# o_ticket_id_are_dropped_not_reported
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_rows_with_no_ticket_id_are_dropped_not_reported  # noqa: E501
 def land_invocations() -> list[dict]:
     """Distinct `frob ticket land` INVOCATIONS, keyed on the ticket id
     parsed from each process row's own argv -- collapsing
@@ -2269,11 +2111,9 @@ def land_invocations() -> list[dict]:
 # frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
 # frob:ticket T-2180
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_finds_a_\
-# pid_holding_the_lock_open
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_finds_a_pid_holding_the_lock_open  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_no_live_\
-# holder_returns_empty
+# tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_no_live_holder_returns_empty  # noqa: E501
 def land_lock_holder_pids(root: Path, proc: Path = Path("/proc")) -> list[int]:
     """Live pids that currently hold `root`'s `.frob/land.lock` file OPEN,
     found by scanning `<proc>/<pid>/fd/*` for a symlink that resolves to
@@ -2438,11 +2278,9 @@ _AGENT_CAP_GUIDANCE = "3-4 agent"
 # frob:doc docs/guides/coordinator-scripts.md#host_load
 # frob:ticket T-2180
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_reads_loadavg\
-# _and_mem_available
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_reads_loadavg_and_mem_available  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_missing_proc_\
-# files_return_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_missing_proc_files_return_none  # noqa: E501
 def host_load(proc: Path = Path("/proc")) -> tuple[float, int] | None:
     """`(one_minute_load_average, mem_available_kb)` read from `<proc>/
     loadavg` and `<proc>/meminfo`'s own STRUCTURED fields -- never by
@@ -2496,11 +2334,9 @@ _SWAP_PRESSURE_FLOOR_KB = 1024 * 1024
 # frob:doc docs/guides/coordinator-scripts.md#swap_pressure
 # frob:ticket T-2249
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_reads_swa\
-# p_used_and_total
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_reads_swap_used_and_total  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_swap_tota\
-# l_zero_never_crashes_or_claims_pressure
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_swap_total_zero_never_crashes_or_claims_pressure  # noqa: E501
 def swap_pressure(proc: Path = Path("/proc")) -> tuple[int, int] | None:
     """`(swap_used_kb, swap_total_kb)` read from `<proc>/meminfo`'s own
     `SwapTotal`/`SwapFree` fields -- the same file `host_load` already
@@ -2963,26 +2799,19 @@ def _forkserver_root_is_live_check(
 # frob:ticket T-2443
 # frob:ticket T-2818
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_counts_forkserver_reparented_to_init
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_counts_forkserver_reparented_to_init  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_ignores_forkserver_with_live_parent
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_ignores_forkserver_with_live_parent  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_ignores_non_forkserver_processes
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_ignores_non_forkserver_processes  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_missing_proc_returns_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_missing_proc_returns_none  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_two_level_chain_with_dead_root_is_orphaned
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_two_level_chain_with_dead_root_is_orphaned  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_deep_chain_under_a_live_check_is_not_orphaned
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_deep_chain_under_a_live_check_is_not_orphaned  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_zero_forkservers_reports_zero
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_zero_forkservers_reports_zero  # noqa: E501
 #: T-3139: mirrors `frob.process._reap.DEFAULT_ORPHAN_AGE_FLOOR_S` exactly
 #: (a second copy: `scripts/fleet_status.py` has a documented "no frob
 #: import" contract, so it cannot import the canonical constant -- same
@@ -3006,20 +2835,15 @@ _ORPHAN_AGE_FLOOR_S = 300.0
 # frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
 # frob:ticket T-3139
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_unmeasurable_age_never_counted
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_unmeasurable_age_never_counted  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_young_forkserver_with_no_check_ancestor_is_not_orphaned
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_young_forkserver_with_no_check_ancestor_is_not_orphaned  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.tes\
-# t_old_forkserver_with_no_check_ancestor_is_orphaned
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_old_forkserver_with_no_check_ancestor_is_orphaned  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgre\
-# esWithReap.test_young_xdist_parented_forkserver_agrees
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgreesWithReap.test_young_xdist_parented_forkserver_agrees  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgre\
-# esWithReap.test_old_no_ancestor_forkserver_agrees
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgreesWithReap.test_old_no_ancestor_forkserver_agrees  # noqa: E501
 def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `multiprocessing.forkserver` helper processes on this
     host are BOTH (a) at least `_ORPHAN_AGE_FLOOR_S` old and (b) do NOT
@@ -3106,20 +2930,15 @@ def _forkserver_entry_is_orphaned(
 # frob:doc docs/guides/coordinator-scripts.md#stale_forkserver_count
 # frob:ticket T-2517
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_c\
-# ounts_old_forkserver_when_no_checks_running
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_counts_old_forkserver_when_no_checks_running  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_i\
-# gnores_young_forkserver
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_ignores_young_forkserver  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_n\
-# ever_counts_anything_while_a_check_is_running
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_never_counts_anything_while_a_check_is_running  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_u\
-# nknown_concurrent_checks_never_counts_anything
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_unknown_concurrent_checks_never_counts_anything  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_m\
-# issing_proc_returns_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_missing_proc_returns_none  # noqa: E501
 def stale_forkserver_count(
     proc: Path = Path("/proc"),
     *,
@@ -3171,14 +2990,11 @@ def stale_forkserver_count(
 # frob:doc docs/guides/coordinator-scripts.md#forkserver_swap_held_kb
 # frob:ticket T-2517
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_s\
-# ums_vmswap_across_every_forkserver
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_sums_vmswap_across_every_forkserver  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_m\
-# issing_status_file_degrades_that_entry_to_zero_not_a_crash
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_missing_status_file_degrades_that_entry_to_zero_not_a_crash  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_m\
-# issing_proc_returns_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_missing_proc_returns_none  # noqa: E501
 def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
     """Sum of `VmSwap` (kb) across every live `multiprocessing.forkserver`
     helper on the host, orphaned or not, stale or not (T-2517) -- the
@@ -3200,14 +3016,11 @@ def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
 # frob:doc docs/guides/coordinator-scripts.md#forkserver_rss_held_kb
 # frob:ticket T-3407
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_su\
-# ms_vmrss_across_every_forkserver
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_sums_vmrss_across_every_forkserver  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_mi\
-# ssing_status_file_degrades_that_entry_to_zero_not_a_crash
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_missing_status_file_degrades_that_entry_to_zero_not_a_crash  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_mi\
-# ssing_proc_returns_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_missing_proc_returns_none  # noqa: E501
 def forkserver_rss_held_kb(proc: Path = Path("/proc")) -> int | None:
     """Sum of `VmRSS` (kb) across every live `multiprocessing.forkserver`
     helper on the host, orphaned or not, stale or not, swapped or not
@@ -3231,11 +3044,9 @@ def forkserver_rss_held_kb(proc: Path = Path("/proc")) -> int | None:
 # frob:doc docs/guides/coordinator-scripts.md#forkserver_count
 # frob:ticket T-3407
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_counts\
-# _every_live_forkserver
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_counts_every_live_forkserver  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_missin\
-# g_proc_returns_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_missing_proc_returns_none  # noqa: E501
 def forkserver_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `multiprocessing.forkserver` helper processes exist
     on this host right now, orphaned/stale/healthy alike (T-3407) -- the
@@ -3295,32 +3106,24 @@ def _is_live_check_cmdline(raw: bytes) -> bool:
 # frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
 # frob:ticket T-2473
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_c\
-# ounts_check_processes
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_counts_check_processes  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_i\
-# gnores_non_check_processes
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_ignores_non_check_processes  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_m\
-# issing_proc_returns_none
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_missing_proc_returns_none  # noqa: E501
+# frob:ticket T-4421
 def concurrent_check_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `frob check` processes are running on this host right
-    now (T-2473) -- the number a coordinator needs to decide whether to
-    dispatch another agent, previously invisible short of deriving it by
-    hand with `ps` (T-2473's own filed measurement: 12 concurrent checks
-    went unnoticed until someone checked manually). Unlike `frob.process.
-    _reap.count_running_checks` (T-2473's advisory log line INSIDE a
-    running check, which excludes itself), this counts EVERY live check
-    process including any this script's own invocation might overlap with
-    -- `fleet_status.py` is not itself a `frob check` process, so there is
-    no self-exclusion case here. Returns `None` if `/proc` is missing/
-    unreadable, mirroring `orphaned_forkserver_count`'s own best-effort-
-    degrades-to-None contract exactly.
-
-    T-2818: now `len(_live_check_pids(proc))`, sharing the exact same
-    cmdline scan `_forkserver_root_is_live_check`'s ancestry walk needs
-    (DUP001 -- this used to duplicate that scan independently); behavior
-    is unchanged, only the scan itself is shared."""
+    now -- the number a coordinator needs to decide whether to dispatch
+    another agent. Unlike `frob.process._reap.count_running_checks` (an
+    advisory log line inside a running check, which excludes itself),
+    this counts every live check process, including any this script's own
+    invocation might overlap with (`fleet_status.py` is not itself a
+    `frob check` process, so there is no self-exclusion case). Returns
+    `None` if `/proc` is missing/unreadable, mirroring
+    `orphaned_forkserver_count`'s best-effort-degrades-to-`None`
+    contract. Shares `_forkserver_root_is_live_check`'s cmdline scan via
+    `_live_check_pids` rather than duplicating it."""
     pids = _live_check_pids(proc)
     if pids is None:
         return None
@@ -3330,14 +3133,11 @@ def concurrent_check_count(proc: Path = Path("/proc")) -> int | None:
 # frob:doc docs/guides/coordinator-scripts.md#_swap_guidance
 # frob:ticket T-2249
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_swap_abov\
-# e_floor_overrides_the_static_guidance
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_swap_above_floor_overrides_the_static_guidance  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_swap_belo\
-# w_floor_keeps_the_static_guidance
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_swap_below_floor_keeps_the_static_guidance  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_unknown_s\
-# wap_keeps_the_static_guidance
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_unknown_swap_keeps_the_static_guidance  # noqa: E501
 def _swap_guidance(swap: tuple[int, int] | None) -> str:
     """The concurrency GUIDANCE clause text -- `_AGENT_CAP_GUIDANCE`
     UNLESS `swap` (`swap_pressure`'s own reading) shows real pressure
@@ -3559,17 +3359,13 @@ def _epics_with_any_children() -> set[str]:
 # frob:ticket T-2182
 # frob:ticket T-2229
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_flags_a_ti\
-# cket_past_its_priority_threshold
+# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_flags_a_ticket_past_its_priority_threshold  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_ignores_ti\
-# ckets_still_under_threshold
+# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_ignores_tickets_still_under_threshold  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_only_queue\
-# d_and_planned_states_are_considered
+# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_only_queued_and_planned_states_are_considered  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_distinguis\
-# hes_epic_and_story_tier_from_ticket_tier
+# tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_distinguishes_epic_and_story_tier_from_ticket_tier  # noqa: E501
 def rotting_tickets() -> list[dict]:
     """Every QUEUED/PLANNED ticket under `TICKETS_DIR` (excluding
     `tickets/archive/**`) whose priority-specific rot-day threshold
@@ -3626,14 +3422,11 @@ def _local_ledger_state(ticket_id: str, tickets_dir: Path = TICKETS_DIR) -> str 
 # frob:doc docs/guides/coordinator-scripts.md#_classify_blockers_local
 # frob:ticket T-2449
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_\
-# done_archived_blocker_is_closed
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_done_archived_blocker_is_closed  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_\
-# queued_blocker_is_open
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_queued_blocker_is_open  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_\
-# missing_blocker_is_unresolved
+# tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_missing_blocker_is_unresolved  # noqa: E501
 def _classify_blockers_local(
     blocked_by: Sequence[str], tickets_dir: Path = TICKETS_DIR
 ) -> tuple[list[str], list[str]]:
@@ -3751,23 +3544,17 @@ def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> No
 # frob:ticket T-2229
 # frob:ticket T-2475
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_splits_by_\
-# tier_under_distinct_action_headings
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_splits_by_tier_under_distinct_action_headings  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_runs_last_\
-# ticket_gets_its_own_deferred_bucket_not_needs_dispatch
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_decomposed\
-# _epic_prints_under_its_own_heading_not_needs_decomposition
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_epic_all_t\
-# erminal_children_prints_under_needs_close
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_epic_all_terminal_children_prints_under_needs_close  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_epic_with_\
-# no_children_at_all_still_prints_under_needs_decomposition
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_epic_with_no_children_at_all_still_prints_under_needs_decomposition  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_blocked_st\
-# ory_with_terminal_child_prints_under_blocked_not_needs_close
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close  # noqa: E501
 def _print_ticket_rot() -> None:
     """Print the TICKET ROT section: `rotting_tickets`'s own count, split
     into headings by required ACTION -- 'NEEDS DISPATCH' (a leaf ticket,
@@ -3882,20 +3669,15 @@ def _print_ticket_rot() -> None:
 # frob:doc docs/guides/coordinator-scripts.md#quarantine
 # frob:ticket T-2049
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_r\
-# aised_with_undisposed_count
+# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_raised_with_undisposed_count  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_c\
-# lear_when_store_says_cleared
+# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_clear_when_store_says_cleared  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_c\
-# lear_when_no_file
+# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_clear_when_no_file  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_unreadabl\
-# e_store_is_unknown_never_clear
+# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_unreadable_store_is_unknown_never_clear  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_non_dict_\
-# record_is_unknown
+# tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_non_dict_record_is_unknown  # noqa: E501
 def quarantine_state() -> tuple[str, int]:
     """T-2049: `("raised" | "clear" | "unknown", undisposed_count)` for
     QUARANTINE -- the T-1693 quarantine circuit breaker's state, read
@@ -3936,14 +3718,11 @@ def quarantine_state() -> tuple[str, int]:
 # frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
 # frob:ticket T-2126
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_reports_\
-# depth_and_oldest_age
+# tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_reports_depth_and_oldest_age  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_zero_dep\
-# th_when_no_file
+# tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_zero_depth_when_no_file  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_unreadab\
-# le_queue_is_unknown_never_zero
+# tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_unreadable_queue_is_unknown_never_zero  # noqa: E501
 def verify_queue_state(*, now: datetime | None = None) -> tuple[int, float | None]:
     """`(depth, oldest_age_s)` for `.frob/verify-queue.json` -- T-2126,
     symmetric to `quarantine_state` immediately above: queue depth/age
@@ -4007,11 +3786,9 @@ def verify_queue_state(*, now: datetime | None = None) -> tuple[int, float | Non
 # frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines
 # frob:ticket T-2172
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness.test_prin\
-# ts_dispatchable_true
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness.test_prints_dispatchable_true  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness.test_prin\
-# ts_lease_scope_divergence_and_sibling_commits
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness.test_prints_lease_scope_divergence_and_sibling_commits  # noqa: E501
 def _ticket_readiness_lines(readiness: dict) -> list[str]:
     """Render one `TICKET <id>` readiness block (lease, main state/scope,
     scope divergence, open blockers, sibling-branch commits, final
@@ -4102,14 +3879,11 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 # frob:ticket T-2180
 # frob:ticket T-2222
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_prints_invo\
-# cations_and_live_lock_holder
+# tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_prints_invocations_and_live_lock_holder  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_prints_no_l\
-# ive_holder_as_normal_resting_state_not_stale
+# tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_prints_no_live_holder_as_normal_resting_state_not_stale  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_guidance_li\
-# ne_uses_live_count_not_raw_count
+# tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_guidance_line_uses_live_count_not_raw_count  # noqa: E501
 # frob:ticket T-2691
 # frob:ticket T-4266
 # frob:doc docs/guides/coordinator-scripts.md#read_land_status_marker
@@ -4438,14 +4212,11 @@ _FORKSERVER_RSS_WARNING_FLOOR_KB = 2 * 1024 * 1024
 # frob:doc docs/guides/coordinator-scripts.md#_forkserver_rss_headline
 # frob:ticket T-3407
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_\
-# large_rss_produces_a_visible_warning
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_large_rss_produces_a_visible_warning  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_\
-# small_rss_stays_quiet
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_small_rss_stays_quiet  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_\
-# unknown_inputs_degrade_to_unknown_not_zero
+# tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_unknown_inputs_degrade_to_unknown_not_zero  # noqa: E501
 def _forkserver_rss_headline(
     forkserver_count: int | None,
     forkserver_rss_kb: int | None,
@@ -4661,11 +4432,9 @@ def _print_land_status() -> None:
 # frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
 # frob:ticket T-2126
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.tes\
-# t_prints_depth_and_age_when_nonempty
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.test_prints_depth_and_age_when_nonempty  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.tes\
-# t_prints_empty_when_zero_depth
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.test_prints_empty_when_zero_depth  # noqa: E501
 def _print_verify_queue_line() -> None:
     """Print the VERIFY QUEUE line `_print_fleet_report` places right
     after QUARANTINE (T-2126) -- split into its own function (ARCH001,
@@ -4687,14 +4456,11 @@ def _print_verify_queue_line() -> None:
 # frob:ticket T-2222
 # frob:ticket T-2654
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_prints_a\
-# ll_four_sections
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_prints_all_four_sections  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_leases_s\
-# ection_shows_classification_per_lease
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_leases_section_shows_classification_per_lease  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_leases_s\
-# ection_reports_ledger_leak_missing_from_held
+# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_leases_section_reports_ledger_leak_missing_from_held  # noqa: E501
 def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     """Print the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main`
     used to print inline -- split out (ARCH001/ARCH103, T-2172) as the
@@ -4929,44 +4695,31 @@ def _print_scope_intersections(tickets: list[str]) -> None:
 # frob:ticket T-1863
 # frob:ticket T-2172
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain.test_exit_zero\
-# _when_clean
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain.test_exit_zero_when_clean  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain.test_exit_one_\
-# when_dirty
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain.test_exit_one_when_dirty  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test\
-# _prints_raised_with_undisposed_count_and_consequence
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test_prints_raised_with_undisposed_count_and_consequence  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test\
-# _prints_clear
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test_prints_clear  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test\
-# _prints_unknown_as_unsafe
+# tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test_prints_unknown_as_unsafe  # noqa: E501
+# frob:ticket T-4421
 def main() -> int:
-    """Print (T-2172: ticket readiness FIRST, when `--ticket` is
-    given, ahead of the general fleet report) root/lease/worktree/
-    quarantine state; exit 1 when root is dirty OR (T-2133) `--ticket
-    T-####` was given and `ticket_readiness` says it is not dispatchable.
-    T-2049: the quarantine line is printed unconditionally (not just on
-    --verbose or similar) because this is the ONE place a coordinator
-    already looks before dispatching a wave -- see `quarantine_state`'s
-    own docstring for the incident this answers.
-
-    T-2172 (ARCH001/ARCH103): this function used to inline all
-    of ROOT/QUARANTINE/LEASES/WORKTREES/TICKET printing itself (78
-    lines, 14 decision points) -- now it only parses args, calls
-    `root_dirt()` once, and delegates the two print blocks to
-    `_print_ticket_readiness` and `_print_fleet_report`, keeping the
-    ordering/exit-code decision (the actual logic worth reading in one
-    place) as the only thing left here.
-
-    T-2180: `--ticket` now accepts MULTIPLE ids (repeatable flag) --
-    each is printed via `_print_ticket_readiness` in turn, and when 2+
-    are given, `scope_intersections` prints every pairwise (and
-    lease-external) scope collision across the whole set, so a
-    coordinator can vet a wave for contention before dispatching it, in
-    the same standing report rather than a separate command."""
+    """Entry point: parse args, print ticket readiness first (when
+    `--ticket` is given, ahead of the general fleet report) then
+    root/lease/worktree/quarantine state; exit 1 when root is dirty or
+    any given `--ticket T-####` is not dispatchable per
+    `ticket_readiness`. The quarantine line is always printed
+    unconditionally -- see `quarantine_state`'s own docstring. Parses
+    args and calls `root_dirt()` once, then delegates the two print
+    blocks to `_print_ticket_readiness` and `_print_fleet_report`,
+    keeping only the ordering/exit-code decision here. `--ticket` accepts
+    multiple ids (repeatable): each is printed via
+    `_print_ticket_readiness` in turn, and when 2+ are given,
+    `scope_intersections` prints every pairwise (and lease-external)
+    scope collision across the whole set, so a coordinator can vet a
+    wave for contention before dispatching it."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--idle-minutes", type=int, default=20)
     parser.add_argument(

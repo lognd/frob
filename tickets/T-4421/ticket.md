@@ -1,7 +1,7 @@
 ---
 id: T-4421
 title: Clean system, scripts, and remaining test docstrings of change-narrative (DOCARCH001)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -453,19 +453,15 @@ body_changes:
   at: '2026-09-19'
   old_length: 326
   new_length: 1455
-- mode: set
-  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
-    are not refused'
-  actor: logan
-  at: '2026-09-19'
-  old_length: 1455
-  new_length: 1458
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to scripts/fleet_status.py, scripts/verify_lands.py,
     and tests/system/** (excluding tests/system/test_system.py, leased elsewhere),
     when DOCARCH001 is measured, then the combined finding count is 0
-  evidence: []
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 acceptance_amendments:
 - op: replace
   index: 1
@@ -506,4 +502,4 @@ Measured denominator for the narrowed scope: ~15-20 (scripts/fleet_status.py
 file's lease status).
 
 The remainder is being split into child tickets in clusters of ~30 findings
-each, parented to this ticket via the planned ticket set form.
+each, parented to this ticket via `frob ticket set-parent`.

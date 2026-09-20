@@ -55,10 +55,9 @@ flow f1 : evil -> web
         assert "CWE-89" in out
 
     def test_file_arg_fails(self, tmp_path: Path) -> None:
-        """T-0163: `frob sys audit <file.strata>` used to silently join
-        `design_dir` onto the file path (`<file>/design`), find nothing,
-        and exit 0 with a vacuous PASS. It must now fail loudly and name
-        the expected directory invocation instead."""
+        """`frob sys audit <file.strata>` (a file, not a directory) must
+        fail loudly and name the expected directory invocation, never
+        exit 0 with a vacuous PASS."""
         repo = _init_repo(tmp_path, _CLEAN_MODEL)
         design_file = repo / "design" / "m.strata"
         r = run("sys", "audit", str(design_file), cwd=repo)

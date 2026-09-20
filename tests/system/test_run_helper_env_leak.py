@@ -99,20 +99,11 @@ class TestRunHelperEnvLeak:
 
 
 class TestRunHelperDefaultTimeout:
-    """T-2980: `run()` must never wait forever. `tests/system/conftest.py`'s
-    `run(*args, ..., timeout=timeout)` used to pass `timeout=None`
-    straight to `subprocess.run` whenever a caller omitted it, so any
-    call that spawned a frob subprocess which itself wedged (a `frob
-    check` invocation is the ubuntu-latest CI incident this ticket is
-    named for) blocked the whole worker indefinitely. Under
-    `--dist=loadgroup`, killing that worker at the outer
-    `--timeout=120` wall clock does not end the run either: xdist
-    redispatches the same wedging item to a fresh worker, which wedges
-    and dies the same way, consuming workers one at a time forever --
-    the exact mechanism reproduced locally for this ticket. Bounding
-    the wait INSIDE `run()` raises a normal Python exception instead,
-    so the test fails and the run moves on with no worker ever needing
-    to be killed."""
+    """`run()` must never wait forever: `tests/system/conftest.py`'s
+    `run(*args, ..., timeout=timeout)` must bound the wait when a caller
+    omits `timeout`, so a wedged frob subprocess raises a normal Python
+    exception and fails the test rather than blocking the worker (and,
+    under `--dist=loadgroup`, every worker after it) indefinitely."""
 
     # frob:ticket T-2980
     def test_run_default_timeout_is_bounded_not_none(self):
@@ -211,8 +202,7 @@ class TestRunHelperOrphanCleanup:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup.test_tim\
-        # eout_kills_the_whole_process_group_not_just_the_direct_child
+        # tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup.test_timeout_kills_the_whole_process_group_not_just_the_direct_child  # noqa: E501
         helper = tmp_path / "helper.py"
         helper.write_text(self._HELPER_SRC)
         pidfile = tmp_path / "grandchild.pid"
@@ -244,8 +234,7 @@ class TestRunHelperOrphanCleanup:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup.test_run\
-        # _arms_pdeathsig_and_uses_a_new_session
+        # tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup.test_run_arms_pdeathsig_and_uses_a_new_session  # noqa: E501
         """Unlike the end-to-end kill test above, this pins the exact
         `Popen` kwargs `run()` passes -- so a future refactor that
         silently drops `preexec_fn`/`start_new_session` (e.g. "simplify"

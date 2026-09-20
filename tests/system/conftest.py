@@ -265,21 +265,19 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
 
 
 def git(*args: str, cwd: Path) -> None:
-    """Run a `git` subcommand against `cwd`, raising on nonzero exit (T-0364:
-    extracted from four system test modules that had copy-pasted this exact
-    body -- see docs/modules/testing.md's system-test fixture note)."""
+    """Run a `git` subcommand against `cwd`, raising on nonzero exit. Shared
+    helper for system-test fixtures that need a real git repo (see
+    docs/modules/testing.md's system-test fixture note)."""
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
 # frob:ticket T-0750
 # frob:tests tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero  # noqa: E501
 def git_init_and_config(path: Path, *, branch: str = "main") -> None:
-    """Git-init `path` on `branch` with a fixed test identity (T-0750:
-    extracted from the same three-line `git init` + two `git config` calls
-    repeated inline across a dozen `test_cli_check.py` fixtures -- the
-    gates a gitless `tmp_path` now errors loudly on, COV002/SCOPE001/
-    TODO001, need a real git repo underneath, not just a working-tree diff
-    that silently degrades)."""
+    """Git-init `path` on `branch` with a fixed test identity, for fixtures
+    that need a real git repo underneath (rather than a bare `tmp_path`,
+    which several gates -- COV002/SCOPE001/TODO001 among them -- error
+    loudly on instead of silently degrading)."""
     git("init", "-q", "-b", branch, cwd=path)
     git("config", "user.email", "test@example.com", cwd=path)
     git("config", "user.name", "Test", cwd=path)

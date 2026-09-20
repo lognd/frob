@@ -113,6 +113,7 @@ def _model():
 
 
 # frob:ticket T-1079
+# frob:ticket T-4421
 class TestFrobSelfModel:
     # frob:tests design kind="integration"
     # frob:tests \
@@ -175,122 +176,19 @@ class TestFrobSelfModel:
     # frob:tests strata-core/src/lib.rs kind="integration"
     # frob:tests strata-core/src/parse.rs kind="integration"
     # frob:ticket T-1079
+    # frob:ticket T-4421
     def test_parses_and_elaborates(self, _model) -> None:
-        """Sanity: the model declares a nonzero component/flow/boundary/claim surface.
-
-        T-0440: `deploy`/`serve`/`mutate` split off `core`'s former
-        utility-hub node into three standalone components. This test's
-        node/flow/claim counts were ALREADY stale against the pre-T-0440
-        tree before this ticket touched them (12/32/24 measured directly
-        via `elaborate`, not the 10/27/23 previously asserted here --
-        `fleet`'s T-0707 `may "exec"` addition and its
-        `weakness:CWE-78:fleet` discharge claim were never folded into
-        this docstring's running count) -- disclosed as pre-existing debt
-        in the T-0440 Done report, not introduced by this ticket. T-0440
-        itself adds 3 nodes (12 -> 15), 10 hand-declared flows (32 -> 42:
-        `f_cli_deploy`/`f_cli_mutate`/`f_cli_serve` inbound from `cli`,
-        `f_deploy_strata`/`f_deploy_core`/`f_mutate_core`/`f_serve_core`/
-        `f_serve_gates`/`f_serve_graphlang`/`f_serve_tickets` outbound),
-        and 2 THREAT003 discharge claims (24 -> 26:
-        `weakness:CWE-78:deploy`/`weakness:CWE-78:mutate` -- both newly
-        declare `may "exec"`; `serve` declares no `may` atom at all, so it
-        drags in zero).
-
-        T-0967: same drift again, this time from T-0864's `natives` node
-        (`frob natives build`, design/frob.strata `node natives`) -- it
-        was never folded into this docstring's running count either: +1
-        node (15 -> 16), +2 hand-declared flows (42 -> 44:
-        `f_cli_natives`/`f_natives_core`), and +1 THREAT003 discharge
-        claim (26 -> 27: `weakness:CWE-78:natives`, `natives` declares
-        `may "exec"` with no `may "eval"`, so it drags in no CWE-94 pair).
-
-        T-1079 (SYS103's 264-finding follow-up, docs/modules/strata.md's
-        "Modeled: `_PACKAGE_ROOT` restriction's 264-finding follow-up"):
-        +4 nodes (16 -> 20: `testsuite`/`scripts_ops`/
-        `strata_core_native`/`frob_core_native`, binding `tests/**`/
-        `scripts/**`/`strata-core/src/**`/`frob-core/src/**` -- none had
-        an owning node before), +0 hand-declared flows (44 -> 44: none
-        of the four is on the cli-dispatch/component-import graph the
-        `f_*` flows model, so none gets one), and +4 THREAT003 discharge
-        claims (27 -> 31: `weakness:CWE-78:testsuite`/`weakness:
-        CWE-89:testsuite`/`weakness:CWE-918:testsuite`/`weakness:
-        CWE-502:testsuite` -- `testsuite` is the only one of the four new
-        nodes whose declared `may` set drags in an owasp-top-10
-        obligation; `scripts_ops`'s `fs`/`fs-read` and
-        `strata_core_native`/`frob_core_native`'s `ffi` do not).
-
-        T-2102: this docstring's "landed a node/flow/claim, forgot to
-        bump the counter" gap recurred at T-0707, T-0864, T-1329,
-        T-1591, and again silently between T-1735 and this ticket (23 ->
-        25 nodes measured directly, with `test_every_claim_proves`'s own
-        `len(claim_results) == 31` failing the same way, 31 -> 34) --
-        five independent, disclosed instances of the exact same
-        maintenance cost. A hardcoded exact count that must be
-        hand-rederived every time the self-hosting model legitimately
-        grows is a standing trap, not a one-off oversight: it fails
-        every organic addition exactly as loudly as a real regression,
-        so a maintainer's trained response becomes "bump the number,"
-        which is precisely how five previous drifts went undetected for
-        as long as they did.
-
-        Replaced the exact `==` counts below with `>=` FLOORS (this
-        test's actual job, per its own module docstring, is "the model
-        is a real, live program that parses and elaborates without
-        error" -- growth is expected and healthy; only SHRINKAGE, which
-        `elaborate` cannot itself detect since removing a node/flow/
-        claim is a perfectly valid edit, is the real regression this
-        sanity check exists to catch). `elaborate` already fails closed
-        on the corruption shapes a count COULD have caught incidentally
-        (`_validate_no_duplicates`: duplicate node/flow/secret ids;
-        dangling flow/boundary references) -- see `_model`'s own
-        fixture, which asserts `elaborated.is_ok` and would already fail
-        this test first were either to happen. The floor values below
-        are this ticket's own measured counts (2026-08-10), not the
-        pre-ticket stale ones.
-
-        T-3423: `_EXPECTED_NODE_IDS` drifted a fourth time (this pass added
-        `narrative`, T-3029's ledger-migration CLI parser split, `code
-        "src/frob/narrative/**"` in design/frob.strata -- `fs.read`-only,
-        not on the cli-dispatch/component-import graph the `f_*` flows
-        model, so only the node-id set moves). Read closely, this is NOT
-        a repeat of the T-0440/T-0967/T-1079/T-2102 anti-pattern above:
-        those four each silently transcribed a bare `==` integer that
-        gave no signal WHAT changed or WHY updating it was safe. T-2109
-        (2026-08-17, already landed before this ticket was filed) had
-        already replaced the node-count floor with exactly this ticket's
-        own option (c) for nodes specifically: `_node_id_diff_message`
-        names every added/removed id and tells the reader to update
-        `_EXPECTED_NODE_IDS` "in the same diff as a deliberate, reviewable
-        edit" -- see that function's docstring. This failure is that
-        mechanism doing its job for the first time since it was built:
-        catching a real, disclosed model addition and demanding an
-        explicit, named acknowledgment rather than silently drifting.
-        DECISION (T-3423, stated explicitly per the ticket's own request,
-        not inherited): keep the existing hybrid rather than moving
-        everything to pure option (a). `_EXPECTED_NODE_IDS` stays an
-        exact golden SET (T-2109's option (c)) because a floor cannot
-        distinguish an intentional node addition from an unintended one
-        (T-2109's own reasoning, still correct) -- losing that would trade
-        a real signal for one fewer manual edit. `flows`/`boundaries`/
-        `claims` stay `>=` FLOORS (T-2102's option (a)) because no
-        derivable-formula or golden-set case has been made for those
-        three (same scope boundary T-2109 drew) and a plain floor already
-        satisfies this test's own stated job ("nonzero ... surface", not
-        exact reproduction) without the maintenance cost integer equality
-        had. What actually changes here: this paragraph documents the
-        pattern explicitly so the NEXT node addition is recognized as
-        T-2109's mechanism working as designed, not a fifth instance of
-        the anti-pattern the first four paragraphs describe -- and two
-        new tests below make both directions of the contract explicit
-        (`TestFrobSelfModelFailureModes`): an empty/unparseable model
-        still fails this sanity check (MUST-FIRE), and the golden-set/
-        floor combination already demonstrated above (T-2109's own
-        injected/removed-node positive controls) is this test's existing
-        MUST-STAY-QUIET evidence for a legitimate node addition under
-        option (c) -- it fails, but with a message naming exactly what to
-        update and why, never a silent pass and never an opaque count
-        mismatch.
-        """
+        """Sanity: the model parses and elaborates to a nonzero
+        component/flow/boundary/claim surface. Node ids are checked
+        against an exact golden set (`_EXPECTED_NODE_IDS`, so an
+        addition or removal must be acknowledged explicitly, per
+        `_node_id_diff_message`'s own docstring); flow/boundary/claim
+        counts are checked as `>=` floors, not exact counts, since only
+        shrinkage (which `elaborate` cannot itself detect) is a real
+        regression here -- growth is expected and healthy. See
+        `TestFrobSelfModelFailureModes` for the MUST-FIRE fixtures
+        proving both directions of this contract, and T-2109/T-2102/T-3423
+        for the design history behind the golden-set-vs-floor split."""
         # T-1329: +1 node = `refactor` (the T-1197 rewrite engine, modeled
         # after landing unbound; SYS102 fallout from the T-1320 coverage run).
         # T-1591: +1 node = `security` (src/frob/security/** extracted
@@ -389,8 +287,7 @@ class TestFrobSelfModel:
     # only ever catches one direction is exactly the asymmetric floor this
     # ticket replaces.
     # frob:tests \
-    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_c\
-    # atches_an_injected_node kind="unit"
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_catches_an_injected_node kind="unit"  # noqa: E501
     # frob:ticket T-2109
     def test_golden_node_id_set_catches_an_injected_node(self) -> None:
         """An id present in `actual` but absent from `_EXPECTED_NODE_IDS`
@@ -403,8 +300,7 @@ class TestFrobSelfModel:
         assert "unexpected" in message
 
     # frob:tests \
-    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_c\
-    # atches_a_removed_node kind="unit"
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_catches_a_removed_node kind="unit"  # noqa: E501
     # frob:ticket T-2109
     def test_golden_node_id_set_catches_a_removed_node(self) -> None:
         """An id present in `_EXPECTED_NODE_IDS` but absent from `actual`
@@ -419,8 +315,7 @@ class TestFrobSelfModel:
         assert "missing" in message
 
     # frob:tests \
-    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_p\
-    # asses_when_unchanged kind="unit"
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_passes_when_unchanged kind="unit"  # noqa: E501
     # frob:ticket T-2109
     def test_golden_node_id_set_passes_when_unchanged(self) -> None:
         """An `actual` set identical to `_EXPECTED_NODE_IDS` passes with no
@@ -432,64 +327,19 @@ class TestFrobSelfModel:
     # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves \
     # kind="e2e"
     # frob:ticket T-1079
+    # frob:ticket T-4421
     def test_every_claim_proves(self, _model) -> None:
-        """Every architecture claim this model draws holds today, and every
-        T-0150 capability-discharge claim is a deliberately human-owned
-        ASSUME (never silently PROVED, never REFUTED).
-
-        A REFUTED claim here means either the model drifted from reality or
-        a real regression (e.g. the `b_vet_endorse` boundary directive was
-        deleted from `src/frob/vet/_registry.py`) -- either way, CI must
-        fail loudly rather than let the claim silently stop meaning
-        anything. The `weakness:CWE-78:*` claims are ASSUMEd, not PROVEd,
-        by design (docs/strata/selfconform.md: `core`'s discharge
-        specifically cannot be graph-proved, since `registry` DOES reach
-        `core` transitively via `vet`; `tickets_ledger`'s IS graph-provable
-        via `c_no_registry_ledger` but still follows the assume-for-
-        uniformity precedent, T-0166) -- verified ASSUMED here rather than
-        PROVED, and never REFUTED.
-
-        T-0440: this test's `assumed_ids` set was already missing
-        `weakness:CWE-78:fleet` (T-0707's `fleet` node has declared
-        `may "exec"` since before this ticket) -- pre-existing debt this
-        ticket's own re-measurement surfaced and fixed, disclosed in the
-        Done report. T-0440 itself adds `weakness:CWE-78:deploy` and
-        `weakness:CWE-78:mutate` (see `deploy`/`mutate`'s own `assume`
-        directives in design/frob.strata for the per-node reasoning);
-        `serve` declares no `may` atom, so it drags in no discharge claim.
-
-        T-0967: same drift shape again -- `weakness:CWE-78:natives` was
-        missing here (T-0864's `natives` node has declared `may "exec"`
-        with its own `assume "weakness:CWE-78:natives"` directive in
-        design/frob.strata since before this ticket, but this test's
-        hardcoded counts/sets were never re-measured against it) --
-        pre-existing model-vs-test drift this ticket root-caused and
-        fixed, not a real prover regression (no claim REFUTEs; the model
-        itself already carried the correct assume).
-
-        T-1079: `testsuite`'s 4 new discharge claims (CWE-78/89/918/502,
-        see test_parses_and_elaborates' docstring above) were added to
-        this test's `assumed_ids` set -- genuine model growth, not
-        drift, since `testsuite` (`code "tests/**"`) did not exist in
-        the model before this ticket.
-
-        T-2102: dropped the hardcoded `assumed_ids` enumeration and the
-        `seen_ids == proved_ids | assumed_ids` exact-set check that used
-        to sit on top of the per-claim loop below. That equality check
-        added NO safety the loop did not already provide -- every claim
-        result was already checked (never REFUTED; PROVED iff its id is
-        in `proved_ids`; ASSUMED otherwise, unconditionally, regardless
-        of set membership) -- it only tested "did the hardcoded set
-        enumerate every claim id that exists today," which is exactly
-        the golden-drift trap `test_parses_and_elaborates`' own T-2102
-        paragraph documents (five independent, disclosed misses:
-        T-0707, T-0864, T-1329, T-1591, and the 23-vs-25 node drift this
-        ticket fixed). `proved_ids` stays hardcoded and enumerated
-        deliberately: those three ids are the model's only claims meant
-        to be graph-PROVED rather than human-ASSUMED, a real, narrow
-        invariant worth locking by name -- unlike `assumed_ids`, growing
-        that set is not this test's job.
-        """
+        """Every architecture claim this model draws holds today, and
+        every capability-discharge claim (`weakness:CWE-78:*`) is a
+        deliberately human-owned ASSUME, never silently PROVED or
+        REFUTED. A REFUTED claim here means the model drifted from
+        reality or a real regression happened (e.g. a boundary directive
+        deleted from source) -- either way CI must fail loudly.
+        `proved_ids` is a small, hardcoded, deliberately narrow set of
+        the model's only claims meant to be graph-PROVED rather than
+        human-ASSUMED; every other claim id is checked as ASSUMED
+        unconditionally, with no separate exact-set enumeration to keep
+        in sync (see T-2102 for why that enumeration was dropped)."""
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
@@ -525,8 +375,7 @@ class TestFrobSelfModel:
         assert seen_proved_ids == proved_ids
 
     # frob:tests \
-    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violat\
-    # ions kind="e2e"
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violations kind="e2e"  # noqa: E501
     # T-0365: TEST009 owes design/frob.strata itself an e2e binding, not
     # just a binding on the test method's own symbol (the directive above
     # marks the test as self-covering per the repo-wide idiom, but that
@@ -602,27 +451,18 @@ class TestFrobSelfModel:
     # `tests/gates/test_scan_timeout_enforcement.py` enumeration). Same
     # 300s reasoning as the other `build_graph(_REPO_ROOT, ...)` tests in
     # this class.
+    # frob:ticket T-4421
     @pytest.mark.timeout(300)
     def test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001(
         self, frob_self_scan_artifacts
     ) -> None:
-        """T-2463 regression: `checker`/`fleet`/`deploy` declared a bare
-        `may "fs.write";` (no via-list) and `vet` declared `may "fs.write"
-        via "src/frob/vet/_nvd.py", "src/frob/vet/_registry.py"` -- all
-        four were false declarations, the same shape T-2457 fixed for the
-        T-2390 schema modules (a bare read-mode `open(path, "rb")` used to
-        satisfy the old mode-blind `fs.write` needle on its own; T-2457
-        fixed the needle, and these four SYS101 ("declared but never
-        observed") findings were the fallout T-2457's own investigation
-        did not cover). Measured directly (not assumed): none of `checker`/
-        `fleet`/`deploy`'s owned code, nor `_nvd.py`/`_registry.py`,
-        contains a single filesystem-write call of any kind -- narrower
-        than `test_sys_gate_zero_violations` above (which also trips on
-        unrelated, pre-existing SYS101/GATERULE001 findings) so this one
-        regression cannot be masked by those. T-3495: shares the same
-        `frob_self_scan_artifacts` session fixture the other tests in
-        this class do.
-        """
+        """Asserts that none of `checker`/`fleet`/`deploy`'s owned code, nor
+        `_nvd.py`/`_registry.py` (the files `vet`'s `fs.write` declaration
+        names), contains a filesystem-write call -- narrower than
+        `test_sys_gate_zero_violations` above (which also trips on
+        unrelated, pre-existing findings), so a real regression here
+        cannot be masked by those. Shares the `frob_self_scan_artifacts`
+        session fixture the other tests in this class use."""
         violations = frob_self_scan_artifacts.violations
         node_violations = [
             v
@@ -679,8 +519,7 @@ class TestFrobSelfModelFailureModes:
     test file only)."""
 
     # frob:tests \
-    # tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes.test_unparsea\
-    # ble_source_fails_to_parse
+    # tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes.test_unparseable_source_fails_to_parse  # noqa: E501
     def test_unparseable_source_fails_to_parse(self) -> None:
         """Source text with no `module` statement at all -- the shape a
         genuinely broken `design/frob.strata` (a bad merge, a truncated
@@ -693,8 +532,7 @@ class TestFrobSelfModelFailureModes:
         assert result.is_err
 
     # frob:tests \
-    # tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes.test_empty_mo\
-    # dule_elaborates_but_fails_every_surface_assertion
+    # tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes.test_empty_module_elaborates_but_fails_every_surface_assertion  # noqa: E501
     def test_empty_module_elaborates_but_fails_every_surface_assertion(
         self,
     ) -> None:

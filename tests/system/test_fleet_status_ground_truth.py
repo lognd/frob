@@ -276,26 +276,11 @@ class TestOrphanedForkserverAgeFloorClaim:
 
 class TestWorktreeLeaseLeakClaim:
     """Claim: "ticket T-<id>'s lease is leaked / not leaked" -- backed by
-    `worktrees_touching_ticket`'s fallback scan, exercised over REAL git
-    worktrees, not string fixtures.
-
-    Defect (c) (T-3128, MEASURED 2026-08-27: a live registered worktree
-    at `.claude/worktrees/t-3122` read as `[LEAK]`) has a LAND-PROOF
-    misattribution of its own: T-3128's recorded land commit (dac790e6e)
-    contains ONLY `CHANGELOG.md`/`changelog.d/T-3128.md`/`rapid-debt.
-    jsonl` -- zero code. The actual fix (the `elif not _worktree_
-    started_ticket_ids(path): matched = _worktree_matches_ticket_by_
-    scope_only(...)` branch below) was folded into sibling ticket
-    T-3139's squash commit (6f04de4c8) because the two tickets shared a
-    worktree and landed sequentially -- filed separately as the
-    misattribution defect itself (see this ticket's Done report). The
-    TRUE parent commit predating T-3128's own fix is therefore
-    `6f04de4c8^` (= `4da2a85c2`, the same commit `TestOrphanedForkserver
-    AgeFloorClaim` already uses as T-3139's own parent -- both tickets'
-    fixes landed together), not T-3128's own recorded land commit. The
-    must-fire fixture below is verified BY HAND to fail at `4da2a85c2`
-    and pass at HEAD -- a genuine, falsifiable T-3128 repro, not a
-    substitution for an unreproducible one."""
+    `worktrees_touching_ticket`'s fallback scan, exercised over real git
+    worktrees, not string fixtures. The must-fire fixture below asserts
+    against `6f04de4c8^` as the parent commit predating the fix (see
+    T-3128's ticket body for why that commit, not T-3128's own recorded
+    land commit, is the correct pre-fix baseline)."""
 
     def test_must_fire_worktree_whose_start_transition_already_landed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

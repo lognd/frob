@@ -1145,11 +1145,11 @@ class TestDoctorLiveLandProcess:
     def test_ambiguous_holder_liveness_is_reported_unhealthy(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-1634: an AMBIGUOUS liveness probe (the pid-liveness equivalent
+        """An ambiguous liveness probe result (the pid-liveness equivalent
         of `frob.tickets._leases._probe_worktree_liveness`'s own
         `"ambiguous"` outcome) is never treated as license to self-heal --
-        it still makes `run_diagnosis` unhealthy, exactly like the pre-
-        T-1634 confirmed-dead case used to."""
+        it still makes `run_diagnosis` report unhealthy, same as a
+        confirmed-dead holder."""
         import json
 
         from frob.doctor import run_diagnosis, scan_live_land_processes

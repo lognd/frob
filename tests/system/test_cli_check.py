@@ -489,8 +489,7 @@ class TestCheckGatesStage:
 
 class TestCheckDocAnchorScopedVsUnscoped:
     # frob:tests \
-    # tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped.test_scoped_do\
-    # canchor_matches_unscoped kind="e2e"
+    # tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped.test_scoped_docanchor_matches_unscoped kind="e2e"  # noqa: E501
     def test_scoped_docanchor_matches_unscoped(self, tmp_path):
         """T-0314 litmus: a `frob:doc docs/x.md#anchor` directive whose target
         lives at the repo root must resolve identically whether `frob check`
@@ -549,8 +548,7 @@ class TestCheckStampBaselineAndDelta:
 
     def test_stamp_baseline_writes_stamp(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_stamp_bas\
-        # eline_writes_stamp
+        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_stamp_baseline_writes_stamp  # noqa: E501
         git_init_and_config(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
@@ -566,8 +564,7 @@ class TestCheckStampBaselineAndDelta:
 
     def test_delta_reports_only_new_violation(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_rep\
-        # orts_only_new_violation
+        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
         git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
@@ -602,8 +599,7 @@ class TestCheckStampBaselineAndDelta:
 
     def test_delta_falls_back_to_full_set_when_no_baseline(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_fal\
-        # ls_back_to_full_set_when_no_baseline
+        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_falls_back_to_full_set_when_no_baseline  # noqa: E501
         git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
@@ -627,8 +623,7 @@ class TestCheckStageGroups:
     # frob:ticket T-0627
     def test_only_list_prints_stage_names(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_st\
-        # age_names
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names  # noqa: E501
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run("check", str(tmp_path), "--only", "list")
         assert r.returncode == 0, r.stdout + r.stderr
@@ -643,8 +638,7 @@ class TestCheckStageGroups:
     # frob:ticket T-0627
     def test_only_list_json_wraps_stages(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_json_wrap\
-        # s_stages
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_json_wraps_stages  # noqa: E501
         import json
 
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
@@ -657,8 +651,7 @@ class TestCheckStageGroups:
     # frob:ticket T-4336
     def test_available_stages_cover_every_gate_and_tool(self):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_co\
-        # ver_every_gate_and_tool
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool  # noqa: E501
         """T-4336: this test now GUARDS a structural invariant rather than
         catching a gap -- `frob.gates._GATE_STAGE_GROUPS`'s own import-time
         assert already forces every `_ALL_GATES` member into at least one
@@ -686,8 +679,7 @@ class TestCheckStageGroups:
     # frob:ticket T-4336
     def test_gate_stage_group_migration_is_byte_identical(self):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStageGroups.test_gate_stage_group_mi\
-        # gration_is_byte_identical
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_gate_stage_group_migration_is_byte_identical  # noqa: E501
         """T-4336 migration proof: the gate->groups mapping computed from
         the new declaration-site source of truth (`frob.gates.
         _GATE_STAGE_GROUPS`) must equal, gate for gate and group for
@@ -789,8 +781,7 @@ class TestCheckStageGroups:
     # frob:ticket T-0627
     def test_stage_group_expands_like_hand_listed_only(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStageGroups.test_stage_group_expands\
-        # _like_hand_listed_only
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_stage_group_expands_like_hand_listed_only  # noqa: E501
         _make_project(tmp_path, "import os\n\ndef foo() -> None:\n    pass\n")
         grouped = run(
             "check", str(tmp_path), "--skip-tests", "--only", "lint", "--json"
@@ -818,8 +809,7 @@ class TestCheckAgentRefusal:
     # frob:ticket T-0627
     def test_bare_check_refuses_under_frob_agent(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses\
-        # _under_frob_agent
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run(
             "check",
@@ -835,8 +825,7 @@ class TestCheckAgentRefusal:
     # frob:ticket T-0627
     def test_stage_selected_check_runs_under_frob_agent(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_che\
-        # ck_runs_under_frob_agent
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_check_runs_under_frob_agent  # noqa: E501
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run(
             "check",
@@ -852,8 +841,7 @@ class TestCheckAgentRefusal:
     # frob:ticket T-0627
     def test_allow_full_check_override_bypasses_refusal(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_o\
-        # verride_bypasses_refusal
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_override_bypasses_refusal  # noqa: E501
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run(
             "check",
@@ -869,8 +857,7 @@ class TestCheckAgentRefusal:
     # frob:ticket T-0627
     def test_bare_check_unaffected_without_frob_agent(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_unaffec\
-        # ted_without_frob_agent
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_unaffected_without_frob_agent  # noqa: E501
         # Scoped to the fast "lint" stage group -- this only needs to prove
         # the refusal never fires without FROB_AGENT set, not re-run the
         # full check/gates pass another system test already covers.
@@ -1122,14 +1109,11 @@ class TestCheckTypescript:
 
 
 class TestGitlessTargetGateSeverity:
-    """T-0705: `secrets_gate`/`pii_structural_gate`/`render_lint_gate`/
+    """`secrets_gate`/`pii_structural_gate`/`render_lint_gate`/
     `walk_lint_gate` degrade a git-less target (no `.git`) to WARNING, not
-    ERROR -- matching `ref_gate`/DOC004's pre-existing posture for the
-    identical `git ls-files` failure (docs/modules/gates.md#git-less-
-    target-contract-t-0705). Regression guard for the T-0705 CI-triage
-    incident: these four gates previously logged the same condition at
-    ERROR, painting their line red for a target that was never a real
-    violation."""
+    ERROR -- matching `ref_gate`/DOC004's posture for the identical `git
+    ls-files` failure (docs/modules/gates.md#git-less-target-contract-
+    t-0705)."""
 
     def test_gitless_target_gates_warn_not_error(self, tmp_path):
         """A git-less fixture (no `.git` anywhere under `tmp_path`) must

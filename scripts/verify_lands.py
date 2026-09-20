@@ -61,20 +61,12 @@ _TICKET_ID_RE = re.compile(r"^T-[0-9]+$")
 # tests/unit/coordinator_suite/test_verify_lands.py::TestLoadLandCommit.test_returns_mi\
 # ssing_for_an_unknown_ticket_id  # noqa: E501
 def load_land_commit(ticket_id: str) -> str | None | Exception:
-    """`ticket_id`'s landing sha: its persisted `land_commit` field first,
-    a `KeyError` INSTANCE (never raised -- returned, so the caller can
-    print a distinct message) if no such ticket exists at all, or `None`
-    if the ticket exists but no sha can be found for it either way.
-
-    T-3543: a squash-apply land no longer WRITES `land_commit` (the
-    dedicated follow-up commit that used to record it, 53 of the last 300
-    `main` commits, is gone) -- when the field is absent, this falls back
-    to `derive_land_commit_by_grep` (`frob.tickets._land_squash`), which
-    finds the same sha from the squash-apply commit's own subject (it
-    durably carries the ticket id there; unlike a `--plan` land's
-    `chore(tickets): land --plan` subject, which never has, and still
-    gets `land_commit` written in-memory before its own one commit, so it
-    never needs this fallback). Imports `frob.tickets` lazily so a
+    """Resolve `ticket_id`'s landing sha: its persisted `land_commit` field
+    if set, else `derive_land_commit_by_grep`'s fallback (matches the
+    squash-apply commit that carries the ticket id in its subject).
+    Returns a `KeyError` INSTANCE (never raised, so the caller can print a
+    distinct message) if the ticket does not exist, or `None` if it exists
+    but no sha can be found either way. Imports `frob.tickets` lazily so a
     plain-sha invocation of this script never pays for it."""
     from frob.tickets import _load_one
     from frob.tickets._land_squash import derive_land_commit_by_grep
@@ -104,8 +96,7 @@ def _git(args: list[str]) -> subprocess.CompletedProcess:
 # frob:tests \
 # tests/unit/coordinator_suite/test_verify_lands.py::TestResolve.test_resolves_full_sha
 # frob:tests \
-# tests/unit/coordinator_suite/test_verify_lands.py::TestResolve.test_unknown_sha_retur\
-# ns_none
+# tests/unit/coordinator_suite/test_verify_lands.py::TestResolve.test_unknown_sha_returns_none  # noqa: E501
 def resolve(sha: str) -> str | None:
     """Full commit id for `sha`, or None when git cannot resolve it."""
     done = _git(["rev-parse", "--verify", f"{sha}^{{commit}}"])
@@ -115,11 +106,9 @@ def resolve(sha: str) -> str | None:
 # frob:doc docs/guides/coordinator-scripts.md#is_ancestor
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/coordinator_suite/test_verify_lands.py::TestIsAncestor.test_true_when_ance\
-# stor
+# tests/unit/coordinator_suite/test_verify_lands.py::TestIsAncestor.test_true_when_ancestor  # noqa: E501
 # frob:tests \
-# tests/unit/coordinator_suite/test_verify_lands.py::TestIsAncestor.test_false_when_not\
-# _ancestor
+# tests/unit/coordinator_suite/test_verify_lands.py::TestIsAncestor.test_false_when_not_ancestor  # noqa: E501
 def is_ancestor(sha: str, ref: str) -> bool:
     """True when `sha` is an ancestor of `ref` (i.e. it really landed)."""
     return _git(["merge-base", "--is-ancestor", sha, ref]).returncode == 0
@@ -128,8 +117,7 @@ def is_ancestor(sha: str, ref: str) -> bool:
 # frob:doc docs/guides/coordinator-scripts.md#subject
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/coordinator_suite/test_verify_lands.py::TestSubject.test_returns_commit_su\
-# bject
+# tests/unit/coordinator_suite/test_verify_lands.py::TestSubject.test_returns_commit_subject  # noqa: E501
 def subject(sha: str) -> str:
     """One-line subject for `sha`, for eyeballing that it is the right commit."""
     return _git(["log", "-1", "--format=%s", sha]).stdout.strip()
@@ -138,8 +126,7 @@ def subject(sha: str) -> str:
 # frob:doc docs/guides/coordinator-scripts.md#verify_lands-main
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain.test_distingui\
-# shes_unknown_from_missing
+# tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain.test_distinguishes_unknown_from_missing  # noqa: E501
 def main() -> int:
     """Check every sha/ticket-id against `ref`; exit 1 if any is missing,
     unknown, or (T-2220) an unrecognized/never-landed ticket id."""

@@ -242,8 +242,7 @@ class TestTicketNewNonInteractive:
 class TestTicketAttachNonInteractive:
     def test_attach_without_path_fails_fast_off_tty(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_w\
-        # ithout_path_fails_fast_off_tty
+        # tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_without_path_fails_fast_off_tty  # noqa: E501
         _init_repo(tmp_path)
         new = run(
             "ticket",
@@ -290,8 +289,7 @@ class TestTicketAttachNonInteractive:
 
     def test_attach_with_explicit_path_succeeds_off_tty(self, tmp_path):
         # frob:tests \
-        # tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_w\
-        # ith_explicit_path_succeeds_off_tty
+        # tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_with_explicit_path_succeeds_off_tty  # noqa: E501
         """T-4255: an explicit attachment PATH is given, so the "no path
         means clipboard" TTY fast-fail must NOT fire even off a TTY --
         this is the mutation-kill counterpart to `test_attach_without_
@@ -337,22 +335,18 @@ class TestTicketAttachNonInteractive:
 
 
 # frob:ticket T-1882
+# frob:ticket T-4421
 class TestBulkRenumberCliRemoved:
-    """T-1882 incident: `frob ticket renumber` with no arguments used to
-    perform a legacy whole-ledger contiguous renumber (T-0012) the instant
-    it was invoked -- it renumbered all 273 tickets in one shot in a real
-    incident. Investigated (requirement 3) and found no legitimate caller
-    (`fix_tick002_renumber` uses the single-id `renumber_one`, not this
-    whole-ledger form), so the CLI dispatch now refuses unconditionally
-    rather than being guarded behind an opt-in flag. Only `--dry-run`
+    """`frob ticket renumber` with no arguments must refuse unconditionally
+    rather than perform a whole-ledger contiguous renumber -- the CLI
+    dispatch has no legitimate caller for that form. Only `--dry-run`
     (read-only) still surfaces the underlying `frob.tickets.renumber`
     primitive."""
 
     # frob:ticket T-1882
     def test_no_args_always_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_no_args_alwa\
-        # ys_refuses
+        # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_no_args_always_refuses  # noqa: E501
         _init_repo(tmp_path)
         filed = run(
             "ticket",
@@ -383,8 +377,7 @@ class TestBulkRenumberCliRemoved:
     # frob:ticket T-1882
     def test_dry_run_still_previews_read_only(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_dry_run_stil\
-        # l_previews_read_only
+        # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_dry_run_still_previews_read_only  # noqa: E501
         _init_repo(tmp_path)
         filed = run(
             "ticket",
