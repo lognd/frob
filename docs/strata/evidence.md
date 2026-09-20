@@ -114,6 +114,9 @@ claim.
 review 2026-10-01`. Assumptions are the explicit trusted computing base:
 auto-generated ones (host OS per `host`, crypto per `transport`, traffic
 metadata per unshaped encrypted channel) plus hand-written ones. All are
-listed in every report; an overdue review date is a gate failure. The
-ledger is tracked text, diffable and reviewable, like every frob source of
-truth.
+listed in every report; an overdue review date is a gate failure --
+`evaluate_claims` (`_claims.py::_eval_assumed`, T-4675) evaluates the
+assume's `review` date against the check's `today` and returns
+`Verdict.REFUTED`, naming the claim, its owner, and its expiry, instead of
+the `Verdict.ASSUMED` a live assume closes as. The ledger is tracked text,
+diffable and reviewable, like every frob source of truth.

@@ -2,7 +2,7 @@
 id: T-4675
 title: 'SF-07: overdue assumes are documented as gate failures and are not -- wire
   the verdict before the 2026-10-15 cliff'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-19'
@@ -30,6 +30,11 @@ scope_changes:
     rule
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_future_review_stays_assumed_no_finding
+- tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_the_real_shared_cliff_date_is_still_future_at_the_fixed_today
+- tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_yields_refuted_finding
+- tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_logs_warning_with_owner_and_date
 designated_repro_test: null
 acceptance:
 - text: Given _models.py:589, docs/strata/evidence.md:117 and docs/strata/charter.md:4
@@ -37,16 +42,23 @@ acceptance:
     _log.warning and returns Verdict.ASSUMED, when this lands, then a test constructing
     an assume with a past review date asserts the evaluation yields a gate FINDING
     -- a positive control that fails at HEAD c8f56ef10.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_future_review_stays_assumed_no_finding
+  - tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_the_real_shared_cliff_date_is_still_future_at_the_fixed_today
+  - tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_yields_refuted_finding
+  - tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_logs_warning_with_owner_and_date
 - text: Given all 33 assumes in design/frob.strata carry review 2026-10-15 and must
     stay green until then, when the gate evaluates a FUTURE review date, then a test
     asserts it still yields ASSUMED with no finding (negative control), and a third
     test pins a fixed today so neither can pass merely because a real date drifted.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_future_review_stays_assumed_no_finding
+  - tests/unit/strata/test_claims_overdue.py::TestFutureAssumeStaysAssumed::test_the_real_shared_cliff_date_is_still_future_at_the_fixed_today
 - text: Given docs/strata/charter.md:4's INV003 waiver reason asserts this gap exists,
     when this lands, then that reason plus docs/strata/evidence.md:117 plus the _models.py:589
     comment all agree with the implementation in the SAME change.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_claims_overdue.py::TestOverdueAssumeIsAGateFinding::test_overdue_review_yields_refuted_finding
 threat: null
 component: strata
 anchor: false

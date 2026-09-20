@@ -633,13 +633,22 @@ def _eval_bound_latency_or_size(
     return Ok(_proved(claim, f"declared {body.metric.value} within limit"))
 
 
+# Days before an assume's `review` date that `evaluate_claims` logs an
+# advance-warning INFO line (T-4675, SF-07): 33 assumes share one date,
+# so the cliff is a fleet-wide event worth surfacing before it hits.
+_ASSUME_REVIEW_WARN_WINDOW_DAYS = 14
+
+
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
 # (the demoted case). T-1062: leaked Unknown traces to ClaimResult construction (a \
 # pydantic model, whose validation call the resolver cannot bound); the one real raise \
 # path (date.fromisoformat) is caught above"
 def _eval_assumed(claim: Claim, today: _dt.date) -> ClaimResult:
-    """Assumes never prove anything; they are ledgered, owned, and expiring."""
+    """A live assume closes ASSUMED (law 3); an overdue `review` is a gate
+    failure (T-4675/SF-07), so it closes REFUTED instead, naming the
+    claim, owner, and expiry -- same finding path every other failed
+    claim already uses (`_plan.py`, `_report.py`, `_audit.py`)."""
     detail = f"assumed by {claim.owner or 'unowned'}"
     if claim.review is not None:
         try:
@@ -651,10 +660,27 @@ def _eval_assumed(claim: Claim, today: _dt.date) -> ClaimResult:
             detail += "; review date malformed"
         else:
             if review < today:
-                _log.warning("assume %s review overdue (%s)", claim.id, claim.review)
-                detail += f"; review overdue since {claim.review}"
-            else:
-                detail += f"; review by {claim.review}"
+                owner = claim.owner or "unowned"
+                _log.warning(
+                    "assume %s review overdue (owner=%s, review=%s, today=%s)",
+                    claim.id,
+                    owner,
+                    claim.review,
+                    today,
+                )
+                return ClaimResult(
+                    claim_id=claim.id,
+                    verdict=Verdict.REFUTED,
+                    quantifier=Quantifier.FORALL,
+                    counterexample=(claim.id,),
+                    detail=(
+                        f"assume {claim.id!r} review overdue since {claim.review} "
+                        f"(owner={owner}, today={today}) -- remedy: re-audit the "
+                        "assumption and bump its `review` date, or replace the "
+                        "assume with a real proof"
+                    ),
+                )
+            detail += f"; review by {claim.review}"
     return ClaimResult(
         claim_id=claim.id,
         verdict=Verdict.ASSUMED,
@@ -769,7 +795,32 @@ def evaluate_claims(
         len(results),
         {v.value: sum(1 for r in results if r.verdict is v) for v in Verdict},
     )
+    _log_upcoming_assume_reviews(model.claims, current)
     return Ok(results)
+
+
+def _log_upcoming_assume_reviews(claims: tuple[Claim, ...], today: _dt.date) -> None:
+    """INFO count of assumes reviewing within `_ASSUME_REVIEW_WARN_WINDOW_DAYS`
+    (T-4675, SF-07): advance notice before they go overdue and REFUTE
+    (`_eval_assumed`). Silent when none are upcoming."""
+    upcoming = []
+    for claim in claims:
+        if not claim.assumed or claim.review is None:
+            continue
+        try:
+            review = _dt.date.fromisoformat(claim.review)
+        except ValueError:
+            continue
+        days_left = (review - today).days
+        if 0 <= days_left <= _ASSUME_REVIEW_WARN_WINDOW_DAYS:
+            upcoming.append((claim.id, days_left))
+    if upcoming:
+        _log.info(
+            "%d assume(s) reviewing within %d day(s): %s",
+            len(upcoming),
+            _ASSUME_REVIEW_WARN_WINDOW_DAYS,
+            upcoming,
+        )
 
 
 def _eval_all_claims(

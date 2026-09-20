@@ -173,8 +173,11 @@ class TestAssumeReviewDates:
         )
         with caplog.at_level("WARNING"):
             result = _one(model, today=dt.date(2026, 7, 17))
-        assert result.verdict is Verdict.ASSUMED
+        # T-4675 (SF-07): an overdue review is a gate FINDING (REFUTED),
+        # not a silent Verdict.ASSUMED warning -- see _eval_assumed.
+        assert result.verdict is Verdict.REFUTED
         assert "review overdue since 2020-01-01" in result.detail
+        assert "alice" in result.detail
         assert "review overdue" in caplog.text
 
 
