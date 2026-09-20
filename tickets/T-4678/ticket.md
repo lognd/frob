@@ -19,6 +19,15 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: DECISION ticket -- its deliverable is an owner
   decision recorded in the body, which legitimately changes no files'
+body_changes:
+- mode: append
+  reason: '2026-09-19: owner decision recorded plus the two measured corrections to
+    SF-09 from the pessimistic keyword audit (scratchpad/STRATA-KEYWORDS.md, 139 rows);
+    decision is NO DELETIONS -- dormant keywords are wired, not removed'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4344
+  new_length: 7736
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (retire
@@ -108,3 +117,68 @@ dead set.
 
 ACCEPTANCE
 Owner records a decision in the body: which option, and what it changes.
+
+
+## DECISION RECORDED -- owner, 2026-09-19 -- NO DELETIONS
+
+**Decided: none of this ticket's three options as framed. Nothing is retired.
+Dormant keywords are WIRED, not removed.** The audit's delete list is empty, so
+option 1 (retire the dead surfaces) has nothing to operate on, and option 3
+(split by surface, retiring two of them) loses its retiring half. What remains
+is option 2 -- exercise rather than retire -- generalised by the owner's rule:
+**"err on the side of adding capabilities; we originally had a good idea and
+then forgot to implement it."**
+
+Source: the pessimistic keyword audit at **scratchpad/STRATA-KEYWORDS.md**,
+139 rows, one per keyword literal, same extraction SF-09 used (139/139
+accounted for).
+
+### Verdicts
+
+| verdict | n | meaning |
+|---|---|---|
+| KEEP | 43 | used in design/frob.strata and/or consumer designs |
+| LITMUS-ONLY | 24 | only design/litmus/*.strata exercises it |
+| DORMANT | 68 | fully wired (parser -> elaborator -> a gate) but no design uses it |
+| DEAD-CANDIDATE | 4 | parsed, modelled in _ast.py, read by NOTHING |
+| DEAD | 0 | -- |
+
+**The list the owner would be deleting is empty.** Even the 4 DEAD-CANDIDATEs
+are WIRE, not DELETE: each is a good idea whose reader was never written.
+
+### TWO MEASURED CORRECTIONS TO SF-09 -- the finding stands, its numbers do not
+
+**Correction 1 -- comment inflation. The honest in-repo unused figure is 86, not
+56.** SF-09 counted raw `grep -w` over design/frob.strata, which is 70% comment
+prose (SF-10). Stripping comments and string literals drops `at`, `by`, `call`,
+`into`, `to`, `runs_as`, `import`, `target`, `trust`, `parse`, `per`, `time` and
+20 others from non-zero to ZERO. So SF-09 UNDERCOUNTED the disuse: 86 keywords
+are absent from design/frob.strata + design/litmus/, not 56.
+
+**Correction 2 -- consumer designs exist and SF-09 never looked at them.**
+Twelve .strata design files live in sibling checkouts under /home/logan/projects
+-- **5,682 lines, twice design/frob.strata's size**. Fourteen keywords are used
+ONLY there and nowhere in frob's own designs: arbitrated_by carries code_ref
+dst kind level managed reason runnable service src ticket unit waive. Seven are
+the entire **vmodel** family; vmodel.strata alone has dst x764, runnable x269,
+code_ref x259, kind x1292. **SF-09 would have had them deleted.**
+
+Net: 67 of 139 keywords appear in at least one real design; 72 in none.
+
+This is the audit's verdict on its predecessor, and it is why the decision is
+"no deletions": SF-09 measured one repo's usage and presented it as a statement
+about value. Per memory/verify-premise-before-filing.md and
+memory/silent-zero-is-the-dominant-bug-class.md, a zero in a corpus you did not
+search is not a zero. The corrections are recorded here rather than quietly
+fixed in the audit file, so the original overreach stays visible.
+
+### What follows from the decision (filed separately, not here)
+
+- The 4 DEAD-CANDIDATEs are the boundary `admit` block -- WIRE leaf.
+- `forbid call` / `forbid import` are enforced by no gate -- WIRE leaf.
+- kernel.md:29's "no other kernel extension exists or is planned" is false --
+  ~79 keywords span eight extra domains; docs leaf plus one decision-turned-leaf
+  per domain, tracked on T-4681.
+
+Closing with no behavior change: the deliverable of a DECISION ticket is the
+decision, now recorded above. No keyword was deleted and no file changed here.
