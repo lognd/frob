@@ -10,11 +10,17 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_land_cmd.py
@@ -65,6 +71,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-01'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve measurement and follow-up caller detail trimmed from _fix_engine_text.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1406
+  new_length: 2214
 evidence:
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
@@ -83,6 +96,9 @@ acceptance:
   - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 fix_fmt001_directive_wrap (src/frob/gates/_fix_engine.py ~L491) calls format_paths over the entire root rather than the diff. Its docstring justifies this: widening scope 'cannot make an unrelated file worse' because format_paths only rewrites genuinely non-canonical directive runs.
 
@@ -93,3 +109,18 @@ Measured 2026-08-01 across two independent agent series: land's pre-fix pass mec
 The fix is to diff-scope the pass when it runs in a land context (FMT001 itself is already diff-scoped -- only this HANDLER widened it). Preserve whole-tree behaviour for a standalone frob check --fix.
 
 Note for whoever takes this: T-1341 is concurrently editing this same file to add an E501 suppression handler, and was briefed to resolve an FMT001-vs-noqa precedence question. Coordinate rather than racing it.
+
+
+T-4709 follow-up (condensed from a comment in src/frob/gates/
+_fix_engine_text.py, trimmed for DOCARCH002's 12-line cap): measured
+for real -- frob:waive reason comments in an unrelated file mechanically
+rewritten by lands that never touched it, forcing one agent to widen
+its own ticket's scope record just to absorb the collateral edit.
+`only_paths=None` is what a standalone `frob check --fix` still gets,
+and every existing caller until it opts in; this mirrors
+`fix_waive004_stale_waiver`'s `gates`/`ticket` keyword-only params
+below: a default-preserves-prior-behaviour scoping lever, testable
+directly with no change needed at any `TIER_A_HANDLERS`/
+`apply_tier_a_fixes` call site. The real caller to wire is `frob ticket
+land`'s pre-land absorption step, src/frob/app/ticket_runner/
+_land_cmd.py.
