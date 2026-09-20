@@ -27,6 +27,13 @@ scope_changes:
   reason: add repro/fix test coverage for PII012 bare-word 'token' over-match fix
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve VALUE_GATED_KEYWORDS regression story trimmed from _keywords.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1775
+  new_length: 2559
 evidence:
 - tests/test_pii_structural_gate.py::TestTokenValueGating::test_cli_argv_tokenizer_parameter_does_not_fire
 - tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_assigned_a_string_literal_still_fires[compound-api_token]
@@ -83,3 +90,17 @@ the 'credentials' category into its own lower-severity or context-gated
 category. Left to the assignee to design; this ticket exists to record
 the measured breadth so a future waiver-spree isn't mistaken for evidence
 of a real defect count.
+
+
+T-4709/T-4770 follow-up (condensed from _VALUE_GATED_KEYWORDS's docstring
+in src/frob/gates/_pii_structural/_keywords.py, trimmed for DOCARCH002's
+12-line cap): three sites cleared via T-2032's identifier rename
+regressed back to FOUR new findings the moment ordinary new code
+(_strip_xdist_tokens, T-2086) used the same ordinary word again --
+renaming identifiers dodges today's finding, not tomorrow's. Deliberately
+NOT applied to every FIELD_SIGNATURES keyword: this is a targeted fix
+for the one keyword T-2069 measured as over-broad, not a blanket
+weakening of PII012 (T-1967's lesson: an exemption matching the normal
+case disables the guard -- this one only narrows what counts as "the
+normal case" for "token" specifically, it does not exempt any file,
+site, or category).
