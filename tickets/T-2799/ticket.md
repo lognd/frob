@@ -10,7 +10,7 @@ blocked_by:
 - T-2894
 parent: T-2790
 tier: ticket
-sprint: null
+sprint: v0.540.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -42,6 +42,12 @@ triage_changes:
     threshold) better reflects that it is waiting on a blocker, not neglected'
   actor: logan
   at: '2026-09-02'
+- field: sprint
+  old_value: null
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
