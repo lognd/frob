@@ -1,7 +1,7 @@
 ---
 id: T-5075
 title: same_worktree_lease rescans all leases on every ticket-holder pair
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -71,12 +71,15 @@ scope_changes:
   reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestDoableThreadsOneLeasesSnapshot::test_read_all_leases_called_exactly_once_across_doable
 designated_repro_test: null
 acceptance:
 - text: same_worktree_lease is called exactly once via a shared read_all_leases snapshot
     across a whole doable() invocation, regardless of ticket/holder count, verified
     by test_read_all_leases_called_exactly_once_across_doable
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestDoableThreadsOneLeasesSnapshot::test_read_all_leases_called_exactly_once_across_doable
 acceptance_amendments:
 - op: replace
   index: 1

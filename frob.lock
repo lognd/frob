@@ -3320,6 +3320,24 @@
       "old_digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
       "reason": "T-draft-76fef001: re-verified after extracting _land_lock_root_env -- docs/modules/tickets.md's T-3324 self-conformance description still accurately describes this function's behavior (same unconditional selfaudit/sys111/docptr check, same unwind-on-hit); only the internal env-set/restore mechanism moved into a helper",
       "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-19",
+      "facet": "body",
+      "new_digest": "00939cbb7a9126d0e4f18c4cdc972bd82fc258efb8372fd037456b348ef7885e",
+      "old_digest": "683f979ec1e0db3bfeac14571056f1edbd8386d83713de9061b13d3b2c4ab906",
+      "reason": "T-5075: added an optional leases= parameter and updated the docstring to describe it; verified every existing caller and dependent test still passes (105/105 in the lease/doable/scope suites) with the new parameter defaulting to the unchanged prior behavior",
+      "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-19",
+      "facet": "sig",
+      "new_digest": "30722c7b060ac2925edd5a82c643a102f0c2dae6f2907d53ed8c9280ec47dee3",
+      "old_digest": "00aa6cf16cb81532ce28ed2b30eed6cc759c0639c8ce97a5e422d4c72920594d",
+      "reason": "T-5075: added an optional leases= parameter and updated the docstring to describe it; verified every existing caller and dependent test still passes (105/105 in the lease/doable/scope suites) with the new parameter defaulting to the unchanged prior behavior",
+      "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
     }
   ],
   "entries": [
@@ -4649,12 +4667,12 @@
       "ref": "src/frob/tickets/_leases.py::read_all_leases"
     },
     {
-      "digest": "683f979ec1e0db3bfeac14571056f1edbd8386d83713de9061b13d3b2c4ab906",
+      "digest": "00939cbb7a9126d0e4f18c4cdc972bd82fc258efb8372fd037456b348ef7885e",
       "facet": "body",
       "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
     },
     {
-      "digest": "00aa6cf16cb81532ce28ed2b30eed6cc759c0639c8ce97a5e422d4c72920594d",
+      "digest": "30722c7b060ac2925edd5a82c643a102f0c2dae6f2907d53ed8c9280ec47dee3",
       "facet": "sig",
       "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
     },

@@ -41,7 +41,7 @@ from enum import Enum
 from pathlib import Path
 
 from frob.logging import get_logger
-from frob.tickets._leases import read_all_leases, same_worktree_lease
+from frob.tickets._leases import _LeaseRecord, read_all_leases, same_worktree_lease
 from frob.tickets._models import (
     LEDGER_PATH,
     OVER_BROAD_LITERAL_GLOBS,
@@ -298,8 +298,12 @@ def _in_progress_leases(queue: TicketQueue) -> tuple[tuple[str, tuple[str, ...]]
 
 
 # frob:ticket T-0473
+# frob:ticket T-5075
 def _cross_worktree_leases(
-    queue: TicketQueue, root: Path
+    queue: TicketQueue,
+    root: Path,
+    *,
+    worktree_leases: tuple[_LeaseRecord, ...] | None = None,
 ) -> tuple[tuple[str, tuple[str, ...]], ...]:
     """`(ticket_id, scope)` for every lease `frob.tickets._leases` reports
     from ANY worktree of `root`'s repository (T-0473) -- the fix for the
@@ -309,8 +313,16 @@ def _cross_worktree_leases(
     `DONE`/`DROPPED` is dropped as stale (a crashed worktree's unreleased
     lease for an already-finished ticket must not block `doable` forever;
     full liveness reconciliation across worktrees is T-0476's job, this is
-    only a cheap local-ledger staleness guard, not a substitute for it)."""
-    leases = read_all_leases(root)
+    only a cheap local-ledger staleness guard, not a substitute for it).
+
+    T-5075: pass a precomputed `worktree_leases` (`read_all_leases(root)`'s
+    own output) when the caller already has one for this same invocation
+    (`_all_leases` does, threaded from `doable`/`doable_blocked`) so this
+    doesn't spawn its OWN independent leases-directory rescan on top of
+    the one `same_worktree_lease` now also reuses -- true single-call-per-
+    invocation, not just per-loop. Omitting it calls `read_all_leases(root)`
+    internally, unchanged."""
+    leases = worktree_leases if worktree_leases is not None else read_all_leases(root)
     kept: list[tuple[str, tuple[str, ...]]] = []
     for lease in leases:
         local = queue.tickets.get(lease.ticket_id)
@@ -321,8 +333,12 @@ def _cross_worktree_leases(
 
 
 # frob:ticket T-0473
+# frob:ticket T-5075
 def _all_leases(
-    queue: TicketQueue, root: Path | None
+    queue: TicketQueue,
+    root: Path | None,
+    *,
+    worktree_leases: tuple[_LeaseRecord, ...] | None = None,
 ) -> tuple[tuple[str, tuple[str, ...]], ...]:
     """`_in_progress_leases(queue)` (the local ledger's own view) UNIONED
     with `_cross_worktree_leases` (every OTHER worktree's recorded lease),
@@ -330,12 +346,20 @@ def _all_leases(
     (it is authoritative for any ticket this worktree's own `tickets.md`
     already knows about) (T-0473). `root=None` (no repo to consult the
     shared lease directory from -- e.g. a caller with no filesystem root)
-    keeps the exact pre-T-0473 local-only behavior."""
+    keeps the exact pre-T-0473 local-only behavior.
+
+    T-5075: `worktree_leases` forwards to `_cross_worktree_leases` -- pass
+    the SAME snapshot `doable`/`doable_blocked` also thread into
+    `leased_by`'s `worktree_leases` so the whole invocation reads the
+    leases directory exactly once, not once here and once per (ticket,
+    holder) pair."""
     local = _in_progress_leases(queue)
     if root is None:
         return local
     merged: dict[str, tuple[str, ...]] = dict(local)
-    for ticket_id, scope in _cross_worktree_leases(queue, root):
+    for ticket_id, scope in _cross_worktree_leases(
+        queue, root, worktree_leases=worktree_leases
+    ):
         merged.setdefault(ticket_id, scope)
     return tuple(sorted(merged.items()))
 
@@ -583,6 +607,14 @@ def large_glob_warnings(
 # tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden
 # frob:tests \
 # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only
+# frob:ticket T-5075
+# frob:waive ARCH001 reason="T-5075 added one more precomputed-parameter paragraph to \
+# this function's docstring (worktree_leases, mirroring the existing \
+# breadth/all_leases threading it already documents) -- the function body itself is \
+# unchanged in shape/branching, the line growth is entirely documentation explaining \
+# WHY a 3rd perf-threading parameter exists, not new complexity; splitting the \
+# function would separate the loop from the very params this docstring exists to \
+# explain"
 def leased_by(
     queue: TicketQueue,
     ticket: Ticket,
@@ -590,6 +622,7 @@ def leased_by(
     *,
     breadth: tuple[int, tuple[str, ...]] | None = None,
     all_leases: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
+    worktree_leases: tuple[_LeaseRecord, ...] | None = None,
 ) -> tuple[tuple[str, str], ...]:
     """`(holding_ticket_id, glob_that_leases_it)` for every IN_PROGRESS
     ticket whose scope-lease overlaps `ticket`'s own scope (T-0453) --
@@ -627,35 +660,65 @@ def leased_by(
     pattern and avoids even the memoized read's dict-lookup/tuple-copy
     overhead per candidate). Omitting it computes it internally, same
     default-to-internal convention as `breadth`.
+
+    T-5075: pass a precomputed `worktree_leases` (`read_all_leases(root)`'s
+    own output) when calling this per-candidate in a loop (`doable`/
+    `doable_blocked` do) so `same_worktree_lease`'s own leases-directory
+    rescan (and its per-lease liveness probe) runs ONCE for the whole call
+    too -- this is the OTHER half of the same T-0453/T-0773 perf pattern
+    `breadth`/`all_leases` already apply here, closing the gap that made
+    `same_worktree_lease` alone still spawn a full rescan per (ticket,
+    holder) pair even after those two were threaded. Omitting it computes
+    it internally via `read_all_leases(root)` when `root` is given (`None`
+    when it is not, matching `same_worktree_lease`'s own no-op-without-root
+    shape).
     """
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
     if all_leases is None:
         all_leases = _all_leases(queue, root)
+    if worktree_leases is None and root is not None:
+        worktree_leases = read_all_leases(root)
     hits: list[tuple[str, str]] = []
     for holder_id, holder_scope in all_leases:
         if holder_id == ticket.id:
             continue
-        hit = _leased_by_one_holder(ticket, root, breadth, holder_id, holder_scope)
+        hit = _leased_by_one_holder(
+            ticket,
+            root,
+            breadth,
+            holder_id,
+            holder_scope,
+            worktree_leases=worktree_leases,
+        )
         if hit is not None:
             hits.append(hit)
     return tuple(hits)
 
 
 # frob:ticket T-1883
+# frob:ticket T-5075
 def _leased_by_one_holder(
     ticket: Ticket,
     root: Path | None,
     breadth: tuple[int, tuple[str, ...]] | None,
     holder_id: str,
     holder_scope: tuple[str, ...],
+    *,
+    worktree_leases: tuple[_LeaseRecord, ...] | None = None,
 ) -> tuple[str, str] | None:
     """`leased_by`'s per-holder collision test (ARCH001 split: the T-1883
     same-worktree exclusion pushed the loop body past the line threshold).
     `None` means `holder_id` does not block `ticket` -- either exempted
     (same-worktree, T-1883; or fully over-broad, breadth-demoted) or simply
-    scope-disjoint."""
-    if root is not None and same_worktree_lease(root, ticket.id, holder_id):
+    scope-disjoint.
+
+    T-5075: `worktree_leases` forwards straight to `same_worktree_lease`'s
+    own `leases` param -- see `leased_by`'s docstring for why this is
+    threaded once per call instead of re-read per holder."""
+    if root is not None and same_worktree_lease(
+        root, ticket.id, holder_id, leases=worktree_leases
+    ):
         # T-1883: a worktree cannot conflict with itself -- exactly one
         # working copy, one agent editing it. The grouped-dispatch workflow
         # routinely gives one worktree several tickets sharing a doc's
@@ -847,6 +910,7 @@ def undispatched_stale(
 # frob:invariant INV-024
 # frob:ticket T-0715
 # frob:ticket T-2577
+# frob:ticket T-5075
 # invariant spec: [INV-024](invariants/INV-024.md)
 def doable(
     queue: TicketQueue,
@@ -874,6 +938,14 @@ def doable(
     through every `leased_by` call in the filter loop below (same pattern
     as `breadth`), instead of each candidate re-deriving the union of
     local-ledger and cross-worktree leases for itself.
+
+    T-5075: `read_all_leases(root)` is likewise computed ONCE here and
+    threaded through as `worktree_leases`, all the way down to
+    `same_worktree_lease` -- this closes the Windows TICK008 stall's
+    second half (T-5036 fixed `frob.gitio.repo_root`'s uncached git spawn;
+    this fixes `same_worktree_lease`'s own uncached leases-directory
+    rescan, previously still repeated once per (ticket, holder) pair even
+    after `all_leases`/`breadth` were threaded).
 
     T-0752: pass a precomputed `breadth` (`scope_breadth_context(root)`,
     the same kwarg `doable_blocked` already accepts) when the caller has
@@ -918,11 +990,19 @@ def doable(
     if not ignore_lease:
         if root is not None and breadth is None:
             breadth = scope_breadth_context(root)
-        all_leases = _all_leases(queue, root)
+        worktree_leases = read_all_leases(root) if root is not None else None
+        all_leases = _all_leases(queue, root, worktree_leases=worktree_leases)
         candidates = [
             t
             for t in candidates
-            if not leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
+            if not leased_by(
+                queue,
+                t,
+                root,
+                breadth=breadth,
+                all_leases=all_leases,
+                worktree_leases=worktree_leases,
+            )
         ]
     return tuple(sorted(candidates, key=lambda t: _doable_sort_key(t, queue)))
 
@@ -1162,6 +1242,7 @@ def _extend_unique(target: list[str], addition: Sequence[str]) -> None:
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
 # tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
+# frob:ticket T-5075
 def doable_blocked(
     queue: TicketQueue,
     root: Path | None = None,
@@ -1176,16 +1257,26 @@ def doable_blocked(
     (re-walking the tree when the caller already has one). T-0773:
     `_all_leases(queue, root)` is likewise computed ONCE here and threaded
     through every `leased_by` call below, rather than each candidate
-    re-deriving it."""
+    re-deriving it. T-5075: same for `read_all_leases(root)`, threaded as
+    `worktree_leases` -- see `doable`'s own docstring for the full
+    rationale."""
     from frob.tickets import _doable_sort_key
 
     candidates = _doable_candidates(queue, root)
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
-    all_leases = _all_leases(queue, root)
+    worktree_leases = read_all_leases(root) if root is not None else None
+    all_leases = _all_leases(queue, root, worktree_leases=worktree_leases)
     blocked: list[tuple[Ticket, tuple[tuple[str, str], ...]]] = []
     for t in sorted(candidates, key=lambda t: _doable_sort_key(t, queue)):
-        hits = leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
+        hits = leased_by(
+            queue,
+            t,
+            root,
+            breadth=breadth,
+            all_leases=all_leases,
+            worktree_leases=worktree_leases,
+        )
         if hits:
             blocked.append((t, hits))
     return tuple(blocked)

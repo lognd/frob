@@ -94,8 +94,7 @@ class TestGitCommonDir:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_acro\
-        # ss_linked_worktrees
+        # tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees  # noqa: E501
         main_common = _git_common_dir(repo)
         wt_common = _git_common_dir(second_worktree)
         assert main_common.is_ok
@@ -111,8 +110,7 @@ class TestCrossWorktreeLeaseVisibility:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_lease_written_in_one_worktree_seen_in_another
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -129,8 +127,7 @@ class TestCrossWorktreeLeaseVisibility:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_doable_in_second_worktree_hides_colliding_ticket
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_doable_in_second_worktree_hides_colliding_ticket  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid_a = created.danger_ok.id
@@ -162,8 +159,7 @@ class TestCrossWorktreeLeaseVisibility:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_release_on_close_removes_the_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_release_on_close_removes_the_lease  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -184,8 +180,7 @@ class TestCrossWorktreeLeaseVisibility:
         wedge `doable` for every other worktree forever -- `read_all_leases`
         treats it as stale and skips it."""
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_stale_lease_for_a_removed_worktree_is_skipped
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_stale_lease_for_a_removed_worktree_is_skipped  # noqa: E501
         doomed_wt = repo.parent / "doomed"
         _run(["git", "worktree", "add", "-b", "feature-doomed", str(doomed_wt)], repo)
         created = new_ticket(doomed_wt, _spec("Doomed", scope=("src/feature.py",)))
@@ -208,8 +203,7 @@ class TestCrossWorktreeLeaseVisibility:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_scope_mutation_refreshes_the_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_scope_mutation_refreshes_the_lease  # noqa: E501
         (repo / "src" / "other.py").write_text("# other\n")
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
@@ -240,8 +234,7 @@ class TestCrossWorktreeLeaseVisibility:
         transition itself; this proves it fires with the POST-change
         scope, not a stale pre-change snapshot."""
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_scope_change_while_queued_then_start_leases_with_post_change_scope
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_scope_change_while_queued_then_start_leases_with_post_change_scope  # noqa: E501
         (repo / "src" / "other.py").write_text("# other\n")
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
@@ -295,8 +288,7 @@ class TestCrossWorktreeLeaseVisibility:
         questions, exactly the distinction this ticket's own 'do not
         infer occupancy from state' constraint protects."""
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
-        # test_local_close_releases_the_lease_before_a_second_worktree_sees_done
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_local_close_releases_the_lease_before_a_second_worktree_sees_done  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -342,8 +334,7 @@ class TestLeaseAttributionProvenance:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.te\
-        # st_cross_worktree_holder_names_its_worktree
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_cross_worktree_holder_names_its_worktree  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -355,8 +346,7 @@ class TestLeaseAttributionProvenance:
 
     def test_local_only_holder_has_no_worktree(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.te\
-        # st_local_only_holder_has_no_worktree
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_local_only_holder_has_no_worktree  # noqa: E501
         assert lease_holder_worktree(repo, "T-9999") is None
 
 
@@ -369,8 +359,7 @@ class TestForceReleaseLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_remove\
-        # s_an_existing_lease_file
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -387,8 +376,7 @@ class TestForceReleaseLease:
 
     def test_no_op_when_no_lease_file_exists(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_\
-        # when_no_lease_file_exists
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists  # noqa: E501
         released = force_release_lease(repo, "T-9999")
         assert released.is_ok
         assert released.danger_ok is False
@@ -398,8 +386,7 @@ class TestForceReleaseLease:
         self, repo: Path, second_worktree: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason\
-        # _is_included_in_the_warning_log
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_included_in_the_warning_log  # noqa: E501
         created = new_ticket(repo, _spec("Feature B", scope=("src/feature_b.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -420,8 +407,7 @@ class TestForceReleaseLease:
     # frob:ticket T-2333
     def test_reason_is_persisted_to_the_ticket_ledger(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason\
-        # _is_persisted_to_the_ticket_ledger
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_persisted_to_the_ticket_ledger  # noqa: E501
         from frob.tickets import load_active
 
         created = new_ticket(repo, _spec("Feature C", scope=("src/feature_c.py",)))
@@ -459,8 +445,7 @@ class TestScopeAddRefusesLiveCrossWorktreeLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorkt\
-        # reeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
         # Ticket A: created and started IN `repo`, leasing src/feature.py.
         # `second_worktree` never merges this commit -- its own local
         # ticket ledger has no record of ticket A at all.
@@ -525,8 +510,7 @@ class TestScopeAddIgnoresTerminalLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease.\
-        # test_dropped_ticket_on_local_ledger_does_not_block_live_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease.test_dropped_ticket_on_local_ledger_does_not_block_live_lease  # noqa: E501
         # Ticket A: started IN second_worktree, leasing src/feature.py --
         # this writes a live lease file to the SHARED side-channel that
         # only second_worktree's own transition() could ever release.
@@ -598,8 +582,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
-        # reeLease.test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
         from frob.tickets import renumber
 
         # Ticket A: started in second_worktree -- a live lease `repo`'s
@@ -625,8 +608,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
-        # reeLease.test_bulk_renumber_dry_run_still_works_under_a_live_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_dry_run_still_works_under_a_live_lease  # noqa: E501
         from frob.tickets import renumber
 
         created_a = new_ticket(
@@ -657,8 +639,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         dispatch: any other agent's live lease, on any unrelated ticket,
         made every single-id renumber refuse."""
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
-        # reeLease.test_single_id_renumber_succeeds_despite_unrelated_live_foreign_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_single_id_renumber_succeeds_despite_unrelated_live_foreign_lease  # noqa: E501
         from frob.tickets import renumber_one
 
         # Ticket A: live-leased in second_worktree -- unrelated to the id
@@ -688,9 +669,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         refuse -- T-1918 narrows the guard to the specific id at risk, it
         does not remove the protection T-1882 added."""
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
-        # reeLease.test_single_id_renumber_still_refused_when_lease_is_on_the_id_being_\
-        # renumbered
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_single_id_renumber_still_refused_when_lease_is_on_the_id_being_renumbered  # noqa: E501
         from frob.tickets import renumber_one
 
         # Ticket A is created in repo (so both checkouts agree it exists),
@@ -716,8 +695,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         ANY ticket, even one entirely unrelated to what would move -- T-1918
         narrows only the single-id paths, never this one."""
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
-        # reeLease.test_bulk_renumber_still_refuses_under_any_live_foreign_lease
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_still_refuses_under_any_live_foreign_lease  # noqa: E501
         from frob.tickets import renumber
 
         created_a = new_ticket(
@@ -744,8 +722,7 @@ class TestSameWorktreeLease:
 
     def test_both_leased_to_same_worktree_matches(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_l\
-        # eased_to_same_worktree_matches
+        # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_leased_to_same_worktree_matches  # noqa: E501
         created_a = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created_a.is_ok
         tid_a = created_a.danger_ok.id
@@ -764,8 +741,7 @@ class TestSameWorktreeLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_differ\
-        # ent_worktrees_do_not_match
+        # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_different_worktrees_do_not_match  # noqa: E501
         created_a = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created_a.is_ok
         tid_a = created_a.danger_ok.id
@@ -783,6 +759,66 @@ class TestSameWorktreeLease:
         assert same_worktree_lease(second_worktree, tid_b, tid_a) is False
 
 
+# frob:ticket T-5075
+class TestDoableThreadsOneLeasesSnapshot:
+    """T-5075 (the second half of the Windows TICK008 stall fix, after
+    T-5036's `repo_root` memoization): `doable()` must call `read_all_
+    leases` exactly ONCE per invocation and thread that snapshot down
+    through `leased_by`/`_leased_by_one_holder` into every
+    `same_worktree_lease` call, rather than `same_worktree_lease`
+    re-scanning the leases directory once per (ticket, holder) pair."""
+
+    def test_read_all_leases_called_exactly_once_across_doable(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestDoableThreadsOneLeasesSnapshot.test_read_all_leases_called_exactly_once_across_doable  # noqa: E501
+        # N tickets, each leasing a distinct file so every pair is a real
+        # scope-disjoint (non-colliding) candidate x holder pair --
+        # a positive control on the CALL COUNT, not on collision outcomes.
+        n_tickets = 4
+        m_holders = 3
+        for i in range(n_tickets):
+            created = new_ticket(
+                repo, _spec(f"Candidate {i}", scope=(f"src/candidate_{i}.py",))
+            )
+            assert created.is_ok
+        for j in range(m_holders):
+            created = new_ticket(
+                repo, _spec(f"Holder {j}", scope=(f"src/holder_{j}.py",))
+            )
+            assert created.is_ok
+            hid = created.danger_ok.id
+            assert transition(repo, hid, TicketState.PLANNED).is_ok
+            assert transition(repo, hid, TicketState.IN_PROGRESS).is_ok
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        queue = TicketQueue(tickets=loaded.danger_ok)
+
+        call_count = 0
+        real_read_all_leases = read_all_leases
+
+        def _counting_read_all_leases(
+            root: Path, *, exclude_from_reconcile: frozenset[str] = frozenset()
+        ):
+            nonlocal call_count
+            call_count += 1
+            return real_read_all_leases(
+                root, exclude_from_reconcile=exclude_from_reconcile
+            )
+
+        monkeypatch.setattr(
+            "frob.tickets._doable.read_all_leases", _counting_read_all_leases
+        )
+
+        doable(queue, repo)
+        assert call_count == 1, (
+            f"expected exactly 1 read_all_leases call across doable() with "
+            f"{n_tickets} candidate(s) x {m_holders} holder(s), got {call_count}"
+        )
+
+
 # frob:ticket T-1883
 class TestDoableExcludesSameWorktreeLeases:
     """The bug T-1883 fixes: `doable --show-blocked`'s underlying
@@ -795,8 +831,7 @@ class TestDoableExcludesSameWorktreeLeases:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLea\
-        # ses.test_same_worktree_colliding_leases_do_not_block_each_other
+        # tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLeases.test_same_worktree_colliding_leases_do_not_block_each_other  # noqa: E501
         created_a = new_ticket(repo, _spec("Ticket A", scope=("docs/shared.md",)))
         assert created_a.is_ok
         tid_a = created_a.danger_ok.id
@@ -822,8 +857,7 @@ class TestDoableExcludesSameWorktreeLeases:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLea\
-        # ses.test_cross_worktree_colliding_lease_still_blocks
+        # tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLeases.test_cross_worktree_colliding_lease_still_blocks  # noqa: E501
         created_a = new_ticket(repo, _spec("Ticket A", scope=("docs/shared.md",)))
         assert created_a.is_ok
         tid_a = created_a.danger_ok.id
@@ -863,8 +897,7 @@ class TestLeaseDeltaReconciliation:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestLeaseDeltaReconciliation.test\
-        # _stale_worktrees_add_does_not_revert_a_siblings_narrowing
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseDeltaReconciliation.test_stale_worktrees_add_does_not_revert_a_siblings_narrowing  # noqa: E501
         created = new_ticket(
             repo, _spec("Feature", scope=("src/feature.py", "src/other.py"))
         )
@@ -921,8 +954,7 @@ class TestLeaseDeltaReconciliation:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestLeaseDeltaReconciliation.test\
-        # _a_legitimate_expansion_from_the_owning_worktree_still_takes_effect
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseDeltaReconciliation.test_a_legitimate_expansion_from_the_owning_worktree_still_takes_effect  # noqa: E501
         created = new_ticket(repo, _spec("Feature", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -972,9 +1004,7 @@ class TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLive\
-        # NarrowingOverStaleQueue.test_narrowed_away_path_is_not_blocked_by_a_stale_loc\
-        # al_queue
+        # tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue.test_narrowed_away_path_is_not_blocked_by_a_stale_local_queue  # noqa: E501
         from frob.tickets._scope import scope_lease_conflict
 
         (repo / "src" / "other.py").write_text("# other\n")

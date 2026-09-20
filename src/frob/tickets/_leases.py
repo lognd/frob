@@ -1792,10 +1792,17 @@ def enforce_ticket_ownership(root: Path, ticket_id: str) -> Result[None, TicketE
 
 # frob:ticket T-1356
 # frob:ticket T-1883
+# frob:ticket T-5075
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_leased_to_same_worktree_matches kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_different_worktrees_do_not_match kind="unit"  # noqa: E501
-def same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
+def same_worktree_lease(
+    root: Path,
+    requesting_id: str,
+    holder_id: str,
+    *,
+    leases: tuple[_LeaseRecord, ...] | None = None,
+) -> bool:
     """Whether `requesting_id` (the ticket asking about/acting from `root`)
     and `holder_id` (a ticket whose scope-lease might otherwise collide with
     it) are BOTH leased to the SAME worktree (T-1356) -- the standing-policy
@@ -1820,7 +1827,21 @@ def same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
     ticket with no recorded lease at all (never `frob ticket start`-ed in ANY
     worktree, or a stale/removed lease) never matches, so this can only ever
     narrow an existing conflict, never invent a new exemption out of thin
-    air."""
+    air.
+
+    T-5075: pass a precomputed `leases` (`read_all_leases(root)`'s own
+    output) when calling this per-candidate in a loop (`frob.tickets.
+    _doable.doable`/`leased_by` do, mirroring the existing `all_leases`
+    threading those functions already apply for their own outer collision
+    check) so the leases-directory rescan and its per-lease liveness probe
+    run ONCE for the whole call, not once per (ticket, holder) pair -- this
+    was the second half of the Windows TICK008 stall fix (T-5036 fixed the
+    `repo_root` git-spawn half; this is the `read_all_leases` rescan half).
+    Omitting it (the default) calls `read_all_leases(root)` internally, same
+    default-to-internal convention `_leased_by_one_holder`'s `breadth`/
+    `all_leases` params already use. See `read_all_leases`'s own docstring
+    for why passing a snapshot here is still liveness-correct within one
+    command's lifetime."""
     from frob.gitio import repo_root
 
     resolved_root = repo_root(root)
@@ -1828,9 +1849,12 @@ def same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
         return False
     root_worktree = str(resolved_root.danger_ok.resolve())
 
+    if leases is None:
+        leases = read_all_leases(root)
+
     requesting_worktree: str | None = None
     holder_worktree: str | None = None
-    for lease in read_all_leases(root):
+    for lease in leases:
         if lease.ticket_id == requesting_id:
             requesting_worktree = lease.worktree
         elif lease.ticket_id == holder_id:
@@ -4087,6 +4111,7 @@ def _full_ledger_dirty(pathspecs: tuple[str, ...], *, root: Path) -> bool:
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:ticket T-5075
 def read_all_leases(
     root: Path, *, exclude_from_reconcile: frozenset[str] = frozenset()
 ) -> tuple[_LeaseRecord, ...]:
@@ -4155,7 +4180,17 @@ def read_all_leases(
     T-4388: `exclude_from_reconcile` is forwarded verbatim to
     `_live_leases_pruning_stale` -- see that function's docstring. Only
     `_refuse_archive_if_leased` passes a non-empty set; every other
-    caller keeps the default and is unaffected."""
+    caller keeps the default and is unaffected.
+
+    T-5075: a caller that needs this same fresh snapshot repeatedly within
+    ONE command invocation (e.g. `doable()`'s per-(ticket, holder) loop via
+    `same_worktree_lease`'s `leases` param) MAY call this once and reuse
+    the returned tuple for the rest of that invocation -- the snapshot is
+    valid for the duration of one command, since nothing changes the
+    leases directory out from under a single-threaded CLI run between its
+    own calls. This does NOT relax the no-caching-ACROSS-calls contract
+    above: a long-lived process (the daemon, a gate pool worker) must
+    still call this fresh each time it starts a new logical operation."""
     resolved = leases_dir(root)
     if resolved.is_err:
         return ()
