@@ -100,6 +100,12 @@ body_changes:
   at: '2026-08-19'
   old_length: 2748
   new_length: 4498
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _worker.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4497
+  new_length: 5598
 evidence:
 - tests/test_serve_daemon.py::TestFrobDaemonStatus::test_reads_current_status
 - tests/test_serve_daemon.py::TestPollPostLand::test_head_moved_refreshes_verdict
@@ -246,3 +252,22 @@ ticket as still proving an invariant it now disproves. This COV003
 finding is accepted, permanent, disclosed residue: the policy this
 ticket implemented was deliberately superseded by a later, better-
 reasoned design.
+
+T-4718 sweep (condensed from src/frob/verify/_worker.py, the "unmeasurable
+early return" block, trimmed for DOCARCH002's 12-line cap): the trimmed
+block's full original text, kept verbatim below.
+
+            # T-1703/T-1688: unmeasurable is never zero, never green, and
+            # this early return is the ONLY thing standing between this
+            # branch and the rest of the function -- advance_watermark is
+            # not even reachable from here.
+            #
+            # T-3886: the SPECIFIC reason -- our own child timed out, our
+            # own spawn was refused, or the check genuinely could not
+            # measure -- is looked up here rather than collapsed into one
+            # undifferentiated "unmeasurable" (F-043's own incident: a
+            # reporter having to infer, by hand, that a 45-minute land
+            # stall was OUR child dying, not the repository being
+            # unmeasurable). `pop` (not a bare read) so a later, unrelated
+            # `None` for a DIFFERENT commit can never accidentally reuse
+            # this commit's stale classification.
