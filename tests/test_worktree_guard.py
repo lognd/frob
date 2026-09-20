@@ -185,8 +185,7 @@ class TestAgentEnvExports:
 
     def test_no_fleet_context_omits_xdist_bound(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_worktree_guard.py::TestAgentEnvExports.test_no_fleet_context_omits\
-        # _xdist_bound
+        # tests/test_worktree_guard.py::TestAgentEnvExports.test_no_fleet_context_omits_xdist_bound  # noqa: E501
         """T-2221 must-still-pass control: no other live agent lease ->
         `PYTEST_XDIST_AUTO_NUM_WORKERS` is not exported at all, so a pytest
         spawned from this environment resolves `-n auto` against xdist's
@@ -199,8 +198,7 @@ class TestAgentEnvExports:
 
     def test_fleet_context_bounds_xdist_workers(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_worktree_guard.py::TestAgentEnvExports.test_fleet_context_bounds_x\
-        # dist_workers
+        # tests/test_worktree_guard.py::TestAgentEnvExports.test_fleet_context_bounds_xdist_workers  # noqa: E501
         """T-2221 acceptance 1: three OTHER live agent leases visible via
         the real cross-worktree lease side-channel (never `ps`-parsed) ->
         `agent_env_exports` includes a `PYTEST_XDIST_AUTO_NUM_WORKERS`
@@ -542,6 +540,7 @@ class TestWarnIfTestmonPluginMissing:
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
 
+# frob:ticket T-4546
 class TestAgentRunnerEnv:
     """T-0574: `frob agent env` CLI wiring (`frob.app.agent_runner`)."""
 
@@ -578,19 +577,25 @@ class TestAgentRunnerEnv:
             agent_run(["env", str(not_a_repo)])
         assert excinfo.value.code == 1
 
-    def test_unrecognized_subcommand_falls_through_to_usage_error(
-        self, capsys: pytest.CaptureFixture[str]
+    # frob:ticket T-4546
+    def test_bare_invocation_defaults_to_env(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch
     ) -> None:
-        # frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_unrecognized_subcommand_falls_through_to_usage_error  # noqa: E501
-        # T-1400: `run()`'s fallthrough (agent_runner.py 88-89) -- no
-        # subcommand at all (argparse's `agent_command` stays `None`)
-        # prints help to stderr and exits 1, instead of silently doing
-        # nothing.
-        with pytest.raises(SystemExit) as excinfo:
-            agent_run([])
-        assert excinfo.value.code == 1
-        err = capsys.readouterr().err
-        assert "usage" in err.lower()
+        # frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_bare_invocation_defaults_to_env  # noqa: E501
+        # T-1400 originally asserted the opposite of this: no subcommand at
+        # all (argparse's `agent_command` stays `None`) fell through to a
+        # usage error. T-4546 (`agent` has exactly one child, `env`)
+        # intentionally flattens that away -- bare `frob agent [path]` now
+        # runs what `frob agent env [path]` ran, same as
+        # `TestAgentGroupFlattened.test_run_dispatches_bare_invocation_to_env`
+        # (tests/unit/test_cli_single_child_groups.py) asserts against the
+        # dispatch layer directly; this test additionally proves it end to
+        # end through `run()`'s real `_run_env` path.
+        _init_repo(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        agent_run([])
+        out = capsys.readouterr().out
+        assert f"export FROB_WORKTREE={shlex.quote(str(tmp_path.resolve()))}" in out
 
 
 class TestAgentEnvStdoutPurity:
@@ -704,8 +709,7 @@ class TestAgentEnvStdoutPurity:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_stdout_is_utf8_ev\
-        # en_under_forced_utf16_ioencoding
+        # tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_stdout_is_utf8_even_under_forced_utf16_ioencoding  # noqa: E501
         """T-4446: on the GitHub Windows runner, `sys.stdout`'s default
         encoding resolved to UTF-16 (console code page / PYTHONIOENCODING
         interaction), so `frob agent env`'s exported lines came out as

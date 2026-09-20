@@ -336,6 +336,7 @@ def _dispatch_refactor(argv: list[str]) -> None:
 
 # frob:ticket T-2993
 # frob:ticket T-3020
+# frob:ticket T-4546
 # frob:tests \
 # tests/test_narrative_blocks.py::TestT3020WaiversRemoved.test_dispatch_narrative_has_no_sys003_waiver  # noqa: E501
 # frob:waive DUP001 reason="deliberate structural duplicate of _dispatch_refactor \
@@ -345,23 +346,49 @@ def _dispatch_refactor(argv: list[str]) -> None:
 # editing _dispatch_refactor's own body, which is refactor/'s live work area this \
 # drive, not this ticket's scope"
 def _dispatch_narrative(argv: list[str]) -> None:
-    """`frob narrative ...` (T-2993) -- dispatched directly, mirroring
-    `_dispatch_refactor` immediately above: `frob.narrative._cli.
-    run_narrative_command` takes a parsed `argparse.Namespace` and returns
-    an exit code directly, the same non-uniform shape `run_refactor_
-    command` uses, for the same reason -- see that function's docstring.
-    Author-invoked only; never called from `land` (T-2994's own doctrine:
-    land may CHECK, never REWRITE)."""
+    """`frob narrative [move] ...` (T-2993) -- dispatched directly,
+    mirroring `_dispatch_refactor` immediately above: `frob.narrative
+    ._cli.run_narrative_command` takes a parsed `argparse.Namespace` and
+    returns an exit code directly, the same non-uniform shape `run_
+    refactor_command` uses, for the same reason -- see that function's
+    docstring. `narrative` has exactly one child (`move`), so bare `frob
+    narrative FILE LINE ...` now dispatches straight to it (T-4546, same
+    flattening `frob claude`/`frob natives`/`frob agent` got, T-4522/
+    T-4546) -- `_normalize_narrative_argv` inserts the implied `move`
+    token ahead of `argv[1:]` (everything after the leading `narrative`
+    token) before parsing. Author-invoked only; never called from `land`
+    (T-2994's own doctrine: land may CHECK, never REWRITE)."""
     import sys as _sys
 
     # frob:ticket T-3020
     from frob.narrative._cli import add_narrative_parser, run_narrative_command
+
+    argv = ["narrative", *_normalize_narrative_argv(argv[1:])]
 
     narrative_parser = argparse.ArgumentParser(prog="frob")
     narrative_sub = narrative_parser.add_subparsers(dest="subcommand")
     add_narrative_parser(narrative_sub)
     narrative_args = narrative_parser.parse_args(argv)
     _sys.exit(run_narrative_command(narrative_args))
+
+
+# frob:ticket T-4546
+def _normalize_narrative_argv(argv: list[str]) -> list[str]:
+    """Insert the implied `move` subcommand token ahead of `argv` when it
+    is missing (T-4546): `narrative` has exactly one child, so bare `frob
+    narrative FILE LINE ...` must run what `frob narrative move FILE
+    LINE ...` ran. `argv` here is everything AFTER the leading
+    `narrative` token (i.e. `argv[1:]` at this module's own
+    `_dispatch_narrative` call site) -- leaves it untouched when the
+    first remaining token already IS `move`, or is a help flag, so
+    argparse's own `--help`/usage handling is unaffected. Kept private to
+    this module (not `frob.narrative._cli`, alongside `add_narrative_
+    parser`) so the `narrative` node's own public interface does not grow
+    for a helper with exactly one caller, entirely within the `cli`
+    node's own dispatch boundary."""
+    if argv and argv[0] not in ("move", "-h", "--help"):
+        return ["move", *argv]
+    return argv or ["move"]
 
 
 # frob:ticket T-2443

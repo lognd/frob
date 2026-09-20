@@ -31,14 +31,40 @@ __all__ = ["add_narrative_parser", "run_narrative_command"]
 
 # frob:doc docs/commands/narrative.md#usage
 # frob:tests \
-# tests/test_narrative_migrate.py::TestNarrativeCli.test_add_narrative_parser_registers\
-# _move
+# tests/test_narrative_migrate.py::TestNarrativeCli.test_add_narrative_parser_registers_move  # noqa: E501
 def add_narrative_parser(sub: argparse._SubParsersAction) -> None:
-    """Register `frob narrative move FILE LINE` on an argparse subparsers
-    object, matching every other `_add_*_parser` builder's shape
-    (`src/frob/_cli_parsers/**`)."""
-    p = sub.add_parser("narrative", help="migrate a T-#### narrative comment block")
-    narrative_sub = p.add_subparsers(dest="narrative_subcommand", required=True)
+    """Register `frob narrative [move] FILE LINE` on an argparse
+    subparsers object, matching every other `_add_*_parser` builder's
+    shape (`src/frob/_cli_parsers/**`). `narrative` has exactly one child
+    (`move`), so bare `frob narrative FILE LINE` now dispatches straight
+    to it (T-4546, same flattening `frob claude`/`frob natives`/`frob
+    agent` got, T-4522/T-4546); the two-word `frob narrative move FILE
+    LINE` spelling is kept working as a documented alias for one release.
+    `move`'s positional `file`/`line` arguments cannot be mirrored
+    directly onto this group parser the way T-4522 mirrored optional
+    FLAGS -- a bare positional here would collide with `add_subparsers`'
+    own positional slot -- so the real dispatch caller
+    (`__main__._dispatch_narrative`) normalizes `argv` via its own
+    private `_normalize_narrative_argv` before parsing, inserting the
+    implied `move` token when it is missing (kept in `__main__.py`, not
+    here, so this node's public interface does not grow for a helper
+    with exactly one caller, all within the `cli` node)."""
+    p = sub.add_parser(
+        "narrative",
+        help="migrate a T-#### narrative comment block -- 'move' is "
+        "implied: bare `frob narrative FILE LINE` runs it (T-4546); the "
+        "two-word `frob narrative move` spelling still works as an alias",
+        description="migrate a T-#### narrative comment block. 'move' is "
+        "implied (T-4546): bare `frob narrative FILE LINE` runs it; the "
+        "two-word `frob narrative move FILE LINE` spelling is kept "
+        "working as a documented alias for one release.",
+    )
+    narrative_sub = p.add_subparsers(dest="narrative_subcommand")
+    # frob:ticket T-4546
+    # T-4546: `narrative` wraps exactly one child (`move`) -- default the
+    # dispatch dest to it so `--help` renders correctly for bare
+    # `frob narrative`.
+    p.set_defaults(narrative_subcommand="move")
 
     mp = narrative_sub.add_parser(
         "move",

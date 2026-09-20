@@ -73,10 +73,24 @@ def _all_logs_to_stderr() -> Iterator[None]:
 
 
 def _build_agent_parser() -> argparse.ArgumentParser:
-    """Argument parser for `frob agent`."""
+    """Argument parser for `frob agent`. `agent` has exactly one child
+    (`env`), so bare `frob agent [path]` now dispatches straight to it
+    (T-4546, same flattening `frob claude`/`frob natives` got, T-4522);
+    the two-word `frob agent env [path]` spelling is kept working as a
+    documented alias for one release. `run` (below) normalizes `argv` to
+    insert the implied `env` token BEFORE parsing -- a `path` positional
+    cannot be mirrored directly onto the group parser the way T-4522
+    mirrored `claude`/`natives`' own optional FLAGS, because a bare
+    positional here would collide with `add_subparsers`' own positional
+    slot (argparse tries to match the first token as a subcommand name
+    first, so `frob agent /some/path` would otherwise fail with "invalid
+    choice: '/some/path'")."""
     p = argparse.ArgumentParser(
         prog="frob agent",
-        description="Print/export the dispatched-agent guard env for a worktree",
+        description="Print/export the dispatched-agent guard env for a "
+        "worktree. 'env' is implied (T-4546): bare `frob agent` runs it; "
+        "the two-word `frob agent env` spelling is kept working as a "
+        "documented alias for one release.",
     )
     agent_sub = p.add_subparsers(dest="agent_command")
     env_p = agent_sub.add_parser(
@@ -87,9 +101,23 @@ def _build_agent_parser() -> argparse.ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="worktree path to resolve (default: cwd)",
+        help="worktree path to resolve (default: cwd, also the default "
+        "action for bare `frob agent`, T-4546)",
     )
     return p
+
+
+# frob:ticket T-4546
+def _normalize_agent_argv(argv: list[str]) -> list[str]:
+    """Insert the implied `env` subcommand token ahead of `argv` when it is
+    missing (T-4546): `agent` has exactly one child, so bare `frob agent
+    [path]` must run what `frob agent env [path]` ran. Leaves `argv`
+    untouched when the first token already IS `env`, or is a help flag --
+    both must reach `_build_agent_parser` unmodified so argparse's own
+    `--help`/usage handling stays exactly as it always has."""
+    if argv and argv[0] not in ("env", "-h", "--help"):
+        return ["env", *argv]
+    return argv or ["env"]
 
 
 def _force_utf8_stdout() -> None:
@@ -192,12 +220,14 @@ def _run_env(path: str) -> None:
 # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_diagnostics_still_appear_on_stderr  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_no_fleet_context_still_produces_valid_eval_output  # noqa: E501
 def run(argv: list[str]) -> None:
-    """`frob agent <subcommand>` entry point (T-0574), dispatched directly
-    by `__main__._dispatch` the same way `frob bind` is. The implemented
-    subcommand surface today is `env`; an unrecognized/missing subcommand
-    falls through to argparse's own usage error."""
+    """`frob agent [subcommand]` entry point (T-0574), dispatched directly
+    by `__main__._dispatch` the same way `frob bind` is. `agent` has
+    exactly one child (`env`), so a bare/missing subcommand now runs it
+    too (T-4546) -- `_normalize_agent_argv` inserts the implied token
+    before parsing; the two-word `frob agent env` spelling still works as
+    a documented alias for one release."""
     parser = _build_agent_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_normalize_agent_argv(argv))
     if args.agent_command == "env":
         _run_env(args.path)
         return

@@ -2,14 +2,14 @@
 id: T-4546
 title: 'flatten the remaining single-child verb groups: agent env, worktree sweep
   (in _core.py) and narrative move (frob/narrative/_cli.py + _root.py)'
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-09-16'
 priority: low
 parent: T-2994
 tier: ticket
-sprint: v0.537.0
+sprint: v0.534.0
 runs_last: false
 milestone: v0.534.0
 runs_last_parallel_safe: false
@@ -66,19 +66,29 @@ scope_changes:
     updating to the new contract
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: v0.534.0
-  new_value: v0.537.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_normalize_inserts_implied_env
+- tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_bare_agent_defaults_to_env
+- tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_run_dispatches_bare_invocation_to_env
+- tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_help_notes_alias
+- tests/unit/test_cli_single_child_groups.py::TestNarrativeGroupFlattened::test_normalize_inserts_implied_move
+- tests/unit/test_cli_single_child_groups.py::TestNarrativeGroupFlattened::test_bare_narrative_defaults_to_move
+- tests/unit/test_cli_single_child_groups.py::TestNarrativeGroupFlattened::test_help_notes_alias
+- tests/test_worktree_guard.py::TestAgentRunnerEnv::test_bare_invocation_defaults_to_env
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob agent, frob worktree, frob narrative WHEN invoked without a subverb
     THEN each runs what its single child ran, the two-word spelling stays as a documented
     alias, and tests/unit/test_cli_single_child_groups.py covers all five groups
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_normalize_inserts_implied_env
+  - tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_bare_agent_defaults_to_env
+  - tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_run_dispatches_bare_invocation_to_env
+  - tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_help_notes_alias
+  - tests/unit/test_cli_single_child_groups.py::TestNarrativeGroupFlattened::test_normalize_inserts_implied_move
+  - tests/unit/test_cli_single_child_groups.py::TestNarrativeGroupFlattened::test_bare_narrative_defaults_to_move
+  - tests/unit/test_cli_single_child_groups.py::TestNarrativeGroupFlattened::test_help_notes_alias
+  - tests/test_worktree_guard.py::TestAgentRunnerEnv::test_bare_invocation_defaults_to_env
 threat: null
 component: null
 anchor: false

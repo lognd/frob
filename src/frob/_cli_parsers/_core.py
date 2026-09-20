@@ -510,12 +510,37 @@ def _add_agent_parser(sub) -> None:
     """Register the `frob agent` subcommand tree for `--help` discovery
     only -- actual dispatch bypasses this parser entirely (see `_dispatch`
     below and `frob.app.agent_runner`'s module docstring), mirroring
-    `bind`'s own precedent."""
+    `bind`'s own precedent. `agent` has exactly one child (`env`), so bare
+    `frob agent` dispatches straight to it at the REAL dispatch layer
+    (T-4546, same flattening `_add_claude_parser`/`_add_natives_parser`
+    established, T-4522); the two-word `frob agent env` spelling is kept
+    working as a documented alias for one release. This tree only sets
+    the default subcommand dest for `--help` rendering -- it does NOT
+    mirror `env`'s own `path` positional the way `claude`/`natives`
+    mirrored their optional flags: a bare positional here would collide
+    with `add_subparsers`' own positional slot (argparse would try to
+    match the first token as a subcommand name first). The REAL argv
+    normalization lives in `frob.app.agent_runner._normalize_agent_argv`,
+    which this help-only tree is never parsed through."""
     agent_p = sub.add_parser(
         "agent",
-        help="print/export the dispatched-agent guard env (T-0574)",
+        help="print/export the dispatched-agent guard env (T-0574) -- "
+        "'env' is implied: bare `frob agent` runs it (T-4546); the "
+        "two-word `frob agent env` spelling still works as an alias",
+        description="print/export the dispatched-agent guard env (T-0574). "
+        "'env' is implied (T-4546): bare `frob agent` runs it; the "
+        "two-word `frob agent env` spelling is kept working as a "
+        "documented alias for one release.",
     )
     agent_sub = agent_p.add_subparsers(dest="agent_command")
+    # frob:ticket T-4546
+    # T-4546: `agent` wraps exactly one child (`env`) -- default the
+    # dispatch dest to it so `--help` renders correctly for bare
+    # `frob agent` without requiring the subparser to be invoked
+    # explicitly. See the REAL dispatch flattening in
+    # frob.app.agent_runner (_normalize_agent_argv) -- this parser is
+    # never used to parse real argv (see this function's own docstring).
+    agent_p.set_defaults(agent_command="env")
     agent_env_p = agent_sub.add_parser(
         "env", help="print FROB_WORKTREE/FROB_AGENT export lines for a worktree"
     )
