@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_effects.py
 - src/frob/vet/_capability_modes.py
@@ -22,6 +26,8 @@ scope:
 - tests/test_capability_registry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/strata/_selfconform.py
@@ -69,6 +75,13 @@ scope_changes:
   reason: existing litmus tests for CAPABILITY_KINDS this ticket extends
   actor: logan
   at: '2026-07-28'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_modes.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 759
+  new_length: 1843
 evidence:
 - tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_coarse_env_covers_union_of_modes
 - tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_mutate_declares_every_real_effect_it_exercises
@@ -78,5 +91,26 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0771 gave env a real read-vs-write needle split (frob.vet._capability_registry env-read/env-write, per language) but deliberately left env OUT of WIRED_MODE_FAMILIES and _effects.py::_KIND_MAP -- env has no tier-2 (THREAT004/SYS100/SYS101) may-declaration join at all today, so there is nothing to feed. This ticket: (1) decide whether env gets its own THREAT004-delegated join like net/fs, or stays a SYS100-extended-only kind; (2) if wired, add env-read/env-write to _KIND_MAP and WIRED_MODE_FAMILIES, remove _selfconform.py's _UNWIRED_ENV_MODE_ALIASES transitional fold; (3) sweep frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES / CWE_CATALOG for any env.read/env.write entries the new join would require (T-0717 mandate point 2's sweep, applied to env).
+
+T-4718 sweep (condensed from src/frob/vet/_capability_modes.py:159-172,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+#: Families whose mode split is WIRED into a live join this pass (module
+#: docstring's "wiring status"): `expand_declared_kind`/`normalize_
+#: observed_kind` only ever explode a bare family name from THIS set into
+#: its `FAMILY_MODES` union -- a family present in `FAMILY_MODES` but NOT
+#: here (proc/ffi today) has its vocabulary DEFINED but its
+#: scanner/declaration join still coarse (a bare `may "proc"` stays exactly
+#: `{"proc"}`, never silently exploded into a mode set that no
+#: scanner-observed kind could ever match, which would make every
+#: existing bare `may "proc"` declaration spuriously go SYS101-stale).
+#: T-1075 adds `env` (module docstring's wiring-status update): env-read/
+#: env-write now has a real tier-2 join (`_effects.py::_KIND_MAP`), so a
+#: coarse `may "env"` declaration can safely explode too. Extending this
+#: set further (`proc`/`ffi`) is the next sibling ticket's job.
