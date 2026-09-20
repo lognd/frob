@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4662
 tier: story
-sprint: v0.536.0
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: story container under T-4662; the disjoint
   scopes live on its leaves'
+triage_changes:
+- field: sprint
+  old_value: v0.536.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: Given _models.py:589, docs/strata/evidence.md:117 and docs/strata/charter.md:4
