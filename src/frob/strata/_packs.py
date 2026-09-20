@@ -21,6 +21,15 @@ from ._models import TRUST
 
 _log = get_logger(__name__)
 
+#: Module names `require_analyzable` has already WARNed about in this
+#: process (SF-11): frob's own model has trusted nodes and never declares
+#: `std.policy.analyzable`, so the auto-inject fires on every elaboration --
+#: 570 occurrences across 45 land logs, ~12.7 per land, before this guard.
+#: Deduping by module name keeps the first occurrence's signal (a designer
+#: seeing it once still learns the pack was auto-supplied) while killing the
+#: per-call-site repetition that made the warning unactionable log noise.
+_WARNED_ANALYZABLE_MODULES: set[str] = set()
+
 #: The mandatory base pack's policy id; matched by id for auto-inject and
 #: for override detection (docs/strata/policy.md#packs).
 # frob:doc docs/strata/policy.md#packs
@@ -93,12 +102,21 @@ def require_analyzable(module: Module) -> Result[Module, StrataError]:
 
     already_present = any(p.id == ANALYZABLE_POLICY_ID for p in module.policies)
     if has_trusted and not already_present:
-        _log.warning(
-            "module %s: trusted component present without %s; "
-            "auto-injecting mandatory base pack",
-            module.name,
-            ANALYZABLE_POLICY_ID,
-        )
+        if module.name not in _WARNED_ANALYZABLE_MODULES:
+            _WARNED_ANALYZABLE_MODULES.add(module.name)
+            _log.warning(
+                "module %s: trusted component present without %s; "
+                "auto-injecting mandatory base pack",
+                module.name,
+                ANALYZABLE_POLICY_ID,
+            )
+        else:
+            _log.debug(
+                "module %s: trusted component present without %s; "
+                "auto-injecting mandatory base pack (already warned this process)",
+                module.name,
+                ANALYZABLE_POLICY_ID,
+            )
         return Ok(
             module.model_copy(update={"policies": (*module.policies, *ANALYZABLE)})
         )

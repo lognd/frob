@@ -2,7 +2,7 @@
 id: T-4673
 title: 'SF-11: require_analyzable WARNs on every single design load -- 570 occurrences
   across 45 land logs, ~12.7 per land'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-19'
@@ -21,6 +21,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_packs_analyzable_warning.py::TestAnalyzableWarningDeduped::test_load_design_ids_twice_warns_once
+- tests/unit/strata/test_packs_analyzable_warning.py::TestAnalyzableWarningDeduped::test_first_call_still_warns
 designated_repro_test: null
 acceptance:
 - text: Given src/frob/strata/_packs.py:96-102 emits a WARNING on every elaboration
@@ -28,11 +31,13 @@ acceptance:
     (the policy keyword appears 0 times in design/frob.strata), when this lands, then
     a test calling load_design_ids twice in one process asserts at most ONE such warning
     record -- a positive control that fails at HEAD c8f56ef10 with one per call.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_packs_analyzable_warning.py::TestAnalyzableWarningDeduped::test_load_design_ids_twice_warns_once
 - text: Given demoting to DEBUG would destroy the signal the docstring deliberately
     chose, when this lands, then a second test asserts the FIRST warning is still
     emitted.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_packs_analyzable_warning.py::TestAnalyzableWarningDeduped::test_first_call_still_warns
 threat: null
 component: strata
 anchor: false
