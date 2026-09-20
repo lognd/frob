@@ -10,6 +10,10 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_doclink_docanchor.py
 - tests/unit/gates/test_doc011.py
@@ -20,6 +24,8 @@ scope:
 - tests/unit/gates/test_markdown_scan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/_tickets_gate.py
@@ -52,6 +58,13 @@ scope_changes:
     root cause
   actor: logan
   at: '2026-08-06'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve exact regex and bug example trimmed from _markdown_scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2414
+  new_length: 2889
 evidence:
 - tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_double_backtick_span_is_blanked
 - tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_single_backtick_span_is_blanked
@@ -66,6 +79,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Main went red on T-1542's land with two TICK006 errors:
 
@@ -114,3 +130,13 @@ assumes the finding is real and repairs the citation. This ticket is
 upstream of it -- if the finding is a false positive, auto-fixing it
 would rewrite correct prose. Land this first, and leave a note on T-1544
 saying so.
+
+
+T-4709 follow-up (condensed from _INLINE_CODE_RE's docstring in
+src/frob/gates/_markdown_scan.py, trimmed for DOCARCH002's 12-line
+cap): the regex is `(`+)(?:(?!\1)[^\n]|\n(?!\n))+?\1`. The bug this
+fixed: a single-backtick-only version silently fails to match a
+doubled-backtick span (e.g. `` `frob quality` `` written with two
+backticks either side) as one span at all; a line-wrapped span like a
+CLI invocation split across two lines is still one token under this
+fix.
