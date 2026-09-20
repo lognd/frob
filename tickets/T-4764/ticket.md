@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
-blocked_by:
-- T-4763
 parent: T-4757
 tier: ticket
 sprint: null
@@ -76,3 +74,6 @@ Positive controls:
 4. the rendered AppConfig rejects an unknown field (or accepts it, per the
    configured behaviour) -- asserted, so the model configuration is proven
    to be in effect rather than merely present.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4763 -- T-4763 is READY and queued to land; the blocker is land order only, same worktree series
