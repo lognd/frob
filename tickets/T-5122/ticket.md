@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_land_verify.py
 - tests/ticket_land_suite/test_land_proof_unmeasured.py
 - src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,13 @@ scope_changes:
   reason: 'T-5122: the claims-reverify outcome gate must run at land()''s own call
     site, immediately after the outcome is computed and before the dry-run early return,
     so the refusal is real for a dry run too'
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-5122: thread the new force/reason kwargs from the existing --force/--reason
+    CLI flags into land()''s new call, and update --force''s own help text to name
+    the new guard it now also overrides'
   actor: logan
   at: '2026-09-20'
 triage_changes:
