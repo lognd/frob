@@ -2,7 +2,7 @@
 id: T-4676
 title: 'SF-23: verify then scope COV002''s per-declaration frob:ticket demand inside
   .strata files (archive/T-0164''s boilerplate class)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-19'
@@ -27,6 +27,9 @@ scope_changes:
     rule
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStandingRegression::test_module_edge_covers_several_declarations_no_per_decl_edges
+- tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStillFiresWithNoEdgeAtAll::test_no_ticket_edge_anywhere_still_fires
 designated_repro_test: null
 acceptance:
 - text: Given tickets/archive/T-0164/ticket.md already named the class 'COV002 demands
@@ -34,16 +37,27 @@ acceptance:
     ticket starts, then T-0164 and its done-report are read FIRST and the premise
     is confirmed against HEAD c8f56ef10 before any change -- if T-0164's own fix already
     handled it, this closes as verified-with-evidence and no code changes.
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStandingRegression::test_module_edge_covers_several_declarations_no_per_decl_edges
 - text: Given the premise holds, when this lands, then a fixture .strata file with
     several declarations and NO frob:ticket directives is asserted to produce zero
     COV002 findings -- a positive control that fails at HEAD; the test stays as the
     standing regression either way.
-  evidence: []
-- text: Given COV002 also lives in _fix_engine.py, _fix_engine_text.py, _fix_engine_sync.py
+  evidence:
+  - tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStandingRegression::test_module_edge_covers_several_declarations_no_per_decl_edges
+  - tests/unit/gates/test_cov002_strata_declarations.py::TestCov002StrataDeclarationsStillFiresWithNoEdgeAtAll::test_no_ticket_edge_anywhere_still_fires
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: Given COV002 also lives in _fix_engine.py, _fix_engine_text.py, _fix_engine_sync.py
     and _waive.py, when the .strata path proves to be in one of those, then scope
     --add it and coordinate with T-4671 before touching _fix_engine_sync.py.
-  evidence: []
+  new_text: null
+  reason: 'conditional criterion whose premise did not hold: the .strata COV002 path
+    lives in _tickets_gate.py only, so no scope into _fix_engine_sync.py was needed
+    (see body PREMISE CHECK)'
+  actor: logan
+  at: '2026-09-20'
 threat: null
 component: gates
 anchor: false
