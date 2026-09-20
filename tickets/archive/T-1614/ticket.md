@@ -68,6 +68,12 @@ body_changes:
   at: '2026-08-20'
   old_length: 4198
   new_length: 4568
+- mode: append
+  reason: 'T-4770: preserve waive-audit measurement trimmed from _render_lint.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4568
+  new_length: 4962
 evidence:
 - tests/unit/test_waive_audit_runner.py::TestPartialCatchup::test_partial_banks_batch_and_advances_watermark
 - tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
@@ -130,3 +136,11 @@ audit -- it stays open/queued as the periodic mechanism's home rather
 than closing once one pass finishes.
 
 frob:waive BUG002 reason="this pass is a classification-only audit ledger correction (frob ticket waive-audit scan/complete, two systemic-defect tickets filed) with no diff-touched production code -- there is no repro test to reach; a confirmatory-only test is not the honest answer, per BUG002's own remedy option 3 (ledger/doc correction filed as kind=bug/security)"
+
+
+T-4770 follow-up (condensed from _EXEMPT_PREFIXES's docstring in
+src/frob/gates/_render_lint.py, trimmed for DOCARCH002's 12-line cap):
+T-1614's waive audit found 11 individually honest frob:waive RENDER001
+directives across 5 files under .claude/hooks/ alone, all citing
+exactly this standalone-no-frob-import constraint; the directory
+exemption replaces that growing per-line-waiver debt.
