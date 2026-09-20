@@ -11,7 +11,7 @@ parent: null
 tier: ticket
 sprint: v0.533.0
 runs_last: false
-milestone: null
+milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -21,6 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: milestone
+  old_value: null
+  new_value: 1.0.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: static audit 2026-09-20 pinned the exact call chain
