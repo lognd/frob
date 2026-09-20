@@ -13,6 +13,9 @@ parent: T-1623
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/vet/**
 - src/frob/graph/**
@@ -21,6 +24,8 @@ scope:
 - tests/unit/vet/test_taint.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: docs/**
@@ -72,6 +77,13 @@ scope_changes:
     Re-add with a reason if the work genuinely reaches further'
   actor: logan
   at: '2026-08-07'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_python.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2869
+  new_length: 7570
 evidence:
 - tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_dict_literal_dispatch_resolves
 - tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_list_literal_dispatch_resolves
@@ -82,6 +94,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Capability detection is fundamentally LEXICAL: `scan_file_capabilities` matches per-language needle tables against the file's raw bytes, excluding hits inside tree-sitter comment spans. Import/binding-aware passes were bolted on afterwards per language (`_python_binding_capabilities` T-0328, `_ts_binding_capabilities` T-0377, a rust sibling) to recover aliased and from-import evasions the raw-text scan "structurally cannot" catch -- their own words.
 
@@ -107,159 +122,74 @@ Fail-closed requirement: when resolution cannot determine a call's target (genui
 
 Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
 
-## Done report
+T-4718 sweep (condensed from src/frob/vet/_capability_python.py:36-102,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
 
-Changed:
-- src/frob/vet/_capability_python.py::_resolve_py_expr
-- src/frob/vet/_capability_python.py::_resolve_py_partial_call (new)
-- src/frob/vet/_capability_python.py::_resolve_py_subscript (new)
-- src/frob/vet/_capability_python.py::_py_scope_alias_lookup (new, factored out of _attr_rebind_lookup)
-- src/frob/vet/_capability_python.py::_attr_rebind_lookup (refactored onto _py_scope_alias_lookup)
-- src/frob/vet/_capability_python.py::_py_literal_key_text (new)
-- src/frob/vet/_capability_python.py::_record_py_dict_container_alias (new)
-- src/frob/vet/_capability_python.py::_record_py_list_container_alias (new)
-- src/frob/vet/_capability_python.py::_first_py_positional_arg (new)
-- src/frob/vet/_capability_python.py::_record_py_alias (dict/list container branches added)
-- src/frob/vet/_capability_python.py::_collect_py_candidates (subscript added to resolvable call-callee/standalone-reference node types)
-
-Scope actually reached: python only, inside src/frob/vet/** as scoped. No
-src/frob/graph/** change was needed for this slice (see "What I could not
-close" below).
-
-What changed and why (fail-closed framing per the ticket):
-
-This is a SCOPED slice of the ticket's full ambition, not the complete
-"consume frob.graph.callgraph for everything" rewrite -- see the split
-proposed below. It closes the two evasions the ticket named as its own
-worked examples that were previously silently invisible to BOTH detectors
-(the raw-text needle scan AND the existing T-0328 import/alias resolver):
-
-1. `functools.partial(dangerous, ...)` -- `_resolve_py_partial_call`
-   resolves the call's own identity through to its first positional
-   argument when the callee resolves to `functools.partial` (any import
-   alias of it). Covers both `p = functools.partial(os.system, cmd); p()`
-   (via the existing alias-table assignment path, unchanged) and
-   `functools.partial(os.system, cmd)()` called directly.
-2. Literal-keyed dict/list dispatch -- `_record_py_dict_container_alias`/
-   `_record_py_list_container_alias` record one alias entry per
-   string/integer-literal key or list index at assignment time (mirroring
-   `_attr_rebind_lookup`'s existing by-name, non-points-to posture);
-   `_resolve_py_subscript` looks the entry up at the call site. Covers
-   `handlers = {"run": subprocess.run}; handlers["run"](cmd)` and the
-   list sibling.
-
-Verified BEFORE this change, both fixtures resolved to `set()` from
-`scan_file_capabilities` (needle scan: no literal `"subprocess.run("`
-text exists in either fixture; resolver: no `subscript`/`call`-to-
-`functools.partial` handling existed in `_resolve_py_expr` at all) --
-confirmed by running the new tests against the pre-change code before
-writing the fix (both failed with `assert "exec" in set()`). AFTER: both
-resolve to `{"exec", ...}` as expected (6 new tests, all passing).
-
-Fail-closed status (the ticket's headline requirement) -- NOT newly built
-here, already exists and was verified still fires: `frob.gates._opaque`'s
-OPAQUE001 (`RUNTIME_OPAQUE_CONSTRUCTS`/`RUNTIME_OPAQUE_STRUCTURAL_
-CONSTRUCTS`, `_capability_scan.py`, T-0665/T-1051/T-1659) already reports
-an explicit, gate-blocking finding -- never a silent "no capability" --
-for exactly the cases this slice does NOT resolve: a non-literal
-`getattr`/`setattr`/`__import__`/`eval`/`exec` name, and a non-literal-
-keyed subscript-then-call. Verified directly: `getattr(os, name)(cmd)`
-(computed `name`) produces one `_OpaqueFinding` with
-`taxonomy_row='python:runtime:getattr-dynamic-name'` via
-`_opaque_indirection_findings`. `_capability_scan._subscript_key_looks_
-literal`'s own docstring explicitly deferred the LITERAL-key case to "the
-ordinary resolver's job" -- that job had never actually been implemented
-until this ticket; the non-literal case was always covered. I did not
-add a NEW "UNRESOLVED" capability kind because one already exists
-(OPAQUE001) and duplicating it inside `scan_file_capabilities` itself
-would create two competing fail-closed mechanisms for the same
-underlying fact, which is its own kind of drift risk.
-
-Second-detector posture (per T-1328 coordination note): the raw-text
-needle scan (`_matched_capabilities`/`_PATTERNS`) is UNCHANGED and still
-runs as an independent first pass; the T-1626 resolver work extends the
-EXISTING binding-aware second pass. T-1328 is a different, unrelated
-second-detector concept (an OS-syscall-backed / generated-manifest
-detector for strata's 7 app-level capability kinds, scoped to
-src/frob/strata/_mutation_audit.py) -- read, not duplicated; no overlap
-with this ticket's file scope.
-
-What I could NOT close in this ticket, and why (proposing a split rather
-than half-landing a false completeness claim):
-
-- Cross-file wrapper attribution ("a helper that wraps a dangerous op and
-  is called from elsewhere must attribute to the caller's node") is NOT
-  attempted. The existing resolver (and this ticket's additions) is
-  single-file: a wrapper defined in the SAME scanned file is already
-  covered today (its body's own dangerous call is observed when that file
-  is scanned), but a helper imported from ANOTHER file/module and called
-  here is invisible to a per-file scan regardless of alias resolution.
-  Doing this properly needs `frob.graph.callgraph`-backed cross-file
-  resolution over the SCANNED DEPENDENCY'S OWN source tree (not this
-  repo's own package graph, which is what `frob.graph.callgraph` is built
-  and tested against today) -- a materially larger, separate unit of
-  work: building/adapting a call graph for an arbitrary third-party
-  source tree, deciding a traversal-depth/cycle policy, and deciding the
-  attribution semantics (does a capability found N hops down attribute to
-  every caller up the chain, or just the direct one?). I am filing this
-  as a follow-up ticket rather than attempting a partial version of it
-  here.
-- TypeScript/Rust/C/Kotlin binding resolvers are untouched -- this
-  ticket's own worked examples (functools.partial, dict/list dispatch)
-  are Python-specific idioms; the existing T-0328 lineage already treats
-  python as "the priority language" and defers the other four languages'
-  binding-table depth as documented follow-up (module docstring, pre-
-  existing). Extending container-alias/partial-equivalent resolution to
-  each of those grammars is a separate, per-language unit of work I did
-  not attempt inside this ticket's time budget.
-- Symbol-level `via` attribution (naming WHICH declared symbol a resolved
-  capability belongs to, not just "this file has capability X") is
-  explicitly out of scope per the ticket body's own sequencing note
-  ("Prerequisite for symbol-level `via`... Sequence this before, or
-  together with, the via-granularity work") -- not attempted here,
-  correctly deferred to whatever ticket does the via-granularity work
-  next, now that this slice makes the underlying hit itself more
-  symbol-resolved than before.
-
-Filed: none yet -- filing the cross-file-wrapper-attribution follow-up
-immediately after this report, scope
-`src/frob/vet/**,src/frob/graph/**`, referencing this ticket.
-
-Evidence: tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions
-(6 node ids, all newly added and passing -- see evidence list on the
-ticket). Also ran (not bound as evidence, regression-only):
-tests/unit/vet/test_taint.py (8/8 pass, unchanged) and
-tests/test_vet.py -k Capability (224/224 pass, unchanged -- this file is
-OUT of this ticket's declared scope, run read-only to confirm no
-regression in the existing T-0328/T-0337/T-0659 binding-resolution
-suite it owns).
-
-Gates: `frob check --ticket T-1626` clean (0 errors after fixing one
-self-inflicted ARCH001 -- `_resolve_py_expr` grew past the 60-line
-threshold with the inline functools.partial branch, split into
-`_resolve_py_partial_call` to fix, no behavior change from the split
-itself). `frob check --only static --ticket T-1626` and
-`--only archgate --ticket T-1626` independently reconfirmed 0 errors
-after the split. No waivers.
-
-### Changed
-```
- docs/modules/vet.md                |  23 +++-
- src/frob/vet/_capability_python.py | 265 ++++++++++++++++++++++++++++++++++---
- tests/test_vet_capability.py       |  92 +++++++++++++
- tickets.md                         |   9 +-
- 4 files changed, 370 insertions(+), 19 deletions(-)
-```
-
-### Evidence
-- `tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_dict_literal_dispatch_resolves` (pytest node id, verified passing when recorded)
-- `tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_list_literal_dispatch_resolves` (pytest node id, verified passing when recorded)
-- `tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_dict_literal_dispatch_with_non_dangerous_value_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_functools_partial_wrapping_dangerous_op_resolves` (pytest node id, verified passing when recorded)
-- `tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_functools_partial_called_directly_resolves` (pytest node id, verified passing when recorded)
-- `tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_partial_from_import_alias_resolves` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 6 passed (from 6 evidence id(s))
-- gates: 0 error(s), 926 warning(s), 724 waived
-- error-findings: none (measured, zero errors)
+# T-0328: import/binding-aware resolution for Python, the priority language
+# (highest coverage). The plain substring scan above is EVADED by ordinary
+# aliasing/from-import Python -- `import subprocess as sp; sp.run(x)` never
+# contains the literal text "subprocess.run(" the needle table looks for,
+# and `from os import system as e; e(x)` contains neither "os.system(" nor
+# "eval(", so the scanner observes NOTHING even though the code genuinely
+# execs. This block builds a per-file IMPORT/BINDING TABLE from the same
+# tree-sitter parse `_comment_byte_spans` already uses, resolves each
+# call/attribute site's leftmost name through it (reconstructing the
+# fully-qualified target, e.g. `sp.run` -> `subprocess.run`), and re-checks
+# the SAME needle tables against the RESOLVED identity string instead of
+# raw source text -- no new registry field, no new needle vocabulary, just
+# a second pass over a synthesized "what this call/attribute actually
+# refers to" string. Every resolved match is still confirmed against
+# `comment_spans` before counting (T-0209 posture unchanged).
+#
+# Scope-awareness (mandatory to avoid FALSE POSITIVES): a LOCAL binding --
+# a function/method parameter, an assignment target, a `for`/`with ... as`
+# target, or a nested `def`/`class` name -- SHADOWS an import of the same
+# name in every enclosing scope from the site up to module level. `def
+# g(system): system(x)` (param) and `class Job: def run(self): ...` then
+# `Job().run()` (method access on an unrelated object) must NOT resolve to
+# `os.system`/a dangerous `run`, because the leftmost name in each case
+# either resolves to a local binding (shadowed) or to an expression this
+# resolver deliberately does not chase further (a `call` node, e.g.
+# `Job()`, is not a resolvable "object" for attribute-chain purposes, so
+# `Job().run` never reaches the import table at all).
+#
+# Known limitations, documented rather than silently eaten (mirrors this
+# module's existing "Honest limits" posture): `from X import *` adds no
+# binding (a star-imported name is untraceable without also modeling X's
+# own exports); a function-scoped `import` is folded into the SAME
+# file-wide binding table as a module-level one (a narrow, safe-direction
+# over-approximation -- it can only ADD a resolution, never suppress a
+# real one); a relative import's dotted text (`from . import x`) is kept
+# as literal text (`"..x"`-shaped), which will not coincidentally collide
+# with any real registry needle in practice. TS/C-C++ are OUT of scope for
+# this pass -- C/C++'s `#include` is coarse-only by design (module
+# docstring), and TS's binding table is noted as follow-up work, not
+# attempted here. Rust gets its own binding-aware pass, T-0378 below.
+#
+# T-1626: two evasions the T-0328 resolver used to miss silently (the
+# ticket's own worked examples) are now resolved rather than dropped:
+# `functools.partial(dangerous, ...)` (`_resolve_py_expr`'s `call` branch
+# recognizes a resolved-`functools.partial` callee and resolves through to
+# its first positional argument -- `p = functools.partial(os.system, cmd);
+# p()` now resolves `p()` to `os.system`), and a literal-keyed dict/list
+# dispatch (`_record_py_dict_container_alias`/`_record_py_list_container_
+# alias` record one alias entry per literal key/index at assignment time,
+# `_resolve_py_subscript` looks it up at the call site -- `funcs = {"run":
+# subprocess.run}; funcs["run"](cmd)` now resolves). Both stayed
+# genuinely silent before: a NON-literal key/index or a dynamically
+# computed `getattr` name is a SEPARATE, already-covered case --
+# `frob.gates._opaque`'s OPAQUE001 (`RUNTIME_OPAQUE_CONSTRUCTS`/
+# `RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS`, `_capability_scan.py`) already
+# fires fail-closed on those (non-literal subscript-then-call, bare
+# `getattr(`/`setattr(`/`eval(`/`exec(`/`__import__(`) -- this module
+# only had to close the LITERAL-key gap OPAQUE001 explicitly defers to
+# "the ordinary resolver's job" (`_subscript_key_looks_literal`'s
+# docstring) but the ordinary resolver never actually implemented until
+# now, which meant a literal-keyed dict/list dispatch fell through BOTH
+# mechanisms: too resolvable to trip OPAQUE001, never actually resolved
+# by this module. Cross-file wrapper attribution (a helper in another
+# module forwarding to a dangerous callable) is NOT attempted here -- it
+# needs `frob.graph.callgraph`-backed cross-file call resolution, a
+# larger, separate unit of work; see T-1626's Done report / follow-up
+# ticket for the split.
