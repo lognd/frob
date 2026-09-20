@@ -9,7 +9,7 @@ created: '2026-09-17'
 priority: high
 parent: T-4410
 tier: ticket
-sprint: v0.532.0
+sprint: v0.535.0
 runs_last: false
 milestone: v0.532.0
 runs_last_parallel_safe: false
@@ -22,6 +22,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: sprint
+  old_value: v0.532.0
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a public function changed in module A and imported by modules B and
