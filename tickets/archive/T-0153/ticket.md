@@ -35,6 +35,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 1380
   new_length: 2632
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2631
+  new_length: 5509
 evidence:
 - tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_has_at_least_one_cve_citation
 - tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_has_at_least_one_needle
@@ -85,3 +91,50 @@ text, kept verbatim below.
 # every fingerprint the file's binding tables resolve to, unioned with the
 # existing lexical result by `id` (a fingerprint caught either way is
 # reported once, not twice).
+
+T-4718 sweep (condensed from src/frob/vet/_capability_scan.py:681-730,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+# True for this module's own source file, the T-0158 registry it compiles
+# `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
+# `_scan_file_fingerprints` against (excluded from directory aggregation
+# since all three contain every needle as literal data, guaranteeing a
+# self-match unrelated to what the code does). Public (T-0201): the
+# SINGLE shared self-match exclusion -- vet's own directory aggregation
+# below AND every `frob.strata._selfconform`/`_effects` join path must
+# call this same function rather than keep parallel private copies, or a
+# future pattern-catalog file re-introduces the T-0151 self-match class
+# in whichever join path forgot to exclude it. This was T-0201's root
+# cause: `_selfconform.py`'s extended-kind/all-kind scans and
+# `_effects.py`'s line-effect scan all predated this export and had no
+# exclusion of their own.
+#
+# T-0253 round 1 (REJECTED): matched by `_SELF_PATTERN_SUFFIXES` (package-
+# relative path suffix) alone, with no scan-target check. That closed the
+# non-editable-install false positive but opened a real evasion hole: a
+# malicious dependency placing a file at a path ending in
+# `frob/vet/_capability.py` would be silently excluded from `frob vet`'s
+# capability scan too, since suffix matching cannot distinguish "this is
+# frob auditing itself" from "this is frob vetting someone else's tree
+# that happens to mimic frob's layout."
+#
+# T-0253 round 2 (this version): `root` is now the caller's scan-target
+# discriminator -- the suffix match only fires when `_is_frob_repo_root
+# (root)` says `root` IS frob's own repository checkout (its own
+# `pyproject.toml` name plus its `frob-core`/`strata-core` crate
+# directories), never based on `path` alone and never based on where the
+# RUNNING package's own files happen to live (round 0's bug, identity
+# comparison against `_SELF_PATH` et al., which broke under a non-
+# editable global install). `root` defaults to `None`, which ALWAYS
+# fails the discriminator (fail-closed, deny-by-default, matching this
+# codebase's charter posture elsewhere) -- a caller that omits `root`
+# gets "never exclude, always scan" rather than a crash, so this stays
+# source-compatible with any caller written against the pre-T-0253
+# one-argument signature while still closing the evasion hole for every
+# real caller in this repo (all of which pass `root` explicitly).
+# Self-conformance callers (`_selfconform.py`/`_effects.py`) always pass
+# frob's own repo root by construction, so this is a no-op there; `frob
+# vet` scanning a dependency passes that dependency's own source root,
+# which is never frob's repo, so the exclusion correctly never fires and
+# the file is scanned like any other.
