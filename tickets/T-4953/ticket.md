@@ -1,7 +1,7 @@
 ---
 id: T-4953
 title: Restore --skip flag parity between frob quality check and frob check
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -19,12 +19,25 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_cli_group_parity.py::TestQualityGroupParity::test_every_quality_leaf_matches_its_flat_twin
 designated_repro_test: null
 acceptance:
-- text: test_every_ops_leaf_matches_its_flat_twin[natives] passes
-  evidence: []
 - text: test_every_quality_leaf_matches_its_flat_twin[check] passes
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_group_parity.py::TestQualityGroupParity::test_every_quality_leaf_matches_its_flat_twin
+acceptance_amendments:
+- op: remove
+  index: 1
+  old_text: test_every_ops_leaf_matches_its_flat_twin[natives] passes
+  new_text: null
+  reason: split out into T-5057 (Restore --skip flag parity between frob ops natives
+    and its flat twin), which is BLOCKED on T-4731's live lease on src/frob/_cli_parsers/_ops.py
+    and _misc.py -- this ticket's own scope (_quality.py only) cannot satisfy this
+    criterion, and its evidence was previously mis-bound to a test that does not cover
+    the natives path
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
