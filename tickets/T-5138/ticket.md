@@ -1,5 +1,5 @@
 ---
-id: T-draft-f8b27583
+id: T-5138
 title: 'Live advisory data in vet: OSV.dev batch API in-process, no external binary,
   cached with staleness refusal, on by default in check and land'
 state: queued
