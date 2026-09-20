@@ -67,6 +67,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 1517
   new_length: 2155
+- mode: append
+  reason: 'T-4770: preserve excluded-file precedent detail trimmed from _secrets.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2154
+  new_length: 2773
 evidence:
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_stale_marker_fires_waive004
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_stale_marker_on_line_above_fires_waive004
@@ -117,3 +123,15 @@ ticket's own tests, not theoretical: this module's own test suite
 writes '# frob:secret-fake reason="..."\n' as one argument to
 write_text -- the whole line IS that string literal, so every such
 literal would misread as a stale marker without this fix.
+
+
+T-4770 follow-up (condensed from
+_STALENESS_MULTILINE_LITERAL_EXCLUDED_FILES's docstring in
+src/frob/gates/_secrets.py, trimmed for DOCARCH002's 12-line cap):
+this mirrors _fake_marker_reason's own same-line-or-line-below
+convention, which the real, non-staleness discharge path also uses.
+The three excluded files are tests/test_secrets_gate.py,
+tests/test_pii_structural_gate.py, tests/unit/graph/test_dsl.py --
+each concatenates/`+`-joins a fixture's marker text or embeds it inside
+one multi-line src = (...) literal. The same precedent this cites is
+also set by TestGateIsGreenOnItself._LEDGER_NARRATIVE_FILES.
