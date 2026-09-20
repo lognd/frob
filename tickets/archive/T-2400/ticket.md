@@ -61,6 +61,13 @@ triage_changes:
     real finding.'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve merge_target_ids argument rationale trimmed from _fix_engine.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2919
+  new_length: 3515
 evidence:
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_id_on_merge_target_but_not_worktree_is_silent
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
@@ -156,3 +163,14 @@ Positive control both ways is mandatory here, because a lazy fix
     ticket id must still produce a recovery filing;
   - must-now-be-silent: a Done report citing a ticket that exists on
     main but postdates the worktree's cut must file nothing.
+
+
+T-4709 follow-up (condensed from TIER_A_HANDLERS's comment block in
+src/frob/gates/_fix_engine.py, trimmed for DOCARCH002's 12-line cap):
+T-2400: every handler now ALSO takes a 5th `merge_target_ids:
+MergeTargetKnownIds | None` argument, same uniform-shape precedent as
+T-1548's `ticket_id` -- `None` for a bare `frob check --fix` (no land
+merge target to resolve). Only `fix_tick006_phantom_refile` reads it,
+for the identical reason `ticket_id` is read by only one handler:
+resolving a phantom citation against the land's actual merge target,
+not just this worktree's own stale ledger view.
