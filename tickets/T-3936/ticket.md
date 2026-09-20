@@ -9,7 +9,7 @@ created: '2026-09-05'
 priority: high
 parent: T-3928
 tier: ticket
-sprint: v0.547.0
+sprint: v0.542.0
 runs_last: false
 milestone: v0.547.0
 runs_last_parallel_safe: false
@@ -145,6 +145,12 @@ triage_changes:
   reason: 'pass2 backlog org: theme bucket consumer-audit'
   actor: logan
   at: '2026-09-11'
+- field: sprint
+  old_value: v0.547.0
+  new_value: v0.542.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: 'first COMPLETE Windows run (34024645783) after the hang fix landed: 25
