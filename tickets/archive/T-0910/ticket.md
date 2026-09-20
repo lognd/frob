@@ -43,6 +43,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 575
   new_length: 3610
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3609
+  new_length: 4938
 evidence:
 - tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_covers_logging_checks_needle_tuples
 - tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_logging_checks_module
@@ -102,3 +108,24 @@ text, kept verbatim below.
 # dependency's own source root, which is never frob's repo, so the
 # discriminator (correctly) refuses the exclusion and the file gets scanned
 # like any other.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_scan.py:203-218,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+    # T-0910: `frob.arch._logging_checks`'s ARCH1xx logging-discipline
+    # checks store the same class of I/O-classifier signal as `_srp.py`
+    # above -- `_BOUNDARY_CALLEE_MARKERS` (`subprocess.`, `requests.`,
+    # `httpx.`, `socket.`, ...) is a bare-text needle tuple this module's
+    # `_is_boundary_call` compares a CALLEE STRING against, not code that
+    # itself execs/opens a socket/fetches a URL. The scanner (by design,
+    # for evasion detection) keys on string-literal CONTENT, so a
+    # classifier table that merely *names* these substrings as data reads
+    # as live net/exec/fetch_url capability USAGE on the `graphlang` node,
+    # which is dishonest -- `_logging_checks.py` does no such I/O itself
+    # (module docstring: it is written once against `NormalizedModule`,
+    # a parsed-fact model, and never touches subprocess/network/sockets
+    # directly). Declaring `may net`/`may exec` on `graphlang` to silence
+    # this would be an equally dishonest fix in the other direction, so
+    # this file is excluded from self-conformance's capability scan the
+    # same way `_srp.py` is, not given a capability it does not have.
