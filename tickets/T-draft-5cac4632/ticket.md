@@ -28,6 +28,21 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006: a rejected CLI form must not appear in backticks in a ticket body;
+    the sys-split tool does not exist and was refused by the owner'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1493
+  new_length: 1510
+- mode: set
+  reason: 'DOC006: a rejected CLI form must not appear in backticks in a ticket body;
+    the sys-split tool does not exist and was refused by the owner'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1510
+  new_length: 1510
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/tickets.strata exists with
@@ -58,7 +73,7 @@ land_commit: null
 Migration leaf for module `tickets` (members: tickets_ledger (store, design/frob.strata:1432), fleet, narrative). Hub: fan-in 8; bidirectional with app, gates, graph, platform and strata.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is NO `frob sys split` tool). Write design/tickets.strata with:
+there is no sys-split tool; the owner rejected one). Write design/tickets.strata with:
   - `module tickets` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
