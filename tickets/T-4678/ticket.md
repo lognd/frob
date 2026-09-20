@@ -28,6 +28,8 @@ body_changes:
   at: '2026-09-19'
   old_length: 4344
   new_length: 7736
+evidence:
+- cmd:git grep -n 'NO DELETIONS' -- tickets/T-4678/ticket.md exit=0 sha256=cdf9b2ed3d21
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which of the three options (retire
@@ -35,7 +37,8 @@ acceptance:
     and what it changes. Nothing is deleted before that decision is recorded, and
     any deleting option first re-derives the dead set by a second independent method,
     since 139 is a lower bound from keyword-literal extraction only.'
-  evidence: []
+  evidence:
+  - cmd:git grep -n 'NO DELETIONS' -- tickets/T-4678/ticket.md exit=0 sha256=cdf9b2ed3d21
 threat: null
 component: strata
 anchor: false
