@@ -28,6 +28,14 @@ scope_changes:
   reason: unit tests for the SCOPE001 draft-promotion exemption fix
   actor: logan
   at: '2026-09-09'
+body_changes:
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2134
+  new_length: 2136
 evidence:
 - tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_exempts_promoted_drafts_pre_promotion_filing_commit
 - tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_unresolved_draft_reference_does_not_exempt
@@ -43,7 +51,7 @@ SCOPE001 exemption (T-0108/T-3298) reads the ticket id out of a
 blamed commit's SUBJECT via `_TICKET_REF_RE = re.compile(r"T-\d{4}")`.
 For a ticket filed as a draft (`frob ticket new` on a non-default
 branch, `T-draft-<hex>` id) and only later promoted to its real
-`T-####` id (`frob ticket promote`), `git blame` on the promoted
+`T-####` id (the ticket promote verb), `git blame` on the promoted
 ticket's `tickets/T-####/ticket.md` attributes every line to the
 ORIGINAL pre-promotion filing commit (`chore(tickets): file
 T-draft-<hex> <title>` -- a `git mv` in a later commit does not
