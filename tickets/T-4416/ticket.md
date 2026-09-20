@@ -10,7 +10,7 @@ blocked_by:
 - T-4413
 parent: T-4410
 tier: story
-sprint: v0.532.0
+sprint: v0.535.0
 runs_last: false
 milestone: v0.532.0
 runs_last_parallel_safe: false
@@ -77,6 +77,13 @@ scope_changes:
     src/frob/app/scaffold_runner.py'
   actor: logan
   at: '2026-09-16'
+triage_changes:
+- field: sprint
+  old_value: v0.532.0
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: GIVEN the rapid and standard land profiles WHEN documented THEN rapid is described
