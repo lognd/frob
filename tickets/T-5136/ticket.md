@@ -13,7 +13,7 @@ parent: null
 tier: story
 sprint: v0.533.0
 runs_last: false
-milestone: null
+milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -26,6 +26,13 @@ scope_breadth_ack_reason: four sibling detectors in one package plus their corpu
   rows and gate docs
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: milestone
+  old_value: null
+  new_value: 1.0.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: given the pre-fix _flow.py, _unlanded.py and gates/__init__.py, when frob
