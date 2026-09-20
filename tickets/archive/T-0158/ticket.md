@@ -10,6 +10,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/vet/_capability.py
 - src/frob/vet/_capability_registry.py
@@ -22,6 +26,15 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 9045
+  new_length: 11923
 evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_matrix_covers_every_kind_and_language
@@ -50,6 +63,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Make the security proof chain sound end to end: THREAT003/THREAT004/SYS100 conclusions (code observes what the design declares, obligations discharge) are only valid if NO reserved capability kind can hide in an unscanned language or an unpatterned cell. Today that is not provable: vet _capability's _PATTERNS covers python/typescript/rust per-kind ad hoc, and C/C++ is excused wholesale ('honestly-empty'). Deliverables: (1) SINGLE-SOURCE capability registry -- one authoritative enumeration of every reserved kind (union of: _PATTERNS keys, every capability_kind in CWE_CATALOG/CWE_TOP_25_CATALOG, every may declaration the surface grammar accepts, DEFAULT_BENIGN_CAPABILITIES) -- with all consumers importing it; any kind used anywhere but absent from the registry fails loudly (extends the T-0150 drift-lock). (2) COVERAGE MATRIX GATE: for every (kind x supported-language) cell, either detection patterns exist OR an explicit per-cell excuse entry with a written reason ('client_storage: no C idiom -- browser-only concept', 'html_render in rust: covered via templating-crate needles ...'). The blanket C/C++ excuse is retired: each kind gets its own C/C++ decision. Unexcused empty cell = gate failure; excuse entries follow the OutOfScopeEntry discipline (specific reason naming the missing idiom, never boilerplate). (3) PER-CELL FIRE FIXTURES: for every patterned cell, a minimal real code snippet in that language that the scanner MUST flag, parametrized so a pattern without a firing fixture fails (T-0145 drift-lock style); plus per-cell negative fixtures locking the documented false-positive boundaries (T-0151 lessons: dotted-call exclusions, self-match). (4) CROSS-CHECKS: matrix kinds reconcile against the threat catalog joins (every capability_kind used by a WeaknessEntry must be a registry kind with at least one patterned language) and against design/frob.strata's may declarations. (5) Wire the matrix verdict into frob sys audit output beside self-conformance ('capability coverage: N kinds x M languages, K cells patterned+proven, J excused with reasons, 0 unexcused') so the exhaustiveness claim is a printed, checkable proof, not folklore. Expect cascading consequences (new patterns change observed capabilities -> design/goldens -- handle per T-0150/T-0151 precedent, green honestly.
 
@@ -144,3 +160,50 @@ acceptance: []
 threat: null
 ```
 A guide series under docs/guides/extending/ making every registry trivially extendable. INVENTORY FIRST: enumerate every registry/extension point in the codebase -- at minimum: gate rule families and their registration (COV/TEST/DRIFT/SCOPE/PRE/DOC/PERF/SYS/THREAT/COMPLIANCE/WAIVE), comment DSL directives (frob:ticket/tests/doc/waive/todo/invariant/channel/boundary/secret), threat catalog (WeaknessEntry/OutOfScopeEntry/views incl. the separate-views precedent), compliance regulations/views, capability registry + pattern tables + per-language matrix cells (T-0158), CVE fingerprints (T-0153), PII categories (T-0154), design-lint rules (T-0155), secrets-scan providers (T-0157), prover claim kinds, scenario kinds, strata surface grammar keywords (and the tmLanguage drift-lock), [[test.runner]] entries, language grammar handlers, sys export formats, litmus fixture mappings, benign capabilities, ticket kinds/states. ONE GUIDE PER REGISTRY on a common template: what it is and where it lives (file paths + symbol names); step-by-step 'add a new entry' recipe; WHICH DRIFT-LOCKS WILL FIRE when you add one and exactly what each demands (fixture, test, excuse entry, doc anchor, golden regen); a worked example diff; common mistakes (cite real session incidents where instructive, e.g. separate-views vs widening defaults, self-match false positives, stale-comment traps). ANTI-ROT MECHANISM (the point of doing this in frob): every guide is bound to its registry's code symbol with frob:doc anchors so the DOC gates flag drift when the registry changes; plus a completeness drift-lock test -- a machine-readable registry-of-registries (the inventory above) asserting every entry has a guide file and a live anchor, so ADDING A NEW REGISTRY without a guide fails the build. docs/index.md gains an Extending section linking every guide. Writing guides will require reading each registry's code carefully -- fix nothing beyond doc anchors; file tickets for any defect discovered while documenting.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_scan.py:681-730,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+# True for this module's own source file, the T-0158 registry it compiles
+# `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
+# `_scan_file_fingerprints` against (excluded from directory aggregation
+# since all three contain every needle as literal data, guaranteeing a
+# self-match unrelated to what the code does). Public (T-0201): the
+# SINGLE shared self-match exclusion -- vet's own directory aggregation
+# below AND every `frob.strata._selfconform`/`_effects` join path must
+# call this same function rather than keep parallel private copies, or a
+# future pattern-catalog file re-introduces the T-0151 self-match class
+# in whichever join path forgot to exclude it. This was T-0201's root
+# cause: `_selfconform.py`'s extended-kind/all-kind scans and
+# `_effects.py`'s line-effect scan all predated this export and had no
+# exclusion of their own.
+#
+# T-0253 round 1 (REJECTED): matched by `_SELF_PATTERN_SUFFIXES` (package-
+# relative path suffix) alone, with no scan-target check. That closed the
+# non-editable-install false positive but opened a real evasion hole: a
+# malicious dependency placing a file at a path ending in
+# `frob/vet/_capability.py` would be silently excluded from `frob vet`'s
+# capability scan too, since suffix matching cannot distinguish "this is
+# frob auditing itself" from "this is frob vetting someone else's tree
+# that happens to mimic frob's layout."
+#
+# T-0253 round 2 (this version): `root` is now the caller's scan-target
+# discriminator -- the suffix match only fires when `_is_frob_repo_root
+# (root)` says `root` IS frob's own repository checkout (its own
+# `pyproject.toml` name plus its `frob-core`/`strata-core` crate
+# directories), never based on `path` alone and never based on where the
+# RUNNING package's own files happen to live (round 0's bug, identity
+# comparison against `_SELF_PATH` et al., which broke under a non-
+# editable global install). `root` defaults to `None`, which ALWAYS
+# fails the discriminator (fail-closed, deny-by-default, matching this
+# codebase's charter posture elsewhere) -- a caller that omits `root`
+# gets "never exclude, always scan" rather than a crash, so this stays
+# source-compatible with any caller written against the pre-T-0253
+# one-argument signature while still closing the evasion hole for every
+# real caller in this repo (all of which pass `root` explicitly).
+# Self-conformance callers (`_selfconform.py`/`_effects.py`) always pass
+# frob's own repo root by construction, so this is a no-op there; `frob
+# vet` scanning a dependency passes that dependency's own source root,
+# which is never frob's repo, so the exclusion correctly never fires and
+# the file is scanned like any other.
