@@ -8,7 +8,6 @@ origin: human
 created: '2026-09-19'
 priority: critical
 blocked_by:
-- T-4722
 - T-4693
 parent: null
 tier: ticket
@@ -50,3 +49,4 @@ BLOCKED: src/frob/gates/_docptr.py is under live cross-worktree lease by T-4709 
 
 ## Unblock log
 - 2026-09-19: unblocked by T-4709 -- lease released
+- 2026-09-19: unblocked by T-4722 -- lease released
