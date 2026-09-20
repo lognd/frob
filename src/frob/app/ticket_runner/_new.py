@@ -26,6 +26,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 from __future__ import annotations
 
 import difflib
+import fnmatch
 import os
 import re
 import sys
@@ -691,8 +692,7 @@ def _scope_plausibility_warnings(
 # frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_finds_an_archived_close_title_match kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_no_match_for_a_genuinely_distinct_title kind="unit"  # noqa: E501
 # frob:tests \
-# tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_titles_a\
-# re_not_flagged_as_related
+# tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_titles_are_not_flagged_as_related  # noqa: E501
 def related_tickets(root: Path, title: str) -> tuple[tuple[str, str, str, float], ...]:
     """`(ticket_id, title, state, similarity)` for every ticket -- ACTIVE
     or ARCHIVED -- whose own title is a close textual match to `title`
@@ -1154,20 +1154,15 @@ def _emit_new_ticket_json(ticket, warnings: list[str]) -> None:  # noqa: ANN001
 
 # frob:ticket T-1556
 # frob:tests \
-# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
-# .test_few_warnings_logged_individually
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_few_warnings_logged_individually  # noqa: E501
 # frob:tests \
-# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
-# .test_many_warnings_collapse_to_counted_summary
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_many_warnings_collapse_to_counted_summary  # noqa: E501
 # frob:tests \
-# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
-# .test_verbose_env_var_disables_collapse
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_verbose_env_var_disables_collapse  # noqa: E501
 # frob:tests \
-# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
-# .test_no_warnings_logs_nothing
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_no_warnings_logs_nothing  # noqa: E501
 # frob:doc \
-# docs/design/cli-hygiene.md#principle-4-scope-closure-warning-volume-must-not-bury-its\
-# -own-most
+# docs/design/cli-hygiene.md#principle-4-scope-closure-warning-volume-must-not-bury-its-own-most  # noqa: E501
 # frob:waive COV007 reason="docs/design/cli-hygiene.md's Principle 4 section \
 # individually frob:describes this symbol by its own qualified path -- a deliberate \
 # per-symbol anchor, not a duplicate"
@@ -1449,6 +1444,7 @@ def _emit_body_similarity_warnings(root: Path, ticket_id: str, body: str) -> Non
 
 
 # frob:ticket T-0998
+# frob:ticket T-4805
 def _scope_closure_warnings(root: Path, scope) -> tuple[str, ...]:  # noqa: ANN001
     """Suggest-or-warn scope-closure hints for `scope` (T-0998), rendered
     as plain human warning lines for `frob ticket new`/`frob ticket scope`'s
@@ -1460,18 +1456,91 @@ def _scope_closure_warnings(root: Path, scope) -> tuple[str, ...]:  # noqa: ANN0
     `new`/`scope` time -- before ever running `frob check` -- instead of
     discovering AFFECT001/COV002 reactively mid-ticket. Returns `()`
     silently (never blocks the CLI command) when the graph cache cannot be
-    loaded/built at all -- this is a nudge, not a gate."""
+    loaded/built at all -- this is a nudge, not a gate.
+
+    T-4805: `scope_doc_code_gaps`/`scope_test_gaps`/
+    `scope_private_helper_gaps` all resolve "is this site in scope" via
+    `frob.tickets._models.scope_matches`, which ALSO treats
+    `DEFAULT_REGISTRY_FILES` (design/frob.strata among them) and
+    `LEDGER_PATH` as implicitly in scope -- correct for SCOPE001 gating,
+    wrong here: it made an EMPTY declared scope closure over every
+    `frob:doc` edge hanging off design/frob.strata (587 warnings, none
+    of them naming a file the ticket touches). Closure must walk only the
+    ticket's DECLARED scope, so every gap this returns is re-checked
+    against `_declared_scope_only` (the same directory-glob expansion
+    `scope_matches` uses, minus its implicit ledger/registry/CLI-wiring
+    additions) before being kept -- an empty declared scope keeps
+    nothing and short-circuits before even loading the graph."""
     from frob.app import ticket_runner as _ticket_runner
     from frob.graph.affects import scope_doc_code_gaps, scope_test_gaps
     from frob.graph.callgraph import scope_private_helper_gaps
+    from frob.tickets._models import LEDGER_PATH, _scope_globs
+
+    scope_tuple = tuple(scope)
+    if not scope_tuple:
+        _log.debug(
+            "scope closure: %r declares no scope -- zero closure warnings "
+            "(T-4805, was previously closing over every implicit-in-scope "
+            "registry file)",
+            scope_tuple,
+        )
+        return ()
+
+    declared_globs = tuple(g for g in _scope_globs(scope_tuple) if g != LEDGER_PATH)
+
+    def _declared_scope_only(symref: str) -> bool:
+        """Whether `symref`'s file component matches the ticket's
+        DECLARED scope globs only -- unlike `scope_matches`, this never
+        treats `LEDGER_PATH`/`DEFAULT_REGISTRY_FILES`/`CLI_WIRING_FILES`
+        as implicitly in scope, so a hub file (design/frob.strata) only
+        counts here when the ticket actually declared it (T-4805)."""
+        file_part = symref.split("::", 1)[0].split("#", 1)[0]
+        return any(fnmatch.fnmatch(file_part, glob) for glob in declared_globs)
 
     snapshot = _ticket_runner._graph_snapshot(root)
     if snapshot.is_err:
         return ()
     snap = snapshot.danger_ok
-    scope_tuple = tuple(scope)
+
+    doc_gaps = [
+        g
+        for g in scope_doc_code_gaps(snap, scope_tuple)
+        if _declared_scope_only(g.scoped_site)
+    ]
+    test_gaps = [
+        g
+        for g in scope_test_gaps(snap, scope_tuple)
+        if _declared_scope_only(g.scoped_site)
+    ]
+    helper_gaps = [
+        h
+        for h in scope_private_helper_gaps(root, scope_tuple, tuple(snap.file_hashes))
+        if _declared_scope_only(h.caller)
+    ]
+
+    warnings: list[str] = [
+        *_doc_gap_warnings(doc_gaps),
+        *_test_gap_warnings(test_gaps),
+        *_helper_gap_warnings(helper_gaps),
+    ]
+    _log.debug(
+        "scope closure: %d doc gap(s), %d test gap(s), %d helper gap(s) for "
+        "declared scope %r (T-4805)",
+        len(doc_gaps),
+        len(test_gaps),
+        len(helper_gaps),
+        scope_tuple,
+    )
+    return tuple(warnings)
+
+
+# frob:ticket T-4805
+def _doc_gap_warnings(doc_gaps) -> list[str]:  # noqa: ANN001
+    """Render `scope_doc_code_gaps` results (already filtered to declared
+    scope) as human warning lines -- split out of `_scope_closure_warnings`
+    to keep that function under the ARCH001 length threshold (T-4805)."""
     warnings: list[str] = []
-    for gap in scope_doc_code_gaps(snap, scope_tuple):
+    for gap in doc_gaps:
         if gap.direction == "code_missing_doc":
             warnings.append(
                 f"{gap.scoped_site}'s frob:doc target lives in "
@@ -1484,7 +1553,16 @@ def _scope_closure_warnings(root: Path, scope) -> tuple[str, ...]:  # noqa: ANN0
                 f"{gap.missing_file!r}, not in scope -- consider --add "
                 f"{gap.missing_file!r}"
             )
-    for gap in scope_test_gaps(snap, scope_tuple):
+    return warnings
+
+
+# frob:ticket T-4805
+def _test_gap_warnings(test_gaps) -> list[str]:  # noqa: ANN001
+    """Render `scope_test_gaps` results (already filtered to declared
+    scope) as human warning lines -- split out of `_scope_closure_warnings`
+    to keep that function under the ARCH001 length threshold (T-4805)."""
+    warnings: list[str] = []
+    for gap in test_gaps:
         if gap.direction == "code_missing_test":
             warnings.append(
                 f"{gap.scoped_site}'s frob:tests target lives in "
@@ -1497,9 +1575,17 @@ def _scope_closure_warnings(root: Path, scope) -> tuple[str, ...]:  # noqa: ANN0
                 f"{gap.missing_file!r}, not in scope -- consider --add "
                 f"{gap.missing_file!r}"
             )
-    for helper_gap in scope_private_helper_gaps(
-        root, scope_tuple, tuple(snap.file_hashes)
-    ):
+    return warnings
+
+
+# frob:ticket T-4805
+def _helper_gap_warnings(helper_gaps) -> list[str]:  # noqa: ANN001
+    """Render `scope_private_helper_gaps` results (already filtered to
+    declared scope) as human warning lines -- split out of
+    `_scope_closure_warnings` to keep that function under the ARCH001
+    length threshold (T-4805)."""
+    warnings: list[str] = []
+    for helper_gap in helper_gaps:
         suggestion = "add" if helper_gap.only_used_by_scope else "review"
         warnings.append(
             f"{helper_gap.caller} calls private helper {helper_gap.callee} "
@@ -1507,4 +1593,4 @@ def _scope_closure_warnings(root: Path, scope) -> tuple[str, ...]:  # noqa: ANN0
             f"(probable under-capture) -- {suggestion} "
             f"{helper_gap.definition_file!r}"
         )
-    return tuple(warnings)
+    return warnings

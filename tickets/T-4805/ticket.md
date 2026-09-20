@@ -2,7 +2,7 @@
 id: T-4805
 title: SCOPE002 emits 587 scope-closure warnings on a ticket with EMPTY scope; scope
   closure must be computed against the ticket's declared scope only
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-19'
@@ -30,19 +30,28 @@ triage_changes:
     a child of story B (T-4665), so T-4805 remains under story B transitively'
   actor: logan
   at: '2026-09-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_scope_closure_declared_scope_only.py::TestEmptyScopeIsZeroWarnings::test_empty_scope_emits_zero_warnings_even_with_hub_file_gaps
+- tests/unit/test_scope_closure_declared_scope_only.py::TestDeclaredScopeOnlyFiltering::test_three_file_scope_keeps_only_matching_gaps
+- tests/unit/test_scope_closure_declared_scope_only.py::TestDeclaredScopeOnlyFiltering::test_scope_actually_covering_the_hub_file_still_gets_its_warnings
+designated_repro_test: tests/unit/test_scope_closure_declared_scope_only.py::TestEmptyScopeIsZeroWarnings::test_empty_scope_emits_zero_warnings_even_with_hub_file_gaps
 acceptance:
 - text: Given filing a ticket with an EMPTY declared scope emits 587 scope-closure
     warnings at HEAD c8f56ef10 (measured twice on 2026-09-19 while filing T-4662 and
     T-4668), every one naming a design/frob.strata frob:doc edge the ticket does not
     touch, when this lands, then a test asserts an empty-scope ticket emits ZERO scope-closure
     warnings -- a positive control that fails today.
-  evidence: []
+  evidence:
+  - tests/unit/test_scope_closure_declared_scope_only.py::TestEmptyScopeIsZeroWarnings::test_empty_scope_emits_zero_warnings_even_with_hub_file_gaps
+  - tests/unit/test_scope_closure_declared_scope_only.py::TestDeclaredScopeOnlyFiltering::test_three_file_scope_keeps_only_matching_gaps
+  - tests/unit/test_scope_closure_declared_scope_only.py::TestDeclaredScopeOnlyFiltering::test_scope_actually_covering_the_hub_file_still_gets_its_warnings
 - text: Given the fix must not be 'disable the check', which would void the owner's
     both-ways scope-closure directive, when a ticket declares N specific files, then
     a test asserts warnings are emitted ONLY for doc edges reachable from those N
     files, and still are emitted for those.
-  evidence: []
+  evidence:
+  - tests/unit/test_scope_closure_declared_scope_only.py::TestDeclaredScopeOnlyFiltering::test_three_file_scope_keeps_only_matching_gaps
+  - tests/unit/test_scope_closure_declared_scope_only.py::TestDeclaredScopeOnlyFiltering::test_scope_actually_covering_the_hub_file_still_gets_its_warnings
 threat: null
 component: tickets
 anchor: false
