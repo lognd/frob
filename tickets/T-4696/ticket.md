@@ -82,6 +82,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 2270
   new_length: 2270
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2270
+  new_length: 2246
 designated_repro_test: null
 acceptance:
 - text: Given a fixture ledger, when frob ticket set priority high runs on a ticket,
@@ -116,7 +123,7 @@ one-field setters that differ only in which field they write:
 All nine live in src/frob/_cli_parsers/_ticket/_metadata.py (794 lines) and all
 nine have the same shape: resolve ticket, validate value, write field, commit.
 
-FOLD INTO: `frob ticket set <field> <value> <id>` (argument order to match the
+FOLD INTO: the planned ticket set form (argument order to match the
 existing setters' order -- state the chosen signature in the Done report). One
 subverb replaces nine. Field validation stays per-field (kind, priority, tier
 and milestone have real enums/format rules; do not weaken them into free text).
@@ -129,10 +136,9 @@ say which way it went.
 graph edge, not a field. Leave it alone.
 
 Shims: each of the nine deleted names keeps the T-4690 shim for one minor
-version, printing `frob ticket set <field> ...`.
+version, printing the planned ticket set form.
 
-POSITIVE CONTROL (acceptance): a round-trip test per field -- `frob ticket set
-priority high T-xxxx` followed by `frob ticket show T-xxxx --json` asserting the
+POSITIVE CONTROL (acceptance): a round-trip test per field -- the planned ticket set form followed by `frob ticket show T-xxxx --json` asserting the
 field actually changed; plus a test that the deprecated `frob ticket priority`
 spelling produces the identical ledger bytes as the new spelling on the same
 fixture ledger. Same-bytes is the control that proves the fold is behaviour-
