@@ -10,6 +10,10 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_land_cmd.py
@@ -21,6 +25,8 @@ scope:
 - tests/unit/test_ticket_runner_gate_findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/check_runner.py
@@ -53,6 +59,13 @@ scope_changes:
     these call sites
   actor: logan
   at: '2026-08-06'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _worker.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3820
+  new_length: 4921
 evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_ty_and_gate_error_both_appear_in_parsed_set
 - tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_budget_truncated_run_yields_none_not_a_partial_set
@@ -61,6 +74,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 The post-land sweep can report CLEAN on a tree that has errors. Observed
 live 2026-08-06: `.frob/rapid-sweep/T-1542-c581c297e28f.log` recorded
@@ -132,3 +148,22 @@ This is the highest-integrity item in the queue. Until it is fixed, no
 sweep result -- in any profile -- is trustworthy evidence of anything,
 and the T-1686 verification-watermark epic would be building a watermark
 on top of a measurement that can silently read zero.
+
+T-4718 sweep (condensed from src/frob/verify/_worker.py, the "unmeasurable
+early return" block, trimmed for DOCARCH002's 12-line cap): the trimmed
+block's full original text, kept verbatim below.
+
+            # T-1703/T-1688: unmeasurable is never zero, never green, and
+            # this early return is the ONLY thing standing between this
+            # branch and the rest of the function -- advance_watermark is
+            # not even reachable from here.
+            #
+            # T-3886: the SPECIFIC reason -- our own child timed out, our
+            # own spawn was refused, or the check genuinely could not
+            # measure -- is looked up here rather than collapsed into one
+            # undifferentiated "unmeasurable" (F-043's own incident: a
+            # reporter having to infer, by hand, that a 45-minute land
+            # stall was OUR child dying, not the repository being
+            # unmeasurable). `pop` (not a bare read) so a later, unrelated
+            # `None` for a DIFFERENT commit can never accidentally reuse
+            # this commit's stale classification.
