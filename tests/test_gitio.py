@@ -20,6 +20,7 @@ from frob.gitio import (
     recent_commits,
     repo_root,
     reset_common_dir_cache,
+    reset_repo_root_cache,
     run_argv,
     spawn_recorder,
     working_diff,
@@ -48,7 +49,10 @@ def _commit(root: Path, message: str) -> None:
     _git(root, "commit", "-q", "-m", message)
 
 
+# frob:ticket T-5036
 class TestRepoRoot:
+    """Tests for `frob.gitio.repo_root` and its T-5036 process-lifetime cache."""
+
     def test_main_checkout(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gitio.py::repo_root
         repo = tmp_path / "repo"
@@ -87,6 +91,58 @@ class TestRepoRoot:
         result = repo_root(missing)
         assert result.is_err
         assert result.danger_err == GitError.NotARepo
+
+    # frob:ticket T-5036
+    def test_memoized_per_start(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gitio.py::repo_root
+        """T-5036: a second `repo_root` call for the same `start` returns
+        the cached result instead of spawning `git` again -- the fix for
+        the Windows TICK008 stall (hundreds of thousands of uncached
+        spawns for the same unchanging root inside `doable()`'s loop)."""
+        reset_repo_root_cache()
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "a.txt").write_text("hello\n")
+        _commit(repo, "init")
+
+        spawn_count = 0
+        real_run_argv = run_argv
+
+        def _counting_run_argv(*args: Any, **kwargs: Any):
+            nonlocal spawn_count
+            spawn_count += 1
+            return real_run_argv(*args, **kwargs)
+
+        monkeypatch.setattr("frob.gitio.run_argv", _counting_run_argv)
+
+        first = repo_root(repo)
+        second = repo_root(repo)
+        assert first.is_ok
+        assert second.is_ok
+        assert first.danger_ok == second.danger_ok
+        assert spawn_count == 1
+        reset_repo_root_cache()
+
+    # frob:ticket T-5036
+    def test_reset_clears_cache(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::reset_repo_root_cache
+        """T-5036: `reset_repo_root_cache` drops the memo, mirroring
+        `reset_common_dir_cache`'s own test."""
+        reset_repo_root_cache()
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "a.txt").write_text("hello\n")
+        _commit(repo, "init")
+
+        first = repo_root(repo)
+        assert first.is_ok
+        reset_repo_root_cache()
+        second = repo_root(repo)
+        assert second.is_ok
+        assert first.danger_ok == second.danger_ok
+        reset_repo_root_cache()
 
     def test_run_argv_failure_surfaces_as_not_a_repo(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

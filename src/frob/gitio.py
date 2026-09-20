@@ -13,11 +13,12 @@ is the private spawn primitive; `run_argv` is the small public wrapper
 subprocess-with-timeout helper in the package, never a second copy living
 under `frob.testing`.
 """
-# frob:waive ARCH102 reason="13 of 15 exports form one connected cluster \
+# frob:waive ARCH102 reason="14 of 16 exports form one connected cluster \
 # around the single subprocess seam this module's docstring names (_run_git \
 # feeding repo_root/working_diff/current_branch/git_common_dir/run_argv); \
-# the 2 outliers (reset_common_dir_cache, SpawnRecorder) are test-support-only \
-# helpers for that same cache/spawn seam with no production call edges into \
+# the 2 outliers (reset_common_dir_cache/reset_repo_root_cache, SpawnRecorder) \
+# are test-support-only helpers for that same cache/spawn seam with no \
+# production call edges into \
 # the rest -- splitting the one real seam this module exists to centralize \
 # just to detach its own test-support helpers would be artificial"  # noqa: E501
 
@@ -308,20 +309,72 @@ def _run_git(
     return Ok(result.stdout)
 
 
+# frob:ticket T-5036
+# Process-lifetime memoization for `repo_root`, same shape as `git_common_
+# dir`'s T-0773/T-0784 cache above. Keyed by the resolved `start` path so
+# different callers spelling the same worktree differently still share
+# one entry. Safe because a worktree's root cannot move mid-invocation.
+# `_repo_root_lock` serializes cache reads/writes across threads, same
+# rationale as `_common_dir_lock`; the `git` subprocess itself runs
+# outside the lock.
+_repo_root_lock = threading.Lock()
+_repo_root_cache: dict[Path, Result[Path, GitError]] = {}
+
+
+# frob:ticket T-5036
 # frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_gitio.py::TestRepoRoot.test_memoized_per_start kind="unit"
 def repo_root(start: Path) -> Result[Path, GitError]:
-    """The repo root for `start`; worktree-correct via `rev-parse --show-toplevel`."""
+    """The repo root for `start`; worktree-correct via `rev-parse --show-toplevel`.
+
+    Memoized per resolved `start` for the process's lifetime (T-5036,
+    mirroring `git_common_dir`'s T-0773/T-0784 cache): this is the fix for
+    the Windows TICK008 stall where `frob.tickets._leases.same_worktree_
+    lease` called this once per (ticket, holder) pair inside `frob.
+    tickets._doable.doable`'s main loop -- against a live ~1000+-ticket
+    queue, hundreds of thousands of spawns of the SAME unchanging `start`
+    within one call, cheap enough to merely be slow on POSIX fork but
+    stalling past any CI timeout on Windows's far costlier process spawn.
+    A benign race where two threads both miss the cache and both spawn
+    `git` for the same `start` is possible but harmless (idempotent
+    result, last write wins), same as `git_common_dir`."""
+    key = start.resolve() if start.exists() else start
+    with _repo_root_lock:
+        cached = _repo_root_cache.get(key)
+    if cached is not None:
+        return cached
     if not start.exists():
         _log.warning("gitio: repo_root: %s does not exist", start)
-        return Err(GitError.NotARepo)
+        result: Result[Path, GitError] = Err(GitError.NotARepo)
+        with _repo_root_lock:
+            _repo_root_cache[key] = result
+        return result
     argv = ("git", "-C", str(start), "rev-parse", "--show-toplevel")
     spawned = run_argv(argv)
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         _log.warning("gitio: %s is not inside a git repository", start)
-        return Err(GitError.NotARepo)
+        result = Err(GitError.NotARepo)
+        with _repo_root_lock:
+            _repo_root_cache[key] = result
+        return result
     root = Path(spawned.danger_ok.stdout.strip())
     _log.debug("gitio: repo_root(%s) = %s", start, root)
-    return Ok(root)
+    result = Ok(root)
+    with _repo_root_lock:
+        _repo_root_cache[key] = result
+    return result
+
+
+# frob:ticket T-5036
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_gitio.py::TestRepoRoot.test_reset_clears_cache kind="unit"
+def reset_repo_root_cache() -> None:
+    """Drop the `repo_root` process-lifetime memo (T-5036, mirroring
+    `reset_common_dir_cache`), under `_repo_root_lock` -- available to
+    tests that need to simulate a fresh CLI invocation within one
+    interpreter; not required for correctness on the read path otherwise."""
+    with _repo_root_lock:
+        _repo_root_cache.clear()
 
 
 # frob:doc docs/modules/testing.md#public-api
@@ -640,6 +693,7 @@ __all__ = [
     "repo_root",
     "recent_commits",
     "reset_common_dir_cache",
+    "reset_repo_root_cache",
     "run_argv",
     "spawn_recorder",
     "working_diff",

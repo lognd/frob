@@ -1,7 +1,7 @@
 ---
 id: T-5036
 title: Cache repo_root to stop O(tickets x holders) git subprocess spawns in doable()
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
