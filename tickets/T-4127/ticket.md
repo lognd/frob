@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: medium
 parent: T-4665
 tier: ticket
-sprint: null
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -24,6 +24,12 @@ triage_changes:
   old_value: null
   new_value: T-4665
   reason: '2026-09-19: SF-18 in the STRATA friction audit; joins story B of epic T-4662'
+  actor: logan
+  at: '2026-09-19'
+- field: sprint
+  old_value: null
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 body_changes:
