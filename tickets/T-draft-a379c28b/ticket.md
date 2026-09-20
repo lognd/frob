@@ -36,6 +36,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 1455
   new_length: 1472
+- mode: set
+  reason: 'DOC006: a rejected CLI form must not appear in backticks in a ticket body;
+    the sys-split tool does not exist and was refused by the owner'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1472
+  new_length: 1472
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/test.strata exists with its
