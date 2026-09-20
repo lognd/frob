@@ -2,7 +2,7 @@
 id: T-4619
 title: 'Clean docstrings: test_tickets_velocity/triage_dates/parent/organization/etc,
   24 misc files (DOCARCH001)'
-state: queued
+state: dropped
 kind: docs
 origin: agent
 created: '2026-09-19'
@@ -68,3 +68,6 @@ anchor_reason: null
 land_commit: null
 ---
 Child of T-4421 (debloat sprint v0.534.0). Measured 2026-09-19: DOCARCH001 finding count for these 24 files was 27 (2+2+23x1) on a truncated repo-wide check; re-measure per-file before starting, the run that produced this count did not finish and may be an undercount. tests/test_worktree_guard.py (1 finding) deliberately excluded -- leased by in-progress T-4546, file it separately or wait. Rewrite each flagged docstring to state WHAT the symbol/test does; move any narrative worth keeping into the ticket that made the change via 'frob ticket body <id> --append'. Do not touch files leased by another in-progress ticket.
+
+## Drop reason
+- 2026-09-20: exact duplicate DOCARCH001 cluster filing; the leased copy T-4623 carries the work (sprint triage drop, direction corrected) (absorbed by T-4623)
