@@ -9,7 +9,7 @@ created: '2026-08-29'
 priority: medium
 parent: null
 tier: ticket
-sprint: backlog
+sprint: v0.540.0
 runs_last: false
 milestone: 1.0.0
 runs_last_parallel_safe: false
@@ -37,6 +37,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+- field: sprint
+  old_value: backlog
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: 'BUG002: no genuine before/after repro exists for a ticket-prose-only diff;
