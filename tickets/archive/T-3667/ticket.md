@@ -30,6 +30,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 4400
   new_length: 4888
+- mode: append
+  reason: 'T-4770: preserve PROTO002/003/004 downstream symptom detail trimmed from
+    _protocol_summary.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4888
+  new_length: 5350
 evidence:
 - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_finds_the_violation_even_when_cwd_relativization_diverges
 designated_repro_test: null
@@ -56,3 +63,13 @@ Traceback evidence: scratchpad/win-33521-failures.txt lines 5554-16479 (all 10 f
 References T-3659 (tracking ticket for this campaign).
 
 DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_finds_the_violation_even_when_cwd_relativization_diverges's docstring carried a long narrative (win32 gates_suite campaign T-3659; the old _package_edges .replace()-based path reconstruction bug and its win32/POSIX-reproducible failure modes; the abs_path=result.danger_ok.path fix). Moved here verbatim for the design rationale; the test docstring now states only what it verifies.
+
+
+T-4770 follow-up (condensed from a comment in
+src/frob/gates/_protocol_summary.py, trimmed for DOCARCH002's 12-line
+cap): result.danger_ok.path is ParsedFile.path, itself
+frob.lang._display_path(root / rel_path). This is why PROTO002/003/004
+(whose requires/transition lookups key directly off edge.src == symref
+against the relative entrypoints this module's OWN PurePosixPath-based
+_tagged_symbols_by_package produces) silently found zero matches on
+win32.
