@@ -29,6 +29,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 2467
   new_length: 2700
+- mode: append
+  reason: correct a forward reference written before the sweep leaf had an id
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2700
+  new_length: 2933
 designated_repro_test: null
 acceptance:
 - text: given a fixture docs/modules/x.md with a section of N+5 lines and one of N-5
@@ -93,6 +99,11 @@ before running the repo-wide sweep (T-4808).
 POSITIVE CONTROL: a fixture `docs/modules/x.md` with one section of N+5 lines and
 one of N-5 lines -- the first is flagged, the second is not; raising N in
 frob.toml silences the first, proving the config path and not just the default.
+
+
+CORRECTION to the last paragraph above: the repo-wide sweep leaf is T-4810, not
+T-4808 (T-4808 is this ticket). The ids were assigned in the same planning pass
+and the forward reference was written before the sweep leaf was filed.
 
 
 CORRECTION to the last paragraph above: the repo-wide sweep leaf is T-4810, not
