@@ -25,6 +25,9 @@ attachments:
 - path: T-draft-65687926/attachments/01-untitled.md
   caption: ''
   sha256: 222540cfb6cba4460c966de63fcc149803e7e5c4523692a30220745d8f98865e
+- path: T-draft-65687926/attachments/02-untitled.pdf
+  caption: ''
+  sha256: 5e6b9093b84007b973097d20126a3768ea2f0a1d4200255c849b0fb3bf04ebc7
 threat: null
 component: gates
 anchor: false
