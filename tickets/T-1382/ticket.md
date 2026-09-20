@@ -9,7 +9,7 @@ created: '2026-08-01'
 priority: low
 parent: null
 tier: epic
-sprint: v1.1.0
+sprint: v0.537.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
@@ -143,6 +143,12 @@ triage_changes:
     than forcing/dropping real backlog work'
   actor: logan
   at: '2026-09-02'
+- field: sprint
+  old_value: v1.1.0
+  new_value: v0.537.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: 'record the owner''s scheduling decision (pre-1.0.0, NOT required for the
