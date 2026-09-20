@@ -63,6 +63,13 @@ triage_changes:
     code the epic''s own acceptance criteria depend on'
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve callee-deletion detail trimmed from _fix_engine.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 985
+  new_length: 1527
 evidence:
 - tests/unit/strata/test_sync_may.py::TestNodeBodySpan::test_flat_body_returns_closing_brace_line
 - tests/unit/strata/test_sync_may.py::TestNodeBodySpan::test_nested_braces_do_not_close_early
@@ -92,3 +99,14 @@ Filed directly under T-2920 rather than folded into the epic's own
 ticket record, so the epic's state accurately reflects that T-2910/
 T-2911 (its other two named child tickets) are not yet done -- this
 piece can close on its own regardless of when those two finish.
+
+
+T-4709 follow-up (condensed from a comment in src/frob/gates/
+_fix_engine.py, trimmed for DOCARCH002's 12-line cap): the two callees
+`_fix_sys100_both_cases` combined (`fix_sys100_may_via_union`,
+`fix_sys100_extended_whole_node_grant`) were deleted from
+_fix_engine_sync.py in the same change; their writer,
+`frob.strata._sync_may`, was left in place for one commit to avoid
+racing T-2920's own concurrent work, and is now ALSO deleted -- T-2935
+confirmed zero remaining importers and removed it (see _sync_may.py's
+own T-2920 docstring).
