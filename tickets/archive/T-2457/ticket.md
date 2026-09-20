@@ -40,6 +40,13 @@ scope_changes:
     which is acceptance criterion [2] and not separable from the detector change.
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _dangerous_ops_python.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3220
+  new_length: 4310
 evidence:
 - tests/test_vet_capability.py::TestModeAwareOpenCall::test_read_mode_open_reports_fs_read_not_fs_write
 - tests/test_vet_capability.py::TestModeAwareOpenCall::test_default_mode_open_is_read_not_write
@@ -135,3 +142,22 @@ POSITIVE CONTROLS:
     beyond literal `open`/`.write` (Path.write_text, shutil, os.replace,
     etc.) must keep being caught; enumerate what it detects today and
     verify the same set after.
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_dangerous_ops_python.py:412-425,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full
+original text, kept verbatim below.
+
+    # T-2457: "open(" removed from this entry's needles. The bare
+    # substring matched ANY open() call regardless of mode -- a read-mode
+    # `open(path, "rb")` satisfied this fs-write rule on its own, which is
+    # exactly the false-positive this ticket fixes (it forced seven false
+    # `fs.write` declarations into design/frob.strata for modules that
+    # provably only read). `open(`/`.open(` calls are now classified by
+    # `frob.vet._capability_core._has_write_mode_open_call`, a mode-aware
+    # token-level parse of the call's arguments wired in via
+    # `_SPECIAL_CHECKS`/`_operation_entry_matches` (this entry's own empty
+    # `needles` tuple is what routes it through that fallback -- see
+    # `_operation_entry_matches`'s T-2457 comment). `.write(` stays a
+    # plain needle: any `.write(...)` call is unambiguously a write
+    # regardless of what it's called on.
