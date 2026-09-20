@@ -52,6 +52,13 @@ scope_changes:
     work), so it needs the same disclosed benign excuse fs-read/fs already carry
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _dangerous_ops_python.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1836
+  new_length: 3410
 evidence:
 - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_requests_post_reports_net_mutate_and_net_connect
 - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_httpx_delete_reports_net_mutate
@@ -122,3 +129,29 @@ decision on whether a verb-aware split is even tractable at the
 needle-table level (a `requests.get(` vs `requests.post(` split is easy;
 a `boto3.client("s3").put_object(...)` chained-call verb is not visible
 to a flat needle) before committing to an implementation shape.
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_dangerous_ops_python.py:721-740,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full
+original text, kept verbatim below.
+
+    # T-2479: split out of the coarse "boto3.client(/resource(" needle above
+    # -- boto3's mutating operation names are PER-SERVICE (S3's put_object/
+    # delete_object vs DynamoDB's put_item/delete_item vs IAM's
+    # create_user/delete_user) and only ever called on the object a
+    # `.client("service")`/`.resource("service")` call returns, with no
+    # library-name prefix at the call site itself -- a flat needle cannot
+    # distinguish these from a read (get_object/get_item/list_users)
+    # without a binding-aware resolver. `frob.vet._capability_python`'s
+    # `_resolve_py_boto3_client_call` (T-2479) resolves
+    # `x = boto3.client("s3")` to the synthetic identity
+    # `boto3.client(s3)`, so `x.put_object(...)` resolves all the way to
+    # `boto3.client(s3).put_object` and matches the needles below.
+    # Additive: the coarse "boto3.client(" / "boto3.resource(" needle
+    # above is UNCHANGED and still fires on every boto3 usage including
+    # these calls -- this is a strictly more precise SECOND observation.
+    # Scope disclosed, matching T-2464's own precedent: this covers three
+    # HIGH-VALUE services (S3, DynamoDB, IAM) with a representative, not
+    # exhaustive, mutating-verb list for each -- a full per-service survey
+    # across boto3's ~350 services is out of scope here (filed as a
+    # follow-up, see T-2479's Done report).
