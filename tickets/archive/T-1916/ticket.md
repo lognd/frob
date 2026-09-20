@@ -62,6 +62,13 @@ scope_changes:
   reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
   actor: logan
   at: '2026-08-09'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve SYS-IFACE-ORDER removal detail trimmed from _fix_engine.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3186
+  new_length: 3674
 evidence:
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
@@ -153,3 +160,13 @@ ACCEPTANCE
    reported by REG002. It must fail before the fix.
 4. Re-measure `--only registry` unscoped after landing; the 7 REG008/
    REG011 warnings are out of scope but must not increase.
+
+
+T-4709 follow-up (condensed from TIER_A_HANDLERS's comment block in
+src/frob/gates/_fix_engine.py, trimmed for DOCARCH002's 12-line cap):
+T-1872 wired a `SYS-IFACE-ORDER` entry here too (declared-name
+presentation reorder only, no membership decision); T-1916 removed it
+again -- REG002 found no gate/policy rule of that id had ever existed
+to justify the registry's "live, enforced gate rule" claim about it,
+and every OTHER entry in this dict is backed by a real detector
+somewhere.
