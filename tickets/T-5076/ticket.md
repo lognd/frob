@@ -1,5 +1,5 @@
 ---
-id: T-draft-d96f50ec
+id: T-5076
 title: 'DECISION: kernel extension domain 4/8 -- entity/architecture (entity/architecture/obligation/binds/configuration):
   desugar to the six primitives, or record as an extension?'
 state: queued
