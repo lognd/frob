@@ -77,6 +77,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 3841
   new_length: 4620
+- mode: append
+  reason: 'T-4709: preserve ENV_ABSENCE_UNVERIFIABLE waiver-distinction detail trimmed
+    from _bug_repro.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4619
+  new_length: 5181
 evidence:
 - tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_single_directive_extracted
 - tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_comma_separated_names_extracted_in_order
@@ -179,3 +186,13 @@ only fails when the variable is genuinely gone. No new evidence format or
 ticket field was added; this mirrors T-3156's scope_has_python_surface
 precedent of one predicate wired into the existing checkpoint rather than
 a parallel mechanism.
+
+
+T-4709 follow-up (condensed from BugReproOutcome.ENV_ABSENCE_UNVERIFIABLE's
+docstring in src/frob/gates/_bug_repro.py, trimmed for DOCARCH002's
+12-line cap): a `frob:waive BUG002` is NOT a synonym for this directive --
+a plain waiver suppresses the check with no claim about WHY beyond its
+own reason text, whereas `frob:env-absent-unverifiable` keeps the check
+running far enough to distinguish "cannot verify" from "did not bother to
+try", which a growing frob:waive BUG002 population cannot do (T-3104's
+own measured count, see this ticket's Done report).
