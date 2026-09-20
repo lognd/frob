@@ -45,6 +45,13 @@ scope_changes:
     SCOPE002'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve ledger-v2 exemption test-proof detail trimmed from _refs.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1515
+  new_length: 2273
 evidence:
 - tests/test_refs_gate.py::TestTicketLedgerV2Exempt::test_ticket_md_is_exempt_with_no_declaration
 - tests/test_refs_gate.py::TestTicketLedgerV2Exempt::test_done_report_md_is_exempt_with_no_declaration
@@ -84,3 +91,17 @@ would sit beside). Start this once T-4124's lease frees; the draft fix
 and its 4 test cases (must-fire withheld: no cases fire after the fix;
 must-stay-quiet: unrelated file in a ticket dir still flags; third
 fixture: archived ticket dir) are described above, ready to reapply.
+
+
+T-4770 follow-up (condensed from _TICKET_LEDGER_V2_EXEMPT_GLOBS's
+docstring in src/frob/gates/_refs.py, trimmed for DOCARCH002's 12-line
+cap): frob.tickets._store's _V2_TICKET_GLOB is "T-*/ticket.md";
+done-report.md is written by frob ticket done-report into the same
+per-ticket directory. `frob ticket done-report` tripped REF001 on
+done-report.md the same way `frob ticket new` tripped it on
+ticket.md -- frob's own ledger writes making a freshly adopted project
+gate-dirty on day one. The two fixed directory depths are tickets/T-*/
+and tickets/archive/T-*/. Proven by TestTicketLedgerV2Exempt.
+test_unrelated_file_in_ticket_dir_still_fires_ref001: a hand-authored
+design note or stray script dropped into a ticket directory still
+fires REF001/REF002.
