@@ -28,6 +28,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006: a rejected CLI form must not appear in backticks in a ticket body;
+    the sys-split tool does not exist and was refused by the owner'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1483
+  new_length: 1500
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/app.strata exists with its
@@ -57,7 +65,7 @@ land_commit: null
 Migration leaf for module `app` (members: cli, scripts_ops, claude_hooks). Consumer with 20 outbound flows; bidirectional with gates, platform, serve and tickets -- apply the D-M9 rule.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is NO `frob sys split` tool). Write design/app.strata with:
+there is no sys-split tool; the owner rejected one). Write design/app.strata with:
   - `module app` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
