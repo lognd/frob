@@ -9,7 +9,7 @@ created: '2026-09-09'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -31,6 +31,13 @@ scope_changes:
   reason: narrow to the WIRE001 detector itself
   actor: logan
   at: '2026-09-09'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.541.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 threat: null
 component: null
