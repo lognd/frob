@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.535.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -57,6 +57,13 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_cmd_drain_wiring.py
   reason: positive control for the new post-land-sweep-dispatch phase marker
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.535.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
