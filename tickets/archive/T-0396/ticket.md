@@ -10,6 +10,10 @@ priority: medium
 parent: T-0376
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/
 - src/frob/graph/
@@ -18,6 +22,15 @@ scope:
 - tests/test_refs_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve reviewer-caught framing trimmed from _refs.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2756
+  new_length: 3158
 evidence:
 - tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
 - tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
@@ -41,6 +54,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 GENERAL prevention for the orphaned-artifact class (the docs/design/registry/*.yaml manifests were read by ZERO files -- exactly this). Add a gate over EVERY git-tracked file, regardless of language/type (.py/.rs/.ts AND .yaml/.md/.toml/.json/.cfg/.txt/data/assets), that verifies each file is REFERENCED (hooked) by at least one OTHER tracked file. Tiers: 0 inbound references = REF001 warn (an orphan -- probably dead or silently unenforced, like the registry yamls); exactly 1 inbound reference = REF002 weaker warn (single point of anchor, fragile); 2+ = pass. The user wants 2+ as the norm, 1 waivable, 0 loud.
 
@@ -51,3 +67,11 @@ DECLARE-WHERE-USED: auto-detected references are not always visible (a data file
 ENTRY-POINT ALLOWLIST: genuinely-referenced-from-outside files (README.md, LICENSE, pyproject.toml, .github/**, __main__.py, top-level entry scripts, the root config) are legitimately low-inbound -- a small explicit allowlist in frob.toml (documented, not a blanket mute), each with a reason, satisfies the gate for those.
 
 Acceptance: (1) frob check gains a REF001/REF002 family; running it on THIS repo TODAY flags docs/design/registry/*.yaml as orphans (0 refs) -- proving it catches the real case; (2) a frob:used-by declaration pointing at a nonexistent/non-reaching consumer fails; (3) the entry-point allowlist is honored with per-file reasons; (4) tests: an orphan file warns, a 1-ref file weak-warns, a 2-ref file passes, a valid declaration passes, a dangling declaration fails. This is a WAIVABLE-warning gate (not error) per the user, so it does not block builds, but every orphan must be waived-with-reason or fixed -- honest accounting, same posture as the other advisory-but-tracked families.
+
+
+T-4770 follow-up (condensed from _is_collectible_test_filename's comment
+in src/frob/gates/_refs.py, trimmed for DOCARCH002's 12-line cap): this
+was a reviewer-caught false NEGATIVE (T-0396 round-3). Example orphan:
+tests/fixtures/orphan_helper.py. Deliberately not reusing is_test_file
+per the repo's playbook precedent -- do not weaken/duplicate a shared
+predicate for one caller's narrower need.
