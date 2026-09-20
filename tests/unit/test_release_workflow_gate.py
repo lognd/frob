@@ -713,16 +713,12 @@ class TestCrossBuiltTargetsSkipImportSmoke:
 
     # frob:ticket T-4472
     def test_install_only_runs_inside_the_non_cross_branch(self) -> None:
-        """MUST-FIRE (T-4472): run 34786316434 (post-T-4470 land
-        e16d97290) showed both cross entries still failing this step --
-        `uv pip install` of a foreign-arch wheel fails on its own
-        ("Failed to determine installation plan ... incompatible with
-        the current platform"), and that install used to run
-        UNCONDITIONALLY before the cross/native `if` branch, so the
-        skip branch was never reached in time. `uv pip install` (and
-        the venv creation feeding it) must appear ONLY inside the
-        `else` (non-cross) arm of the `if matrix.cross` block, never
-        before the `if` and never inside the cross arm."""
+        """Asserts `uv pip install` (and the venv creation feeding it)
+        appears only inside the `else` (non-cross) arm of the `if
+        matrix.cross` block, never before the `if` and never inside the
+        cross arm, so a foreign-arch wheel install cannot run
+        unconditionally ahead of the skip branch. See T-4472 for the
+        design rationale."""
         doc = _load(_RELEASE_WORKFLOW)
         step = _find_step_by_name_prefix(
             doc["jobs"]["build"], "Install the just-built wheels into a clean venv"
@@ -776,16 +772,12 @@ class TestCrossBuiltTargetsSkipImportSmoke:
 
 # frob:ticket T-4476
 class TestArtifactSmokeAarch64UsesNativeArmRunner:
-    """T-4476: release run 34799974130 -- `artifact-smoke`'s
-    manylinux-aarch64 leg previously ran on ubuntu-latest (x86_64) and
-    tried to install the aarch64 wheel into an x86_64 host venv, the
-    same cross-architecture boundary T-4470 hit for macos-x86_64.
-    Unlike macos-x86_64 (no native arm64 hosted image was available
-    there), GitHub DOES publish a hosted native arm64 Linux image --
-    `ubuntu-24.04-arm` -- free for public repos since GA (Jan 2025).
-    This repo is public, so the leg is moved there instead of being
-    dropped: it keeps this smoke test REAL rather than falling back to
-    the PLATFORM001 wheel-existence-only boundary."""
+    """Asserts `artifact-smoke`'s manylinux-aarch64 leg runs on GitHub's
+    hosted native arm64 Linux image (`ubuntu-24.04-arm`, free for public
+    repos), rather than ubuntu-latest (x86_64) installing the aarch64
+    wheel into a mismatched host venv, keeping the smoke test real
+    instead of falling back to the PLATFORM001 wheel-existence-only
+    boundary. See T-4476/T-4470 for the design rationale."""
 
     def test_manylinux_aarch64_smoke_runs_on_a_native_arm_image(self) -> None:
         """MUST-FIRE: `artifact-smoke`'s manylinux-aarch64 entry must

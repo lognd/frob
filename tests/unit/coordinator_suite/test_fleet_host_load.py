@@ -329,12 +329,12 @@ class TestOrphanedForkserverCount:
         assert fleet_status.orphaned_forkserver_count(tmp_path / "no-proc") is None
 
     def test_two_level_chain_with_dead_root_is_orphaned(self, tmp_path: Path) -> None:
-        """T-2818's own positive control, the case that failed before this
-        fix: a forkserver (4242) whose parent is ANOTHER forkserver (5000)
-        whose own originating check already died (reparented to init, no
-        live check pid anywhere in the tree). The old one-level test read
-        4242 as 'live-parented' because 5000 is alive; the ancestry walk
-        must classify BOTH as orphaned."""
+        """Asserts a forkserver (4242) whose parent is another forkserver
+        (5000) whose own originating check already died (reparented to
+        init, no live check pid anywhere in the tree) classifies both as
+        orphaned, since a one-level check alone would misread 4242 as
+        live-parented because 5000 is alive. See T-2818 for the design
+        rationale."""
         proc = tmp_path / "proc"
         proc.mkdir()
         self._write_entry(

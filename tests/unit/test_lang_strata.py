@@ -71,11 +71,11 @@ class TestParseStrata:
 
     # frob:ticket T-2410
     def test_publicness_is_derived_from_clearance_not_a_blanket_true(self) -> None:
-        """T-2410: `chirp.strata` declares `node author { clearance
-        Public; }` (public=True) alongside several `clearance Internal`
-        nodes (public=False) -- a real mixed shape, not the pre-T-2410
-        `public=True` placeholder every symbol used to get regardless of
-        its own clearance clause."""
+        """Asserts a symbol's `public` field derives from its own
+        `clearance` clause (`chirp.strata` declares `node author {
+        clearance Public; }` alongside several `clearance Internal`
+        nodes, a real mixed shape), not a blanket placeholder value. See
+        T-2410 for the design rationale."""
         # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
         pf = parse_file(_LITMUS).danger_ok
         author_sym = _symbol(pf, "chirp.author")
@@ -400,17 +400,13 @@ class TestGrammarAuthoritativeSymbols:
 
 
 class TestGrammarAuthoritativeSymbolsCorpusWide:
-    """T-2194 (T-2187 follow-up): T-2187's Done report verified, by hand,
-    that all 64 tracked `.strata` files walk with zero `Err` under its
-    fix -- but that verification was prose in a closed ticket, not a
-    checked-in guard. This makes it permanent: walk EVERY tracked
-    `.strata` file (`git ls-files '*.strata'`, not a fixed list, so a
-    newly-added `.strata` file is covered automatically) and assert each
-    one parses clean. A future change to `_walk_strata.py`, or a new
+    """Asserts every tracked `.strata` file (`git ls-files '*.strata'`,
+    not a fixed list, so a newly-added file is covered automatically)
+    walks with zero `Err`, as a checked-in guard rather than a one-time
+    manual verification. A future change to `_walk_strata.py`, or a new
     `.strata` construct kind the grammar-vs-locator reconciliation does
-    not yet handle, now fails HERE instead of silently reintroducing the
-    T-2187 defect (a grammar/locator disagreement that used to downgrade
-    to a log warning no caller ever saw)."""
+    not yet handle, fails here instead of downgrading to an unseen log
+    warning. See T-2194/T-2187 for the design rationale."""
 
     def test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count(
         self,

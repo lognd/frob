@@ -115,12 +115,11 @@ class TestLandProcessRows:
     def test_a_land_in_a_different_repo_is_not_counted(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """T-4377's measured gap: this scan previously had NO cwd/repo
-        filter at all, so a `frob ticket land` running in a completely
-        different checkout would still count toward THIS repo's LANDS IN
-        FLIGHT. pid 100's cwd resolves inside `REPO`'s own worktree
-        directory (kept); pid 200's cwd resolves under an unrelated repo
-        entirely (dropped)."""
+        """Asserts a `frob ticket land` running in a different checkout
+        is not counted toward this repo's lands-in-flight: pid 100's cwd
+        resolves inside `REPO`'s own worktree directory (kept); pid 200's
+        cwd resolves under an unrelated repo entirely (dropped). See
+        T-4377 for the design rationale."""
         if sys.platform == "win32":
             pytest.skip(
                 "land_process_rows is POSIX-only (ps/proc); returns [] "
@@ -754,8 +753,7 @@ class TestFlockHoldersMatchingWin32Guard:
         to an empty set -- never reach `os.major`/`os.minor`, which would
         raise `AttributeError` on a real Windows interpreter."""
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_land.py::TestFlockHoldersMatchingWin3\
-        # 2Guard.test_win32_platform_returns_empty_without_calling_os_major_minor
+        # tests/unit/coordinator_suite/test_fleet_land.py::TestFlockHoldersMatchingWin32Guard.test_win32_platform_returns_empty_without_calling_os_major_minor  # noqa: E501
         monkeypatch.setattr(fleet_status._sys, "platform", "win32")
         lock_stat = os.stat(__file__)
         result = fleet_status._flock_holders_matching(
@@ -770,8 +768,7 @@ class TestFlockHoldersMatchingWin32Guard:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_land.py::TestFlockHoldersMatchingWin3\
-        # 2Guard.test_posix_platform_still_matches_normally
+        # tests/unit/coordinator_suite/test_fleet_land.py::TestFlockHoldersMatchingWin32Guard.test_posix_platform_still_matches_normally  # noqa: E501
         lock_stat = os.stat(__file__)
         maj, minor = os.major(lock_stat.st_dev), os.minor(lock_stat.st_dev)
         line = f"1: FLOCK  ADVISORY  WRITE 100 {maj:02x}:{minor:02x}:{lock_stat.st_ino} 0 EOF"

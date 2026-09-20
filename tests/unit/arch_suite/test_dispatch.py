@@ -117,9 +117,10 @@ class TestTestFileExemption:
 
 
 class TestCollectDispatchRefs:
-    """Direct unit coverage of `_collect_dispatch_refs`'s three dispatch-
-    like shapes (T-0394: the call-callee, call-argument, and keyword-
-    argument branches, extracted to `_collect_dispatch_refs_from_call`)."""
+    """Covers `_collect_dispatch_refs`'s three dispatch-like shapes: the
+    call-callee, call-argument, and keyword-argument branches, in
+    `_collect_dispatch_refs_from_call`. See T-0394 for the design
+    rationale."""
 
     def _refs(self, tmp_path: Path, source: str) -> set[str]:
         from frob.arch._abstraction import _collect_dispatch_refs

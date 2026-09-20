@@ -34,17 +34,12 @@ _CTYPES_SRC = 'import ctypes\nlib = ctypes.CDLL("libfoo.so")\nlib.do_thing(1)\n'
 def test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production(
     tmp_path: Path,
 ) -> None:
-    """MUST-FIRE: the identical undeclared ctypes call is placed in a
-    real production file, a `[graph].exclude`-matched directory, and a
-    nested `tests/` directory. `is_excluded`/`is_test_file` both require
-    a POSIX-style `rel` to work correctly (a nested directory is
-    required -- a bare `test_*.py` filename would already be classified
-    as a test by naming convention alone, which would not distinguish
-    this bug). FFI002 must fire for the production copy only -- proving
-    the gate scans the RIGHT set, the wrong-set failure mode T-3947
-    describes (on Windows this gate used to scan the excluded/test
-    copies as production instead of, or in addition to, the real
-    production violation)."""
+    """Asserts FFI002 fires for the production copy only when the
+    identical undeclared ctypes call is placed in a real production
+    file, a `[graph].exclude`-matched directory, and a nested `tests/`
+    directory (a nested directory, not a bare `test_*.py` filename, is
+    required so `is_excluded`/`is_test_file` are actually exercised on a
+    POSIX-style `rel`). See T-3947 for the design rationale."""
     _write(tmp_path, "frob.toml", '[graph]\nexclude = ["vendor/**"]\n')
     _write(tmp_path, "prod/sub/mod.py", _CTYPES_SRC)
     _write(tmp_path, "vendor/sub/mod.py", _CTYPES_SRC)

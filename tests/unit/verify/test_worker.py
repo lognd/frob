@@ -180,19 +180,13 @@ class TestRunCoalescedVerification:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
-        """T-3052 (H5) acceptance (must-fire fixture): an unfilable
-        finding must NOT become silently green on the SECOND wake. Before
-        this fix, `_resolve_verification_outcome` wrote the rolling
-        baseline unconditionally, BEFORE deciding the outcome -- so wake
-        1's unfiled-red result had already recorded `fresh` (the
-        unfilable finding included) as the new baseline, and wake 2's
-        `fresh - baseline` came back empty, taking the green path and
-        advancing the watermark past the very commit wake 1 refused to
-        certify. This re-runs `run_coalesced_verification` twice against
-        an UNCHANGED tree (same findings both times, `_file_regression_
-        ticket` always refusing) and asserts wake 2 is STILL red and
-        STILL does not advance -- the unfiled finding must keep
-        reappearing as new every wake until something durable owns it."""
+        """Asserts an unfilable finding does not become silently green on
+        the second wake: re-running `run_coalesced_verification` twice
+        against an unchanged tree (same findings both times,
+        `_file_regression_ticket` always refusing) stays red and does
+        not advance the watermark, since `_resolve_verification_outcome`
+        must decide the outcome before writing the rolling baseline. See
+        T-3052 (H5) for the design rationale."""
         from frob.app.ticket_runner import _rapid_sweep
 
         _enqueue_n(tmp_path, 1)
@@ -286,13 +280,11 @@ class TestRunCoalescedVerification:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
-        """T-3464 must-fire fixture: the vanished-findings relief above
-        must NOT over-fire. When only SOME of `new_findings` vanished at
+        """Asserts a batch where only some of `new_findings` vanished at
         file time (recorded as debt) and at least one pair is still
-        genuinely unfiled -- no matching vanished-debt entry for it --
-        the batch as a whole must still be treated as ownerless and pin
-        the watermark exactly like before this fix. A reproducing
-        finding must never ride through on a sibling phantom's coattails."""
+        genuinely unfiled is treated as ownerless and pins the watermark,
+        so a reproducing finding never rides through on a sibling
+        phantom's coattails. See T-3464 for the design rationale."""
         from frob.app.ticket_runner import _rapid_sweep
         from frob.tickets._evidence import record_rapid_debt
 

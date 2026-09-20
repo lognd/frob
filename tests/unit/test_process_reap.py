@@ -90,8 +90,9 @@ class TestReapActiveChildren:
 
 
 class TestInstallSigtermReaper:
-    """`install_sigterm_reaper` (T-2443) installs exactly once, chaining to
-    whatever handler was previously registered."""
+    """Covers `install_sigterm_reaper`: installs exactly once, chaining to
+    whatever handler was already registered. See T-2443 for the design
+    rationale."""
 
     def test_installs_handler_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_reap, "_sigterm_reaper_installed", False)
@@ -390,10 +391,10 @@ def _write_live_check_entry(
 
 
 class TestIsLiveCheckProcess:
-    """`_is_live_check_process` (T-3072): the whole-token classifier that
-    replaced this file's own THIRD copy of `scripts/fleet_status.py`'s
-    anchor-bugged `(?:^|/)frob\\x00` regex (`_is_frob_check_process` used
-    to carry it directly)."""
+    """Covers `_is_live_check_process`, the whole-token classifier
+    matching `scripts/fleet_status.py`'s own live-check-process shape
+    without the anchor-bugged `(?:^|/)frob\\x00` regex form. See T-3072
+    for the design rationale."""
 
     def test_matches_module_invoked_check(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess.test_matches_module_invoked_check  # noqa: E501

@@ -86,25 +86,22 @@ def _write_design_file(root: Path, filename: str, text: str) -> None:
 
 # frob:ticket T-3460
 class TestPolicyWeakeningGateFileIdentity:
-    """T-3460: every INV051 finding used to report `Violation.file` as the
-    constant `design_dir` regardless of which `.strata` file declared the
-    weakening policy -- so two DISTINCT weakenings in two DIFFERENT files
-    were indistinguishable by `(rule, file)` identity (the same anchor-
-    collapse class T-3419 fixed generically for SELFAUDIT001; INV051's
-    own message names policy ids, not a file, so that fix could not
-    reach it). `policy_weakening_gate` now resolves each finding's own
-    child policy back to its declaring file via `_policy_id_file_map`,
-    the same `node_file`-map shape VMOD001 already uses (T-3264)."""
+    """Asserts `policy_weakening_gate` resolves each INV051 finding's own
+    child policy back to its declaring file via `_policy_id_file_map`
+    (the same `node_file`-map shape VMOD001 uses), so two distinct
+    weakenings in two different `.strata` files report distinct `(rule,
+    file)` identities, rather than both collapsing onto the constant
+    `design_dir` anchor. See T-3460/T-3419/T-3264 for the design
+    rationale."""
 
     # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGateFileIdentity.test_must_fire_two_weakenings_in_different_files_get_distinct_file_identities  # noqa: E501
     def test_must_fire_two_weakenings_in_different_files_get_distinct_file_identities(
         self, tmp_path: Path
     ) -> None:
-        """MUST-FIRE fixture (T-3460's own acceptance, mirroring T-3419's):
-        two unrelated weakenings declared in two different `.strata`
-        files must report two DIFFERENT `(rule, file)` identities, not
-        both collapse onto `design_dir`. This MUST FAIL on main (both
-        used to report `file="design"`)."""
+        """Asserts two unrelated weakenings declared in two different
+        `.strata` files report two distinct `(rule, file)` identities,
+        rather than both collapsing onto `design_dir`. See T-3460/T-3419
+        for the design rationale."""
         _write_design_file(
             tmp_path,
             "a.strata",

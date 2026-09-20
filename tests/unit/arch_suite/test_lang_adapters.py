@@ -1750,11 +1750,11 @@ class TestFourWayCrossLanguageEquivalence:
     def test_derived_class_has_the_field_and_one_method(
         self, py_module, ts_module, rust_module, kt_module
     ) -> None:
-        """The derived class (Animal) carries a `name` field and its
-        `speak` method in all four languages -- python included since
-        T-0727 fixed `PythonAdapter._py_class_fields` to match the real
-        (unwrapped) `assignment` node shape tree-sitter-python actually
-        yields, closing what was previously a documented waiver."""
+        """Asserts the derived class (Animal) carries a `name` field and
+        its `speak` method in all four languages, including python, where
+        `PythonAdapter._py_class_fields` matches the unwrapped
+        `assignment` node shape tree-sitter-python yields. See T-0727 for
+        the design rationale."""
         for module in (py_module, ts_module, rust_module, kt_module):
             derived = next(c for c in module.classes if c.name == "Animal")
             field_names = {f.name for f in derived.fields}

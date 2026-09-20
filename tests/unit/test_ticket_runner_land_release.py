@@ -236,11 +236,10 @@ class TestApplyReleaseBumpForLand:
     def test_stamp_failure_propagates_instead_of_staging_stale_manifest(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-2462: since `_apply_release_bump_for_land` no longer calls
-        `frob.release.stamp` at all (that write moved to an explicit
-        release cut), the fail-closed path this class used to prove via a
-        `stamp` failure is now proven via the fragment write's own
-        failure -- it must still propagate as `Err(ReleaseBumpFailed)`."""
+        """Asserts a fragment write failure propagates as
+        `Err(ReleaseBumpFailed)`, since `_apply_release_bump_for_land`
+        does not call `frob.release.stamp` (that write is an explicit
+        release-cut step). See T-2462 for the design rationale."""
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.test_stamp_failure_propagates_instead_of_staging_stale_manifest  # noqa: E501
         _write_repo_files(tmp_path)
         manifest = ReleaseManifest(version="0.1.0", api={})
@@ -493,16 +492,12 @@ class TestVerifyOneBucketPassingRoutesToIndividualReverify:
 
 # frob:ticket T-2569
 class TestVerifyOneBucketPassingSpawnFailureIsUnmeasured:
-    """T-2569: the real incident -- `run_selected` returning
-    `Err(TestingError.SpawnFailed)` (a runner process that could not be
-    started or timed out, e.g. under machine contention) must report every
-    id in the bucket as `VerifyStatus.UNMEASURED`, never `FAILED`. Before
-    this fix, `_verify_one_bucket_passing` collapsed EVERY non-passing
-    cause (genuine failure AND infra/spawn error alike) into a single bare
-    "not passing" bit, which is exactly the false-positive T-2569's own
-    incident measured: a spawn timeout reported as "evidence no longer
-    passes when re-run" for all 7 of a ticket's evidence nodes, zero of
-    which actually ran."""
+    """Asserts `run_selected` returning `Err(TestingError.SpawnFailed)`
+    (a runner process that could not be started or timed out) reports
+    every id in the bucket as `VerifyStatus.UNMEASURED`, never `FAILED`,
+    so `_verify_one_bucket_passing` distinguishes an infra/spawn error
+    from a genuine failure rather than collapsing both into one "not
+    passing" bit. See T-2569 for the design rationale."""
 
     def test_spawn_failed_is_unmeasured_not_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

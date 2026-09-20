@@ -167,11 +167,10 @@ class TestRefactorDispatch:
 
 # frob:ticket T-3125
 class TestHelpListsDirectDispatchVerbs:
-    """`refactor`/`narrative` are dispatched by a raw argv[0] scan before
-    `_build_parser()` ever runs (see `_dispatch`), so they used to work but
-    never show up in `frob --help`'s own subcommand list -- T-3125 fixes
-    that by also registering them on the real parser tree, additively,
-    purely for discoverability."""
+    """Asserts `refactor`/`narrative` (dispatched by a raw argv[0] scan
+    before `_build_parser()` runs, see `_dispatch`) are also registered
+    on the real parser tree and show up in `frob --help`'s subcommand
+    list. See T-3125 for the design rationale."""
 
     def test_help_lists_refactor_and_narrative(self, capsys) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestHelpListsDirectDispatchVerbs.test_help_lists_refactor_and_narrative  # noqa: E501
@@ -207,8 +206,7 @@ class TestWhereis:
 
     def test_prints_executable_and_package_dir(self, capsys) -> None:
         # frob:tests \
-        # tests/unit/test_main_entry.py::TestWhereis.test_prints_executable_and_package\
-        # _dir
+        # tests/unit/test_main_entry.py::TestWhereis.test_prints_executable_and_package_dir  # noqa: E501
         import sys
 
         main_module._dispatch_whereis([])
@@ -247,8 +245,7 @@ class TestWhereis:
         self, tmp_path, capsys
     ) -> None:
         # frob:tests \
-        # tests/unit/test_main_entry.py::TestWhereis.test_two_different_installs_report\
-        # _different_paths
+        # tests/unit/test_main_entry.py::TestWhereis.test_two_different_installs_report_different_paths  # noqa: E501
         """Acceptance: invoked from two different `frob` package
         locations, `whereis` reports two different paths -- simulated
         here by monkeypatching the resolved package `__file__` between
@@ -605,13 +602,12 @@ class TestGroupedHelpFormatter:
             )
 
     def test_no_help_text_breaks_inside_a_word(self) -> None:
-        """T-2385 acceptance[0]: no rendered `--help` line may end mid-word
-        (the narrower description column from the deeper entry indent
-        previously broke `ops`'s help string as "...clean/c" / "lean/...").
-        A genuine word-wrap break always falls on whitespace; textwrap
-        never hyphenates, so a broken word shows up as a line ending in an
+        """Asserts no rendered `--help` line ends mid-word: a genuine
+        word-wrap break always falls on whitespace (textwrap never
+        hyphenates), so a broken word shows up as a line ending in an
         orphan 1-2 character fragment that only forms a real word when
-        joined with the next line's leading fragment with NO space."""
+        joined with the next line's leading fragment with no space. See
+        T-2385 for the design rationale."""
         parser = main_module._build_parser()
         help_text = parser.format_help()
         lines = help_text.splitlines()

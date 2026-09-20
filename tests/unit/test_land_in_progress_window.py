@@ -110,21 +110,20 @@ class _HeldLock:
 
 
 @pytest.mark.skipif(os.name == "nt", reason="fcntl-backed flock probe, POSIX (T-3612)")
+# frob:ticket T-4628
 class TestLandInProgressWindowNarrowedToSplice:
     """`refuse_if_land_in_progress`'s new contract: probe `tickets.lock`,
     never `land.lock`, for the refusal decision itself (T-3612)."""
 
+    # frob:ticket T-4628
     def test_land_lock_held_but_tickets_lock_free_allows_the_write(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """A land's slow phase (gates/precheck): `land.lock` is held for
-        the whole run, `tickets.lock` is untouched between splices --
-        under the OLD whole-land check this refused for the land's
-        entire duration; under T-3612's narrowed check it succeeds
-        immediately, and logs the allowed-during-land write at INFO
-        naming the correlated holder's pid (T-3612's observability
-        requirement -- this narrowing must not be a silent behavior
-        change)."""
+        """Asserts a write during a land's slow phase (`land.lock` held
+        for the whole run, `tickets.lock` untouched between splices)
+        succeeds immediately under the narrowed splice-only check, and
+        logs the allowed-during-land write at INFO naming the correlated
+        holder's pid. See T-3612 for the design rationale."""
         root = tmp_path
         pid = os.getpid()
         _write_land_lock_holder_json(root, pid=pid, ticket_id="T-9001")
@@ -228,21 +227,20 @@ class TestSecondLandStillRefused:
 
 
 @pytest.mark.skipif(os.name == "nt", reason="fcntl-backed flock probe, POSIX (T-3612)")
+# frob:ticket T-4628
 class TestWholeLandVerbClassification:
-    """T-4556: `renumber`/`promote`/`archive`/`migrate` rewrite MANY
-    ticket files across their own multi-file transaction with no single
-    `tickets.lock` span covering the whole rewrite (T-1615 excludes them
-    from the uniform auto-commit) -- so T-3612's splice-only probe let
-    them interleave with a land's out-of-tree compose for their entire
-    multi-file duration. `whole_land=True` (passed by the dispatch layer
-    for exactly these four verbs, see `_LAND_WHOLE_LAND_VERBS`) restores
-    the pre-T-3612 `land.lock`-duration probe for them, while every
-    OTHER verb keeps the narrowed splice-only check.
+    """Asserts `whole_land=True` (passed by the dispatch layer for
+    `renumber`/`promote`/`archive`/`migrate`, see
+    `_LAND_WHOLE_LAND_VERBS`) applies the `land.lock`-duration probe for
+    those four verbs, since they rewrite many ticket files across their
+    own multi-file transaction with no single `tickets.lock` span
+    covering the whole rewrite, while every other verb keeps the
+    narrowed splice-only check. See T-4556/T-3612 for the design
+    rationale.
 
-    This is this ticket's BUG002 repro: at the parent commit (T-3612,
-    before this ticket), `refuse_if_land_in_progress` has no `whole_land`
-    parameter at all, so `test_renumber_refused_while_only_land_lock_
-    held` fails with a `TypeError` (unexpected keyword argument) rather
+    This is this ticket's BUG002 repro: `test_renumber_refused_while_
+    only_land_lock_held` fails at the parent commit with a `TypeError`
+    (unexpected keyword argument) rather
     than the assertion it makes here -- FAILED_AT_PARENT, not "passed
     but asserted the wrong thing"."""
 

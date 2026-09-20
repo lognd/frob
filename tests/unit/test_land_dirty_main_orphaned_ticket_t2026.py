@@ -201,15 +201,11 @@ class TestCommitOrphanedNewTicketDirOnlyDrift:
     # frob:ticket T-3050
     def test_non_queued_orphan_is_never_auto_committed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift.test_non_queued_orphan_is_never_auto_committed  # noqa: E501
-        """T-3050 (H3): FAILS FIRST at the parent commit -- an orphaned
-        directory whose `ticket.md` parses cleanly but carries a
-        NON-QUEUED state (here `done`) must never be swept into an
-        auto-heal commit. Before this fix, `_orphaned_new_ticket_dir_
-        candidates` only checked that the file parsed and the id
-        matched; it never inspected `state`, so a directory left behind
-        in `done` state (e.g. a stray copy of an already-closed ticket)
-        was auto-committed to main exactly like fresh queued work,
-        publishing a false `state=done` straight onto main."""
+        """Asserts an orphaned directory whose `ticket.md` parses cleanly
+        but carries a non-queued state (here `done`) is never swept into
+        an auto-heal commit: `_orphaned_new_ticket_dir_candidates` must
+        inspect `state`, not just check that the file parsed and the id
+        matched. See T-3050 (H3) for the design rationale."""
         root = tmp_path / "repo"
         _git_init(root)
         done_ticket = _TICKET_MD.replace("state: queued", "state: done")
@@ -339,9 +335,10 @@ class TestRefuseIfMainDirtyOrphanedTicketHeal:
 
     def test_genuinely_human_dirty_root_still_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestRefuseIfMainDirtyOrphanedTicketHeal.test_genuinely_human_dirty_root_still_refuses  # noqa: E501
-        """No over-reach: an ordinary edited source file must still
-        refuse exactly as before this ticket -- swallowing real
-        uncommitted work is far worse than the blockage T-2026 fixes."""
+        """Asserts an ordinary edited source file still refuses
+        (`LandError.DirtyMain`): the orphaned-ticket auto-heal must never
+        swallow real uncommitted work. See T-2026 for the design
+        rationale."""
         root = tmp_path / "repo"
         _git_init(root)
         (root / "some_module.py").write_text("x = 1\n")

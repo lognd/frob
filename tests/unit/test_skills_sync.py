@@ -264,13 +264,12 @@ class TestSyncSkillsProvenance:
 
 # frob:ticket T-2268
 class TestSkillsSyncRenderLint:
-    """T-2268: `_skills_sync.py::run` used to write through bare `print`
-    calls (a RENDER001 regression from T-2241's own land, hours old at the
-    time this ticket was filed) instead of routing through
-    `frob.render.Renderer` like every other CLI entry point in this repo.
-    `render_lint_gate` scans this repo's own git-tracked source directly,
-    so this genuinely reproduces against the pre-fix source (RENDER001
-    fires) and passes against the fixed source (it does not)."""
+    """Asserts `_skills_sync.py::run` routes its output through
+    `frob.render.Renderer`, like every other CLI entry point in this
+    repo, rather than bare `print` calls: `render_lint_gate` scans this
+    repo's own git-tracked source directly, so RENDER001 fires against a
+    regression and stays quiet against the compliant source. See T-2268
+    for the design rationale."""
 
     def test_no_render001_violations_for_skills_sync(self) -> None:
         """`render_lint_gate(_REPO_ROOT)` reports zero RENDER001 violations
@@ -285,8 +284,8 @@ class TestSkillsSyncRenderLint:
 
 
 class TestMakefileRecipeDelegates:
-    """T-2241 acceptance[2]: `sync-skills:`'s recipe body is a single `uv
-    run frob sync-skills` line, not the old ~35-line bash for-loop."""
+    """Asserts the Makefile `sync-skills:` recipe body is a single `uv
+    run frob sync-skills` line. See T-2241 for the design rationale."""
 
     def test_recipe_body_is_a_single_line(self) -> None:
         match = re.search(r"^sync-skills:[^\n]*\n(?:\t.*\n)*", _MAKEFILE, re.MULTILINE)

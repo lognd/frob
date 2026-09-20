@@ -123,8 +123,7 @@ class TestUnlandedBranchWork:
         (import error / detector absent) and passes now that it does.
         """
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_confirme\
-        # d_leak_shape_done_report_plus_in_progress
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_confirmed_leak_shape_done_report_plus_in_progress  # noqa: E501
         _branch(repo, "runner-wiring")
         _write_ticket_md(repo, "T-1315", state="in-progress")
         _write_done_report(repo, "T-1315")
@@ -146,8 +145,7 @@ class TestUnlandedBranchWork:
         `tickets/<id>/ticket.md`. A path-existence-only check misreads this
         as "not on main at all"; this detector must not."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_archived\
-        # _done_ticket_is_not_a_false_positive
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_archived_done_ticket_is_not_a_false_positive  # noqa: E501
         _write_ticket_md(repo, "T-9001", state="done", archived=True)
         _commit_all(repo, "archive T-9001 on main")
 
@@ -164,8 +162,7 @@ class TestUnlandedBranchWork:
         """`dropped` is the other terminal state (T-1934's `_TERMINAL_
         STATES`) -- must be excluded exactly like `done`."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_dropped_\
-        # ticket_on_main_is_not_a_false_positive
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_dropped_ticket_on_main_is_not_a_false_positive  # noqa: E501
         _write_ticket_md(repo, "T-9002", state="dropped")
         _commit_all(repo, "drop T-9002 on main")
 
@@ -184,8 +181,7 @@ class TestUnlandedBranchWork:
         """The second REQUIRED-A signal: no `done-report.md` at all, but
         the branch's own `ticket.md` reads `state: done`."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_local_st\
-        # ate_done_with_no_done_report_file_is_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_local_state_done_with_no_done_report_file_is_flagged  # noqa: E501
         _branch(repo, "no-report-branch")
         _write_ticket_md(repo, "T-9003", state="done")
         _commit_all(repo, "finish T-9003 without writing a done-report")
@@ -201,8 +197,7 @@ class TestUnlandedBranchWork:
         no done-report and no `state: done`/`dropped` carries no finished
         signal at all -- never reported (there is no work to lose)."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_queued_t\
-        # icket_on_branch_is_not_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_queued_ticket_on_branch_is_not_flagged  # noqa: E501
         _branch(repo, "wip-branch")
         _write_ticket_md(repo, "T-9004", state="in-progress")
         _commit_all(repo, "still working T-9004")
@@ -217,8 +212,7 @@ class TestUnlandedBranchWork:
         expiry) must never be reported -- a live agent is still working
         it, this is not a leak."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_live_lea\
-        # sed_ticket_is_excluded
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_live_leased_ticket_is_excluded  # noqa: E501
         _branch(repo, "live-branch")
         _write_ticket_md(repo, "T-9005", state="in-progress")
         _write_done_report(repo, "T-9005")
@@ -250,8 +244,7 @@ class TestUnlandedBranchWork:
         this asserted zero findings and got one (T-9101, inherited from
         main's own history)."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_fresh_br\
-        # anch_reports_zero_despite_main_history
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_fresh_branch_reports_zero_despite_main_history  # noqa: E501
         _write_ticket_md(repo, "T-9101", state="in-progress")
         _write_done_report(repo, "T-9101")
         _commit_all(repo, "finished work sitting directly on main, unlanded to itself")
@@ -271,8 +264,7 @@ class TestUnlandedBranchWork:
         commits add a done-report for a ticket that is non-terminal on
         `main` is still flagged."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_genuine_\
-        # leak_still_reported_after_the_fix
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_genuine_leak_still_reported_after_the_fix  # noqa: E501
         _write_ticket_md(repo, "T-9102", state="in-progress")
         _commit_all(repo, "queue T-9102 on main")
 
@@ -301,8 +293,7 @@ class TestUnlandedBranchWork:
         `"directive-anchored"` signal existed, this asserted one finding
         and got zero."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
-        # e_anchored_code_with_queued_ticket_is_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directive_anchored_code_with_queued_ticket_is_flagged  # noqa: E501
         _branch(repo, "t1552-ledger-v2")
         _write_ticket_md(repo, "T-1691", state="queued")
         (repo / "src").mkdir(parents=True, exist_ok=True)
@@ -332,8 +323,7 @@ class TestUnlandedBranchWork:
         anchored code -- normal in-flight work, not a ledger gap. Must
         stay silent."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
-        # e_anchored_code_with_in_progress_ticket_is_not_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directive_anchored_code_with_in_progress_ticket_is_not_flagged  # noqa: E501
         _branch(repo, "healthy-branch")
         _write_ticket_md(repo, "T-1700", state="in-progress")
         (repo / "src").mkdir(parents=True, exist_ok=True)
@@ -353,8 +343,7 @@ class TestUnlandedBranchWork:
         -- the stronger, more specific signal wins, exactly one finding
         per ticket per branch."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
-        # e_anchor_yields_to_a_stronger_signal
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directive_anchor_yields_to_a_stronger_signal  # noqa: E501
         _branch(repo, "both-signals-branch")
         _write_ticket_md(repo, "T-1701", state="queued")
         _write_done_report(repo, "T-1701")
@@ -380,8 +369,7 @@ class TestUnlandedBranchWork:
         with a body mentioning another ticket id would falsely flag that
         other id."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
-        # e_anchor_in_tickets_path_is_not_a_self_signal
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directive_anchor_in_tickets_path_is_not_a_self_signal  # noqa: E501
         _branch(repo, "ledger-only-branch")
         _write_ticket_md(repo, "T-1702", state="queued")
         path = repo / "tickets" / "T-1702" / "ticket.md"
@@ -403,8 +391,7 @@ class TestUnlandedBranchWork:
         directive on its own, so this id must NOT resolve to a finding:
         it cannot resolve to any real `ticket.md` at all."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_fixture_\
-        # directive_string_in_a_test_file_is_not_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_fixture_directive_string_in_a_test_file_is_not_flagged  # noqa: E501
         _branch(repo, "touches-fixture-test-file")
         (repo / "tests").mkdir(parents=True, exist_ok=True)
         (repo / "tests" / "test_gates.py").write_text(
@@ -430,8 +417,7 @@ class TestUnlandedBranchWork:
         be reported -- the resolve-check narrows false positives, it does
         not also swallow the genuine T-1948 shape."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_genuine_\
-        # directive_anchored_specimen_still_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_genuine_directive_anchored_specimen_still_flagged  # noqa: E501
         _branch(repo, "genuine-specimen-branch")
         _write_ticket_md(repo, "T-9401", state="queued")
         (repo / "src").mkdir(parents=True, exist_ok=True)
@@ -451,20 +437,15 @@ class TestUnlandedBranchWork:
     def test_real_ticket_id_inside_a_string_literal_is_not_flagged(
         self, repo: Path
     ) -> None:
-        """T-2300's own acceptance criterion: a `frob:ticket T-####`-shaped
-        string embedded inside a STRING LITERAL (not a directive-position
-        comment) must NOT resolve to a finding even when the id names a
-        REAL, resolvable, non-terminal ticket -- the exact gap T-2287's
-        resolve-check narrowing left open, since a resolvable id is no
-        longer enough to tell a real directive apart from a commented-out
-        or quoted mention once the id itself is real. The old bare-regex
-        `_TICKET_DIRECTIVE_RE` cannot see the difference (it greps blob
-        text with no notion of comment vs. string); the real comment-DSL
-        parser (`_directive_ids_via_real_parser`) can, because `frob:`
-        directives only ever parse out of actual COMMENT nodes."""
+        """Asserts a `frob:ticket T-####`-shaped string embedded inside a
+        string literal (not a directive-position comment) does not
+        resolve to a finding, even when the id names a real, resolvable,
+        non-terminal ticket: `_directive_ids_via_real_parser` only parses
+        `frob:` directives out of actual comment nodes, unlike a bare
+        regex that greps blob text with no notion of comment vs. string.
+        See T-2300/T-2287 for the design rationale."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_real_tic\
-        # ket_id_inside_a_string_literal_is_not_flagged
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_real_ticket_id_inside_a_string_literal_is_not_flagged  # noqa: E501
         _branch(repo, "string-literal-mention-branch")
         _write_ticket_md(repo, "T-9402", state="queued")
         (repo / "src").mkdir(parents=True, exist_ok=True)
@@ -491,8 +472,7 @@ class TestUnlandedBranchWork:
         the string-literal false positive without also losing the
         genuine T-1948 shape."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_real_dir\
-        # ective_anchor_still_flagged_via_real_parser
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_real_directive_anchor_still_flagged_via_real_parser  # noqa: E501
         _branch(repo, "real-directive-comment-branch")
         _write_ticket_md(repo, "T-9403", state="queued")
         (repo / "src").mkdir(parents=True, exist_ok=True)
@@ -513,8 +493,7 @@ class TestUnlandedBranchWork:
         calls) reports the same finding the all-branches scan does, for
         the branch it is pointed at."""
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_findings\
-        # _for_one_branch_matches_the_aggregate
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_findings_for_one_branch_matches_the_aggregate  # noqa: E501
         _branch(repo, "solo-branch")
         _write_ticket_md(repo, "T-9006", state="in-progress")
         _write_done_report(repo, "T-9006")
@@ -539,8 +518,7 @@ class TestUnlandedBranchWorkMainStateSpawnScaling:
     re-resolving it per (branch, ticket) pair."""
 
     # frob:tests \
-    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkMainStateSpawnScal\
-    # ing.test_main_state_resolution_does_not_scale_with_branch_times_ticket
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkMainStateSpawnScaling.test_main_state_resolution_does_not_scale_with_branch_times_ticket  # noqa: E501
     def test_main_state_resolution_does_not_scale_with_branch_times_ticket(
         self, repo: Path
     ) -> None:
@@ -592,18 +570,15 @@ class TestUnlandedBranchWorkMainStateSpawnScaling:
 
 # frob:ticket T-1966
 class TestBranchOwnChangedFilesConsolidation:
-    """T-1966: 'files this branch's own commits changed' used to be
-    implemented independently in `frob.tickets._land` and
-    `frob.tickets._unlanded`, and got the two-dot/three-dot lesson wrong
-    twice in different clothes (T-1922, T-1955). These tests pin the
-    consolidated shape: exactly ONE real implementation, both former
-    call sites agreeing on a real diff, and the empty-set case for a
-    freshly-cut branch."""
+    """Asserts "files this branch's own commits changed" has exactly one
+    real implementation, that both `frob.tickets._land` and
+    `frob.tickets._unlanded` agree on a real diff against it, and that a
+    freshly-cut branch produces the empty set. See T-1966/T-1922/T-1955
+    for the design rationale."""
 
     def test_unlanded_has_no_second_implementation(self) -> None:
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
-        # on.test_unlanded_has_no_second_implementation
+        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation.test_unlanded_has_no_second_implementation  # noqa: E501
         """The concept must have exactly one home. Before T-1966,
         `_unlanded._branch_own_changed_files` ran its own `git diff
         --name-only` spawn (`run_argv(("git", ..., "diff", ...))`)
@@ -622,8 +597,7 @@ class TestBranchOwnChangedFilesConsolidation:
 
     def test_both_former_call_sites_agree_on_a_real_branch(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
-        # on.test_both_former_call_sites_agree_on_a_real_branch
+        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation.test_both_former_call_sites_agree_on_a_real_branch  # noqa: E501
         """A branch with commits on BOTH sides of the merge-base: `main`
         advances after the branch is cut (a file only `main` touched),
         and the branch commits its own file. `_land._branch_changed_files`
@@ -659,8 +633,7 @@ class TestBranchOwnChangedFilesConsolidation:
 
     def test_freshly_cut_branch_yields_empty_set(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
-        # on.test_freshly_cut_branch_yields_empty_set
+        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation.test_freshly_cut_branch_yields_empty_set  # noqa: E501
         """A branch cut from `main` with no commits of its own reports
         the empty set from the shared helper -- the exact T-1955
         regression shape (a `git ls-tree`-based predecessor inherited
@@ -681,8 +654,7 @@ class TestUnlandedBranchWorkScanBudget:
     hanging the caller."""
 
     # frob:tests \
-    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_bu\
-    # dget_of_zero_scans_no_branches
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_budget_of_zero_scans_no_branches  # noqa: E501
     def test_budget_of_zero_scans_no_branches(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -710,8 +682,7 @@ class TestUnlandedBranchWorkScanBudget:
         )
 
     # frob:tests \
-    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_a_\
-    # generous_budget_still_scans_everything
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_a_generous_budget_still_scans_everything  # noqa: E501
     def test_a_generous_budget_still_scans_everything(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -735,8 +706,7 @@ class TestUnlandedBranchWorkScanBudget:
         assert len(findings) == 3
 
     # frob:tests \
-    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_th\
-    # e_default_budget_is_a_small_finite_number
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_the_default_budget_is_a_small_finite_number  # noqa: E501
     def test_the_default_budget_is_a_small_finite_number(self) -> None:
         """The module's own out-of-the-box default is small and finite --
         the scan is bounded without any caller having to configure

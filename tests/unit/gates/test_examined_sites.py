@@ -91,19 +91,12 @@ class TestIsFamilyInstrumented:
 # frob:ticket T-1921
 # frob:ticket T-1943
 class TestAttachExaminedSites:
-    """`attach_examined_sites` populates `archgate` for real against a
-    fixture tree, and leaves every other family absent -- the acceptance
-    property T-1921's brief demanded a regression test for: a partially-
-    examined run's uninstrumented families must never look covered.
-
-    T-2301: the two archgate-specific cases that used to live here
-    (`test_archgate_examined_sites_include_a_real_python_file`,
-    `test_archgate_examined_sites_exclude_an_unparseable_file`) moved to
-    `tests/test_arch_gate.py::TestArchExaminedSites` -- both carried a
-    `frob:tests` edge to `src/frob/gates/_arch.py::arch_examined_sites`,
-    which pulled in `_arch.py`'s own full test surface as SCOPE002
-    warnings whenever this file was in a ticket's scope (T-2012). This
-    class keeps the family-agnostic cases only."""
+    """Asserts `attach_examined_sites` populates `archgate` for real
+    against a fixture tree while leaving every other family absent, so a
+    partially-examined run's uninstrumented families never look covered.
+    This class keeps the family-agnostic cases only; the archgate-specific
+    cases live in `tests/test_arch_gate.py::TestArchExaminedSites`. See
+    T-1921/T-2301/T-2012 for the design rationale."""
 
     # frob:ticket T-1943
     def test_families_this_module_does_not_know_about_stay_absent(
