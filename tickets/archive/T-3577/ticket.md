@@ -31,6 +31,13 @@ scope_changes:
   reason: 'scope closure: frob:doc target for touched symbols'
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: condense msvcrt poll-loop ceiling rationale into T-3577 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3181
+  new_length: 4389
 evidence:
 - tests/unit/test_process_lock.py::TestPortableFlock::test_windows_blocking_reentry_raises_instead_of_hanging_forever
 - tests/system/test_run_helper_env_leak.py::TestRunHelperWin32TimeoutSurvivesAHungGrandchild::test_timeout_kills_process_tree_and_never_calls_an_untimed_communicate
@@ -57,3 +64,22 @@ Symptom: the FIRST tests/system test invokes the frob CLI via tests/system/conft
 (d) Revert T-3560 instrumentation in the SAME land per that tickets own contract: -v --full-trace in .github/workflows/ci.ymls windows Test step, and the SIGBREAK faulthandler registration (_install_sigbreak_faulthandler) in tests/conftest.py.
 
 Cites runs 33370059331 and 33376126399.
+
+<!-- narrative-moved:src/frob/process/_lock.py:80:T-3577 -->
+: T-3577: ceiling `_msvcrt_acquire_blocking`'s poll loop retries against,
+: in seconds, before raising `PortableLockUnavailable` instead of retrying
+: forever. `fcntl.flock` without `LOCK_NB` genuinely blocks indefinitely
+: on POSIX, but that is safe there because re-locking the SAME fd (the
+: shape every call site in this codebase uses) is a no-op -- `msvcrt.
+: locking` has no such same-fd/same-process reentrancy (T-3577's own
+: measured finding: none of the ported call sites -- `frob.tickets.
+: _store`/`_land`/`_leases`/`_land_queue`/`_mutation_sweep_queue`/
+: `_new_renumber`/`_land_git_ops`, `frob.serve._socketd`, `frob.testing.
+: _coverage_wait` -- carry `derived_state_lock`'s own same-process
+: reentrancy guard), so a nested same-process re-acquire of the same lock
+: retries against itself FOREVER on Windows with no bound at all. Chosen
+: generous (well above any legitimate cross-process contention this
+: codebase's own locks are held for) so a genuinely slow but healthy
+: contender never trips it -- this exists to convert an indefinite,
+: silent hang into a loud, bounded failure, not to police normal
+: contention latency.

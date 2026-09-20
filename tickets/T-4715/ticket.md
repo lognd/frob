@@ -2,7 +2,7 @@
 id: T-4715
 title: 'Source narrative C7: perf/ process/ refactor/ release/ scaffold/ security/
   serve/ stats/ -- 21 files, 34 runs, 682 lines'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -56,24 +56,43 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
+- tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+- tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
+  - tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+  - tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 - text: given every block that cited a ticket, when the sweep is done, then that narrative
     is readable in that ticket body -- moved, never deleted (T-2994 constraint 1)
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
+  - tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+  - tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 - text: given every block that cited NO ticket, when the sweep is done, then its narrative
     is in this cluster ticket body
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
+  - tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+  - tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 - text: given the whole diff, when git diff -w is taken over non-comment lines, then
     it is empty -- comments only, no behaviour change
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
+  - tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+  - tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 - text: given each batch of frob narrative move calls, when the batch finishes, then
     frob ticket list exits 0 (T-2994 constraint 3, the DuplicateId hazard)
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
+  - tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+  - tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 threat: null
 component: null
 anchor: false

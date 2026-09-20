@@ -10,6 +10,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/**
 - src/frob/check/**
@@ -19,6 +23,15 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: condense placeholder-word tuning rationale into T-0157 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2370
+  new_length: 3763
 evidence:
 - tests/test_secrets_gate.py::TestRedact::test_never_returns_the_token
 - tests/test_secrets_gate.py::TestFindsTokens::test_stripe_live_key_sec003
@@ -43,5 +56,31 @@ evidence:
 designated_repro_test: null
 threat: info-disclosure
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 New gate family: scan TRACKED files (git ls-files, never untracked/.env -- and a TRACKED .env is itself a critical finding) for real-looking API tokens and credentials; any match fails frob check unless the site is explicitly marked fake. INVESTIGATE FIRST: the existing frob:secret directive in the comment DSL -- build on its semantics (e.g. frob:secret fake annotation) rather than inventing a parallel marker; also honor obvious placeholder shapes (XXXX runs, asterisks, the literal words fake/changeme/example/placeholder inside the token) so docs and tests stay writable. Pattern table, named per provider with SPECIAL ATTENTION to: OpenAI (sk- and sk-proj- prefixed), Anthropic (sk-ant-), Stripe (sk_live_/rk_live_/pk_live_/whsec_ -- pk_test/sk_test count as real-looking too, flag at lower severity), and finance/common services: AWS (AKIA/ASIA access ids + paired 40-char secrets), GitHub (ghp_/gho_/ghs_/ghu_/github_pat_), GitLab (glpat-), Slack (xoxb-/xoxp-/xoxa-/xoxs-), Google (AIza...), Twilio, SendGrid (SG.), Plaid, Square (sq0), PayPal/Braintree, npm (npm_), PyPI (pypi-), HuggingFace (hf_), private-key PEM blocks (BEGIN ... PRIVATE KEY), and JWTs (eyJ header heuristic). Each pattern carries provider name, severity, and a format constraint (length/charset/checksum where the format has one) to cut false positives; generic high-entropy fallback only if it can be made honest (document the false-positive class per T-0151 precedent, or omit with written reasoning). CRITICAL implementation constraints: (1) NEVER echo the full matched token in any output, log, or ticket -- redact to provider + prefix + length; (2) the gate's own tests need realistic-SHAPED tokens: construct them clearly fake (e.g. correct prefix + XXXX/pattern-invalid tail) and/or annotate with frob:secret fake so the gate does not fail its own fixtures (T-0151 self-match lesson -- lock this with an explicit test that the test files themselves pass the gate); (3) wire into frob check as a default-on gate with its own rule ids and a waive path requiring a written reason; (4) run the new gate against the whole current repo and make it green honestly -- if anything real-looking is already tracked, that is a finding to surface loudly in the Done report, not to quietly waive. Drift-lock: a provider listed in the pattern table without a fixture exercising it fails the suite.
+
+<!-- narrative-moved:src/frob/security/_redact.py:65:T-0157 -->
+: Placeholder shapes inside a token that make it obviously non-real
+: regardless of provider (T-0157: "so docs and tests stay writable").
+: Checked case-insensitively against the matched token text only, never
+: the whole line (a real key sitting next to the word "example" in prose
+: must still fire).
+:
+: T-0968: the bare words `example`/`fake` are DROPPED from this tuple
+: (gates-quality audit finding 3's second complaint -- `_looks_fake` used
+: to suppress any token merely CONTAINING one of these substrings,
+: unanchored, so a real-shaped key sitting next to "EXAMPLE" discharged
+: for free with no marker at all -- AWS's own canonical placeholder access
+: key id (`AKIA` + `IOSFODNN7EXAMPLE`, split here so this comment does not
+: itself trip this repo's own tightened gate/GH013-push-protection checks)
+: used to slip past this way). `changeme`/`placeholder` are kept: both are
+: template-only words no
+: real provider token format ever legitimately contains, so they carry
+: none of `example`/`fake`'s false-negative risk. The anchored
+: template-shape (`_KNOWN_TEMPLATE_SHAPE_RE`) and low-entropy-phrase
+: (`_looks_low_entropy` + `_PLACEHOLDER_PHRASE_RE`) checks below are the
+: only path left for an `example`/`fake`-flavored fixture token; an honest
+: fixture should carry `frob:secret-fake reason="..."` instead.

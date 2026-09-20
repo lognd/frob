@@ -69,6 +69,13 @@ scope_changes:
     anchors in the same docs these modules already point at
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: condense frob-check cmdline-token classifier history into T-2473 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3676
+  new_length: 5640
 evidence:
 - tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
 - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
@@ -215,3 +222,34 @@ POSITIVE CONTROLS:
   - must-still-complete: work does not silently drop because a check
     was refused or queued -- a deferred check must be visibly deferred,
     per the fail-loudly doctrine (T-2391), not skipped.
+
+<!-- narrative-moved:src/frob/process/_proc_scan.py:460:T-2473 -->
+frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473
+frob:ticket T-2473
+: `cmdline` shape identifying a live `frob check` invocation -- matches
+: the two argv tokens `frob`/`check` appearing as SEPARATE tokens (never
+: a substring match, which would also fire on `frob ticket check-repro`
+: or a path containing the word "check"). `frob`/`check` are matched
+: independently rather than as one fixed substring because the CLI entry
+: point varies by invocation shape (`frob check ...`, `uv run frob check
+: ...`, `.venv/bin/frob check ...`) but the token pair is constant across
+: all of them. Compiled against RAW cmdline bytes (NUL-separated argv,
+: kept as-is rather than replaced with spaces) so token-boundary matching
+: is exact.
+frob:waive COV007 reason="docs/modules/process.md's Concurrent-check advisory \
+(T-2473) section documents several symbols under one section, not just a public \
+entry point -- the many-symbols-one-section convention this repo already accepted \
+for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
+: T-3072: `_is_frob_check_process` used to carry its OWN
+: `_FROB_TOKEN_RE = re.compile(rb"(?:^|/)frob\x00")` here -- the exact
+: same anchor bug T-3072 found and fixed in `scripts/fleet_status.py`'s
+: equivalent classifier (`^` only anchors the WHOLE cmdline blob's
+: start, not each NUL-delimited token, so a `frob` token that is neither
+: the very first token nor preceded by a literal `/` -- exactly `python
+: -m frob check ...`'s shape -- never matched). A THIRD copy of the same
+: broken pattern, in this same file, undercounting `count_running_
+: checks` for the fleet's own dominant `-m frob` invocation shape.
+: Replaced with `_is_live_check_process` (T-3072's whole-token
+: classifier, defined above `_forkserver_root_is_live_check`) rather
+: than patching the regex a third time -- DUP001: one classifier, one
+: home.

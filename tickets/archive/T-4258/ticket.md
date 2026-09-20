@@ -96,6 +96,12 @@ body_changes:
   at: '2026-09-07'
   old_length: 3019
   new_length: 4187
+- mode: append
+  reason: condense idle-termination owner-directive narrative into T-4258 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4186
+  new_length: 5384
 evidence:
 - tests/test_serve_daemon.py::TestIdleSelfTermination::test_record_useful_work_updates_the_timestamp
 - tests/test_serve_daemon.py::TestIdleSelfTermination::test_never_having_worked_is_measured_from_start_time
@@ -229,3 +235,22 @@ poll that finds nothing to do is idleness, not activity, or the check will never
 fire on precisely the daemon it needs to catch. The instance measured here was
 polling every few minutes throughout its nineteen hours; a heartbeat-based
 liveness check would have called it healthy the entire time.
+
+<!-- narrative-moved:src/frob/serve/_daemon.py:96:T-4258 -->
+frob:ticket T-4258
+Owner directive (added after a real 19-hour-old daemon had to be killed
+by hand): more than one hour with nothing to do means death. This is a
+SEPARATE obligation from releasing the graph-cache lock between polls
+(T-4258's other finding) -- a daemon that holds no lock at all could
+still, in principle, outlive its usefulness for most of a day with
+nobody noticing. `_run_daemon_cycle` records a fresh timestamp here only
+when a cycle did USEFUL WORK (see `_record_useful_work` and its call
+sites in `_poll_post_land`/`_poll_rebase_bot`/`_poll_verify_worker`
+below) -- never merely because the poll loop executed. The instance
+measured here had been polling faithfully, finding nothing to do, every
+few minutes for nineteen hours straight; a heartbeat/loop-ran signal
+would have called that healthy the entire time.
+frob:waive COV001 reason="covered by this module's own new docstring section \
+(T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
+docs/modules/serve.md file for one constant -- same doc-anchor scope-closure tension \
+this file's own COV007 waivers document (T-1010/T-1937/T-3903)"

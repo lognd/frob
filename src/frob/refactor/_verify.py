@@ -56,24 +56,7 @@ def _parse_touched_python_files(
     for path in touched_files:
         if not path.is_file():
             continue
-        # T-1885: `touched_files` is every path a `RefactorPlan.reference_
-        # ops` entry rewrote -- not just Python source. A non-`.py` carrier
-        # (a `tickets/<id>/ticket.md` evidence citation, T-1546; a
-        # `docs/design/registry/*.yaml` registry citation, T-1200) reaching
-        # `ast.parse` unconditionally is not Python and predictably raises
-        # `SyntaxError` on ordinary prose/YAML content (observed: "leading
-        # zeros in decimal integer literals are not permitted" parsing a
-        # ticket.md's `T-0001`-shaped id) -- which this function correctly
-        # reported as a failed `VerifyOutcome` (never silently swallowed as
-        # a crash), but that failure was spurious AND indistinguishable
-        # from a genuine one: nothing about the actual rewrite was broken,
-        # only this check's blind assumption that every touched file is
-        # Python. A non-`.py` file is recorded in `skipped` -- disclosed
-        # explicitly, never silently folded into either `passed=True`
-        # ("I looked and it's fine") or `passed=False` ("I looked and it's
-        # broken") -- rather than being handed to `ast.parse` at all. This
-        # function's whole job is Python syntax/import resolution; a
-        # non-Python file was never a real candidate for it.
+        # see T-1885 for the history behind this
         if path.suffix != ".py":
             skipped.append(str(path))
             continue

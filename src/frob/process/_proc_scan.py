@@ -191,25 +191,7 @@ def _forkserver_cmdline_matches(pid: int, proc: Path) -> bool:
     )
 
 
-# frob:ticket T-3072
-#: `frob check`'s own argv shape, as separate NUL-separated `/proc/<pid>/
-#: cmdline` tokens: a live check process's cmdline always carries a token
-#: that IS (not merely contains) the literal `frob` -- either the
-#: executable's own basename (`.../bin/frob check ...`) or the module
-#: name after `-m` (`python -m frob check ...`, this fleet's own dominant
-#: invocation shape under `uv run`) -- plus a separate `check` token
-#: somewhere after it. T-3072's own live-fleet evidence: `scripts/fleet_
-#: status.py`'s equivalent classifier (`_FROB_CHECK_TOKEN_RE = re.compile
-#: (rb"(?:^|/)frob\x00")`) does NOT match this shape -- `^` only anchors
-#: the WHOLE cmdline blob's start, not each NUL-delimited token, so a
-#: `frob` token that is neither the very first token nor preceded by a
-#: literal `/` (exactly the `-m frob` case: the token before it is `-m`,
-#: not a path) never matches, and two live `python -m frob check ...`
-#: launchers were measured falsely reported ORPHANED as a direct result
-#: (T-3072's Done report; T-3093 fixes that regex in `scripts/fleet_
-#: status.py` itself). This module's own classifier below compares whole
-#: TOKENS after splitting on `\x00`, never a regex over the raw joined
-#: bytes, so it has no equivalent anchor bug by construction.
+# see T-3072 for the history behind this
 _LIVE_CHECK_EXE_TOKEN = b"frob"
 _LIVE_CHECK_SUBCOMMAND_TOKEN = b"check"
 
@@ -459,37 +441,11 @@ def _reap_orphaned_pids(
 
 # frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473
 # frob:ticket T-2473
-#: `cmdline` shape identifying a live `frob check` invocation -- matches
-#: the two argv tokens `frob`/`check` appearing as SEPARATE tokens (never
-#: a substring match, which would also fire on `frob ticket check-repro`
-#: or a path containing the word "check"). `frob`/`check` are matched
-#: independently rather than as one fixed substring because the CLI entry
-#: point varies by invocation shape (`frob check ...`, `uv run frob check
-#: ...`, `.venv/bin/frob check ...`) but the token pair is constant across
-#: all of them. Compiled against RAW cmdline bytes (NUL-separated argv,
-#: kept as-is rather than replaced with spaces) so token-boundary matching
-#: is exact.
+# frob:ticket T-3072
 # frob:waive COV007 reason="docs/modules/process.md's Concurrent-check advisory \
 # (T-2473) section documents several symbols under one section, not just a public \
 # entry point -- the many-symbols-one-section convention this repo already accepted \
 # for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
-#: T-3072: `_is_frob_check_process` used to carry its OWN
-#: `_FROB_TOKEN_RE = re.compile(rb"(?:^|/)frob\x00")` here -- the exact
-#: same anchor bug T-3072 found and fixed in `scripts/fleet_status.py`'s
-#: equivalent classifier (`^` only anchors the WHOLE cmdline blob's
-#: start, not each NUL-delimited token, so a `frob` token that is neither
-#: the very first token nor preceded by a literal `/` -- exactly `python
-#: -m frob check ...`'s shape -- never matched). A THIRD copy of the same
-#: broken pattern, in this same file, undercounting `count_running_
-#: checks` for the fleet's own dominant `-m frob` invocation shape.
-#: Replaced with `_is_live_check_process` (T-3072's whole-token
-#: classifier, defined above `_forkserver_root_is_live_check`) rather
-#: than patching the regex a third time -- DUP001: one classifier, one
-#: home.
-
-
-# frob:ticket T-2473
-# frob:ticket T-3072
 def _is_frob_check_process(pid: int, proc: Path, self_pid: int) -> bool:
     """`True` when `<proc>/<pid>/cmdline` names a live `frob check`
     invocation, excluding `self_pid` (a process never counts itself as

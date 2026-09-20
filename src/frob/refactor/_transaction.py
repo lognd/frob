@@ -285,22 +285,7 @@ def build_plan(
     # rewrite.
     reference_ops = reference_ops + repoint_ops
 
-    # T-3596 gaps 1+3: `carry_forward_ops` MUST land in `dest_file_path`
-    # BEFORE `append_op`'s own append of the moved symbol's body --
-    # `_apply_ops_to_file` writes every append-kind op (`start_line=-1`)
-    # targeting one file in LIST order, so a needed-import op folded into
-    # `reference_ops` (which always comes AFTER `move_ops` in `plan.
-    # all_ops`) would land physically BELOW the class/function it is
-    # meant to satisfy -- syntactically valid (a module-level statement
-    # can follow a class def) but semantically useless: the class body
-    # already evaluated its base-class expression by the time that
-    # import line runs, so the `NameError` this fix exists to prevent
-    # still fires. Folding it into `move_ops` INSTEAD (between `delete_
-    # op` and `append_op`) keeps `move_ops` a variable-length tuple only
-    # when a cross-file move actually needed a carry-forward import --
-    # `TestBuildPlan.test_plan_includes_move_and_reference_ops`'s
-    # same-file rename case, which never populates `carry_forward_ops`,
-    # keeps its existing `len(plan.move_ops) == 2` contract unchanged.
+    # see T-3596 for the history behind this
     plan = RefactorPlan(
         kind=kind,
         source=resolved,

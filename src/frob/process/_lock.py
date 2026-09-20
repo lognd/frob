@@ -77,23 +77,7 @@ except ImportError:  # pragma: no cover -- windows-only in this repo's CI
 _log = get_logger(__name__)
 
 
-#: T-3577: ceiling `_msvcrt_acquire_blocking`'s poll loop retries against,
-#: in seconds, before raising `PortableLockUnavailable` instead of retrying
-#: forever. `fcntl.flock` without `LOCK_NB` genuinely blocks indefinitely
-#: on POSIX, but that is safe there because re-locking the SAME fd (the
-#: shape every call site in this codebase uses) is a no-op -- `msvcrt.
-#: locking` has no such same-fd/same-process reentrancy (T-3577's own
-#: measured finding: none of the ported call sites -- `frob.tickets.
-#: _store`/`_land`/`_leases`/`_land_queue`/`_mutation_sweep_queue`/
-#: `_new_renumber`/`_land_git_ops`, `frob.serve._socketd`, `frob.testing.
-#: _coverage_wait` -- carry `derived_state_lock`'s own same-process
-#: reentrancy guard), so a nested same-process re-acquire of the same lock
-#: retries against itself FOREVER on Windows with no bound at all. Chosen
-#: generous (well above any legitimate cross-process contention this
-#: codebase's own locks are held for) so a genuinely slow but healthy
-#: contender never trips it -- this exists to convert an indefinite,
-#: silent hang into a loud, bounded failure, not to police normal
-#: contention latency.
+# see T-3577 for the history behind this
 _MSVCRT_BLOCKING_ACQUIRE_CEILING_S = 120.0
 
 
@@ -311,23 +295,7 @@ _LOCK_REL = Path(".frob") / "derived.lock"
 # OS lock; only same-thread re-entry is short-circuited.
 _lock_local = threading.local()
 
-# frob:ticket T-0918
-# T-0918: PROCESS-wide (not thread-local) reentrancy signal. `_lock_local`
-# above only answers "does THIS thread already hold the lock" -- it says
-# nothing about a SIBLING thread in the same process (e.g. `frob check`'s
-# `ThreadPoolExecutor` gate workers) holding it concurrently. `flock(2)`
-# itself gives no same-process reentrancy across distinct open file
-# descriptions: a worker thread that naively requested EXCLUSIVE while the
-# main thread already holds SHARED on the same lock file would genuinely
-# block against its own process's other thread -- a real deadlock, not a
-# logical contract violation (see T-0879's Done report and this module's
-# own docstring for the flock(2) citation). `_process_held_counts` tracks,
-# per lock-file path, how many distinct real OS-level acquisitions (across
-# ALL threads, ANY mode) are currently outstanding in THIS process; it is
-# incremented exactly once per first-time (non-reentrant) acquire and
-# decremented exactly once when that acquisition's final release happens,
-# guarded by `_process_registry_lock` since multiple threads race on it
-# concurrently. `derived_state_write_lock` below is the only reader.
+# see T-0918 for the history behind this
 _process_registry_lock = threading.Lock()
 _process_held_counts: dict[str, int] = {}
 

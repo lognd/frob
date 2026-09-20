@@ -64,6 +64,12 @@ body_changes:
   at: '2026-08-26'
   old_length: 4218
   new_length: 5534
+- mode: append
+  reason: condense Protocol structural-conformance fix history into T-2981 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5533
+  new_length: 6636
 evidence:
 - tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
 - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
@@ -140,3 +146,21 @@ single-platform type check. A CI step that runs `ty` with an explicit Windows
 target from Linux would catch this class before it reaches a Windows runner.
 
 frob:no-behavior-change reason="T-2981 is a typing/structure-only fix: it declares a Protocol (_DaemonServerLike) and a class-level attribute annotation (_LeaseConnection._sock) so ty check resolves the daemon server's attribute surface identically on every sys.platform target. No runtime code path, branch, or behavior changes on any platform -- run_socket_daemon's Windows refusal and the real POSIX _DaemonServer class body are both untouched. The defect this ticket fixes is a CI type-checker diagnostic (14 unresolved-attribute findings under a Windows-target ty check), not a runtime bug reachable by any test -- there is no runtime path to make a pytest test fail at main and pass at the fix, since nothing at runtime changed. The evidence bound (tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits, tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close) is a regression guard proving the touched runtime paths still work identically, matching this directive's own must-still-pass requirement. The real proof of the fix is `uv run ty check --python-platform win32 src` going from 14 diagnostics to 0, reported in the Done report -- not a pytest repro, because the defect is a type-checker finding, not a runtime one."
+
+<!-- narrative-moved:src/frob/serve/_socketd.py:683:T-2981 -->
+T-2981: the public attribute surface `_RequestHandler`/`_idle_monitor`
+read off a live server (`root`, `idle_tracker`, `event_bus`,
+`lease_manager`, `shutdown`) -- declared once, UNCONDITIONALLY, as a
+structural `Protocol` so both the real POSIX `_DaemonServer` (below) and
+the Windows placeholder can be checked against the SAME contract on
+every `ty --python-platform` target. This is the fix for T-2961's own
+regression: annotating call sites as `_DaemonServer` directly meant a
+Windows-target check evaluated only the `else` branch's bare
+placeholder, which carries none of these attributes, so every access
+came back `unresolved-attribute` (14 diagnostics, none of them a real
+runtime bug -- `run_socket_daemon` already refuses before ever
+constructing a server on Windows). The real class needs no change: `ty`
+verifies structural conformance from `__init__`'s own attribute
+assignments, unconditionally-defined methods/attributes on a Protocol
+subject are checked without regard to which platform branch defined the
+concrete class.

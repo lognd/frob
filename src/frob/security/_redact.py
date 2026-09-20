@@ -62,43 +62,10 @@ _FAKE_MARKER = "frob:secret-fake"
 #: free -- see `_fake_marker_reason`/`_bare_fake_marker`/`_sec004_violation`.
 _FAKE_MARKER_REASON_RE = re.compile(r'frob:secret-fake\s+reason="([^"]*)"')
 
-#: Placeholder shapes inside a token that make it obviously non-real
-#: regardless of provider (T-0157: "so docs and tests stay writable").
-#: Checked case-insensitively against the matched token text only, never
-#: the whole line (a real key sitting next to the word "example" in prose
-#: must still fire).
-#:
-#: T-0968: the bare words `example`/`fake` are DROPPED from this tuple
-#: (gates-quality audit finding 3's second complaint -- `_looks_fake` used
-#: to suppress any token merely CONTAINING one of these substrings,
-#: unanchored, so a real-shaped key sitting next to "EXAMPLE" discharged
-#: for free with no marker at all -- AWS's own canonical placeholder access
-#: key id (`AKIA` + `IOSFODNN7EXAMPLE`, split here so this comment does not
-#: itself trip this repo's own tightened gate/GH013-push-protection checks)
-#: used to slip past this way). `changeme`/`placeholder` are kept: both are
-#: template-only words no
-#: real provider token format ever legitimately contains, so they carry
-#: none of `example`/`fake`'s false-negative risk. The anchored
-#: template-shape (`_KNOWN_TEMPLATE_SHAPE_RE`) and low-entropy-phrase
-#: (`_looks_low_entropy` + `_PLACEHOLDER_PHRASE_RE`) checks below are the
-#: only path left for an `example`/`fake`-flavored fixture token; an honest
-#: fixture should carry `frob:secret-fake reason="..."` instead.
+# see T-0157 for the history behind this
 _PLACEHOLDER_WORDS = ("changeme", "placeholder")
 _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
-#: Placeholder PHRASES (as opposed to single words above) -- T-0219: a
-#: fixture like `xoxb-your-...-here` reads as an obvious template
-#: to a human but contains none of `_PLACEHOLDER_WORDS`. Matched
-#: case-insensitively against the token text, same as `_PLACEHOLDER_WORDS`.
-#:
-#: BYPASS FIX (T-0219 review round 2): this regex alone is a `.search()`
-#: substring test -- a real, high-entropy token that merely CONTAINS
-#: `your-`/`insert-`/`-here` anywhere (e.g. a live key naming a tenant
-#: "your-company") used to suppress SEC001 unconditionally. It is now only
-#: ever consulted through `_looks_fake`, gated by EITHER
-#: `_KNOWN_TEMPLATE_SHAPE_RE` (a whole-token structural anchor) OR
-#: `_looks_low_entropy` (the phrase must be sitting inside human-written
-#: template text, not real secret noise). Never call `.search()` on this
-#: pattern directly to decide fakeness again -- go through `_looks_fake`.
+# see T-0219 for the history behind this
 _PLACEHOLDER_PHRASE_RE = re.compile(r"(-here\b|\byour-|\binsert-)", re.IGNORECASE)
 #: Whole-token ANCHOR (T-0219 bypass fix): a known template *shape* --
 #: short provider-ish prefix, then `your-`/`insert-`, then more words,
@@ -465,24 +432,7 @@ _PATTERNS: tuple[_SecretPattern, ...] = (
         r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |)PRIVATE KEY-----",
         "-----BEGIN ... PRIVATE KEY-----",
     ),
-    # T-0427 (A.4 "Basic-auth in URL"): generic scheme, colon-slash-slash,
-    # user, colon, password, at-sign, host credential-in-URL shape (detect-
-    # secrets `BasicAuthDetector`). (Written out in prose above, not as one
-    # contiguous example string, so this comment does not self-trip the
-    # very pattern it describes -- see `TestGateIsGreenOnItself` below.)
-    # Deliberately LAST among the URL-shaped patterns (ordering discipline
-    # at top of this table) -- `mongodb-atlas-uri` above is a strict subset
-    # of this shape and must claim its span first, or every Mongo URI would
-    # double-report under both providers.
-    #
-    # Host segment requires an embedded dot (`[^\s/@]+\.[^\s/@]+`) rather
-    # than a bare `[^\s/]+` -- T-0427 discovery: the un-anchored version
-    # matched `docs/design/secrets-pii-corpus.md`'s own prose row
-    # documenting this exact provider format (a placeholder literal
-    # ending in the single word "host", no dot), a real false positive on
-    # an existing tracked file rather than a fixture. Requiring a dotted
-    # hostname keeps the pattern honest for real URLs (which always have
-    # one) while no longer tripping on bare descriptive placeholder words.
+    # see T-0427 for the history behind this
     _pat(
         "basic-auth-url",
         "SEC001",

@@ -93,23 +93,11 @@ _ttl_skip_logged: set[tuple[Path, str]] = set()
 # frob:doc docs/modules/serve.md#daemon-jobs
 DEFAULT_POLL_INTERVAL_S = 20.0
 
-# frob:ticket T-4258
-# Owner directive (added after a real 19-hour-old daemon had to be killed
-# by hand): more than one hour with nothing to do means death. This is a
-# SEPARATE obligation from releasing the graph-cache lock between polls
-# (T-4258's other finding) -- a daemon that holds no lock at all could
-# still, in principle, outlive its usefulness for most of a day with
-# nobody noticing. `_run_daemon_cycle` records a fresh timestamp here only
-# when a cycle did USEFUL WORK (see `_record_useful_work` and its call
-# sites in `_poll_post_land`/`_poll_rebase_bot`/`_poll_verify_worker`
-# below) -- never merely because the poll loop executed. The instance
-# measured here had been polling faithfully, finding nothing to do, every
-# few minutes for nineteen hours straight; a heartbeat/loop-ran signal
-# would have called that healthy the entire time.
 # frob:waive COV001 reason="covered by this module's own new docstring section \
 # (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
 # docs/modules/serve.md file for one constant -- same doc-anchor scope-closure tension \
 # this file's own COV007 waivers document (T-1010/T-1937/T-3903)"
+# see T-4258 for the history behind this
 IDLE_TERMINATION_S = 3600.0
 
 #: Last time ANY daemon job for a given root actually performed useful
@@ -130,8 +118,7 @@ _LAST_USEFUL_WORK_MONOTONIC: dict[str, float] = {}
 # frob:ticket T-4289
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests \
-# tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_t\
-# he_timestamp kind="unit"
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_the_timestamp kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="new symbol, covered by this module's own new docstring \
 # section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
 # docs/modules/serve.md file -- same doc-anchor scope-closure tension this file's own \
@@ -153,14 +140,11 @@ def _record_useful_work(
 # frob:ticket T-4289
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests \
-# tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_t\
-# erminal kind="unit"
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_terminal kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_is_termin\
-# al kind="unit"
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_is_terminal kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_is_measu\
-# red_from_start_time kind="unit"
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_is_measured_from_start_time kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="new symbol, covered by this module's own new docstring \
 # section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
 # docs/modules/serve.md file -- same doc-anchor scope-closure tension this file's own \
@@ -700,14 +684,11 @@ def _default_terminate() -> None:
 
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests \
-# tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_st\
-# ops kind="unit"
+# tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates_after_t\
-# he_idle_ceiling kind="unit"
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates_after_the_idle_ceiling kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_terminate_whil\
-# e_work_keeps_happening kind="unit"
+# tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_terminate_while_work_keeps_happening kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
 # documents this daemon internal; demoted to private in this ticket (frob-exports: \
 # every real caller, including tests, already accessed it module-qualified) but \

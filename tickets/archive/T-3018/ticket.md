@@ -67,6 +67,13 @@ triage_changes:
     run, which is the give-up scenario frob status was built to prevent'
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: condense kernel32-resolution/ty-platform-guard rationale into T-3018 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2162
+  new_length: 3855
 evidence:
 - tests/unit/test_process_pid_liveness.py::TestPidAlivePosix::test_current_process_is_alive
 - tests/unit/test_process_pid_liveness.py::TestPidAlivePosix::test_process_lookup_error_is_dead
@@ -127,3 +134,31 @@ traffic through frob ticket land / frob ticket work.
 
 Filed while working T-3003; out of that ticket's declared scope
 (src/frob/tickets/_land.py and _leases.py were not in scope).
+
+<!-- narrative-moved:src/frob/process/_pid_liveness.py:36:T-3018 -->
+frob:ticket T-3018
+frob:ticket T-3191
+: The Windows `kernel32` handle, or `None` on any platform where
+: `ctypes.windll` does not exist (every non-Windows platform). Resolved
+: once at import time, the same "optional backend probed once at import,
+: `None` everywhere it is unavailable" shape `frob.process._lock`'s own
+: `msvcrt`/`fcntl` pair uses (T-2934) -- a test fakes the Windows path on
+: Linux CI by monkeypatching THIS name directly (`monkeypatch.setattr(
+: _pid_liveness, "_kernel32", FakeKernel32())`), never by monkeypatching
+: `sys.platform` or the shared global `ctypes` module.
+:
+: T-3191: `ctypes.windll` is likewise declared only under
+: `if sys.platform == "win32":` in typeshed's `ctypes/__init__.pyi`, so
+: this used to be a bare `ctypes.windll.kernel32` wrapped in
+: `try/except AttributeError` -- a RUNTIME guard, invisible to a static
+: checker, which forced a `ty: ignore[unresolved-attribute]` suppression that was
+: then a matched-opposite-error: REQUIRED when `ty` checks a Linux
+: target (where `windll` truly does not exist) and reported as an
+: unused suppression, itself an error, when `ty` checks a Windows
+: target (where `windll` resolves and the ignore has nothing to
+: suppress) -- no single static suppression set can satisfy both. The
+: `if sys.platform == "win32":` guard below is a COMPILE-TIME-visible
+: check `ty` narrows on per `--python-platform` target exactly like
+: typeshed's own stub does: on a win32 target the body is checked with
+: `windll` available; on every other target the branch is unreachable
+: and never checked at all. Needs no `ty: ignore` in either direction.

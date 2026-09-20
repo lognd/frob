@@ -35,6 +35,12 @@ body_changes:
   at: '2026-09-01'
   old_length: 6426
   new_length: 9532
+- mode: append
+  reason: condense carry-forward-import ordering rationale into T-3596 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 9532
+  new_length: 10638
 evidence:
 - tests/test_refactor.py::TestGapRegressions::test_gap1_move_carries_forward_default_arg_import
 - tests/test_refactor.py::TestGapRegressions::test_gap2_move_repoints_same_module_bare_name_reference
@@ -211,3 +217,21 @@ T-3591 found four MORE gap classes in the same move/split verbs (tests/test_tick
    most dangerous of the six: it silently orphans OTHER tickets'
    evidence and only surfaces at land time via OrphanedEvidenceDeletion,
    not at split time.
+
+<!-- narrative-moved:src/frob/refactor/_transaction.py:288:T-3596 -->
+T-3596 gaps 1+3: `carry_forward_ops` MUST land in `dest_file_path`
+BEFORE `append_op`'s own append of the moved symbol's body --
+`_apply_ops_to_file` writes every append-kind op (`start_line=-1`)
+targeting one file in LIST order, so a needed-import op folded into
+`reference_ops` (which always comes AFTER `move_ops` in `plan.
+all_ops`) would land physically BELOW the class/function it is
+meant to satisfy -- syntactically valid (a module-level statement
+can follow a class def) but semantically useless: the class body
+already evaluated its base-class expression by the time that
+import line runs, so the `NameError` this fix exists to prevent
+still fires. Folding it into `move_ops` INSTEAD (between `delete_
+op` and `append_op`) keeps `move_ops` a variable-length tuple only
+when a cross-file move actually needed a carry-forward import --
+`TestBuildPlan.test_plan_includes_move_and_reference_ops`'s
+same-file rename case, which never populates `carry_forward_ops`,
+keeps its existing `len(plan.move_ops) == 2` contract unchanged.

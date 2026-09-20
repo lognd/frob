@@ -30,6 +30,12 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 3526
+- mode: append
+  reason: condense anchor-bug fix history into T-3072 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3525
+  new_length: 4872
 evidence:
 - tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_of_orphaned_forkserver_is_reaped
 - tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_under_a_live_check_is_never_reaped
@@ -115,3 +121,24 @@ ACCEPTANCE
 - Must-fire fixture: a genuinely orphaned forkserver is reaped.
 - The command declares its platform boundary loudly rather than silently
   no-opping off Linux.
+
+<!-- narrative-moved:src/frob/process/_proc_scan.py:194:T-3072 -->
+frob:ticket T-3072
+: `frob check`'s own argv shape, as separate NUL-separated `/proc/<pid>/
+: cmdline` tokens: a live check process's cmdline always carries a token
+: that IS (not merely contains) the literal `frob` -- either the
+: executable's own basename (`.../bin/frob check ...`) or the module
+: name after `-m` (`python -m frob check ...`, this fleet's own dominant
+: invocation shape under `uv run`) -- plus a separate `check` token
+: somewhere after it. T-3072's own live-fleet evidence: `scripts/fleet_
+: status.py`'s equivalent classifier (`_FROB_CHECK_TOKEN_RE = re.compile
+: (rb"(?:^|/)frob\x00")`) does NOT match this shape -- `^` only anchors
+: the WHOLE cmdline blob's start, not each NUL-delimited token, so a
+: `frob` token that is neither the very first token nor preceded by a
+: literal `/` (exactly the `-m frob` case: the token before it is `-m`,
+: not a path) never matches, and two live `python -m frob check ...`
+: launchers were measured falsely reported ORPHANED as a direct result
+: (T-3072's Done report; T-3093 fixes that regex in `scripts/fleet_
+: status.py` itself). This module's own classifier below compares whole
+: TOKENS after splitting on `\x00`, never a regex over the raw joined
+: bytes, so it has no equivalent anchor bug by construction.

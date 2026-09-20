@@ -10,12 +10,25 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_lock.py
 - src/frob/dup/_pipeline.py
 - src/frob/graph/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: condense process-held reentrancy-count rationale into T-0918 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2903
+  new_length: 4119
 evidence:
 - tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_standalone_rebuild_takes_exclusive
 - tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_nested_inside_shared_holder_does_not_deadlock
@@ -24,6 +37,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0879 wired `derived_state_lock(root, exclusive=True)` into the two
 writers where it is safe to do so unconditionally: `frob.mutate.
@@ -73,3 +89,22 @@ process already holds ANY mode of the lock). `src/frob/check/**` and
 `src/frob/gates/**` are read-only reference points, not touched.
 
 See T-0879's Done report for the full deadlock trace and citations.
+
+<!-- narrative-moved:src/frob/process/_lock.py:314:T-0918 -->
+frob:ticket T-0918
+T-0918: PROCESS-wide (not thread-local) reentrancy signal. `_lock_local`
+above only answers "does THIS thread already hold the lock" -- it says
+nothing about a SIBLING thread in the same process (e.g. `frob check`'s
+`ThreadPoolExecutor` gate workers) holding it concurrently. `flock(2)`
+itself gives no same-process reentrancy across distinct open file
+descriptions: a worker thread that naively requested EXCLUSIVE while the
+main thread already holds SHARED on the same lock file would genuinely
+block against its own process's other thread -- a real deadlock, not a
+logical contract violation (see T-0879's Done report and this module's
+own docstring for the flock(2) citation). `_process_held_counts` tracks,
+per lock-file path, how many distinct real OS-level acquisitions (across
+ALL threads, ANY mode) are currently outstanding in THIS process; it is
+incremented exactly once per first-time (non-reentrant) acquire and
+decremented exactly once when that acquisition's final release happens,
+guarded by `_process_registry_lock` since multiple threads race on it
+concurrently. `derived_state_write_lock` below is the only reader.

@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/_verify.py
 - tests/test_refactor.py
@@ -19,6 +22,8 @@ scope:
 - src/frob/refactor/_cli.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_refactor.py
@@ -45,6 +50,13 @@ scope_changes:
     spirit)'
   actor: logan
   at: '2026-08-08'
+body_changes:
+- mode: append
+  reason: condense non-python touched-file skip rationale into T-1885 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1617
+  new_length: 2812
 evidence:
 - tests/test_refactor.py::TestVerify::test_import_resolution_skips_non_python_touched_file
 - tests/test_refactor.py::TestVerify::test_import_resolution_still_catches_syntax_error_in_py_file_among_non_py
@@ -54,6 +66,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Found while writing T-1854's regression tests.
 `verify_import_resolution` (src/frob/refactor/_verify.py) calls
@@ -83,3 +96,23 @@ skip a file whose suffix cannot possibly be Python source, in
 touching a non-Python file (a ticket.md carrier is the simplest real
 repro) through `run_refactor` and asserts it does NOT roll back for
 this reason.
+
+<!-- narrative-moved:src/frob/refactor/_verify.py:59:T-1885 -->
+T-1885: `touched_files` is every path a `RefactorPlan.reference_
+ops` entry rewrote -- not just Python source. A non-`.py` carrier
+(a `tickets/<id>/ticket.md` evidence citation, T-1546; a
+`docs/design/registry/*.yaml` registry citation, T-1200) reaching
+`ast.parse` unconditionally is not Python and predictably raises
+`SyntaxError` on ordinary prose/YAML content (observed: "leading
+zeros in decimal integer literals are not permitted" parsing a
+ticket.md's `T-0001`-shaped id) -- which this function correctly
+reported as a failed `VerifyOutcome` (never silently swallowed as
+a crash), but that failure was spurious AND indistinguishable
+from a genuine one: nothing about the actual rewrite was broken,
+only this check's blind assumption that every touched file is
+Python. A non-`.py` file is recorded in `skipped` -- disclosed
+explicitly, never silently folded into either `passed=True`
+("I looked and it's fine") or `passed=False` ("I looked and it's
+broken") -- rather than being handed to `ast.parse` at all. This
+function's whole job is Python syntax/import resolution; a
+non-Python file was never a real candidate for it.

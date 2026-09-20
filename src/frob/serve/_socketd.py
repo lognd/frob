@@ -680,22 +680,7 @@ class _RequestHandler(socketserver.StreamRequestHandler):
             self.wfile.flush()
 
 
-# T-2981: the public attribute surface `_RequestHandler`/`_idle_monitor`
-# read off a live server (`root`, `idle_tracker`, `event_bus`,
-# `lease_manager`, `shutdown`) -- declared once, UNCONDITIONALLY, as a
-# structural `Protocol` so both the real POSIX `_DaemonServer` (below) and
-# the Windows placeholder can be checked against the SAME contract on
-# every `ty --python-platform` target. This is the fix for T-2961's own
-# regression: annotating call sites as `_DaemonServer` directly meant a
-# Windows-target check evaluated only the `else` branch's bare
-# placeholder, which carries none of these attributes, so every access
-# came back `unresolved-attribute` (14 diagnostics, none of them a real
-# runtime bug -- `run_socket_daemon` already refuses before ever
-# constructing a server on Windows). The real class needs no change: `ty`
-# verifies structural conformance from `__init__`'s own attribute
-# assignments, unconditionally-defined methods/attributes on a Protocol
-# subject are checked without regard to which platform branch defined the
-# concrete class.
+# see T-2981 for the history behind this
 class _DaemonServerLike(Protocol):
     """Structural contract for whatever `_DaemonServer` resolves to on the
     running platform -- the attribute surface `_RequestHandler` and
