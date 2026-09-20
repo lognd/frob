@@ -9,7 +9,6 @@ created: '2026-09-19'
 priority: high
 blocked_by:
 - T-4760
-- T-4989
 parent: T-4757
 tier: ticket
 sprint: v0.537.0
@@ -112,3 +111,6 @@ Positive controls:
    current count is 39, so the test fails loudly before the fix);
 4. a test asserts every frob:doc anchor emitted by a template resolves to a
    heading that the same manifest renders.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4989 -- T-4989's own scope (src/frob/gates/_refs.py, tests/test_refs_gate.py) is leased by T-4770/T-4624, so it cannot be implemented right now either; narrowing T-4761 instead of waiting on it -- restoring refs.entrypoint parity across the 4 forked templates (matching shared/python's existing block) rather than the zero-rows ideal T-4989 would enable, and noting that gap explicitly rather than silently dropping it
