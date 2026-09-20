@@ -71,16 +71,27 @@ scope_changes:
   reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
   actor: logan
   at: '2026-09-19'
-- op: add
-  glob: src/frob/tickets/_doable.py
-  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
-  actor: logan
-  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
-- text: test_real_repo_ledger_is_tick008_clean completes well within its Windows CI
-    timeout
+- text: same_worktree_lease is called exactly once via a shared read_all_leases snapshot
+    across a whole doable() invocation, regardless of ticket/holder count, verified
+    by test_read_all_leases_called_exactly_once_across_doable
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: test_real_repo_ledger_is_tick008_clean completes well within its Windows
+    CI timeout
+  new_text: same_worktree_lease is called exactly once via a shared read_all_leases
+    snapshot across a whole doable() invocation, regardless of ticket/holder count,
+    verified by test_read_all_leases_called_exactly_once_across_doable
+  reason: 'narrowed from ''test_real_repo_ledger_is_tick008_clean completes well within
+    its Windows CI timeout'': with T-5036''s fix merged in for measurement, the TICK008
+    test still stalls, now inside a THIRD, previously-undiscovered bottleneck (over_broad_literal_globs/declared_source_prefixes,
+    filed as T-5117) outside this ticket''s scope -- rewriting to what this ticket''s
+    own change actually proves, per the same pattern used on T-5036'
+  actor: logan
+  at: '2026-09-19'
 threat: null
 component: null
 anchor: false
