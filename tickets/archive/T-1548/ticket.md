@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
 - src/frob/app/ticket_runner/_land_cmd.py
@@ -16,6 +20,8 @@ scope:
 - tests/test_gates_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_land_cmd.py
@@ -36,11 +42,33 @@ scope_changes:
     owned by T-1547 in this same worktree)
   actor: logan
   at: '2026-08-05'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve ticket_id argument rationale trimmed from _fix_engine.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 494
+  new_length: 1178
 evidence:
 - tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean
 - tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_no_ticket_id_is_a_no_op
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Follow-up from T-1531: insert '# frob:ticket <landing-id>' above a symbol when COV002 (changed-symbol-without-edge) fires and the diff producing it belongs to the landing ticket itself. Needs a Tier-A handler that reads COV002's finding (symbol + file:line) plus the landing ticket id from the caller (both _tier_a_pre_land_step and _apply_root_tier_a_fixes already have it), confirms the changed hunk actually belongs to that ticket's own diff, and inserts the directive line above the symbol.
+
+
+T-4709 follow-up (condensed from TIER_A_HANDLERS's comment block in
+src/frob/gates/_fix_engine.py, trimmed for DOCARCH002's 12-line cap):
+T-1548: every handler now takes a 4th `ticket_id: str | None` argument
+(the landing ticket's id, when `apply_tier_a_fixes` is called from a
+land context -- `None` for a bare `frob check --fix`) -- every existing
+handler simply ignores it, only `fix_cov002_ticket_directive_insertion`
+reads it, since inserting a `frob:ticket <id>` directive is the one
+Tier-A fix that structurally needs to know WHICH ticket is landing
+(there is no other way to derive that from `root`/`snapshot`/`queue`
+alone -- multiple tickets can be simultaneously open).
