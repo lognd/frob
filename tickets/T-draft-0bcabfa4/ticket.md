@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: critical
 parent: T-draft-0a0c7b43
 tier: ticket
-sprint: null
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'pure decision record (D-M9): no file scope until the owner
   rules'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: owner decision on D-M9 recorded verbatim, 2026-09-19 19:30
