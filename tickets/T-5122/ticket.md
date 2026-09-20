@@ -1,7 +1,7 @@
 ---
 id: T-5122
 title: land must fail when LAND-PROOF claims re-verification is SKIPPED-UNMEASURED
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -17,10 +17,19 @@ scope:
 - src/frob/tickets/_land_finalize.py
 - src/frob/tickets/_land_verify.py
 - tests/ticket_land_suite/test_land_proof_unmeasured.py
+- src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-5122: the claims-reverify outcome gate must run at land()''s own call
+    site, immediately after the outcome is computed and before the dry-run early return,
+    so the refusal is real for a dry run too'
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: sprint
   old_value: null
