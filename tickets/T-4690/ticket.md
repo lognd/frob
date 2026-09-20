@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4687
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -47,6 +47,13 @@ scope_changes:
 - op: remove
   glob: src/frob/app/ops_runner.py
   reason: T-draft-5658939f holds live lease on _ops.py; will re-add once it lands
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 body_changes:
