@@ -9,6 +9,10 @@ priority: medium
 parent: T-1137
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates.py
@@ -18,6 +22,8 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/_waive.py
@@ -44,6 +50,14 @@ scope_changes:
     in the same diff
   actor: logan
   at: '2026-07-29'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve TIER_A_HANDLERS design-review and ordering detail trimmed
+    from _fix_engine.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1084
+  new_length: 1963
 evidence:
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
@@ -83,6 +97,9 @@ acceptance:
   - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Add four more Tier-A handlers to src/frob/gates/_fix_engine.py (same
 protocol as the four T-1138/T-1177 already ship): frob fmt invocation for
@@ -100,3 +117,18 @@ existing four (promoting apply_tier_a_fixes's current positional-call
 list to a dict keyed by rule id, per docs/design/check-fix-engine.md's
 "Fix-handler protocol" section, so the fixability-registry-field ticket
 has a real table to scan).
+
+
+T-4709 follow-up (condensed from TIER_A_HANDLERS's comment block in
+src/frob/gates/_fix_engine.py, trimmed for DOCARCH002's 12-line cap):
+T-1261 promotes `apply_tier_a_fixes`'s prior positional-call list to an
+explicit dict keyed by rule id, per docs/design/check-fix-engine.md's
+"Fix-handler protocol" section, so the fixability-registry-field ticket
+has a real table to introspect by name. A handler whose OWN signature
+differs (three take (root, snapshot), one takes (root, queue),
+fix_waive004_stale_waiver takes extra keyword-only scope params) is
+adapted via a thin lambda -- T-1260's design-review advisory noted this
+inconsistency and deferred the minimal fix to this ticket; this dict IS
+that minimal fix, at the call-site layer only. Order in full:
+DOC007/DOC002/INV006-carry/FMT001/SUPPRESS001/REG010/REL002/DOCENUM001
+are pure rewrites with no ledger interaction.
