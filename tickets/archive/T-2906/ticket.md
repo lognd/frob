@@ -179,6 +179,13 @@ scope_changes:
   reason: split out of _dangerous_ops_other.py to stay under LARGE001's 800-line threshold
   actor: logan
   at: '2026-08-25'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _kinds.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1302
+  new_length: 2602
 evidence:
 - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_bash_pipe_to_shell_detected
 - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_bash_eval_detected
@@ -226,3 +233,25 @@ minimum, reasoned KNOWN_GAP citations in frob.lang._support's three
 status functions naming THIS ticket, so LANG003 stops firing as
 "unverified" and starts firing as "tracked, not silent" (the same WARN,
 not ERROR, posture every other disclosed gap gets).
+
+T-4718 sweep (condensed from
+src/frob/vet/_capability_registry/_kinds.py:9-25, the LANGUAGES block,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full
+original text, kept verbatim below.
+
+#: every language the matrix reasons about. C and C++ share one bucket
+#: (`c-cpp`) since the dangerous idioms -- `system`/`popen`/`exec*`/
+#: `dlopen`/`strcpy`-family -- are identical C ABI surface in both.
+#: T-2906: bash and csharp added -- each gets real `_DangerousOperation`
+#: patterns for its highest-value idioms (exec/eval/fetch_url/env/fs) in
+#: `_dangerous_ops_other.py`, plus generated `CAPABILITY_MATRIX_EXCUSES`
+#: cells (`_new_adapter_matrix_excuses` in `_matrix.py`, mirrors `frob.
+#: dup._exhaustiveness._non_python_excuses`'s generated-not-hand-copied
+#: shape) for every kind that genuinely has no idiom in that language.
+#: T-3492: java added, same discipline -- real patterns for its
+#: highest-value idioms (net/env-read/exec/deserialize) in the new
+#: `_dangerous_ops_java.py`, generated excuses for the rest.
+#: T-3493: cuda added, same discipline -- a `.cu`/`.cuh` file compiles
+#: with a HOST C/C++ compiler, so its real patterns in the new
+#: `_dangerous_ops_cuda.py` mirror c-cpp's own exec/fs/ffi/net entries
+#: verbatim (same C ABI), generated excuses for the rest.
