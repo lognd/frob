@@ -44,6 +44,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 2476
   new_length: 4098
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4098
+  new_length: 4096
 designated_repro_test: null
 acceptance:
 - text: Given two branches off the same main, when each files one draft ticket and
@@ -123,7 +130,7 @@ Target shape -- a branch NEVER owns a number:
 - tickets are created as content-addressed T-draft-<hash> ids; a hash cannot collide across
   branches, so two collaborators filing simultaneously never conflict
 - a number is assigned ONLY when a ticket reaches the trunk
-- `frob ticket sync --base main` absorbs main's ledger, renumbers the branch's colliding or
+- the planned ticket sync verb absorbs main's ledger, renumbers the branch's colliding or
   draft ids, and REWRITES EVERY CITATION: frob:ticket, frob:todo, follow_up=, blocked_by,
   parent, and done-report links. This subsumes T-3929's dangling-citation problem, which is
   the same rewrite performed at a different moment.
