@@ -13,7 +13,7 @@ blocked_by:
 - T-4230
 parent: T-4230
 tier: ticket
-sprint: null
+sprint: v0.540.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -28,6 +28,12 @@ triage_changes:
   new_value: T-4230
   reason: 'follow-up: wire entrypoint_coverage_violations built under T-4230 into
     the gate pipeline'
+  actor: logan
+  at: '2026-09-19'
+- field: sprint
+  old_value: null
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 body_changes:
