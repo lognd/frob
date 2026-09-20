@@ -2,7 +2,7 @@
 id: T-4722
 title: 'Source narrative C3: tickets/ (land pipeline, models, store) -- 19 files,
   61 runs, 1388 lines'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'

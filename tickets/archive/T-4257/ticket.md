@@ -51,6 +51,47 @@ scope_changes:
     recursive kernel stack depth on Windows'' smaller default thread stack'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: 'T-4257: deliberately not git -C scratch config core.autocrlf false --
+
+    core.autocrlf is a REPOSITORY-level setting, not a per-worktree one
+
+    (worktrees do not get their own core.* config unless
+
+    extensions.worktreeConfig is enabled), so writing it "for scratch"
+
+    actually rewrites repo''s own shared .git/config, flipping core.autocrlf
+
+    out from under the caller''s own checkout for the rest of the process.
+
+    Measured on Windows: this exact write made repo''s pre-existing
+
+    CRLF-normalized files re-evaluate as "modified" against the index the
+
+    moment the shared config changed, newly failing
+
+    test_bump_failure_leaves_repo_working_tree_untouched, which this
+
+    function must leave untouched.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2829
+  new_length: 3611
+- mode: append
+  reason: 'T-4257: measured directly on Windows -- feature.txt came out of
+
+    git apply --index as b"landed content\r\n" even with
+
+    core.autocrlf=false pinned on every git invocation involved, because
+
+    the corruption had already happened in this write_text call, upstream
+
+    of git entirely.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3611
+  new_length: 4006
 evidence:
 - tests/test_gate_cache.py::TestStatKeyCoarseClockSafety::test_recent_stat_match_falls_through_to_content_hash
 - tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
@@ -133,3 +174,23 @@ them without the stack.
 DO NOT WIDEN A TIMEOUT TO MAKE A TEST PASS unless you have the stack showing the
 work genuinely completes and only needs longer. Raising a limit to silence a
 deadlock hides the defect and is the wrong incentive.
+
+<!-- narrative-moved:src/frob/tickets/_land_release.py:1281:T-4257 -->
+T-4257: deliberately NOT `git -C scratch config core.autocrlf
+false` here -- `core.autocrlf` is a REPOSITORY-level setting, not a
+per-worktree one (worktrees do not get their own `core.*` config
+unless `extensions.worktreeConfig` is enabled), so writing it
+"for scratch" actually rewrites `repo`'s OWN SHARED `.git/config`,
+flipping `core.autocrlf` out from under the caller's own checkout
+for the rest of the process (MEASURED on Windows, T-4257: this
+exact write made `repo`'s pre-existing CRLF-normalized files
+re-evaluate as "modified" against the index the moment the shared
+config changed, newly failing `test_bump_failure_leaves_repo_
+working_tree_untouched`, which this function must leave untouched).
+
+<!-- narrative-moved:src/frob/tickets/_land_release.py:1315:T-4257 -->
+verbatim in the target file's content -- MEASURED directly on
+Windows (T-4257): `feature.txt` came out of `git apply --index` as
+`b"landed content\r\n"` even with `core.autocrlf=false` pinned on
+every git invocation involved, because the corruption had already
+happened in this `write_text` call, upstream of git entirely.

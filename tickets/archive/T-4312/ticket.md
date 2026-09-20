@@ -54,6 +54,52 @@ scope_changes:
     file+promote+drop lifecycle
   actor: logan
   at: '2026-09-08'
+body_changes:
+- mode: append
+  reason: 'T-4312: warn at close/drop time when the transition strands a live
+
+    directive naming the ticket being closed. T-4305 repaired one instance
+
+    after the fact (a frob:waive WIRE001 ... follow_up="T-4274" orphaned
+
+    the moment T-4274 closed, turning a passing WIRE002 into a CI-blocking
+
+    failure with zero code changes); T-4316 repaired a second, unrelated
+
+    instance the same day (frob:todo T-4298 orphaned by T-4298''s own close,
+
+    failing TODO002). Neither strand had anything to do with WIRE001
+
+    specifically -- the mechanism is generic: ANY directive family whose
+
+    own gate later checks "does this named ticket id still resolve to an
+
+    OPEN ticket" can be stranded by an unrelated ticket''s close/drop.
+
+
+    Posture (per the ticket''s own design points): WARN, never REFUSE. A
+
+    warning that scrolls past unread is how both T-4305 and T-4316''s
+
+    strands reached CI in the first place, so every site is named
+
+    individually -- file, line, the exact directive, the gate rule it will
+
+    trip, and the remedy -- in the same log line, not a bare "something now
+
+    dangles" count. A refusal here would block a legitimate close/drop over
+
+    an ENTIRELY UNRELATED ticket''s directive, which is worse than the miss
+
+    it replaces; this mirrors frob.tickets._reporting.reopen_ticket''s own
+
+    T-4287 disclosure (_worktrees_carrying_terminal_copy) -- "disclosure,
+
+    not a second gate."'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 800
+  new_length: 2394
 evidence:
 - tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_waive_wire001_follow_up_is_found
 - tests/unit/test_land_stranding_t4312.py::TestStrandReferenceForEdge::test_todo_directive_is_found
@@ -73,3 +119,29 @@ anchor_reason: null
 land_commit: null
 ---
 T-4305 fixed one WIRE001 waiver stranded when its named follow_up ticket (T-4274) closed, turning a passing WIRE002 check into a CI-blocking failure with zero code changes. Nothing warns at close time: any ticket close can silently strand any frob:waive WIRE001 follow_up="T-####" naming it, discovered only later by a WIRE002 failure (or worse, on main/CI) that gives no hint the true cause was an unrelated ticket close. Add a check at 'frob ticket close'/'frob ticket land' time that scans live frob:waive WIRE001 directives for follow_up= references to the ticket being closed and warns (or blocks) so the closer can either add permanent="true" (if the waiver reasoning is structural, per T-1592's precedent) or repoint follow_up at a still-open ticket before the strand happens instead of after.
+
+<!-- narrative-moved:src/frob/tickets/_land.py:5769:T-4312 -->
+T-4312: warn at close/drop time when the transition strands a LIVE
+directive naming the ticket being closed. T-4305 repaired one instance
+after the fact (a `frob:waive WIRE001 ... follow_up="T-4274"` orphaned
+the moment T-4274 closed, turning a passing WIRE002 into a CI-blocking
+failure with zero code changes); T-4316 repaired a second, unrelated
+instance the same day (`frob:todo T-4298` orphaned by T-4298's own
+close, failing TODO002). Neither strand had anything to do with WIRE001
+specifically -- the mechanism is generic: ANY directive family whose own
+gate later checks "does this named ticket id still resolve to an OPEN
+ticket" can be stranded by an unrelated ticket's close/drop. The full
+set of such families, cross-checked against `frob.graph.dsl`'s edge
+vocabulary and each family's own gate:
+
+Posture (per the ticket's own design points): WARN, never REFUSE. A
+warning that scrolls past unread is how both T-4305 and T-4316's strands
+reached CI in the first place, so every site is named individually --
+file, line, the exact directive, the gate rule it will trip, and the
+remedy -- in the same log line, not a bare "something now dangles"
+count. A refusal here would block a legitimate close/drop over an
+ENTIRELY UNRELATED ticket's directive, which is worse than the miss it
+replaces; this mirrors `frob.tickets._reporting.reopen_ticket`'s own
+T-4287 disclosure (`_worktrees_carrying_terminal_copy`) -- "disclosure,
+not a second gate."
+---------------------------------------------------------------------------

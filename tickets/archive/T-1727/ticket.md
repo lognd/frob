@@ -10,6 +10,10 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_mutation_evidence.py
 - src/frob/app/ticket_runner/_close_cmd.py
@@ -23,6 +27,8 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/tickets/_mutation_evidence.py
@@ -167,6 +173,25 @@ scope_changes:
     unmeasured findings, bind-time warning)
   actor: logan
   at: '2026-08-07'
+body_changes:
+- mode: append
+  reason: 'T-1727: the cap _MAX_FILES * _MAX_MUTANTS_PER_FILE * _TIMEOUT_S (up to
+
+    720s) does NOT actually bound the whole sweep''s wall-clock budget,
+
+    because it is a worst-case ceiling per mutant, not a real deadline
+
+    anyone enforces. The incident this ticket exists for was 10 consecutive
+
+    540s frob ticket close timeouts (~90 minutes total) with no partial
+
+    result at all, because nothing inside the sweep itself ever stopped
+
+    early.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3216
+  new_length: 3785
 evidence:
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_zero_budget_reports_unmeasured_not_confirmatory
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_mid_sweep_deadline_truncates_and_reports_unmeasured
@@ -176,6 +201,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 `frob ticket close` timed out TEN CONSECUTIVE TIMES at 540s each on
 T-1672 -- roughly 90 minutes of an agent's budget spent producing no
@@ -233,3 +261,12 @@ what coverage is being traded away rather than quietly reducing it.
 Evidence for this ticket must include the actual pathological shape -- a
 bound evidence test that spawns a subprocess -- and assert that close
 returns a BOUNDED, EXPLICIT unmeasured result rather than hanging.
+
+<!-- narrative-moved:src/frob/tickets/_mutation_evidence.py:67:T-1727 -->
+: T-1727: total wall-clock budget for the WHOLE sweep (every file, every
+: mutant, combined) -- the cap `_MAX_FILES * _MAX_MUTANTS_PER_FILE *
+: _TIMEOUT_S` (up to 720s) does NOT actually bound, because it is a
+: worst-case ceiling per mutant, not a real deadline anyone enforces: the
+: incident this ticket exists for was 10 consecutive 540s `frob ticket
+: close` timeouts (~90 minutes total) with no partial result at all,
+: because nothing inside the sweep itself ever stopped early. This is

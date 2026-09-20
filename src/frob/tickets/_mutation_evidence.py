@@ -64,13 +64,6 @@ _MAX_MUTANTS_PER_FILE = 8
 #: behavior" semantics).
 _TIMEOUT_S = 30.0
 
-#: T-1727: total wall-clock budget for the WHOLE sweep (every file, every
-#: mutant, combined) -- the cap `_MAX_FILES * _MAX_MUTANTS_PER_FILE *
-#: _TIMEOUT_S` (up to 720s) does NOT actually bound, because it is a
-#: worst-case ceiling per mutant, not a real deadline anyone enforces: the
-#: incident this ticket exists for was 10 consecutive 540s `frob ticket
-#: close` timeouts (~90 minutes total) with no partial result at all,
-#: because nothing inside the sweep itself ever stopped early. This is
 #: checked against a SHARED deadline across every file in one sweep (not
 #: reset per file), so the total is what it says regardless of how many
 #: files/mutants are in play. Override via FROB_MUTATION_SWEEP_BUDGET_S
@@ -78,6 +71,7 @@ _TIMEOUT_S = 30.0
 #: raised as the fix for the timeout incident -- see module docstring's
 #: "do not simply raise the timeout" note, this constant bounds the
 #: SWEEP's own internal deadline, not the caller's external wrapper.
+# see T-1727 for the history behind this
 _SWEEP_BUDGET_ENV = "FROB_MUTATION_SWEEP_BUDGET_S"
 _DEFAULT_SWEEP_BUDGET_S = 90.0
 
@@ -360,8 +354,7 @@ def _budget_exceeded_finding(
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
 # frob:tests \
-# tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_real_su\
-# bprocess_spawning_evidence_stays_bounded_not_hung
+# tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_real_subprocess_spawning_evidence_stays_bounded_not_hung  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-4369
 # frob:waive ARCH001 reason="T-4369: this orchestrator was already at the \

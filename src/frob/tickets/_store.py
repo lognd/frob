@@ -62,14 +62,6 @@ from typani.result import Err, Ok, Result
 from frob.gitio import run_argv
 from frob.logging import get_logger
 
-# T-0458/T-2934/T-3506: `fcntl` is posix-only. `ledger_lock`/`_flock_path`
-# used to degrade to an unconditional, unbounded, logged-but-silent
-# no-op on a platform without it -- the same PLATFORM001-shaped bug
-# T-2918 fixed in `frob.app.ticket_runner._rapid_sweep._baseline_lock`.
-# Both now use `frob.process._lock`'s shared `portable_flock_acquire`/
-# `portable_flock_release` (T-3506) -- this module used to hand-roll its
-# OWN `msvcrt`/`fcntl` dual-path (deliberately, per a prior "frob.tickets
-# and frob.process never share a lock FILE" precedent this docstring used
 # to cite); T-3506 supersedes that specifically for the PRIMITIVE (not
 # the lock FILE -- `ledger_lock`/`_flock_path` still lock their own
 # `.frob/tickets*.lock` paths, never `frob.process`'s `.frob/derived.
@@ -81,6 +73,7 @@ from frob.logging import get_logger
 # exactly the silent-corruption class this repo's own ledger-integrity
 # doctrine treats as unacceptable (never hand-edit tickets.md; a lost
 # write here is the same shape).
+# see T-0458 for the history behind this
 from frob.process._lock import (
     lock_backend_available,
     portable_flock_acquire,

@@ -33,6 +33,26 @@ body_changes:
   at: '2026-09-07'
   old_length: 239
   new_length: 1085
+- mode: append
+  reason: 'T-4243: the prior-holder snapshot used to be re-read from path AFTER
+
+    this process''s own portable_flock_acquire succeeded. On POSIX
+
+    fcntl.flock is advisory, so that same-process re-read was harmless, but
+
+    confirmed on real Windows (winrun) the post-acquire Path.read_text
+
+    raised PermissionError every time; _read_land_lock_holder swallowed it
+
+    as OSError -> None, so prior_holder came back None and the T-1634
+
+    reclaim-disclosure warning below never fired even though the reclaim
+
+    itself genuinely succeeded.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1085
+  new_length: 1936
 evidence:
 - tests/test_ticket_leases.py::TestDispatchLandGuard::test_orphaned_squash_residue_is_reclaimed_before_a_mutating_verb_dispatches
 - tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
@@ -47,3 +67,17 @@ land_commit: null
 Three Windows-only failures under T-4236 remainder class. 1) reclaim test asserts clean tree, finds land.lock untracked. 2) normalization-only-dirty test asserts dirty, finds clean. 3) reclaim-and-logged test expects a log line, gets none.
 
 frob:waive BUG002 reason="All three defects/premises this ticket fixes are Windows-only (confirmed via winrun against a real Windows interpreter): on this checkouts own platform (Linux), each named evidence test PASSES both before and after the fix, since the Linux run never exercises the platform-specific mechanism (Windows mandatory msvcrt locking vs POSIX advisory fcntl; git clean -fd deleting an open+locked file; Path.write_text newline translation on write). The parent-commit repro-check therefore cannot observe the regression this ticket fixes -- it is blind on this platform by construction, not because the fix is unproven. Each defect was independently reproduced as FAILING on real Windows via winrun before the fix and confirmed PASSING on real Windows via winrun after it; see the Done report for the exact repro transcripts."
+
+<!-- narrative-moved:src/frob/tickets/_land.py:898:T-4243 -->
+T-4243: snapshotted BEFORE the acquire loop, and updated only from
+PRE-acquire reads inside that loop below -- never re-read from
+`path` after this process's own `portable_flock_acquire` succeeds.
+On POSIX `fcntl.flock` is advisory, so a same-process `Path.
+read_text` against `path` after acquiring `fd`'s flock still reads
+the file fine -- the original shape here re-read post-acquire and
+that was harmless. `msvcrt.locking` (Windows) is MANDATORY, not
+real Windows (winrun): the post-acquire `Path.read_text` reproduced
+here raised `PermissionError` every time, `_read_land_lock_holder`
+swallowed it as `OSError -> None`, so `prior_holder` silently came
+back `None` and the T-1634 reclaim-disclosure warning below never
+fired -- even though the reclaim (re-acquiring and overwriting a

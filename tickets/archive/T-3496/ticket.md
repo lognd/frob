@@ -44,6 +44,30 @@ body_changes:
   at: '2026-08-30'
   old_length: 1309
   new_length: 1867
+- mode: append
+  reason: 'T-3496: git grep -E on macOS links a regex backend that does not honor
+
+    \b/\s (silently: the compile does not error, the pattern just never
+
+    matches), which is why this scan found 13 macOS-only "0 citations
+
+    found" failures (T-3488 bucket D) while the identical pattern worked
+
+    on Linux''s glibc-backed git. Per _drop_escaped_mentions''s own
+
+    docstring, this module''s patterns are ALSO re-run through Python''s re
+
+    module, which does not understand POSIX [[:space:]] bracket-class
+
+    syntax at all (silently misparses it as a nested literal-character
+
+    set, FutureWarning: Possible nested set); [ \t] is valid, identical
+
+    syntax in both engines.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1877
+  new_length: 2429
 evidence:
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_registry_deferred_disposition
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_registry_tracked_by_disposition
@@ -84,3 +108,13 @@ identically on both filesystems/grep flavors, or declare a PLATFORM001
 boundary if the primitive is genuinely POSIX-only-in-practice.
 
 frob:waive BUG002 reason="T-3496 fixes a macOS-only git-grep-backend defect (\b/\s GNU regex extensions silently unmatched by macOS's git grep -E backend, T-3488 bucket D). The designated repro tests genuinely PASS at main on Linux (glibc's git regex backend honors \b/\s fine) and would only genuinely fail-then-pass on macos-latest CI, which this implementer cannot dispatch from a Linux worktree. Evidence is confirmatory-only on this host by the nature of the defect, not by a weak test -- same shape and same reasoning as T-3488's own BUG002 waiver."
+
+<!-- narrative-moved:src/frob/tickets/_live_tracker.py:68:T-3496 -->
+bracket expression, portable to any `git grep -E` backend -- and, per
+`_drop_escaped_mentions`'s own docstring, this module's patterns are
+ALSO re-run through Python's `re` module, which does not understand
+POSIX `[[:space:]]` bracket-class syntax at all (silently misparses it
+as a nested literal-character set, `FutureWarning: Possible nested
+set`); `[ \t]` is valid, identical syntax in both engines.
+see T-1559 for the history behind this
+see T-1633 for the history behind this

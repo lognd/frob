@@ -11,23 +11,64 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_ticket_land.py
   reason: add regression test for the _waive.py diff-target fix
   actor: logan
   at: '2026-08-08'
+body_changes:
+- mode: append
+  reason: 'T-1805 (the land-composition-hole ticket): a whole-file reset of
+
+    pyproject.toml silently discarded real ticket work whenever a landing
+
+    ticket''s only change happened to be a non-version pyproject.toml edit
+
+    (confirmed: T-1508''s one-line dependency pin, dropped four consecutive
+
+    times). CHANGELOG.md and .frob-release.json stay whole-file resets
+
+    because both are genuinely, entirely land-owned in practice -- the
+
+    scaffolded pre-commit hook (src/frob/scaffold/project.py''s
+
+    worktree-lease install) refuses ANY worktree commit touching
+
+    CHANGELOG.md at all, and .frob-release.json is a wholly land-derived
+
+    manifest no ticket has a legitimate reason to hand-edit. pyproject.toml
+
+    is different: that same hook only refuses a commit that changes the
+
+    version = line specifically (playbook.md#4b) -- every other field is
+
+    explicit, legitimate worktree-agent territory. _RESET_FIELD_LEVEL names
+
+    the one file that gets a field-scoped reset instead of a whole-file one.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1835
+  new_length: 2995
 evidence:
 - tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected
 - tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Found while working T-1800 (SYS108 missing from _KNOWN_GATE_RULES).
 
@@ -63,32 +104,20 @@ not in diff" check) at src/frob/gates/_waive.py instead of (or in
 addition to) src/frob/gates/__init__.py -- wherever the frozenset literal
 itself actually lives, not wherever it happens to be imported.
 
-## Done report
-
-Fixed `_sync_gate_rules_for_land`'s trigger diff (src/frob/app/ticket_runner/_land_cmd.py)
-to watch src/frob/gates/_waive.py instead of src/frob/gates/__init__.py.
-_KNOWN_GATE_RULES has lived in _waive.py since T-1072's split; __init__.py
-only imports/consumes the name and never changes when a rule id is
-appended, so the old diff target made this land-time auto-sync silently
-inert for every ordinary rule-id addition since T-1072 -- confirmed root
-cause of PERF012 and SYS108 both landing unregistered in check-coverage.yaml.
-
-Added TestSyncGateRulesForLandDiffTarget with two regression cases: an
-edit to _waive.py containing _KNOWN_GATE_RULES must trigger the scan
-(previously silently skipped), and an unrelated _waive.py edit with no
-_KNOWN_GATE_RULES text must still no-op.
-
-### Changed
-```
- tickets/T-1805/ticket.md | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
-```
-
-### Evidence
-- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected` (pytest node id, verified passing when recorded)
-- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
-- gates: 3 error(s), 825 warning(s), 733 waived
-- error-findings: PRE001@tickets/T-1805, SELFAUDIT001@design, invalid-assignment@tests/test_ticket_land.py
+<!-- narrative-moved:src/frob/tickets/_land_release.py:532:T-1805 -->
+: T-1805 (the land-composition-hole ticket): `CHANGELOG.md` and
+: `.frob-release.json` are reset WHOLE-FILE (below) because both are
+: genuinely, entirely land-owned in practice -- the scaffolded
+: pre-commit hook (`src/frob/scaffold/project.py`'s worktree-lease
+: install) refuses ANY worktree commit touching `CHANGELOG.md` at all,
+: and `.frob-release.json` is a wholly land-derived manifest no ticket
+: has a legitimate reason to hand-edit. `pyproject.toml` is different:
+: that same hook only refuses a commit that changes the `version = `
+: line specifically (`playbook.md#4b`) -- every OTHER field
+: (`[project.optional-dependencies]`, `[tool.*]`, `[build-system]`,
+: entry points, ...) is explicit, legitimate worktree-agent territory.
+: A whole-file reset therefore silently discarded real ticket work
+: whenever a landing ticket's only change happened to be a non-version
+: `pyproject.toml` edit (confirmed: T-1508's one-line dependency pin,
+: dropped four consecutive times). `_RESET_FIELD_LEVEL` names the one
+: file that gets a field-scoped reset instead of a whole-file one.

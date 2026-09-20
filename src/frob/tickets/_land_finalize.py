@@ -866,21 +866,15 @@ def _close_finalized_ticket(
     if skip is not None:
         return skip
 
-    # T-0821: a ticket landed with full evidence and a Done report but
-    # never actually run through `frob ticket start` (or reverted to
-    # PLANNED by a section-10b ledger restore, T-0752) cannot legally
-    # jump PLANNED -> DONE (`_TRANSITIONS` only allows PLANNED ->
-    # IN_PROGRESS/DROPPED) -- every prior incident (T-0799, T-0752,
-    # T-0815) hit this AFTER the merge already landed in the worktree,
-    # forcing a manual start-then-retry recipe with main untouched but
-    # the coordinator now needing a second pass. Advance PLANNED ->
-    # IN_PROGRESS transparently here, right before the real close
+    # T-0821: advance PLANNED -> IN_PROGRESS transparently here, right
+    # before the real close
     # transition, whenever finalize's own preconditions (evidence + a
     # substantive Done report, the same gate `transition(..., DONE)`
     # checks a moment later) are otherwise about to be satisfied -- so
     # the close below always sees a from-state the state machine
     # actually allows, and a legitimately-done PLANNED ticket never
     # surfaces `InvalidTransition` post-merge at all.
+    # see T-0821 for the history behind this
     if current.state == TicketState.PLANNED:
         advanced = transition(worktree, final_id, TicketState.IN_PROGRESS)
         if advanced.is_err:

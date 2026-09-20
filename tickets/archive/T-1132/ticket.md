@@ -10,6 +10,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/**
 - tests/test_tickets.py
@@ -20,6 +24,8 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_lifecycle.py
@@ -61,6 +67,25 @@ scope_changes:
     the same change) and to satisfy AFFECT001/COV001 on the new symbols
   actor: logan
   at: '2026-07-28'
+body_changes:
+- mode: append
+  reason: 'T-1132: a strict field validator on Ticket.model_validate (also the
+
+    LEDGER LOAD path, frob.tickets._store._parse_ledger/_validate) would
+
+    hard-fail loading the entire shared ledger (all ~1000+ tickets,
+
+    active+archive) the moment a single historical malformed edge exists
+
+    anywhere in it -- a much worse failure mode than the T-0380 incident
+
+    itself (one ticket silently miscomputed, not every command refusing to
+
+    run).'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 271
+  new_length: 609
 evidence:
 - tests/test_tickets.py::TestBlockCliValidatesBy::test_cli_refuses_empty_string_by
 - tests/test_tickets.py::TestBlockCliValidatesBy::test_cli_refuses_malformed_by
@@ -87,5 +112,14 @@ acceptance:
   - tests/test_tickets.py::TestBlockCliValidatesBy::test_cli_refuses_empty_string_by
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0380 sat silently undoable for days because blocked_by contained an empty string alongside three real (done) blockers -- doable() treated it as an unresolvable blocker and nothing surfaced why. Schema validation at write time plus a doctor scan for the existing ledger.
+
+<!-- narrative-moved:src/frob/tickets/_models.py:2275:T-1132 -->
+field validator here would hard-fail loading the ENTIRE shared ledger
+(all ~1000+ tickets, active+archive) the moment a single historical
+malformed edge exists anywhere in it, a much worse failure mode than
+the T-0380 incident itself (one ticket silently miscomputed, not

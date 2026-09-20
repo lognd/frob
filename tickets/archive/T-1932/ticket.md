@@ -20,6 +20,29 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-1932/T-1931: this cross-ticket leakage re-check runs a second time,
+
+    here, after _land_merge_stage''s wip-commit, because _land_precheck''s
+
+    earlier copy of the same check only ever sees COMMITTED history --
+
+    anything a caller''s pre-land auto-fix absorption (frob ticket land''s
+
+    own T-1175 _absorb_pre_land_fixes, e.g. the T-1931 incident) left as an
+
+    UNCOMMITTED disk write is invisible to that earlier check and only
+
+    becomes part of history at the wip-commit just above. See
+
+    _reverify_cross_ticket_leakage_post_mutation''s own docstring for the
+
+    full ordering invariant.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4132
+  new_length: 4644
 evidence:
 - tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck::test_guard_refusal_survives_an_uncommitted_reintroduction
 - tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck::test_clean_land_is_unaffected
@@ -113,3 +136,12 @@ Note src/frob/tickets/_land.py is high-traffic and every agent depends on
 it. A regression here blocks the whole repo, as T-1882 demonstrated
 earlier today. State explicitly what this change does under concurrent
 lands.
+
+<!-- narrative-moved:src/frob/tickets/_land.py:2953:T-1932 -->
+T-1932/T-1931: re-run the cross-ticket leakage guard AGAIN, here,
+AFTER `_land_merge_stage`'s wip-commit has captured every mutation
+into `worktree`'s HEAD -- see `_reverify_cross_ticket_leakage_
+post_mutation`'s own docstring for the ordering invariant this
+closes (`_land_precheck`'s own copy of this same check, run
+earlier, only ever sees COMMITTED history; anything a caller's
+pre-land auto-fix absorption left as an UNCOMMITTED disk write --

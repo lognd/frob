@@ -144,12 +144,7 @@ from frob.tickets._models import (
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _TICKET_ID_RE, _parse_ticket_file, _store_mode, load_all
 
-# T-0577/T-2934/T-3506: same posix-only degradation as `frob.tickets.
-# _store`'s `ledger_lock` -- `_land_lock` used to degrade to a documented
-# no-op (an unconditional, unbounded, logged-but-silent no-op on a
-# platform without `fcntl`, the same PLATFORM001-shaped bug T-2918 fixed
-# elsewhere) rather than failing import. `_land_lock`'s own polling
-# acquire loop now delegates each attempt's platform branch to
+# `_land_lock`'s own polling acquire loop delegates each attempt's platform branch to
 # `frob.process._lock`'s shared `portable_flock_acquire`/`portable_
 # flock_release`/`lock_backend_available` (T-3506) rather than
 # re-deriving its own `fcntl`/`msvcrt` pair -- still raises
@@ -157,28 +152,17 @@ from frob.tickets._store import _TICKET_ID_RE, _parse_ticket_file, _store_mode, 
 # `land()` already catches for the genuinely-contended-lock timeout
 # case, rather than inventing a second exception type for "no lock
 # primitive at all") when NEITHER exists.
+# see T-0577 for the history behind this
 
 _log = get_logger(__name__)
 
-# T-0577: dedicated lock file for serializing `land()` calls against the
-# SAME `root`, deliberately a DIFFERENT name from `_store._lock_path`'s
-# `.frob/tickets.lock`. Reusing that exact path was tried first and broke:
-# a worktree's own `.frob/tickets.lock` (created the moment ANY ticket
-# operation runs in the worktree, then committed into the branch by
-# `land`'s own `git add -A` wip-commit/finalize-commit steps) collides,
-# by identical relative path, with the untracked lock file `root`'s own
-# lock would have created -- git's squash-merge refuses outright ("would
 # be overwritten by merge") rather than silently picking a side. A
 # distinct filename `root` never shares with anything a worktree branch
 # legitimately commits sidesteps that collision entirely.
-#
-# T-1619: the path constant itself now lives in `frob.tickets._leases`
-# (`LAND_LOCK_REL`) -- that module is the single home every OTHER ledger-
-# committing verb's auto-commit choke point
-# (`_leases._add_and_commit_tickets_md`) probes via `refuse_if_land_in_
 # progress` before writing its own commit, so both sides of the
 # exclusivity check must agree on exactly one path, never two
 # independently-defined copies that could silently drift apart.
+# see T-0577 for the history behind this
 _LAND_LOCK_REL = LAND_LOCK_REL
 
 
@@ -911,23 +895,11 @@ def _land_lock(
     fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
     deadline = _time.monotonic() + timeout
     logged_holder = False
-    # T-4243: snapshotted BEFORE the acquire loop, and updated only from
-    # PRE-acquire reads inside that loop below -- never re-read from
-    # `path` after this process's own `portable_flock_acquire` succeeds.
-    # On POSIX `fcntl.flock` is advisory, so a same-process `Path.
-    # read_text` against `path` after acquiring `fd`'s flock still reads
-    # the file fine -- the original shape here re-read post-acquire and
-    # that was harmless. `msvcrt.locking` (Windows) is MANDATORY, not
-    # advisory: it blocks even a SEPARATE handle in the SAME process from
-    # reading a byte range this process itself just locked. Confirmed on
-    # real Windows (winrun): the post-acquire `Path.read_text` reproduced
-    # here raised `PermissionError` every time, `_read_land_lock_holder`
-    # swallowed it as `OSError -> None`, so `prior_holder` silently came
-    # back `None` and the T-1634 reclaim-disclosure warning below never
-    # fired -- even though the reclaim (re-acquiring and overwriting a
-    # dead holder's lock) genuinely succeeded. Reading the snapshot only
-    # BEFORE this process holds the lock closes that gap on both
-    # platforms.
+    # `msvcrt.locking` (Windows) is MANDATORY, not advisory: it blocks even
+    # a SEPARATE handle in the SAME process from reading a byte range this
+    # process itself just locked. Reading the snapshot only BEFORE this
+    # process holds the lock closes that gap on both platforms.
+    # see T-4243 for the history behind this
     pre_acquire_holder = _read_land_lock_holder(path)
     while True:
         # frob:ticket T-3506
@@ -1845,12 +1817,6 @@ def land(
     function's own docstring for why."""
     root, worktree = root.resolve(), worktree.resolve()
 
-    # T-1003 (churn item 4): `root` defaults to the invoker's cwd
-    # (`ticket_runner.py`'s `_land`) -- running `frob ticket land <id>
-    # --worktree <path>` from a shell sitting INSIDE the worktree (rather
-    # than cd-ing out to the shared root checkout first, the "chained cd"
-    # ritual this ticket retires) makes `root` resolve to the identical
-    # path as `worktree`, for free, no misconfigured `--worktree` involved.
     # Resolve the TRUE primary checkout from `worktree`'s own git common
     # dir and use it instead, transparently, whenever that resolves to
     # something OTHER than `worktree` itself -- a real linked worktree,
@@ -1860,6 +1826,7 @@ def land(
     # checkout itself, the genuinely wrong configuration T-0795 introduced
     # this refusal for), `root` is left as `worktree` unchanged and
     # `_refuse_if_root_is_worktree` still refuses exactly as before.
+    # see T-1003 for the history behind this
     if root == worktree:
         resolved_root = _resolve_primary_checkout(worktree)
         if resolved_root is not None and resolved_root != worktree:
@@ -2983,19 +2950,10 @@ def _land_locked(
             return Err(stage.danger_err)
         wip_committed, did_merge, dry_run_report = stage.danger_ok
 
-        # T-1932/T-1931: re-run the cross-ticket leakage guard AGAIN, here,
-        # AFTER `_land_merge_stage`'s wip-commit has captured every mutation
-        # into `worktree`'s HEAD -- see `_reverify_cross_ticket_leakage_
-        # post_mutation`'s own docstring for the ordering invariant this
-        # closes (`_land_precheck`'s own copy of this same check, run
-        # earlier, only ever sees COMMITTED history; anything a caller's
-        # pre-land auto-fix absorption left as an UNCOMMITTED disk write --
-        # `frob ticket land`'s own T-1175 `_absorb_pre_land_fixes`, e.g. the
-        # T-1931 incident -- is invisible to that earlier check and only
-        # becomes part of history at the wip-commit just above). Placed
-        # BEFORE the dry-run early return for the same D-05 reason every
-        # other post-mutation re-check below is: a `--dry-run` must preview
-        # the exact refusal a real run would hit, not skip it.
+        # Placed BEFORE the dry-run early return for the same D-05 reason
+        # every other post-mutation re-check below is: a `--dry-run` must
+        # preview the exact refusal a real run would hit, not skip it.
+        # see T-1932 for the history behind this
         leakage_recheck = _reverify_cross_ticket_leakage_post_mutation(
             root, worktree, ticket, main_branch_name, allow_cross_ticket
         )
@@ -3017,19 +2975,12 @@ def _land_locked(
                 _abort_merge(worktree)
             return Err(passenger_recheck.danger_err)
 
-        # T-0754 review round 2 fix #4: refresh the pre-work sweep BEFORE
-        # any inner check runs `check_gates()` (a live `frob check
-        # --ticket` spawn) -- landing can pull in unrelated main-side
-        # commits that touch the ticket's scope globs, moving the sweep's
-        # scope digest out from under it (see `_refresh_prework_sweep`'s
-        # own doc, T-0236); done AFTER that check instead, `check_gates()`
-        # would observe a stale-sweep PRE001 the Done report's captured
-        # claim never carried, refusing the land on a false divergence.
         # Only for a REAL land (`dry_run_report is None` -- the exact same
         # condition the unconditional call below already required, since a
         # dry run always returns before reaching it): a dry run must still
         # leave the worktree exactly as found, and this call's write is
         # not itself unwound the way the merge commit is.
+        # see T-0754 for the history behind this
         if dry_run_report is None:
             _refresh_prework_sweep(worktree, ticket)
 
@@ -3046,39 +2997,6 @@ def _land_locked(
             return Err(post_merge_check.danger_err)
         passing_ids = post_merge_check.danger_ok
 
-        # T-0754: re-verify captured Done-report claims (test count, gate
-        # state) against the SAME post-merge tree `post_merge_check` just
-        # re-verified evidence against -- same ordering rationale (before
-        # the dry-run early return, so `--dry-run` stays a real guarantee).
-        # T-0754 review round 2 fix #3: the test-count half is DERIVED from
-        # `passing_ids` (the exact set D-05's own `passed()` run just
-        # computed above), never a second collect+run -- halves the real
-        # cost of a `run_tests`-supplying land.
-        #
-        # T-2064/T-2076 CORRECTION: the T-2064 probe that used to sit here
-        # compared `root`'s live HEAD against `root_pre_land_tip` and read
-        # "equal" as proof the check_gates() spawn observes root's
-        # PRE-land tree via `cwd=root`. That comparison is a tautology --
-        # `root` is never mutated before `_land_squash_apply` runs (this
-        # module's own comment, a few lines below, names it as the ONLY
-        # step that touches `root`), so `root`'s HEAD is trivially
-        # unchanged here NO MATTER what `cwd` the spawn actually uses; the
-        # "equal" reading proved nothing about the spawn itself and was a
-        # false positive. T-2076 traced the real caller wiring
-        # (`_land_core_invoke`, src/frob/app/ticket_runner/_land_cmd.py)
-        # and confirmed directly (a probe on a real spawn, plus a fixture-
-        # repo reproduction) that `check_gates`/`check_gate_findings`
-        # already spawn with `cwd=worktree` -- the correctly-merged tree
-        # -- by the time this point in `_land_locked` runs. The real
-        # defect was a DIFFERENT silent failure mode entirely: `frob
-        # check`'s own `_refuse_full_check_for_agent` (T-0627) refuses
-        # this spawn's unchunked shape whenever the caller's shell carries
-        # `FROB_AGENT` (true for every dispatched worktree agent), which
-        # made `check_gates()` return `None` ("unmeasured") on every land
-        # run from an agent shell -- see `_shared_check_spawn_fn`'s own
-        # docstring (`src/frob/app/ticket_runner/_verify.py`) for the full
-        # account and the fix (`FROB_ALLOW_FULL_CHECK=1` in the spawn's
-        # own child env, unconditionally).
         # T-2913: rapid already lets the deferred post-land sweep
         # (`spawn_deferred_post_land_sweep`, run unconditionally under
         # rapid regardless of what is passed here) catch a regression
@@ -3089,6 +3007,7 @@ def _land_locked(
         # reverify`'s own docstring for the full argument and why
         # `check_gate_claims` (a separate, cheaper T-1410 spawn) is left
         # untouched.
+        # see T-0754 for the history behind this
         effective_check_gates = check_gates
         effective_check_gate_findings = check_gate_findings
         if _land_should_skip_inline_claims_reverify(worktree):
@@ -3174,26 +3093,14 @@ def _land_locked(
             return Err(finalized.danger_err)
         final_id = finalized.danger_ok
 
-        # T-4634: load (or build) the T-1736 verify-intent graph snapshot
-        # NOW, before `_squash_apply_on_disposable_stage` mutates `root` --
-        # at this instant `root`'s `.frob/cache.db` still matches
-        # `root_pre_land_tip` (the PRIOR land's own squash-apply is what
-        # last wrote it), so `_load_snapshot_for_intent`'s `load_graph`
-        # call is ordinarily a cache HIT. The pre-T-4634 shape loaded (or,
-        # on a miss, fully rebuilt) this same snapshot AFTER publish
-        # instead -- but the squash-apply's own file writes are exactly
-        # what `load_graph`'s staleness check (`_first_stale_cached_file`)
-        # flags as drifted, so that post-publish load ALWAYS missed and
-        # fell through to a full `build_graph` rebuild, on every single
-        # land, in the critical section between LAND-PROOF and process
-        # exit (T-4634/T-4635's own measurement: 10+ minutes under fleet
-        # load). Capturing it here instead reuses the land's own
+        # Capturing it here instead reuses the land's own
         # already-fresh cache rather than rebuilding a full repo snapshot
         # a second time for the same commit. Best-effort like every other
         # use of this snapshot: `None` on any load/build failure (logged
         # inside `_load_snapshot_for_intent` itself), carried through
         # unchanged to `_record_verify_intent_for_landed_commit` below,
         # never raised here.
+        # see T-4634 for the history behind this
         pre_land_snapshot = _load_snapshot_for_intent(
             root, ticket_id, root_pre_land_tip.danger_ok
         )
@@ -4740,20 +4647,11 @@ def _check_tdd_order(
     if not scoped_edges:
         return Ok(None)
 
-    # T-3618 (perf): bound every edge's git-log walk to this land's own
-    # merge-base..HEAD range instead of each artifact/test symbol's
-    # ENTIRE file history -- a diff-scoped edge's introducing commit is
-    # by construction one of this land's own worktree commits (never
-    # something predating the branch point), so the walk never needs to
-    # look further back than that. Measured (T-3618's Done report): an
-    # unbounded walk against a long-history file cost ~200-300s PER EDGE,
-    # making a 14-file split land's TDD001 phase run 50-150 minutes; a
-    # bounded walk against the same worktree's own (small) commit range
-    # is the fix this ticket's acceptance bar (<120s total) requires. A
     # merge-base resolution failure degrades to `since=None` (the prior
     # unbounded behavior) rather than skipping the check outright -- this
     # phase is WARN-only already, so the cost regression is the only risk
     # of falling back, logged loudly rather than silently eaten.
+    # see T-3618 for the history behind this
     merge_base_result = run_argv(
         ("git", "-C", str(worktree), "merge-base", base_ref, "HEAD")
     )
@@ -5868,18 +5766,6 @@ def _find_leaked_tickets(
 
 
 # ---------------------------------------------------------------------------
-# T-4312: warn at close/drop time when the transition strands a LIVE
-# directive naming the ticket being closed. T-4305 repaired one instance
-# after the fact (a `frob:waive WIRE001 ... follow_up="T-4274"` orphaned
-# the moment T-4274 closed, turning a passing WIRE002 into a CI-blocking
-# failure with zero code changes); T-4316 repaired a second, unrelated
-# instance the same day (`frob:todo T-4298` orphaned by T-4298's own
-# close, failing TODO002). Neither strand had anything to do with WIRE001
-# specifically -- the mechanism is generic: ANY directive family whose own
-# gate later checks "does this named ticket id still resolve to an OPEN
-# ticket" can be stranded by an unrelated ticket's close/drop. The full
-# set of such families, cross-checked against `frob.graph.dsl`'s edge
-# vocabulary and each family's own gate:
 #   - `frob:waive WIRE001 ... follow_up="T-####"`  -> WIRE002
 #   - `frob:todo T-####`                            -> TODO002
 #   - `frob:debt <RULE> ... ticket="T-####"`        -> DEBT002
@@ -5890,18 +5776,7 @@ def _find_leaked_tickets(
 # this sense. `frob:invariant`/`frob:doc`/`frob:tests`/`frob:describes`/
 # `frob:secret-fake`/`frob:env` reference symrefs, doc anchors, or nothing
 # at all -- none of them name a ticket id, so none of them qualify.
-#
-# Posture (per the ticket's own design points): WARN, never REFUSE. A
-# warning that scrolls past unread is how both T-4305 and T-4316's strands
-# reached CI in the first place, so every site is named individually --
-# file, line, the exact directive, the gate rule it will trip, and the
-# remedy -- in the same log line, not a bare "something now dangles"
-# count. A refusal here would block a legitimate close/drop over an
-# ENTIRELY UNRELATED ticket's directive, which is worse than the miss it
-# replaces; this mirrors `frob.tickets._reporting.reopen_ticket`'s own
-# T-4287 disclosure (`_worktrees_carrying_terminal_copy`) -- "disclosure,
-# not a second gate."
-# ---------------------------------------------------------------------------
+# see T-4312 for the history behind this
 
 
 class _StrandedDirective(BaseModel):

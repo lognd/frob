@@ -55,6 +55,31 @@ scope_changes:
     changed
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: 'T-3618 (perf): bound every edge''s git-log walk to this land''s own
+
+    merge-base..HEAD range instead of each artifact/test symbol''s entire
+
+    file history -- a diff-scoped edge''s introducing commit is by
+
+    construction one of this land''s own worktree commits (never something
+
+    predating the branch point), so the walk never needs to look further
+
+    back than that. Measured (T-3618''s Done report): an unbounded walk
+
+    against a long-history file cost ~200-300s per edge, making a 14-file
+
+    split land''s TDD001 phase run 50-150 minutes; a bounded walk against
+
+    the same worktree''s own (small) commit range is the fix this ticket''s
+
+    acceptance bar (<120s total) requires.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2212
+  new_length: 2929
 evidence:
 - tests/gates/test_tdd_order.py::TestPerfShape::test_since_bounds_the_log_walk_to_a_revision_range
 - tests/gates/test_tdd_order.py::TestPerfShape::test_shared_file_is_walked_and_read_exactly_once_across_edges
@@ -105,3 +130,15 @@ scope src/frob/tickets/_land.py + src/frob/gates/_tdd_order.py -- it
 will promote to a real id when t-3586 lands. After THIS ticket lands,
 whoever lands t-3586 should drop/merge that draft as a duplicate rather
 than leaving two open tickets for one bug.
+
+<!-- narrative-moved:src/frob/tickets/_land.py:4650:T-3618 -->
+T-3618 (perf): bound every edge's git-log walk to this land's own
+merge-base..HEAD range instead of each artifact/test symbol's
+ENTIRE file history -- a diff-scoped edge's introducing commit is
+by construction one of this land's own worktree commits (never
+something predating the branch point), so the walk never needs to
+look further back than that. Measured (T-3618's Done report): an
+unbounded walk against a long-history file cost ~200-300s PER EDGE,
+making a 14-file split land's TDD001 phase run 50-150 minutes; a
+bounded walk against the same worktree's own (small) commit range
+is the fix this ticket's acceptance bar (<120s total) requires. A

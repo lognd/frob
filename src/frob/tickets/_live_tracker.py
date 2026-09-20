@@ -65,34 +65,6 @@ _log = get_logger(__name__)
 # (it never claimed the target itself still had open work).
 _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 
-# `frob:waive RULE reason="..." ticket=T-0605` (comment channel, `=`,
-# quotes optional) and the `.strata` twin `waive "RULE" reason "..."
-# ticket "T-0605"` (bare space, but the value itself is ALWAYS quoted in
-# that grammar) -- deliberately NOT `ticket\s+T-0605` unquoted-and-
-# unattributed: that also matches an ordinary CLI invocation/log line like
-# `--ticket T-0605` (a real false-positive class hit in `.frob/
-# telemetry.jsonl` during T-0854's own testing), which cites nothing as a
-# live tracker at all.
-# T-1559: the WIRE001/WIRE002 `follow_up=` binding (`frob.gates._wire.
-# _wire002_violations`'s own attribute) is the SAME "this ticket is still
-# cited as live tracker" hazard `ticket=` already covers, for a different
-# waiver family (WIRE001's deferred-wiring waivers, not WAIVE006's own).
-# The 2026-08-05 incident this ticket fixes: T-1490/T-1488 landed and
-# closed while 16 `frob:waive WIRE001 ... follow_up="T-1490"`-shaped
-# directives still bound them -- WIRE002 caught it only on the NEXT `frob
-# check`, one check too late, exactly the T-0605 shape this module
-# already exists to close for `ticket=`. Folded into the SAME pattern
-# (one `git grep -E` alternation) rather than a parallel scan, since both
-# are "a comment attribute equals this ticket id" citations differing
-# only in attribute name.
-# frob:ticket T-1633
-# Each attribute alternative is LEFT-ANCHORED by an explicit leading-character
-# alternation rather than a lookbehind: this pattern is handed to `git grep -E`
-# (POSIX ERE), which has no lookbehind at all. Without the anchor, `ticket=`
-# matched inside any longer identifier ending in it -- `active_ticket=T-1582`
-# in ordinary Done-report prose read as a live-tracker citation and refused a
-# land.
-#
 # T-3496: the trailing boundary is RIGHT-ANCHORED the same explicit way, and
 # `\s` is spelled `[ \t]` -- both `\b` and `\s` are GNU regex extensions,
 # not part of POSIX ERE. `git grep -E` on macOS links a regex backend that
@@ -101,12 +73,7 @@ _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 # citations found" failures (T-3488 bucket D) while the identical pattern
 # worked on Linux's glibc-backed git. `_LEFT`/`_RIGHT` reproduce the same
 # "not part of a longer identifier" boundary check using only a plain
-# bracket expression, portable to any `git grep -E` backend -- and, per
-# `_drop_escaped_mentions`'s own docstring, this module's patterns are
-# ALSO re-run through Python's `re` module, which does not understand
-# POSIX `[[:space:]]` bracket-class syntax at all (silently misparses it
-# as a nested literal-character set, `FutureWarning: Possible nested
-# set`); `[ \t]` is valid, identical syntax in both engines.
+# see T-3496 for the history behind this
 _LEFT = r"(^|[^A-Za-z0-9_.-])"
 _RIGHT = r"([^A-Za-z0-9_]|$)"
 _WAIVER_TICKET_PATTERN = (

@@ -28,6 +28,35 @@ scope_changes:
   reason: 'positive control: snapshot loader must not be called after publish'
   actor: logan
   at: '2026-09-19'
+body_changes:
+- mode: append
+  reason: 'T-4634: the T-1736 verify-intent graph snapshot is loaded (or built)
+
+    here, before _squash_apply_on_disposable_stage mutates root, because at
+
+    this instant root''s .frob/cache.db still matches root_pre_land_tip (the
+
+    prior land''s own squash-apply is what last wrote it), so
+
+    _load_snapshot_for_intent''s load_graph call is ordinarily a cache HIT.
+
+    The pre-T-4634 shape loaded (or, on a miss, fully rebuilt) this same
+
+    snapshot AFTER publish instead -- but the squash-apply''s own file
+
+    writes are exactly what load_graph''s staleness check
+
+    (_first_stale_cached_file) flags as drifted, so that post-publish load
+
+    ALWAYS missed and fell through to a full build_graph rebuild, on every
+
+    single land, in the critical section between LAND-PROOF and process
+
+    exit (T-4634/T-4635''s own measurement: 10+ minutes under fleet load).'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 0
+  new_length: 872
 evidence:
 - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_given_snapshot_is_reused_never_reloaded
 - tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
@@ -52,3 +81,17 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+<!-- narrative-moved:src/frob/tickets/_land.py:3096:T-4634 -->
+T-4634: load (or build) the T-1736 verify-intent graph snapshot
+NOW, before `_squash_apply_on_disposable_stage` mutates `root` --
+at this instant `root`'s `.frob/cache.db` still matches
+`root_pre_land_tip` (the PRIOR land's own squash-apply is what
+last wrote it), so `_load_snapshot_for_intent`'s `load_graph`
+call is ordinarily a cache HIT. The pre-T-4634 shape loaded (or,
+on a miss, fully rebuilt) this same snapshot AFTER publish
+instead -- but the squash-apply's own file writes are exactly
+what `load_graph`'s staleness check (`_first_stale_cached_file`)
+flags as drifted, so that post-publish load ALWAYS missed and
+fell through to a full `build_graph` rebuild, on every single
+land, in the critical section between LAND-PROOF and process
+exit (T-4634/T-4635's own measurement: 10+ minutes under fleet

@@ -2274,19 +2274,15 @@ class Ticket(BaseModel):
 
     # T-1132: deliberately NOT validating `blocked_by`/`parent` here (unlike
     # `TicketSpec` below). `Ticket.model_validate` is also the LEDGER LOAD
-    # path (`frob.tickets._store._parse_ledger`/`_validate`) -- a strict
-    # field validator here would hard-fail loading the ENTIRE shared ledger
-    # (all ~1000+ tickets, active+archive) the moment a single historical
-    # malformed edge exists anywhere in it, a much worse failure mode than
-    # the T-0380 incident itself (one ticket silently miscomputed, not
-    # every command refusing to run). New-edge validation lives at the
-    # actual write sites instead: `TicketSpec` (used only by `frob ticket
-    # new`, never by the loader) and the `_block` CLI verb's explicit
-    # `is_valid_ticket_ref` check (`model_copy` bypasses field validators
-    # entirely regardless, so putting one here would not even close that
-    # gap). `frob doctor`'s malformed-edge scan (T-1132) is the READ-side
-    # complement: it flags an EXISTING bad edge without depending on strict
-    # `Ticket` construction succeeding.
+    # path, so a field validator here risks a hard-fail loading the whole
+    # ledger. New-edge validation lives at the actual write sites instead:
+    # `TicketSpec` (used only by `frob ticket new`, never by the loader)
+    # and the `_block` CLI verb's explicit `is_valid_ticket_ref` check
+    # (`model_copy` bypasses field validators entirely regardless, so
+    # putting one here would not even close that gap). `frob doctor`'s
+    # malformed-edge scan is the READ-side complement: it flags an
+    # EXISTING bad edge without depending on strict construction.
+    # see T-1132 for the history behind this
 
     # frob:ticket T-0838
     # frob:tests tests/test_tickets.py::TestUnknownFieldForwardCompat.test_unknown_field_logs_warning_named  # noqa: E501

@@ -37,6 +37,23 @@ scope_changes:
     own frob:doc target that must move with this behavior change
   actor: logan
   at: '2026-08-19'
+body_changes:
+- mode: append
+  reason: 'T-2638: this is the direct fix for a confirmed incident -- an agent
+
+    renamed "### What was NOT done, and why" (phrase-matched on "not done")
+
+    to "### Scope boundary: measurement only, zero repairs (by design)"
+
+    with the SAME disclosed content one line below. The phrase scan alone
+
+    went silent, but the heading itself never stopped existing, so the
+
+    structural check still fires on it.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3633
+  new_length: 4062
 evidence:
 - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_reworded_heading_still_flagged_structurally
 - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_description_headings_before_done_report_are_not_flagged
@@ -129,3 +146,11 @@ is the correct behavior. But the workaround should not have been available.
   most reports are this shape and must not gain friction
 - a Done report naming real numbered ticket ids still PASSES exactly as
   today
+
+<!-- narrative-moved:src/frob/tickets/_reporting.py:1034:T-2638 -->
+is the direct fix for the confirmed incident: an agent renamed "###
+What was NOT done, and why" (phrase-matched on "not done") to "###
+Scope boundary: measurement only, zero repairs (by design)" with the
+SAME disclosed content one line below -- the phrase scan alone went
+silent, but the heading itself never stopped existing, so this check
+still fires on it.

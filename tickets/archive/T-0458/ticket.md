@@ -11,6 +11,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/
 - src/frob/app/ticket_runner.py
@@ -20,6 +24,29 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-0458/T-2934/T-3506: fcntl is posix-only. ledger_lock/_flock_path used
+
+    to degrade to an unconditional, unbounded, logged-but-silent no-op on
+
+    a platform without it -- the same PLATFORM001-shaped bug T-2918 fixed
+
+    in frob.app.ticket_runner._rapid_sweep._baseline_lock. This module used
+
+    to hand-roll its own msvcrt/fcntl dual-path (deliberately, per a prior
+
+    "frob.tickets and frob.process never share a lock FILE" precedent this
+
+    docstring used to cite); T-3506 supersedes that specifically for the
+
+    PRIMITIVE.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5846
+  new_length: 6468
 evidence:
 - tests/unit/test_ticket_store.py::TestLedgerLock::test_two_threads_serialize
 - tests/unit/test_ticket_store.py::TestLedgerLock::test_reentrant_in_same_thread
@@ -37,6 +64,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 User request 2026-07-20: writing directly to tickets.md is a hassle. Make a
 WRITE-PIPE the canonical write tool for the ledger -- an agent writes to it
@@ -127,3 +157,13 @@ hand-written "changed"/"evidence" list drifts from reality (e.g. this
 session's dropped-untracked-file and stale-evidence-id incidents). Ties T-0463
 (land already computes the full changeset -> reuse it as the Changed source)
 and D-01 (evidence pass status).
+
+<!-- narrative-moved:src/frob/tickets/_store.py:65:T-0458 -->
+T-0458/T-2934/T-3506: `fcntl` is posix-only. `ledger_lock`/`_flock_path`
+used to degrade to an unconditional, unbounded, logged-but-silent
+no-op on a platform without it -- the same PLATFORM001-shaped bug
+T-2918 fixed in `frob.app.ticket_runner._rapid_sweep._baseline_lock`.
+Both now use `frob.process._lock`'s shared `portable_flock_acquire`/
+`portable_flock_release` (T-3506) -- this module used to hand-roll its
+OWN `msvcrt`/`fcntl` dual-path (deliberately, per a prior "frob.tickets
+and frob.process never share a lock FILE" precedent this docstring used

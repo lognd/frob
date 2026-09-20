@@ -529,42 +529,14 @@ def _resync_release_manifest(
 #: silently regress).
 _LAND_OWNED_RELEASE_FILES = ("pyproject.toml", "CHANGELOG.md", ".frob-release.json")
 
-#: T-1805 (the land-composition-hole ticket): `CHANGELOG.md` and
-#: `.frob-release.json` are reset WHOLE-FILE (below) because both are
-#: genuinely, entirely land-owned in practice -- the scaffolded
-#: pre-commit hook (`src/frob/scaffold/project.py`'s worktree-lease
-#: install) refuses ANY worktree commit touching `CHANGELOG.md` at all,
-#: and `.frob-release.json` is a wholly land-derived manifest no ticket
-#: has a legitimate reason to hand-edit. `pyproject.toml` is different:
-#: that same hook only refuses a commit that changes the `version = `
-#: line specifically (`playbook.md#4b`) -- every OTHER field
-#: (`[project.optional-dependencies]`, `[tool.*]`, `[build-system]`,
-#: entry points, ...) is explicit, legitimate worktree-agent territory.
-#: A whole-file reset therefore silently discarded real ticket work
-#: whenever a landing ticket's only change happened to be a non-version
-#: `pyproject.toml` edit (confirmed: T-1508's one-line dependency pin,
-#: dropped four consecutive times). `_RESET_FIELD_LEVEL` names the one
-#: file that gets a field-scoped reset instead of a whole-file one.
 #:
-#: T-1760 ROOT CAUSE this whole reset exists to close: none of these
-#: three files is protected by `ticket.scope`
-#: (`_auto_resolve_out_of_scope_conflicts` only fires on a genuine git
-#: CONFLICT, keep="ours"), and `git merge --squash` performs an ordinary
-#: clean 3-way merge on any file that does NOT conflict. A worktree
-#: branched before a sibling's land already advanced these files carries
-#: its own (older) copies at whatever content they held at the
-#: worktree's OWN merge-base -- when that differs from root's current
-#: HEAD, the squash's per-file 3-way merge can resolve CLEANLY (no
-#: conflict object at all) by taking the worktree's side, silently
-#: regressing root's working tree to a version/manifest OLDER than what
-#: root's last real commit already declared. Measured on main across
-#: four consecutive lands (T-1692/T-1754/T-1755/T-1756): the version
-#: oscillated 0.366.0 -> 0.365.0 -> 0.366.0 -> 0.365.0, each backward
-#: step exactly this shape. Resetting FIRST, unconditionally, on every
-#: land (not just when a regression is detected) is the fix T-1760 asked
-#: for directly: the bump is a function of (root's manifest, the landing
-#: API) and should be evaluated from root's own state at squash time,
-#: never from whatever a worktree happened to carry.
+#: T-1760: none of these three files is protected by `ticket.scope`, so
+#: resetting FIRST, unconditionally, on every land (not just when a
+#: regression is detected) is the fix: the bump is a function of (root's
+#: manifest, the landing API) and should be evaluated from root's own
+#: state at squash time, never from whatever a worktree happened to
+#: carry.
+# see T-1760 for the history behind this
 _RESET_FIELD_LEVEL = frozenset({"pyproject.toml"})
 
 
@@ -819,11 +791,9 @@ def _apply_dev_version_bump_branch(
 
 # frob:ticket T-4184
 # frob:tests \
-# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_refuses_w\
-# ithout_ack
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_refuses_without_ack  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_proceeds_\
-# once_acknowledged
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_proceeds_once_acknowledged  # noqa: E501
 def _dev_version_major_guard(
     final_id: str, new_version: str, table: dict
 ) -> Result[None, LandError]:
@@ -857,11 +827,9 @@ def _dev_version_major_guard(
 
 # frob:ticket T-4184
 # frob:tests \
-# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in_sequenc\
-# e_produce_distinguishable_versions
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in_sequence_produce_distinguishable_versions  # noqa: E501
 # frob:tests \
-# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_leaves_ve\
-# rsion_untouched
+# tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_leaves_version_untouched  # noqa: E501
 # frob:waive ARCH001 reason="the major-version guard is already split out into its own \
 # _dev_version_major_guard function directly above; what remains is one linear \
 # sequence of Result-returning steps (toggle check, compute next dev version, guard, \
@@ -1077,8 +1045,7 @@ def _apply_reported_bump(
 
 # frob:ticket T-1011
 # frob:tests \
-# tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_\
-# none_is_noop
+# tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
 # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
 # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
 def _apply_gate_rule_sync(
@@ -1306,21 +1273,11 @@ def _add_scratch_worktree(
             pre_land_tip,
         )
         return Err(LandError.GitFailed)
-    # T-4257: deliberately NOT `git -C scratch config core.autocrlf
-    # false` here -- `core.autocrlf` is a REPOSITORY-level setting, not a
-    # per-worktree one (worktrees do not get their own `core.*` config
-    # unless `extensions.worktreeConfig` is enabled), so writing it
-    # "for scratch" actually rewrites `repo`'s OWN SHARED `.git/config`,
-    # flipping `core.autocrlf` out from under the caller's own checkout
-    # for the rest of the process (MEASURED on Windows, T-4257: this
-    # exact write made `repo`'s pre-existing CRLF-normalized files
-    # re-evaluate as "modified" against the index the moment the shared
-    # config changed, newly failing `test_bump_failure_leaves_repo_
-    # working_tree_untouched`, which this function must leave untouched).
     # `_apply_composed_diff_onto_scratch`'s own `git apply --index` call
     # passes the same `-c core.autocrlf=false` override PER-INVOCATION
     # instead, exactly like `worktree add` above -- scoped to that one
     # process, never written to disk.
+    # see T-4257 for the history behind this
     return Ok(None)
 
 
@@ -1357,13 +1314,9 @@ def _apply_composed_diff_onto_scratch(
     # whose LINES (both context lines and the `+`/`-` payload) are
     # LF-terminated; writing it through the default text mode silently
     # injects a `\r` into every line `git apply` then reproduces
-    # verbatim in the target file's content -- MEASURED directly on
-    # Windows (T-4257): `feature.txt` came out of `git apply --index` as
-    # `b"landed content\r\n"` even with `core.autocrlf=false` pinned on
-    # every git invocation involved, because the corruption had already
-    # happened in this `write_text` call, upstream of git entirely.
     # `newline=""` disables the translation and writes `diff_text`'s
     # bytes exactly as `git diff` produced them.
+    # see T-4257 for the history behind this
     patch_file.write_text(diff_text, newline="")
     applied = run_argv(("git", "-C", scratch, "apply", "--index", str(patch_file)))
     if applied.is_err or applied.danger_ok.returncode != 0:
