@@ -34,6 +34,7 @@ POSIX separators. A bare `path` refers to the whole file.
 <!-- frob:describes src/frob/lang/__init__.py::supported_languages -->
 <!-- frob:describes src/frob/graph/__init__.py::build_graph -->
 <!-- frob:describes src/frob/graph/__init__.py::load_graph -->
+<!-- frob:describes src/frob/graph/__init__.py::get_snapshot -->
 <!-- frob:describes src/frob/graph/_resolve.py::resolve -->
 <!-- frob:describes src/frob/graph/__init__.py::edges_from -->
 <!-- frob:describes src/frob/graph/__init__.py::edges_to -->
@@ -73,6 +74,18 @@ def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]
     # Cache-only load for read paths; Err(CacheStale) if any on-disk file hash
     # moved since the cache was built, Err(CacheCorrupt) if the cache is
     # unreadable or has never been built (including a missing cache file).
+def get_snapshot(root: Path, cache: Path) -> Result[GraphSnapshot, GraphError | BuildError]
+    # T-4688: the ONE load-or-build entry point every graph
+    # consumer should call instead of hand-rolling load_graph-then-
+    # build_graph. Tries load_graph first (cheap, cache-only, content-
+    # keyed via on-disk (mtime_ns, size) then a real content hash on any
+    # mismatch -- never mtime alone); falls back to build_graph only on a
+    # miss. Naturally cross-process: every caller shares the same on-disk
+    # .frob/cache.db, so a `frob check --only <stage>` process run after a
+    # sibling process already refreshed it gets a cache hit here too, not
+    # just a same-process one (build_graph's own @memoize_per_run, T-0423,
+    # only covers the same-process case). Logs "graph: reused cache" on a
+    # hit and "graph: rebuilt (reason=...)" on a miss, at INFO.
 def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphError]
 def edges_from(snapshot: GraphSnapshot, ref: str) -> tuple[Edge, ...]
 def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]

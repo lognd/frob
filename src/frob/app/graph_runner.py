@@ -130,13 +130,15 @@ def _run_build(root: Path, cache: Path) -> None:
 
 
 def _load_snapshot(root: Path, cache: Path):
-    from frob.graph import build_graph, load_graph
+    """Load (building if stale) the snapshot `frob graph query`/friends read.
 
-    loaded = load_graph(cache)
-    if loaded.is_ok:
-        return loaded
-    _log.info("graph: cache stale/missing, building: %s", loaded.danger_err)
-    return build_graph(root, cache)
+    T-4688: routes through `frob.graph.get_snapshot`, the shared
+    content-keyed load-or-build entry point, instead of its own
+    `load_graph`-then-`build_graph` fallback.
+    """
+    from frob.graph import get_snapshot
+
+    return get_snapshot(root, cache)
 
 
 def _query_json_payload(ref: str, record, outgoing, incoming) -> dict:  # noqa: ANN001

@@ -229,14 +229,11 @@ _MTIME_GRANULARITY_CACHE_FILENAME = "mtime-granularity-ns"
 
 # frob:ticket T-4279
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_pro\
-# be_returns_a_plausible_small_value
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_probe_returns_a_plausible_small_value  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samp\
-# les_colliding_falls_back_to_loop_span
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samples_colliding_falls_back_to_loop_span  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_unwritab\
-# le_root_returns_none
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_unwritable_root_returns_none  # noqa: E501
 def _probe_mtime_granularity_ns(root: Path) -> int | None:
     """Measure `root`'s filesystem's OBSERVED mtime-update granularity in
     nanoseconds (T-4279), via `_GRANULARITY_PROBE_WRITES` real back-to-
@@ -290,8 +287,7 @@ def _probe_mtime_granularity_ns(root: Path) -> int | None:
 
 # frob:ticket T-4279
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_pro\
-# be_returns_a_plausible_small_value
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_probe_returns_a_plausible_small_value  # noqa: E501
 def _collect_mtime_probe_samples(
     probe_path: Path,
 ) -> tuple[list[int], int] | None:
@@ -314,8 +310,7 @@ def _collect_mtime_probe_samples(
 
 # frob:ticket T-4279
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samp\
-# les_colliding_falls_back_to_loop_span
+# tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samples_colliding_falls_back_to_loop_span  # noqa: E501
 def _granularity_bucket_for_samples(
     root: Path, timestamps: list[int], loop_elapsed_ns: int
 ) -> int | None:
@@ -348,14 +343,11 @@ def _granularity_bucket_for_samples(
 
 # frob:ticket T-4279
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_second_c\
-# all_does_not_reprobe
+# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_second_call_does_not_reprobe  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_on_disk_\
-# cache_survives_a_fresh_in_process_cache
+# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_on_disk_cache_survives_a_fresh_in_process_cache  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_unmeasur\
-# able_result_is_not_persisted_to_disk
+# tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_unmeasurable_result_is_not_persisted_to_disk  # noqa: E501
 def _mtime_granularity_ns(root: Path) -> int | None:
     """`root`'s filesystem mtime granularity in nanoseconds, measured once
     and cached both in-process (`_mtime_granularity_cache`) and on disk
@@ -396,11 +388,9 @@ def _mtime_granularity_ns(root: Path) -> int | None:
 
 # frob:ticket T-4279
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_ma\
-# rgin_is_granularity_times_safety_multiplier
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_margin_is_granularity_times_safety_multiplier  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_ma\
-# rgin_is_none_when_granularity_unmeasurable
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_margin_is_none_when_granularity_unmeasurable  # noqa: E501
 def _stat_trust_margin_ns(root: Path) -> int | None:
     """The stat-trust margin (ns) for `root`'s filesystem (T-4279):
     `_STAT_TRUST_SAFETY_MULTIPLIER` times the measured mtime granularity
@@ -417,23 +407,17 @@ def _stat_trust_margin_ns(root: Path) -> int | None:
 # frob:ticket T-4257
 # frob:ticket T-4279
 # frob:tests \
-# tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_recent_stat_match_falls_t\
-# hrough_to_content_hash
+# tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_recent_stat_match_falls_through_to_content_hash  # noqa: E501
 # frob:tests \
-# tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_old_stat_match_is_trusted\
-# _and_skips_reparse
+# tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_old_stat_match_is_trusted_and_skips_reparse  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_no\
-# ne_margin_never_trusts_regardless_of_age
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_none_margin_never_trusts_regardless_of_age  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_st\
-# at_within_margin_is_not_trusted
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_stat_within_margin_is_not_trusted  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_st\
-# at_past_margin_is_trusted
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_stat_past_margin_is_trusted  # noqa: E501
 # frob:tests \
-# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_co\
-# arse_granularity_widens_the_untrusted_window
+# tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_coarse_granularity_widens_the_untrusted_window  # noqa: E501
 def _stat_trustworthy(mtime_ns: int, margin_ns: int | None) -> bool:
     """`True` iff `mtime_ns` is old enough (past `margin_ns`) for a
     matching cached `(mtime_ns, size)` to be trusted WITHOUT a
@@ -1195,6 +1179,54 @@ def _load_graph_from_connection(conn, cache: Path) -> Result[GraphSnapshot, Grap
     return Ok(snapshot)
 
 
+# frob:ticket T-4688
+# frob:doc docs/modules/graph.md#public-api
+# frob:tests \
+# tests/unit/test_graph_get_snapshot.py::TestGetSnapshot.test_second_call_on_unchanged_tree_does_not_rebuild  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_get_snapshot.py::TestGetSnapshot.test_changed_file_triggers_exactly_one_rebuild  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_get_snapshot.py::TestGetSnapshot.test_load_failure_falls_back_to_build  # noqa: E501
+def get_snapshot(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
+    """The one load-or-build entry point every graph consumer should call
+    instead of hand-rolling `load_graph`-then-`build_graph`.
+
+    T-4688: a repo-wide audit (2026-09-19) found 18 independent
+    `load_graph`-then-`build_graph`-on-miss call sites across src/frob,
+    each reimplementing the same fallback against the same on-disk
+    `.frob/cache.db` -- and, worse, several call sites (the main gate
+    pipeline's `_load_graph_queue_lock`) skipping `load_graph` entirely and
+    calling `build_graph` unconditionally, paying its walk+staleness-check
+    cost even on a fully warm cache. `load_graph`'s cache-only read IS the
+    content-keyed check (`_first_stale_cached_file`/`_first_added_file`
+    compare on-disk `(mtime_ns, size)` and, on a mismatch, an actual content
+    hash -- never mtime alone) that makes a rebuild unnecessary when nothing
+    analyzable has changed; the fix here is simply to route every caller
+    through the SAME cheap check rather than have each reinvent it, so a
+    rebuild happens only when `load_graph` actually reports drift.
+
+    This is naturally cross-process: `cache` is the same on-disk
+    `.frob/cache.db` every caller already shared, so a `frob check --only
+    <stage>` process that runs after a sibling process already refreshed
+    it gets a `load_graph` cache hit too, not just a same-process one (that
+    same-process case was already covered by `build_graph`'s own
+    `@memoize_per_run`, T-0423 -- this closes the cross-process gap that
+    left unchanged).
+
+    Logs at INFO which path was taken, so the "how many times was the
+    graph rebuilt" question T-4688 was filed to answer is
+    answerable from logs going forward: "graph: reused cache" on a
+    `load_graph` hit, "graph: rebuilt (reason=...)" on a fall-through to
+    `build_graph`.
+    """
+    loaded = load_graph(cache)
+    if loaded.is_ok:
+        _log.info("graph: reused cache key=%s", cache)
+        return Ok(loaded.danger_ok)
+    _log.info("graph: rebuilt (reason=%s)", loaded.danger_err)
+    return build_graph(root, cache)
+
+
 # frob:doc docs/modules/graph.md#public-api
 def edges_from(snapshot: GraphSnapshot, ref: str) -> tuple[Edge, ...]:
     """All edges whose `src` is exactly `ref`."""
@@ -1245,6 +1277,7 @@ __all__ = [
     "edges_from",
     "edges_to",
     "fold_comment_runs",
+    "get_snapshot",
     "is_generated_source",
     "load_graph",
     "load_lock",

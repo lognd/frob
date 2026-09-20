@@ -1,5 +1,5 @@
 ---
-id: T-draft-1bbad2b8
+id: T-5120
 title: ticket start transition must be a ledger write carrying worktree and branch,
   not a lease side effect
 state: queued

@@ -1,5 +1,5 @@
 ---
-id: T-draft-39b65b5e
+id: T-5121
 title: 'TICK rule: requeue an in-progress ticket whose recorded worktree or branch
   is dead'
 state: queued
@@ -8,7 +8,7 @@ origin: human
 created: '2026-09-20'
 priority: high
 blocked_by:
-- T-draft-1bbad2b8
+- T-5120
 parent: T-4651
 tier: ticket
 sprint: null

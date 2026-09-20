@@ -1,8 +1,8 @@
 ---
-id: T-draft-ea93df7b
+id: T-4688
 title: 'graph is rebuilt 5+ times per ticket close-out: --only checks share no cache,
   docptr always cold-rebuilds'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -65,15 +65,28 @@ scope_changes:
     new test file since tests/test_graph.py is leased by in-progress T-4625
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_second_call_on_unchanged_tree_does_not_rebuild
+- tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_changed_file_triggers_exactly_one_rebuild
+- tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_load_failure_falls_back_to_build
 designated_repro_test: null
 acceptance:
 - text: two consecutive get_snapshot calls on an unchanged tree build the graph zero
     additional times on the second call
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_second_call_on_unchanged_tree_does_not_rebuild
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_changed_file_triggers_exactly_one_rebuild
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_load_failure_falls_back_to_build
 - text: one changed file between two get_snapshot calls triggers exactly one rebuild
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_second_call_on_unchanged_tree_does_not_rebuild
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_changed_file_triggers_exactly_one_rebuild
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_load_failure_falls_back_to_build
 - text: a never-built cache falls back to build_graph transparently via get_snapshot
-  evidence: []
+  evidence:
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_second_call_on_unchanged_tree_does_not_rebuild
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_changed_file_triggers_exactly_one_rebuild
+  - tests/unit/test_graph_get_snapshot.py::TestGetSnapshot::test_load_failure_falls_back_to_build
 threat: null
 component: null
 anchor: false

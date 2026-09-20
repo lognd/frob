@@ -14,14 +14,17 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
+# frob:ticket T-4688
 def _load_snapshot_for_ack(root: Path, cache: Path):  # noqa: ANN201
-    """Load (building if stale) the graph snapshot `ack` resolves refs against."""
-    from frob.graph import build_graph, load_graph
+    """Load (building if stale) the graph snapshot `ack` resolves refs against.
 
-    loaded = load_graph(cache)
-    if loaded.is_err:
-        _log.info("ack: cache stale/missing, building: %s", loaded.danger_err)
-        loaded = build_graph(root, cache)
+    T-4688: routes through `frob.graph.get_snapshot`, the shared
+    content-keyed load-or-build entry point, instead of its own
+    `load_graph`-then-`build_graph` fallback.
+    """
+    from frob.graph import get_snapshot
+
+    loaded = get_snapshot(root, cache)
     if loaded.is_err:
         _log.error("ack: graph unavailable: %s", loaded.danger_err)
         sys.exit(1)

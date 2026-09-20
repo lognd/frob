@@ -1,5 +1,5 @@
 ---
-id: T-draft-9014e3a1
+id: T-5122
 title: land must fail when LAND-PROOF claims re-verification is SKIPPED-UNMEASURED
 state: queued
 kind: bug

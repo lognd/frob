@@ -31,13 +31,13 @@ def _probe(cfg: AppConfig, dup_path: Path) -> None:
     -- there is no sandbox. Only point this at trees you already trust.
     """
     from frob.dup import probe_equivalence
-    from frob.graph import build_graph, load_graph
+    from frob.graph import get_snapshot
 
     a, b = cfg.dup_probe[0], cfg.dup_probe[1]
     root = dup_path if dup_path.is_dir() else dup_path.parent
     cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    snapshot = (loaded if loaded.is_ok else build_graph(root, cache)).danger_ok
+    # T-4688: shared content-keyed load-or-build entry point.
+    snapshot = get_snapshot(root, cache).danger_ok
     result = probe_equivalence(a, b, snapshot, budget_s=30.0)
     if result.is_err:
         _log.error("probe %s <-> %s: %s", a, b, result.danger_err)

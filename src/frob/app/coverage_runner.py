@@ -59,13 +59,12 @@ def run(cfg: AppConfig) -> None:
     root = cfg.coverage_path or Path(".")
 
     if cfg.coverage_full:
-        from frob.graph import build_graph, load_graph
+        from frob.graph import get_snapshot
         from frob.testing._coverage_refresh import native_coverage_refresh
 
+        # T-4688: shared content-keyed load-or-build entry point.
         cache = root / ".frob" / "cache.db"
-        loaded = load_graph(cache)
-        if loaded.is_err:
-            loaded = build_graph(root, cache)
+        loaded = get_snapshot(root, cache)
         if loaded.is_err:
             _log.error(
                 "frob coverage --full: could not build graph snapshot: %s",

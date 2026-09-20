@@ -178,6 +178,7 @@ class TestDupRunner:
 
         class _FakeLoaded:
             is_ok = False
+            danger_err = "stale"
 
         class _FakeSnapshot:
             pass
@@ -214,6 +215,7 @@ class TestDupRunner:
 
         class _FakeLoaded:
             is_ok = False
+            danger_err = "stale"
 
         class _FakeSnapshot:
             pass
@@ -247,6 +249,7 @@ class TestDupRunner:
 
         class _FakeLoaded:
             is_ok = False
+            danger_err = "stale"
 
         class _FakeSnapshot:
             pass

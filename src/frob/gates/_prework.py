@@ -245,6 +245,7 @@ def _bounded_xref_scan(
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0236
 # frob:ticket T-0240
+# frob:ticket T-4688
 # frob:tests tests/ticket_land_suite/test_land_core.py::TestPreworkSweepRefresh.test_land_refreshes_stale_sweep_after_unrelated_main_change kind="unit"  # noqa: E501
 # frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_honors_graph_excludes  # noqa: E501
 # frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_skips_builtin_skip_dirs  # noqa: E501
@@ -299,18 +300,16 @@ def sweep_ticket(
     from frob.dup import find_duplicates
     from frob.excludes import load_exclude_globs
     from frob.gates import scope_digest
-    from frob.graph import build_graph, load_graph
+    from frob.graph import get_snapshot
 
     started = time.monotonic()
 
     dup_result = find_duplicates(root)
     dup_findings = dup_result.total_clones
 
+    # T-4688: shared content-keyed load-or-build entry point.
     cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    if loaded.is_err:
-        loaded = build_graph(root, cache)
-    snapshot = loaded.ok
+    snapshot = get_snapshot(root, cache).ok
 
     all_patterns = list(ticket.scope or (".",))
     digest = scope_digest(ticket.scope, snapshot) if snapshot is not None else ""
