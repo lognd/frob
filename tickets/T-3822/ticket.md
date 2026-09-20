@@ -8,7 +8,7 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: medium
-parent: T-4667
+parent: T-4665
 tier: ticket
 sprint: v1.1.0
 runs_last: false
@@ -26,6 +26,14 @@ triage_changes:
   reason: '2026-09-19: SF-22 in the STRATA friction audit; joins story D (DECISIONS)
     of epic T-4662 -- docs-vs-parser disagreement is a question about which artifact
     is the specification, which the owner is rethinking'
+  actor: logan
+  at: '2026-09-19'
+- field: parent
+  old_value: T-4667
+  new_value: T-4665
+  reason: '2026-09-19: owner decided the parser is incomplete rather than the docs
+    wrong, converting this from a DECISION into implementation work; it moves from
+    story D (T-4667) to story B (T-4665)'
   actor: logan
   at: '2026-09-19'
 body_changes:
