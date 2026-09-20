@@ -47,6 +47,13 @@ scope_changes:
     as a known pre-existing SCOPE002 condition instead'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve compare-step arithmetic detail trimmed from _flag_coverage.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 762
+  new_length: 1267
 evidence:
 - tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_project_dependency_not_in_frobs_own_interpreter_still_resolves
 - tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_now_fire_reports_the_genuinely_dropped_flag
@@ -59,3 +66,13 @@ anchor_reason: null
 land_commit: null
 ---
 T-3887 F-012: FLAGCOV001 imports the target project's own parser (e.g. stpone.flash.cli:build_parser) from frob's own interpreter, so it cannot resolve for any non-frob project (reports UNRESOLVED). frob.process._project_tool (T-3887/T-4125) only covers SUBPROCESS spawns (uv run --project ...); an import is resolved in-process and needs a different mechanism (spawn a resolver subprocess in the project's env and pass the result back, or importlib against the project's own sys.path/venv site-packages). Enumerate every import/exec-in-frobs-interpreter site first (this is likely not the only one), then decide the mechanism. Off-repo fixture required per T-3887's own doctrine: verify against a project whose package is not importable from frob's interpreter.
+
+
+T-4709 follow-up (condensed from a comment in
+src/frob/gates/_flag_coverage.py, trimmed for DOCARCH002's 12-line
+cap): the pre-T-4147 mechanism was `resolve_dotted_symbol` (any
+consumer that declares [[docblocks.commands]]). `find_dropped_cli_
+flags`'s own compare step (`_all_parser_dests(parser) &
+frozenset(config_cls.model_fields) - forwarded`) is pure set arithmetic
+over names, so this loses nothing by doing that arithmetic back in
+frob's own process once the three name sets come home as JSON.
