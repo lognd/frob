@@ -41,6 +41,13 @@ scope_changes:
     ''Five possible outcomes'' list and added a T-3464 subsection'
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _worker.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2460
+  new_length: 3945
 evidence:
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_all_vanished_findings_advance_the_watermark
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_partially_vanished_findings_still_pin_the_watermark
@@ -68,3 +75,27 @@ Each of these 5 findings is repeatedly logged as 'rapid sweep: 5 of 5 new identi
 This is a structural livelock: T-3222 (don't file vanished findings) and T-2324 (don't silently advance the watermark past unfiled findings) are individually correct but together mean this watermark position can NEVER progress on its own. It currently blocks EVERY land in the repo (T-3449's land failed twice on this before I found and manually cleared it once with frob verify dispose; it will re-raise for the next agent's land attempt too since the watermark is still stuck at the same commit).
 
 SUGGESTED FIX (not attempted -- outside this discovery's scope/budget): give T-2324's ownerless-finding path a way to advance the watermark specifically when the SAME finding set has already been dismissed/found-non-reproducing N times in a row (or persist the dispose decision so the identical batch is not re-derived), rather than re-deriving and re-raising an identical quarantine on every cycle indefinitely.
+
+T-4718 sweep (condensed from src/frob/verify/_worker.py:493-511, trimmed
+for DOCARCH002's 12-line cap): the trimmed block's full original text,
+kept verbatim below.
+
+    #: "empty" (nothing queued, verify_fn never called), "baseline-
+    #: established" (first-ever run, no prior baseline to compare against
+    #: -- NOT a proven-green claim, so the watermark is deliberately left
+    #: untouched here too), "red" (new findings vs the rolling baseline,
+    #: filed/disposed to `filed_ticket`, or genuinely ownerless with
+    #: `filed_ticket=None`), "vanished" (T-3464: every new finding was
+    #: unfileable ONLY because none of them reproduced any more by T-3222's
+    #: file-time recheck -- there is nothing durable to own and nothing
+    #: real left to pin on, so this advances like green despite
+    #: `filed_ticket=None`), or "green" (no new findings).
+    #: T-2324: "red" no longer implies `advanced_watermark=False` -- check
+    #: that field directly, never infer it from `status`. A red result
+    #: whose findings got a durable owner (`filed_ticket` is not `None`)
+    #: still advances the watermark and compacts the queue, exactly like
+    #: green; only a red result that could not even be FILED
+    #: (`filed_ticket is None`) leaves the watermark untouched -- see
+    #: `_resolve_verification_outcome`'s own docstring for why. "vanished"
+    #: is the one exception to THAT rule too: `filed_ticket=None` there
+    #: as well, but `advanced_watermark=True`.
