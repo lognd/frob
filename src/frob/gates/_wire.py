@@ -54,38 +54,17 @@ from frob.tickets import TicketQueue
 _log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# WIRE001/WIRE002 (T-1428): a ticket's own diff adds code nothing outside its
-# own tests can reach.
-# ---------------------------------------------------------------------------
-#
-# DEAD001 above asks "does ANY private symbol in the tree have a caller".
-# WIRE001 asks a narrower, diff-scoped question that DEAD001 structurally
-# cannot answer: "does the symbol/rule-id/CLI-flag this DIFF just added have
-# a caller/registration OUTSIDE the diff's own test files" -- catching
-# PUBLIC additions too (DEAD001 exempts every public symbol by design), and
-# catching the "string in a list" wiring shape (a new gate rule id, a new
-# CLI flag's argparse `dest`) that never appears as a call token at all and
-# so is invisible to call-graph analysis of any kind, per this module's own
-# `build_reference_graph`/`build_call_graph` substrate (see
-# `_is_reached_outside_diff_tests`'s docstring for why a text scan, not the
-# call graph, is used here).
-#
-# All four real-instance shapes this ticket names are implemented:
-#   1. a new function/method/class with no non-test caller (T-1421)
-#   2. a new gate rule id literal absent from `_KNOWN_GATE_RULES` (T-1421's
-#      BUG002)
-#   3. a new CLI flag `dest=` absent from `_config_external.py`'s copy
-#      lists (T-1422) -- the "string in a list" shape, handled by a
-#      TARGETED check, not the call graph (see module docstring on that
-#      function)
-#   4. a new keyword-only parameter added to an EXISTING function's
-#      signature that no call site passes (T-1384/T-1399/T-1391, T-1430)
-#      -- `_wire001_new_kwonly_param_violations` diffs the function's
-#      keyword-only parameter set at the diff's merge-base against its
-#      current set (stdlib `ast`, not the token-stream digest machinery
-#      T-1431's relocation check uses -- a plain name-set diff is exact
-#      here, no false-positive-from-body-rewrite risk to guard against).
+# WIRE001/WIRE002 (T-1428): a ticket's own diff adds code nothing
+# outside its own tests can reach. WIRE001 asks a diff-scoped question
+# DEAD001 cannot: does the symbol/rule-id/CLI-flag this DIFF added have
+# a caller/registration OUTSIDE the diff's own tests -- catching PUBLIC
+# additions too, and the "string in a list" shape invisible to
+# call-graph analysis (see `_is_reached_outside_diff_tests`). Four
+# shapes: (1) a new function/method/class with no non-test caller, (2)
+# a new gate rule id absent from `_KNOWN_GATE_RULES`, (3) a new CLI
+# flag `dest=` absent from `_config_external.py`'s copy lists
+# (TARGETED, not the call graph), (4) a new keyword-only parameter no
+# call site passes.
 
 _RULE_ID_LITERAL_RE = re.compile(r'rule\s*=\s*"([A-Z][A-Z0-9]{1,9}\d{3})"')
 _CLI_DEST_LITERAL_RE = re.compile(r'\bdest\s*=\s*"([a-z][a-z0-9_]*)"')
@@ -94,27 +73,16 @@ _CONFIG_EXTERNAL_PATH = "src/frob/app/_config_external.py"
 
 #: Function NAMES that register a subcommand's parser purely for --help
 #: discoverability on a direct-dispatch verb whose real invocation
-#: (`frob.__main__._dispatch`'s raw argv[0] scan) never routes through
-#: `AppConfig.from_external` at all (T-4303) -- every `dest=` an ADDED
-#: line spells inside one of these functions' own body is therefore, BY
+#: never routes through `AppConfig.from_external` at all (T-4303) --
+#: every `dest=` an ADDED line spells inside one is therefore, BY
 #: CONSTRUCTION, never going to appear in `_config_external.py`'s
-#: forwarded set, and flagging it every time trains the exact "waive it,
-#: it's always this" reflex a per-verb `frob:waive WIRE001
-#: follow_up="T-####"` was standing in for (see `_add_whereis_parser`'s
-#: own T-4299 waiver, now dischargeable once this lands). Source of
-#: truth: `frob.__main__._dispatch`'s if/elif chain -- the SAME chain
-#: `_WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS` below tracks for the verb-
-#: token axis, and the same reason that tuple gives for leaving `bind`/
-#: `agent`/`worktree`/`sync-skills` off of it: those verbs (`whereis`
-#: included, T-4299) still register their OWN `_add_*_parser` on the
-#: real `_build_parser()` tree, so they are visible to `frob --help` and
-#: to this WIRE001 check's `_CLI_PARSER_DIR_PREFIX` file filter -- only
-#: `refactor`/`narrative` build a throwaway local parser instead
-#: (`_dispatch_refactor`/`_dispatch_narrative`'s own shape), which never
-#: lives under `src/frob/_cli_parsers/**` in the first place and so is
-#: already outside this check's file filter, needing no entry here.
-#: Update this set if that chain adds or removes an AppConfig-bypass
-#: branch whose parser still registers on the live tree.
+#: forwarded set. Source of truth: `frob.__main__._dispatch`'s if/elif
+#: chain -- the SAME chain `_WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS`
+#: tracks for the verb-token axis. Only `refactor`/`narrative` build a
+#: throwaway local parser outside `src/frob/_cli_parsers/**`, needing
+#: no entry here. Update this set if the chain adds/removes an
+#: AppConfig-bypass branch whose parser still registers on the live
+#: tree.
 # frob:ticket T-4303
 _WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS: frozenset[str] = frozenset(
     {
@@ -232,22 +200,16 @@ def _new_callable_records(
 _JOB_TABLE_MARKER_NAMES = frozenset({"_ProcessJob"})
 
 # frob:ticket T-2931
-# T-2931: `atexit.register(_target, ...)` is a fourth by-reference wiring
-# shape (`_scratch_file_for_suffix`'s registration of `_remove_scratch_
-# file`, T-2645) -- the stdlib's OWN dynamic-dispatch registry invokes
-# the callback at interpreter exit, never via a call token this module's
-# text scan can see, the identical class of gap `_WRAPPER_MARKER_NAMES`
-# already covers for `memoize_per_run(_target)`-shaped wrapper markers.
-# Kept as its own DOTTED-marker set rather than folded into
-# `_WRAPPER_MARKER_NAMES` (whose members `_wire_reach_patterns`'
-# `wrapper_pattern` matches as a BARE name immediately before `(` --
-# `(?<![A-Za-z0-9_.])`'s negative lookbehind explicitly excludes a
-# dot-preceded match, so a bare "register" alternative would either miss
-# `atexit.register(` entirely or, worse, false-positive on any OTHER
-# object's unrelated `.register(` method sharing the bare name) --
-# `_DOTTED_WRAPPER_MARKERS` instead pairs each marker with its required
-# qualifier (`"atexit"`) so the alternative it builds
-# (`atexit\.register\(`) is exact, not a bare-name collision risk.
+# T-2931: `atexit.register(_target, ...)` is a fourth by-reference
+# wiring shape (T-2645) -- the stdlib's OWN dynamic-dispatch registry
+# invokes the callback at interpreter exit, never via a call token this
+# module's text scan can see, the same class of gap `_WRAPPER_MARKER_
+# NAMES` already covers for wrapper markers. Kept as its own DOTTED-
+# marker set rather than folded into `_WRAPPER_MARKER_NAMES` (which
+# matches a BARE name immediately before `(` and explicitly excludes a
+# dot-preceded match) -- `_DOTTED_WRAPPER_MARKERS` pairs each marker
+# with its required qualifier so the alternative it builds is exact,
+# not a bare-name collision risk.
 _DOTTED_WRAPPER_MARKERS = (("atexit", "register"),)
 
 
@@ -417,6 +379,7 @@ def _is_fixture_consumed_as_parameter(
 
 # frob:ticket T-1502
 # frob:ticket T-2746
+# frob:ticket T-4770
 def _wire_reach_patterns(
     short: str, kind: SymbolKind, *, is_property: bool = False
 ) -> tuple[
@@ -467,22 +430,16 @@ def _wire_reach_patterns(
     call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
     if kind == SymbolKind.METHOD:
         # T-2532: a classmethod/staticmethod's ONLY legal call shape in
-        # Python is dotted-qualified (`ClassName.method_name(...)` or
-        # `instance.method_name(...)`) -- the plain `call_pattern` above
-        # explicitly EXCLUDES any match preceded by a dot
-        # (`(?<![A-Za-z0-9_.])`), which is right for a bare module-level
-        # function/const/type (a dot-preceded `short(` there is someone
-        # ELSE's attribute of the same name, not a real call) but wrong
-        # for a method record: it makes every genuine, working qualified
-        # call site invisible to the reach scan. `SealedGrantSet.from_
-        # root_node(node)` (T-2530's own incident) is exactly this shape.
-        # Widened only for `kind == METHOD` (this module has no separate
-        # staticmethod/classmethod `SymbolKind` -- both collapse into
-        # METHOD, see `frob.lang._models.SymbolKind`), so a bare function/
-        # class/const/type record's call_pattern is unaffected; the
-        # existing "no preceding dot" lookbehind still applies to the
-        # bare-name alternative, only the second alternative below drops
-        # it for a dotted-qualified prefix specifically.
+        # Python is dotted-qualified -- the plain `call_pattern` above
+        # explicitly EXCLUDES any match preceded by a dot, which is
+        # right for a bare module-level function/const/type but wrong
+        # for a method record: it makes every genuine qualified call
+        # site invisible to the reach scan (`SealedGrantSet.from_
+        # root_node(node)`, T-2530's own incident). Widened only for
+        # `kind == METHOD` (both collapse into METHOD, see
+        # `frob.lang._models.SymbolKind`); the bare-name alternative
+        # keeps the "no preceding dot" lookbehind, only the second
+        # alternative drops it for a dotted-qualified prefix.
         call_pattern = re.compile(
             rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\("
             rf"|(?<![A-Za-z0-9_.])[A-Za-z_][A-Za-z0-9_]*"
@@ -491,33 +448,18 @@ def _wire_reach_patterns(
     marker_names = "|".join(
         re.escape(name) for name in (*_WRAPPER_MARKER_NAMES, *_JOB_TABLE_MARKER_NAMES)
     )
-    # T-1684: a DICT-TABLE entry (`"sweep-async": _sweep_async,` in
-    # `_ticket_dispatch_table`) is the third by-reference wiring shape in
-    # this repo, alongside the wrapper-marker and job-table ones above --
-    # every `frob ticket <verb>` handler is wired exactly this way and
-    # nothing else ever calls it by name. Without this, every new CLI
-    # subcommand handler is a WIRE001 false positive whose only remedy is
-    # a waiver, which is how a gate teaches people to waive it.
-    # T-1807: the dict-table value can also be MODULE-QUALIFIED
-    # (`"frob_map": _tools.frob_map,` -- every row of
-    # `_TOOL_DISPATCH` in src/frob/serve/_socketd.py uses this exact
-    # shape), so the value alternative also accepts an optional
-    # `name.`-prefixed qualifier ahead of `short`, not just a bare name.
-    #
-    # T-2778: a fourth by-reference shape -- a bare-name KEYWORD-ARGUMENT
-    # VALUE (`on_tick=_print_tick`, `scripts/wait_for_land_slot.py`'s own
-    # `_print_tick` passed to `wait_for_slot`'s `on_tick=` parameter) --
-    # is the callback-argument case the wrapper-marker/job-table/dict-
-    # table alternatives above cannot see: none of them names a fixed
-    # marker function, a job-table constructor, or a dict literal, they
-    # are just an ordinary call passing the symbol by name as one of its
-    # OTHER arguments. Restricted to `kind == SymbolKind.FUNCTION` only
-    # (never CLASS, never METHOD) so this cannot rescue T-1831's
-    # `formatter_class=_GroupedHelpFormatter` anchor (a CLASS passed the
-    # identical way) -- that anchor must keep firing on purpose (its own
-    # docstring: "must never be closed"). A METHOD is excluded too since
-    # no evidenced instance of this shape exists for one yet and widening
-    # past the evidenced FUNCTION case would just be guessing.
+    # T-1684: a DICT-TABLE entry is the third by-reference wiring shape
+    # -- every `frob ticket <verb>` handler is wired exactly this way,
+    # and without this every new CLI subcommand handler is a WIRE001
+    # false positive whose only remedy is a waiver. T-1807: the value
+    # can also be MODULE-QUALIFIED, so the alternative accepts an
+    # optional `name.`-prefixed qualifier too.
+    # T-2778: a fourth shape -- a bare-name KEYWORD-ARGUMENT VALUE -- is
+    # the callback-argument case the other alternatives cannot see.
+    # Restricted to `kind == SymbolKind.FUNCTION` only so this cannot
+    # rescue T-1831's CLASS-passed anchor (which must keep firing on
+    # purpose); METHOD is excluded too since no evidenced instance
+    # exists yet.
     keyword_arg_pattern = (
         rf"|(?<![A-Za-z0-9_.])[A-Za-z_][A-Za-z0-9_]*\s*=\s*"
         rf"{re.escape(short)}(?![A-Za-z0-9_])(?!\s*\()"
@@ -1401,23 +1343,16 @@ def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Vio
 
 #: Files this repo tracks that are known to name frob verbs by hand, at
 #: ERROR severity: hooks (both reference shapes -- a compiled matcher
-#: AND suggestion prose) and the two docs the T-1725 ticket names
-#: directly as load-bearing (the agent playbook every dispatched agent
-#: reads, and the CLI reference doc). Glob patterns, matched via
-#: `PurePath.match` against each tracked file's root-relative path.
-#:
-#: Deliberately NOT `docs/**/*.md` generally (T-1725's own "wider scope"
-#: ask, measured and found too imprecise for ERROR-severity enforcement
-#: right now): this module's own extraction heuristic (a "frob" word
-#: followed by 1-2 alphanumeric-hyphen tokens inside a backtick span)
-#: false-positives heavily against ordinary doc prose that happens to
-#: mention "frob" near unrelated backtick-quoted vocabulary (priority
-#: levels, board columns, config keys) -- see `docs/audits/wire003-
-#: repo-scan.md` for the measured count this ticket's Done report cites.
-#: Widening this tuple to the full docs tree is a follow-up once that
-#: false-positive rate is brought down (per-token allowlist, or requiring
-#: `uv run frob`/`` frob <verb> `` as a stricter anchor), not something
-#: to force through at ERROR severity today.
+#: AND suggestion prose) and the two docs T-1725 names directly as
+#: load-bearing (the agent playbook every dispatched agent reads, and
+#: the CLI reference doc). Glob patterns, matched via `PurePath.match`.
+#: Deliberately NOT `docs/**/*.md` generally: this module's own
+#: extraction heuristic (a "frob" word followed by 1-2 alphanumeric-
+#: hyphen tokens inside a backtick span) false-positives heavily
+#: against ordinary doc prose that happens to mention "frob" near
+#: unrelated backtick-quoted vocabulary. Widening to the full docs tree
+#: is a follow-up once that false-positive rate is brought down, not
+#: something to force through at ERROR severity today.
 _WIRE003_SCAN_GLOBS: tuple[str, ...] = (
     ".claude/hooks/*.py",
     "docs/guides/agent-playbook.md",
@@ -1546,23 +1481,17 @@ def _wire003_subparsers_action(parser):  # noqa: ANN001, ANN202
     return None
 
 
-#: Top-level verb NAMES `frob.__main__._dispatch` routes by a raw argv[0]
-#: string check BEFORE `_build_parser()` is ever called (T-3115), so they
-#: never enter the argparse tree `_wire003_live_verb_tokens` walks below
-#: and are consequently absent from `frob --help` too -- a real, separate
-#: discoverability defect (T-3115's own report), not something this gate
-#: should paper over. `bind`/`agent`/`worktree`/`sync-skills` are ALSO
-#: raw-dispatched early but stay off this tuple deliberately: each still
-#: calls its own `_add_*_parser` inside `_build_parser()` (see
-#: `_add_workflow_subparsers`/`_add_analysis_subparsers` in
-#: `frob.__main__`), so the walk below already sees them live. Only
-#: `refactor` and `narrative` build their argparse tree from a throwaway
-#: local parser inside their own `_dispatch_*` helper and never register
-#: it on the real one. Source of truth: `frob.__main__._dispatch`'s
-#: if/elif chain -- update this tuple if that chain adds or removes a
-#: raw-dispatch-only branch (frob:tests below cover a must-fire case so a
-#: forgotten update still shows up as a stale-verb false-negative gap,
-#: not silently).
+#: Top-level verb NAMES `frob.__main__._dispatch` routes by a raw
+#: argv[0] string check BEFORE `_build_parser()` is ever called
+#: (T-3115), so they never enter the argparse tree
+#: `_wire003_live_verb_tokens` walks and are absent from `frob --help`
+#: too -- a real, separate discoverability defect, not something this
+#: gate should paper over. `bind`/`agent`/`worktree`/`sync-skills` are
+#: ALSO raw-dispatched early but stay off this tuple: each still calls
+#: its own `_add_*_parser` inside `_build_parser()`, so the walk
+#: already sees them live. Only `refactor`/`narrative` build their tree
+#: from a throwaway local parser and never register it on the real
+#: one. Source of truth: `frob.__main__._dispatch`'s if/elif chain.
 # frob:ticket T-3115
 _WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS: tuple[str, ...] = ("refactor", "narrative")
 
@@ -1690,41 +1619,32 @@ def _wire003_stale_verb_references(root: Path) -> list[Violation]:
 # frob:ticket T-1428
 # frob:ticket T-1725
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_new_public_function_with_no_caller_\
-# is_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_new_public_function_with_no_caller_is_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_function_called_from_non_test_code_is_not_flagged  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_relocated_symbol_via_file_split_is_\
-# not_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_relocated_symbol_via_file_split_is_not_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_new_kwonly_param_never_passed_is_fl\
-# agged
+# tests/gates_suite/test_wire.py::TestWireGate.test_new_kwonly_param_never_passed_is_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_kwonly_param_passed_at_call_site_is_not_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_cli_dest_missing_from_config_external_is_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_cli_dest_present_in_config_external_is_not_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_rule_id_missing_from_known_gate_rules_is_flagged  # noqa: E501
 # frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_rule_id_present_in_known_gate_rules_is_not_flagged  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_fires_when_follow_up_ticket\
-# _missing
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_missing  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_fires_when_follow_up_ticket\
-# _is_closed
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_is_closed  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_clean_when_follow_up_ticket\
-# _is_open
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_clean_when_follow_up_ticket_is_open  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_matcher_pattern_stale_verb_\
-# is_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_matcher_pattern_stale_verb_is_flagged  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_suggestion_string_stale_ver\
-# b_is_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_suggestion_string_stale_verb_is_flagged  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_wire.py::TestWireGate.test_wire003_real_verbs_are_not_flagged
 # frob:tests \
-# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_dotted_module_path_is_not_f\
-# lagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_dotted_module_path_is_not_flagged  # noqa: E501
 # frob:enforces CHK-GATE-WIRE001
 # frob:enforces CHK-GATE-WIRE002
 # frob:enforces CHK-GATE-WIRE003

@@ -192,29 +192,17 @@ _PROTOCOL_TAG_KINDS = frozenset(
 )
 
 #: T-0747: per-language `NormalizedModule` adapter dispatch for the
-#: cleanup-obligation gate's intraprocedural exit walk (`_acquiring_
-#: function_violations`) -- same four `frob.arch` adapters `analyze_
-#: project` already drives, keyed by file suffix like `_DISCHARGE_BY_
-#: SUFFIX` below. `.py` is additionally the ONLY suffix the exceptional-
-#: exit half consults `frob.arch._mayraise.compute_may_raise` for (that
-#: resolver's own module docstring discloses it as Python-specific: its
-#: builtin-raiser table and exception hierarchy are Python's, not a
-#: generic cross-language shape) -- Rust/TypeScript/Kotlin acquisitions
-#: still get the language-agnostic normal-return postdominance check,
-#: just not the exceptional-exit half.
-#:
-#: Built LAZILY (`_normalized_adapter_by_suffix`, below), not as a module-
-#: level literal: `frob.gates` (this module's own package) is imported
-#: transitively from deep inside `frob.arch.__init__`'s own import chain
-#: (`frob.arch -> _async_hazards -> _python -> frob.dup -> frob.gates`),
-#: so a module-level `_python.PythonAdapter()` instantiation at THIS
-#: module's import time reads `frob.arch._python` before its own class
-#: body has finished executing -- a real circular-import `AttributeError`
-#: this ticket's own first pass shipped and `tests/unit/test_arch.py`
-#: (which imports `frob.arch` directly, triggering that exact order)
-#: caught. Constructing the adapters inside a function instead defers
-#: that attribute lookup until first CALL, by which point every module in
-#: the cycle has finished importing.
+#: cleanup-obligation gate's exit walk -- same four `frob.arch` adapters
+#: `analyze_project` already drives. `.py` is additionally the ONLY
+#: suffix the exceptional-exit half consults `compute_may_raise` for
+#: (Python-specific builtin-raiser table); other languages still get
+#: the normal-return postdominance check, just not the exceptional-exit
+#: half. Built LAZILY, not as a module-level literal: `frob.gates` is
+#: imported
+#: transitively from deep inside `frob.arch.__init__`'s own import
+#: chain, so a module-level adapter instantiation at import time reads
+#: `frob.arch._python` before its class body finishes -- a real
+#: circular-import `AttributeError`. Deferring to first CALL avoids it.
 _ADAPTER_FACTORY_BY_SUFFIX: dict[str, Callable[[], LanguageAdapter]] = {
     ".py": lambda: _python.PythonAdapter(),
     ".rs": lambda: _rust.RustAdapter(),
@@ -275,6 +263,7 @@ def _package_files(root: Path, rel_path: str) -> tuple[str, ...]:
     return found or (rel_path,)
 
 
+# frob:ticket T-4770
 def _package_edges(root: Path, files: tuple[str, ...]) -> tuple[Edge, ...]:
     """Every `frob:` directive `Edge` parsed from `files` (skipping any
     that fails to parse, logged) -- the `compute_protocol_summaries`
@@ -315,24 +304,17 @@ def _package_edges(root: Path, files: tuple[str, ...]) -> tuple[Edge, ...]:
             )
             continue
         file_edges, _malformed = parse_directives(result.danger_ok)
-        # T-3667: `result.danger_ok.path` (`ParsedFile.path`, itself
-        # `frob.lang._display_path(root / rel_path)` -- ALWAYS `.as_
-        # posix()`, see that function's own docstring), not `str(root /
-        # rel_path)`. `parse_directives` builds every `Edge.src`/`origin`
-        # from `ParsedFile.path` verbatim, so `abs_path` must be BYTE-
-        # IDENTICAL to whatever string is actually embedded there for
-        # this `.replace()` to ever match. `str(root / rel_path)` on
-        # win32 renders native `\` separators while `ParsedFile.path`
-        # is always POSIX -- a mismatch that made this `.replace()` a
-        # silent no-op, leaving `e.src`/`origin` as the ABSOLUTE `_
-        # display_path` string instead of the intended `rel_path` --
-        # invisible on POSIX, where `str()` and `.as_posix()` coincide,
-        # which is why PROTO002/003/004 (whose requires/transition
-        # lookups key directly off `edge.src == symref` against the
-        # relative `entrypoints` this module's OWN `PurePosixPath`-based
-        # `_tagged_symbols_by_package` produces) silently found zero
-        # matches on win32 -- see T-3659's win32 campaign, T-3667's own
-        # ticket body for the full diagnostic trail.
+        # T-3667: `result.danger_ok.path` is ALWAYS `.as_posix()`, not
+        # `str(root / rel_path)`. `parse_directives` builds every
+        # `Edge.src`/`origin` from `ParsedFile.path` verbatim, so
+        # `abs_path` must be BYTE-IDENTICAL for this `.replace()` to
+        # ever match. `str(root / rel_path)` on win32 renders native
+        # `\` separators while `ParsedFile.path` is always POSIX -- a
+        # mismatch that made this `.replace()` a silent no-op, leaving
+        # `e.src`/`origin` as the ABSOLUTE path instead of the intended
+        # relative one -- invisible on POSIX, where `str()` and
+        # `.as_posix()` coincide. See T-3659's win32 campaign for the
+        # full diagnostic trail.
         abs_path = result.danger_ok.path
         for e in file_edges:
             edges.append(

@@ -2,7 +2,7 @@
 id: T-4770
 title: 'Source narrative C2: gates B (_parse_failures..invariants) -- 20 files, 44
   runs, 1019 lines'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -39,24 +39,43 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_runs.py
+  exit=0 sha256=178672a4e42b
+- cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_narrative_moved.py
+  exit=0 sha256=c3a697a507f9
+- cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_no_ticket_blocks.py
+  exit=0 sha256=2232c98d4eff
+- cmd:sh /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_nonbehavior.sh
+  exit=0 sha256=c9f5ed3b1646
+- cmd:/home/logan/projects/frob/.venv/bin/frob ticket list exit=0 sha256=51aab0adc42a
 designated_repro_test: null
 acceptance:
 - text: 'given the 20 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
-  evidence: []
+  evidence:
+  - cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_runs.py
+    exit=0 sha256=178672a4e42b
 - text: given every block that cited a ticket, when the sweep is done, then that narrative
     is readable in that ticket body -- moved, never deleted (T-2994 constraint 1)
-  evidence: []
+  evidence:
+  - cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_narrative_moved.py
+    exit=0 sha256=c3a697a507f9
 - text: given every block that cited NO ticket, when the sweep is done, then its narrative
     is in this cluster ticket body
-  evidence: []
+  evidence:
+  - cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_no_ticket_blocks.py
+    exit=0 sha256=2232c98d4eff
 - text: given the whole diff, when git diff -w is taken over non-comment lines, then
     it is empty -- comments only, no behaviour change
-  evidence: []
+  evidence:
+  - cmd:sh /tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/verify_t4770_nonbehavior.sh
+    exit=0 sha256=c9f5ed3b1646
 - text: given each batch of frob narrative move calls, when the batch finishes, then
     frob ticket list exits 0 (T-2994 constraint 3, the DuplicateId hazard)
-  evidence: []
+  evidence:
+  - cmd:/home/logan/projects/frob/.venv/bin/frob ticket list exit=0 sha256=51aab0adc42a
 threat: null
 component: null
 anchor: false

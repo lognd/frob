@@ -24,56 +24,17 @@ from frob.tickets import TicketQueue, TicketState
 _log = get_logger(__name__)
 
 
-# T-0779 (audit H2): a waiver justified by "this is pending ticket T-XXXX"
-# must not outlive T-XXXX -- the five LINT004 kill-switch waivers cited
-# T-0200 as the follow-on ticket to build for months after T-0200 closed,
-# and nothing re-litigated them. WAIVE006 resolves every ticket id a
-# waiver BINDS ITSELF to (never a bare historical mention) against the
-# ledger+archive; DONE or DROPPED there means the waiver has outlived its
-# own justification and must be re-justified or removed.
-#
-# Calibration (the hard part): a waiver's reason prose routinely narrates
-# history ("kill-switch mechanism exists (T-0200/T-0778) but ... -- tracked
-# in T-draft-8cd37914") without the mention being a live claim that T-0200
-# is still open or still the reason the gap is excused -- T-0778 rewrote
-# exactly this class of waiver to cite an open follow-on while HISTORICALLY
-# mentioning the now-closed T-0200 that built the underlying mechanism.
-# WAIVE006 must not fire on that. Two things count as binding:
-#   1. An explicit ticket attribute (`frob:waive RULE reason="..."
-#      ticket="T-####"`, or a strata `waive "RULE" reason "..." ticket
-#      "T-####";` clause) -- the author wrote down, structurally, "this is
-#      what tracks the gap".
-#   2. Specific "still pending on this ticket" phrasing INSIDE the reason
-#      text itself (`_WAIVE006_BINDING_PHRASE_RES`) -- "pending T-####" and
-#      "T-#### is the follow-on ticket" are the two shapes this repo's own
-#      history (T-0412/T-0753 debt-style waivers, the pre-T-0778 LINT004
-#      waivers) has actually produced. A bare `(T-0200/T-0778)` aside or a
-#      `T-0200 built a real kill switch` narration is neither shape, so it
-#      is never extracted -- only a ticket reference the reason text itself
-#      claims is the live justification counts.
-# T-2622 (T-2612 audit): a waiver justified by "T-XXXX holds a live lease
-# on this file, so I cannot touch it" is the SAME shape of stale premise
-# WAIVE006 already catches for "pending"/"blocked on"/"waiting on"
-# phrasing -- it just uses different words. T-2612 measured this directly:
-# 12 waiver sites cited a "holding a live lease" style premise, and 0 of
-# the 12 still held one (every cited ticket had gone terminal). Nothing
-# caught that, because none of `_WAIVE006_BINDING_PHRASE_RES`'s existing
-# patterns matched "holds ... lease" phrasing at all -- the ticket
-# reference was there, but the extractor never saw it as binding.
-#
-# Rather than build a second, parallel "lease-premise" checker (the
-# duplication NO DUPLICATION forbids, and the exact anti-pattern T-2622
-# was filed to avoid), these five patterns extend THIS SAME tuple: any
-# ticket id a reason cites as the reason a file/site is currently off
-# limits is a live-state claim just as much as "pending T-####" is, and
-# WAIVE006/007 already do the right thing with it (ERROR if the cited
-# ticket has gone DONE/DROPPED, WARN if it never resolves at all) with no
-# further code change needed once the phrase is recognized. Calibrated
-# against this repo's own real waiver text (this file's own top-of-module
-# waiver: "T-1279 (TEST005 burn-down) holds a concurrent in-progress
-# lease on src/frob/gates/** for the whole package" -- T-1279 is DONE as
-# of T-2622, making that specific waiver a live positive-control case for
-# this exact extension, not a hypothetical).
+# T-0779: a waiver justified by "this is pending ticket T-XXXX" must not
+# outlive T-XXXX. WAIVE006 resolves every ticket id a waiver BINDS
+# ITSELF to (never a bare mention) against the ledger; DONE/DROPPED
+# means it must be re-justified. Two things count as binding: (1) an
+# explicit ticket attribute (`frob:waive RULE reason="..." ticket=
+# "T-####"`, or the strata `waive ... ticket "T-####";` clause), or (2)
+# "still pending on this ticket" phrasing INSIDE the reason text itself
+# (`_WAIVE006_BINDING_PHRASE_RES`) -- a bare historical aside is neither
+# and is never extracted. T-2622: a "T-XXXX holds a live lease" premise
+# is the SAME stale-premise shape; these patterns extend THIS SAME
+# tuple rather than build a second, parallel checker.
 _WAIVE006_TICKET_ID_RE = r"T-\d+"
 _WAIVE006_BINDING_PHRASE_RES = tuple(
     re.compile(pattern, re.IGNORECASE)
@@ -285,36 +246,18 @@ def waive006_gate(
     )
 
 
-# T-0808 (T-0779 reviewer finding): WAIVE006 deliberately skips a binding
-# ticket ref that does not resolve to any ticket at all (active or
-# archive) -- that is a different honesty gap, not WAIVE006's "closed
-# ticket" case, and was silently unflagged. The real incident this closes:
-# four `design/frob.strata` waivers bound to `T-draft-8cd37914`, which was
-# renumbered to `T-0803` at land -- the waivers kept citing a ticket id
-# that no longer (and now never again) resolves, a permanent silent
-# waiver with nothing left to re-litigate it.
-#
-# Exemption: EVERY `T-draft-*` id is exempt from WAIVE007, unconditionally
-# -- not just ones referenced by a still-live worktree lease. A narrower
-# "exempt only if a live lease still claims this draft id" rule was
-# considered and rejected: it would require this gate to cross-reference
-# `frob.tickets._leases` state that is worktree-local and routinely absent
-# in the very run (a landed/merged checkout, CI, another agent's worktree)
-# where the gate needs to be trustworthy, making the exemption itself flaky
-# across environments -- exactly the kind of environment-dependent gate
-# result this repo's gates avoid elsewhere. Drafts are worktree-local
-# transients by construction (`frob.tickets._models` mints `T-draft-<hex>`
-# only inside an active worktree, and `frob ticket land` always renumbers
-# them to a real `T-####` id before the ledger is shared) -- so ANY
-# `T-draft-*` id a gate run observes is either still in-progress (not yet
-# landed, not a dangling reference at all -- the id simply has not been
-# minted into the real ledger this checkout sees) or was already
-# renumbered away and is now permanently unresolvable by design, a state
-# WAIVE006 already treats as out of scope for the identical reason (see
-# `_waive006_stale_ticket`'s docstring). Flagging a renumbered draft as
-# "dangling" would fire on every merged waiver written before its own
-# ticket landed, forever, which is noise WAIVE007 exists to avoid
-# creating, not add.
+# T-0808 (T-0779 reviewer finding): WAIVE006 deliberately skips a
+# binding ticket ref that does not resolve to any ticket at all -- a
+# different honesty gap than WAIVE006's "closed ticket" case, and was
+# silently unflagged. Real incident: four waivers bound to
+# `T-draft-8cd37914`, renumbered to `T-0803` at land -- they kept
+# citing an id that no longer resolves, permanently.
+# Exemption: EVERY `T-draft-*` id is exempt from WAIVE007
+# unconditionally -- checking lease state (worktree-local, routinely
+# absent in a landed checkout) would make the exemption flaky. Any
+# `T-draft-*` id observed is either still in-progress or already
+# renumbered away and permanently unresolvable by design, the same
+# state WAIVE006 already treats as out of scope.
 def _waive007_is_exempt_dangling_ref(ticket_id: str) -> bool:
     """`True` for any `T-draft-*` id: worktree-local transient by
     construction (see the module comment above), never a WAIVE007
@@ -437,29 +380,17 @@ def waive007_gate(
 
 # frob:ticket T-0504
 # PLACE001 was first prototyped as "distance from the class's own span
-# start" and DELIBERATELY DROPPED (T-0470) before landing: that heuristic
-# fired on this repo's own widespread, legitimate idiom of per-field
-# `frob:waive`/`frob:ticket` comments documenting one field deep inside a
-# large pydantic config class (e.g. `src/frob/app/config.py`'s
-# `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines past the
-# class's `class AppConfig:` line) -- fields are not `RawSymbol`s (only
-# FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one always
-# falls back to the enclosing class by construction, and doing so far
-# from the class top is completely intentional there, not mis-scoped.
-#
-# T-0504 replaces that raw-distance signal with the materially different
-# one this comment's own predecessor named as the real fix: does a
-# nearby REAL symbol exist that the directive plausibly SHOULD have
-# bound to via `following` but didn't reach, with nothing but blank
-# lines/comments/decorators between the directive and that symbol? The
-# per-field idiom always has genuine field-assignment CODE in that gap
-# (the very thing that makes it a field and not a stray comment), so it
-# is excluded by construction rather than by distance -- see
-# `_place001_missed_symbol`'s docstring for the full argument and
-# `TestPlace001Gate` for both the non-vacuous positive (a directive
-# separated from its intended `def` by one blank line too many) and the
-# AppConfig-shaped negative (a directive above a field, real code before
-# the next real method).
+# start" and DELIBERATELY DROPPED (T-0470) before landing: that
+# heuristic fired on this repo's own widespread, legitimate idiom of
+# per-field `frob:waive`/`frob:ticket` comments deep inside a large
+# pydantic config class -- fields are not `RawSymbol`s, so a directive
+# above one always falls back to the enclosing class by construction,
+# and doing so far from the class top is intentional there.
+# T-0504 replaces raw-distance with the real fix: does a nearby REAL
+# symbol exist the directive plausibly SHOULD have bound to via
+# `following` but didn't reach, with nothing but blank lines/comments/
+# decorators between them? The per-field idiom always has genuine
+# field-assignment CODE in that gap, so it is excluded by construction.
 _PLACE001_LOOKAHEAD = 10
 
 

@@ -227,20 +227,16 @@ _BINARY_EXTS = frozenset(
 )
 
 
-# T-0396 round-3 (reviewer-caught false NEGATIVE): `frob.excludes.is_test_file`
-# exempts ANY path with a `tests/` directory component, not just files that
-# are themselves tests -- correct for its other callers (the arch gate,
-# T-0359, wants "skip everything under tests/"), but wrong here: a dead
-# fixture/helper/data file that merely LIVES under `tests/` (e.g.
-# `tests/fixtures/orphan_helper.py`, no `test_*` functions, imported
-# nowhere) is exactly the kind of orphan this gate exists to catch, and
-# the broad rule silently hid it. This gate needs the NARROWER claim --
-# "this file's own NAME is what the test runner discovers" -- never "this
-# file merely sits in a tests/ directory". Deliberately NOT reusing
-# `is_test_file` (playbook: do not weaken/duplicate a shared predicate
-# for one caller's narrower need); this is the file-name half of pytest's
-# own collection convention (`test_*.py`/`*_test.py`) plus the TS/Rust
-# analogs, kept local to this gate.
+# T-0396 round-3: `frob.excludes.is_test_file` exempts ANY path with a
+# `tests/` directory component -- correct for its other callers (T-0359
+# wants "skip everything under tests/"), but wrong here: a dead
+# fixture/helper/data file that merely LIVES under `tests/` (no
+# `test_*` functions, imported nowhere) is exactly the orphan this gate
+# exists to catch. This gate needs the NARROWER claim -- "this file's
+# own NAME is what the test runner discovers". Deliberately NOT reusing
+# `is_test_file`: this is the file-name half of pytest's own collection
+# convention (`test_*.py`/`*_test.py`) plus the TS/Rust analogs, kept
+# local to this gate.
 def _is_collectible_test_filename(rel_path: str) -> bool:
     """True if `rel_path`'s OWN basename matches a test-runner discovery
     convention (`test_*.py`, `*_test.py`, `*.test.ts`, `*_test.rs`, ...)
@@ -260,31 +256,16 @@ def _is_collectible_test_filename(rel_path: str) -> bool:
 
 # frob:ticket T-3019
 #: The project's own root manifest/tooling-lock files -- read by tooling,
-#: never referenced from other tracked source files, and universal to
-#: every project regardless of what it contains -- are exempt from
-#: REF001/REF002 by default (see `ref_gate`'s own T-3019 module-docstring
-#: note). Exact literal root paths ONLY: a nested `somepkg/pyproject.toml`
-#: (a workspace member, handled separately by `_native_stub_pairs` when it
-#: is a maturin crate manifest) stays fully subject to REF001/REF002,
-#: since a sub-package manifest is not automatically read by anything the
-#: way the project root's own manifest is. `frob-coverage.lock.json`
-#: (`frob.derived_state`'s `--stamp-coverage` output) is the one non-
-#: manifest member: unlike `.frob/`'s other derived state (gitignored,
-#: never tracked), this ONE file is deliberately meant to be committed
-#: (`frob.doctor`'s own docstring: "the committed frob-coverage.lock.json"
-#: -- it is how a CI leg without its own test run still gets a coverage
-#: verdict), so it needs the same default exemption for the same reason.
-#: `.gitignore` is the last member: read exclusively by `git` itself,
-#: universal to every real project, and -- like `pyproject.toml`/
-#: `frob.toml` -- never referenced from other tracked source files by
-#: design.
-#:
-#: T-3031: `package.json`/`tsconfig.json` are the JS/TS-world analogs of
-#: `pyproject.toml` -- read by tooling (npm/tsc), universal to every real
-#: TypeScript/JavaScript project, never referenced from other tracked
-#: source files by design. Same exact-literal-root-path-only rule: a
-#: nested `packages/sub/package.json` workspace member stays fully
-#: subject to REF001/REF002.
+#: never referenced from other tracked source files, universal to every
+#: project -- are exempt from REF001/REF002 by default. Exact literal
+#: root paths ONLY: a nested `somepkg/pyproject.toml` (a workspace
+#: member) stays fully subject to REF001/REF002, since a sub-package
+#: manifest is not automatically read the way the root's own is.
+#: `frob-coverage.lock.json` is the one non-manifest member: unlike
+#: `.frob/`'s other derived state, this ONE file is deliberately meant
+#: to be committed. `.gitignore` is the last member, read exclusively by
+#: git itself. T-3031: `package.json`/`tsconfig.json` are the JS/TS-world
+#: analogs -- same exact-literal-root-path-only rule.
 _DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
     {
         "pyproject.toml",
@@ -322,46 +303,13 @@ _DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
 
 # frob:ticket T-4145
 #: GitHub's own community-health files and issue/PR templates: read by
-#: THE GITHUB PLATFORM ITSELF by fixed path convention, never by another
-#: tracked in-repo file -- the identical "universal, tooling-consumed,
-#: no per-project judgment call" shape T-3019/T-3031 already carved out
-#: for pyproject.toml/frob.toml/package.json above, extended here to
-#: GitHub's convention-anchored paths (T-4145, filed after T-4131 added
-#: these files here and immediately tripped REF001/REF002 on every one
-#: of them -- the exact "fresh project not gate-clean on day one" shape
-#: T-3931 reported, this time from doing the most ordinary thing a
-#: project can do: adding a contributing guide). CONTRIBUTING.md/
-#: SECURITY.md/CODE_OF_CONDUCT.md are exempted at their ROOT path only
-#: (GitHub also recognizes a `.github/` or `docs/` copy, but a project
-#: using one of those instead can add its own `[[refs.entrypoint]]` line,
-#: same as any other genuinely external-facing file -- this default
-#: covers the common root-file case so a fresh project is not forced to
-#: write that declaration itself). `.github/ISSUE_TEMPLATE/` files are
-#: NOT a fixed list here: GitHub reads EVERY file placed under that one
-#: directory (`.yml`/`.md`) by directory convention, not by name, so
-#: `_is_github_convention_file` below matches the whole directory by
-#: glob instead of enumerating filenames a project might add or rename
-#: (see `_GITHUB_CONVENTION_EXEMPT_GLOBS`).
-#:
-#: DECISION RECORDED (T-4145's own acceptance item: whether REF002's
-#: one-inbound-reference rule should apply to non-code files at all):
-#: NO CHANGE to REF002's general scope. It keeps applying uniformly to
-#: code and non-code tracked files alike. A markdown doc linked exactly
-#: once from README is indeed the ordinary shape for authored docs, not
-#: an inherently fragile one -- but the actual defect this ticket found
-#: was never "REF002 fires on docs", it was "REF002 does not know a
-#: file's real consumer is an external platform reading by path
-#: convention, not another tracked file's text". That is fixed here,
-#: narrowly, the same way T-3019/T-3031 fixed it for build tooling's own
-#: root manifests. Blanket-exempting every non-code file from REF002
-#: instead would trade a real, narrow gap for a much bigger blind spot:
-#: a genuinely single-anchored design doc, changelog fragment, or
-#: abandoned draft (the ordinary way documentation rots) would stop
-#: being flagged at all, for every project that adopts frob, on the
-#: strength of one convention-anchored file family's needs. If a future
-#: case shows REF002 firing wrongly on some OTHER non-code shape, the
-#: fix is the same one applied here -- teach the gate that specific
-#: convention, not disable the rule for a whole file-type class.
+#: THE GITHUB PLATFORM ITSELF by convention, never another tracked
+#: in-repo file -- same shape T-3019/T-3031 carved out for pyproject.
+#: toml/package.json (T-4145). Exempted at ROOT path only; `.github/
+#: ISSUE_TEMPLATE/` is matched by directory glob since GitHub reads
+#: EVERY file placed there. DECISION RECORDED: NO CHANGE to REF002's
+#: general scope -- it keeps applying uniformly to code and non-code
+#: files; a future case gets the SAME narrow fix, not a rule disable.
 _GITHUB_CONVENTION_EXEMPT = frozenset(
     {
         "CONTRIBUTING.md",
@@ -392,32 +340,17 @@ def _is_github_convention_file(rel_path: str) -> bool:
 
 # frob:ticket T-4153
 #: T-4153: ledger-v2 (sharded-ledger) mode's own per-ticket artifacts --
-#: `frob.tickets._store`'s `_V2_TICKET_GLOB` ("T-*/ticket.md") shape,
-#: mirrored here for both the active and archived ticket directories, and
-#: for `done-report.md` (written by `frob ticket done-report` into the
-#: same per-ticket directory). These are read only by `frob ticket`/`frob
-#: check` tooling -- never referenced from other tracked source files by
-#: design -- the identical "universal, tooling-consumed, no per-project
-#: judgment call" shape T-3249/T-3444 already carved out for ledger-v1's
-#: single root `tickets.md`/`tickets-archive.md` above. Before this, the
-#: moment `frob ticket new` created the FIRST ticket in a v2-mode project,
-#: its `tickets/T-*/ticket.md` failed REF001 on the spot, and `frob
-#: ticket done-report` tripped the same finding on `done-report.md` --
-#: frob's own ledger writes making a freshly adopted project gate-dirty
-#: on day one, the exact "clean project fails clean" shape T-3019/T-3031/
-#: T-3249/T-3444/T-4145 all fixed for their own respective artifacts.
-#:
-#: Deliberately narrow, per T-4145's own recorded caution: this is NOT a
-#: blanket exemption for the `tickets/` directory or for markdown files in
-#: general -- an exemption that matches the normal case disables the
-#: guard, and this repo has an incident on record (an-exemption-matching-
-#: the-normal-case-disables-the-guard) of exactly that failure mode. Only
-#: the two fixed filenames frob itself writes, at the two fixed directory
-#: depths frob itself uses (`tickets/T-*/` and `tickets/archive/T-*/`),
-#: are matched -- any other file dropped into a ticket directory (a
-#: hand-authored design note, a stray script) stays fully subject to
-#: REF001/REF002, proven by
-#: `TestTicketLedgerV2Exempt.test_unrelated_file_in_ticket_dir_still_fires_ref001`.
+#: "T-*/ticket.md" and "done-report.md" -- mirrored here for both active
+#: and archived ticket directories, the same shape T-3249/T-3444 carved
+#: out for ledger-v1's single root tickets.md/tickets-archive.md. Before
+#: this, the moment `frob ticket new` created the FIRST ticket in a
+#: v2-mode project, its ticket.md failed REF001 on the spot -- the exact
+#: "clean project fails clean" shape T-3019/T-3031/T-3249/T-3444/T-4145
+#: all fixed for their own respective artifacts.
+#: Deliberately narrow, per T-4145's recorded caution against a blanket
+#: exemption: only the two fixed filenames frob itself writes, at the
+#: two fixed directory depths, are matched -- any other file dropped
+#: into a ticket directory stays fully subject to REF001/REF002.
 _TICKET_LEDGER_V2_EXEMPT_GLOBS = (
     "tickets/T-*/ticket.md",
     "tickets/T-*/done-report.md",
@@ -580,33 +513,24 @@ def _read_text(root: Path, rel_path: str) -> str | None:
 
 # The ticket's own reference shapes -- import/require/include/use
 # statements, config/string path literals, markdown/doc LINKS, frob:doc
-# directive targets -- all collapse to "a path/basename token appearing in
-# one of these SYNTACTIC positions", never a bare prose mention. This is
-# the load-bearing distinction T-0396's own dogfooding run needed: a
-# README table cell or a ticket-body sentence that merely NAMES a file
-# (`` `patterns.yaml` ``, "the docs/design/registry/*.yaml manifests") is
-# not a reference in ANY of the ticket's listed shapes, and counting it as
-# one silently defeats the gate's entire purpose (it produced a false
-# 2+-refs PASS for the exact registry-yaml orphans this gate exists to
-# catch -- see this module's own Done report evidence). Restricting to
-# these syntactic positions is what makes "prose about a file" and "a real
-# reference to a file" distinguishable at all.
+# directive targets -- all collapse to "a path/basename token appearing
+# in one of these SYNTACTIC positions", never a bare prose mention.
+# This is the load-bearing distinction T-0396's own dogfooding run
+# needed: a README table cell or a ticket-body sentence that merely
+# NAMES a file is not a reference in ANY of the ticket's listed shapes
+# -- counting it as one silently defeats the gate's entire purpose (a
+# false 2+-refs PASS for the exact registry-yaml orphans this gate
+# exists to catch).
 _MD_LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
-# T-0467: the repo's own doc convention wraps a path mention in backticks
-# (`` `docs/rework.md` ``) rather than quotes or a markdown link -- neither
-# `_QUOTED_RE` (only "/' quotes) nor `_MD_LINK_RE` (only `[text](target)`)
-# ever tokenizes that shape, so ~12 docs referenced ONLY via a backtick
-# mention read as false-positive REF001 orphans despite being genuinely
-# linked. Restricted to backtick content that itself contains a `/` (a
-# real MULTI-COMPONENT path, e.g. `docs/rework.md`) -- deliberately NOT
-# "any backtick with a recognized extension", which would also swallow a
-# bare-basename prose mention like `` `manifest.yaml` `` in a sentence
-# that merely DESCRIBES the file ("the `manifest.yaml` file lists things,
-# but nothing loads it") without it being a real reference -- exactly the
-# false PASS `TestReferenceDetection.
-# test_bare_prose_mention_does_not_count_as_a_reference` guards against.
-# A directory component is what distinguishes "this text names a path" (a
-# real reference) from "this text mentions a bare filename" (still prose).
+# T-0467: the repo's own doc convention wraps a path mention in
+# backticks rather than quotes or a markdown link -- neither
+# `_QUOTED_RE` nor `_MD_LINK_RE` ever tokenizes that shape, so ~12 docs
+# referenced ONLY via a backtick mention read as false-positive REF001
+# orphans. Restricted to backtick content that itself contains a `/` (a
+# real MULTI-COMPONENT path) -- deliberately NOT "any backtick with a
+# recognized extension", which would also swallow a bare-basename
+# prose mention. A directory component is what distinguishes "this
+# text names a path" from "this text mentions a bare filename".
 _BACKTICK_RE = re.compile(r"`([^`\n]{2,300})`")
 # T-0396 round-2 fix-verification (self-caught while sampling remaining
 # findings for genuineness): the original `["\']([^"\']{2,300})["\']` opens
@@ -656,18 +580,13 @@ def _md_waived_rules(rel_path: str, text: str | None) -> frozenset[str]:
 
 
 # T-1665: Python's own `import`/`from ... import` parsing used to live
-# here as a text regex (`_FROM_IMPORT_RE`/`_PLAIN_IMPORT_RE`/
-# `_split_import_names`/`_python_import_targets`, T-0396 round-2's fix for
-# the multi-name-import gap). Removed in favor of `frob.graph.imports.
-# build_import_graph`'s real AST-based resolver (`_python_reach`, below)
-# -- a grammar-correct parser is strictly more precise than a regex scan
-# for this one language (it finds every import regardless of nesting
-# inside `if`/`try`/`TYPE_CHECKING` guards, and never mistakes a
-# look-alike string/comment for an import) and, more importantly, it
-# NEVER produces a bare stem/dotted-suffix guess the way the old regex
-# tokens + `_tokens_reach`'s Python-only stem-matching branch used to --
-# see this module's own docstring, layer 0, for why that guess was the
-# false-comfort case T-1665 was filed to remove.
+# here as a text regex (T-0396 round-2's fix for the multi-name-import
+# gap). Removed in favor of `frob.graph.imports.build_import_graph`'s
+# real AST-based resolver -- a grammar-correct parser is strictly more
+# precise (finds every import regardless of nesting inside `if`/`try`/
+# `TYPE_CHECKING` guards, never mistakes a look-alike string/comment)
+# and never produces a bare stem/dotted-suffix guess the old regex
+# tokens used to -- see this module's own docstring, layer 0.
 
 
 def _candidate_tokens(text: str) -> tuple[str, ...]:

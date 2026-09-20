@@ -132,39 +132,18 @@ CRITICAL_PROVIDERS = frozenset(p.provider for p in _PATTERNS if p.label == "crit
 #: corresponding test fixture (T-0157's drift-lock requirement).
 ALL_PROVIDERS: frozenset[str] = frozenset(p.provider for p in _PATTERNS)
 
-# T-1211 (perf report candidate #6): find which line indices in a file's
-# text could possibly contain a hit (`_candidate_line_indices`) with 33
-# whole-FILE `finditer` calls (one per `_PATTERNS` entry) instead of 33
-# compiled patterns x `finditer` per PHYSICAL LINE (544k lines measured x 33
-# patterns = ~18M `finditer` calls, ~94% of the gate's wall time -- the cost
-# is Python-level per-call/regex-engine-setup overhead multiplied 544k-fold,
-# not the character-scanning itself).
-#
-# A single COMBINED alternation regex (`(?P<p0>...)|(?P<p1>...)|...`) was
-# tried first and measured SLOWER end-to-end (~19s vs. ~4.4s baseline on this
-# repo's own tree) -- confirmed empirically, not assumed. Python's `re`
-# engine has no shared-prefix/Aho-Corasick optimization across alternation
-# branches; a single compiled pattern's literal-prefix fast path (the actual
-# source of `finditer`'s per-pattern speed) is defeated the moment 33
-# unrelated literal prefixes are OR'd into one pattern, so scanning the whole
-# file with one combined regex tries all 33 branches at every character
-# position instead of skipping ahead via one literal's own prefix scan.
-# Keeping `_PATTERNS` as 33 SEPARATE compiled regexes, each run once over the
-# whole file text (33 calls total, not 33 x line-count), preserves each
-# pattern's own prefix optimization while still cutting `finditer` call
-# count by ~5 orders of magnitude versus the per-line loop.
-#
-# None of `_PATTERNS` uses MULTILINE/DOTALL, and every char class that could
-# otherwise cross a line (`.`, `\s`) is either bounded by `.`'s default
-# no-newline-match semantics or is a NEGATED class excluding `\s` (hence
-# `\n`) -- so a match's span can never straddle two physical lines, and
-# mapping a match start offset to its containing line via `_line_offsets`/
-# `bisect` is exact, not an approximation. The actual per-line claim/
-# precedence/fake-marker logic is UNCHANGED and still runs, verbatim, via
-# `_scan_line` -- only for the (rare) candidate lines this pre-pass
-# identifies, never for a line with zero possible hits. This keeps findings
-# byte-identical to the pre-T-1211 per-line-per-pattern loop while skipping
-# the ~94% of lines that can never produce a violation.
+# T-1211 (perf): find which line indices in a file's text could possibly
+# contain a hit (`_candidate_line_indices`) with 33 whole-FILE `finditer`
+# calls (one per `_PATTERNS` entry) instead of 33 compiled patterns x
+# `finditer` per PHYSICAL LINE (~18M finditer calls, ~94% of the gate's
+# wall time). A single COMBINED alternation regex was measured SLOWER
+# end-to-end (~19s vs ~4.4s) -- Python's `re` engine has no shared-
+# prefix optimization across alternation branches, so 33 separate
+# compiled regexes each run once over the whole file preserves each
+# pattern's own prefix fast path while cutting `finditer` calls by ~5
+# orders of magnitude. No `_PATTERNS` entry uses MULTILINE/DOTALL, so a
+# match can never straddle lines; `_scan_line`'s logic is UNCHANGED, run
+# only for candidate lines, keeping findings byte-identical to before.
 
 
 # frob:ticket T-1211
@@ -259,52 +238,32 @@ def _bare_fake_marker_violations(rel_path: str, text: str) -> list[Violation]:
     return violations
 
 
-#: A REAL, reason-bearing `frob:secret-fake` marker (as opposed to a prose
-#: MENTION of the marker inside this module's own docstrings/messages, which
-#: use the identical `frob:secret-fake reason="..."` substring constantly --
-#: see `_BARE_FAKE_DIRECTIVE_RE`'s comment for the same hazard on the bare
-#: form). T-0978: this is the enumeration regex for the staleness check
-#: only (`_stale_fake_marker_violations`); the loose, comment-leader-free
-#: `_FAKE_MARKER_REASON_RE` above stays exactly as-is for the actual
-#: discharge decision inside `_scan_line`/`_fake_marker_reason` -- changing
-#: that regex's matching behavior is outside this ticket's scope.
-#:
-#: T-0978 second false-positive class (found while writing this ticket's
-#: own tests, not theoretical): a *test* file that constructs a fixture's
-#: marker text as a Python string literal argument -- e.g. this module's own
-#: test suite writes `'# frob:secret-fake reason="..."\n'` as one argument
-#: to `write_text` -- contains that exact substring in ITS OWN tracked
-#: source, with a real `#`/`//` immediately before it, so the backtick-only
-#: exclusion above is not enough; the whole line IS that string literal, so
-#: there is no unrelated real secret token nearby in that SOURCE line for
-#: `_would_trip_without_marker` to find, and every such literal would
-#: misread as a stale marker. The additional `['"]`-preceded exclusion below
-#: closes this: a `#`/`//` immediately preceded by a quote character is
-#: inside a string literal being constructed, not a real standalone/inline
-#: comment directive, and is excluded the same way the backtick case is.
+#: A REAL, reason-bearing `frob:secret-fake` marker, not a prose MENTION
+#: of the marker inside this module's own docstrings. T-0978: this is
+#: the enumeration regex for the staleness check only; the loose
+#: `_FAKE_MARKER_REASON_RE` above stays as-is for the actual discharge
+#: decision. Second false-positive class: a test file constructing a
+#: fixture's marker text as a Python string literal contains that exact
+#: substring in its own source with a real `#`/`//` before it. The
+#: `['"]`-preceded exclusion closes this: such a comment leader is
+#: inside a string literal being constructed, not a real directive.
 _REAL_FAKE_MARKER_REASON_RE = re.compile(
     '(?<![\'"`])(?:#|//)\\s*frob:secret-fake\\s+reason="([^"]*)"'
 )
 
 
-#: T-0968's own docstring notes this marker family is SHARED between
-#: `secrets_gate` (SEC00x) and `frob.gates._pii_structural`'s PII011
-#: (email-shaped literal) detector -- confirmed empirically while building
-#: this staleness check: every real, single-physical-line
-#: `frob:secret-fake reason="..."` marker actually present in this repo's
-#: own tracked test suite today (a dozen-plus sites) protects a fabricated
-#: git identity EMAIL, not a SEC00x-shaped token, so checking SEC00x
-#: patterns alone (`_would_trip_without_marker`) misreads every one of
-#: them as stale. Replicating PII011's real AST-based `_is_email_shaped`
-#: check here would require importing `frob.gates._pii_structural`
-#: internals, outside this ticket's declared scope
-#: (src/frob/graph/dsl.py, src/frob/gates/__init__.py,
-#: src/frob/gates/_secrets.py, tests/**) -- a plain email-shape substring
-#: heuristic is used instead, deliberately erring toward "plausibly still
-#: needed" (never flagging staleness) on any uncertain match, the same
-#: safe-direction posture `_looks_low_entropy` documents for the opposite
-#: (never-suppress) case. A real PII011-aware staleness check is a natural
-#: follow-up once frob.gates._pii_structural exposes a public seam for it.
+#: T-0968: this marker family is SHARED between `secrets_gate` (SEC00x)
+#: and PII011 (email-shaped literal) -- confirmed empirically: every
+#: real, single-physical-line `frob:secret-fake reason="..."` marker in
+#: this repo's own tracked test suite protects a fabricated git
+#: identity EMAIL, not a SEC00x-shaped token, so checking SEC00x
+#: patterns alone misreads every one as stale. Replicating PII011's
+#: real AST-based check would require importing
+#: `frob.gates._pii_structural` internals, outside this ticket's scope
+#: -- a plain email-shape substring heuristic is used instead,
+#: deliberately erring toward "plausibly still needed" on any uncertain
+#: match. A real PII011-aware check is a natural follow-up once
+#: frob.gates._pii_structural exposes a public seam for it.
 _PLAUSIBLE_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
 
@@ -330,24 +289,18 @@ def _plausibly_still_needed(lines: list[str], index: int) -> bool:
     )
 
 
-#: T-0978: files where a `frob:secret-fake reason="..."` marker sighting is
-#: source-level test DATA -- built as a Python string-literal fragment that
-#: itself, in this file's OWN tracked source, spans multiple physical
-#: lines (concatenated/`+`-joined or embedded inside one multi-line `src =
-#: (...)` literal) -- rather than a real, single-physical-line directive
-#: comment sitting next to the content it discharges. This staleness check
-#: is inherently physical-line-based (mirrors `_fake_marker_reason`'s own
-#: same-line-or-line-below convention, which the real, non-staleness
-#: discharge path also uses), so it cannot tell "this IS the real marker
-#: line for a real fixture" from "this is one fragment of test-authored
-#: string data that merely CONTAINS marker-shaped text, whose actual
-#: 'content' fragment lives on a different physical source line entirely".
-#: Confirmed empirically (not theoretical) while building this feature:
-#: every site below produced a false "stale" WAIVE004 finding against a
-#: perfectly live, intentional test fixture. Excluded by file, the same
-#: precedent `TestGateIsGreenOnItself._LEDGER_NARRATIVE_FILES` and
-#: `frob.gates._pii_structural._SELF_EXCLUDED_FILES` already set for this
-#: exact class of scanner/test-fixture self-collision.
+#: T-0978: files where a `frob:secret-fake reason="..."` marker sighting
+#: is source-level test DATA -- a Python string-literal fragment that
+#: spans multiple physical lines -- rather than a real, single-
+#: physical-line directive comment sitting next to the content it
+#: discharges. This staleness check is inherently physical-line-based,
+#: so it cannot tell "this IS the real marker line" from "this is one
+#: fragment of test-authored string data that merely CONTAINS
+#: marker-shaped text". Confirmed empirically while building this
+#: feature: every site below produced a false "stale" WAIVE004 finding.
+#: Excluded by file, the same precedent
+#: `frob.gates._pii_structural._SELF_EXCLUDED_FILES` already set for
+#: this class of scanner/test-fixture self-collision.
 _STALENESS_MULTILINE_LITERAL_EXCLUDED_FILES = frozenset(
     {
         "tests/test_secrets_gate.py",

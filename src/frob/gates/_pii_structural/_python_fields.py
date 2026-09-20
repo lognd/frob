@@ -19,21 +19,16 @@ _log = get_logger(__name__)
 
 #: Base-class / decorator name fragments that mark a `ClassDef` as a data
 #: structure worth scanning (pydantic `BaseModel`, `TypedDict`,
-#: `NamedTuple`, `dataclasses.dataclass`, `attrs`/`attr.s` `define`). T-0971
-#: (gates-quality audit finding 14): a `class User(OrmBase)` subclassing a
-#: PROJECT-LOCAL intermediate base (not `BaseModel` itself) was invisible
-#: -- the exact shape SQLAlchemy's declarative pattern and Django's ORM
-#: both use, arguably the most common real PII carrier (an ORM row).
-#: `DeclarativeBase` (SQLAlchemy 2.0's own base, `class Base(DeclarativeBase)`
-#: is the documented idiom so a project's `Base` is one hop from this name,
-#: not zero) and `Model` (Django's `models.Model`, matched on the bare
-#: `Attribute.attr` suffix the same way `BaseModel`/`TypedDict` already
-#: are) are added directly since they are fixed, well-known library names.
-#: A THIRD-hop project-local base (`class User(OrmBase)` where `OrmBase`
-#: itself subclasses `DeclarativeBase`) is NOT resolved -- that needs
-#: cross-file base-class transitive resolution this AST-local, single-file
-#: gate does not have; disclosed as a real remaining gap, not silently
-#: dropped (T-0971 Done report).
+#: `NamedTuple`, `dataclasses.dataclass`, `attrs`/`attr.s` `define`).
+#: T-0971: a `class User(OrmBase)` subclassing a PROJECT-LOCAL
+#: intermediate base was invisible -- the exact shape SQLAlchemy's
+#: declarative pattern and Django's ORM both use, arguably the most
+#: common real PII carrier (an ORM row). `DeclarativeBase` and `Model`
+#: are added directly since they are fixed, well-known library names. A
+#: THIRD-hop project-local base is NOT resolved -- that needs cross-file
+#: base-class transitive resolution this AST-local, single-file gate
+#: does not have; disclosed as a real remaining gap, not silently
+#: dropped.
 # frob:ticket T-0971
 # frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_orm_declarative_base_field_fires  # noqa: E501
 _STRUCTURE_BASE_NAMES = frozenset(

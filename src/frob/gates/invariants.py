@@ -24,22 +24,17 @@ from frob.yamlio import fast_yaml_loader
 
 _log = get_logger(__name__)
 
-# T-4019: widened from the original `^INV-\d{3}$` to match the id grammar
-# the `frob:invariant` code-comment directive already accepts with NO
-# format restriction of its own (`frob.graph.dsl`'s target parsing takes
-# any bare token) -- a real, working example already lives in this repo:
-# `# frob:invariant INV-RENDER-SOLE-STDOUT` (src/frob/gates/_render_lint.py).
-# The old three-digit-only pattern rejected that shape outright, so a
-# consumer's descriptive id (`INV-ADMIN-DATA-001`) failed this loader's
-# validation while the very directive meant to anchor it accepted the
-# same string -- one concept, two disagreeing spellings. This is the ONE
-# shared definition now: "INV-" followed by one or more dash-separated
-# all-caps/digit segments, covering both the original convention
-# (INV-045) and a descriptive id (INV-ADMIN-DATA-001,
-# INV-RENDER-SOLE-STDOUT) -- never silently permissive (lowercase, empty
-# segments, and bare "INV-" still fail loudly, matching a directive's own
-# de-facto shape: real ids are always dash-separated shouting-case
-# tokens).
+# T-4019: widened from the original `^INV-\d{3}$` to match the id
+# grammar the `frob:invariant` code-comment directive already accepts
+# with NO format restriction of its own -- a real example already
+# lives in this repo: `# frob:invariant INV-RENDER-SOLE-STDOUT`. The
+# old three-digit-only pattern rejected a descriptive id
+# (`INV-ADMIN-DATA-001`) while the directive meant to anchor it
+# accepted the same string -- one concept, two disagreeing spellings.
+# This is the ONE shared definition now: "INV-" followed by one or
+# more dash-separated all-caps/digit segments, never silently
+# permissive (lowercase, empty segments, bare "INV-" still fail
+# loudly).
 _ID_RE = re.compile(r"^INV-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
 
@@ -229,8 +224,7 @@ class InvariantLoadError(BaseModel):
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:tests \
-# tests/gates_suite/test_invariant.py::TestInvariantLoad.test_one_malformed_file_does_n\
-# ot_block_others kind="unit"
+# tests/gates_suite/test_invariant.py::TestInvariantLoad.test_one_malformed_file_does_not_block_others kind="unit"  # noqa: E501
 class LoadedInvariants(BaseModel):
     """`load_invariants`'s result (T-4019): every invariant that parsed
     cleanly, plus one `InvariantLoadError` for every file that didn't.

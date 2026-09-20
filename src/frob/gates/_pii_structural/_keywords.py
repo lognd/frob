@@ -31,27 +31,18 @@ _log = get_logger(__name__)
 #: does via `str.split("_")` for identifiers.
 _COMMENT_WORD_RE = re.compile(r"[A-Za-z_]+")
 
-#: T-2069: keywords whose NAME/COMMENT match alone is too weak a signal to
-#: fire PII012 on -- the bare English/lexical word is legitimately common
-#: enough in this codebase's own domain vocabulary (a parser/CLI/AST/git-ref
-#: "token", never an auth token) that `_PII012_REVIEWED_NON_PII`'s
-#: one-site-at-a-time allowlist above was measurably not durable: three
-#: sites cleared via T-2032's identifier rename regressed back to FOUR new
-#: findings the moment ordinary new code (`_strip_xdist_tokens`, T-2086)
-#: used the same ordinary word again (T-2069 ticket body). Renaming
-#: identifiers dodges today's finding, not tomorrow's -- so for exactly
-#: this keyword, PII012 additionally requires VALUE evidence before firing:
-#: an assignment target actually bound to a string-literal value
+#: T-2069: keywords whose NAME/COMMENT match alone is too weak a signal
+#: to fire PII012 on -- the bare word is legitimately common enough in
+#: this codebase's own domain vocabulary (a parser/CLI/AST/git-ref
+#: "token", never an auth token) that per-site allowlisting was
+#: measurably not durable. So for exactly this keyword, PII012
+#: additionally requires VALUE evidence before firing: an assignment
+#: target actually bound to a string-literal value
 #: (`_token_literal_assignment_target_ids`) for an identifier hit, or a
-#: literal-value-shaped pattern (`_TOKEN_VALUE_SHAPE_RE`) for a comment hit
-#: -- the same "adjacent to an actual value, not just a name" distinction
-#: that separates a real captured credential from a lexer/parser token by
-#: construction. Deliberately NOT applied to every `FIELD_SIGNATURES`
-#: keyword: this is a targeted fix for the one keyword T-2069 measured as
-#: over-broad, not a blanket weakening of PII012 (T-1967's lesson: an
-#: exemption matching the normal case disables the guard -- this one only
-#: narrows what counts as "the normal case" for "token" specifically, it
-#: does not exempt any file, site, or category).
+#: literal-value-shaped pattern (`_TOKEN_VALUE_SHAPE_RE`) for a comment
+#: hit -- the same "adjacent to an actual value, not just a name"
+#: distinction that separates a real captured credential from a
+#: lexer/parser token by construction.
 _VALUE_GATED_KEYWORDS = frozenset({"token"})
 
 #: T-2069: a comment word this shape looks like it is annotating an actual
@@ -164,39 +155,18 @@ def _pii012_violation(
     )
 
 
-#: T-0540: PII012's identifier/comment sweep is suggestion-only WARN
-#: (module docstring: "no hard fail on names alone") and still fired
-#: broadly on two overloaded single-word `FIELD_SIGNATURES` keywords --
-#: "token" (a LEXER/parser/AST/git-ref/shell-command/LLM-context-budget
-#: token throughout this codebase's OWN tooling -- `frob.dup`'s duplicate-
-#: code tokenizer, `frob.lang`'s tree-sitter walkers, `frob.gates._refs`'s
-#: symref tokens, `frob.map`'s LLM context-length estimate -- never an
-#: auth token at any site below) and "secret" (this codebase's OWN
-#: std.secrets DECLARATION construct -- `frob.graph.EdgeKind.SECRET`, a
-#: strata Secret-clearance node id, or elaboration/threat-model prose
-#: describing that construct -- never a literal secret value). A handful
-#: of unrelated single-site homonyms round out the table: `passwd`/
-#: `passwd_added`/`passwd_removed` (raw `/etc/passwd` text captured for
-#: deploy-state diffing, already PII010-waived at the same fields per
-#: T-0539's precedent -- no real password ever lives in `/etc/passwd`);
-#: `run_diagnosis`/`test_run_diagnosis_*` (this codebase's own `frob
-#: doctor` self-diagnostic feature name, docs/guides/install.md); `email`
-#: (a docstring's tag-format EXAMPLE string `"identifier.email"`, not a
-#: data-structure field); `_cve_fingerprint_scan` (a MODULE NAME mentioned
-#: in a prose comment, not a biometric scan); `password` (a CWE catalog
-#: entry TITLE string, `strata/_threat.py`'s WeaknessEntry table).
-#:
-#: `FIELD_SIGNATURES` itself is deliberately NOT narrowed for "token" or
-#: "secret" (module docstring: single-source registry shared with
-#: PII010's field scan, where a field genuinely named `token`/`secret` on
-#: a real data structure must remain deny-by-default) -- this table
-#: exempts PII012's weaker identifier/comment signal ONLY, one (file,
-#: identifier) site at a time, each individually read at its call site
-#: before being added here (T-0540 Done report), never a blanket keyword
-#: mute. Matched on the identifier TEXT, not the line number, so a later
-#: refactor that only shifts line numbers does not silently widen the
-#: exemption -- a brand-new identifier introduced at the same site still
-#: fires and gets its own review.
+#: T-0540: PII012's identifier/comment sweep is suggestion-only WARN and
+#: still fired broadly on two overloaded single-word `FIELD_SIGNATURES`
+#: keywords -- "token" (a LEXER/parser/AST/git-ref/LLM-context-budget
+#: token throughout this codebase's OWN tooling, never an auth token
+#: below) and "secret" (this codebase's OWN std.secrets DECLARATION
+#: construct, never a literal secret value). A handful of unrelated
+#: single-site homonyms round out the table (T-0540's Done report).
+#: `FIELD_SIGNATURES` itself is NOT narrowed for "token"/"secret" -- a
+#: field genuinely named that must remain deny-by-default for PII010;
+#: this table exempts PII012's weaker identifier/comment signal ONLY,
+#: one (file, identifier) site at a time, matched on TEXT so a
+#: line-number-only refactor cannot silently widen the exemption.
 # frob:ticket T-0971
 _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
     {
@@ -324,19 +294,13 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("src/frob/gates/__init__.py", "_cve_fingerprint_scan"),
         ("src/frob/strata/_threat.py", "password"),
         # T-0971: PII010/PII012 burn-down -- the remaining 89 (file,
-        # identifier) sites in the 167-finding unwaived measured baseline,
-        # each individually read at its call site before being added here
-        # (same T-0540 discipline, not a blanket mute). All are the same
-        # already-documented "token" LEXER/parser/regex-name/CLI-token/
-        # random-nonce homonym (a compiled `_*_TOKEN_RE` provability
-        # pattern, a tree-sitter/markdown/CLI-invocation parse token, a
-        # `ContextVar` reset token, or a `uuid4().hex` random directory
-        # suffix -- never an auth token) or the "diagnosis"/"email"/
-        # "password"/"secret"/"ssn"/"address" homonyms already established
-        # above (this repo's own `frob doctor` diagnostic feature name,
-        # PII010's own cross-language gate test names literally testing
-        # the detector, and a plain-English comment word) -- confirmed by
-        # reading each site, not inferred from the identifier text alone.
+        # identifier) sites in the 167-finding unwaived measured
+        # baseline, each individually read at its call site before
+        # being added here (same T-0540 discipline). All are the same
+        # already-documented "token" homonym (compiled regex/tree-
+        # sitter/CLI/ContextVar/uuid tokens, never an auth token) or the
+        # "diagnosis"/"email"/"password"/"secret"/"ssn"/"address"
+        # homonyms established above -- confirmed by reading each site.
         ("src/frob/arch/_rust.py", "token"),
         ("src/frob/arch/_srp.py", "token"),
         ("src/frob/deploy/_generate_windows.py", "token"),

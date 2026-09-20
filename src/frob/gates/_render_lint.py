@@ -54,25 +54,18 @@ _log = get_logger(__name__)
 #: flagged call shape by name, which would otherwise self-match.
 _SELF_EXCLUDED_FILES = frozenset({"src/frob/gates/_render_lint.py"})
 
-#: Path prefixes exempt entirely (T-2719, widened from the original single
-#: `src/frob/render/` string): `str.startswith` accepts a tuple directly,
-#: so this stays a one-site check just like the original.
-#:
+#: Path prefixes exempt entirely (T-2719, widened from the original
+#: single `src/frob/render/` string): `str.startswith` accepts a tuple
+#: directly, so this stays a one-site check.
 #: - `src/frob/render/`: `frob.render` IS the sole sanctioned home for
-#:   these calls (module docstring) -- `Renderer._emit`'s own
-#:   `print(line, file=self.stream)` is the one legitimate call site.
-#: - `.claude/hooks/`: Claude Code hook scripts run standalone, before any
-#:   venv/native-extension build exists, and MUST NOT import `frob.*` --
-#:   `frob.render.Renderer` is therefore structurally unreachable from
-#:   them, not merely unused. T-1614's waive audit found 11 individually
-#:   honest `frob:waive RENDER001` directives across 5 files in this
-#:   directory alone, all citing exactly this constraint; a directory
-#:   exemption replaces that growing per-line-waiver debt.
-#: - `scripts/fleet_status.py`: the same standalone, no-frob-import
-#:   constraint, for the identical reason (a fleet-diagnostic script that
-#:   must run without a built venv) -- named as a single file, NOT a
-#:   `scripts/` prefix, because sibling scripts (e.g. `bump_version.py`)
-#:   DO import `frob.*` and remain fully subject to RENDER001.
+#:   these calls -- `Renderer._emit`'s own print is the one legitimate
+#:   call site.
+#: - `.claude/hooks/`: hook scripts run standalone, before any venv/
+#:   native-extension build exists, and MUST NOT import `frob.*` --
+#:   `Renderer` is structurally unreachable from them, not merely unused.
+#: - `scripts/fleet_status.py`: the same standalone constraint, named as
+#:   a single file, NOT a `scripts/` prefix, because sibling scripts
+#:   (e.g. bump_version.py) DO import `frob.*`.
 _EXEMPT_PREFIXES: tuple[str, ...] = (
     "src/frob/render/",
     ".claude/hooks/",
@@ -265,14 +258,11 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # a dict-value assignment cannot see the real runtime caller" follow_up="T-3504"
 # frob:ticket T-2740
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_true_for_a_rea\
-# l_scanned_file kind="unit"
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_true_for_a_real_scanned_file kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_false_for_an_e\
-# xempt_path kind="unit"
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_false_for_an_exempt_path kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_false_for_a_pa\
-# th_outside_any_pathspec kind="unit"
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_false_for_a_path_outside_any_pathspec kind="unit"  # noqa: E501
 def render001_scans(root: Path, rel_path: str) -> bool:
     """True iff RENDER001's own scan set would actually examine `rel_path`
     for a bare stdout write -- the exact membership test `render_lint_gate`

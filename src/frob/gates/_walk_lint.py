@@ -785,24 +785,16 @@ def _is_none_names(test: ast.expr, guard_names: frozenset[str]) -> frozenset[str
 
 #: T-2934: typani's two Result constructors -- a `return Ok(...)`/
 #: `return Err(...)` is a STRUCTURED, typed exit distinct from falling
-#: through to whatever the normal-success code path does, matching this
-#: repo's dominant error-handling convention (see `~/.claude/refs/
-#: typani.md`, "PREFER pydantic and typani"). `_guard_is_loud` treats
-#: either constructor as loud: measured false positive on
-#: `frob.tickets._land_git_ops.reclaim_orphaned_squash_residue`'s real
+#: through to whatever the normal-success code path does. `_guard_is_
+#: loud` treats either constructor as loud: measured false positive on
+#: `reclaim_orphaned_squash_residue`'s real
 #: `if _fcntl is None: _log.warning(...); return Ok(False)` -- that
-#: function's whole job is "decide whether it is SAFE to mutate", and
-#: `Ok(False)` there means "decided no, on purpose, logged" (a real,
-#: visible, controlled abort of the risky operation), not "proceeded as
-#: if the missing primitive did not matter" the way `_baseline_lock`'s
-#: pre-T-2918 bug did. `Err(...)` is the more obviously-loud half of the
-#: same pair; `Ok(...)` earns the same treatment because the discriminator
-#: PLATFORM001 actually cares about is "did the guard body take an
-#: explicit, typed exit instead of continuing normal flow", not "did it
-#: specifically signal failure" -- a plain `return None`/bare `return`/
-#: fallthrough is NOT a typed exit and still fires (see the must-fire
-#: fixture, `TestPlatform001._WARN_AND_CONTINUE_SRC`, which returns
-#: `None` with no such constructor).
+#: means "decided no, on purpose, logged", not "proceeded as if the
+#: missing primitive did not matter" the way `_baseline_lock`'s
+#: pre-T-2918 bug did. `Ok(...)` earns the same treatment as `Err(...)`:
+#: PLATFORM001 cares whether the guard took an explicit, typed exit,
+#: not whether it signaled failure -- a plain `return None`/bare
+#: return/fallthrough is NOT a typed exit and still fires.
 _TYPED_EXIT_RESULT_CONSTRUCTORS = frozenset({"Ok", "Err"})
 
 
