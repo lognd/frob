@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: critical
 parent: null
 tier: epic
-sprint: v0.541.0
+sprint: v0.538.0
 runs_last: false
 milestone: v0.541.0
 runs_last_parallel_safe: false
@@ -21,6 +21,13 @@ no_scope_declared_reason: 'tier=epic: a decomposition container. Its ten leaves 
   the declaration/glob subject-count surface, the docstring-claim lint, and five new
   rule families across gates and strata; scope belongs on the leaves, where it can
   be disjoint enough to dispatch in parallel'
+triage_changes:
+- field: sprint
+  old_value: v0.541.0
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given the ten findings in F-307, when this epic is decomposed, then each has
