@@ -79,6 +79,13 @@ scope_changes:
   reason: new repro/regression test for the import-cycle fix
   actor: logan
   at: '2026-08-16'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve import-cycle detail trimmed from _docblocks.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 562
+  new_length: 1071
 evidence:
 - tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
 designated_repro_test: tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
@@ -125,3 +132,13 @@ anchor_reason: null
 land_commit: 18ce2088a7234357fa4b2c9c838bfdc24b65abae
 ---
 Leaf of T-2202 (epic). Measured directly from 'uv run frob check --only cycle' on 2026-08-16, which now differs from T-2202's originally recorded cluster (T-2202 described a 5-file cluster ending at graph/cache.py; today's is 6 files and also includes graph/_models.py). The growth is attributable to T-2211 (landed after T-2202 was filed), which fixed resolve_local_import to stop dropping imported names for the 'from X import submodule' idiom -- previously-invisible edges through that idiom are now real graph edges. Not a regression; do not revert anything.
+
+
+T-4709 follow-up (condensed from a comment in src/frob/gates/
+_docblocks.py, trimmed for DOCARCH002's 12-line cap): both this module
+(for _ProjectNamespaces/_read_toml, used below) and _docblocks_refs.py
+(for all three, including _doc004_violation, which this module never
+calls directly) need them; this module importing the bulk of DOC004's
+parsing/checking logic back from _docblocks_refs.py while
+_docblocks_refs.py imported these three names from here made the pair
+a real, module-level import cycle.
