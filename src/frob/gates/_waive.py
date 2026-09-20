@@ -211,6 +211,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-2919
 # frob:ticket T-3014
 # frob:ticket T-2688
+# frob:ticket T-4212
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -547,6 +548,11 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS002",
         "SYS003",
         "SYS004",
+        # T-4212: an explicit worktree/branch SYS audit could not run at
+        # all (no worktree checked out for the branch, or its GraphSnapshot
+        # build failed) -- Severity.UNRESOLVED, distinct from a measured
+        # zero findings.
+        "SYS900",
         # T-1148: a declared `[[native]]` extension fails to import right
         # now (`run_gates`'s early `_native_unavailable_report` short-
         # circuit) -- see `frob.gates.__init__._native_unavailable_report`.

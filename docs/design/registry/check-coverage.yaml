@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 372
+gate_rule_total: 378
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     fixability: "manual"
@@ -1880,6 +1880,36 @@ gate_rule_entries:
   - id: "CHK-GATE-WAIVE012"
     name: "WAIVE012 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE012"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-BASE001"
+    name: "BASE001 is a live, enforced gate rule"
+    disposition: "handled_by:BASE001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-CLAIM001"
+    name: "CLAIM001 is a live, enforced gate rule"
+    disposition: "handled_by:CLAIM001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COV010"
+    name: "COV010 is a live, enforced gate rule"
+    disposition: "handled_by:COV010"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-GUARD001"
+    name: "GUARD001 is a live, enforced gate rule"
+    disposition: "handled_by:GUARD001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-INV010"
+    name: "INV010 is a live, enforced gate rule"
+    disposition: "handled_by:INV010"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SYS900"
+    name: "SYS900 is a live, enforced gate rule"
+    disposition: "handled_by:SYS900"
     fixability: "manual"
     cross_refs: []
 concern_family_total: 13

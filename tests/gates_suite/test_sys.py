@@ -1044,6 +1044,85 @@ class TestSys111FindingsTouching:
         assert findings == ()
 
 
+class TestSysGateForBranch:
+    """`frob.gates._sys_branch.sys_gate_for_branch`: SYS/capability audits,
+    evaluated against an explicit worktree/branch root rather than
+    whatever root a caller's own `GraphSnapshot` was built from. See
+    T-4212."""
+
+    # frob:tests src/frob/gates/_sys_branch.py::sys_gate_for_branch kind="unit"
+    def test_finds_findings_only_visible_on_branch(self, tmp_path: Path) -> None:
+        from frob.gates._sys_branch import sys_gate_for_branch
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _git_init(repo)
+        subprocess.run(["git", "branch", "feature"], cwd=repo, check=True)
+        wt = tmp_path / "feature-wt"
+        subprocess.run(
+            ["git", "worktree", "add", str(wt), "feature"],
+            cwd=repo,
+            check=True,
+        )
+        _write(wt, "design/m.strata", _DESIGN_STRATA)
+        _write(
+            wt,
+            "src/a.py",
+            "def send():\n    # frob:channel f_does_not_exist\n    pass\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=wt, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feature work"], cwd=wt, check=True
+        )
+
+        # main itself has none of this -- a plain sys_gate(repo, ...) sees
+        # nothing, exactly the F-317/M-1 blind spot this ticket closes.
+        main_violations = sys_gate(repo, _snapshot(repo))
+        assert _by_rule(main_violations, "SYS001") == []
+
+        branch_violations = sys_gate_for_branch(repo, "feature")
+        sys001 = _by_rule(branch_violations, "SYS001")
+        assert len(sys001) == 1
+        assert sys001[0].severity == Severity.ERROR
+
+    # frob:tests src/frob/gates/_sys_branch.py::sys_gate_for_branch kind="unit"
+    def test_missing_worktree_reports_unmeasured(self, tmp_path: Path) -> None:
+        from frob.gates._sys_branch import sys_gate_for_branch
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _git_init(repo)
+
+        violations = sys_gate_for_branch(repo, "does-not-exist")
+        assert len(violations) == 1
+        assert violations[0].rule == "SYS900"
+        assert violations[0].severity == Severity.UNRESOLVED
+        assert "UNMEASURED" in violations[0].message
+
+    # frob:tests src/frob/gates/_sys_branch.py::sys_gate_for_branch kind="unit"
+    def test_snapshot_build_failure_reports_unmeasured(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from typani import Err
+
+        import frob.gates._sys_branch as sys_mod
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _git_init(repo)
+
+        monkeypatch.setattr(sys_mod, "_resolve_ref_worktree", lambda root, ref: repo)
+
+        import frob.graph as graph_mod
+
+        monkeypatch.setattr(graph_mod, "build_graph", lambda root, cache: Err("boom"))
+
+        violations = sys_mod.sys_gate_for_branch(repo, "main")
+        assert len(violations) == 1
+        assert violations[0].rule == "SYS900"
+        assert violations[0].severity == Severity.UNRESOLVED
+
+
 class TestDocptrFindingsTouching:
     """`frob.gates._sys.docptr_findings_touching` (T-3575): DOC004/DOC006
     (dangling doc anchor / unresolved file-path pointer) findings,
@@ -1307,8 +1386,7 @@ class TestKnownGateRuleIds:
     # frob:ticket T-0972
     # frob:ticket T-1010
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_liter\
-    # al_is_known
+    # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
     def test_every_emitted_rule_literal_is_known(self) -> None:
         """Generator-freshness drift-lock (T-1010, inverting the T-0964
         scan): every rule id `frob.gates._rule_id_scan.
@@ -1338,8 +1416,7 @@ class TestKnownGateRuleIds:
 
     # frob:ticket T-1010
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_r\
-    # ule_id
+    # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_id  # noqa: E501
     def test_scan_finds_a_synthetic_rule_id(self, tmp_path: Path) -> None:
         """A fresh gate emitting a rule id via an inline `rule="..."`
         literal is picked up by `scan_emitted_rule_ids` with no hand edit
@@ -1358,8 +1435,7 @@ class TestKnownGateRuleIds:
 
     # frob:ticket T-1010
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_resolves_const_name\
-    # _reference
+    # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_resolves_const_name_reference  # noqa: E501
     def test_scan_resolves_const_name_reference(self, tmp_path: Path) -> None:
         """A `rule=CONST_NAME` reference resolved against a module-level
         `CONST_NAME = "RULE123"` assignment -- the T-0964 class this
@@ -1551,8 +1627,7 @@ class TestRenderLintGate:
         assert _by_rule(violations, "RENDER001") == []
 
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_stderr_directed_print_is_s\
-    # ilent
+    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
     def test_stderr_directed_print_is_silent(self, tmp_path: Path) -> None:
         """A `print(..., file=sys.stderr)` call is never flagged --
         INV-RENDER-SOLE-STDOUT governs stdout only."""
@@ -1573,8 +1648,7 @@ class TestRenderLintGate:
         assert _by_rule(violations, "RENDER001") == []
 
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_unparseable_file_fires_par\
-    # se001
+    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
     # frob:ticket T-0897
     def test_unparseable_file_fires_parse001(self, tmp_path: Path) -> None:
         """A file with a Python syntax error fires PARSE001 instead of
@@ -1644,8 +1718,7 @@ class TestRenderLintGate:
         assert _by_rule(violations, "RENDER001") == []
 
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_exemption_is_file_scoped_n\
-    # ot_dir_scoped
+    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_exemption_is_file_scoped_not_dir_scoped  # noqa: E501
     # frob:ticket T-2719
     def test_exemption_is_file_scoped_not_dir_scoped(self) -> None:
         """Control on the exemption predicate itself: `scripts/
@@ -1670,8 +1743,7 @@ class TestRenderLintGate:
         assert not "scripts/other_tool.py".startswith(_EXEMPT_PREFIXES)
 
     # frob:tests \
-    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_scan_now_covers_hooks_and_\
-    # fleet_status
+    # tests/gates_suite/test_sys.py::TestRenderLintGate.test_scan_now_covers_hooks_and_fleet_status  # noqa: E501
     # frob:ticket T-2719
     def test_scan_now_covers_hooks_and_fleet_status(self, tmp_path: Path) -> None:
         """BUG002 repro (T-2719): before this fix, `.claude/hooks/**` and

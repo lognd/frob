@@ -2,14 +2,14 @@
 id: T-4212
 title: 'gates evaluate main only: extend SYS/capability audits to run against a worktree/branch,
   and treat an unrunnable check as unmeasured, not clean'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-07'
 priority: high
 parent: T-4135
 tier: ticket
-sprint: v0.538.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -34,13 +34,10 @@ scope_changes:
     same T-1420 split-family precedent
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.538.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/gates_suite/test_sys.py::TestSysGateForBranch::test_finds_findings_only_visible_on_branch
+- tests/gates_suite/test_sys.py::TestSysGateForBranch::test_missing_worktree_reports_unmeasured
+- tests/gates_suite/test_sys.py::TestSysGateForBranch::test_snapshot_build_failure_reports_unmeasured
 designated_repro_test: null
 threat: null
 component: null
