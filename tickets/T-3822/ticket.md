@@ -4,7 +4,7 @@ title: 'F-017: docs/strata/surface.md + threat.md node grammar shows attr IDENT 
   but the real form needs STRING (attr "privacy-policy"; retention=90d) -- fix the
   docs to show the STRING attr form'
 state: queued
-kind: bug
+kind: feature
 origin: human
 created: '2026-09-05'
 priority: medium
@@ -34,6 +34,13 @@ triage_changes:
   reason: '2026-09-19: owner decided the parser is incomplete rather than the docs
     wrong, converting this from a DECISION into implementation work; it moves from
     story D (T-4667) to story B (T-4665)'
+  actor: logan
+  at: '2026-09-19'
+- field: kind
+  old_value: bug
+  new_value: feature
+  reason: '2026-09-19: converted from a docs decision into implementation work on
+    the parser (owner decision: the parser is incomplete, not the docs wrong)'
   actor: logan
   at: '2026-09-19'
 body_changes:
