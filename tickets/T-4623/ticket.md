@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: medium
 parent: T-4421
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -48,6 +48,12 @@ triage_changes:
   old_value: null
   new_value: T-4421
   reason: child of T-4421 docarch debloat split
+  actor: logan
+  at: '2026-09-19'
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
