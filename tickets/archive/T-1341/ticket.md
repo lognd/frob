@@ -10,6 +10,10 @@ priority: high
 parent: T-1339
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates_fix_engine.py
@@ -17,6 +21,8 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_gates.py
@@ -26,6 +32,13 @@ scope_changes:
     T-1341 already had to update.'
   actor: logan
   at: '2026-08-01'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve SUPPRESS001/FMT001 ordering detail trimmed from _fix_engine.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 843
+  new_length: 1350
 evidence:
 - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression
 - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_idempotent_second_fix_pass_is_a_no_op
@@ -44,7 +57,20 @@ acceptance:
   - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_idempotent_second_fix_pass_is_a_no_op
 threat: null
 component: gates
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Phase 2 of T-1339, depends on the SUPPRESS001 detector. Add a Tier-A deterministic handler to frob.gates._fix_engine alongside the existing frob:tests/frob:doc/INV006 handlers, so it is picked up by apply_tier_a_fixes and therefore absorbed automatically by frob ticket land (same path frob fmt takes).
 
 Requirements: canonical deterministic comment order on the rewritten line (existing dual-dialect lines in this repo use 'type: ignore[...]  # noqa: ...  # ty: ignore[...]' -- confirm against the 20 already-paired lines and match them rather than inventing an order). Idempotent: both-present is a no-op. Never widen a coded suppression to a bare one. Preserve any trailing explanatory comment. Tier-A means deterministic and verifiable -- if the reporting diagnostic does not carry a rule code, do NOT guess, leave the finding for a human.
+
+
+T-4709 follow-up (condensed from TIER_A_HANDLERS's comment block in
+src/frob/gates/_fix_engine.py, trimmed for DOCARCH002's 12-line cap):
+both SUPPRESS001 and FMT001 can act on an over-long line, and FMT001's
+directive-wrap gets first refusal. SUPPRESS001 never touches a
+`frob:`-directive-bearing line at all (see `_FROB_DIRECTIVE_MARKER_RE`),
+so the two never actually collide on the same physical line in
+practice -- the ordering is still fixed explicitly rather than left to
+dict insertion accident.
