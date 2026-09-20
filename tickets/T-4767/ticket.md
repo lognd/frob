@@ -19,7 +19,6 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/app/ticket_runner/_lifecycle.py
-- src/frob/app/ticket_runner/_new.py
 - src/frob/app/ticket_runner/_query.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/ticket_runner/_verify.py
@@ -40,6 +39,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: leased by in-progress T-4805, deferred per BRIEF.md concurrency rule
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
