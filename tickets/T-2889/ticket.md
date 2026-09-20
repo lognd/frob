@@ -46,12 +46,6 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: v0.535.0
-  new_value: v0.535.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
