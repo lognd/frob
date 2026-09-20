@@ -2,7 +2,7 @@
 id: T-4717
 title: docs/modules/vet.md rule rows VET006/008/009/010 describe unimplemented designs
   under live rule ids; align with gates.md and the emitting sites
-state: in-progress
+state: queued
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -80,3 +80,6 @@ mislead anyone reading the rule table to understand what VET006/8/9/10 actually 
   detonation, cadence/maintainer signals) appears under a live VET0xx id anywhere in vet.md.
 - Unimplemented designs are either linked to an existing backlog ticket or listed under a clearly
   labelled "Planned detectors (no rule id yet)" heading with no rule ids.
+
+## Failure log
+- 2026-09-20 attempt 1: coordinator: in-progress with no worktree or branch carrying work; requeued for a fresh agent
