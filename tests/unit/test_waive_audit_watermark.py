@@ -87,11 +87,10 @@ class TestSaveWatermark:
         assert reloaded.catchup_remaining == 7
 
     def test_creates_parent_dir_if_missing(self, tmp_path: Path) -> None:
-        """T-2721: the watermark now lives at the repo ROOT
-        (`waive-audit-watermark.json`, not `.frob/waive-audit-
-        watermark.json`) -- `watermark_path`'s own parent is `tmp_path`
-        itself, which already exists as the pytest fixture, so this
-        checks the file is created rather than a `.frob/` subdirectory."""
+        """Proves `save_watermark` creates `waive-audit-watermark.json`
+        at the repo root, whose parent (`tmp_path` itself, the pytest
+        fixture) already exists, rather than under a `.frob/`
+        subdirectory (see T-2721)."""
         watermark = WaiveAuditWatermark(
             commit_sha="abc", audited_at=utc_now(), waivers_audited=0
         )

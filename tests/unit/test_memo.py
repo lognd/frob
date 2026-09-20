@@ -256,13 +256,12 @@ def test_analyze_project_second_call_is_memo_hit(tmp_path: Path) -> None:
 
 # frob:ticket T-0410
 def test_parse_file_second_call_is_memo_hit(tmp_path: Path) -> None:
-    """`parse_file` called twice with the same path inside one scope
-    returns the identical object the second time (T-0410): `_parse`'s own
-    content-hash cache already skips the tree-sitter parse on a repeat
-    call, but `extract()` (the symbol/comment walk over that tree) used to
-    re-run every time regardless -- the actual hot cost COV006's rescue
-    helpers pay by calling `parse_file` on the same file many times over
-    in one `frob check` run."""
+    """Proves `parse_file` called twice with the same path inside one
+    scope returns the identical object the second time, memoizing
+    `extract()` (the symbol/comment walk) on top of `_parse`'s own
+    content-hash cache -- the hot cost COV006's rescue helpers pay by
+    calling `parse_file` on the same file many times in one `frob check`
+    run (see T-0410)."""
     _write_py_file(tmp_path)
     path = tmp_path / "sample.py"
 

@@ -72,14 +72,12 @@ class TestExpandDeclaredKind:
         assert expand_declared_kind("env") == frozenset({"env.read", "env.write"})
 
     def test_unwired_family_stays_coarse(self):
-        """`proc` has a defined mode set (`FAMILY_MODES`) but is not in
-        `WIRED_MODE_FAMILIES` (T-1075: `env` moved INTO the wired set once
-        its own tier-2 join landed, so this test now exercises `proc` --
-        still unwired, since the vet registry has no `capability_
-        kind="proc"` entries at all, module docstring's naming-
-        reconciliation note) -- a bare `may "proc"` must stay exactly
-        `{"proc"}`, never silently explode into modes no scanner can
-        observe yet (module docstring's "wiring status")."""
+        """Proves `expand_declared_kind("proc")` stays exactly
+        `{"proc"}` for a family that has a defined mode set
+        (`FAMILY_MODES`) but is not in `WIRED_MODE_FAMILIES` (the vet
+        registry has no `capability_kind="proc"` entries), so a bare
+        `may "proc"` never silently explodes into modes no scanner can
+        observe yet (see T-1075)."""
         assert expand_declared_kind("proc") == frozenset({"proc"})
 
     def test_kind_with_no_modes_defined_stays_itself(self):

@@ -141,12 +141,11 @@ class TestSettingsForProfile:
 
 # frob:ticket T-2361
 class TestEffectiveProfileOrStandard:
-    """T-2361: `effective_profile_or_standard` is the last seam that used
-    to force `_land_cmd.py` to import `ProfileName` directly just to
-    spell its own `Err`-falls-back-to-`STANDARD` default -- these tests
-    pin BOTH halves of that contract (pass-through on `Ok`, fallback on
-    `Err`) so a future change to `effective_profile`'s own error posture
-    cannot silently flip this helper's fail-closed default."""
+    """Proves `effective_profile_or_standard` implements both halves of
+    its contract -- passing through on `Ok`, falling back to `STANDARD`
+    on `Err` -- without `_land_cmd.py` importing `ProfileName` directly,
+    so a future change to `effective_profile`'s own error posture cannot
+    silently flip this helper's fail-closed default (see T-2361)."""
 
     # frob:ticket T-2361
     def test_ok_passes_through(

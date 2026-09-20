@@ -41,22 +41,16 @@ class TestParseGuardIsWired:
 
     # frob:tests tests/unit/test_lang_parse_guard.py::TestParseGuardIsWired.test_parse_source_calls_the_guard_helpers  # noqa: E501
     def test_parse_source_calls_the_guard_helpers(self) -> None:
-        """`_parse`'s (tree-sitter) source must still reference both guard
-        helpers by name -- a refactor that inlines the read/parse steps
-        and drops the helper calls would otherwise pass every behavioral
-        test in this suite (every fixture is small and fast) while
-        silently reintroducing the T-0893 DoS gap.
-
-        T-2631: `_parse` was split (T-2575, to stay under ARCH001's line
-        threshold) into `_parse` plus a `_parse_uncached_and_store` tail
-        that `_parse` calls for its cache-miss path -- `_run_parse_with_
-        timeout` now lives in the tail, not `_parse`'s own source text.
-        The guard is still reachable on every call (see
-        `TestParseGuardIsInvoked` below, which locks that behaviorally),
-        so this checks the combined source of `_parse` plus the helper it
-        delegates its uncached path to, rather than `_parse` alone --
-        preserving the original intent (both guards present somewhere on
-        `_parse`'s call path) without pinning the internal split shape."""
+        """Proves both guard helpers (`_read_source_under_cap` and
+        `_run_parse_with_timeout`, the T-0893 DoS mitigation) are
+        referenced by name in the combined source of `_parse` and
+        `_parse_uncached_and_store` (the tail `_parse` delegates its
+        cache-miss path to, see T-2631/T-2575), without pinning which of
+        the two functions carries which call -- a refactor that inlines
+        the read/parse steps and drops a helper call would otherwise
+        pass every fast, small-fixture behavioral test in this suite
+        while silently reintroducing the DoS gap; `TestParseGuardIsInvoked`
+        below locks the guard being reachable on every call."""
         source = inspect.getsource(lang_mod._parse) + inspect.getsource(
             lang_mod._parse_uncached_and_store
         )

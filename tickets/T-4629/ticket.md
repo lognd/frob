@@ -1,14 +1,14 @@
 ---
 id: T-4629
 title: Clean tests/unit docstrings of change-narrative (DOCARCH001) cluster 5
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
 priority: medium
 parent: T-4419
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,18 +32,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 designated_repro_test: null
 acceptance:
 - text: Given a scoped frob check on cluster 5 files, when DOCARCH001 is measured,
     then its finding count for those files is 0
-  evidence: []
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 threat: null
 component: null
 anchor: false

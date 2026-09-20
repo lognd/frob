@@ -250,15 +250,13 @@ class TestScopeOverlapWarnings:
 
 # frob:ticket T-2342
 class TestNonRelativeScopeDoesNotCrash:
-    """T-2342 (reader-side half): a ticket with a corrupted, ABSOLUTE-path
-    scope entry (T-2308's real incident -- the rapid-sweep auto-filer had
-    written filesystem-absolute paths into `scope:`) used to crash EVERY
-    `frob ticket new` fleet-wide with `NotImplementedError: Non-relative
-    patterns are unsupported`, because `Path.glob()`'s laziness meant the
-    `try/except` around the call never actually caught the error raised
-    during iteration. Filing an unrelated ticket must still succeed, and
-    the malformed entry must be named in a warning, not silently
-    swallowed or silently coerced into something plausible."""
+    """Proves `frob ticket new` succeeds fleet-wide, with the malformed
+    entry named in a warning rather than swallowed or coerced into
+    something plausible, when another ticket carries a corrupted,
+    absolute-path `scope:` entry (a rapid-sweep auto-filer artifact, see
+    T-2308) -- the `try/except` around `Path.glob()` must catch the
+    error raised during iteration, not just at the call site, since
+    `Path.glob()` is lazy (see T-2342)."""
 
     # frob:ticket T-2342
     # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_unrelated_ticket_still_files_despite_one_corrupt_row  # noqa: E501

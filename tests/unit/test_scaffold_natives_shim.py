@@ -44,8 +44,9 @@ def _core_shim_block():
 
 # frob:ticket T-0865
 class TestMakefileCoreShimTemplate:
-    """The scaffold-owned shim content itself is the one-line delegate,
-    not the old per-repo cargo/CARGO_TARGET_DIR recipe (T-0864)."""
+    """Proves the scaffold-owned shim content is the one-line
+    `uv run frob natives build` delegate, carrying no per-repo cargo or
+    CARGO_TARGET_DIR recipe logic (see T-0864)."""
 
     # frob:ticket T-0865
     def test_shim_content_is_one_line_natives_build_delegate(self) -> None:

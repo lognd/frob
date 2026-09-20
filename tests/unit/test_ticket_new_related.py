@@ -220,11 +220,11 @@ class TestPossibleEnforcementSymbolsCue:
 
 # frob:ticket T-2772
 class TestPossibleEnforcementSymbolsRetargeted:
-    """T-2772: `_possible_enforcement_symbols` used to hardcode the git
-    grep pathspec `src/frob/**/*.py`, so it silently returned `()` in
-    every sibling repo whose package is not `frob` -- indistinguishable
-    from a genuine "found nothing" result. Retargeted onto `frob.lang.
-    declared_source_prefixes` (T-2195/T-2389's promoted resolver)."""
+    """Proves `_possible_enforcement_symbols` resolves its git grep
+    pathspec via `frob.lang.declared_source_prefixes` (T-2195/T-2389's
+    promoted resolver), so it works in a sibling repo whose package is
+    not `frob`, rather than returning `()` indistinguishably from a
+    genuine "found nothing" result (see T-2772)."""
 
     @staticmethod
     def _pyproject(tmp_path: Path, name: str) -> None:

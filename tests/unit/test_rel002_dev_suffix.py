@@ -40,9 +40,10 @@ def _write_pyproject(root: Path, version: str) -> None:
 
 def test_dev_version_ahead_of_stamp_does_not_fire_rel002(tmp_path):
     # frob:tests src/frob/gates/__init__.py::_rel002_coherence_violations
-    """BUG002 repro (T-4540): this exact scenario -- dev_version_bump on,
-    pyproject at 0.531.1.dev3, stamp at 0.531.0 -- used to fire REL002 on
-    every land. It must report zero REL002 findings."""
+    """Proves `release_gate` reports zero REL002 findings when
+    `dev_version_bump` is on and pyproject sits ahead of the stamp on a
+    `.devN` suffix (T-4184's per-land dev bump shape) -- REL002 must not
+    fire on every land in this configuration (see T-4540)."""
     from frob.gates import release_gate
 
     _write_module(tmp_path)

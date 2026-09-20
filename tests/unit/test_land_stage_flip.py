@@ -144,12 +144,12 @@ def _flip(v2_main: Path, prepared: tuple[Path, Ticket, str, str], **kwargs):  # 
 # frob:ticket T-3121
 # frob:ticket T-3135
 class TestDisposableStageFlip:
-    """The flip's must-fire / must-stay-quiet pair plus its refusal path.
-
-    MUST FIRE: a land's entire staged-but-uncommitted window is invisible
-    to a concurrent poll of root. MUST STAY QUIET: a profile that wires
-    the T-1514 pre-commit sweep keeps the old in-root path rather than
-    handing that sweep a checkout it cannot measure."""
+    """Proves the disposable-worktree stage-flip's must-fire /
+    must-stay-quiet pair plus its refusal path: a land's entire
+    staged-but-uncommitted window is invisible to a concurrent poll of
+    root, and a profile wiring the T-1514 pre-commit sweep keeps an
+    in-root path rather than handing that sweep a checkout it cannot
+    measure."""
 
     def test_root_never_goes_dirty_during_the_squash_apply(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501

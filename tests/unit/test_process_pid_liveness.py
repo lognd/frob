@@ -172,18 +172,12 @@ class TestPidAliveWindowsBackend:
 
 # frob:ticket T-3191
 class TestKernel32PlatformGuard:
-    """T-3191: `_kernel32`'s import-time resolution used to be a bare
-    `ctypes.windll.kernel32` inside `try/except AttributeError` -- a
-    RUNTIME guard invisible to `ty`, which forced a `ty: ignore` that was
-    REQUIRED on a Linux `--python-platform` target and reported as an
-    unused suppression (itself an error) on a Windows target -- a
-    matched-opposite-error no single static suppression can satisfy. It
-    is now behind an explicit `if sys.platform == "win32":` check instead,
-    which `ty` narrows per target the same way typeshed's own stub does,
-    needing no suppression in either direction. These fixtures exercise
-    that RUNTIME guard directly (via `importlib.reload` under a faked
-    `sys.platform`), independent of the `ty`-visible shape, as the actual
-    must-fire/must-stay-quiet pair for this site."""
+    """Proves `_kernel32`'s import-time resolution, behind an explicit
+    `if sys.platform == "win32":` check that `ty` narrows per target the
+    same way typeshed's own stub does, behaves correctly at runtime
+    (via `importlib.reload` under a faked `sys.platform`) as the
+    must-fire/must-stay-quiet pair for this site, independent of the
+    `ty`-visible shape (see T-3191)."""
 
     def test_win32_resolves_kernel32(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # MUST-FIRE: on a win32 host, `_kernel32` is resolved from

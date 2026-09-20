@@ -165,13 +165,10 @@ class TestQuietQueryStdout:
     # frob:ticket T-2582
     # frob:tests src/frob/logging/quiet.py::quiet_query_stdout kind="unit"
     def test_quiets_by_default(self, monkeypatch) -> None:
-        """With no FROB_VERBOSE set, behaves exactly like quiet_stdout_logs:
-        raises the stdout handler to WARNING for the duration of the block.
-        This is the repro for T-2582 -- at the parent commit this helper
-        did not exist and every human-mode query path used
-        contextlib.nullcontext(), so the equivalent assertion (handler
-        stays at its original DEBUG/INFO level during the "quiet" block)
-        would have FAILED before this fix."""
+        """Proves that with no `FROB_VERBOSE` set, this helper behaves
+        exactly like `quiet_stdout_logs`: it raises the stdout handler to
+        WARNING for the duration of the block, rather than leaving it at
+        its original DEBUG/INFO level (see T-2582)."""
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
         handler = _install_stdout_handler(logging.DEBUG)
         try:

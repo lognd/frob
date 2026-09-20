@@ -285,9 +285,11 @@ class TestRuffFormatCheckOnly:
 
 
 # frob:ticket T-3906
+# frob:ticket T-4629
 class TestRunMultiplePaths:
-    """T-3312 (folded into T-3906): `frob format`'s path argument is a
-    LIST, not one path."""
+    """Proves `frob format`'s runner processes a list of paths, each
+    getting formatted independently, not just a single path (see
+    T-3906)."""
 
     # frob:ticket T-3906
     def test_multiple_paths_each_get_processed(

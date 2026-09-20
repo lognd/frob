@@ -66,8 +66,7 @@ def test_render_project_writes_expected_files(tmp_path: Path) -> None:
 
 
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_render_project_existing_output_without_forc\
-# e_is_err
+# tests/unit/test_scaffold_project.py::test_render_project_existing_output_without_force_is_err  # noqa: E501
 def test_render_project_existing_output_without_force_is_err(tmp_path: Path) -> None:
     """Re-rendering without force=True refuses to clobber existing output."""
     first = render_project("python-tool", "demo", tmp_path)
@@ -79,8 +78,7 @@ def test_render_project_existing_output_without_force_is_err(tmp_path: Path) -> 
 
 
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_render_project_force_overwrites_existing_ou\
-# tput
+# tests/unit/test_scaffold_project.py::test_render_project_force_overwrites_existing_output  # noqa: E501
 def test_render_project_force_overwrites_existing_output(tmp_path: Path) -> None:
     """force=True re-renders even when the output files already exist."""
     first = render_project("python-tool", "demo", tmp_path)
@@ -103,8 +101,7 @@ def test_render_project_all_registered_types_succeed(tmp_path: Path) -> None:
 
 # frob:ticket T-1576
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_p\
-# rofile
+# tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_profile  # noqa: E501
 def test_render_project_all_types_default_to_rapid_profile(tmp_path: Path) -> None:
     """T-1576: every registered project type's rendered `frob.toml` opts a
     brand-new scaffolded repo into `[profile] profile = "rapid"` -- the
@@ -122,8 +119,7 @@ def test_render_project_all_types_default_to_rapid_profile(tmp_path: Path) -> No
 
 
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_resolve_manifest_paths_bad_output_expressio\
-# n_is_render_failed
+# tests/unit/test_scaffold_project.py::test_resolve_manifest_paths_bad_output_expression_is_render_failed  # noqa: E501
 def test_resolve_manifest_paths_bad_output_expression_is_render_failed(
     tmp_path: Path,
 ) -> None:
@@ -140,8 +136,7 @@ def test_resolve_manifest_paths_bad_output_expression_is_render_failed(
 
 
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_write_manifest_entries_missing_template_is_\
-# template_not_found
+# tests/unit/test_scaffold_project.py::test_write_manifest_entries_missing_template_is_template_not_found  # noqa: E501
 def test_write_manifest_entries_missing_template_is_template_not_found(
     tmp_path: Path,
 ) -> None:
@@ -177,8 +172,7 @@ def test_render_project_propagates_resolve_failure(tmp_path: Path, monkeypatch) 
 
 
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawn\
-# ing
+# tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning  # noqa: E501
 # frob:ticket T-0803
 # frob:ticket T-3271
 # frob:tests \
@@ -195,8 +189,7 @@ def test_render_project_creates_name_subdir_must_fire(tmp_path: Path) -> None:
 
 # frob:ticket T-3271
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_render_project_existing_collision_still_ref\
-# uses_must_stay_quiet
+# tests/unit/test_scaffold_project.py::test_render_project_existing_collision_still_refuses_must_stay_quiet  # noqa: E501
 def test_render_project_existing_collision_still_refuses_must_stay_quiet(
     tmp_path: Path,
 ) -> None:
@@ -216,8 +209,7 @@ def test_render_project_existing_collision_still_refuses_must_stay_quiet(
 
 # frob:ticket T-3271
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_render_project_bare_form_does_not_scatter_i\
-# nto_existing_project_root
+# tests/unit/test_scaffold_project.py::test_render_project_bare_form_does_not_scatter_into_existing_project_root  # noqa: E501
 def test_render_project_bare_form_does_not_scatter_into_existing_project_root(
     tmp_path: Path,
 ) -> None:
@@ -242,12 +234,10 @@ def test_render_project_bare_form_does_not_scatter_into_existing_project_root(
 # frob:tests \
 # tests/unit/test_scaffold_project.py::test_freshly_scaffolded_project_is_v2_must_fire
 def test_freshly_scaffolded_project_is_v2_must_fire(tmp_path: Path) -> None:
-    """MUST-FIRE (T-3272): a freshly scaffolded project ships no ledger
-    content of any shape, so it is detected as v2, and `frob ticket new`
-    in it writes `tickets/T-0001/ticket.md`, not a `tickets.md` monofile
-    entry -- the scaffold's fresh-repo default is now ledger v2
-    (`_store_mode`'s own T-1553 fresh-repo default, previously defeated
-    by the scaffold shipping an empty `tickets.md`)."""
+    """Proves a freshly scaffolded project ships no ledger content of
+    any shape, so `_store_mode` detects it as v2 (T-1553's fresh-repo
+    default) and `frob ticket new` writes `tickets/T-0001/ticket.md`,
+    not a `tickets.md` monofile entry (see T-3272)."""
     result = render_project("python-tool", "demo", tmp_path)
     assert result.is_ok
     project_dir = tmp_path / "demo"
@@ -279,8 +269,7 @@ def test_existing_v1_repo_unaffected_must_stay_quiet(tmp_path: Path) -> None:
 
 # frob:ticket T-3272
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_migrator_still_works_on_v1_repo_third_fixtu\
-# re
+# tests/unit/test_scaffold_project.py::test_migrator_still_works_on_v1_repo_third_fixture  # noqa: E501
 def test_migrator_still_works_on_v1_repo_third_fixture(tmp_path: Path) -> None:
     """THIRD FIXTURE (T-3272): the one-shot `migrate_v1_to_v2` migrator
     still works on a genuine v1 repo (a monofile ledger with real ticket
@@ -338,8 +327,7 @@ def test_hooks_dir_kill_switch_refuses_without_spawning(
 
 # frob:ticket T-3314
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_ci_template_frob_check_gate_fails_loudly_no\
-# t_silently
+# tests/unit/test_scaffold_project.py::test_ci_template_frob_check_gate_fails_loudly_not_silently  # noqa: E501
 def test_ci_template_frob_check_gate_fails_loudly_not_silently(
     tmp_path: Path,
 ) -> None:
@@ -373,8 +361,7 @@ def test_ci_template_frob_check_gate_fails_loudly_not_silently(
 
 # frob:ticket T-3605
 # frob:tests \
-# tests/unit/test_scaffold_project.py::test_scaffolded_docs_make_targets_exist_in_makef\
-# ile
+# tests/unit/test_scaffold_project.py::test_scaffolded_docs_make_targets_exist_in_makefile  # noqa: E501
 def test_scaffolded_docs_make_targets_exist_in_makefile(tmp_path: Path) -> None:
     """T-3410 regression: `docs/index.md.j2`'s ``make <target>`` references
     must resolve against the same template set's rendered Makefile, and
