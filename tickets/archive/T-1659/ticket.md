@@ -10,6 +10,10 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_cache_gate.py
 - src/frob/gates/_opaque.py
@@ -23,6 +27,8 @@ scope:
 - tests/unit/test_dup_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_vet.py
@@ -80,6 +86,13 @@ scope_changes:
     assertion needs its own waiver'
   actor: logan
   at: '2026-08-06'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_scan.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2207
+  new_length: 3326
 evidence:
 - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
 - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
@@ -106,6 +119,9 @@ acceptance:
   - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-1652 fixed dead_symbol_gate never setting Violation.symref, which let
 frob:waive DEAD001 fall back to file-scope matching and silently
@@ -142,3 +158,21 @@ today, rest unchecked), PII011/PII012 (src/frob/gates/_pii_structural/*,
 (src/frob/gates/_taint_gate.py, no symref at all, per-sink finding).
 Recommend a first pass on CACHE001 and OPAQUE001 (highest confidence,
 highest stakes given OPAQUE001's waived population), then sweep the rest.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_scan.py:1290-1303,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+# T-1659: the python builtins whose `RUNTIME_OPAQUE_CONSTRUCTS` needle is a
+# BARE, unqualified name (`eval(`, `exec(`, `getattr(`, `setattr(`,
+# `__import__(`) -- these are exactly the needles a raw substring scan
+# cannot tell apart from (a) the same characters appearing as the tail of a
+# longer identifier (`_mutation_for_eval(`, `test_...flags_exec(`, both real
+# incidents this repo's own OPAQUE001 waivers already hand-documented as
+# "scanner false positive on the ... name") or (b) a dotted attribute/method
+# access ending in the same name (`monkeypatch.setattr(`, `model.eval(` --
+# pytest's own monkeypatch fixture and z3's `Model.eval`, neither the
+# python builtin). Constructs whose needle is ALREADY dotted
+# (`importlib.import_module(`) are not in this set -- they need the
+# opposite verification (an exact attribute chain, not a bare name) and had
+# no reported false positives, so left on the pre-existing text-scan path.
