@@ -10,6 +10,7 @@ priority: critical
 blocked_by:
 - T-4709
 - T-4722
+- T-4693
 parent: null
 tier: ticket
 sprint: null
