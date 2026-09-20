@@ -81,26 +81,7 @@ _MANAGED_ATTR = "managed"
 #: local for the same import-cycle reason as `_MANAGED_ATTR` above.
 _ERRORS_TOTAL_ATTR = "errors_total"
 
-#: Flow attr marking a `cache`'s elaborator-synthesized fill/invalidation
-#: edges as explicitly NOT crossing a real process/service boundary
-#: (T-0845, the SAME bare-marker literal `_reliability.py::_LOCAL_ATTR`
-#: reads to exempt a flow from the REL200 TIMEOUT obligation -- kept as a
-#: local copy, not an import, for the same cross-module-vocabulary reason
-#: `_MANAGED_ATTR` above documents). This is a deliberate, unconditional
-#: disposition for the `cache` construct specifically (NOT `cdn`): per
-#: docs/strata/surface.md#key-construct-semantics, `cache X of Y` is
-#: std.infra's IN-PROCESS derived view -- its node inherits `Y`'s own
-#: trust directly (`_cache_node_and_fill_flow` below) rather than a
-#: separate provider trust the way `cdn`'s network-fronting variant does
-#: (`_cdn_node_and_fill_flow`, which deliberately does NOT get this attr).
-#: `cache` therefore has no real cross-boundary hop to time-bound in the
-#: first place, for EVERY declaration of it, not just this repo's own
-#: `graph_cache` -- this is the "explicit local disposition for
-#: in-process in-memory flows" T-0845 chose over a per-flow `attr`
-#: grammar clause, since `cache`'s parser (`strata-core::parse_cache`)
-#: has no such clause and adding one is a strata-core change outside this
-#: ticket's scope (src/frob/strata/**, design/frob.strata,
-#: tests/unit/strata/** only).
+# see T-0845 for the history behind this
 _CACHE_LOCAL_ATTR = "local"
 
 
@@ -307,21 +288,7 @@ def _store_capacity(decl: StoreDecl) -> KernelCapacity | None:
     return capacity
 
 
-# T-0250: `waive RULE reason="..." [ticket="..."]`+ desugars the SAME
-# direct-mapping way `_elaborate.py::_elaborate_node` desugars them for
-# `node` -- straight to `Node.waives`, so a store's declared waiver
-# discharges a `frob sys audit` finding against it exactly like a
-# node's would (`_waive.py` reads `Node.waives` generically off any
-# elaborated `Node`, with no store/node distinction).
-#
-# `_elaborate.py::_validate_waivers` only walks `module.nodes` (it runs
-# BEFORE `elaborate_infra`/`_elaborate_store` even sees `module.stores`,
-# `_elaborate.py::elaborate`'s call order) -- a store's `waive` clause
-# would silently skip the mandatory-non-blank-reason and multi-instance
-# sub-target check `_validate_waivers` gives `node` unless this
-# elaborator enforces it itself. Same check, same error, just run here
-# instead, so the T-0174 "no way to elaborate a blank-reason waiver"
-# guarantee (docs/strata/waive.md) holds for stores too.
+# see T-0250 for the history behind this
 def _validate_store_waives(
     decl: StoreDecl,
 ) -> Result[tuple[Waiver, ...], StrataError]:

@@ -335,34 +335,16 @@ _log = get_logger(__name__)
 # frob:enforces CHK-GATE-SYS100
 # frob:enforces CHK-GATE-SYS101
 # frob:enforces CHK-GATE-SYS102
-# SYS103 edge added at T-0667's coordinator close-out, once the registry
-# entry existed and SYS103 registered in the live rule set (the follow-up
-# T-0667's Done report deferred).
 # frob:enforces CHK-GATE-SYS103
-# T-1113: CHK-GATE-SYS104/105/106 registry entries added alongside the
-# SYS104 opt-in-to-mandatory flip, mirroring the CHK-GATE-SYS103
-# precedent above.
 # frob:enforces CHK-GATE-SYS105
 # frob:enforces CHK-GATE-SYS106
-# T-1451: CHK-GATE-SYS107 registry entry added alongside the via-less-
-# may-on-a-large-node advisory (_via_less_large_node_violations below),
-# mirroring the CHK-GATE-SYS105/106 precedent above.
 # frob:enforces CHK-GATE-SYS107
 # frob:enforces CHK-SUBSYS-STRATA
-# T-0672: SLH-SYS-EVA-* edges bind this function directly to the
-# structural-linter-adversarial-hardening.md denominator rows T-0668/
-# T-0669/T-0670 close (docs/design/registry/arch-checks.yaml's
-# `handled_by:SYS100`/`SYS105`/`SYS106` dispositions). T-1870: the
-# CHK-GATE-SYS104 registry entry and the SLH-SYS-EVA-03-UNDECLARED-
-# PUBLIC-SURFACE `frob:enforces` edge that used to sit here are both
-# removed -- SYS104 (and its writer) are deleted, per an explicit owner
-# directive that no code path may auto-update declared public-symbol
-# surface; SLH-SYS-EVA-03 is re-dispositioned `out_of_scope:reasoned-
-# deferral` in arch-checks.yaml pending T-1629.
 # frob:enforces SLH-SYS-EVA-01-UNMODELED-MODULE
 # frob:enforces SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY
 # frob:enforces SLH-SYS-EVA-04-PURPOSE-DRIFT
 # frob:enforces SLH-SYS-EVA-05-BINDING-LAUNDERING
+# see T-0667 for the history behind this
 def check_self_conformance(
     model: KernelModel, root: Path
 ) -> Result[SelfConformReport, StrataError]:

@@ -81,26 +81,7 @@ SYS_BINDING_TOTALITY = "SYS106"
 SYS_VIA_LESS_LARGE_NODE = "SYS107"
 
 # frob:doc docs/strata/surface.md#may-scope
-# frob:ticket T-2224
-#: T-2224: the capability atoms SYS107 treats as FAIL-CLOSED regardless
-#: of `[strata] require_may_scope` -- a via-less grant on one of these,
-#: on a large node, is ALWAYS `Severity.ERROR`
-#: (`frob.gates._sys_selfaudit._selfaudit_severity`), never an opt-in
-#: advisory. These four atoms let a node run attacker-influenced code
-#: (`exec`/`eval`), persist beyond itself (`install-hook`), or cross the
-#: language-runtime trust boundary (`ffi`) -- the shape T-1623's threat
-#: model names as unacceptable to leave WARN-only indefinitely.
-#: `net`/`fs.read`/`fs.write` are deliberately NOT in this set: they stay
-#: WARN-appropriate at whole-node breadth per SYS107's existing
-#: rationale (module docstring's SYS107 section) -- widening this set to
-#: them would be mass unrelated churn across `design/frob.strata`'s
-#: existing declarations, exactly what this ticket's own scope note
-#: warns against.
-# frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
-# rule family -- this symbol only moved to a sibling module verbatim (same name, same \
-# body/signature), no behavior change, so the affects()-closure doc it names needs no \
-# update"
-# frob:ticket T-2729
+# see T-2224 for the history behind this
 SYS107_FAIL_CLOSED_ATOMS: frozenset[str] = frozenset(
     {"exec", "eval", "install-hook", "ffi"}
 )
@@ -117,75 +98,16 @@ SYS107_FAIL_CLOSED_ATOMS: frozenset[str] = frozenset(
 SYS_DUPLICATE_INTERFACE = "SYS108"
 
 # frob:doc \
-# docs/modules/gates.md#sys113-a-declaration-glob-matching-zero-files-is-its-own-findin\
-# g-t-4110h3-10
-#: `frob sys audit` rule id for SYS113 (T-4110/H3-10) declaration glob
-#: matches zero files: a node's `code=` glob set, OR a glob-form `may`
-#: grant `via` entry, resolves to ZERO real (skip-dir-filtered) files on
-#: the current branch -- distinct from SYS101 (declared but never
-#: OBSERVED, which requires the glob to match at least one real file)
-#: and from the `_fully_excluded_node_ids` carve-out (>=1 real match, all
-#: `[graph].exclude`'d). SYS101/SELFAUDIT001's waivers used to be the
-#: only signal here, which collapses "the code is here and does not use
-#: the capability" (a real SYS101 finding) with "the code named by this
-#: glob is not here at all" (a typo'd/renamed/deleted path) into one
-#: waivable signal -- SYS113 gives the second case its own, separately
-#: waivable identity. Symbol-form `via` entries (`glob::symbol`) are
-#: deliberately NOT covered here: SYS109 (`_effects.py::
-#: check_stale_via_symbols`) already flags a symbol-form entry resolving
-#: against zero candidate files as stale by its own docstring ("zero
-#: candidate files trivially contain zero matching symbols"); covering
-#: them again here would double-report the identical fact under two rule
-#: ids. No per-capability sub-target (mirrors SYS102/SYS103): a code=
-#: glob or a via entry names a SURFACE, not a specific observed
-#: capability kind.
-# frob:ticket T-4110
+# docs/modules/gates.md#sys113-a-declaration-glob-matching-zero-files-is-its-own-finding-t-4110h3-10  # noqa: E501
+# see T-4110 for the history behind this
 SYS_ZERO_MATCH_DECLARATION = "SYS113"
 
 # frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
-#: `frob sys audit` rule id for SYS110 (T-1629) undeclared intended
-#: surface: a node that has opted into hand-declared `interface=` intent
-#: (at least one entry) whose REAL public surface contains a symbol not
-#: named there (module docstring's SYS110 section). Always ERROR. SYS109
-#: is retired as an id (T-1627, folded into SELFAUDIT001 directly rather
-#: than through this module's own `_collect_sys_violations` aggregator);
-#: SYS110 continues the sequence here since it IS collected by that
-#: aggregator, same family as SYS100-108.
-# frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
-# rule family -- this symbol only moved to a sibling module verbatim (same name, same \
-# body/signature), no behavior change, so the affects()-closure doc it names needs no \
-# update"
-# frob:ticket T-2729
+# see T-1629 for the history behind this
 SYS_UNDECLARED_INTENDED_SURFACE = "SYS110"
 
 # frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
-#: T-1629's OWN migration boundary, hand-typed and disclosed here rather
-#: than silently absorbed by the check: these `interface=` blocks predate
-#: T-1629 (T-0668/T-1150-era generated MIRRORS, no longer kept in sync
-#: since T-1870 deleted the writer) and have real drift against the
-#: current tree today (measured directly against this repo's own
-#: `design/frob.strata` at T-1629 time -- `frozenset(v.node for v in
-#: check_self_conformance(...).danger_ok.violations if v.rule ==
-#: SYS_UNDECLARED_INTENDED_SURFACE)`, 734 findings across these 15
-#: nodes at T-1629 time). SYS110 is silent for exactly these node ids
-#: until a human does the per-node hand-curation pass the module
-#: docstring's phased-migration section describes -- shrink this set
-#: (never add to it without the same audit) as each node's list is
-#: brought current; SYS110 is now LIVE and enforced for every node NOT
-#: named here, including the two nodes that already carried a non-empty
-#: `interface=` and already conformed at T-1629 time (`checker`, `fleet`
-#: -- deliberately not silenced, since enabling enforcement wherever it
-#: is already green today is the correct default, not "exempt everything
-#: with an interface= block") and `natives` (T-1981: hand-audited, 1
-#: real finding -- `CARGO_CACHE_DIRNAME` was a genuine public export
-#: (in the module's own `__all__`) missing from `interface=`; added by
-#: hand, not regenerated, after confirming a real external consumer
-#: (`tests/unit/test_natives_build.py`) actually imports it).
-# frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
-# rule family -- this symbol only moved to a sibling module verbatim (same name, same \
-# body/signature), no behavior change, so the affects()-closure doc it names needs no \
-# update"
-# frob:ticket T-2729
+# see T-1629 for the history behind this
 SYS110_UNAUDITED_NODES: frozenset[str] = frozenset(
     {
         "cli",
@@ -210,22 +132,5 @@ SYS110_UNAUDITED_NODES: frozenset[str] = frozenset(
 # frob:ticket T-2729
 _PACKAGE_ROOT = "src/frob"
 
-# frob:doc docs/strata/surface.md#may-scope
-# frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
-# (T-1440/T-1451) documents the SYS107 via-less-large-node advisory this constant \
-# configures -- same T-0524/T-0529 per-symbol architecture-doc precedent every other \
-# COV007 waiver in this repo already carries, not accidental drift onto a private \
-# symbol"
-#: SYS107's default "large node" file-count threshold (T-1451) --
-#: deliberately a round, generous number (LARGE001's own file-SIZE
-#: threshold precedent, `frob.arch._check_large_file`, is the closest
-#: existing analog in this repo for "a size past which a flat/unscoped
-#: declaration stops being informative") rather than a data-derived one;
-#: `[strata] require_may_scope_threshold` in `frob.toml` overrides it per
-#: repo (`_scope_config.py::StrataScopeConfig`).
-# frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
-# rule family -- this symbol only moved to a sibling module verbatim (same name, same \
-# body/signature), no behavior change, so the affects()-closure doc it names needs no \
-# update"
-# frob:ticket T-2729
+# see T-1636 for the history behind this
 _LARGE_NODE_FILE_THRESHOLD = 20

@@ -13,30 +13,7 @@ from ._threat_catalog_cwe import CWE_CATALOG, CWE_TOP_25_CATALOG
 from ._threat_models import OutOfScopeEntry, WeaknessEntry
 
 # frob:doc docs/strata/threat.md#beyond-security-the-anti-pattern-families
-# Phase E (T-0114, docs/strata/threat.md#phasing item E): the anti-pattern
-# families table's rows that map onto EXISTING kernel detectables with NO
-# new precondition logic -- a `capability_kind` join THREAT002/THREAT003
-# already run (dynamic ORM scope reuses the SAME `sql` capability CWE-89
-# fires on, just a different cited id/mitigation), or a citation-only entry
-# (`capability_kind=None`, the CWE-22/352/798 precedent above) whose actual
-# firing/discharge lives in another already-shipped module -- capacity/
-# budget arithmetic (T-0066) for the single-dependency-bottleneck row, the
-# std.infra immutable/cdn machinery for the static-hosting row -- so THREAT001
-# catalog completeness can cite and prove baseline coverage of them without
-# THREAT002/THREAT003 re-detecting what those modules already refute.
-# Kept in a SEPARATE tuple from `CWE_CATALOG` (not appended to it) so the
-# `owasp-top-10` view -- built directly from `CWE_CATALOG`'s ids above --
-# never silently grows to include non-OWASP quality rows; a caller checking
-# the quality baseline passes this catalog explicitly.
-#
-# Stored XSS (the table's third security-family row) needs NO catalog
-# addition at all: `_discharges_as_chokepoint`'s `NoFlow(src=foreign,
-# dst=node_id)` is evaluated over `reachable`, which is already transitive
-# -- a foreign flow through an intermediate store to an `html_render` sink
-# is the SAME multi-hop path the existing CWE-79 entry already covers, so
-# the persistent/two-hop variant is the SAME obligation, not a new one
-# (disclosed here rather than duplicated as a second entry with the same
-# precondition shape).
+# see T-0114 for the history behind this
 QUALITY_CATALOG: tuple[WeaknessEntry, ...] = (
     WeaknessEntry(
         id="CWE-639",
@@ -76,29 +53,7 @@ QUALITY_CATALOG: tuple[WeaknessEntry, ...] = (
         title="Improper Certificate Validation",
         cite="https://cwe.mitre.org/data/definitions/295.html",
         family="security",
-        # T-0188 (docs/strata/threat.md#cve-fingerprints-code-level-pattern-
-        # catalog-t-0153, "curated, not exhaustive"): honest views
-        # placement -- neither `CWE_CATALOG` (the verified 8-id `owasp-
-        # top-10` transcription) nor `CWE_TOP_25_CATALOG` (the verified
-        # 2023 MITRE Top 25 membership, `_CWE_TOP_25_IDS` above -- CWE-295
-        # is NOT one of the 25) claims this id without a fresh, dated
-        # re-verification against those specific pinned lists; adding it
-        # there would silently widen a view whose membership this module's
-        # own docstrings describe as independently checked. Cataloged here
-        # in `QUALITY_CATALOG` instead (already home to other
-        # `family="security"` rows, e.g. CWE-639 above) with NO `QUALITY_
-        # VIEWS` membership -- mirrors CWE-639/REL-001's own precedent of a
-        # catalog entry that need not belong to any named baseline view
-        # (`check_catalog_completeness` is per-view, not "every entry must
-        # have a view", `TestQualityFamilies` in test_threat.py). No
-        # `capability_kind`: TLS certificate-verification bypass (`verify=
-        # False` and its cross-language siblings) is not a `may`-capability
-        # auto-instantiation shape (`_effects.py::_may_kind` has no
-        # tls-verification kind) -- it is fired exclusively by the
-        # `std.cve` fingerprint layer (`_cve_fingerprint.py`'s
-        # FP-TLS-VERIFY-* entries) matching the literal disable-verification
-        # needle, the SAME "citation-only, discharge lives elsewhere"
-        # shape CWE-798/352 already use in `CWE_CATALOG` above.
+        # see T-0188 for the history behind this
         capability_kind=None,
         mitigation="certificate_verification_enabled",
         rung=Rung.L4,
@@ -176,46 +131,14 @@ QUALITY_CATALOG: tuple[WeaknessEntry, ...] = (
     ),
 )
 
-#: T-0171: the union sink taxonomy across EVERY family catalog this module
-#: ships (`CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- the
-#: single home `check_capability_completeness` classifies a `may`
-#: capability kind against, regardless of which family's VIEW is being
-#: audited. Before this, `_audit.py::_evaluate_family` passed each family's
-#: OWN narrower catalog to `check_capability_completeness`, so a capability
-#: kind classified in `CWE_CATALOG` (security) but absent from `QUALITY_
-#: CATALOG` (e.g. `exec`, `deserialize`, `fetch_url` -- QUALITY_CATALOG has
-#: no entry mapped to those kinds at all, comment above `DEFAULT_BENIGN_
-#: CAPABILITIES`) fired THREAT002 against every quality-family view too,
-#: demanding a per-repo `BenignCapability` excuse for a capability that is
-#: NOT unclassified -- it is simply irrelevant to the quality family's
-#: obligation table. Classification ("is this kind a recognized sink
-#: ANYWHERE in the taxonomy") and relevance ("does THIS family's catalog
-#: fire an obligation for it") are different questions; THREAT001/THREAT003
-#: still resolve per-family (a family's obligations are only the entries
-#: its own catalog declares), but THREAT002 -- "every capability kind is
-#: classified" (threat.md#the-exhaustiveness-proof-the-point, item 2) --
-#: was never meant to mean "classified by THIS family's subset of the
-#: taxonomy"; the taxonomy itself is one thing, split into per-family
-#: catalogs only for view-membership bookkeeping (docs/strata/
-#: threat.md#beyond-security-the-anti-pattern-families).
 # frob:doc docs/strata/threat.md#phasing
+# see T-0171 for the history behind this
 ALL_CATALOG: tuple[WeaknessEntry, ...] = (
     CWE_CATALOG + CWE_TOP_25_CATALOG + QUALITY_CATALOG
 )
 
 # frob:doc docs/strata/threat.md#phasing
-# The table's remaining rows whose precondition needs GENUINELY new
-# detection -- a flow-attribute predicate (`compressed`, `batch`,
-# `optimistic`), a boundary-kind predicate over CORS-specific fields
-# (`cors origin any` + "carries credentials"), or an endpoint/route
-# concept the kernel model has no node/flow field for at all -- rather
-# than a join over an existing `capability_kind`, `NoFlow`, or Node/Flow
-# attribute the kernel already extracts. Charter law 1 (no new kernel
-# primitive) plus this ticket's scope (catalog data + existing-detectable
-# plumbing only) means these are cataloged as an explicit, reasoned
-# out-of-scope rather than forced through a precondition that does not
-# actually exist yet -- an honest gap, not a silent one (docs/strata/
-# threat.md#what-is-honestly-not-covered).
+# see T-4719 for the full rationale
 QUALITY_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
     OutOfScopeEntry(
         id="PERF-COMPRESS-001",
@@ -264,21 +187,8 @@ QUALITY_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
 )
 
 #: Baseline VIEWS for the anti-pattern families (docs/strata/threat.md
-#: #beyond-security-the-anti-pattern-families): each view's member set is
-#: the table's rows for that family, whether discharged by a `QUALITY_
-#: CATALOG` entry or explicitly excused by `QUALITY_OUT_OF_SCOPE` --
-#: THREAT001 (`check_catalog_completeness`) proves the SAME "every id
-#: named or explicitly out-of-scope" exhaustiveness per family, unmodified,
-#: by passing the family's view name + `QUALITY_CATALOG` +
-#: `QUALITY_OUT_OF_SCOPE` as its `catalog`/`out_of_scope` arguments -- no
-#: new checker, per docs/strata/threat.md#phasing item E ("reuses A-C
-#: machinery; adds no kernel"). No `compatibility`-family view is stubbed:
-#: the charter's concrete anti-pattern table (docs/strata/threat.md
-#: #beyond-security-the-anti-pattern-families) names zero compatibility
-#: rows, so a `compat-baseline` view would lie about what it checks (the
-#: SAME "never stub an unshipped view" rule `VIEWS` above already follows
-#: for `cwe-top-25`/`owasp-asvs`/`cwe-1000`).
 # frob:doc docs/strata/threat.md#beyond-security-the-anti-pattern-families
+# see T-4719 for the full rationale
 QUALITY_VIEWS: dict[str, frozenset[str]] = {
     "web-performance-baseline": frozenset(
         {"PERF-002", "PERF-COMPRESS-001", "PERF-BATCH-001", "PERF-OPTIMISTIC-001"}

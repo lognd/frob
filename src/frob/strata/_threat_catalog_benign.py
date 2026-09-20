@@ -10,34 +10,8 @@ from __future__ import annotations
 
 from ._threat_models import BenignCapability
 
-#: T-0150: `may` capability kinds `_selfconform.py`'s SYS100/SYS101 measure
-#: via `frob.vet._capability`'s scanner vocabulary (net/fs-write-derived
-#: "fs"/eval/env/ffi/install-hook) that name NO `CWE_CATALOG`/
-#: `QUALITY_CATALOG` `capability_kind` at all (the catalog's kinds --
-#: html_render/sql/exec/fetch_url/deserialize/client_storage -- are a
-#: DIFFERENT, CWE-sink-shaped vocabulary, docs/strata/threat.md#the-
-#: catalog-stdcwe). Declaring these on `design/frob.strata`'s nodes (so
-#: SYS100/SYS101 can reconcile them) would otherwise fail THREAT002 on
-#: every one of them ("matches no sink taxonomy entry") with NO way to
-#: excuse it, since `BenignCapability` is a Python-side argument neither
-#: `evaluate_exhaustiveness` (`_audit.py`) nor `audit_claim` (`_sysdoc.py`,
-#: DOC003's model-side half) wired to a default until now. `exec` IS
-#: listed below too, despite having a real `CWE_CATALOG` entry (CWE-78) --
-#: `_evaluate_family` (`_audit.py`) passes the SAME `benign` tuple to BOTH
-#: the security (`CWE_CATALOG`) and quality (`QUALITY_CATALOG`) family
-#: loops, and `QUALITY_CATALOG` has no `exec`-mapped entry at all;
-#: `check_capability_completeness`'s `known` set is catalog-derived, so
-#: `exec` already being `known` for the security loop makes this entry a
-#: no-op there (`excused` is consulted only for kinds NOT already known) --
-#: it only takes effect for the quality loop, where it is a genuine gap in
-#: `QUALITY_CATALOG`'s vocabulary, not a security exemption.
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-# frob:waive AFFECT001 reason="T-1075 added env.read/env.write entries, same shape as \
-# every other entry already in this tuple; docs/strata/threat.md is outside T-1075's \
-# declared scope (src/frob/strata/_effects.py, src/frob/vet/_capability_modes.py, \
-# extended to src/frob/strata/_selfconform.py, src/frob/strata/_threat.py, \
-# src/frob/vet/_capability_registry.py, and their test files) -- matches T-1047's own \
-# precedent for the identical situation on CAPABILITY_KINDS"
+# see T-0150 for the history behind this
 DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
     BenignCapability(
         kind="exec",
@@ -65,19 +39,7 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "calls as a sink on their own; not compensated elsewhere"
         ),
     ),
-    # T-0771: `net` joined `frob.vet._capability_modes.WIRED_MODE_FAMILIES`
-    # -- `_effects.py::_KIND_MAP` now normalizes an observed net effect to
-    # the precise `net.connect`/`net.listen` spelling (T-0717's own
-    # `fs.write`/`fs.read` precedent) instead of the coarse bare `net`
-    # THREAT005's `check_effect_completeness` used to see, so the bare
-    # `net` excuse above no longer matches a real observed effect's
-    # `.kind` -- mandate point 2 ("BenignCapability entries... would be
-    # needed... once a family is wired") applied for real, not deferred.
-    # `net.listen` has no code exercising it in this repo's own `src/`
-    # tree (frob is a CLI/library, not a server) but is excused
-    # unconditionally anyway -- unreachable today is not the same claim as
-    # "can never happen", and an excuse that only fires when hit is not
-    # weaker for firing rarely.
+    # see T-0771 for the history behind this
     BenignCapability(
         kind="net.connect",
         reason=(

@@ -68,82 +68,10 @@ def _warn_if_empty_row(
         )
 
 
-# frob:ticket T-0279
-# Bumped 1 -> 2: a cache.db written before the T-0336 gates.py fix (which
-# taught `frob.gates` to treat a `frob:tests` edge's src/target endpoints
-# per the either-direction convention, T-0137) can carry rows whose shape
-# was never re-validated against that convention -- `_check_fingerprint`
-# only catches a PACKAGE VERSION change, not a same-version code fix inside
-# a dev/editable install (`_FINGERPRINT_PACKAGES` reads `importlib.metadata`
-# versions, which do not move between commits absent an explicit version
-# bump). `dsl.py`'s fresh-parse construction (`src`=attached symbol,
-# `target`=directive argument, always) and `cache.py`'s store/load
-# (identity passthrough, no field swap) already agree with each other --
-# this bump exists purely to force every existing `.frob/cache.db` in the
-# wild to discard whatever it holds and reparse once under the current,
-# canonical dsl.py+gates.py pairing, rather than trusting rows written
-# under an unknown historical version of that pairing forever.
-# frob:ticket T-0245
-# Bumped 2 -> 3: the `files` table gains `mtime_ns`/`size` columns (T-0245):
-# a mount-filesystem stat is one syscall vs. the open+read+close of a full
-# content hash, so build_graph and load_graph can trust an unchanged
-# (mtime_ns, size) pair and skip reading file bytes entirely for the common
-# "nothing changed" case -- the per-file stat storm this ticket exists to
-# cut. A cache.db written under schema 2 has no such columns, so this must
-# invalidate it same as any other shape change.
-# frob:ticket T-1464
-# Bumped 3 -> 4: new `parsed_artifacts` table (T-1464) persists whole
-# per-file `ParsedFile` payloads (symbols/comments/content_hash), keyed by
-# `(content_hash, fingerprint)`, so `ProcessPoolExecutor` gate workers
-# (perf/dup/dead_symbols/arch, see `frob.gates._run_process_gate`) can read
-# an already-derived artifact instead of independently re-parsing +
-# re-extracting the same file in every worker process. Lives in this same
-# `connect()`/schema machinery but under its OWN db file
-# (`.frob/parse-artifacts.db`, `frob.gates._PARSE_ARTIFACT_CACHE_REL`) --
-# NOT `.frob/cache.db` -- so this table's write volume never contends
-# with `store_file_data`'s own T-1423 lock budget on the graph-snapshot
-# cache; this schema bump still applies to BOTH files (any db this
-# module's `connect()` ever opens gets the new table). A db written
-# before this table existed has no such rows -- same "shape changed, must
-# invalidate" rule as every prior bump, even though this bump is additive
-# (no existing table's columns changed) rather than corrective.
+# see T-0279 for the history behind this
 _SCHEMA_VERSION = 4
 
-# frob:ticket T-0243
-# Packages whose behavior changes the shape of the parsed graph: the frob
-# distribution itself (extraction/digest logic) plus every tree-sitter
-# grammar/runtime package it parses source with. Bumping any of these can
-# silently change symbol/edge output for identical source bytes -- see the
-# T-0243 malmberg pilot incident (2830 vs 3007 symbols from a stale cache
-# after a frob upgrade).
-# frob:ticket T-0402
-# G6: "frob-strata" was missing here -- a frob-strata native-extension
-# upgrade that changed `.strata` parse output would NOT invalidate the
-# cache, exactly the T-0243 incident this mechanism exists to prevent,
-# reintroduced for `.strata`.
-# frob:ticket T-0433
-# G6 (full fix): the tree-sitter grammar packages are now DERIVED from
-# `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` -- the module that actually owns
-# grammar loading -- instead of hand-copied here. "frob" (this
-# distribution's own extraction/digest logic) and "frob-strata" (the one
-# non-tree-sitter grammar) are not `frob.lang` grammar packages, so they
-# stay listed here explicitly; every tree-sitter-loaded language's
-# fingerprint surface now updates automatically if `frob.lang` ever adds or
-# drops a package to that set, with no second hand-copied tuple to forget.
-# frob:ticket T-3433
-# PORT001-IDENT reviewed and DECIDED as a legitimate self-reference, not a
-# portability bug: this cache belongs to frob's OWN analyzer, not to
-# whatever repo it happens to be scanning. The fingerprint's job is "would
-# a version bump of a package that determines parse OUTPUT silently make
-# this cache stale" -- and the packages that determine THIS cache's parse
-# output are always frob's own extraction/digest code and frob-strata's
-# native `.strata` grammar, regardless of which repo is under analysis. A
-# consumer repo's own dependencies play no part in how frob.graph parses
-# that repo's source, so there is nothing to "resolve from the scanned
-# repo's own declared dependencies" here -- unlike PORT001-PATH's silent-
-# pass/false-fire class, retargeting this to be config-driven would not
-# fix a real cross-repo bug, only replace two names that are correct for
-# every host repo with a lookup that could return the wrong ones.
+# see T-0243 for the history behind this
 _NON_LANGUAGE_FINGERPRINT_PACKAGES = ("frob", "frob-strata")
 _FINGERPRINT_PACKAGES = (
     *_NON_LANGUAGE_FINGERPRINT_PACKAGES,
@@ -258,9 +186,6 @@ def _lock_backoff_seconds(attempt: int, *, remaining: float) -> float:
 _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS = 2.0
 
 
-# T-3820 platform invariant (documented in prose and tracked by ticket
-# T-3820; not expressed as a machine-checked directive, as it has no
-# tree-local measure a gate could evaluate):
 # on Windows/stdlib-sqlite3, publishing a rebuilt
 # cache db over `path` via os.replace can only survive a CONCURRENT reader
 # whose handle on `path` is TRANSIENT (opened and closed around each
@@ -271,13 +196,7 @@ _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS = 2.0
 # handle has open without FILE_SHARE_DELETE, which Python's bundled sqlite3
 # does not request and cannot be made to via the stdlib API. That case is
 # unsupported by design on Windows (POSIX is unaffected -- rename never
-# invalidates an open fd there); the 6 skipped T-3781/T-3820 tests in
-# tests/unit/test_graph_cache.py model exactly that persistent-handle case.
-# frob:ticket T-3820
-# frob:raises OSError
-# frob:ticket T-4456
-# frob:tests \
-# tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501
+# see T-3820 for the history behind this
 def _publish_by_overwrite_win32(tmp_path: Path, path: Path, *, what: str) -> bool:
     """Windows-only last-resort publish for `_replace_with_retry`: write
     `tmp_path`'s bytes into `path` IN PLACE instead of retargeting
@@ -978,28 +897,7 @@ def _connect_with_backoff(path: Path) -> sqlite3.Connection:
             attempt += 1
 
 
-# frob:ticket T-3669
-# Round 6 of the cache-atomicity saga. Every prior round (T-3607 quarantine
-# -rename, T-3623 schema-complete-before-visible, T-3632 atomic temp-build
-# + double-checked locking, T-3634 disk-I/O reconnect, T-3644 WAL
-# retirement, T-3654 deadline backoff) treated the symptom on the SAME
-# connection object. The defect they all missed is a HANDLE LIFECYCLE one:
-# `os.replace` publishes a NEW inode at the canonical path, and a
-# `sqlite3.Connection` opened before that replace stays bound to the OLD,
-# now-unlinked (or quarantined) inode forever. On darwin such a handle
-# reads the pre-replace state indefinitely -- so a sibling keeps seeing
-# `fingerprint None`, re-invalidates, republishes, and the two processes
-# thrash rebuilds over each other (~20 cycles, run 33529632605) -- and a
-# WRITE through it surfaces as `attempt to write a readonly database`,
-# which every retry loop then retried ON THE SAME DOOMED HANDLE. The fix
-# is to make "is my handle still bound to the file at the canonical path?"
-# a cheap, explicit check taken BEFORE every fingerprint read and before
-# every retried operation, and to make the readonly shape reopen rather
-# than retry. `id(conn)` keys this map because `sqlite3.Connection`
-# supports neither weak references nor attribute assignment; entries are
-# dropped in `_close_conn`, and an id collision is harmless either way (a
-# stale entry that differs from the live inode only causes one extra
-# correct reopen; one that matches it describes the same file anyway).
+# see T-3669 for the history behind this
 _CONN_FILE_IDENTITY: dict[int, tuple[int, int]] = {}
 _OPEN_IDENTITY_ATTEMPTS = 3
 _CONN_IDENTITY_MAX_ENTRIES = 512
@@ -1714,25 +1612,7 @@ def _is_stale_or_corrupt_connection(exc: sqlite3.Error) -> bool:
     return any(shape in msg for shape in _STALE_CONNECTION_ERROR_SHAPES)
 
 
-# frob:ticket T-4159
-# T-4159: the subset of `_STALE_CONNECTION_ERROR_SHAPES` a blind reopen
-# CANNOT fix -- "no such table"/"disk i/o error"/"unable to open database
-# file" are all shapes a SIBLING's atomic os.replace produces against a
-# stale handle (T-3634's own reasoning: the file at `path` is fine, this
-# connection's view of it is not, so reopening at the canonical path
-# already resolves it). "database disk image is malformed" and "database
-# is corrupted" are different in kind: sqlite emits them when the BYTES ON
-# DISK fail its own page-structure checks, which describes the file
-# itself, not this connection's view of it -- reopening the same path
-# reads the same bad bytes again. Before this ticket, both recovery loops
-# that consult `_is_stale_or_corrupt_connection` (`_reconnect_delay_for`/
-# `_run_with_stale_reconnect` and `_recover_fingerprint_connection`)
-# treated every shape in that tuple identically: reopen-and-retry a fixed
-# number of times, then re-raise the SAME malformed-database error
-# forever -- measured live in this checkout (2026-09-07/09) as
-# `store_file_data` retrying 3 times against a genuinely corrupt
-# `cache.db` and giving up with a misleading "cache lock never released"
-# message, when the real fault was never a lock at all.
+# see T-4159 for the history behind this
 _GENUINE_CORRUPTION_ERROR_SHAPES = (
     "database disk image is malformed",
     "database is corrupted",

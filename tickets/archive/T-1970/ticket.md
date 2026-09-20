@@ -103,6 +103,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3721
+  new_length: 5020
 evidence:
 - tests/unit/graph/test_dsl_mention_escape.py::TestMaskFrobMentions::test_masks_a_mention_span_to_same_length_dots
 - tests/unit/graph/test_dsl_mention_escape.py::TestMaskFrobMentions::test_leaves_unwrapped_text_untouched
@@ -186,3 +193,25 @@ must not trigger DSL001 or LiveTrackerCited, and must not block a land.
 Then assert an UNESCAPED real directive on the same line still parses and
 is still honored (no weakening), and that the escape is recognized by
 each scanner independently, not just the first one fixed.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:88:T-1970 -->
+frob:ticket T-1970
+T-1970: the DSL had no mention/use distinction -- prose ABOUT a
+directive (a discharge comment quoting `follow_up="T-1956"` while
+explaining it was already handled, a reworded comment describing a
+removed `frob:waive WIRE001`) was parsed AS a live directive, refusing
+two consecutive lands over pure English wording. `frob:quote(...)` is
+the one explicit escape: any text a doubled-parenthesized `frob:quote(`
+... `)` span wraps is a MENTION, not a directive -- inert to every
+scanner that reads directive-shaped text, whether that scanner is this
+module's own `_LINE_RE`/`_parse_line` or an entirely separate text scan
+(`frob.tickets._live_tracker`'s `git grep` citation check, T-1970's own
+second incident). Deliberately NOT a doubled-colon prefix
+(`frob::waive`) -- the live-tracker incident mentioned a bare
+`follow_up="T-1956"` attribute with no adjacent `frob:` verb at all, so
+an escape tied to the verb position could not have covered it; a
+wrapper covers ANY directive-shaped substring regardless of what
+precedes it. Single-level (no nested parens) is a documented
+limitation, not a silent gap: directive attribute values in this DSL
+are always `key="value"` quoted strings, which do not themselves need
+parens.

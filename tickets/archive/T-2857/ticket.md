@@ -51,6 +51,19 @@ scope_changes:
     this ticket filed
   actor: logan
   at: '2026-08-22'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3897
+  new_length: 5341
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5341
+  new_length: 6649
 evidence:
 - tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_unescaped_internal_quote_is_reported_not_silently_accepted
 - tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_escaped_internal_quote_still_parses_cleanly
@@ -144,3 +157,48 @@ problem here.
 T-2854 covers mode 3 alone. This ticket is the class. If they are worked
 separately, whoever takes T-2854 must not tighten recognition in a way that
 makes modes 1/2/4 quieter.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:573:T-2857 -->
+frob:ticket T-2857
+T-2857 mode 4: these five verbs used to sit in `_MD_HANDLED_VERBS` below,
+on the assumption that reaching this function with one of them meant
+"already turned into a real edge, nothing to report". That assumption is
+false: `markdown_anchors`'s loop only calls `_unhandled_markdown_
+directive` on a line AFTER `_directive_edge` has already tried and
+FAILED to match it (see that loop's `if directive_edge is not None:
+continue` immediately above the call) -- so a line whose verb is one of
+these five reaching this function is proof the line shape-matched loosely
+(`_ANY_MD_DIRECTIVE_RE`) but failed the strict per-verb regex
+(`_DESCRIBES_RE`/`_ENUMERATES_RE`/`_UNTIL_RE`/`_TICKET_MD_RE`/
+`_DOC_MD_RE`) -- e.g. a `frob:describes` symref broken by an embedded
+space from a bad line-wrap (T-2857's own measured repro: `frob:describes
+path::Class.metho d_further_here` -- the wrapped continuation's trailing
+space landed mid-identifier). Treating them as unconditionally "handled"
+made that failure completely silent: verb membership alone said "fine",
+with no check that THIS line actually produced the edge. A well-formed
+directive of any of these five verbs can never reach this function in
+the first place (it `continue`s out of the loop above), so moving them
+out of the blanket-accept set below cannot produce a new false positive
+on anything that already parses.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:539:T-2857 -->
+frob:ticket T-2857
+T-2857 mode 1: `_MD_WAIVE_RE` above only checks for the OPENING
+`reason="` -- it never verified the value actually closes, so a bare
+unescaped `"` inside the reason text (a genuine incident: two agents
+wrote `reason="the "old" foo"` in a markdown doc) silently matched as if
+well-formed, extracting the wrong (truncated) `rule`/never checking the
+rest of the line at all -- `_unhandled_markdown_directive` then saw a
+recognized rule and returned `None`, no diagnostic, ever. This
+escape-aware value grammar (`\"` does NOT terminate the value, mirroring
+the informal backslash-escape convention this repo's own docs already
+use, e.g. `docs/modules/tickets-verify-sweep.md`'s `reason="... ==
+\"select-batch-tests\" ..."`) finds the REAL closing quote so
+`_md_waive_reason_tail_error` below can tell a genuinely early close
+(leftover text before `-->`, the incident's shape) from a value that
+legitimately continues onto a later physical line (this per-line scanner
+cannot see across lines at all, so that case is left exactly as
+tolerant as before rather than guessed at -- see that function's
+docstring for the measured false-positive check against all 219
+tracked `<!-- frob:waive` sites in this repo, T-2857's positive
+control).

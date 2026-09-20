@@ -29,6 +29,13 @@ scope_changes:
     two-process test, T-3669''s acceptance evidence'
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: condense atomicity-saga history into T-3669 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3074
+  new_length: 4623
 evidence:
 - tests/unit/test_graph_cache.py::TestHandleIdentity::test_replaced_away_handle_is_reopened_before_the_next_read
 - tests/unit/test_graph_cache.py::TestHandleIdentity::test_fingerprint_read_after_a_replace_lands_on_the_live_file
@@ -96,3 +103,27 @@ readonly-db retry match), T-3654 (deadline backoff) -- all landed, all
 insufficient on darwin. Round 6 must fix the HANDLE lifecycle, not add
 more retries.
 Scope: src/frob/graph/cache.py + tests/unit/test_graph_cache.py.
+
+<!-- narrative-moved:src/frob/graph/cache.py:943:T-3669 -->
+frob:ticket T-3669
+Round 6 of the cache-atomicity saga. Every prior round (T-3607 quarantine
+-rename, T-3623 schema-complete-before-visible, T-3632 atomic temp-build
++ double-checked locking, T-3634 disk-I/O reconnect, T-3644 WAL
+retirement, T-3654 deadline backoff) treated the symptom on the SAME
+connection object. The defect they all missed is a HANDLE LIFECYCLE one:
+`os.replace` publishes a NEW inode at the canonical path, and a
+`sqlite3.Connection` opened before that replace stays bound to the OLD,
+now-unlinked (or quarantined) inode forever. On darwin such a handle
+reads the pre-replace state indefinitely -- so a sibling keeps seeing
+`fingerprint None`, re-invalidates, republishes, and the two processes
+thrash rebuilds over each other (~20 cycles, run 33529632605) -- and a
+WRITE through it surfaces as `attempt to write a readonly database`,
+which every retry loop then retried ON THE SAME DOOMED HANDLE. The fix
+is to make "is my handle still bound to the file at the canonical path?"
+a cheap, explicit check taken BEFORE every fingerprint read and before
+every retried operation, and to make the readonly shape reopen rather
+than retry. `id(conn)` keys this map because `sqlite3.Connection`
+supports neither weak references nor attribute assignment; entries are
+dropped in `_close_conn`, and an id collision is harmless either way (a
+stale entry that differs from the live inode only causes one extra
+correct reopen; one that matches it describes the same file anyway).

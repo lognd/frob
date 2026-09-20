@@ -380,62 +380,7 @@ def _flow_completeness_gap(model: KernelModel, claim: Claim) -> str | None:
     return None
 
 
-# Whether the boundaries carrying `entry`'s EXACT required mitigation
-# (`_matching_boundary_ids`) are, by themselves, sufficient to make
-# `claim`'s `NoFlow` hold -- i.e. the catalog-correct mitigation is a
-# genuine chokepoint, not merely one boundary among several (of possibly
-# unrelated kinds) that happen to also block a path (docs/strata/
-# threat.md#phasing item C, review round 2). This comment (not the
-# docstring) carries the explanation so frob-arch's long-function line
-# count reflects the code, not the essay (same pattern as gates/
-# __init__.py's `_match_waiver`).
-#
-# Vacuous-path short-circuit FIRST: if `claim` already holds with EVERY
-# boundary removed (`_restricted_to_boundaries(model, frozenset(),
-# claim)`), no path from the claim's source to its sink exists in the
-# closure AT ALL -- the `NoFlow` is proved by absence of a flow, not by
-# any boundary. T-0501: the caller (`_check_discharge_mitigation_kind`)
-# now runs `_flow_completeness_gap` BEFORE this function and rejects the
-# G2 mixed-model case (a foreign node exists elsewhere but this
-# obligation's own flow was never modeled) with a distinct violation, so
-# by the time this branch is reached the vacuous case is EITHER the
-# sound T-0223 library-mode discharge (no foreign-trust node anywhere in
-# the model) OR a model with genuinely no flows/boundaries declared at
-# all (the pre-T-0113 fixtures this branch was written to keep passing) --
-# both legitimately proved by absence, so accepting them here is correct,
-# not the reviewer-flagged gap.
-#
-# Otherwise, re-evaluates the SAME claim (`_claim_holds`, so the SAME
-# `_eval_noflow`/`reachable` closure walk `_discharges_as_chokepoint`'s
-# round-1 shape check already leans on) over a model copy with every
-# OTHER boundary removed (`_restricted_to_boundaries`) -- no new closure
-# primitive, no new `strata_core` call. G1 (docs/audits/strata.md):
-# `_matching_boundary_ids` additionally requires each candidate boundary's
-# `obligations` to resolve to a real in-model `Claim.id`
-# (`_obligations_resolve`) -- a matching `predicate` string alone is no
-# longer sufficient; a chokepoint boundary with no evidence ref (or a
-# dangling one) is excluded from `matching` and so cannot satisfy this
-# check, even if its bare predicate name happens to equal
-# `entry.mitigation`.
-#
-# Quantifier: this is "the matching boundaries alone cut the closure the
-# SAME `NoFlow` walk already computes" -- sound (a PROVED result here
-# means the matching boundaries really do interpose on every path
-# `reachable` traverses, since removing MORE boundaries can only ADD
-# reachability, never remove it) but not maximal: a path blocked ONLY by
-# a non-matching boundary (with no matching boundary anywhere on it) is
-# invisible to per-path attribution, since `FactBase.reachable` reports
-# reachability, not which specific boundary blocked which specific path
-# (docs/strata/kernel.md#fact-base). If EVERY path happens to carry a
-# matching boundary, this proves True exactly; if only SOME paths do
-# while others are saved solely by a non-matching boundary, this proves
-# False (the restricted-model NoFlow is REFUTED, since removing the
-# non-matching boundary that had been covering that path reopens it) --
-# which is the conservative, deny-by-default direction (charter law 2).
-# No unsound acceptance is possible; the disclosed gap is precision, not
-# soundness: a model needing a per-path (rather than per-model)
-# mitigation-kind proof is out of v0's scope, noted here and in
-# threat.md rather than silently assumed away.
+# see T-0501 for the history behind this
 def _mitigation_is_chokepoint(
     model: KernelModel,
     entry: WeaknessEntry,
@@ -516,25 +461,7 @@ def _check_discharge_assumed_and_refuted(
     return None
 
 
-# The mitigation-kind check (`_mitigation_is_chokepoint`) is skipped for
-# an `assumed` claim, exactly like the REFUTED check above it: an assumed
-# claim is a human-owned TCB entry never run through the closure at all
-# (`_claims.py::evaluate_claims` short-circuits assumed claims to the
-# `ASSUMED` verdict before touching `_eval_noflow`), so there is no
-# closure-derived proof to inspect for boundary kind -- the owner/review
-# gate a few lines up is the only accountability an assume gets, same as
-# every other claim form in this module.
-#
-# It is ALSO skipped when `node_id` names a `managed` node (T-0172,
-# `_code_binding.py::is_managed`): a managed node is external, pure-config
-# infrastructure declared to have no scannable code, so there is no
-# tier-2 code-modeled boundary for `_mitigation_is_chokepoint` to inspect
-# either -- "no tier-2 conformance; obligations shift to config evidence
-# or assumes" (docs/strata/surface.md#key-construct-semantics). The claim
-# still has to exist, prove a chokepoint shape (`_discharges_as_chokepoint`
-# above), and clear the catalog rung -- only the boundary-KIND proof is
-# exempted, same as an assume gets.
-# frob:ticket T-0501
+# see T-0172 for the history behind this
 def _unbound_boundary_detail(entry: WeaknessEntry, unbound: frozenset[str]) -> str:
     """The G1-stronger-half violation detail naming every ENDORSE boundary
     that matches `entry`'s mitigation and resolves its obligations, but

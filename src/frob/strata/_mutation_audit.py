@@ -104,44 +104,10 @@ _log = get_logger(__name__)
 DETECTABLE_KINDS: frozenset[str] = frozenset(_KIND_MAP.values()) | _EXTENDED_KINDS
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
-#: Every RAW declared-kind spelling (`_may_kind` form -- `_SECCOMP_KIND_MAP`
-#: is keyed on the same raw spelling `node_allowed_syscalls` reads, not the
-#: canonicalized/expanded `DETECTABLE_KINDS` vocabulary) the seccomp export
-#: -- the mutation audit's independent SECOND detector (module docstring)
-#: -- actually varies for. A kind outside this set (module docstring:
-#: every app-level extended kind today -- `env`/`eval`/`ffi`/
-#: `install-hook`/`sql`/`deserialize`/`html_render`/`fetch_url`/
-#: `client_storage`, none of which has a real OS-syscall analog) has NO
-#: second-detector coverage yet -- `run_may_mutation_audit` reports its
-#: deletions as `SecondDetectorGap` rather than silently counting SYS100
-#: alone as "double detected". T-1454 (env-mode-explosion/T-1453 via
-#: migration fallout): `env.read` joins this disclosed-gap list too --
-#: unlike `fs.read`/`fs.write` (real `open`/`read` syscalls, T-1203's
-#: rationale for adding those two to `_SECCOMP_KIND_MAP`), reading an
-#: environment variable has no distinct OS syscall of its own (it is a
-#: libc lookup over the process's already-mapped environment block), so
-#: there is no seccomp-profile fact to vary when an `env.read` atom is
-#: deleted -- a real gap, not a spurious one, and NOT fabricated into
-#: `_SECCOMP_KIND_MAP` just to make this set look complete.
+# see T-1454 for the history behind this
 EXPORT_DETECTABLE_KINDS: frozenset[str] = frozenset(_SECCOMP_KIND_MAP)
 
-# T-1328's independent SECOND detector for the app-level capability kinds
-# `_SECCOMP_KIND_MAP` deliberately excludes (module docstring: no real
-# OS-syscall analog exists for these -- faking a seccomp entry for `sql`
-# would be dishonest). Mirrors `_SECCOMP_KIND_MAP`'s own shape exactly
-# (raw declared kind -> tuple of allowed manifest entries) but generates
-# a DIFFERENT artifact -- an app-capability manifest, not a syscall list
-# -- through a code path that shares nothing with `_effects.py::
-# scan_file_capabilities`/`_selfconform.py`'s observed-vs-declared join
-# (the FIRST detector): like the seccomp map, this reads ONLY the
-# declared `Node.may` tuple, never re-scans source. `env`/`env.read`/
-# `env.write` are all listed because a node may declare either the bare
-# family or a precise mode (`_may_kind` returns whichever was written).
-# `html_render`/`client_storage` (the module docstring's other two
-# disclosed-gap kinds) are deliberately NOT here -- this ticket's
-# declared scope is exactly the 7 kinds named in its title; those two
-# remain open `SecondDetectorGap` findings, same as before this ticket.
-# frob:ticket T-1328
+# see T-1328 for the history behind this
 _APP_CAPABILITY_MANIFEST_MAP: dict[str, tuple[str, ...]] = {
     "eval": ("app.eval",),
     "env": ("app.env.read", "app.env.write"),
@@ -236,8 +202,7 @@ class MutationFinding(BaseModel):
 
     # frob:doc docs/strata/selfconform.md#the-three-rules
     # frob:tests \
-    # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every\
-    # _may_is_load_bearing
+    # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing  # noqa: E501
     # frob:waive AFFECT001 reason="T-1328 extended this property's join to also check \
     # the new app_diff pair, same shape as the pre-existing export_diff check; \
     # docs/strata/selfconform.md is outside T-1328's declared scope -- same doc-anchor \
@@ -275,8 +240,7 @@ class MutationAuditReport(BaseModel):
 
     # frob:doc docs/strata/selfconform.md#the-three-rules
     # frob:tests \
-    # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every\
-    # _may_is_load_bearing
+    # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing  # noqa: E501
     @property
     def all_load_bearing(self) -> bool:
         """`True` iff every finding's `load_bearing` holds -- every
@@ -361,8 +325,7 @@ def _export_diff_fires(node: Node, mutated: Node) -> bool:
 # frob:doc docs/strata/selfconform.md#the-three-rules
 # frob:ticket T-1328
 # frob:tests \
-# tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_maps_ea\
-# ch_app_kind kind="unit"
+# tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_maps_each_app_kind kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="new T-1328 function, same doc anchor as its sibling \
 # run_may_mutation_audit already carries; docs/strata/selfconform.md is outside \
 # T-1328's declared scope -- same doc-anchor scope-closure tension this file's own \
@@ -425,20 +388,7 @@ def _audit_one_atom(
     ) or _extended_sys100_fires(node, deleted, extended_view)
     export_expected = kind_raw in EXPORT_DETECTABLE_KINDS
     export_diff = _export_diff_fires(node, deleted)
-    # T-1328: unlike EXPORT_DETECTABLE_KINDS (in practice no node in this
-    # repo declares both a precise and a coarse seccomp-covered kind
-    # together), a node CAN legitimately declare both a coarse `env` and a
-    # precise `env.read`/`env.write` atom (design/frob.strata's `core`
-    # node does exactly this) -- deleting the precise atom alone then
-    # leaves the coarse sibling still covering the same manifest entries,
-    # so the diff correctly does NOT fire for THIS atom's removal. Compute
-    # `app_expected` from the actual diff (masking-aware) rather than a
-    # static kind-membership check, so `app_diff_expected` never claims a
-    # per-atom guarantee this specific node's coexisting declarations
-    # cannot deliver -- `APP_DETECTABLE_KINDS` membership alone still
-    # governs the coarser `second_detector_gaps` "does this KIND have a
-    # detector at all" question below, unaffected by any one node's
-    # masking.
+    # see T-1328 for the history behind this
     app_diff = _app_manifest_diff_fires(node, deleted)
     app_kind_has_detector = kind_raw in APP_DETECTABLE_KINDS
     app_expected = app_kind_has_detector and app_diff

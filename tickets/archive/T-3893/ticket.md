@@ -294,6 +294,13 @@ scope_changes:
     fix; filing a follow-up ticket instead'
   actor: logan
   at: '2026-09-05'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4789
+  new_length: 5702
 evidence:
 - tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_quoted_target_with_spaces_parses_as_one_value
 - tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_quoted_target_with_no_trailing_attrs
@@ -389,3 +396,18 @@ ACCEPTANCE
 - The three design questions answered explicitly in the done report.
 - The full list of positional-value readers enumerated and each confirmed.
 - All fixtures committed.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:179:T-3893 -->
+T-3893: a POSITIONAL target (the bare word `_parse_line` reads via
+`rest.partition(" ")`) wrapped in double quotes, exactly `_ATTR_RE`'s own
+`"([^"]*)"` value grammar -- the SAME quoting convention, applied to the
+one place `_ATTR_RE` cannot reach (attribute values only, never a bare
+leading target). This is what lets `frob:tests "describes a thing, does
+another" kind="unit"` cite a vitest node id whose describe/it title is
+human prose full of spaces: `matches_collected`/the per-framework
+resolvers see the space-bearing string as one opaque target, same as any
+other target, once past this regex. No embedded-quote support (see
+`_parse_attrs`'s leftover check just below `_ATTR_RE.sub` for the
+explicit-refusal half of that story) -- deliberately not a second
+quoting mechanism, just this one convention read from a different
+position on the line.

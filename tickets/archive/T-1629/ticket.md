@@ -102,6 +102,19 @@ scope_changes:
     the ticket's own bound acceptance criterion
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: condense SYS110 migration-boundary narrative into T-1629 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1933
+  new_length: 3863
+- mode: append
+  reason: condense SYS110 id-retirement narrative into T-1629 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3863
+  new_length: 4826
 evidence:
 - tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_real_symbol_outside_declared_set_fires
 - tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_declared_superset_is_silent
@@ -143,3 +156,49 @@ Design questions the ticket must settle:
 - Interaction with the SYS104 self-audit family, which currently reads the generated form.
 
 This is the deepest of the strata maturity tickets and should be sequenced after the mechanical ones (duplicate blocks, testsuite noise), since those shrink the surface this has to reason about.
+
+<!-- narrative-moved:src/frob/strata/_selfconform_ids.py:161:T-1629 -->
+frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
+: T-1629's OWN migration boundary, hand-typed and disclosed here rather
+: than silently absorbed by the check: these `interface=` blocks predate
+: T-1629 (T-0668/T-1150-era generated MIRRORS, no longer kept in sync
+: since T-1870 deleted the writer) and have real drift against the
+: current tree today (measured directly against this repo's own
+: `design/frob.strata` at T-1629 time -- `frozenset(v.node for v in
+: check_self_conformance(...).danger_ok.violations if v.rule ==
+: SYS_UNDECLARED_INTENDED_SURFACE)`, 734 findings across these 15
+: nodes at T-1629 time). SYS110 is silent for exactly these node ids
+: until a human does the per-node hand-curation pass the module
+: docstring's phased-migration section describes -- shrink this set
+: (never add to it without the same audit) as each node's list is
+: brought current; SYS110 is now LIVE and enforced for every node NOT
+: named here, including the two nodes that already carried a non-empty
+: `interface=` and already conformed at T-1629 time (`checker`, `fleet`
+: -- deliberately not silenced, since enabling enforcement wherever it
+: is already green today is the correct default, not "exempt everything
+: with an interface= block") and `natives` (T-1981: hand-audited, 1
+: real finding -- `CARGO_CACHE_DIRNAME` was a genuine public export
+: (in the module's own `__all__`) missing from `interface=`; added by
+: hand, not regenerated, after confirming a real external consumer
+: (`tests/unit/test_natives_build.py`) actually imports it).
+frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
+rule family -- this symbol only moved to a sibling module verbatim (same name, same \
+body/signature), no behavior change, so the affects()-closure doc it names needs no \
+update"
+frob:ticket T-2729
+
+<!-- narrative-moved:src/frob/strata/_selfconform_ids.py:145:T-1629 -->
+frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
+: `frob sys audit` rule id for SYS110 (T-1629) undeclared intended
+: surface: a node that has opted into hand-declared `interface=` intent
+: (at least one entry) whose REAL public surface contains a symbol not
+: named there (module docstring's SYS110 section). Always ERROR. SYS109
+: is retired as an id (T-1627, folded into SELFAUDIT001 directly rather
+: than through this module's own `_collect_sys_violations` aggregator);
+: SYS110 continues the sequence here since it IS collected by that
+: aggregator, same family as SYS100-108.
+frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
+rule family -- this symbol only moved to a sibling module verbatim (same name, same \
+body/signature), no behavior change, so the affects()-closure doc it names needs no \
+update"
+frob:ticket T-2729

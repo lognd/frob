@@ -10,6 +10,10 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/_mayraise.py
 - src/frob/gates/**
@@ -23,6 +27,21 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: condense COMPLIANCE005 vacuity-closure narrative into T-1244 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3381
+  new_length: 5073
+- mode: append
+  reason: condense SYS107 threshold rationale into T-1636 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5073
+  new_length: 6269
 evidence:
 - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_qualified_except_clause_discharges_bare_named_leak
 - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_reraise_of_qualified_catch_type_is_normalized
@@ -39,6 +58,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Two untracked findings families surfaced by an unscoped `frob check`:
 gate:EXHAUST (33 unwaived warnings) and gate:COV (33 unwaived warnings,
@@ -96,3 +118,47 @@ Acceptance:
 - `frob check --only exhaustive_handling` unscoped shows 0 unwaived
   warnings for gate:EXHAUST (or the exact honest remainder is disclosed
   in the Done report with reasoning, not silently left).
+
+<!-- narrative-moved:src/frob/strata/_compliance.py:1043:T-1636 -->
+frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#compliance005compliance007-compliance-registry-vs-model-checking-t-1244  # noqa: E501
+frob:waive COV007 reason="T-1636: the anchored EXHAUSTIVENESS-GATE.md section is a \
+deliberate design doc walking through this exact private mapping's own \
+vacuity-closure rationale (T-1244), immediately below in this same module's own \
+multi-paragraph docstring -- same T-0524/T-0529 per-symbol architecture-doc \
+precedent every other COV007 waiver in this repo already carries, not accidental \
+drift onto a private symbol"
+: T-1244 (gate-vacuity closure): `_check_cmpl_registry_unit_dispositions`
+: (COMPLIANCE005) only proves a `CMPL_REGISTRY_UNIT_IDS` member carries
+: SOME `handled_by`/`out_of_scope` string -- for 16 of the 17 units that
+: string is the SELF-referential `handled_by:COMPLIANCE005`, which is
+: circular: "this framework is handled by the check that verifies a
+: disposition string exists" proves nothing about whether any real
+: `RegulationEntry`/mitigation/attestation backs THAT framework's actual
+: obligations. `CMPL-FROB-CATALOG-ENTRIES` is the one legitimate
+: exception -- it is a meta-row COUNTING `COMPLIANCE_CATALOG`'s own real
+: entries, so its self-reference is not vacuous (T-1250 confirms this
+: explicitly rather than let it ride the same generic shape as the other
+: 16). Maps each vacuously-self-referential unit to the per-framework
+: triage ticket (T-1245-T-1249) that owns its real (a)/(b)/(c)/(d)
+: classification -- named here, not re-derived, so `_cmpl_unit_backing_
+: violation`'s message always points at live, open follow-up work.
+
+<!-- narrative-moved:src/frob/strata/_selfconform_ids.py:213:T-1636 -->
+frob:doc docs/strata/surface.md#may-scope
+frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
+(T-1440/T-1451) documents the SYS107 via-less-large-node advisory this constant \
+configures -- same T-0524/T-0529 per-symbol architecture-doc precedent every other \
+COV007 waiver in this repo already carries, not accidental drift onto a private \
+symbol"
+: SYS107's default "large node" file-count threshold (T-1451) --
+: deliberately a round, generous number (LARGE001's own file-SIZE
+: threshold precedent, `frob.arch._check_large_file`, is the closest
+: existing analog in this repo for "a size past which a flat/unscoped
+: declaration stops being informative") rather than a data-derived one;
+: `[strata] require_may_scope_threshold` in `frob.toml` overrides it per
+: repo (`_scope_config.py::StrataScopeConfig`).
+frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
+rule family -- this symbol only moved to a sibling module verbatim (same name, same \
+body/signature), no behavior change, so the affects()-closure doc it names needs no \
+update"
+frob:ticket T-2729

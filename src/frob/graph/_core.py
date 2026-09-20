@@ -75,10 +75,6 @@ def resolve_call_edges_native(
     return {caller: tuple(callees) for caller, callees in pairs}
 
 
-# T-0930 DISCLOSURE: `frob_core` also exports `called_names`,
-# `ordered_called_names`, `referenced_names`, and `unresolved_exempt_names`
-# (frob-core/src/lib.rs) -- native ports of `frob.graph.callgraph`'s
-# per-symbol token-scan helpers, prototyped during this same investigation.
 # Deliberately NOT wired here: measured end-to-end SLOWER than the
 # pure-Python loops they would replace (0.242s vs 0.135s median
 # dead_symbols in-scope thread_time over this repo's own `src/frob/gates`
@@ -86,7 +82,4 @@ def resolve_call_edges_native(
 # calls, where per-call PyO3 marshaling overhead outweighs the loop-speed
 # win a Rust implementation gives on larger batches (contrast
 # `resolve_call_edges` above: 46 large, batched calls, a genuine win).
-# Kept in `frob_core` (tested, documented) as a parked kernel for a future
-# caller that batches across a whole package/file rather than one symbol
-# at a time -- see `frob.graph.callgraph._ordered_called_names`'s
-# docstring for the full disposition.
+# see T-0930 for the history behind this

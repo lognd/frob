@@ -216,39 +216,9 @@ REGULATION_VIEWS: dict[str, frozenset[str]] = {
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
-# frob:ticket T-0503
-#: T-0503: the production `OutOfScopeRegulation` catalog -- mirrors
-#: `_threat.py::CWE_TOP_25_OUT_OF_SCOPE`/`QUALITY_OUT_OF_SCOPE` for the
-#: compliance family (module docstring's "same obligation/discharge/
-#: exhaustiveness structure as `_threat.py`"). Before this, no module-level
-#: `OutOfScopeRegulation` tuple existed anywhere, so `evaluate_compliance`'s
-#: production callsite (`_audit.py::_compliance_pii_lint_fingerprint_gaps`)
-#: always threaded an empty `out_of_scope=()`, making COMPLIANCE004 (`caught_
-#: by` integrity) vacuous in production regardless of `known_rule_ids`
-#: threading (T-0499's own Done report flagged this as a distinct,
-#: not-folded-in gap). Each entry names a regulation the baseline catalog
-#: does not model plus the real compensating control that catches it
-#: elsewhere -- a fabricated or typo'd `caught_by` here is exactly the case
-#: COMPLIANCE004 exists to refuse.
+# see T-0503 for the history behind this
 COMPLIANCE_OUT_OF_SCOPE: tuple[OutOfScopeRegulation, ...] = (
-    # T-1246 re-review (2026-07-29): T-1242 landed exposure:public-web and
-    # T-1314 landed PRIVACY-NOTICE (mitigation privacy_policy_attestation)
-    # into COMPLIANCE_CATALOG. PRIVACY-NOTICE's notice-at-collection duty
-    # now PARTIALLY discharges CMPL-CCPA-CORE-RIGHTS's right-to-know
-    # component (both are the same "a public collection point must
-    # disclose what it collects" obligation -- PRIVACY-NOTICE's own
-    # RegulationEntry cite already names CCPA Cal. Civ. Code Sec.1798.100
-    # notice-at-collection as a see-also). Right-to-delete has NO
-    # matching coverage: GDPR-ERASURE only fires on a `revocation` edge in
-    # a GDPR jurisdiction, and CCPA carries no separate CA-specific
-    # consumer-deletion-request primitive. This out_of_scope entry is
-    # therefore NOT retired -- it is narrowed and reaffirmed: still
-    # correct for right-to-delete, no longer the whole story for
-    # right-to-know now that PRIVACY-NOTICE exists. Review date extended;
-    # a future ticket may split CCPA-CORE-RIGHTS's disposition into a
-    # real handled_by (right-to-know, via PRIVACY-NOTICE) plus a narrower
-    # out_of_scope (right-to-delete only) once the registry-row-level
-    # split machinery exists to express partial coverage per row.
+    # see T-1246 for the history behind this
     OutOfScopeRegulation(
         id="CCPA",
         reason="the kernel carries GDPR's subject/jurisdiction/retention "
@@ -1040,28 +1010,7 @@ CMPL_REGISTRY_UNIT_IDS: frozenset[str] = frozenset(
     }
 )
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#compliance005compliance007-compliance-registry-vs-model-checking-t-1244  # noqa: E501
-# frob:waive COV007 reason="T-1636: the anchored EXHAUSTIVENESS-GATE.md section is a \
-# deliberate design doc walking through this exact private mapping's own \
-# vacuity-closure rationale (T-1244), immediately below in this same module's own \
-# multi-paragraph docstring -- same T-0524/T-0529 per-symbol architecture-doc \
-# precedent every other COV007 waiver in this repo already carries, not accidental \
-# drift onto a private symbol"
-#: T-1244 (gate-vacuity closure): `_check_cmpl_registry_unit_dispositions`
-#: (COMPLIANCE005) only proves a `CMPL_REGISTRY_UNIT_IDS` member carries
-#: SOME `handled_by`/`out_of_scope` string -- for 16 of the 17 units that
-#: string is the SELF-referential `handled_by:COMPLIANCE005`, which is
-#: circular: "this framework is handled by the check that verifies a
-#: disposition string exists" proves nothing about whether any real
-#: `RegulationEntry`/mitigation/attestation backs THAT framework's actual
-#: obligations. `CMPL-FROB-CATALOG-ENTRIES` is the one legitimate
-#: exception -- it is a meta-row COUNTING `COMPLIANCE_CATALOG`'s own real
-#: entries, so its self-reference is not vacuous (T-1250 confirms this
-#: explicitly rather than let it ride the same generic shape as the other
-#: 16). Maps each vacuously-self-referential unit to the per-framework
-#: triage ticket (T-1245-T-1249) that owns its real (a)/(b)/(c)/(d)
-#: classification -- named here, not re-derived, so `_cmpl_unit_backing_
-#: violation`'s message always points at live, open follow-up work.
+# see T-1636 for the history behind this
 _CMPL_UNIT_TRIAGE_TICKET: dict[str, str] = {
     "CMPL-SOC2-CATEGORIES": "T-1245",
     "CMPL-SOC2-CC-FAMILIES": "T-1245",

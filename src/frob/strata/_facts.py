@@ -88,27 +88,7 @@ _FANOUT_PREFIX = "fanout="
 #: relaying is not itself a meaningful transitive link.
 _NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit", "utility"})
 
-#: T-0496 (docs/audits/strata.md G5): the non-transitive attrs honored when
-#: `through_barriers=False` -- the confidentiality `noflow` closure
-#: (`_claims.py::_first_noflow_witness`, the ONLY caller that omits
-#: `through_barriers`). Deliberately EXCLUDES `utility`: T-0226 added
-#: `utility`-as-terminal specifically so an unrelated hub edge (e.g. a
-#: logging import) would not falsely refute a legitimate `noflow` claim --
-#: but this made the SAME marker a real, author-controlled way to hide a
-#: genuine downstream leak from the confidentiality check (repro: `flow
-#: log_hub{src=secret_store, dst=logger, utility}` then `flow leak{src=
-#: logger, dst=foreign_sink}` -- `noflow(secret_store, foreign_sink)`
-#: PROVED despite the two-hop leak, since `logger` was reached only via the
-#: terminal `utility` edge and so was never enqueued to explore its own
-#: `leak` edge). Per charter law 2 (deny-by-default): a false REFUTED that
-#: forces a human to add a real `Boundary`/discharge is an acceptable cost;
-#: a false PROVED that hides a real exfiltration path is not. `krb_no_
-#: transit` is NOT similarly excluded here -- no caller currently reaches
-#: it through this path (`_krb.py`'s synthesized flows feed the `through_
-#: barriers=True` movement/reach closures, `_krb_movement.py:388`), and
-#: T-0282's own fix was never claimed for confidentiality noflow the way
-#: T-0226's `utility` fix was, so there is no known equivalent gap to close
-#: for it.
+# see T-0496 for the history behind this
 _NOFLOW_NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit"})
 
 

@@ -11,6 +11,10 @@ blocked_by:
 parent: T-0927
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/callgraph.py
 - src/frob/graph/_core.py
@@ -23,6 +27,8 @@ scope:
 - frob-core/frob_core.pyi
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/**
@@ -92,6 +98,13 @@ scope_changes:
     stub to see resolve_call_edges/called_names/etc member signatures)
   actor: logan
   at: '2026-07-27'
+body_changes:
+- mode: append
+  reason: condense T-0930 disclosure into ticket body, keep perf rationale
+  actor: logan
+  at: '2026-09-19'
+  old_length: 549
+  new_length: 1128
 evidence:
 - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_real_package
 - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_synthetic_edge_case
@@ -99,5 +112,18 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Child 3 of T-0927, blocked by the audit child. For rows the audit marks rust-candidate (CPU-bound tree-walking, hashing, scanning loops that survive the python quick wins), implement in the existing Rust natives (frob_core, built via frob natives build / maturin, T-0864 infra) with byte-identical python fallbacks when the native is unavailable (worktree-natives artifact pattern), golden parity tests python-vs-rust, and per-path before/after benchmarks in the audit doc. Narrow this ticket's scope to the specific files once the audit names them.
+
+<!-- narrative-moved:src/frob/graph/_core.py:78:T-0930 -->
+T-0930 DISCLOSURE: `frob_core` also exports `called_names`,
+`ordered_called_names`, `referenced_names`, and `unresolved_exempt_names`
+(frob-core/src/lib.rs) -- native ports of `frob.graph.callgraph`'s
+per-symbol token-scan helpers, prototyped during this same investigation.
+Kept in `frob_core` (tested, documented) as a parked kernel for a future
+caller that batches across a whole package/file rather than one symbol
+at a time -- see `frob.graph.callgraph._ordered_called_names`'s
+docstring for the full disposition.

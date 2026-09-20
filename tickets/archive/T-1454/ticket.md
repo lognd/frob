@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_gate_cache.py
 - src/frob/gates/__init__.py
@@ -17,6 +21,8 @@ scope:
 - docs/modules/serve.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
@@ -43,6 +49,13 @@ scope_changes:
     T-0602 section; that section must record the T-1454 fix'
   actor: logan
   at: '2026-08-02'
+body_changes:
+- mode: append
+  reason: condense seccomp-gap narrative into T-1454 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1918
+  new_length: 3364
 evidence:
 - tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_changes_on_field_edit
 - tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_stable_for_equal_content
@@ -50,6 +63,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Found while working T-1436 (unrelated to that ticket's own scope).
 
@@ -84,3 +100,25 @@ docstring/body edit will see a *false* DRIFT001 the very next default
 `frob check` unless they know to pass `FROB_NO_GATE_CACHE=1` -- which is
 undocumented in the agent playbook and easy to mistake for a real,
 unresolved drift finding.
+
+<!-- narrative-moved:src/frob/strata/_mutation_audit.py:106:T-1454 -->
+frob:doc docs/strata/selfconform.md#the-three-rules
+: Every RAW declared-kind spelling (`_may_kind` form -- `_SECCOMP_KIND_MAP`
+: is keyed on the same raw spelling `node_allowed_syscalls` reads, not the
+: canonicalized/expanded `DETECTABLE_KINDS` vocabulary) the seccomp export
+: -- the mutation audit's independent SECOND detector (module docstring)
+: -- actually varies for. A kind outside this set (module docstring:
+: every app-level extended kind today -- `env`/`eval`/`ffi`/
+: `install-hook`/`sql`/`deserialize`/`html_render`/`fetch_url`/
+: `client_storage`, none of which has a real OS-syscall analog) has NO
+: second-detector coverage yet -- `run_may_mutation_audit` reports its
+: deletions as `SecondDetectorGap` rather than silently counting SYS100
+: alone as "double detected". T-1454 (env-mode-explosion/T-1453 via
+: migration fallout): `env.read` joins this disclosed-gap list too --
+: unlike `fs.read`/`fs.write` (real `open`/`read` syscalls, T-1203's
+: rationale for adding those two to `_SECCOMP_KIND_MAP`), reading an
+: environment variable has no distinct OS syscall of its own (it is a
+: libc lookup over the process's already-mapped environment block), so
+: there is no seccomp-profile fact to vary when an `env.read` atom is
+: deleted -- a real gap, not a spurious one, and NOT fabricated into
+: `_SECCOMP_KIND_MAP` just to make this set look complete.

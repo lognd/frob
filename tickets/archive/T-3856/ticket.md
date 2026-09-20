@@ -53,6 +53,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-15'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4376
+  new_length: 5300
 evidence:
 - tests/unit/graph/test_dsl.py::TestTodoFreeTextNote::test_note_parses_per_language
 - tests/unit/graph/test_dsl.py::TestNoqaTail::test_leading_hash_bad_attribute_syntax_is_still_flagged
@@ -159,3 +166,19 @@ ACCEPTANCE
 - The leading-hash question measured against the real pipeline, with a stated
   verdict on whether DSL001 is vacuous for any language today.
 - All fixtures committed.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:1895:T-3856 -->
+T-3856: a directive written inside a python docstring (T-0342's
+`_walk_python_docstring_comments`) arrives here as RAW docstring
+text, never run through `_strip_comment_delims` (there is no
+comment marker to strip -- the "#" this repo's own convention
+puts in front of such lines, e.g. `src/frob/perf/_dup_spawn.py`,
+is literal string content, not a comment delimiter). Before this
+fix a "#"-prefixed docstring line failed the bare
+`startswith("frob:")` check and was silently skipped -- no Edge,
+no MalformedDirective either, making DSL001 vacuous for every
+`frob:` directive written this way. Strip one optional leading
+'#' (matching every non-docstring extraction path, which already
+strips its own language's comment marker) before judging the
+prefix, so the docstring convention is validated exactly like a
+real comment line instead of silently disappearing.

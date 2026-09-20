@@ -40,6 +40,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 0
   new_length: 1429
+- mode: append
+  reason: keep Windows-replace invariant in code, move T-3820 framing/test-list to
+    ticket
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1428
+  new_length: 2003
 evidence:
 - tests/unit/test_graph_cache.py::TestReplaceWithRetry::test_transient_permission_error_is_retried_then_succeeds
 - tests/unit/test_graph_cache.py::TestReplaceWithRetry::test_persistent_permission_error_is_reraised_after_the_deadline
@@ -70,3 +77,15 @@ connect/close loop so no retry window opens). The production retry fixes the
 realistic transient shape (gate worker opening+closing around each access,
 leaving gaps), proven by a minimal winrun repro and TestReplaceWithRetry on
 Linux and Windows.
+
+<!-- narrative-moved:src/frob/graph/cache.py:223:T-3820 -->
+T-3820 platform invariant (documented in prose and tracked by ticket
+T-3820; not expressed as a machine-checked directive, as it has no
+tree-local measure a gate could evaluate):
+invalidates an open fd there); the 6 skipped T-3781/T-3820 tests in
+tests/unit/test_graph_cache.py model exactly that persistent-handle case.
+frob:ticket T-3820
+frob:raises OSError
+frob:ticket T-4456
+frob:tests \
+tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501

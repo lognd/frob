@@ -141,43 +141,7 @@ def _node_real_public_surface(
     return frozenset(surface)
 
 
-# T-1870: SYS104 (`_interface_conformance_violations`, T-0668) used to
-# live here -- deleted along with its writer (`frob.strata.
-# _sync_interface`, T-1150) per an explicit owner directive that no code
-# path may auto-update declared public-symbol surface. `_node_real_
-# public_surface` and `_INTERFACE_PREFIX` (both still defined in this
-# module) survive because SYS110 also depends on them
-# (`_undeclared_intended_surface_violations` below) -- only the SYS104
-# check function and its call site are gone.
-#
-# T-3523: SYS104's OWN narrowing helpers -- `_imported_from_spec`,
-# `_src_root_prefixes`, `_resolve_cross_package_import`, and
-# `_cross_node_referenced_symbols` itself -- had exactly one caller
-# each, all the way up to `_cross_node_referenced_symbols`, which SYS104
-# alone consumed. A T-1870-era comment here claimed they "survive
-# because SYS106 and SYS108 also depend on them"; that was never true
-# for `_cross_node_referenced_symbols` (grep confirms zero callers in
-# this repo, T-3523's own measurement) and is only true for `_node_
-# real_public_surface` above via SYS110, not SYS106/SYS108 -- SYS106
-# (`_selfconform_binding_rules.py::_binding_totality_violations`) is a
-# self-contained reachability walk over `resolve_local_import` that
-# never touches either helper, and SYS108
-# (`_duplicate_interface_violations`) only reads `_node_attr_values`.
-# Deleted the four now-provably-dead functions rather than building a
-# SYS106 consumer for them -- SYS106 already does its job without them.
-# frob:waive COV007 reason="T-2729: this private helper's frob:doc anchor predates \
-# this ticket -- same T-0524/T-0529/T-1636 per-function architecture-doc precedent \
-# every other COV007 waiver in this repo already carries, not accidental drift onto a \
-# private symbol introduced by this move"
-# frob:doc docs/strata/surface.md#compact-interface-attrs-t-1198
-# frob:enforces CHK-GATE-SYS108
-# frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_duplicate_symbol_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_no_duplicates_silent  # noqa: E501
-# frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
-# rule family -- this symbol only moved to a sibling module verbatim (same name, same \
-# body/signature), no behavior change, so the affects()-closure doc it names needs no \
-# update"
-# frob:ticket T-2729
+# see T-1870 for the history behind this
 def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViolation]:
     """SYS108 (T-1624): a node whose `interface=` attrs (module attrs
     preserve every declared entry verbatim, `_node_attr_values`) name the

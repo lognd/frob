@@ -219,6 +219,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3699
+  new_length: 4615
 evidence:
 - tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_waive_of_a_genuinely_unhonored_rule_is_reported_unparsed
 - tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_waive_of_each_honored_rule_produces_no_finding
@@ -304,3 +311,19 @@ reported (a)/(b) split and per-file counts. First test must FAIL before
 the fix: assert a documentation line quoting a directive in an inline-code
 span does not raise DSL001, and separately assert a genuinely unhandled
 live markdown directive still does.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:131:T-1989 -->
+frob:ticket T-1989
+T-1989: fenced (```...```) code spans, matched over the WHOLE doc text
+(DOTALL, so a fence's own multi-line body is caught in one span) --
+fences are well-scoped (triple backticks, opened/closed in matched
+pairs almost by construction) so a file-wide regex is safe. Inline
+(`...`) spans are deliberately kept SAME-LINE ONLY (`_INLINE_CODE_RE`,
+below) rather than also spanning newlines: a whole-file inline-backtick
+regex measured unsafe on this repo's own docs (`docs/modules/gates.md`
+alone carries an ODD total backtick count -- 7657 at T-1989 measurement
+time -- so file-wide non-greedy pairing silently mispairs everything
+downstream of whichever single stray backtick breaks parity, blanking
+the wrong spans or none at all). Matches `frob.gates.invariants.
+_INLINE_CODE_RE`'s same same-line-only precedent for the identical
+reason.

@@ -38,6 +38,12 @@ body_changes:
   at: '2026-09-07'
   old_length: 5139
   new_length: 7354
+- mode: append
+  reason: condense T-4159 recovery-loop history into ticket body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7353
+  new_length: 8659
 evidence:
 - tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_integrity_check_reports_corrupt
 - tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals::test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption
@@ -190,3 +196,24 @@ come back was a one-off event worth noting and closing. A corruption that return
 under concurrent load confirms the writer-coordination defect and is the finding
 that matters. Re-run the same five-database integrity sweep after the next heavy
 fleet session and record the result here either way.
+
+<!-- narrative-moved:src/frob/graph/cache.py:1658:T-4159 -->
+frob:ticket T-4159
+T-4159: the subset of `_STALE_CONNECTION_ERROR_SHAPES` a blind reopen
+CANNOT fix -- "no such table"/"disk i/o error"/"unable to open database
+file" are all shapes a SIBLING's atomic os.replace produces against a
+stale handle (T-3634's own reasoning: the file at `path` is fine, this
+connection's view of it is not, so reopening at the canonical path
+already resolves it). "database disk image is malformed" and "database
+is corrupted" are different in kind: sqlite emits them when the BYTES ON
+DISK fail its own page-structure checks, which describes the file
+itself, not this connection's view of it -- reopening the same path
+reads the same bad bytes again. Before this ticket, both recovery loops
+that consult `_is_stale_or_corrupt_connection` (`_reconnect_delay_for`/
+`_run_with_stale_reconnect` and `_recover_fingerprint_connection`)
+treated every shape in that tuple identically: reopen-and-retry a fixed
+number of times, then re-raise the SAME malformed-database error
+forever -- measured live in this checkout (2026-09-07/09) as
+`store_file_data` retrying 3 times against a genuinely corrupt
+`cache.db` and giving up with a misleading "cache lock never released"
+message, when the real fault was never a lock at all.

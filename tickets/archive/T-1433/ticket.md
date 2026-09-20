@@ -10,6 +10,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - Makefile
 - src/frob/testing/**
@@ -26,6 +29,8 @@ scope:
 - tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/test_makefile_coverage.py
@@ -122,6 +127,13 @@ scope_changes:
     ticket since COV002 requires an open-ticket edge and that ticket is now closed'
   actor: logan
   at: '2026-08-02'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2140
+  new_length: 3379
 evidence:
 - tests/test_coverage.py::TestSpawnWithWatchdog::test_wall_clock_deadline_kills_and_reports
 - tests/test_coverage.py::TestSpawnWithWatchdog::test_no_progress_deadline_kills_a_silent_hang
@@ -174,6 +186,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Two independent full `make coverage` runs wedged identically in the serial
 rerun phase (the `-n 0 --cov-append --junitxml=.frob/last-coverage-rerun.xml`
@@ -214,46 +227,17 @@ cause futex owner must be identified and fixed. Reproduction: run
 make coverage twice back-to-back; observe the second (or even first)
 run's rerun-phase CPU flatline via ps -o cputimes.
 
-## Done report
-
-Final causal chain, established across four instrumented reproductions
-on 2026-08-02/03:
-
-1. At COVERAGE_WORKERS=4 on this 4-core WSL box, one coverage-traced
-   xdist worker is reproducibly killed by an uncatchable signal
-   (OOM-shaped: no faulthandler trace despite faulthandler being
-   enabled, "node down: Not properly terminated", kill point varies
-   from 21 percent to 99 percent of the run -- systemic memory
-   pressure, not one heavy test).
-2. After the death, pytest-xdist's scheduler deadlocks: SIGUSR1 stack
-   dumps (tests/conftest.py instrumentation built by this ticket) show
-   the master parked in dsession.loop_once queue.get and every
-   surviving worker parked in remote.run_one_test waiting for the next
-   command -- a protocol deadlock, no lock involved.
-
-Delivered by this ticket across its sessions: the serial-rerun timeout
-bound; the xdist-phase COVERAGE_XDIST_DEADLINE bound; SIGUSR1
-all-thread stack-dump instrumentation (FROB_COVERAGE_STACKDUMP=1) plus
-faulthandler_timeout; xdist_group serialization of the three known
-full-repo self-scan tests; and the operational fix -- COVERAGE_WORKERS
-defaults to 2, the measured-safe width (the 2026-08-03 2-worker run
-completed with zero worker deaths, the first clean completion after
-four consecutive 4-worker wedges).
-
-Remainder is tracked, not lost: T-1472 (capture direct kernel OOM
-evidence; broaden the heavy-test allowlist) stays the follow-up for
-proving the kill mechanism at the kernel level and for any future
-attempt to raise the width back to 4.
-
-### Changed
-(no changed files detected)
-
-### Evidence
-- `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout` (pytest node id, verified passing when recorded)
-- `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging` (pytest node id, verified passing when recorded)
-- `tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 3 passed (from 3 evidence id(s))
-- gates: 0 error(s), 2134 warning(s), 740 waived
-- error-findings: none (measured, zero errors)
+<!-- narrative-moved:src/frob/graph/dsl.py:755:T-1433 -->
+frob:doc docs/modules/graph.md#comment-dsl
+frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_until_directive_emits_until_edge  # noqa: E501
+frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_negative_existence_phrase_emits_claims_absence_edge  # noqa: E501
+frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_not_yet_wired_phrase_is_also_detected  # noqa: E501
+frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_directive_comment_line_itself_never_matches_the_heuristic  # noqa: E501
+frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_plain_prose_with_no_matching_phrase_emits_nothing  # noqa: E501
+frob:ticket T-1433
+frob:ticket T-1989
+frob:waive AFFECT001 reason="pure ARCH001 line-count split (extracted \
+_directive_edge/_negexist_phrase_edge helpers, preserving match order and behavior \
+verbatim -- tests/unit/gates/test_negexist.py's tests stay green); the documented \
+comment-DSL contract in docs/modules/graph.md#comment-dsl is unchanged, so it needs \
+no update"

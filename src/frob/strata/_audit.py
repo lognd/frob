@@ -973,37 +973,13 @@ def _apply_gap_waivers(
 
 
 # frob:ticket T-1157
+# frob:ticket T-4719
 # frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_sys205_waiver_is_not_reported_stale_by_exhaustiveness_pass  # noqa: E501
 def _gap_rule_in_scope(rule: str) -> bool:
     """Excludes rule ids that own their own waiver channel
     (SYS100-102, HOST001/HOST002, SYS200-203, SYS205, REL200/REL201/
     REL210/REL211)."""
-    # T-0174: this predicate sees every THREAT/LINT/PII/compliance/
-    # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
-    # `check_self_conformance`), HOST001/HOST002 (owned by
-    # `evaluate_host_isolation_waived`, T-0280), SYS200-203 (T-0724:
-    # owned by `check_resource_contention`'s own `apply_waivers` call,
-    # `_contention.py::_apply_contention_waivers`), SYS205 (T-1061/T-1157:
-    # owned by `check_mode_conformance`'s own `apply_waivers` call,
-    # `_mode_conformance.py::check_mode_conformance`), and REL200/REL201/
-    # REL210/REL211 (T-0640/T-0644: owned by `check_reliability_timeouts`/
-    # `check_reliability_health`'s shared `apply_waivers` call,
-    # `_reliability.py::_apply_reliability_waivers`) -- each of
-    # those owns its own waiver channel (apply_waivers' `in_scope`
-    # docstring). Without this exclusion, a legitimate `waive "SYS20X:..."`
-    # (or, per T-0640, `waive "REL20X:..."`) clause was reported STALE
-    # here (this gap set never contains a matching finding) even while
-    # the owning check correctly matched and applied the SAME waiver in
-    # its own pass -- a real cross-family collision, not a hypothetical
-    # one (T-0724 review round surfaced it for SYS20X on frob's own
-    # design/frob.strata; T-0640 hit the identical collision for REL200
-    # on the SAME file's cache-fill waivers; T-1157 hit the identical
-    # collision for SYS205 mode-conformance waivers on the SAME file's
-    # `tickets_ledger` resource). Excluding those rule ids here (rather
-    # than enumerating every rule this call DOES own) keeps this
-    # predicate correct as new gap-producing rule families are added --
-    # a new rule id is in scope here by default, exactly like `gaps`
-    # itself already is.
+    # see T-0174 for the history behind this
     return rule not in (
         SYS_UNDECLARED_INTERFACE,
         SYS_STALE_DESIGN,

@@ -100,6 +100,13 @@ scope_changes:
   reason: T-4111 lease released
   actor: logan
   at: '2026-09-19'
+body_changes:
+- mode: append
+  reason: condense narrative into cited ticket body per T-4691 C5 sweep
+  actor: logan
+  at: '2026-09-19'
+  old_length: 787
+  new_length: 1986
 evidence:
 - tests/gates_suite/test_invariant.py::TestTimeStableGate::test_fails_once_clock_advances_past_horizon
 - tests/gates_suite/test_invariant.py::TestTimeStableGate::test_stays_quiet_when_still_passing_at_horizon
@@ -118,3 +125,22 @@ anchor_reason: null
 land_commit: null
 ---
 Consumer F-362/H4-1 (T-4166): a check comparing a committed-artifact-derived value against wall-clock time passes today and fails tomorrow; every existing test supplies now and the artifact's timestamp from the same instant, so the whole class of 'passes today, fails tomorrow' is invisible. Add an invariant kind (e.g. frob:invariant time-stable horizon="180d") discharged by re-running the bound test with the clock advanced across the declared horizon; failing that, a narrower lint flagging a comparison between a committed-artifact value and new Date()/now() with no test that varies now. High value: ask what in frob's OWN tree is a function of wall-clock time and tested only at a single instant. Fixture-testable: YES, with a synthetic time-dependent function in frob's own tree.
+
+<!-- narrative-moved:src/frob/graph/dsl.py:246:T-4221 -->
+: `frob:invariant`'s optional `kind="time-stable" horizon="<N><unit>"`
+: obligation attr pair (T-4221, F-362/H4-1): a check comparing a
+: committed-artifact-derived value against wall-clock time passes today
+: and fails tomorrow, and every existing test supplies "now" and the
+: artifact's timestamp from the SAME instant, so that whole class is
+: invisible until it actually rots. `kind="time-stable"` declares the
+: invariant's bound test must still pass with the clock advanced across
+: `horizon`; `frob.gates._inv.time_stable_gate` is the runner that
+: actually re-executes the bound test under an advanced-clock env var
+: and reports a finding if it fails at any sampled point. The two attrs
+: are required TOGETHER: `kind=` with no `horizon=` has no horizon to
+: advance across, and `horizon=` with no `kind=` (or a different kind)
+: has no declared discharge mechanism to apply it to. Only one `kind`
+: value exists so far (`"time-stable"`) -- `_INVARIANT_KIND_VALUES` is a
+: closed set, not a free-text field, so a typo'd kind fails loudly at
+: parse time instead of silently never being picked up by any runner.
+frob:ticket T-4221

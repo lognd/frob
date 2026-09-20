@@ -154,6 +154,13 @@ scope_changes:
     requires bumping accepted_count with a reason in the same diff
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: condense SYS113 rationale into T-4110 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3619
+  new_length: 5148
 evidence:
 - tests/unit/strata/test_selfconform_kinds.py::TestMatchedRealFiles::test_returns_only_matching_files
 - tests/unit/strata/test_selfconform_kinds.py::TestMatchedRealFiles::test_empty_when_no_glob_matches
@@ -241,3 +248,29 @@ mechanism, not backend-shaped):
   capability -- clean, neither rule fires
 
 frob:ticket T-4109
+
+<!-- narrative-moved:src/frob/strata/_selfconform_ids.py:119:T-4110 -->
+frob:doc \
+docs/modules/gates.md#sys113-a-declaration-glob-matching-zero-files-is-its-own-findin\
+g-t-4110h3-10
+: `frob sys audit` rule id for SYS113 (T-4110/H3-10) declaration glob
+: matches zero files: a node's `code=` glob set, OR a glob-form `may`
+: grant `via` entry, resolves to ZERO real (skip-dir-filtered) files on
+: the current branch -- distinct from SYS101 (declared but never
+: OBSERVED, which requires the glob to match at least one real file)
+: and from the `_fully_excluded_node_ids` carve-out (>=1 real match, all
+: `[graph].exclude`'d). SYS101/SELFAUDIT001's waivers used to be the
+: only signal here, which collapses "the code is here and does not use
+: the capability" (a real SYS101 finding) with "the code named by this
+: glob is not here at all" (a typo'd/renamed/deleted path) into one
+: waivable signal -- SYS113 gives the second case its own, separately
+: waivable identity. Symbol-form `via` entries (`glob::symbol`) are
+: deliberately NOT covered here: SYS109 (`_effects.py::
+: check_stale_via_symbols`) already flags a symbol-form entry resolving
+: against zero candidate files as stale by its own docstring ("zero
+: candidate files trivially contain zero matching symbols"); covering
+: them again here would double-report the identical fact under two rule
+: ids. No per-capability sub-target (mirrors SYS102/SYS103): a code=
+: glob or a via entry names a SURFACE, not a specific observed
+: capability kind.
+frob:ticket T-4110
