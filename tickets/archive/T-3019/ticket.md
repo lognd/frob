@@ -103,6 +103,13 @@ triage_changes:
     machinery itself, where killing a live process corrupts a land in flight
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve manifest-exemption detail trimmed from _refs.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3847
+  new_length: 4675
 evidence:
 - tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_root_pyproject_and_frob_toml_are_exempt_with_no_declaration
 - tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_nested_pyproject_toml_still_subject_to_ref001
@@ -207,3 +214,17 @@ platform's baseline, not just the Windows matrix leg.
 
 Filed while working T-3003 (Windows Test-stage triage); out of that
 ticket's declared Windows-portability scope.
+
+
+T-4770 follow-up (condensed from _DEFAULT_ROOT_MANIFEST_EXEMPT's
+docstring in src/frob/gates/_refs.py, trimmed for DOCARCH002's 12-line
+cap): a nested workspace member (e.g. a maturin crate manifest, handled
+separately by _native_stub_pairs) stays fully subject to REF001/REF002.
+frob-coverage.lock.json is frob.derived_state's --stamp-coverage output;
+unlike .frob/'s other derived state (gitignored, never tracked), it is
+deliberately meant to be committed (frob.doctor's own docstring: "the
+committed frob-coverage.lock.json" -- it is how a CI leg without its own
+test run still gets a coverage verdict). .gitignore is like
+pyproject.toml/frob.toml: never referenced from other tracked source
+files by design. T-3031's package.json/tsconfig.json are read by
+npm/tsc, universal to every real TypeScript/JavaScript project.
