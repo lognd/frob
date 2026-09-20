@@ -28,6 +28,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006: a rejected CLI form must not appear in backticks in a ticket body;
+    the sys-split tool does not exist and was refused by the owner'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1400
+  new_length: 1417
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/natives.strata exists with
@@ -58,7 +66,7 @@ land_commit: null
 Migration leaf for module `natives` (members: natives). Leaf consumer: out-degree 2, fan-in 1.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is NO `frob sys split` tool). Write design/natives.strata with:
+there is no sys-split tool; the owner rejected one). Write design/natives.strata with:
   - `module natives` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
