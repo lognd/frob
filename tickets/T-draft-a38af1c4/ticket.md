@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_docptr.py
 - src/frob/tickets/_land_squash.py
 - tests/gates/test_docptr.py
+- tests/tickets/test_land_squash.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: tests/gates/test_docptr.py
   reason: positive controls for DOC006 tickets/** skip
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: tests/tickets/test_land_squash.py
+  reason: positive control for T-3324 attribution exclusion
   actor: logan
   at: '2026-09-19'
 body_changes:
