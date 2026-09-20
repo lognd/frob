@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/graph/_models.py
@@ -20,6 +24,8 @@ scope:
 - tests/unit/graph/test_dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/graph/dsl.py
@@ -77,6 +83,13 @@ scope_changes:
     tests'
   actor: logan
   at: '2026-07-22'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve DEPR003/DEPR002 rationale trimmed from _debt_deprecated.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 284
+  new_length: 979
 evidence:
 - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
 - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr001_malformed_sunset_is_reported
@@ -94,5 +107,21 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 frob:debt generalized to API surface: frob:deprecated <since> sunset=<date> ticket=T-#### on a public symbol; a gate warns while in window, errors past sunset or when the ticket closes without removal; release refuses to stamp with expired deprecations. Scope: graph dsl, gates, docs.
+
+
+T-4709 follow-up (condensed from the deprecated-symbol-gate comment
+block in src/frob/gates/_debt_deprecated.py, trimmed for DOCARCH002's
+12-line cap): DEPR003 exists because `frob:debt` has no equivalent
+"still valid" signal; a deprecated PUBLIC symbol needs one, per this
+ticket's own body. DEPR002 suppresses DEPR003/DEPR004 when the ticket
+itself is not open, since a mistracked deprecation is the more
+actionable finding. `release_gate`'s check is
+`_release_expired_deprecated_violations`; the point of only blocking
+on EXPIRED deprecations is that an unenforced sunset never quietly
+survives past its own date, while a still-live one within its warning
+window does not block a release.
