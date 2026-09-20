@@ -36,6 +36,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 1443
   new_length: 1460
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1460
+  new_length: 1454
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/graph.strata exists with its
@@ -65,7 +72,7 @@ land_commit: null
 Migration leaf for module `graph` (members: graphlang, refactor, mutate). Hub: fan-in 8; bidirectional with gates, platform, tickets and vet.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is no sys-split tool; the owner rejected one). Write design/graph.strata with:
+there is NO a sys-split tool (rejected) tool). Write design/graph.strata with:
   - `module graph` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
