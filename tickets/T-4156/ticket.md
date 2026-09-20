@@ -11,7 +11,7 @@ blocked_by:
 - T-4127
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,6 +32,13 @@ no_scope_declared_reason: 'T-4145 follow-up: this is a decision/investigation ti
   about SCOPE002''s closure-cascade behavior itself, not a ticket that edits any of
   the overlapping files -- a real fix scope will be decided once the SCOPE002 gate''s
   own remediation approach (a/b/c in the body) is chosen'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
