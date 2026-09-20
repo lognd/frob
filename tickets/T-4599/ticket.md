@@ -2,7 +2,7 @@
 id: T-4599
 title: instrument the silent ~111s land phase between rapid --files scoping and worktree
   auto-sync with phase-transition logging
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
