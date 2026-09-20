@@ -10,6 +10,10 @@ priority: high
 parent: T-0969
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_secrets.py
 - src/frob/gates/_pii_structural.py
@@ -22,6 +26,8 @@ scope:
 - tickets-archive.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
@@ -145,6 +151,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-07-27'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve scope-boundary detail trimmed from _secrets.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1909
+  new_length: 2370
 evidence:
 - tests/test_secrets_gate.py::TestFakeMarking::test_literal_fake_word_in_token_is_not_flagged
 - tests/test_secrets_gate.py::TestFakeMarking::test_frob_secret_fake_marker_without_reason_still_fires
@@ -165,6 +178,9 @@ acceptance:
   - tests/test_secrets_gate.py::TestFakeMarking::test_frob_secret_fake_marker_without_reason_still_fires
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 gates-quality audit (T-0399) finding 3: the `frob:secret-fake` marker
 (src/frob/gates/_secrets.py's `_FAKE_MARKER`, also consulted by
@@ -197,3 +213,12 @@ count, it will have moved since 2026-07-27); (c) drop the bare-substring
 template-shape/entropy checks only (closes part of finding 3 and repro
 "AKIA" + "IOSFODNN7EXAMPLE" from the audit -- split here, landed T-0968,
 so this ticket body no longer trips its own tightened SEC001 gate).
+
+
+T-4770 follow-up (condensed from _PLAUSIBLE_EMAIL_RE's docstring in
+src/frob/gates/_secrets.py, trimmed for DOCARCH002's 12-line cap): a
+dozen-plus sites in this repo's own tracked test suite carry this
+marker. This ticket's declared scope was src/frob/graph/dsl.py,
+src/frob/gates/__init__.py, src/frob/gates/_secrets.py, tests/**. The
+"plausibly still needed" posture mirrors _looks_low_entropy's
+never-suppress posture for the opposite (never-flag) case.
