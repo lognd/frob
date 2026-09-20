@@ -23,13 +23,6 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-body_changes:
-- mode: append
-  reason: genuine scope-lease collision with T-3964 on _models.py
-  actor: logan
-  at: '2026-09-19'
-  old_length: 624
-  new_length: 841
 designated_repro_test: null
 acceptance:
 - text: Given a node declared in a module, when elaborated, then its Node fact carries
@@ -59,6 +52,3 @@ Nothing else is added: no Module primitive, no module-level flow, no module
 trust level. Record the deliberate growth in docs/strata/kernel.md against
 charter law 1 (the kernel grows deliberately or the feature is wrong): what was
 added, why the six primitives were not enough, and what was explicitly refused.
-
-
-Blocked 2026-09-19: frob ticket work refused to start because src/frob/strata/_models.py is leased by in-progress T-3964. Recorded blocked_by T-3964 rather than forcing a collision; will retry once the lease clears.
