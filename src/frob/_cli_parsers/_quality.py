@@ -20,6 +20,7 @@ from frob._cli_parsers._check import (
     _add_check_scope_args,
     _add_check_selection_args,
     _add_check_skip_args,
+    _add_check_skip_unified_arg,
 )
 from frob._cli_parsers._core import (
     _populate_arch_args,
@@ -37,6 +38,7 @@ from frob._cli_parsers._misc import (
 
 
 # frob:ticket T-1567
+# frob:ticket T-4953
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \
@@ -63,6 +65,7 @@ def _add_quality_parser(sub) -> None:
     )
     _add_check_scope_args(check_p)
     _add_check_skip_args(check_p)
+    _add_check_skip_unified_arg(check_p)
     _add_check_selection_args(check_p)
 
     test_p = quality_sub.add_parser(

@@ -1,7 +1,7 @@
 ---
 id: T-4953
 title: Restore --skip flag parity between frob quality check and frob check
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
