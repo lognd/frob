@@ -15,13 +15,40 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/narrative
 - docs/commands/narrative.md
 - tests/narrative
+- src/frob/narrative/_migrate.py
+- src/frob/narrative/_bulk.py
+- src/frob/narrative/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/narrative
+  reason: T-4546 leases src/frob/narrative/_cli.py; narrow to non-leased files, CLI
+    wiring deferred to Done report
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/narrative/_migrate.py
+  reason: T-4546 leases src/frob/narrative/_cli.py; narrow to non-leased files, CLI
+    wiring deferred to Done report
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/narrative/_bulk.py
+  reason: T-4546 leases src/frob/narrative/_cli.py; narrow to non-leased files, CLI
+    wiring deferred to Done report
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/narrative/__init__.py
+  reason: T-4546 leases src/frob/narrative/_cli.py; narrow to non-leased files, CLI
+    wiring deferred to Done report
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: given a fixture directory of three files citing a live ticket, an archived
