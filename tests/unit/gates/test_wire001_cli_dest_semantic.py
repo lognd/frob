@@ -49,13 +49,10 @@ class TestConfigExternalForwardedDestNames:
         )
 
     def test_comment_and_docstring_mentions_are_not_collected(self) -> None:
-        """T-2348's false-negative repro: the OLD text-membership scan
-        (`f'"{dest}"' in config_external_text`) would have read a `dest`
-        string as "wired" merely because it appears, quoted, anywhere in
-        the file -- a comment, an unrelated docstring, dead prose. The
-        AST-parsed replacement only ever collects literals that are
-        actual elements of a module-level collection literal, so a
-        quoted mention outside one of those must NOT be collected."""
+        """Asserts a `dest` string quoted in a comment, docstring, or
+        other dead prose is not collected as "wired": the AST-parsed scan
+        only collects literals that are actual elements of a module-level
+        collection literal. See T-2348 for the design rationale."""
         text = (
             '"""A docstring that happens to mention "orphan_dest" for '
             'illustration."""\n'
@@ -98,14 +95,11 @@ class TestWire001CliDestViolations:
         assert violations == []
 
     def test_dest_mentioned_only_in_a_comment_is_flagged(self, tmp_path: Path) -> None:
-        """T-2348's must-fail-before-fix repro, now must-pass-after-fix:
-        a `dest` string that appears in `_config_external.py` only inside
-        a COMMENT (never inside an actual forwarding tuple) is correctly
-        flagged as unwired. Under the old raw substring scan this was a
-        false negative -- `f'"{dest}"' in text` matches a quoted mention
-        in a comment exactly as readily as a real tuple entry, so the gate
-        silently missed a genuinely-dropped CLI flag whose name happened
-        to be mentioned in passing prose."""
+        """Asserts a `dest` string appearing in `_config_external.py`
+        only inside a comment (never an actual forwarding tuple) is
+        flagged as unwired, rather than misread as wired by a raw
+        substring match against quoted prose. See T-2348 for the design
+        rationale."""
         config_external = tmp_path / "src" / "frob" / "app" / "_config_external.py"
         config_external.parent.mkdir(parents=True)
         config_external.write_text(

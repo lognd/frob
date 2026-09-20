@@ -74,8 +74,7 @@ class TestForceOverridesUnionMerge:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge.test_two\
-        # _branches_appending_different_records_both_survive
+        # tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge.test_two_branches_appending_different_records_both_survive  # noqa: E501
         _run(["git", "checkout", "-q", "-b", "worktree-a"], repo)
         with (repo / "force-overrides.jsonl").open("a", encoding="utf-8") as fh:
             fh.write(
@@ -117,8 +116,7 @@ class TestForceOverridesUnionMerge:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge.test_ide\
-        # ntical_line_appended_on_both_sides_deduplicates
+        # tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge.test_identical_line_appended_on_both_sides_deduplicates  # noqa: E501
         """T-1873 item 4: whether union merge can duplicate a record when
         both sides append the byte-identical line. Measured: git's native
         `merge=union` DEDUPLICATES an exact duplicate line rather than
@@ -180,18 +178,13 @@ def autocrlf_repo(tmp_path: Path) -> Path:
 
 
 class TestAttachmentCrlfSuppression:
-    """T-2239: T-1433's `.gitattributes` `-text` rule only matched the OLD
-    v1 flat attachment layout (`tickets/attachments/**`), never the v2
-    per-ticket nested layout (`tickets/<id>/attachments/**`) ledger v2
-    actually uses -- so v2 attachments were silently CRLF-converted on
-    checkout, desyncing their on-disk sha256 from the sha256 recorded at
-    attach time (LF content). Verified by REPRODUCTION: write an LF file,
-    commit it, force a real checkout-time filter pass (delete + `git
-    checkout --`, the same code path a fresh clone/checkout exercises,
-    not merely a read of the committed blob), and assert the byte content
-    -- and therefore its sha256 -- survives unconverted. A test that never
-    re-checks out the file would prove nothing, since `-text` only takes
-    effect on checkout, not on `git show`/`git add`.
+    """Asserts the `.gitattributes` `-text` rule matches the v2
+    per-ticket nested attachment layout (`tickets/<id>/attachments/**`),
+    so an LF-committed attachment survives a real checkout-time filter
+    pass (delete + `git checkout --`) with its sha256 unconverted --
+    `-text` only takes effect on checkout, never on `git show`/`git add`,
+    so the test must force a real checkout. See T-2239/T-1433 for the
+    design rationale.
     """
 
     @staticmethod
@@ -217,8 +210,7 @@ class TestAttachmentCrlfSuppression:
         self, autocrlf_repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_v2\
-        # _nested_attachment_survives_checkout_unconverted
+        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_v2_nested_attachment_survives_checkout_unconverted  # noqa: E501
         body = "line one\nline two\nline three\n"
         import hashlib
 
@@ -238,12 +230,11 @@ class TestAttachmentCrlfSuppression:
 
     def test_v1_flat_attachment_still_covered(self, autocrlf_repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_v1\
-        # _flat_attachment_still_covered
-        """MUST-STILL-PASS control (T-2239): the OLD v1 flat layout the
-        original T-1433 rule targeted must remain covered after widening
-        the glob to also match v2 -- a fix that replaced rather than
-        extended coverage would silently regress it."""
+        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_v1_flat_attachment_still_covered  # noqa: E501
+        """Asserts the v1 flat attachment layout stays covered after the
+        `.gitattributes` glob was widened to also match v2, proving the
+        widening extended rather than replaced v1 coverage. See T-2239
+        for the design rationale."""
         body = "flat layout line one\nflat layout line two\n"
         import hashlib
 
@@ -264,8 +255,7 @@ class TestAttachmentCrlfSuppression:
         self, autocrlf_repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_un\
-        # related_text_file_still_gets_autocrlf_conversion
+        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_unrelated_text_file_still_gets_autocrlf_conversion  # noqa: E501
         """Negative control: a plain file OUTSIDE any attachments path is
         NOT covered by the attachment `-text` glob -- proves the glob is
         scoped to attachments, not accidentally suppressing conversion

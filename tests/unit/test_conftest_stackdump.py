@@ -35,8 +35,7 @@ class TestStackdumpHandler:
     """T-1433: `_install_stackdump_handler`/`_dump_all_thread_stacks`."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_a\
-    # ll_thread_stacks_when_enabled
+    # tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
     def test_sigusr1_writes_all_thread_stacks_when_enabled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -63,8 +62,7 @@ class TestStackdumpHandler:
             signal.signal(signal.SIGUSR1, previous)
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_inst\
-    # alled_when_env_unset
+    # tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
     def test_handler_not_installed_when_env_unset(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -92,8 +90,7 @@ class TestSelfScanHeavyGrouping:
     faulthandler fault trace captured, matching an uncatchable SIGKILL)."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_h\
-    # eavy_tests_share_one_xdist_group
+    # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
     def test_self_scan_heavy_tests_share_one_xdist_group(self) -> None:
         """A collected item whose name matches one of the known full-repo
         self-scan tests gets the SAME `xdist_group` marker as the others --
@@ -140,8 +137,7 @@ class TestSelfScanHeavyGrouping:
         assert items[3].own_markers == []
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_fixture_use\
-    # _joins_the_heavy_group_without_a_name_listing
+    # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_fixture_use_joins_the_heavy_group_without_a_name_listing  # noqa: E501
     def test_fixture_use_joins_the_heavy_group_without_a_name_listing(self) -> None:
         """T-4329: an item whose `fixturenames` closure includes
         `frob_self_scan_artifacts` or `frob_self_scan_snapshot` joins the
@@ -199,8 +195,7 @@ class TestLoadscopeSchedulerHardening:
     abort the whole session."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_missi\
-    # ng_registered_collection_is_absorbed_not_raised
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_missing_registered_collection_is_absorbed_not_raised  # noqa: E501
     def test_missing_registered_collection_is_absorbed_not_raised(self) -> None:
         """A node in `self.assigned_work` (so still visited by `schedule`'s
         `_reschedule` loop) but absent from `self.registered_collections`
@@ -230,8 +225,7 @@ class TestLoadscopeSchedulerHardening:
             LoadScopeScheduling._assign_work_unit = original_method
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healt\
-    # hy_node_still_gets_assigned_normally
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healthy_node_still_gets_assigned_normally  # noqa: E501
     def test_healthy_node_still_gets_assigned_normally(self) -> None:
         """A node correctly present in BOTH `assigned_work` and
         `registered_collections` still gets its work unit through the
@@ -261,8 +255,7 @@ class TestLoadscopeSchedulerHardening:
             LoadScopeScheduling._assign_work_unit = original_method
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reent\
-    # rant_remove_node_during_reschedule_does_not_raise
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reentrant_remove_node_during_reschedule_does_not_raise  # noqa: E501
     def test_reentrant_remove_node_during_reschedule_does_not_raise(self) -> None:
         """T-4366: forces the exact race from `loadscope.py:202` -- a
         second worker vanishing (a reentrant `remove_node` call, here
@@ -374,8 +367,7 @@ class _ReentrantCrashNode:
         self._fired = False
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reent\
-    # rant_remove_node_during_reschedule_does_not_raise
+    # tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reentrant_remove_node_during_reschedule_does_not_raise  # noqa: E501
     # frob:waive WIRE001 reason="only caller is xdist's own DSession._reschedule \
     # (site-packages, outside this repo's static caller search), which reads \
     # .shutting_down as an attribute per node it visits -- same shape as WIRE001 false \
@@ -420,8 +412,7 @@ class TestHeavySubprocessGrouping:
     well under that budget run serially."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_sub\
-    # process_marker_groups_per_file
+    # tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subprocess_marker_groups_per_file  # noqa: E501
     def test_heavy_subprocess_marker_groups_per_file(self) -> None:
         """A collected item whose module carries the `heavy_subprocess`
         marker gets its OWN `xdist_group`, keyed by module name -- so two
@@ -562,8 +553,7 @@ class TestSuiteResultLine:
             self.exitstatus = 0
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_pri\
-    # nts_greppable_line_at_any_verbosity
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
     def test_sessionfinish_prints_greppable_line_at_any_verbosity(self) -> None:
         """On the controller (no `workerinput`), the hook writes exactly one
         `SUITE-RESULT:` line carrying the real exit status and counts --
@@ -582,8 +572,7 @@ class TestSuiteResultLine:
         assert line == "SUITE-RESULT: exitstatus=1 collected=50 failed=2"
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_ski\
-    # ps_on_xdist_worker
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
     def test_sessionfinish_skips_on_xdist_worker(self) -> None:
         """On an xdist WORKER (`workerinput` present, mirroring
         `pytest_configure`'s own controller-only guard above the hook),
@@ -615,8 +604,7 @@ class TestSuiteResultLine:
             self.stats = stats
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lis\
-    # ts_failing_node_ids
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
     def test_sessionfinish_lists_failing_node_ids(self) -> None:
         """T-1673: alongside the count-only `SUITE-RESULT:` line, the hook
         writes one `SUITE-RESULT-FAILED:` line per failing/erroring node id
@@ -637,8 +625,7 @@ class TestSuiteResultLine:
         assert "SUITE-RESULT-FAILED: tests/b.py::test_two (error)" in reporter.lines
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_cap\
-    # s_failing_node_ids_with_and_n_more
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
     def test_sessionfinish_caps_failing_node_ids_with_and_n_more(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -665,8 +652,7 @@ class TestSuiteResultLine:
         assert failed_lines[-1] == "SUITE-RESULT-FAILED: and 3 more"
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_nod\
-    # e_id_cap_env_override
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_node_id_cap_env_override  # noqa: E501
     def test_sessionfinish_node_id_cap_env_override(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -696,8 +682,7 @@ class TestSuiteResultLine:
         assert not any("more" in line for line in failed_lines)
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_sta\
-    # rts_line_at_column_zero_when_terminal_is_mid_line
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_starts_line_at_column_zero_when_terminal_is_mid_line  # noqa: E501
     def test_sessionfinish_starts_line_at_column_zero_when_terminal_is_mid_line(
         self,
     ) -> None:
@@ -718,15 +703,14 @@ class TestSuiteResultLine:
         assert re.match(r"^SUITE-RESULT", reporter.lines[1])
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_sta\
-    # ys_byte_for_byte_unchanged_when_terminal_already_at_column_zero
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_stays_byte_for_byte_unchanged_when_terminal_already_at_column_zero  # noqa: E501
     def test_sessionfinish_stays_byte_for_byte_unchanged_when_terminal_already_at_column_zero(
         self,
     ) -> None:
-        """T-4103 MUST-STAY-QUIET: when the terminal is already at column
-        zero (progress output that DID end in a newline), `ensure_newline()`
-        is a no-op -- no blank line is inserted, and the emitted lines are
-        byte-for-byte identical to before this change."""
+        """Asserts `ensure_newline()` is a no-op when the terminal is
+        already at column zero (progress output that ended in a
+        newline): no blank line is inserted. See T-4103 for the design
+        rationale."""
         module = _load_conftest()
         reporter = self._FakeReporter(at_line_start=True)
         config = self._FakeConfig(reporter=reporter, is_worker=False)
@@ -799,8 +783,7 @@ class TestWorkerCrashReport:
         file fails loudly instead of silently leaking crash state."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logstart_writes\
-    # _marker_only_on_worker
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logstart_writes_marker_only_on_worker  # noqa: E501
     def test_logstart_writes_marker_only_on_worker(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -822,8 +805,7 @@ class TestWorkerCrashReport:
         assert not module._xdist_crash_marker_path("gw0").exists()
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logfinish_clear\
-    # s_marker
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logfinish_clears_marker  # noqa: E501
     def test_logfinish_clears_marker(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -841,8 +823,7 @@ class TestWorkerCrashReport:
         assert not module._xdist_crash_marker_path("gw1").exists()
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem\
-    # _records_one_entry_and_marks_failed
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_records_one_entry_and_marks_failed  # noqa: E501
     def test_handlecrashitem_records_one_entry_and_marks_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -871,8 +852,7 @@ class TestWorkerCrashReport:
         assert report.longrepr != "worker crashed"  # T-3516's own message replaced it
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem\
-    # _respects_a_raised_rerun_cap
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_respects_a_raised_rerun_cap  # noqa: E501
     def test_handlecrashitem_respects_a_raised_rerun_cap(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -901,8 +881,7 @@ class TestWorkerCrashReport:
         assert "not rescheduled" in module._worker_crash_entries[1]
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_sessionfinish_p\
-    # rints_report_and_forces_failing_exit
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_sessionfinish_prints_report_and_forces_failing_exit  # noqa: E501
     def test_sessionfinish_prints_report_and_forces_failing_exit(self) -> None:
         """`pytest_sessionfinish` prints exactly one `WORKER-CRASH-REPORT:`
         header plus one line per recorded crash, and forces
@@ -929,8 +908,7 @@ class TestWorkerCrashReport:
         assert session.exitstatus == 1
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_sessionfinish_s\
-    # tays_quiet_on_a_clean_run
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_sessionfinish_stays_quiet_on_a_clean_run  # noqa: E501
     def test_sessionfinish_stays_quiet_on_a_clean_run(self) -> None:
         """MUST-STAY-QUIET (T-3516): a run with no recorded worker crashes
         prints no `WORKER-CRASH-REPORT:` line at all, and does not touch
@@ -983,8 +961,7 @@ class TestWorkerCrashReportIntegration:
         )
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must\
-    # _fire_planted_os_exit_produces_one_report_and_failing_exit
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must_fire_planted_os_exit_produces_one_report_and_failing_exit  # noqa: E501
     def test_must_fire_planted_os_exit_produces_one_report_and_failing_exit(
         self, tmp_path: Path
     ) -> None:
@@ -1021,8 +998,7 @@ class TestWorkerCrashReportIntegration:
         assert len(failed_lines) == 1, combined
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must\
-    # _stay_quiet_on_a_clean_run
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must_stay_quiet_on_a_clean_run  # noqa: E501
     def test_must_stay_quiet_on_a_clean_run(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET (T-3516): a clean run (no crash) prints no
         `WORKER-CRASH-REPORT` section at all."""
@@ -1034,8 +1010,7 @@ class TestWorkerCrashReportIntegration:
         assert "WORKER-CRASH-REPORT" not in combined, combined
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must\
-    # _stay_quiet_normal_failure_reporting_unchanged
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must_stay_quiet_normal_failure_reporting_unchanged  # noqa: E501
     def test_must_stay_quiet_normal_failure_reporting_unchanged(
         self, tmp_path: Path
     ) -> None:
@@ -1066,8 +1041,7 @@ class TestStallWatchdog:
 
     # frob:ticket T-3608
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_requ\
-    # ires_both_a_crash_and_a_progress_gap
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_requires_both_a_crash_and_a_progress_gap  # noqa: E501
     def test_stall_detected_requires_both_a_crash_and_a_progress_gap(self) -> None:
         """No crash at all is never a stall, however long the gap; a crash
         with no progress timestamp yet is never a stall; a crash with a gap
@@ -1081,8 +1055,7 @@ class TestStallWatchdog:
 
     # frob:ticket T-3608
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item\
-    # _lines_reads_surviving_markers
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item_lines_reads_surviving_markers  # noqa: E501
     def test_format_stalled_item_lines_reads_surviving_markers(
         self, tmp_path: Path
     ) -> None:
@@ -1108,8 +1081,7 @@ class TestStallWatchdog:
 
     # frob:ticket T-3608
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item\
-    # _lines_is_empty_when_the_marker_dir_is_absent
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item_lines_is_empty_when_the_marker_dir_is_absent  # noqa: E501
     def test_format_stalled_item_lines_is_empty_when_the_marker_dir_is_absent(
         self, tmp_path: Path
     ) -> None:
@@ -1120,8 +1092,7 @@ class TestStallWatchdog:
 
     # frob:ticket T-3608
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_\
-    # a_death_controller_only
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_a_death_controller_only  # noqa: E501
     def test_testnodedown_marks_a_death_controller_only(self) -> None:
         """`pytest_testnodedown` records `_last_node_death_ts` on the
         controller (no `workerinput`) and is a no-op on a worker -- this is
@@ -1146,8 +1117,7 @@ class TestStallWatchdog:
 
     # frob:ticket T-3643
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_pytest_testnodedown\
-    # _is_optionalhook
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_pytest_testnodedown_is_optionalhook  # noqa: E501
     def test_pytest_testnodedown_is_optionalhook(self) -> None:
         """T-3643: `pytest_testnodedown` is an xdist-only hookspec
         (`xdist.newhooks`) -- without `@pytest.hookimpl(optionalhook=True)`
@@ -1167,17 +1137,13 @@ class TestStallWatchdog:
 
 
 class TestStallAbortResultLines:
-    """T-4353: `_stall_abort_result_and_failed_lines` -- a stall-abort now
-    reports the REAL pass/fail counts and failing-id list already
-    accumulated in `terminalreporter.stats` instead of a hardcoded
-    `collected=0 failed=0`, root-caused by run 34305173304 reaching 99%
-    before one `frob_self_scan_heavy` worker died alone and the old
-    hardcoded line discarded every one of the thousands of tests that had
-    already passed."""
+    """Covers `_stall_abort_result_and_failed_lines`: asserts a stall-abort
+    reports the real pass/fail counts and failing-id list already
+    accumulated in `terminalreporter.stats`, rather than a hardcoded
+    `collected=0 failed=0`. See T-4353 for the design rationale."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_reports_rea\
-    # l_counts_and_failing_ids_from_terminalreporter_stats
+    # tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_reports_real_counts_and_failing_ids_from_terminalreporter_stats  # noqa: E501
     def test_reports_real_counts_and_failing_ids_from_terminalreporter_stats(
         self,
     ) -> None:
@@ -1214,8 +1180,7 @@ class TestStallAbortResultLines:
         assert "SUITE-RESULT-FAILED: tests/c.py::test_two (error)" in failed_lines
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_falls_back_\
-    # to_zero_counts_when_no_reporter_is_registered
+    # tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_falls_back_to_zero_counts_when_no_reporter_is_registered  # noqa: E501
     def test_falls_back_to_zero_counts_when_no_reporter_is_registered(self) -> None:
         """No `terminalreporter` plugin registered (should not happen in a
         real run, but this must never raise) falls back to the ORIGINAL
@@ -1304,8 +1269,7 @@ class TestStallWatchdogIntegration:
 
     # frob:ticket T-3608
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestStallWatchdogIntegration.test_kills_a_\
-    # worker_mid_item_and_ends_promptly_with_a_loud_report
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdogIntegration.test_kills_a_worker_mid_item_and_ends_promptly_with_a_loud_report  # noqa: E501
     def test_kills_a_worker_mid_item_and_ends_promptly_with_a_loud_report(
         self, tmp_path: Path
     ) -> None:
@@ -1329,8 +1293,7 @@ class TestRepoTreeHash:
     """T-3525: `_repo_tree_hash`'s never-raises fallback contract."""
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestRepoTreeHash.test_stable_for_the_same_\
-    # clean_tree
+    # tests/unit/test_conftest_stackdump.py::TestRepoTreeHash.test_stable_for_the_same_clean_tree  # noqa: E501
     def test_stable_for_the_same_clean_tree(self, tmp_path: Path) -> None:
         """Called twice against the SAME (real, this-repo) tree state,
         `_repo_tree_hash` returns the identical value both times."""
@@ -1341,8 +1304,7 @@ class TestRepoTreeHash:
         assert first != "no-git-fallback"
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestRepoTreeHash.test_falls_back_without_r\
-    # aising_when_git_is_unavailable
+    # tests/unit/test_conftest_stackdump.py::TestRepoTreeHash.test_falls_back_without_raising_when_git_is_unavailable  # noqa: E501
     def test_falls_back_without_raising_when_git_is_unavailable(
         self, tmp_path: Path
     ) -> None:
@@ -1369,8 +1331,7 @@ class TestCachedSelfScan:
         return _compute
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_cache_miss_compute\
-    # s_once_and_persists
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_cache_miss_computes_once_and_persists  # noqa: E501
     def test_cache_miss_computes_once_and_persists(self, tmp_path: Path) -> None:
         """An empty cache dir: `compute` is called exactly once, its
         result is returned, and a cache file is left behind for the next
@@ -1388,8 +1349,7 @@ class TestCachedSelfScan:
         assert (cache_dir / "hash-a.pkl").is_file()
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_cache_hit_does_not\
-    # _recompute
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_cache_hit_does_not_recompute  # noqa: E501
     def test_cache_hit_does_not_recompute(self, tmp_path: Path) -> None:
         """MUST-FIRE (T-3525, primitive level): once persisted under a
         given tree hash, a SECOND call with the SAME hash loads from disk
@@ -1409,8 +1369,7 @@ class TestCachedSelfScan:
         assert len(calls) == 1
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_tree_hash_mismatch\
-    # _triggers_exactly_one_fresh_scan
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_tree_hash_mismatch_triggers_exactly_one_fresh_scan  # noqa: E501
     def test_tree_hash_mismatch_triggers_exactly_one_fresh_scan(
         self, tmp_path: Path
     ) -> None:
@@ -1430,8 +1389,7 @@ class TestCachedSelfScan:
         assert (cache_dir / "hash-b.pkl").is_file()
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_corrupted_cache_fa\
-    # lls_back_to_a_fresh_scan
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_corrupted_cache_falls_back_to_a_fresh_scan  # noqa: E501
     def test_corrupted_cache_falls_back_to_a_fresh_scan(self, tmp_path: Path) -> None:
         """A torn/corrupted cache file (a worker that died mid-persist
         before this ticket's fix, say) is treated as a miss -- `compute`
@@ -1450,8 +1408,7 @@ class TestCachedSelfScan:
         assert len(calls) == 1
 
     # frob:tests \
-    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_must_fire_scan_cou\
-    # nt_is_one_across_a_simulated_worker_restart
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_must_fire_scan_count_is_one_across_a_simulated_worker_restart  # noqa: E501
     def test_must_fire_scan_count_is_one_across_a_simulated_worker_restart(
         self, tmp_path: Path
     ) -> None:

@@ -324,16 +324,12 @@ class TestIdentitiesStillReproducing:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing.test_failed_silent_tool_result_is_unmeasurable_not_zero  # noqa: E501
-        """T-2521 required control #2: a re-measurement whose `ruff-check`
-        (or any tool) FAILED (`exit_code != 0`) with zero error
-        diagnostics -- the malformed-JSON shape T-2521's own investigation
-        reproduced directly against this repo's real `parse_ruff_json` --
-        must read as unmeasurable, never as "measured, none of the
-        candidates reproduce". Before this fix, this exact JSON shape
-        would have made `_identities_still_reproducing` return an empty
-        set (not `None`), and the caller would have read that as
-        `vanished = all_pairs`, dropping a ticket whose findings the
-        run never actually managed to check."""
+        """Asserts a re-measurement whose tool run failed (`exit_code !=
+        0`) with zero error diagnostics reads as unmeasurable (`None`,
+        not an empty set), so a caller does not read it as "measured,
+        none of the candidates reproduce" and drop a ticket the run never
+        actually managed to check. See T-2521 for the design
+        rationale."""
         import json
 
         payload = {
@@ -574,16 +570,13 @@ class TestRevalidateDispatchableSweepTickets:
     ) -> None:
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition  # noqa: E501
-        """T-2078: `revalidate_dispatchable_sweep_tickets` is called from
-        `doable`'s render path against the FULL candidate set -- unlike
-        `_close_resolved_sweep_tickets`, it never filtered out
-        already-terminal (`dropped`/`done`) tickets before this fix, so a
-        resolved-but-already-dropped sweep ticket got a doomed
-        `dropped -> dropped` transition attempted on every single
-        `frob ticket doable` call: 9 InvalidTransition errors and 9
-        dirtied files per invocation in the measured incident. This test
-        MUST fail against pre-fix main (it would log the illegal
-        transition and dirty the ticket's file)."""
+        """Asserts `revalidate_dispatchable_sweep_tickets`, called from
+        `doable`'s render path against the full candidate set, filters
+        out already-terminal (`dropped`/`done`) tickets so a
+        resolved-but-already-dropped sweep ticket never gets a
+        `dropped -> dropped` transition attempted (which logs an
+        InvalidTransition error and dirties the ticket's file). See
+        T-2078 for the design rationale."""
         import json
 
         from frob.tickets import TicketState, drop_ticket, load_queue, new_ticket

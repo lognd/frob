@@ -79,8 +79,7 @@ class TestStaleNatives:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_nat\
-        # ive_grammar_ahead_of_native kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_native_grammar_ahead_of_native kind="unit"  # noqa: E501
         # Fixture simulating T-0166's real incident: strata-core/** source
         # newer than the built strata_core.abi3.so.
         name = "fake_native_src"
@@ -115,8 +114,7 @@ class TestStaleNatives:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_nativ\
-        # e_reports_nothing kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_native_reports_nothing kind="unit"  # noqa: E501
         name = "fake_native_src_fresh"
         source_dir = "fake-native-src-fresh"
         monkeypatch.setattr(
@@ -145,8 +143,7 @@ class TestStaleNatives:
         `reason="content-digest"` because the fix compares content, not
         just timestamps."""
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_witho\
-        # ut_rebuild_is_caught_by_content_digest kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_without_rebuild_is_caught_by_content_digest kind="unit"  # noqa: E501
         name = "fake_native_src_touch_attack"
         source_dir = "fake-native-src-touch-attack"
         monkeypatch.setattr(
@@ -204,8 +201,7 @@ class TestStaleNatives:
         misreported as stale via content-digest -- only an unrebuilt edit
         (artifact bytes unchanged) is the touch-attack signature."""
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_real_rebuil\
-        # d_after_edit_is_not_a_false_positive kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_real_rebuild_after_edit_is_not_a_false_positive kind="unit"  # noqa: E501
         name = "fake_native_src_real_rebuild"
         source_dir = "fake-native-src-real-rebuild"
         monkeypatch.setattr(
@@ -241,16 +237,13 @@ class TestStaleNatives:
     def test_reproducible_rebuild_clears_the_content_digest_latch(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-2805's own root-cause repro, inverted: a GENUINE `frob
-        natives build` whose output happens to be byte-identical to the
-        prior artifact (a reproducible build of unchanged source) must
-        CLEAR the T-0513 content-digest latch, not re-trigger it forever.
-        Before the fix, this native would stay `reason="content-digest"`
-        stale indefinitely -- the tool's own documented remediation
-        (`frob natives build`) could never clear its own detector."""
+        """Asserts a genuine `frob natives build` whose output is
+        byte-identical to the recorded artifact (a reproducible build of
+        unchanged source) clears the content-digest latch, rather than
+        leaving the native stuck `reason="content-digest"` stale
+        indefinitely. See T-2805/T-0513 for the design rationale."""
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reproducibl\
-        # e_rebuild_clears_the_content_digest_latch kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reproducible_rebuild_clears_the_content_digest_latch kind="unit"  # noqa: E501
         from frob.strata._native_staleness import record_native_build_attempt
 
         name = "fake_native_src_repro_rebuild"
@@ -316,8 +309,7 @@ class TestStaleNatives:
         this control, T-2805's fix would be indistinguishable from
         deleting the content-digest check."""
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_after\
-        # _edit_without_a_build_attempt_still_latches kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_after_edit_without_a_build_attempt_still_latches kind="unit"  # noqa: E501
         from frob.strata._native_staleness import record_native_build_attempt
 
         name = "fake_native_src_stale_build_attempt"
@@ -363,8 +355,7 @@ class TestStaleNatives:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_unbuilt_nat\
-        # ive_is_not_reported_as_stale kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_unbuilt_native_is_not_reported_as_stale kind="unit"  # noqa: E501
         # An unbuilt native is T-0333's `missing_natives` diagnostic -- a
         # different remedy ("build it") from "stale" ("rebuild it").
         name = "fake_native_src_unbuilt"
@@ -382,8 +373,7 @@ class TestStaleNatives:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_no_matching\
-        # _source_dir_is_not_reported kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_no_matching_source_dir_is_not_reported kind="unit"  # noqa: E501
         name = "fakenat_no_source_dir"
         _write_frob_toml(tmp_path, name)
         _fake_native_package(tmp_path, name, b"\x00compiled")
@@ -395,8 +385,7 @@ class TestStaleNatives:
 
     def test_default_native_source_dirs_match_repo_convention(self) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_default_nat\
-        # ive_source_dirs_match_repo_convention kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_default_native_source_dirs_match_repo_convention kind="unit"  # noqa: E501
         assert NATIVE_SOURCE_DIRS == ("strata-core", "frob-core")
 
 
@@ -411,8 +400,7 @@ class TestSeedWorktreeNativeSourceMtimes:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtime\
-        # s.test_identical_source_is_backdated_and_reads_fresh kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_identical_source_is_backdated_and_reads_fresh kind="unit"  # noqa: E501
         name = "fake_native_seed"
         source_dir = "fake-native-seed"
         monkeypatch.setattr(
@@ -456,8 +444,7 @@ class TestSeedWorktreeNativeSourceMtimes:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtime\
-        # s.test_diverged_source_is_left_untouched_and_still_stale kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_diverged_source_is_left_untouched_and_still_stale kind="unit"  # noqa: E501
         name = "fake_native_seed_diverged"
         source_dir = "fake-native-seed-diverged"
         monkeypatch.setattr(
@@ -496,16 +483,13 @@ class TestSeedWorktreeNativeSourceMtimes:
     def test_repo_side_untracked_file_does_not_block_seeding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-4434: the frob_core-still-stale repro -- `repo` has a real,
-        root-gitignored, locally-generated file under the crate dir
-        (`uv.lock`, from `uv sync`/`maturin develop`) that a freshly
-        checked-out `worktree` never has at all. The OLD filesystem-walk
-        digest saw this as a genuine content divergence and refused to
-        seed; the fix compares only GIT-TRACKED content, so `uv.lock`
-        never enters the comparison and seeding still succeeds."""
+        """Asserts seeding succeeds when `repo` has a root-gitignored,
+        locally-generated file under the crate dir (`uv.lock`) that a
+        freshly checked-out `worktree` never has, since the digest
+        compares only git-tracked content and `uv.lock` never enters the
+        comparison. See T-4434 for the design rationale."""
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtime\
-        # s.test_repo_side_untracked_file_does_not_block_seeding kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_repo_side_untracked_file_does_not_block_seeding kind="unit"  # noqa: E501
         name = "fake_native_seed_untracked"
         source_dir = "fake-native-seed-untracked"
         monkeypatch.setattr(
@@ -556,8 +540,7 @@ class TestCheckNativeStalenessOrExit:
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.te\
-        # st_exits_nonzero_and_prints_when_stale kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.test_exits_nonzero_and_prints_when_stale kind="unit"  # noqa: E501
         monkeypatch.setattr(
             "frob.strata._native_staleness.stale_native_warning",
             lambda root: "STALE NATIVE: fake",
@@ -571,8 +554,7 @@ class TestCheckNativeStalenessOrExit:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.te\
-        # st_returns_none_when_not_stale kind="unit"
+        # tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.test_returns_none_when_not_stale kind="unit"  # noqa: E501
         monkeypatch.setattr(
             "frob.strata._native_staleness.stale_native_warning", lambda root: None
         )

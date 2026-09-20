@@ -71,13 +71,12 @@ class TestPerf010YamlCLoader:
         # frob:tests \
         # tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader.test_does_not\
         # _fire_on_helper_loader_indirection  # noqa: E501
-        """T-1204: a genuine PERF010 false positive -- calling a shared
-        `*_loader()` factory (`frob.yamlio.fast_yaml_loader`'s own
-        established shape) that itself resolves to `yaml.CSafeLoader`
-        used to still fire, because the rule's original bare-token scan
-        can only ever see a LITERAL `CSafeLoader`/`CLoader` token inside
-        the calling symbol's own body, never through a helper call
-        boundary."""
+        """Asserts PERF010 does not fire when a shared `*_loader()`
+        factory (`frob.yamlio.fast_yaml_loader`'s own established shape)
+        resolves to `yaml.CSafeLoader` through a helper call boundary,
+        since the rule's bare-token scan only sees a literal
+        `CSafeLoader`/`CLoader` token inside the calling symbol's own
+        body. See T-1204 for the design rationale."""
         src = (
             "import yaml\n"
             "\n"
@@ -156,12 +155,11 @@ class TestPerf011RepoScanInLoop:
         # frob:tests \
         # tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop.test_does_\
         # not_fire_when_earlier_loop_is_an_unrelated_genexpr  # noqa: E501
-        """T-1647: a real PERF011 false positive on `main`
-        (`tests/integration/test_integration.py::
-        test_outline_line_matches_xref_definition`) -- an unrelated
-        generator expression's own `for`-clause earlier in the function
-        used to flip the rule's loop-context flag, so a later, entirely
-        un-looped repo-scan call was misread as being inside a loop."""
+        """Asserts PERF011 does not fire when an unrelated generator
+        expression's own `for`-clause earlier in the function flips the
+        rule's loop-context flag, misreading a later, entirely un-looped
+        repo-scan call as inside a loop. See T-1647 for the design
+        rationale."""
         src = (
             "def find(items, root):\n"
             "    cls = next(c for c in items if c.name == 'X')\n"

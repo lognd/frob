@@ -1,14 +1,14 @@
 ---
 id: T-4630
 title: Clean tests/unit docstrings of change-narrative (DOCARCH001) cluster 2
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
 priority: medium
 parent: T-4419
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -36,22 +36,20 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: tests/unit/test_cli_group_parity.py
-  reason: leased by in-progress T-5092 (cli-regrouping parity fix); deferred,
+  reason: leased by in-progress T-draft-5658939f (cli-regrouping parity fix); deferred,
     pick up once that lease releases
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_bare_ticket_reference_stays_quiet
 designated_repro_test: null
 acceptance:
 - text: Given a scoped frob check on cluster 2 files, when DOCARCH001 is measured,
     then its finding count for those files is 0
-  evidence: []
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_bare_ticket_reference_stays_quiet
 threat: null
 component: null
 anchor: false

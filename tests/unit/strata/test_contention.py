@@ -33,8 +33,7 @@ def _load(filename: str) -> tuple[Module, KernelModel]:
 
 class TestDuplicatePort:
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_\
-    # fires
+    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_fires  # noqa: E501
     def test_two_nodes_same_port_fires(self):
         _module, model = _load("contention_port_vuln.strata")
         report = check_resource_contention(model)
@@ -53,8 +52,7 @@ class TestDuplicatePort:
         assert not [v for v in report.violations if v.rule == SYS_DUPLICATE_PORT]
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_one_sided_waiver_kee\
-    # ps_the_other_nodes_finding
+    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_one_sided_waiver_keeps_the_other_nodes_finding  # noqa: E501
     def test_one_sided_waiver_keeps_the_other_nodes_finding(self):
         _module, model = _load("contention_port_waived.strata")
         report = check_resource_contention(model)
@@ -66,8 +64,7 @@ class TestDuplicatePort:
 
 class TestOverlappingPath:
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_owns_subtree_overl\
-    # ap_fires_write_capable
+    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_owns_subtree_overlap_fires_write_capable  # noqa: E501
     def test_owns_subtree_overlap_fires_write_capable(self):
         _module, model = _load("contention_path_vuln.strata")
         report = check_resource_contention(model)
@@ -79,16 +76,14 @@ class TestOverlappingPath:
         assert all("/etc/other-service" not in v.detail for v in findings)
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_disjoint_paths_cle\
-    # an
+    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_disjoint_paths_clean  # noqa: E501
     def test_disjoint_paths_clean(self):
         _module, model = _load("contention_path_clean.strata")
         report = check_resource_contention(model)
         assert not [v for v in report.violations if v.rule == SYS_OVERLAPPING_PATH]
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_readonly_acl_overl\
-    # ap_fires_but_not_write_capable
+    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_readonly_acl_overlap_fires_but_not_write_capable  # noqa: E501
     def test_readonly_acl_overlap_fires_but_not_write_capable(self):
         _module, model = _load("contention_acl_readonly_vuln.strata")
         report = check_resource_contention(model)
@@ -111,12 +106,11 @@ class TestOverlappingPath:
 
     # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_common_arbitered_resource_still_fires_without_module  # noqa: E501
     def test_common_arbitered_resource_still_fires_without_module(self):
-        """The SAME arbitered-pair fixture, called the OLD way (no
-        `module=` argument) -- SYS201 must still fire, exactly as it did
-        before T-1149, since `module=None` has no way to look up either
-        node's `access` declarations or the resource's arbiter. Mirrors
-        `TestSharedStoreWrite.test_arbitered_store_still_fires_without_
-        module`'s exact "additive, not a signature break" guarantee."""
+        """Asserts SYS201 still fires against an arbitered-pair fixture
+        called with no `module=` argument, since `module=None` has no way
+        to look up either node's `access` declarations or the resource's
+        arbiter -- the "additive, not a signature break" guarantee. See
+        T-1149 for the design rationale."""
         _module, model = _load("contention_path_arbitered.strata")
         report = check_resource_contention(model)
         findings = [v for v in report.violations if v.rule == SYS_OVERLAPPING_PATH]
@@ -145,8 +139,7 @@ class TestSharedPipe:
         assert {v.node for v in findings} == {"svc_a", "svc_b"}
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedPipe.test_distinct_pipe_names_cle\
-    # an
+    # tests/unit/strata/test_contention.py::TestSharedPipe.test_distinct_pipe_names_clean  # noqa: E501
     def test_distinct_pipe_names_clean(self):
         _module, model = _load("contention_pipe_clean.strata")
         report = check_resource_contention(model)
@@ -155,8 +148,7 @@ class TestSharedPipe:
 
 class TestSharedStoreWrite:
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_two_writers_fires\
-    # _mode_blind
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_two_writers_fires_mode_blind  # noqa: E501
     def test_two_writers_fires_mode_blind(self):
         module, model = _load("contention_store_vuln.strata")
         store_ids = frozenset(s.id for s in module.stores)
@@ -168,8 +160,7 @@ class TestSharedStoreWrite:
         assert all("other_store" not in v.detail for v in findings)
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_single_writer_cle\
-    # an
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_single_writer_clean  # noqa: E501
     def test_single_writer_clean(self):
         module, model = _load("contention_store_clean.strata")
         store_ids = frozenset(s.id for s in module.stores)
@@ -177,8 +168,7 @@ class TestSharedStoreWrite:
         assert not [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_empty_store_ids_i\
-    # s_silent
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_empty_store_ids_is_silent  # noqa: E501
     def test_empty_store_ids_is_silent(self):
         """`store_ids` empty (the default): SYS203 must emit nothing at
         all, even though the SAME fixture fires with `store_ids` supplied
@@ -190,8 +180,7 @@ class TestSharedStoreWrite:
         assert not [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_arbitered_store_d\
-    # ischarges
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_arbitered_store_discharges  # noqa: E501
     def test_arbitered_store_discharges(self):
         """T-1025: the SAME two-writer shape as
         contention_store_vuln.strata, but the store also declares a real
@@ -206,16 +195,13 @@ class TestSharedStoreWrite:
         assert not [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_arbitered_store_s\
-    # till_fires_without_module
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_arbitered_store_still_fires_without_module  # noqa: E501
     def test_arbitered_store_still_fires_without_module(self):
-        """The SAME arbitered fixture, called the OLD way (no `module=`
-        argument) -- SYS203 must still fire, exactly as it did before
-        T-1025, since `module=None` (the default) has no way to look up
-        the arbiter. This is the "additive, not a signature break"
-        guarantee `check_resource_contention`'s docstring promises: every
-        pre-T-1025 caller keeps its exact prior behavior unless it opts
-        in to passing `module`."""
+        """Asserts SYS203 still fires against an arbitered fixture called
+        with no `module=` argument, since `module=None` (the default) has
+        no way to look up the arbiter -- the "additive, not a signature
+        break" guarantee `check_resource_contention`'s docstring
+        promises. See T-1025 for the design rationale."""
         module, model = _load("contention_store_arbitered.strata")
         store_ids = frozenset(s.id for s in module.stores)
         report = check_resource_contention(model, store_ids=store_ids)
@@ -223,8 +209,7 @@ class TestSharedStoreWrite:
         assert {v.node for v in findings} == {"writer_a", "writer_b"}
 
     # frob:tests \
-    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_unarbitered_store\
-    # _still_fires_with_module
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_unarbitered_store_still_fires_with_module  # noqa: E501
     def test_unarbitered_store_still_fires_with_module(self):
         """Passing `module=` does not blanket-discharge every store --
         contention_store_vuln.strata's `shared_store` has NO `resource`

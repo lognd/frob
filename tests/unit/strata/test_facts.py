@@ -206,10 +206,10 @@ class TestClosure:
 
     # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
     def test_krb_no_transit_still_terminal_for_confidentiality_noflow(self):
-        """`krb_no_transit` is NOT excluded from `_NOFLOW_NON_TRANSITIVE_
-        ATTRS` (T-0496's comment: no known equivalent gap for it) -- it
-        stays a terminal edge under `through_barriers=False` too, same as
-        before this ticket's fix."""
+        """Asserts `krb_no_transit`, not excluded from
+        `_NOFLOW_NON_TRANSITIVE_ATTRS`, stays a terminal edge under
+        `through_barriers=False` too. See T-0496 for the design
+        rationale."""
         model = KernelModel(
             nodes=(_node("a"), _node("b"), _node("c")),
             flows=(
@@ -289,15 +289,12 @@ class TestClosure:
 
 
 class TestBuildFactsNativeExtensionUnavailable:
-    """T-0134: a standalone tool install has no `strata_core` extension.
-
-    `build_facts` used to do a module-level `import strata_core` and raise
-    a bare `ImportError` on missing it -- crashing `frob check`'s sys_gate
-    for any repo with a `design/` dir in a standalone install. Monkeypatch
-    the module-level binding to `None` (the state a bare `uv tool install
-    frob` leaves it in) and confirm `build_facts` degrades to a typed
-    `Err` before touching any `strata_core` call, matching the T-0133
-    pattern already applied to `frob.lang._walk_strata`.
+    """Asserts `build_facts` degrades to a typed `Err` before touching
+    any `strata_core` call, rather than raising a bare `ImportError`,
+    when the module-level `strata_core` binding is `None` (the state a
+    bare `uv tool install frob` leaves a standalone install in, with no
+    `strata_core` extension). Matches the T-0133 pattern already applied
+    to `frob.lang._walk_strata`. See T-0134 for the design rationale.
     """
 
     @pytest.fixture(autouse=True)

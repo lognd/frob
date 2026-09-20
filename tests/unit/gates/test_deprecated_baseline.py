@@ -330,9 +330,9 @@ class TestTighten:
         assert entry.file_counts() == {"src/b.py": 1}
 
     def test_symbol_no_longer_deprecated_is_dropped(self, tmp_path: Path) -> None:
-        """T-0639: a symbol baselined previously but absent from `current`
-        (directive removed, or symbol deleted) drops out of the baseline
-        entirely."""
+        """Asserts a baselined symbol absent from `current` (directive
+        removed, or symbol deleted) drops out of the baseline entirely.
+        See T-0639 for the design rationale."""
         # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestTighten.test_symbol_no_longer_deprecated_is_dropped  # noqa: E501
         save_deprecated_baseline(
             tmp_path,
@@ -391,13 +391,12 @@ class TestDepr005ViolationsGrowth:
     def test_growth_beyond_baseline_fires_at_the_right_file_and_line(
         self, tmp_path: Path
     ) -> None:
-        """T-1052: a second file whose count grows beyond its baseline
-        fires DEPR005 naming THAT file at its own (lowest) reference
-        line, while an unrelated file at its baselined count stays silent
-        -- proves the per-file `==` match used to compute the reported
-        line actually discriminates between files (kills an Eq-swapped or
-        And-swapped mutant that would report the wrong file/line or fire
-        on the wrong file)."""
+        """Asserts a file whose count grows beyond its baseline fires
+        DEPR005 naming that file at its own lowest reference line, while
+        an unrelated file at its baselined count stays silent -- the
+        per-file `==` match discriminates between files (kills an
+        Eq-swapped or And-swapped mutant that would report the wrong
+        file/line). See T-1052 for the design rationale."""
         # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_growth_beyond_baseline_fires_at_the_right_file_and_line  # noqa: E501
         _write(tmp_path, "src/a.py", self._deprecated_source())
         _write(tmp_path, "src/stable.py", "from a import helper\nhelper(1)\n")
@@ -437,8 +436,7 @@ class TestDepr005ViolationsGrowth:
         stays silent (kills a regression that shared state across symbols
         incorrectly, e.g. reusing one symbol's reference set for another)."""
         # frob:tests \
-        # tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.tes\
-        # t_two_baselined_symbols_each_evaluated_independently
+        # tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_two_baselined_symbols_each_evaluated_independently  # noqa: E501
         _write(
             tmp_path,
             "src/a.py",

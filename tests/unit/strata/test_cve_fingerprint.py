@@ -111,11 +111,10 @@ class TestCatalogDrift:
 
 
 class TestXxeFingerprint:
-    """T-0189 (T-0153 review follow-up): `FP-XXE-PARSE-001` joins the new
-    CWE-611 `WeaknessEntry` (`_threat.py`) -- previously refused by
-    CVEFP001 since no CWE-611 catalog entry existed
+    """Asserts `FP-XXE-PARSE-001` joins the CWE-611 `WeaknessEntry`
+    (`_threat.py`), passing CVEFP001's catalog-drift check
     (docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-
-    t-0153)."""
+    t-0153). See T-0189/T-0153 for the design rationale."""
 
     # frob:tests src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS kind="unit"
     def test_fp_xxe_parse_001_exists_and_joins_cwe_611(self):
@@ -136,11 +135,10 @@ class TestXxeFingerprint:
 
 # frob:ticket T-0510
 class TestT0510Fingerprints:
-    """T-0510: the five previously disclosed-gap fingerprints (weak-hash,
-    prototype pollution, ReDoS, open redirect, SSTI) each join a NEW
-    `WeaknessEntry` this ticket also added to `QUALITY_CATALOG` --
-    counterexample-first: prove each joins its cwe_id AND actually fires
-    on its own needle (not just data-shape correct)."""
+    """Asserts each of five fingerprints (weak-hash, prototype pollution,
+    ReDoS, open redirect, SSTI) joins its `WeaknessEntry` in
+    `QUALITY_CATALOG` by cwe_id and actually fires on its own needle, not
+    just data-shape correct. See T-0510 for the design rationale."""
 
     _EXPECTED = {
         "FP-WEAKHASH-PASSWORD-001": ("CWE-916", "python", "CVE-2012-3287"),

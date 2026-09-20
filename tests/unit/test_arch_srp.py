@@ -592,23 +592,14 @@ class TestArchConfigThresholds:
 
 # frob:ticket T-3395
 class TestArch103WaiverStaysEffective:
-    """T-3395: `app._version_guard._git_head_sha` genuinely trips the
+    """Asserts a function that genuinely trips the
     `mixed-concern-function`/ARCH103 threshold (I/O plus 2+ decision
     points) and carries a `frob:waive ARCH103 reason="..."` comment
-    resolving it -- this pins that resolution against regressing silently
-    if the function's waiver comment is ever dropped or edited out of
-    sync with the code it targets.
-
-    T-3598: `refactor._verify._import_check_env` used to be this class's
-    OTHER live example, but T-3587's refactor moved its src-vs-repo-root
-    branch out into a separate `import_roots` helper, dropping the
-    function's own decision-point count from 2 to 1 -- below ARCH103's
-    threshold. ARCH103 genuinely no longer fires raw there, so its
-    `frob:waive` was removed (dead weight, waiving nothing) and this
-    class's test for it was replaced with a discharge lock plus a
-    synthetic fixture that keeps proving the waiver MECHANISM itself
-    (bound-to-exact-symbol resolution) without depending on a live
-    function's shape staying put across future refactors."""
+    resolving it stays resolved, pinning the waiver-mechanism's
+    bound-to-exact-symbol resolution against a dropped or out-of-sync
+    waiver comment. A synthetic fixture (rather than a live function)
+    keeps this decoupled from any future refactor of real code. See
+    T-3395/T-3598 for the design rationale."""
 
     # frob:tests src/frob/refactor/_verify_import.py::_import_check_env
     def test_import_check_env_arch103_no_longer_fires_raw(self, tmp_path: Path) -> None:
@@ -647,12 +638,11 @@ class TestArch103WaiverStaysEffective:
     def test_waiver_mechanism_resolves_a_genuine_arch103_by_exact_symbol(
         self, tmp_path: Path
     ) -> None:
-        """T-3598: the general waiver-stays-bound-to-exact-symbol proof
-        `test_import_check_env_arch103_is_waived` used to carry, now on
-        a synthetic fixture (mirroring `_import_check_env`'s ORIGINAL,
-        pre-T-3587 shape: I/O plus 2 decision points) instead of a real,
-        driftable function -- decoupled from any future refactor of the
-        real code."""
+        """Asserts the waiver-stays-bound-to-exact-symbol mechanism on a
+        synthetic fixture (I/O plus 2 decision points, mirroring
+        `_import_check_env`'s original shape) rather than a real,
+        driftable function, decoupled from any future refactor of the
+        real code. See T-3598 for the design rationale."""
         from frob.gates import _apply_waivers
         from frob.gates._arch import arch_gate
         from frob.graph import build_graph

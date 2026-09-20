@@ -486,11 +486,11 @@ class TestDeployServeMutateNodeSplitConformance:
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
     def test_mutate_declares_every_real_effect_it_exercises(self):
-        """T-1075: `mutate` also reads `os.environ` (building a child
-        process's env for the mutation-test subprocess run) -- `env` joins
-        this fixture's declared `may` set now that `env` is wired (was
-        invisible to `check_capability_conformance`, THREAT004's core
-        join, before this ticket; only ever caught by SYS100-extended)."""
+        """Asserts `mutate`'s `may` set declares `env` (it reads
+        `os.environ` to build a child process's env for the mutation-test
+        subprocess run), so `check_capability_conformance`'s THREAT004
+        join sees it directly rather than only via SYS100-extended. See
+        T-1075 for the design rationale."""
         root = Path(__file__).resolve().parents[3]
         model = KernelModel(
             nodes=(
@@ -660,10 +660,11 @@ class TestExclusiveGrammar:
 
 
 class TestStaleViaSymbol:
-    """T-1627: a symbol-form `via` entry naming a symbol that resolves to
-    nothing is its own loud, distinct finding (`StaleViaSymbolViolation`,
-    SYS109) -- never a silent pass and never folded into the ordinary
-    undeclared-capability `CapabilityViolation`."""
+    """Asserts a symbol-form `via` entry naming a symbol that resolves to
+    nothing produces its own loud, distinct `StaleViaSymbolViolation`
+    (SYS109), never a silent pass or a fold into the ordinary
+    undeclared-capability `CapabilityViolation`. See T-1627 for the
+    design rationale."""
 
     # frob:tests src/frob/strata/_effects.py::check_stale_via_symbols kind="unit"
     def test_resolvable_symbol_is_not_flagged(self, tmp_path: Path):

@@ -162,13 +162,13 @@ def _hold_exclusive_then_signal(
 
 # frob:ticket T-3506
 class TestPortableFlock:
-    """T-3506: `portable_flock_acquire`/`portable_flock_release` --
-    the shared primitive `derived_state_lock` used to hand-roll on its
-    own, now extracted and ported to by every other lock call site in
-    this codebase (`frob.tickets._store`/`_new_renumber`/`_land`/
-    `_leases`/`_land_queue`/`_mutation_sweep_queue`/`_land_git_ops`,
+    """Covers `portable_flock_acquire`/`portable_flock_release`, the
+    shared locking primitive used by every lock call site in this
+    codebase (`frob.tickets._store`/`_new_renumber`/`_land`/`_leases`/
+    `_land_queue`/`_mutation_sweep_queue`/`_land_git_ops`,
     `frob.serve._socketd`, `frob.app.ticket_runner._rapid_sweep`,
-    `frob.testing._coverage_wait`)."""
+    `frob.testing._coverage_wait`). See T-3506 for the design
+    rationale."""
 
     def test_posix_blocking_acquire_release_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
@@ -815,13 +815,13 @@ class TestAllocatorLock:
 
 # frob:ticket T-2122
 class TestSharedIdCounter:
-    """`frob.tickets._new_renumber._next_ticket_id_shared`/`_allocate_ticket_id`
-    (T-2122): id allocation must not collide between two checkouts of the
-    SAME repo that each hold a divergent (stale) view of what ids are
-    taken -- the shape `allocator_lock` cannot fix, since it lives at a
-    PER-CHECKOUT path (`<root>/.frob/tickets-allocator.lock`) and never
-    contends across checkouts, and the old `_next_ticket_id` scan decides
-    purely from whatever ledger snapshot its own caller happened to load."""
+    """Covers `frob.tickets._new_renumber._next_ticket_id_shared`/
+    `_allocate_ticket_id`: id allocation must not collide between two
+    checkouts of the same repo that each hold a divergent (stale) view of
+    what ids are taken, a shape `allocator_lock` cannot fix since it
+    lives at a per-checkout path
+    (`<root>/.frob/tickets-allocator.lock`) and never contends across
+    checkouts. See T-2122 for the design rationale."""
 
     @staticmethod
     def _git(*args: str, cwd: Path) -> None:
@@ -843,14 +843,12 @@ class TestSharedIdCounter:
     def test_two_checkouts_with_divergent_views_never_collide(
         self, tmp_path: Path
     ) -> None:
-        """GIVEN two checkouts of the SAME repo, each with a divergent
-        (here: identically stale) view of which ids are taken, WHEN both
-        allocate a fresh id THEN they must not receive the same one --
-        this MUST fail against current main (T-2122): the old
-        `_next_ticket_id` scan decides purely from each caller's own
-        `merged` snapshot with no cross-checkout coordination at all, so
-        two checkouts that agree (correctly, from their own stale view)
-        on the current max both compute the identical next id."""
+        """Asserts two checkouts of the same repo, each with a divergent
+        (here: identically stale) view of which ids are taken, do not
+        receive the same fresh id when both allocate one, since
+        allocation must coordinate across checkouts rather than decide
+        purely from each caller's own ledger snapshot. See T-2122 for the
+        design rationale."""
         primary = tmp_path / "primary"
         self._init_repo_on_main(primary)
         detached = tmp_path / "detached"
@@ -928,8 +926,7 @@ class TestSharedIdCounterPlatformBackends:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_no_\
-        # lock_primitive_refuses_loudly
+        # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
         import frob.process._lock as _lock_mod
         import frob.tickets._new_renumber as _renumber_mod
 
@@ -954,8 +951,7 @@ class TestSharedIdCounterPlatformBackends:
         seeded, acquire, release) the real backend only ever runs for
         real on Windows."""
         # frob:tests \
-        # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_win\
-        # dows_backend_round_trips
+        # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_windows_backend_round_trips  # noqa: E501
         import fcntl as _real_fcntl
 
         import frob.process._lock as _lock_mod

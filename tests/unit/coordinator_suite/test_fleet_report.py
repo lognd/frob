@@ -113,8 +113,7 @@ class TestTicketReadiness:
 
     # frob:ticket T-2196
     # frob:tests \
-    # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_d\
-    # ispatchable_when_ticket_does_not_exist_on_main
+    # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispatchable_when_ticket_does_not_exist_on_main  # noqa: E501
     def test_not_dispatchable_when_ticket_does_not_exist_on_main(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -137,8 +136,7 @@ class TestTicketReadiness:
 
     # frob:ticket T-2196
     # frob:tests \
-    # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_d\
-    # ispatchable_when_a_blocker_is_still_open
+    # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispatchable_when_a_blocker_is_still_open  # noqa: E501
     def test_not_dispatchable_when_a_blocker_is_still_open(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -169,8 +167,7 @@ class TestTicketReadiness:
 
     # frob:ticket T-2196
     # frob:tests \
-    # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_dispa\
-    # tchable_when_every_blocker_is_done
+    # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_dispatchable_when_every_blocker_is_done  # noqa: E501
     def test_dispatchable_when_every_blocker_is_done(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1412,8 +1409,7 @@ class TestVerifyQueueState:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_\
-        # reports_depth_and_oldest_age
+        # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_reports_depth_and_oldest_age  # noqa: E501
         """(MUST FAIL FIRST on main -- `verify_queue_state` does not exist
         yet): depth is the entry count, oldest_age_s is the OLDEST
         `enqueued_at` entry's age (the entry a coordinator most needs to
@@ -1439,8 +1435,7 @@ class TestVerifyQueueState:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_\
-        # zero_depth_when_no_file
+        # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_zero_depth_when_no_file  # noqa: E501
         """MUST-STILL-PASS control: no queue file at all means nothing is
         queued -- `(0, None)`, not `(-1, None)` (the unreadable case)."""
         monkeypatch.setattr(
@@ -1453,8 +1448,7 @@ class TestVerifyQueueState:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_\
-        # unreadable_queue_is_unknown_never_zero
+        # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_unreadable_queue_is_unknown_never_zero  # noqa: E501
         """Malformed JSON is `(-1, None)`, never misread as `(0, None)` --
         mirrors `quarantine_state`'s own "cannot verify is never
         verified" posture: an unreadable store must never look like an
@@ -1474,8 +1468,7 @@ class TestFleetStatusMainVerifyQueue:
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQ\
-        # ueue.test_prints_depth_and_age_when_nonempty
+        # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.test_prints_depth_and_age_when_nonempty  # noqa: E501
         """A nonzero queue depth is printed with its age, next to
         QUARANTINE -- symmetric to T-2049's own quarantine-line placement
         test above."""
@@ -1497,8 +1490,7 @@ class TestFleetStatusMainVerifyQueue:
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         # frob:tests \
-        # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQ\
-        # ueue.test_prints_empty_when_zero_depth
+        # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.test_prints_empty_when_zero_depth  # noqa: E501
         """MUST-STILL-PASS control: a zero-depth queue is reported as
         empty, not silently omitted."""
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
@@ -1584,30 +1576,14 @@ class TestFleetStatusLarge001WaiverParses:
     """
 
     def test_waiver_still_suppresses_large001(self, tmp_path: Path) -> None:
-        """arch_gate() + _apply_waivers() against a SCOPED fixture repo
-        containing a real, byte-for-byte copy of scripts/fleet_status.py
-        report zero KEPT LARGE001 findings for it -- proving the
-        corrected, multi-line frob:quote(frob:waive reason) still parses
-        as one directive and still binds, rather than silently
-        regressing to a bare unwaived LARGE001 error the way a malformed
-        directive would.
-
-        T-3532: this used to `build_graph`/`arch_gate` the WHOLE live
-        repo tree per test invocation, outside the T-3495 shared
-        `frob_self_scan_heavy` artifacts and paying its own private
-        multi-minute scan on a slow CI runner. The subject under test is
-        the WAIVER-BINDING mechanism, not "does this repo have zero
-        LARGE001 findings repo-wide" (that property belongs to
-        `test_sys_gate_zero_violations` and friends, which already share
-        `frob_self_scan_artifacts`) -- `arch_gate` also has no snapshot
-        parameter to piggyback on that shared session fixture the way
-        `test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses`
-        (T-3532, `tests/test_gates.py`) now does for `perf_gate`. A
-        SCOPED one-file fixture repo is the right substitute per this
-        ticket's own accepted alternative: the real file's real waiver
-        directive still binds through the real `arch_gate`/
-        `_apply_waivers` machinery, at a cost of one small-tree AST parse
-        instead of the whole repo."""
+        """Asserts `arch_gate()` + `_apply_waivers()` against a scoped
+        one-file fixture repo (a real, byte-for-byte copy of
+        scripts/fleet_status.py) report zero kept LARGE001 findings for
+        it, proving the multi-line `frob:quote(frob:waive reason)` form
+        still parses as one directive and still binds. Scoped to one file
+        rather than the whole live repo tree, at the cost of one
+        small-tree AST parse instead of a multi-minute scan. See T-3532
+        for the design rationale."""
         from frob.gates._arch import arch_gate  # noqa: PLC0415
         from frob.gates._waive import _apply_waivers  # noqa: PLC0415
         from frob.graph import build_graph  # noqa: PLC0415
@@ -1639,19 +1615,14 @@ class TestFleetStatusLarge001WaiverParses:
 
 # frob:ticket T-2854
 class TestOwnDocstringHasNoMalformedDirective:
-    """T-2854: this file's own TestFleetStatusLarge001WaiverParses docstring
-    used to contain an unescaped line ('frob:waive reason still parses as
-    one directive and still binds,') that the directive DSL parses per-line
-    -- a docstring is directive-scannable too (T-0342), and that line's
-    SHAPE (starts with 'frob:<verb>') is indistinguishable from a genuine
-    one-line directive, so it was reported as a MalformedDirective ('bad
-    attribute syntax'). Fixed by wrapping the mention in the DSL's own
-    `frob:quote(...)` escape (T-1970) rather than weakening the scanner --
-    see tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMention
-    Escape for the escape mechanism's own isolated coverage. This test
-    binds directly to THIS file's real content so a future edit re-
-    introducing an unescaped directive-shaped docstring line here is
-    caught immediately, not just in the synthetic fixture."""
+    """Asserts this file's own `TestFleetStatusLarge001WaiverParses`
+    docstring carries no directive-shaped line unescaped by the DSL's
+    `frob:quote(...)` mechanism (a docstring is directive-scannable too,
+    T-0342), binding directly to this file's real content so a future
+    edit reintroducing one is caught immediately. See
+    tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMention
+    Escape for the escape mechanism's own isolated coverage, and T-2854
+    for the design rationale."""
 
     def test_no_malformed_directives_in_this_file(self) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_report.py::TestOwnDocstringHasNoMalformedDirective.test_no_malformed_directives_in_this_file  # noqa: E501

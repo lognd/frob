@@ -76,8 +76,7 @@ def test_iter_functions_cpp_yields_qualified_names(tmp_path: Path) -> None:
 
 
 # frob:tests \
-# tests/unit/test_dup_legacy_cpp.py::test_enclosing_class_cpp_none_for_top_level_functi\
-# on
+# tests/unit/test_dup_legacy_cpp.py::test_enclosing_class_cpp_none_for_top_level_function  # noqa: E501
 def test_enclosing_class_cpp_none_for_top_level_function(tmp_path: Path) -> None:
     """A free function's enclosing class is None."""
     root = _parse(tmp_path)
@@ -98,17 +97,12 @@ def test_enclosing_class_cpp_names_the_struct_or_class(tmp_path: Path) -> None:
 
 # frob:tests tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings
 def test_collect_locals_cpp_covers_bindings(tmp_path: Path) -> None:
-    """For-loop and range-for bindings, plain declarations, AND function
-    parameters (T-1509) are all collected as locals.
-
-    T-1509 fix: `_collect_locals_cpp` used to look up the `parameters`
-    field on `func_node` (`function_definition`) directly, but
-    tree-sitter's cpp grammar puts that field on the function's
-    `function_declarator` child instead -- so function PARAMETERS were
-    never actually added to the local set here (unlike `_legacy_py`'s
-    equivalent, which does collect params). `_cpp_function_declarator`
-    now unwraps to the real `function_declarator` node first, matching
-    `_cpp_func_name`'s own pointer/reference-declarator unwrap."""
+    """Asserts for-loop and range-for bindings, plain declarations, and
+    function parameters are all collected as locals: `_collect_locals_
+    cpp` reads `parameters` off the function's `function_declarator`
+    child (via `_cpp_function_declarator`'s unwrap), not off `func_node`
+    directly, since that is where tree-sitter's cpp grammar puts the
+    field. See T-1509 for the design rationale."""
     root = _parse(tmp_path)
     func_node, _sym = next((n, s) for n, s in _iter_functions_cpp(root) if s == "f")
     locals_ = _collect_locals_cpp(func_node)
@@ -140,19 +134,17 @@ def test_collect_locals_cpp_method_params_too(tmp_path: Path) -> None:
 
 
 # frob:tests \
-# tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_\
-# token
+# tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_token  # noqa: E501
 # frob:waive PII012 reason="'token' here is a tree-sitter/dup-fingerprint lexer token \
 # (positional _vN placeholder), not a credential or personal-data surface; test name \
 # and prose describe token-folding semantics"
 def test_collect_locals_cpp_param_folds_to_positional_token(
     tmp_path: Path,
 ) -> None:
-    """T-1509's real detection-quality fix: two functions identical except
-    for parameter NAMES now fingerprint identically, because a parameter
-    identifier folds to a positional `_vN` token like every other local
-    (it did not before this fix -- a raw, un-folded parameter name would
-    make the serialized token strings differ between two such functions)."""
+    """Asserts two functions identical except for parameter names
+    fingerprint identically, because a parameter identifier folds to a
+    positional `_vN` token like every other local. See T-1509 for the
+    design rationale."""
     src_a = "int f(int alpha, int beta) { return alpha + beta; }\n"
     src_b = "int f(int gamma, int delta) { return gamma + delta; }\n"
 
@@ -170,8 +162,7 @@ def test_collect_locals_cpp_param_folds_to_positional_token(
 
 
 # frob:tests \
-# tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_\
-# and_numbers
+# tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_and_numbers  # noqa: E501
 # frob:waive PII012 reason="'token' here is a dup-fingerprint lexer token (positional \
 # _vN placeholder) named in assertion comments, not a credential or personal-data \
 # surface"
