@@ -1,5 +1,5 @@
 ---
-id: T-draft-ed4316e8
+id: T-4912
 title: Fix stale DOC006 pointers accumulated in ticket bodies (CI doc004/doc006 live-repo
   gate)
 state: queued
