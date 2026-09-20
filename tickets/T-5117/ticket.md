@@ -9,6 +9,7 @@ created: '2026-09-19'
 priority: medium
 blocked_by:
 - T-4722
+- T-4767
 parent: T-4806
 tier: ticket
 sprint: null
