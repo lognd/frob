@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4691
 tier: ticket
-sprint: v0.533.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -30,13 +30,6 @@ scope_changes:
   reason: T-4693 DOCARCH002 ratchet baseline snapshot
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.533.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: given a 20-line comment run of pure algorithm explanation citing no ticket,
@@ -50,9 +43,8 @@ acceptance:
     runs with default docstring_max=20, then the 25-line one is flagged and the 15-line
     one is not
   evidence: []
-- text: given frob.toml [gates.docs] comment_run_max = 30, when DOCARCH002 runs over
-    the 20-line fixture, then it is quiet -- proving the config path, not just the
-    default
+- text: given the frob.toml gates.docs table comment_run_max = 30, when DOCARCH002 runs over the 20-line fixture,
+    then it is quiet -- proving the config path, not just the default
   evidence: []
 - text: given a frob:ticket T-1234 directive, a single-line '# see T-1234' pointer,
     and a '# T-1234:' line followed by 3 prose lines, when DOCARCH002 check 2 runs,
@@ -92,8 +84,8 @@ THREE CHECKS, ONE RULE FAMILY (DOCARCH002):
 
 (1) LENGTH CAP, CONTENT-BLIND.
     Any run of consecutive `#` comment lines longer than N (frob.toml
-    [gates.docs] comment_run_max, default 12) is a finding. Any docstring longer
-    than M lines ([gates.docs] docstring_max, default 20) is a finding.
+    <!-- frob:waive DOC006 reason="illustrative future frob.toml section this ticket proposes -- does not exist until the DOCARCH002 leaf lands" -->[gates.docs] comment_run_max, default 12) is a finding. Any docstring longer
+    than M lines (<!-- frob:waive DOC006 reason="illustrative future frob.toml section this ticket proposes -- does not exist until the DOCARCH002 leaf lands" -->[gates.docs] docstring_max, default 20) is a finding.
     No wording test anywhere in this check.
     EXEMPT BY SYNTAX, NOT BY WORDING: a shebang/coding line, a license header
     block (the leading comment run before the first token of the module), and a

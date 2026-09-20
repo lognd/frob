@@ -164,7 +164,7 @@ SCOPE AND DISJOINTNESS
 - `strata-core/src/parse/grammar_policy.rs` and `strata-core/src/parse/mod.rs`
   -- confirmed by `git grep -ln '"secret"|"rotate"|"revoke"|"issued_by"|"lifetime"'
   -- strata-core/src/parse/`, which ALSO names `grammar_node.rs`.
-- `design/litmus/secret_lifecycle.strata` -- a NEW litmus file, deliberately its
+- <!-- frob:waive DOC006 reason="illustrative target path for the litmus file this ticket creates -- does not exist until this ticket lands" -->`design/litmus/secret_lifecycle.strata` -- a NEW litmus file, deliberately its
   own file so this leaf stays scope-disjoint from T-3822.
 - **HARD SEQUENCING NOTE:** `grammar_node.rs` is T-3822's declared scope and is
   deliberately NOT in this ticket's scope. If the secret lifecycle grammar

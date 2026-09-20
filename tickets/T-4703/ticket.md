@@ -85,8 +85,8 @@ rediscover it.
    and `path.Class.method`. Canonical is `path::Class.method` (what pytest prints). A lint plus
    Tier-A fix rewrites the other two spellings. NEVER refuse them -- token/grammar fixes, never
    lexical.
-7. Derived bindings, not guessed. `frob ticket evidence ... --bind` writes the `frob:tests` line
-   for the accepted symbol from the evidence it already records; the docs gates offer `--bind`
+7. Derived bindings, not guessed. <!-- frob:waive DOC006 reason="illustrative future --bind flag this ticket proposes adding to frob ticket evidence -- does not exist until this ticket lands" -->`frob ticket evidence ... --bind` writes the `frob:tests` line
+   for the accepted symbol from the evidence it already records; the docs gates offer <!-- frob:waive DOC006 reason="illustrative future --bind flag this ticket proposes -- does not exist until this ticket lands" -->`--bind`
    for `frob:doc` where the anchor is already known. NO heuristic generator that guesses which
    test covers which symbol, ever.
 

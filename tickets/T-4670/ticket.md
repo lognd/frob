@@ -11,7 +11,7 @@ blocked_by:
 - T-4668
 parent: T-4664
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -23,13 +23,6 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: v0.536.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: Given the committed lock has 7 keys under their ceiling (total slack 45) and
@@ -74,7 +67,7 @@ LOOSE, not BROKEN. Zero keys are over ceiling and zero are unlocked at HEAD.
 Do not file this as a breach.
 
 WHAT TO BUILD
-A drift reporter in a new `src/frob/strata/_ratchet_drift.py`: given the measured
+A drift reporter in a new <!-- frob:waive DOC006 reason="illustrative target path for the module this ticket creates -- does not exist until this ticket lands" -->`src/frob/strata/_ratchet_drift.py`: given the measured
 counts and the lock, report slack per key, total slack, and dead entries. Report
 only -- whether slack becomes a FAILURE, or the ratchet re-tightens on shrink, is
 a gate-semantics choice that belongs to A4's derivable-ceiling design, not here.

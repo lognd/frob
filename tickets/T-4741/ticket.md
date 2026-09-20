@@ -81,7 +81,7 @@ acceptance:
     The PR check refusing a branch-minted id says "run `frob ticket sync --base main`,
     then push". No refusal in this flow may state a problem without stating its remedy.
   evidence: []
-- text: Given `frob ticket sync`, when it runs, then it prints a before/after table
+- text: Given <!-- frob:waive DOC006 reason="illustrative future frob ticket sync subcommand this ticket proposes -- does not exist until this ticket lands" -->`frob ticket sync`, when it runs, then it prints a before/after table
     of every renumbered id and every rewritten citation, and exits with a one-line
     summary of what changed. A sync that renumbered nothing says so on one line rather
     than printing an empty table.

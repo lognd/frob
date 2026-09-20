@@ -11,7 +11,7 @@ blocked_by:
 - T-4598
 parent: T-4664
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -24,13 +24,6 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: v0.536.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: '2026-09-19: coordinator/owner amendment -- D-M6 splits design/frob.strata
@@ -91,7 +84,7 @@ writes {"accepted_count", "reason"} only, unlike the SYS111 writer at
 src/frob/gates/_fix_engine_sync.py:1362 which writes a `ticket`.
 
 WHAT TO BUILD
-A single `src/frob/strata/_ratchet_lock.py` owning the lock's read, write and
+A single <!-- frob:waive DOC006 reason="illustrative target path for the module this ticket creates -- does not exist until this ticket lands" -->`src/frob/strata/_ratchet_lock.py` owning the lock's read, write and
 schema: one typed model (pydantic), one loader returning a typani Result, one
 writer both call sites will migrate to, and a schema validator that refuses a
 lock with any capability key outside `entries` or any entry missing

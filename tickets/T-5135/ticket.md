@@ -374,7 +374,7 @@ but a trap for the next caller).
 
 **Multiplier**: at 648, `path` = files a branch changed (tens to hundreds) and
 the enclosing analysis runs per agent branch (~20 worktrees) -> hundreds to
-low thousands of `git show` spawns per `frob ticket unlanded`.
+low thousands of `git show` spawns per <!-- frob:waive DOC006 reason="narrative shorthand for the frob doctor unlanded-worktree walk in src/frob/tickets/_unlanded.py; there is no `frob ticket unlanded` verb" -->`frob ticket unlanded`.
 
 **Batched alternative (exists)**: `git grep -h -E "frob:(ticket|todo) T-[0-9]+"
 <branch> -- <paths>` in one spawn, or `git archive <branch> | tar -xO`, instead

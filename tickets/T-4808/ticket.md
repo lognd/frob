@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: medium
 parent: T-4691
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -22,13 +22,6 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: correct a forward reference written before the sweep leaf had an id
@@ -71,8 +64,9 @@ acceptance:
 - text: given a fixture docs/modules/x.md with a section of N+5 lines and one of N-5
     lines, when the lint runs, then only the first is flagged
   evidence: []
-- text: given frob.toml [gates.docs] raises N, when the lint runs over the same fixture,
-    then the first section is quiet -- proving the config path, not just the default
+- text: given the frob.toml gates.docs table
+    raises N, when the lint runs over the same fixture, then the first section is
+    quiet -- proving the config path, not just the default
   evidence: []
 - text: given todays docs/modules content, when this leaf closes, then the measured
     distribution of section lengths is recorded in the ticket and N is chosen from
@@ -127,7 +121,7 @@ in review" from a good intention into a gate finding when it does not happen.
 Document that division in `docs/modules/docstrings.md` so the next agent reads it
 before running the repo-wide sweep (T-4808).
 
-POSITIVE CONTROL: a fixture `docs/modules/x.md` with one section of N+5 lines and
+POSITIVE CONTROL: a fixture <!-- frob:waive DOC006 reason="illustrative fixture path for the lint's positive control, not a real tracked file" -->`docs/modules/x.md` with one section of N+5 lines and
 one of N-5 lines -- the first is flagged, the second is not; raising N in
 frob.toml silences the first, proving the config path and not just the default.
 

@@ -122,7 +122,7 @@ command. Three leaves added:
   Split out of T-4694 because it adds a second destination type and would have
   taken that leaf past three points.
 - T-4808 -- a docs/modules size lint: a per-symbol section over N lines is a
-  finding, N config in [gates.docs] beside comment_run_max and docstring_max.
+  finding, N config in <!-- frob:waive DOC006 reason="illustrative future frob.toml section this ticket proposes -- does not exist until the DOCARCH002 leaf lands" -->[gates.docs] beside comment_run_max and docstring_max.
   This is the DESTINATION-SIDE half of the same ratchet: without it, relocating
   38,964 lines into docs/modules is a relocation rather than a reduction, and
   prose escapes one cap by moving under the other. N chosen from the measured

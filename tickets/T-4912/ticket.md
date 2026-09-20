@@ -2,7 +2,7 @@
 id: T-4912
 title: Fix stale DOC006 pointers accumulated in ticket bodies (CI doc004/doc006 live-repo
   gate)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'

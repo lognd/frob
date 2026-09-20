@@ -151,7 +151,7 @@ SCOPE AND DISJOINTNESS
   `git grep -ln '"attr"' -- strata-core/src/parse/`, which also names
   grammar_flow.rs and grammar_infra.rs; if the node attr form proves to live in
   one of those, scope --add it).
-- `design/litmus/attr_ident.strata` -- a NEW litmus file, deliberately its own
+- <!-- frob:waive DOC006 reason="illustrative target path for the litmus file this ticket creates -- does not exist until this ticket lands" -->`design/litmus/attr_ident.strata` -- a NEW litmus file, deliberately its own
   file so this leaf stays scope-disjoint from T-3823, which also touches the
   parser.
 - `docs/strata/surface.md`, `docs/strata/threat.md` -- these become CORRECT

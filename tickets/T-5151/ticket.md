@@ -1,5 +1,5 @@
 ---
-id: T-draft-1b1cebcb
+id: T-5151
 title: 'frob ticket attach --remove PATH: first-class attachment removal with ledger
   record cleanup'
 state: queued

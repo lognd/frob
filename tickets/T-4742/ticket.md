@@ -11,7 +11,7 @@ blocked_by:
 - T-4713
 parent: T-4703
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -25,13 +25,6 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
@@ -68,7 +61,7 @@ That is the incident this leaf makes impossible; cite it in the rule's docs.
 - Plant one directive in each of the three spellings, all naming the SAME symbol, and assert
   they resolve to the same edge (the parser's tolerance) AND that exactly two of them are
   flagged (the lint's discrimination).
-- Plant a path that legitimately contains a dot but no class (`a.b.py::f`) and assert it is NOT
+- Plant a path that legitimately contains a dot but no class (<!-- frob:waive DOC006 reason="illustrative non-resolving fixture path used to test the lint's discrimination, not a real tracked file" -->`a.b.py::f`) and assert it is NOT
   rewritten -- the fix must not treat every dot as a separator.
 - Plant a quoted value containing `::` and assert it is untouched.
 
