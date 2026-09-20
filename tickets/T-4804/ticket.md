@@ -19,6 +19,16 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: '2026-09-19: DECISION ticket for SF-01 -- its deliverable
   is an owner decision recorded in the body, which legitimately changes no files'
+body_changes:
+- mode: append
+  reason: '2026-09-19: owner decision recorded -- SYS grows from self-conformance
+    only into a design-quality gate, every existing rule gets a positive-control liveness
+    fixture before it may stay registered, and NO rule is retired; the liveness-fixture
+    leaf is filed now and the design-quality leaves follow'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5034
+  new_length: 7809
 designated_repro_test: null
 acceptance:
 - text: 'Owner records a decision in the body: which option or combination (run the
@@ -119,3 +129,52 @@ MEASUREMENT BOUNDARIES THE OWNER MUST WEIGH
 ACCEPTANCE
 Owner records a decision in the body: which option (or combination), and what it
 changes.
+
+
+## DECISION RECORDED -- owner, 2026-09-19 19:50
+
+**Decided: a combination of options 2 and 3, and an explicit REFUSAL of option 4.**
+
+1. **SYS grows from a self-conformance-only gate into a DESIGN-QUALITY gate.**
+   Its new subject matter is dead nodes, unreviewed assumes, contract drift, and
+   per-module audit findings. Today the family only asks "does frob's model
+   conform to itself", which is why zero is its steady state; the decision is
+   that it should also ask "is this design any good".
+2. **Every existing rule gets a positive-control fixture that makes it FIRE in
+   CI before it may stay registered.** This is option 3 adopted wholesale: a
+   rule that cannot be shown firing is not a rule, it is a claim. Registration
+   becomes conditional on demonstrated liveness.
+3. **NO RULE IS RETIRED.** Option 4 is refused outright, consistent with the
+   owner's general rule -- **"err on the side of adding capabilities; we
+   originally had a good idea and then forgot to implement it"** -- and with
+   T-4678's parallel decision that the keyword delete list is empty.
+
+WHY THIS ANSWERS THE MEASUREMENT. SF-01 measured 614,294 rule fires across 82
+rule ids with ZERO starting with SYS and SELFAUDIT001 appearing once. Under this
+decision that number stops being ambiguous in both directions at once: the
+liveness fixtures make a zero PROVABLE (a registered rule has been seen firing,
+so a production zero means clean), and the design-quality scope gives the family
+something to find in the first place. Per
+memory/silent-zero-is-the-dominant-bug-class.md the four readings of a zero are
+clean / could-not-run / nothing-to-measure / matcher-never-fired; the fixtures
+eliminate the last two, and the scope change addresses the third at its root.
+
+Note the interaction with option 1, which is NOT taken: the family keeps running
+where it runs today. T-4672's missing `check --only sys` wall-clock is still
+worth having and still the input to any future scheduling decision, but
+scheduling is no longer the answer to SF-01.
+
+### WHAT IS FILED
+
+- **The liveness-fixture leaf, filed now**, scoped to tests/gates_suite and
+  design/litmus: every registered SYS/SELFAUDIT rule gets a fixture that makes
+  it fire, and a meta-test refuses a registered rule with no such fixture.
+- **The design-quality leaves** -- dead nodes, unreviewed assumes, contract
+  drift, per-module audit findings -- as decisions-turned-leaves, one per
+  subject area.
+
+Note that "unreviewed assumes" as a design-quality subject is adjacent to but
+NOT the same as T-4675 (SF-07), which wires the OVERDUE-assume verdict and
+remains the critical leaf with 26 days to the 2026-10-15 cliff. T-4675 lands on
+its own; the design-quality rule is the broader "was this ever reviewed at all"
+question.
