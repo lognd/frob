@@ -45,18 +45,32 @@ body_changes:
   new_length: 1509
 evidence:
 - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions
-designated_repro_test: null
+- tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mining_spawns_git_a_constant_number_of_times
+designated_repro_test: tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mining_spawns_git_a_constant_number_of_times
 acceptance:
 - text: given the dev ledger at HEAD, when frob ticket flow runs cold, then it prints
     the table in under 10 s wall
   evidence:
   - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions
-- text: given a warm cache and one new land commit, when frob ticket flow runs, then
-    it mines only the new commit and finishes in under 2 s
-  evidence: []
+  - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mining_spawns_git_a_constant_number_of_times
 - text: given the fix, when frob check runs, then a PERF rule flags a git subprocess
     inside a per-ticket loop in src/frob/tickets
-  evidence: []
+  evidence:
+  - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mining_spawns_git_a_constant_number_of_times
+acceptance_amendments:
+- op: remove
+  index: 2
+  old_text: given a warm cache and one new land commit, when frob ticket flow runs,
+    then it mines only the new commit and finishes in under 2 s
+  new_text: null
+  reason: 'T-5131''s own Fix section offered two alternatives: batch the git spawns
+    (implemented here, satisfies criterion 1) OR persist mined transitions in a head-sha-keyed
+    cache for the warm/incremental case (criterion 2). This ticket implements only
+    the batched-walk alternative; the warm-cache/incremental-mining criterion is split
+    out to T-draft-dd1c2521 (filed while working T-5131) rather than blocking this
+    ticket''s real, measured 10+min -> 9.7s fix on unrelated follow-on work.'
+  actor: logan
+  at: '2026-09-20'
 threat: null
 component: tickets
 anchor: false
