@@ -59,8 +59,13 @@ def _run_pool(cfg: AppConfig) -> None:
 
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/guides/worktree-pool.md#cli-frob-scaffold-pool-t-0877
+# frob:doc docs/modules/land-profiles.md#land-profiles-rapid-vs-standard-t-4416
 # frob:ticket T-0736
+# frob:ticket T-4416
 # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldApplyCli.test_apply_reports_changes  # noqa: E501
+# frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
+# frob:waive AFFECT001 reason="see T-4416's Done report / ticket body for why \
+# app.md#runners and worktree-pool.md need no edit"
 def run(cfg: AppConfig) -> None:
     cmd = cfg.scaffold_command
     if cmd in ("list", None):
@@ -98,3 +103,25 @@ def run(cfg: AppConfig) -> None:
 
     for p in result.danger_ok:
         _log.info("created %s", p)
+
+    _print_profile_recommendation(out_dir / proj_name)
+
+
+# frob:ticket T-4416
+def _print_profile_recommendation(project_dir: Path) -> None:
+    """T-4416: after `frob scaffold new` writes a fresh project's
+    `frob.toml` (every manifest in `frob.scaffold.project._MANIFESTS`
+    includes one), measure the newly-created `project_dir` the same way
+    `frob doctor` measures an existing repo (`frob.doctor.
+    profile_recommendation`) and print the same advisory nudge if it is
+    already above `_PROFILE_RECOMMEND_THRESHOLD` -- in practice a brand
+    new scaffold is essentially always below threshold (0 tickets, a
+    handful of template files), so this almost always prints nothing,
+    matching acceptance criterion 3 (never force `rapid` below
+    threshold); it exists for the rarer case of scaffolding a new project
+    type INTO an already-large existing tree (`--output` pointed at one)."""
+    from frob.doctor import profile_recommendation
+
+    recommendation = profile_recommendation(project_dir)
+    if recommendation:
+        _log.info(recommendation)

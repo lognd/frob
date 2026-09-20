@@ -51,6 +51,7 @@ def _report(
     remediation: str | None,
     live_land_process: LiveLandProcess | None = None,
     scaffold_blocks: list[ManagedBlockStatus] | None = None,
+    profile_recommendation: str | None = None,
 ) -> DoctorReport:
     return DoctorReport(
         frob_version="9.9.9",
@@ -66,6 +67,7 @@ def _report(
         remediation=remediation,
         live_land_process=live_land_process,
         scaffold_blocks=list(scaffold_blocks or []),
+        profile_recommendation=profile_recommendation,
     )
 
 
@@ -360,3 +362,51 @@ class TestDoctorRunnerScaffoldDisclosure:
         doctor_runner.run(_cfg())
         out = capsys.readouterr().out
         assert "scaffold apply" not in out
+
+
+# frob:ticket T-4416
+class TestDoctorRunnerProfileRecommendation:
+    """T-4416: `DoctorReport.profile_recommendation` (advisory-only nudge
+    toward `[profile] profile = "rapid"`) is printed whenever present,
+    on either the healthy or unhealthy path -- orthogonal to `healthy`,
+    unlike the disclosures above."""
+
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_recommendation_printed_when_present  # noqa: E501
+    def test_recommendation_printed_when_present(self, monkeypatch, capsys) -> None:
+        """A healthy report carrying a recommendation string prints it,
+        without affecting the exit code."""
+        import frob.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(
+                healthy=True,
+                remediation=None,
+                profile_recommendation="repo ticket count 5000 > 4200 -- "
+                "consider rapid",
+            ),
+        )
+        doctor_runner.run(_cfg())
+        out = capsys.readouterr().out
+        assert "5000" in out
+        assert "rapid" in out
+
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_no_recommendation_prints_nothing_extra  # noqa: E501
+    def test_no_recommendation_prints_nothing_extra(self, monkeypatch, capsys) -> None:
+        """A report with no recommendation (the common, below-threshold
+        case) prints nothing about profiles at all."""
+        import frob.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(
+                healthy=True, remediation=None, profile_recommendation=None
+            ),
+        )
+        doctor_runner.run(_cfg())
+        out = capsys.readouterr().out
+        assert "rapid" not in out

@@ -1183,9 +1183,121 @@ def _diagnose_unity_toolchain(
     return project, editor
 
 
+# frob:ticket T-4416
+#: T-4416: repo-scale threshold at which `frob doctor`/`frob scaffold new`
+#: RECOMMEND (never force -- see `profile_recommendation`'s own docstring)
+#: `[profile] profile = "rapid"` in `frob.toml`. Measured on this repo
+#: (T-4416's own ticket body): an unscoped `standard`-profile `frob check`
+#: takes 25-45 minutes at ~4200 tickets / ~1400 tracked source files, and
+#: T-4408's land (a comparable scale) measured 50+ minutes single-thread --
+#: `rapid`'s post-T-4413 scoped-synchronous check (diff-touched files plus
+#: direct dependents, unscoped sweep deferred to the batched post-land
+#: pass, CI the unscoped authority) is the profile that scales, so a repo
+#: past this size is told so. Deliberately DISTINCT from `frob.tickets.
+#: _profile`'s `_THRESHOLD_FILE_COUNT`/`_THRESHOLD_TICKET_COUNT` (300/200)
+#: -- that pair drives the one-way DOWNWARD auto-ratchet off of `rapid`'s
+#: PRE-T-4413 meaning (small-repo-only, ceremony-light, risky at scale);
+#: this pair drives an advisory recommendation TOWARD `rapid`'s POST-T-4413
+#: meaning (scoped-synchronous, the profile that scales). Both live because
+#: they answer different questions about the same enum member post-rename;
+#: reconciling the two is out of this ticket's scope (see T-4416's Done
+#: report for the filed follow-up).
+class _ProfileRecommendationThreshold(BaseModel):
+    """One named threshold pair for `profile_recommendation`'s OR check --
+    a `BaseModel` (not a bare tuple) so the measured numbers stay
+    self-documenting at every call site, per this repo's `model_config = {}`
+    convention."""
+
+    model_config = {}
+
+    ticket_count: int
+    file_count: int
+
+
+# frob:ticket T-4416
+#: The module-level `_ProfileRecommendationThreshold` instance
+#: `profile_recommendation` checks against; a distinct symbol from the
+#: class above it, so it carries its own frob:ticket edge.
+_PROFILE_RECOMMEND_THRESHOLD = _ProfileRecommendationThreshold(
+    ticket_count=4200,
+    file_count=1400,
+)
+
+
+# frob:ticket T-4416
+# frob:doc docs/modules/land-profiles.md#land-profiles-rapid-vs-standard-t-4416
+# frob:tests tests/unit/test_doctor.py::TestProfileRecommendation.test_below_threshold_recommends_nothing  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestProfileRecommendation.test_ticket_count_above_threshold_recommends_rapid  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestProfileRecommendation.test_file_count_above_threshold_recommends_rapid  # noqa: E501
+def profile_recommendation(root: Path) -> str | None:
+    """`None` when `root` is at or below `_PROFILE_RECOMMEND_THRESHOLD` on
+    both axes (an OR check -- either axis alone is enough to recommend,
+    matching `frob.tickets._profile`'s own "any ONE threshold" precedent);
+    otherwise a human-readable recommendation string naming which axis
+    tripped and citing the measured numbers, for `frob doctor` and `frob
+    scaffold new`'s frob.toml-writing path to surface. This is ADVISORY
+    ONLY -- it never writes `frob.toml`, never flips `DoctorReport.healthy`,
+    and a repo below threshold is never told to relax anything: `standard`
+    (this repo's existing unscoped-synchronous default, T-4415 declared CI
+    the unscoped authority regardless of profile) stays a reasonable
+    default for a small project, matching this ticket's acceptance
+    criterion 3. Measures via the same two primitives `frob.tickets.
+    _profile` already uses for its own (differently-thresholded, see
+    `_PROFILE_RECOMMEND_THRESHOLD`'s docstring) ratchet check --
+    `frob.excludes.iter_files` for file count and `frob.tickets.load_queue`
+    for open+archived ticket count -- rather than importing that module's
+    private helpers across a package boundary."""
+    from frob.excludes import iter_files
+    from frob.tickets import load_queue
+
+    file_count = len(iter_files(root))
+    loaded = load_queue(root)
+    if loaded.is_err:
+        _log.warning(
+            "doctor: profile_recommendation: load_queue failed (%s), "
+            "ticket-count axis treated as 0",
+            loaded.danger_err,
+        )
+        ticket_count = 0
+    else:
+        ticket_count = len(loaded.danger_ok.tickets)
+
+    if ticket_count > _PROFILE_RECOMMEND_THRESHOLD.ticket_count:
+        return (
+            f"repo ticket count {ticket_count} > "
+            f"{_PROFILE_RECOMMEND_THRESHOLD.ticket_count} -- consider "
+            '`[profile] profile = "rapid"` in frob.toml: standard\'s '
+            "unscoped synchronous check measures 25-45 minutes at this "
+            "scale (T-4416), rapid's scoped-synchronous check (diff plus "
+            "dependents, unscoped sweep deferred to the batched post-land "
+            "pass, CI authoritative) does not"
+        )
+    if file_count > _PROFILE_RECOMMEND_THRESHOLD.file_count:
+        return (
+            f"repo file count {file_count} > "
+            f"{_PROFILE_RECOMMEND_THRESHOLD.file_count} -- consider "
+            '`[profile] profile = "rapid"` in frob.toml: standard\'s '
+            "unscoped synchronous check measures 25-45 minutes at this "
+            "scale (T-4416), rapid's scoped-synchronous check (diff plus "
+            "dependents, unscoped sweep deferred to the batched post-land "
+            "pass, CI authoritative) does not"
+        )
+    _log.debug(
+        "doctor: profile_recommendation: %s below threshold "
+        "(tickets=%d/%d files=%d/%d), no recommendation",
+        root,
+        ticket_count,
+        _PROFILE_RECOMMEND_THRESHOLD.ticket_count,
+        file_count,
+        _PROFILE_RECOMMEND_THRESHOLD.file_count,
+    )
+    return None
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:ticket T-1501
 # frob:ticket T-1515
+# frob:ticket T-4416
 class DoctorReport(BaseModel):
     """Full `frob doctor` diagnosis: per-extension status, derived-artifact
     integrity manifest (T-0570), cross-run content drift (T-0604),
@@ -1238,7 +1350,14 @@ class DoctorReport(BaseModel):
     either field, matching the story's own "no spurious noise" acceptance
     criterion. Neither ever makes `healthy` False: a Unity project with
     no editor located is reported via `unity_editor.present=False`,
-    informational only, per `UnityEditorStatus`'s own docstring."""
+    informational only, per `UnityEditorStatus`'s own docstring.
+    `profile_recommendation` (T-4416) is `None` below `profile_
+    recommendation`'s own `_PROFILE_RECOMMEND_THRESHOLD` on both axes,
+    else a human-readable nudge toward `[profile] profile = "rapid"` --
+    ADVISORY ONLY, like `scaffold_blocks`: never affects `healthy`, and a
+    repo below threshold gets no recommendation at all (a small project's
+    `standard` default is left alone, matching T-4416's acceptance
+    criterion 3)."""
 
     model_config = {}
 
@@ -1258,6 +1377,7 @@ class DoctorReport(BaseModel):
     import_source: ImportSourceStatus | None = None
     unity_project: UnityProjectInfo | None = None
     unity_editor: UnityEditorStatus | None = None
+    profile_recommendation: str | None = None
     healthy: bool
     remediation: str | None = None
 
@@ -1551,6 +1671,7 @@ def _doctor_healthy(
     )
 
 
+# frob:ticket T-4416
 def _assemble_doctor_report(
     resolved_root: Path,
     extensions: list,
@@ -1571,6 +1692,7 @@ def _assemble_doctor_report(
     import_source: ImportSourceStatus | None = None,
     unity_project: UnityProjectInfo | None = None,
     unity_editor: UnityEditorStatus | None = None,
+    profile_recommendation: str | None = None,
 ) -> DoctorReport:
     """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
@@ -1597,7 +1719,8 @@ def _assemble_doctor_report(
     missing `ToolCategory.REQUIRED` entry -- see `ToolCategory`'s own
     docstring for why OPTIONAL/OPTIONAL_FOR_GATE absences never do.
     `unity_project`/`unity_editor` (T-4501) never affect `healthy` --
-    see `DoctorReport`'s own docstring for why."""
+    see `DoctorReport`'s own docstring for why. `profile_recommendation`
+    (T-4416) never affects `healthy` either -- same reasoning."""
     tools = external_tools or []
     missing_required_tools = [
         t for t in tools if t.category == ToolCategory.REQUIRED and not t.present
@@ -1633,6 +1756,7 @@ def _assemble_doctor_report(
         import_source=import_source,
         unity_project=unity_project,
         unity_editor=unity_editor,
+        profile_recommendation=profile_recommendation,
         healthy=healthy,
         remediation=_combined_remediation(
             natives_healthy,
@@ -1658,6 +1782,7 @@ def _assemble_doctor_report(
 # threshold); behavior, inputs, outputs, and the documented contract are all \
 # unchanged, so docs/guides/install.md's own content needs no edit"
 # frob:ticket T-1515
+# frob:ticket T-4416
 def run_diagnosis(root: Path | None = None) -> DoctorReport:
     """Check every entry in `NATIVE_EXTENSIONS` for importability and
     fingerprint every entry in `DERIVED_ARTIFACTS` under `root`, building
@@ -1699,6 +1824,11 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     Editor binary and `dotnet` were located on this machine -- see
     `_diagnose_unity_toolchain`'s own docstring for the project-detection
     gating (a non-Unity repo never attempts Unity detection at all).
+
+    T-4416: also computes `profile_recommendation` -- a nudge toward
+    `[profile] profile = "rapid"` in `frob.toml` once `resolved_root`
+    crosses `_PROFILE_RECOMMEND_THRESHOLD` on ticket or file count, never
+    affecting `healthy` -- see `profile_recommendation`'s own docstring.
     """
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
@@ -1719,6 +1849,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     external_tools = scan_external_tools()
     import_source = _import_source_status(resolved_root)
     unity_project, unity_editor = _diagnose_unity_toolchain(resolved_root)
+    recommendation = profile_recommendation(resolved_root)
 
     report = _assemble_doctor_report(
         resolved_root,
@@ -1740,6 +1871,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         import_source,
         unity_project,
         unity_editor,
+        recommendation,
     )
     _log_doctor_diagnosis(
         report.healthy,

@@ -49,3 +49,38 @@ class TestScaffoldApplyCli:
         out2 = second.stdout + second.stderr
         assert second.returncode == 0, out2
         assert "already current" in out2
+
+
+# frob:ticket T-4416
+class TestScaffoldNewProfileRecommendation:
+    """T-4416: `frob scaffold new` measures the freshly-created project
+    directory the same way `frob doctor` does and only mentions `rapid`
+    if it is already above `frob.doctor._PROFILE_RECOMMEND_THRESHOLD` --
+    a brand new scaffold (a handful of template files, 0 tickets) never
+    is, matching acceptance criterion 3 (never force `rapid` below
+    threshold)."""
+
+    # frob:tests \
+    # tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
+    def test_new_small_project_prints_no_recommendation(self, tmp_path: Path) -> None:
+        # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
+        """A freshly scaffolded `python-library` project is far below
+        `_PROFILE_RECOMMEND_THRESHOLD` on both axes -- `frob scaffold new`
+        prints no `rapid` recommendation for it."""
+        result = subprocess.run(
+            FROB
+            + [
+                "scaffold",
+                "new",
+                "python-library",
+                "tinyproj",
+                "--output",
+                str(tmp_path),
+            ],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        out = result.stdout + result.stderr
+        assert result.returncode == 0, out
+        assert "rapid" not in out

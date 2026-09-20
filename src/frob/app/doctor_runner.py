@@ -23,8 +23,10 @@ _log = get_logger(__name__)
 # frob:ticket T-0448
 # frob:ticket T-0563
 # frob:ticket T-1276
+# frob:ticket T-4416
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:doc docs/modules/render.md#exemplar-frob-doctor
+# frob:doc docs/modules/land-profiles.md#land-profiles-rapid-vs-standard-t-4416
 # frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_plain_prints_all_available_and_does_not_exit  # noqa: E501
 # frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_json_emits_parseable_report  # noqa: E501
 # frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
@@ -55,12 +57,11 @@ def run(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2979
+# frob:ticket T-4416
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_p\
-# ath_raises_stdout_handlers_to_warning_by_default
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_raises_stdout_handlers_to_warning_by_default  # noqa: E501
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_p\
-# ath_leaves_stdout_handlers_alone_under_frob_verbose
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose  # noqa: E501
 def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
     """`run`'s plain (human, non-`--json`, non-`--usage`) path -- extracted
     out of `run` to keep it under ARCH001's 60-line threshold (same move
@@ -104,6 +105,7 @@ def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
 
     _print_orphaned_land_lock_disclosure(r, report)
     _print_scaffold_disclosure(r, report)
+    _print_profile_recommendation(r, report)
 
     if not report.healthy:
         sys.exit(1)
@@ -111,8 +113,7 @@ def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
 
 # frob:ticket T-3725
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plai\
-# n_exits_1_and_prints_remediation
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
 def _print_unhealthy_summary(r: Renderer, report) -> None:
     """`_run_plain`'s unhealthy-branch status line + remediation, extracted
     (T-3725) to keep `_run_plain` under ARCH103's decision-point threshold.
@@ -143,11 +144,9 @@ def _print_unhealthy_summary(r: Renderer, report) -> None:
 
 # frob:ticket T-1634
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.te\
-# st_healthy_report_with_confirmed_dead_holder_prints_self_healing_line
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line  # noqa: E501
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.te\
-# st_healthy_report_with_no_land_lock_prints_nothing_extra
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_no_land_lock_prints_nothing_extra  # noqa: E501
 def _print_orphaned_land_lock_disclosure(r: Renderer, report) -> None:
     """T-1634: extracted out of `run` to keep it under ARCH001's 60-line
     threshold. A confirmed-dead land.lock holder no longer makes the
@@ -167,11 +166,9 @@ def _print_orphaned_land_lock_disclosure(r: Renderer, report) -> None:
 
 # frob:ticket T-3725
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healt\
-# hy_report_with_scaffold_needs_apply_prints_disclosure_line
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line  # noqa: E501
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healt\
-# hy_report_with_no_scaffold_blocks_prints_nothing_extra
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra  # noqa: E501
 # frob:waive DUP001 reason="deliberate structural mirror of this same file's \
 # _print_orphaned_land_lock_disclosure directly above -- both are the identical \
 # 'informational-only finding, disclose on the otherwise-healthy path' shape T-1634 \
@@ -197,6 +194,25 @@ def _print_scaffold_disclosure(r: Renderer, report) -> None:
             "`frob scaffold apply` (informational only, does not affect "
             "the exit code)"
         )
+
+
+# frob:ticket T-4416
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_recommendation_printed_when_present  # noqa: E501
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_no_recommendation_prints_nothing_extra  # noqa: E501
+def _print_profile_recommendation(r: Renderer, report) -> None:
+    """T-4416: print `report.profile_recommendation` (advisory-only nudge
+    toward `[profile] profile = "rapid"` once the repo crosses
+    `frob.doctor._PROFILE_RECOMMEND_THRESHOLD`) whenever present, on both
+    the healthy and unhealthy paths -- unlike `_print_scaffold_disclosure`/
+    `_print_orphaned_land_lock_disclosure` above (both gated on `report.
+    healthy`, since they are self-healing/already-covered-by-remediation
+    findings), a profile recommendation is orthogonal to health and stays
+    worth surfacing either way. Prints nothing when `None` (a repo below
+    threshold, matching T-4416's acceptance criterion 3: never force
+    `rapid`, never even mention it, below the measured threshold)."""
+    if report.profile_recommendation:
+        r.blank()
+        r.write.warn(f"  {report.profile_recommendation}")
 
 
 # frob:ticket T-1360

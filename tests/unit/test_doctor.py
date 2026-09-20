@@ -327,3 +327,92 @@ class TestUnityProjectDiagnosis:
         assert project is None
         assert editor is None
         assert called is False
+
+
+class TestProfileRecommendation:
+    """`profile_recommendation` (T-4416): advisory-only nudge toward
+    `[profile] profile = "rapid"` once `root` crosses `doctor.
+    _PROFILE_RECOMMEND_THRESHOLD` on either the ticket-count or
+    file-count axis; `None` (no recommendation, never force `rapid`)
+    below both -- matching this ticket's acceptance criteria 2/3."""
+
+    def test_below_threshold_recommends_nothing(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_doctor.py::TestProfileRecommendation.test_below_threshold_recommends_nothing  # noqa: E501
+        """A tiny repo (both axes at 0) gets no recommendation at all --
+        acceptance criterion 3: never force `rapid` below threshold."""
+        monkeypatch.setattr("frob.excludes.iter_files", lambda root, **_: ())
+
+        class _EmptyQueue:
+            tickets: tuple = ()
+
+        from typani.result import Ok
+
+        monkeypatch.setattr("frob.tickets.load_queue", lambda root: Ok(_EmptyQueue()))
+        assert doctor.profile_recommendation(tmp_path) is None
+
+    def test_ticket_count_above_threshold_recommends_rapid(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_doctor.py::TestProfileRecommendation.test_ticket_count_above_threshold_recommends_rapid  # noqa: E501
+        """Ticket count alone above `_PROFILE_RECOMMEND_THRESHOLD.
+        ticket_count` is enough to recommend `rapid` (an OR check,
+        matching acceptance criterion 2) -- the message cites the
+        measured ticket count."""
+        monkeypatch.setattr("frob.excludes.iter_files", lambda root, **_: ())
+
+        class _BigQueue:
+            tickets = tuple(range(5000))
+
+        from typani.result import Ok
+
+        monkeypatch.setattr("frob.tickets.load_queue", lambda root: Ok(_BigQueue()))
+        message = doctor.profile_recommendation(tmp_path)
+        assert message is not None
+        assert "5000" in message
+        assert "rapid" in message
+
+    def test_file_count_above_threshold_recommends_rapid(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_doctor.py::TestProfileRecommendation.test_file_count_above_threshold_recommends_rapid  # noqa: E501
+        """File count alone above `_PROFILE_RECOMMEND_THRESHOLD.
+        file_count` is enough to recommend `rapid`, even with zero
+        tickets -- the message cites the measured file count."""
+        monkeypatch.setattr(
+            "frob.excludes.iter_files",
+            lambda root, **_: tuple(Path(f"f{i}.py") for i in range(1500)),
+        )
+
+        class _EmptyQueue:
+            tickets: tuple = ()
+
+        from typani.result import Ok
+
+        monkeypatch.setattr("frob.tickets.load_queue", lambda root: Ok(_EmptyQueue()))
+        message = doctor.profile_recommendation(tmp_path)
+        assert message is not None
+        assert "1500" in message
+        assert "rapid" in message
+
+
+class TestLandProfilesDocMatchesCode:
+    """T-4416 acceptance criterion 1: `docs/modules/land-profiles.md`
+    describes `rapid` as scoped-synchronous (diff plus dependents) and
+    `standard` as unscoped-synchronous (full check), matching their
+    actual post-T-4413 behavior -- a plain text assertion, since the
+    doc's whole job here is to state that correctly in prose."""
+
+    def test_doc_names_rapid_scoped_and_standard_unscoped(self) -> None:
+        # frob:tests tests/unit/test_doctor.py::TestLandProfilesDocMatchesCode.test_doc_names_rapid_scoped_and_standard_unscoped  # noqa: E501
+        doc_path = (
+            Path(__file__).resolve().parents[2]
+            / "docs"
+            / "modules"
+            / "land-profiles.md"
+        )
+        text = doc_path.read_text(encoding="utf-8")
+        assert "rapid = scoped-synchronous" in text
+        assert "standard = unscoped-synchronous" in text
+        assert "diff-touched files plus their DIRECT dependents" in text
