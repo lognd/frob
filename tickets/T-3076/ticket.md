@@ -9,7 +9,7 @@ created: '2026-08-27'
 priority: medium
 parent: T-3505
 tier: ticket
-sprint: null
+sprint: v0.542.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -27,6 +27,12 @@ triage_changes:
   reason: T-3076 is the measured characterization this epic drains to zero for 1.0.0
   actor: logan
   at: '2026-08-30'
+- field: sprint
+  old_value: null
+  new_value: v0.542.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: Record the first real Windows suite measurement, the windows-only cluster
