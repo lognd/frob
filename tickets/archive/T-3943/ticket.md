@@ -93,6 +93,12 @@ body_changes:
   at: '2026-09-06'
   old_length: 5821
   new_length: 8350
+- mode: append
+  reason: condense default-branch resolver history into T-3943 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 8349
+  new_length: 9245
 evidence:
 - tests/test_check_gate_base.py::TestCheckDefaultBase::test_explicit_check_base_wins
 - tests/test_check_gate_base.py::TestCheckDefaultBase::test_falls_back_to_current_branch_not_literal_main
@@ -266,3 +272,18 @@ ADDITIONAL ACCEPTANCE
   uses a different base.
 - The base actually used is reported in the output, so a mismatch is visible
   rather than inferred from surprising findings.
+
+<!-- narrative-moved:src/frob/check/_python.py:1295:T-3943 -->
+T-3943: a bare `frob check` (no `--base`) used to fall back to the
+literal "main" here, so on a repo whose default branch is `dev`
+(this repo, post-T-4496) every symbol in dev's own history since
+main last merged is reported as "changed with no frob:ticket edge"
+-- signal-destroying noise burying real findings (F-173). Route
+through `frob.tickets._land`'s already-canonical
+`_resolve_default_ticket_branch` instead (root's own current
+branch, else `[tool.frob] ticket_land_branch`, else "main" -- the
+same resolver `frob ticket work`/evidence/done-report already use,
+T-4492) so `check`, `close`, `done-report`, and the CI self-gate
+all agree on one answer instead of each hardcoding a second copy
+of the rule. Lazy import: `frob.tickets._land` is a much larger
+module than this gate-dispatch chokepoint needs to pull in eagerly.

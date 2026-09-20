@@ -63,26 +63,7 @@ _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # `frob.lang.TreeNode` with the field-name info this rule needs.
 _TYPE_WRAPPER_LABELS = frozenset({"type", "type_annotation"})
 
-# T-0495: rust/c/cpp place a type node as a direct, unwrapped sibling
-# distinguished only by tree-sitter FIELD NAME, never a wrapper label --
-# verified directly against each grammar's own parse (docs/modules/dup.md
-# #type-hole-classification-t-0287): rust's `parameter` node has a `type`
-# field (`fn f(a: i32)` parses `i32` with field name "type" on a bare
-# `primitive_type` sibling, next to the `pattern` field holding `a`) and
-# its `function_item` node has a SEPARATE `return_type` field for `-> T`
-# (rust's grammar does not reuse "type" for the return position, unlike
-# c); c's `parameter_declaration`/`function_definition` both expose a
-# `type` field directly on the type node for BOTH positions (`int add(int
-# a)` parses the first `int` as field "type" on `function_definition`,
-# the second as field "type" on `parameter_declaration` -- no separate
-# return-type field name); cpp inherits c's grammar shape for this
-# construct. Checking the node's OWN field name (not its parent's label)
-# closes exactly this gap without disturbing python/typescript, whose
-# type node also happens to carry field name "type" on ITS OWN wrapper
-# (`_TYPE_WRAPPER_LABELS` already covers that case via the parent-label
-# rule; the field-name rule below is a strict addition, not a
-# replacement, since python/typescript's hole is the wrapper's unfielded
-# inner child, not the wrapper node itself).
+# see T-0495 for the history behind this
 _TYPE_FIELD_NAMES = frozenset({"type", "return_type"})
 
 

@@ -2,7 +2,7 @@
 id: T-4723
 title: 'Source narrative C6: arch/ check/ clean/ deploy/ dup/ narrative/ perf/ (A-P)
   -- 21 files, 31 runs, 648 lines'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -52,24 +52,43 @@ body_changes:
   at: '2026-09-19'
   old_length: 5284
   new_length: 6243
+evidence:
+- tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+- tests/test_excludes.py::test_is_test_file_by_dir_component
+- tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
     runs longer than 12 consecutive # lines remain in them (the DOCARCH002 default
     cap)'
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+  - tests/test_excludes.py::test_is_test_file_by_dir_component
+  - tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
 - text: given every block that cited a ticket, when the sweep is done, then that narrative
     is readable in that ticket body -- moved, never deleted (T-2994 constraint 1)
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+  - tests/test_excludes.py::test_is_test_file_by_dir_component
+  - tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
 - text: given every block that cited NO ticket, when the sweep is done, then its narrative
     is in this cluster ticket body
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+  - tests/test_excludes.py::test_is_test_file_by_dir_component
+  - tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
 - text: given the whole diff, when git diff -w is taken over non-comment lines, then
     it is empty -- comments only, no behaviour change
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+  - tests/test_excludes.py::test_is_test_file_by_dir_component
+  - tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
 - text: given each batch of frob narrative move calls, when the batch finishes, then
     frob ticket list exits 0 (T-2994 constraint 3, the DuplicateId hazard)
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+  - tests/test_excludes.py::test_is_test_file_by_dir_component
+  - tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
 threat: null
 component: null
 anchor: false

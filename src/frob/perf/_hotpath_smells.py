@@ -190,20 +190,7 @@ _OPEN_BRACKETS = frozenset({"(", "[", "{"})
 _CLOSE_BRACKETS = frozenset({")", "]", "}"})
 
 
-# T-1647: PERF011 used to flag a repo-scan call the instant ANY for/while
-# token appeared earlier in the flattened stream. An audit of every live
-# PERF011 finding on main found this systematically misfired on
-# `for x in <repo-scan-call>(...):` and its comprehension/genexpr
-# equivalents -- that call is the loop's own ITERABLE expression,
-# evaluated exactly ONCE to build the iterator, never "once per
-# iteration" the way the mined T-1207 shape (a call inside the loop
-# BODY) is. 22 of 31 findings were exactly this shape, including one
-# where the "earlier loop" was an unrelated genexpr's own for-clause
-# with no relation to the later, un-looped call it caused to misfire.
-# See `_perf011_repo_scan_in_loop`'s own docstring below for the fix and
-# its one disclosed residual gap (sibling, not nested, loops).
-# frob:ticket T-1225
-# frob:ticket T-1647
+# see T-1647 for the history behind this
 def _perf011_repo_scan_in_loop(symbol: RawSymbol, path: str) -> Violation | None:
     """PERF011: a repo-scan API call (`xref`/`exports_consumers`/
     `iter_files`) called from inside a loop over symbols -- mined from
@@ -300,33 +287,7 @@ def _perf013_repeated_ast_walk(symbol: RawSymbol, path: str) -> Violation | None
     return None
 
 
-# T-1649: PERF014 used to fire the instant THREE OR MORE for/while tokens
-# appeared ANYWHERE earlier in the flattened token stream -- the same
-# flaw T-1647 found and fixed in PERF011 (no way to tell a genuinely
-# nested loop from an earlier, already-CLOSED sibling loop, since a flat
-# token stream carries no block/indent structure). Auditing every live
-# finding found the identical failure class here: `src/frob/gates/
-# _docptr.py::_prose_tokens` (a listcomp's own `for` plus a first,
-# single-level finditer loop, both SEQUENTIAL and preceding a second,
-# genuinely-nested finditer) and `src/frob/gates/_refs.py::
-# _python_import_targets` (two SEQUENTIAL top-level for-loops, each with
-# its own single level of real nesting) both misfired this way.
-#
-# Fixed by dropping the token-stream heuristic entirely and re-parsing
-# the file's real tree-sitter AST (the same substrate `frob.perf.
-# _loop_effects._iter_loop_call_sites` already uses for PERF008, in this
-# same package) to compute each `.finditer(...)` call's REAL ancestor
-# loop-nesting depth -- how many `for_statement`/`while_statement` nodes'
-# own BODY (not header/iterable) actually encloses the call, tracked via
-# a depth-tagged pre-order stack walk. This structurally cannot conflate
-# a sibling with a nested loop (a sibling loop is simply not an ancestor
-# at all) and automatically excludes comprehension/genexpr `for`-clauses
-# (they parse as `for_in_clause` inside `list_comprehension`/`generator_
-# expression`, never `for_statement`, so they were never eligible to
-# begin with -- no separate bracket-depth guard needed, unlike PERF011's
-# token-stream fix, because the AST already carries that distinction).
-#
-# frob:ticket T-1649
+# see T-1649 for the history behind this
 _AST_LOOP_KINDS = frozenset({"for_statement", "while_statement"})
 
 

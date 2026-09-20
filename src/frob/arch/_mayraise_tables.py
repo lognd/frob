@@ -83,19 +83,7 @@ _EXCEPTION_PARENT: dict[str, str | None] = {
     "struct.error": "Exception",
 }
 
-#: Curated builtin-raiser table (T-0685/T-0686): bare callee name -> the
-#: exception type(s) that call is known to be capable of raising, per the
-#: parent ticket's own examples (`int()`/`float()` casts -> `ValueError`,
-#: `getattr` reflection -> `AttributeError`, `open`/file IO -> `OSError`,
-#: `next` on an exhausted iterator -> `StopIteration`). A call whose bare
-#: name matches a row here is treated as RESOLVED (contributes exactly
-#: these types, does not also fall through to the unresolved-callee
-#: `UNKNOWN` path) even though this resolver has no `NormalizedFunction`
-#: body for it to recurse into -- deliberately narrow (see
-#: `frob.arch._mayraise`'s module docstring): every callee name NOT in
-#: this table and NOT a same-module function is fail-closed to `UNKNOWN`,
-#: not silently assumed safe.
-# frob:ticket T-0686
+# see T-0685 for the history behind this
 _BUILTIN_RAISERS: dict[str, frozenset[str]] = {
     # T-2552: `TypeError` deliberately ABSENT from both. `int(x)`/`float(x)`
     # raise it only when `x` is not string/number-shaped at all -- a static
@@ -114,24 +102,7 @@ _BUILTIN_RAISERS: dict[str, frozenset[str]] = {
     "next": frozenset({"StopIteration"}),
 }
 
-#: Curated stdlib C-EXTENSION raiser table (T-0689), keyed on the call's
-#: FULL dotted callee text (`"json.loads"`, not the bare `"loads"`) --
-#: deliberately a SEPARATE, more specific table from `_BUILTIN_RAISERS`
-#: (which matches on bare name): a bare-name match here would risk
-#: shadowing an unrelated same-module function that happens to share a
-#: name with one of these (`def pack(...)` in the caller's own module,
-#: say) the same way `_BUILTIN_RAISERS` already narrowly accepts for true
-#: builtins with no realistic same-module collision. Qualified stdlib
-#: C-extension calls (json's `_json` accelerator, sqlite3's `_sqlite3`,
-#: struct's `_struct`) resolve to their documented raised type instead of
-#: falling through to the opaque-boundary `UNKNOWN` default (this ticket's
-#: user mandate) -- extend as more curated stdlib C-extension surface is
-#: identified; anything NOT listed here (including ctypes/cffi calls,
-#: which have no fixed per-call raised type at all -- see
-#: `frob.arch._mayraise`'s module docstring) stays `UNKNOWN`, fail-closed,
-#: unless covered by a `frob:callee-raises` declaration
-#: (`NormalizedCall.declared_raises`).
-# frob:ticket T-0689
+# see T-0689 for the history behind this
 _STDLIB_QUALIFIED_RAISERS: dict[str, frozenset[str]] = {
     "json.loads": frozenset({"JSONDecodeError"}),
     "json.load": frozenset({"JSONDecodeError"}),

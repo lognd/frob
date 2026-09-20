@@ -61,6 +61,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 3037
   new_length: 3478
+- mode: append
+  reason: condense pinned-severity rationale into T-4447 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3478
+  new_length: 4470
 evidence:
 - tests/unit/test_findings_severity_pinned.py::test_violation_defaults_severity_pinned_false
 - tests/unit/test_findings_severity_pinned.py::test_platform_skip_violation_is_pinned
@@ -80,3 +86,20 @@ MEASURED on the Windows mirror by the T-4444 agent (2026-09-12, ticket failed th
 - 2026-09-12 attempt 1: Undoable as scoped: the fix requires an explicit severity-pin marker set at Violation-construction time. Genuine COV003 ERROR violations (_cov003_evidence_violation, gates/__init__.py:2081) and the platform-skip COV003 WARN verdict (_platform_skip_violation, gates/__init__.py:1984) share identical file/line shape (file=f'tickets/{ticket.id}', line=0) and only differ by severity itself -- the exact thing _apply_severity_overrides must decide whether to change. There is no existing field on Violation (findings.py) that distinguishes a detector-pinned WARN from an ordinary one; many other rules also emit plain Severity.WARN (20+ call sites in gates/__init__.py), so no reliable signature exists within _waive.py alone. A correct fix needs a new Violation field (e.g. severity_pinned: bool) added in src/frob/findings.py and set True by _platform_skip_violation in src/frob/gates/__init__.py -- both outside T-4447's declared scope (src/frob/gates/_waive.py + tests only). Implementing this via message-text matching instead would be a lexical hack, not a structural fix, and was rejected per engineering principles. Requesting scope be widened to include findings.py and gates/__init__.py (the two verdict builders _platform_skip_violation and _test002_platform_skipped), or split into a follow-up ticket with that scope.
 
 DOCARCH001 cleanup note (T-4420): tests/gates_suite/test_severity_overrides_pin.py::test_override_still_escalates_unpinned_warn's docstring used to say: 'T-4447: the pin is precise, not a blanket exemption for the rule -- an ordinary (unpinned) COV003 WARN of the same rule must still be promoted to ERROR when [gates.severity] says so, exactly as before this ticket's fix.' Moved here; the test docstring now states only what it verifies.
+
+<!-- narrative-moved:src/frob/findings.py:110:T-4447 -->
+frob:ticket T-4447
+T-4447: True only when the VERDICT BUILDER itself already chose this
+severity as a deliberate, final answer (currently the COV003/TEST002
+platform-skip WARN verdicts, `_platform_skip_violation` and
+`_test002_platform_skipped` in gates/__init__.py) -- distinct from
+`Severity.UNRESOLVED`, which means "no answer", because a pinned
+violation DOES have an answer (WARN) that must not be re-decided.
+`_apply_severity_overrides` (T-4386's own `[gates.severity]` dial)
+skips pinned violations exactly like it skips UNRESOLVED ones: T-4386
+already established that `[gates.severity]` is a strictness knob for
+a genuine finding, not license to overwrite what a check has already
+settled -- COV003=error/TEST002=error silently re-promoting a
+platform-skip WARN back to ERROR (T-4447) is the same bug in a
+different guise. Left False for every ordinary violation, which
+remains fully subject to `[gates.severity]` as before.

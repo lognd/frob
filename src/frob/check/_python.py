@@ -50,24 +50,7 @@ if TYPE_CHECKING:
 # "warning", "note", "info"]` string alias for `Diagnostic.severity`. Do
 # not conflate the two.
 
-# frob:ticket T-3985
-#: T-3985's subject-count primitive, wired for a PROOF OF CONCEPT of ONE
-#: rule (PROFILE001, T-3941's own proven positive control) -- rule id ->
-#: (probe callable, the rule's hardcoded severity absent any `[gates.
-#: severity]` override). Deliberately NOT a repo-wide rollout: see this
-#: ticket's own scope note ("scope the FIRST landing to the model change
-#: plus the cross-cutting check plus 2-3 gates as a proof of concept").
-#: A rule with no entry here is simply unmigrated -- its family's
-#: `ToolResult.subject_count` stays `None`, never misread as `0`.
-#:
-#: Built lazily by `_subject_count_probes()` (never at import time):
-#: `frob.gates` and `frob.check._python` have a live circular-import
-#: relationship (`frob.gates.__init__` transitively imports back into
-#: this module via `frob.graph`/`frob.check.__init__`), so importing
-#: `frob.gates._profile_boundary`/`frob.gates._waive` at module scope
-#: here breaks `import frob` outright. Every other module-level import
-#: in this file is unaffected; this is the one probe registry that must
-#: stay deferred.
+# see T-3985 for the history behind this
 _SUBJECT_COUNT_PROBES: dict[str, tuple[Callable[[Path], int], _GateSeverity]] | None = (
     None
 )
@@ -1211,6 +1194,7 @@ def _gate_cache_enabled(no_cache: bool) -> bool:
 # frob:ticket T-1346
 # frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_run_gates_passes_use_cache_true_by_default  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_run_gates_no_cache_forces_use_cache_false  # noqa: E501
+# frob:ticket T-4723
 def _run_gates(
     root: Path,
     *,
@@ -1292,19 +1276,7 @@ def _run_gates(
                 replay.partial,
             )
             return _label_replay(list(replay.results), age_s=replay.age_s)
-    # T-3943: a bare `frob check` (no `--base`) used to fall back to the
-    # literal "main" here, so on a repo whose default branch is `dev`
-    # (this repo, post-T-4496) every symbol in dev's own history since
-    # main last merged is reported as "changed with no frob:ticket edge"
-    # -- signal-destroying noise burying real findings (F-173). Route
-    # through `frob.tickets._land`'s already-canonical
-    # `_resolve_default_ticket_branch` instead (root's own current
-    # branch, else `[tool.frob] ticket_land_branch`, else "main" -- the
-    # same resolver `frob ticket work`/evidence/done-report already use,
-    # T-4492) so `check`, `close`, `done-report`, and the CI self-gate
-    # all agree on one answer instead of each hardcoding a second copy
-    # of the rule. Lazy import: `frob.tickets._land` is a much larger
-    # module than this gate-dispatch chokepoint needs to pull in eagerly.
+    # see T-3943 for the history behind this
     from frob.tickets._land import _resolve_default_ticket_branch
 
     resolved_base = base or _resolve_default_ticket_branch(root, None)

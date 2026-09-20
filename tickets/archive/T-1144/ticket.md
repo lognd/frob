@@ -10,6 +10,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/**
 - src/frob/process/parsers/**
@@ -18,6 +22,8 @@ scope:
 - tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/arch/_python.py
@@ -71,6 +77,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-07-28'
+body_changes:
+- mode: append
+  reason: condense ToolResult-family convention rationale into T-1144 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1487
+  new_length: 2831
 evidence:
 - tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_toolresult_returning_group_not_flagged
 - tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_non_toolresult_returning_group_still_flagged
@@ -78,6 +91,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-1124 found two abstraction-opportunity groups that keep firing from
 `frob check --only arch` because the shared signature carries a specific
@@ -103,3 +119,26 @@ detector's specificity heuristic (docs/modules/arch.md) should learn to
 exclude. Scope: src/frob/check/**, src/frob/process/parsers/**,
 docs/modules/arch.md (if the detector itself needs an exclusion) or the
 consuming files (if a real shared helper is extractable).
+
+<!-- narrative-moved:src/frob/arch/_abstraction.py:397:T-1144 -->
+: `frob.process`/`frob.check`'s own check-stage-runner return-type
+: convention (T-1144, filed from T-1124 as the mirror of T-1112's
+: `check_*` registry exclusion and T-1141's gate/rule-builder
+: exclusion): every check-stage runner/tool-result builder across
+: `src/frob/check/**`, `src/frob/process/parsers/**`, and the
+: individual arch/cycle/dup CLI runners returns `ToolResult` or
+: `ToolResult | None`, because `ToolResult` is `frob.process`'s own
+: domain type -- nothing outside the check/process stack constructs
+: one. T-1144's own investigation confirmed the genuine body-level
+: duplication in this area (`_opt_in_deploy_stage_result`,
+: `_missing_tool_result` forwarding to `tool_unavailable_result`) was
+: already extracted by T-1124; what remained across all 4 ToolResult-
+: shaped groups (24 members measured) was purely this same
+: convention-shape false positive, not a further extraction
+: opportunity -- a lone unrelated member like `parse_junit_xml`
+: (real XML-parsing logic that happens to share `(str, str) ->
+: ToolResult` with three trivial synthetic-result builders purely
+: because its `tool` parameter has a default) makes that especially
+: clear: there is no one coherent family to extract here, only the
+: shared return type.
+frob:ticket T-1195

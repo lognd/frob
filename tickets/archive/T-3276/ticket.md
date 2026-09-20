@@ -33,6 +33,13 @@ scope_changes:
   reason: COV001 doc anchor for the new tool-inventory public symbols
   actor: logan
   at: '2026-08-28'
+body_changes:
+- mode: append
+  reason: condense external-tool-inventory rationale into T-3276 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4730
+  new_length: 6610
 evidence:
 - tests/unit/test_doctor.py::TestScanExternalTools::test_present_binary_reports_version
 - tests/unit/test_doctor.py::TestScanExternalTools::test_missing_binary_reports_absent_with_install_hint
@@ -128,3 +135,33 @@ ACCEPTANCE
 - `frob doctor` reports the inventory.
 - All three fixtures present.
 - The scaffolded-CI silent-skip pattern reported.
+
+<!-- narrative-moved:src/frob/doctor.py:795:T-3276 -->
+frob:ticket T-3276
+T-3276: the stated inventory of every external tool frob spawns or
+depends on for a gate to MEASURE something, with its category
+(`ToolCategory`'s own docstring states the rule each category follows)
+and install hint. `kind="binary"` entries are probed via `shutil.which`
++ a best-effort `--version` spawn; `kind="package"` entries are probed
+via `importlib.metadata.version` (they are Python plugins/libraries,
+never spawned as a subprocess themselves -- pytest-xdist and pytest-cov
+are pytest PLUGINS, loaded in-process by pytest, not separate binaries).
+`git`/`uv`/`python`(sys.executable) are REQUIRED: frob cannot run at
+all without a Python interpreter, cannot resolve a repo without git,
+and every `uv run` spawn convention (T-3268's own fix target) needs
+`uv`. `pytest`/`pytest-xdist`/`pytest-cov` are OPTIONAL_FOR_GATE: the
+TEST gate and `frob coverage` need them to MEASURE, but frob itself
+still runs and every other gate still reports normally without them --
+this is the exact F-011 incident (`frob coverage --full` degrading
+silently instead of reporting coverage UNMEASURED). `ruff`/`ty` are
+REQUIRED for the gates that spawn them (T-0142 already gives these a
+loud typed failure on absence; listed here so the inventory is
+complete, not duplicating that fix). Per-language toolchains
+(`cargo`/`npm`/`ctest`/`dotnet`) are OPTIONAL: genuinely per-language,
+silent when the repo does not use that language (LANG003 already
+reports per-language gaps separately from tool presence). `dotnet`
+(T-4501) is the .NET SDK a Unity/C# project's own `.csproj`/`.sln`
+build (as opposed to the Unity *editor* binary itself, which is not a
+PATH-discoverable single-name binary -- see `_locate_unity_editor`)
+may need on the machine; absence is silent for the same reason
+`cargo`/`npm`/`ctest` absence is.

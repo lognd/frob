@@ -78,19 +78,8 @@ from frob.process.parsers.common import Diagnostic, ToolResult
 
 _log = get_logger(__name__)
 
-#: T-3675 (win32 round 18, Part 2): env-gated debug knob, OFF by default
-#: everywhere -- when set to one of "lock"/"detect"/"tasks"/"submit",
-#: `_run_check_with_skips`/`_run_tasks_concurrently` exit the pipeline
-#: cleanly (a trivial successful `CheckResult`/empty results list, with
-#: a `FROB-CHECK-STOP-BEFORE:` breadcrumb naming the point) immediately
-#: before that named stage -- bracketing round-16/17's `executor.submit
-#: -> t.start()` interrupt stack frame one stage at a time. Same posture
-#: as `FROB_DISABLE_EXEC`/`FROB_DISABLE_POOL_PRELOAD`/`FROB_WIN32_
-#: SPAWN_DEBUG` in `src/frob/process/_guard.py`: a real, live knob, never
-#: a no-op stub, but wired into NO default code path -- only a CI diag
-#: step opts in, one point per step, to name which stage the T-3648-
-#: SIGNAL sender lives before/after.
 # frob:doc docs/commands/check.md#ci-diagnostics-pipeline-stop-points
+# see T-3675 for the history behind this
 FROB_CHECK_STOP_BEFORE_ENV = "FROB_CHECK_STOP_BEFORE"
 
 #: The 7 stop points `FROB_CHECK_STOP_BEFORE` recognizes, in pipeline
@@ -110,50 +99,10 @@ _CHECK_STOP_POINTS = (
     "submit",
 )
 
-#: T-3689: env-gated timing-breadcrumb knob, OFF by default everywhere,
-#: sibling to `FROB_CHECK_STOP_BEFORE_ENV` -- where that knob EXITS the
-#: pipeline at a named point, this one keeps running but PRINTS an
-#: elapsed-seconds-since-process-start breadcrumb at every one of the
-#: same `_CHECK_STOP_POINTS` (via `_stop_before_result`'s own call
-#: sites, unconditionally reached regardless of whether the point
-#: matches `FROB_CHECK_STOP_BEFORE`) plus 3 extra sub-phase points
-#: inside `_early_precheck_failure` (T-3256/T-2764/T-3526's own 3
-#: prechecks) that the 7 pipeline-wide stop points cannot see inside
-#: of. Exists because T-3686 fixed the win32 self-interrupt (pid_alive
-#: no longer broadcasts CTRL_C_EVENT) and UNMASKED a second win32
-#: problem the stop-before knob cannot localize on its own: `frob
-#: check` now runs to completion on win32 but a zero-tool-spawn diag
-#: (FROB_DISABLE_EXEC=1) took 122.7s instead of the expected low
-#: single digits (CI run 33615554440). `FROB_CHECK_STOP_BEFORE` only
-#: proves a bracket is clean or dirty by EXITING there -- it cannot
-#: say how long a run that completes anyway took to cross each point.
-#: This flag turns the same 7 points (plus the 3 precheck sub-phases)
-#: into elapsed-time breadcrumbs instead, so the NEXT windows CI run's
-#: `FROB-CHECK-TIMING:` lines localize where the 122s actually goes
-#: without needing a new bisect round per candidate point.
-#:
-#: T-3689: PRIVATE (leading underscore), unlike its public `FROB_CHECK_
-#: STOP_BEFORE_ENV` sibling -- `docs/commands/check.md` (the natural
-#: `frob:doc` home for a public sibling knob) sits outside this
-#: ticket's own declared scope, so this stays undocumented-but-private
-#: rather than public-but-undocumented; documenting it there (and
-#: making it public) is deferred to a follow-up ticket that touches
-#: `docs/commands/check.md`.
+# see T-3689 for the history behind this
 _FROB_CHECK_TIMING_DEBUG_ENV = "FROB_CHECK_TIMING_DEBUG"
 
-#: T-3689: process-start reference `_timing_mark` measures elapsed time
-#: against -- captured once, at import time, which for a `frob check`
-#: CLI invocation (a fresh, single-shot `python`/`uv run` process) is
-#: indistinguishable in practice from "process start" (the gap is
-#: import-resolution time for `frob.check` itself and its transitive
-#: imports, microseconds to low milliseconds, not seconds) -- exactly
-#: the same "one-shot process, import time ~= process start" premise
-#: `frob.check._memo`'s own per-run counters already rely on. A
-#: per-call `time.monotonic()` capture at `_run_check_with_skips`'s own
-#: first line would be marginally more precise but would need
-#: threading a `start` value through every `_stop_before_result` call
-#: site for a precision gain this diagnostic (localizing tens of
-#: seconds, not milliseconds) does not need.
+# see T-3689 for the history behind this
 _TIMING_PROCESS_START = time.monotonic()
 
 
@@ -437,61 +386,7 @@ _TOOL_STAGES = frozenset(
 )
 
 
-# ---------------------------------------------------------------------------
-# T-3256: cross-process, memory-aware admission budget
-# ---------------------------------------------------------------------------
-#
-# MEASURED 2026-08-28 with six agent series live on a 12-core/23GB box: load
-# 35.89, 0GB free, 51 forkserver processes totalling 14.5GB RSS. Every gate
-# worker pool downstream of `run_check` (`frob.gates._run_gates`'s
-# `proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))`,
-# plus `frob.lang`/`frob.graph.cache`'s own `os.cpu_count()`-sized pools)
-# sizes itself against the WHOLE machine's core count with no cross-process
-# awareness -- N concurrent `frob check` runs is an N-fold oversubscription
-# no single one of them is wrong about.
-#
-# THE MECHANISM CHOSEN: `_admission_budget` registers this process in a
-# lightweight cross-process file registry under `.frob/check-admission/`
-# (one small marker per live `frob check` PID, T-3256's "token file"
-# candidate), counts how many OTHER checks are concurrently registered,
-# reads real available memory (`/proc/meminfo`'s `MemAvailable`, Linux
-# only), and derives a per-process worker budget capped by BOTH the real
-# core count and (available memory / a per-worker MB estimate), divided by
-# the concurrent-check count. It then monkeypatches `os.cpu_count()` for
-# the remainder of this process's life (restored on exit) to return that
-# budget -- NOT because patching a stdlib function is the first choice,
-# but because it is the one mechanism that reaches every downstream
-# `os.cpu_count()`-sized pool (`frob.gates`, `frob.lang`, `frob.graph.
-# cache`) WITHOUT editing those modules, which this ticket's scope
-# (`src/frob/check/__init__.py` only) does not permit -- and because in
-# THIS codebase `os.cpu_count()` gates PROCESS COUNT at each of those call
-# sites (not merely a scheduling hint), so shrinking it directly shrinks
-# the number of forkserver workers spawned, addressing the MEASURED
-# memory constraint, not just CPU scheduling (an `os.sched_setaffinity`-
-# only approach would throttle CPU scheduling but leave the same worker
-# COUNT -- and therefore the same RSS -- unchanged).
-#
-# DEGRADE, NEVER REFUSE (T-3256 requirement 2): `_compute_admitted_
-# workers` always returns >= 1; `_admission_budget` only patches
-# `os.cpu_count()` (and only logs) when the admitted budget is actually
-# smaller than the real core count. On an idle box (one check running,
-# ample memory) admitted == real core count, nothing is patched, nothing
-# is logged (MUST-STAY-QUIET). This also satisfies "do not lower the pool
-# size unconditionally" -- the reduction is proportional to OBSERVED
-# concurrent load and OBSERVED available memory, never a fixed cap.
-#
-# OUT OF SCOPE, reported not fixed here (per the ticket's own instruction):
-#   - Whether `fleet_status` can distinguish "N checks fighting over the
-#     box" from "N agents stalled" -- see T-3256's Done report for what was
-#     found; no fleet_status code is touched by this ticket.
-#   - Making `frob ticket land`'s own wall-clock timeout budget-aware
-#     (extending it while its child `frob check` is demonstrably still
-#     progressing) -- a real, distinct fix the coordinator's T-3256 field
-#     evidence (a land killed by its own `timeout 540` wrapper while its
-#     child check was 335s in at 82.8% CPU, not stalled) argues for, but
-#     it touches ticket-land/timeout-wrapper code, not `src/frob/check/
-#     __init__.py` -- filed as a follow-up rather than expanding this
-#     ticket's scope.
+# see T-3256 for the history behind this
 
 #: Rough per-worker memory budget in MiB for a `frob check` gate worker --
 #: derived directly from T-3256's field measurement (14,552MB RSS / 51
@@ -1286,27 +1181,7 @@ def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
     )
 
 
-# frob:ticket T-0627
-#: Named `--only` presets grouping related stages so an agent can budget one
-#: chunk of `frob check` per invocation instead of the full run (T-0627: a
-#: full `--only gates` pass on this repo measured ~113s wall time, over the
-#: ~120s agent foreground cap documented in `docs/guides/agent-playbook.md`
-#: section 3b -- past that cap the harness auto-backgrounds the command and
-#: a dispatched sub-agent stalls forever waiting on a notification that can
-#: never reach it). Membership names are tool names (this module's own
-#: `_TOOL_STAGES`) or gate names (`frob.gates._ALL_GATES`); `_resolve_only`
-#: expands a group alias into its members before doing its existing
-#: gate/tool split, so a group behaves exactly like hand-listing its
-#: members on `--only`. The gate-name split mirrors
-#: `frob.gates._PROCESS_POOL_GATES` (the CPU-bound gates dispatched to a
-#: process pool) vs. the thread-pool remainder: `gates-native`/
-#: `gates-security` each take a few of the CPU-bound giants (measured
-#: comfortably under the 90s per-stage target), `gates-fast` takes every
-#: cheap/I/O-bound gate (also well under budget on its own).
-# frob:ticket T-0788
-# frob:ticket T-0665
-#: `lint`/`static` name tools (this module's own `_TOOL_STAGES`), never
-#: gates, so they are safe to hand-list directly.
+# see T-0627 for the history behind this
 _TOOL_ONLY_STAGE_GROUPS: dict[str, frozenset[str]] = {
     "lint": frozenset({"ruff", "ty"}),
     "static": frozenset({"cycle", "dup", "arch", "bind", "exports"}),

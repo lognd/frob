@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/
 - docs/modules/arch.md
@@ -17,6 +21,8 @@ scope:
 - tests/unit/test_check_budget.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/arch.md
@@ -42,6 +48,13 @@ scope_changes:
     directly
   actor: logan
   at: '2026-07-29'
+body_changes:
+- mode: append
+  reason: condense abstraction-family cross-import history into T-1195 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2970
+  new_length: 3959
 evidence:
 - tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
 - tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference
@@ -51,6 +64,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 ## Description
 
@@ -119,3 +135,19 @@ file-level finding has no symref) -- not every file on this list needs a
 structural split; a disposition is a valid, honest outcome where a real
 split boundary would fragment a genuinely cohesive module (T-1074's own
 precedent for the 7 files it dispositioned rather than split).
+
+<!-- narrative-moved:src/frob/arch/_python.py:1101:T-1195 -->
+T-1195 (LARGE001 residue split): the cross-file abstraction-opportunity
+detection family (signature extraction, dispatch-ref collection, the
+false-positive-family exclusions, near-duplicate clustering, and the
+`_check_abstraction_opportunities` entry point) lives in
+`frob.arch._abstraction`, which imports THIS module's normalized-function
+helpers (`_iter_normalized_functions`/`_iter_py_functions`/
+`_py_build_module`). T-3350: this module used to re-export
+`_abstraction`'s three entry points back under its own name so
+`frob.arch.__init__` could reach them as `_python.X` -- that re-export
+was the ONE back-edge closing a 2-node `frob.arch._abstraction` <->
+`frob.arch._python` CYCLE001 SCC. `frob.arch.__init__` now imports
+`frob.arch._abstraction` directly instead (`_abstraction.X`), so this
+module no longer imports `_abstraction` at all -- the dependency is
+one-directional (`_abstraction` -> `_python`), not mutual.

@@ -170,6 +170,12 @@ body_changes:
   at: '2026-09-06'
   old_length: 5741
   new_length: 7071
+- mode: append
+  reason: condense subject-count probe rationale into T-3985 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7070
+  new_length: 8210
 evidence:
 - tests/unit/test_process.py::TestSubjectCount::test_default_is_none
 - tests/unit/test_process.py::TestSubjectCount::test_populated_zero_is_distinct_from_none
@@ -261,3 +267,23 @@ T-4036 item 4, cross-referenced rather than duplicated -- a further instance of 
 F-273 M-1, cross-referenced rather than refiled -- a SECOND independent instance of T-4025 item 1 (itself appended to this ticket above), now with the MOST CONCRETE proposal yet. VERIFIED: WIRE001 is the closest existing rule and it is explicitly disabled for this shape (see the many frob:waive WIRE001 directives already on this consumer's backend routes) -- so the gap is not that no rule exists, but that the closest rule was deliberately turned off for exactly the case that needed it.
 
 FINDING: COMP-1801..1805 (auth pages) each carry a frob:describes anchor, a frob:doc back-reference, and a passing unit test -- V-model closure satisfied purely by "component exists and is tested" -- while the pages are UNROUTED and unreachable in production. Proposed concrete rule: a frontend WIRE rule asserting every exported page component under pages/** is referenced from a route table, SYMMETRICAL to the backend's existing route-registration check (whatever machinery already verifies a backend route handler is registered, mirror it for frontend page components against their router config). This is the first of the reachability-primitive instances with a fully specified, implementable proposal rather than only a description of the gap -- prioritize it as the design's worked example when this ticket's scope is picked up.
+
+<!-- narrative-moved:src/frob/check/_python.py:53:T-3985 -->
+frob:ticket T-3985
+: T-3985's subject-count primitive, wired for a PROOF OF CONCEPT of ONE
+: rule (PROFILE001, T-3941's own proven positive control) -- rule id ->
+: (probe callable, the rule's hardcoded severity absent any `[gates.
+: severity]` override). Deliberately NOT a repo-wide rollout: see this
+: ticket's own scope note ("scope the FIRST landing to the model change
+: plus the cross-cutting check plus 2-3 gates as a proof of concept").
+: A rule with no entry here is simply unmigrated -- its family's
+: `ToolResult.subject_count` stays `None`, never misread as `0`.
+:
+: Built lazily by `_subject_count_probes()` (never at import time):
+: `frob.gates` and `frob.check._python` have a live circular-import
+: relationship (`frob.gates.__init__` transitively imports back into
+: this module via `frob.graph`/`frob.check.__init__`), so importing
+: `frob.gates._profile_boundary`/`frob.gates._waive` at module scope
+: here breaks `import frob` outright. Every other module-level import
+: in this file is unaffected; this is the one probe registry that must
+: stay deferred.

@@ -203,21 +203,8 @@ ArchCategory = Literal[
     "cpp-noexcept-throws",
 ]
 
-#: T-0687 added `"error"` (previously `warning`/`suggestion`/`info` were
-#: the entire set) for a hard-boundary violation category
-#: (`"cpp-noexcept-throws"`) whose
-#: severity is not advisory -- an escaping exception from a `noexcept`
-#: function is `std::terminate` at runtime, not a recoverable condition a
-#: caller can choose to act on later. Promoting `"error"`-severity
-#: `ArchSuggestion`s into an enforced, unwaivable gate finding (the way
-#: `frob.gates._unwaivable_channel_rules` already does for every OTHER
-#: `ArchCategory`) is `src/frob/gates/**` wiring, out of T-0687's own
-#: declared scope (`src/frob/arch/**`/`src/frob/lang/**`/
-#: `tests/unit/test_arch.py` alone) -- filed as a follow-up, same T-0728
-#: "built and tested first, dispatch wiring landed later" precedent
-#: `frob.arch._exceptions.check_errors_as_values`'s own module docstring
-#: already establishes for exactly this class of scope carve-out.
 # frob:doc docs/modules/arch.md#arch-suggestion
+# see T-0687 for the history behind this
 ArchSeverity = Literal["warning", "suggestion", "info", "error"]
 
 
@@ -264,8 +251,7 @@ class ArchResult(BaseModel):
 
     # frob:ticket T-0588
     # frob:tests \
-    # tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat.test_as_text_clean_p\
-    # roject
+    # tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat.test_as_text_clean_project  # noqa: E501
     def as_text(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         if not self.suggestions:
@@ -283,8 +269,7 @@ class ArchResult(BaseModel):
 
     # frob:ticket T-0588
     # frob:tests \
-    # tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat.test_as_json_has_sug\
-    # gestions_key
+    # tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat.test_as_json_has_suggestions_key  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         return json.dumps(self.model_dump(), indent=2)

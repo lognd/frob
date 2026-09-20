@@ -38,6 +38,13 @@ scope_changes:
     test module
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: condense double-logging root-handler rationale into T-1621 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1624
+  new_length: 2972
 evidence:
 - tests/unit/test_logging_module.py::test_under_pytest_true_in_this_process
 - tests/unit/test_logging_module.py::test_under_pytest_false_without_pytest_in_sys_modules
@@ -62,3 +69,26 @@ Why it is worth fixing rather than tolerating: it doubles the volume of every te
 Fix direction: do not install frob's own stream handlers when running under pytest (pytest's capture is already reporting them), or set propagation so exactly one path reports. Whichever is chosen, assert it: a test that emits one record and asserts it appears exactly once in the captured output.
 
 Also verify, and state the answer in the Done report, whether ordinary CLI invocations double as well. A probe during triage did not produce a warning at all, so the CLI case is UNVERIFIED rather than known-clean -- do not assume it is fine because the pytest path explains the observed instances.
+
+<!-- narrative-moved:src/frob/logging/logger.py:109:T-1621 -->
+T-1621: every record frob logs was appearing TWICE in pytest's
+own report, in two different formats -- not two copies from one
+handler, but ONE record reaching the terminal via two
+INDEPENDENT reporters that both sit on the root logger. Path 1:
+frob's own `_LazyStderrHandler`/`_LazyStdoutHandler` (below)
+write a frob-formatted line straight to `sys.stderr`/`sys.
+stdout`, which pytest's output capturing reports back verbatim
+as "Captured stderr/stdout call". Path 2: pytest's OWN logging-
+capture plugin attaches its own `LogCaptureHandler` directly to
+the root logger for the duration of every test (unconditionally,
+regardless of `log_cli`/dictConfig -- this repo's own dictConfig
+neither installs nor could remove it), and reports the SAME
+record again as "Captured log call" in pytest's own default
+format. Root's own handler list is left empty here rather than
+setting `propagate = False`: `propagate` must stay on so path 2
+(which does not depend on frob's own handlers at all) keeps
+working for `caplog`-based tests, and so a downstream consumer
+of this library who attaches their OWN handler above frob's
+loggers still receives every record -- only frob's OWN
+stdout/stderr handlers are skipped, and only under pytest, where
+path 2 already reports every record on its own.

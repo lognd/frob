@@ -46,6 +46,12 @@ body_changes:
   at: '2026-08-28'
   old_length: 6150
   new_length: 8508
+- mode: append
+  reason: condense cross-process admission-budget rationale into T-3256 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 8487
+  new_length: 12008
 evidence:
 - tests/unit/test_check_admission.py::TestComputeAdmittedWorkers::test_idle_box_admits_full_pool
 - tests/unit/test_check_admission.py::TestComputeAdmittedWorkers::test_six_concurrent_checks_reduce_the_pool
@@ -200,3 +206,60 @@ concurrent pools finish faster), but it does not eliminate the fixed-timeout rac
 coordinator's evidence documents -- a genuinely slow but progressing check under residual
 contention can still be killed at the wall clock. That is a distinct, real fix and is
 filed as a follow-up ticket rather than expanding this one's scope: T-3270.
+
+<!-- narrative-moved:src/frob/check/__init__.py:429:T-3256 -->
+---------------------------------------------------------------------------
+T-3256: cross-process, memory-aware admission budget
+---------------------------------------------------------------------------
+
+MEASURED 2026-08-28 with six agent series live on a 12-core/23GB box: load
+35.89, 0GB free, 51 forkserver processes totalling 14.5GB RSS. Every gate
+worker pool downstream of `run_check` (`frob.gates._run_gates`'s
+`proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))`,
+plus `frob.lang`/`frob.graph.cache`'s own `os.cpu_count()`-sized pools)
+sizes itself against the WHOLE machine's core count with no cross-process
+awareness -- N concurrent `frob check` runs is an N-fold oversubscription
+no single one of them is wrong about.
+
+THE MECHANISM CHOSEN: `_admission_budget` registers this process in a
+lightweight cross-process file registry under `.frob/check-admission/`
+(one small marker per live `frob check` PID, T-3256's "token file"
+candidate), counts how many OTHER checks are concurrently registered,
+reads real available memory (`/proc/meminfo`'s `MemAvailable`, Linux
+only), and derives a per-process worker budget capped by BOTH the real
+core count and (available memory / a per-worker MB estimate), divided by
+the concurrent-check count. It then monkeypatches `os.cpu_count()` for
+the remainder of this process's life (restored on exit) to return that
+budget -- NOT because patching a stdlib function is the first choice,
+but because it is the one mechanism that reaches every downstream
+`os.cpu_count()`-sized pool (`frob.gates`, `frob.lang`, `frob.graph.
+cache`) WITHOUT editing those modules, which this ticket's scope
+(`src/frob/check/__init__.py` only) does not permit -- and because in
+THIS codebase `os.cpu_count()` gates PROCESS COUNT at each of those call
+sites (not merely a scheduling hint), so shrinking it directly shrinks
+the number of forkserver workers spawned, addressing the MEASURED
+memory constraint, not just CPU scheduling (an `os.sched_setaffinity`-
+only approach would throttle CPU scheduling but leave the same worker
+COUNT -- and therefore the same RSS -- unchanged).
+
+DEGRADE, NEVER REFUSE (T-3256 requirement 2): `_compute_admitted_
+workers` always returns >= 1; `_admission_budget` only patches
+`os.cpu_count()` (and only logs) when the admitted budget is actually
+smaller than the real core count. On an idle box (one check running,
+ample memory) admitted == real core count, nothing is patched, nothing
+is logged (MUST-STAY-QUIET). This also satisfies "do not lower the pool
+size unconditionally" -- the reduction is proportional to OBSERVED
+concurrent load and OBSERVED available memory, never a fixed cap.
+
+OUT OF SCOPE, reported not fixed here (per the ticket's own instruction):
+  - Whether `fleet_status` can distinguish "N checks fighting over the
+    box" from "N agents stalled" -- see T-3256's Done report for what was
+    found; no fleet_status code is touched by this ticket.
+  - Making `frob ticket land`'s own wall-clock timeout budget-aware
+    (extending it while its child `frob check` is demonstrably still
+    progressing) -- a real, distinct fix the coordinator's T-3256 field
+    evidence (a land killed by its own `timeout 540` wrapper while its
+    child check was 335s in at 82.8% CPU, not stalled) argues for, but
+    it touches ticket-land/timeout-wrapper code, not `src/frob/check/
+    __init__.py` -- filed as a follow-up rather than expanding this
+    ticket's scope.

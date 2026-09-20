@@ -38,6 +38,14 @@ scope_changes:
     2) gating logic
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: condense STOP_BEFORE env-knob rationale into T-3675 body, keep frob:doc
+    anchor
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5881
+  new_length: 6753
 evidence:
 - tests/test_ci_workflow_matrix.py::TestWindowsTestStepMitigationsStayPinned::test_test_step_sets_frob_test_hard_exit
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_false_when_env_unset
@@ -228,3 +236,17 @@ sub-variant steps) + tests/test_ci_workflow_matrix.py + docs/modules/
 process.md.
 Explicitly OUT of scope (do not touch): src/frob/graph/cache.py,
 tests/gates_suite/**, src/frob/refactor/**.
+
+<!-- narrative-moved:src/frob/check/__init__.py:81:T-3675 -->
+: T-3675 (win32 round 18, Part 2): env-gated debug knob, OFF by default
+: everywhere -- when set to one of "lock"/"detect"/"tasks"/"submit",
+: `_run_check_with_skips`/`_run_tasks_concurrently` exit the pipeline
+: cleanly (a trivial successful `CheckResult`/empty results list, with
+: a `FROB-CHECK-STOP-BEFORE:` breadcrumb naming the point) immediately
+: before that named stage -- bracketing round-16/17's `executor.submit
+: -> t.start()` interrupt stack frame one stage at a time. Same posture
+: as `FROB_DISABLE_EXEC`/`FROB_DISABLE_POOL_PRELOAD`/`FROB_WIN32_
+: SPAWN_DEBUG` in `src/frob/process/_guard.py`: a real, live knob, never
+: a no-op stub, but wired into NO default code path -- only a CI diag
+: step opts in, one point per step, to name which stage the T-3648-
+: SIGNAL sender lives before/after.

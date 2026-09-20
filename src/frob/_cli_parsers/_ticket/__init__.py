@@ -170,6 +170,7 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
+# frob:ticket T-4723
 def _add_ticket_parser(sub) -> None:
     """Register the `frob ticket` subcommand and its arguments."""
     ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")
@@ -189,21 +190,7 @@ def _add_ticket_parser(sub) -> None:
     path_parsers = _add_ticket_query_parsers(ticket_sub)
     path_parsers += _add_ticket_lifecycle_parsers(ticket_sub)
 
-    # T-4521: `admin` groups the disaster-recovery-only verbs (renumber/
-    # restore/reconcile) under one help heading. `renumber`/`reconcile`
-    # are registered fresh here via the same builders their now-hidden
-    # top-level aliases use (`_add_ticket_lifecycle_parsers`, above,
-    # already built and SUPPRESS-hid those). `restore` cannot be
-    # rebuilt the same way -- its builder lives in
-    # `_closeout_evidence.py`, under a concurrent ticket's file lease --
-    # so the ALREADY-BUILT top-level `restore` parser object (registered
-    # by `_add_ticket_lifecycle_parsers` above, via
-    # `_add_ticket_fail_evidence_archive_parsers`) is reused verbatim
-    # under `admin` too: the same `ArgumentParser` instance is shared
-    # between both subparsers registries, which is safe (argparse
-    # actions carry no back-reference to their owning subparsers
-    # action), and byte-for-byte identical to the old top-level verb by
-    # construction, not by re-implementation.
+    # see T-4521 for the history behind this
     admin_sub, admin_leaf_parsers = _add_ticket_admin_parser(ticket_sub)
     ticket_restore_p = ticket_sub.choices.get("restore")
     if ticket_restore_p is not None:

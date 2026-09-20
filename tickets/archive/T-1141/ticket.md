@@ -10,11 +10,24 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: condense gate/rule-builder convention rationale into T-1141 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2759
+  new_length: 4136
 evidence:
 - tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_violation_returning_group_not_flagged
 - tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_non_violation_returning_group_still_flagged
@@ -22,6 +35,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Filed from T-1114 (triage of the 29 gates/ abstraction-opportunity
 findings T-1082 handed off, after T-1112's identical precedent for
@@ -66,3 +82,25 @@ exclusion mechanism (already proposed for the check_* registry family
 in T-1112) to also recognize a package's own established gate/rule-
 builder return-type convention, so this class of finding does not need
 re-triaging by hand every time a gates/ split ticket re-measures.
+
+<!-- narrative-moved:src/frob/arch/_abstraction.py:361:T-1141 -->
+: `frob.gates`'s own gate/rule-builder return-type convention (T-1141,
+: filed from T-1114 as the mirror of T-1112's `check_*` registry
+: exclusion): every gate function (`*_gate`) and every rule-builder
+: helper it dispatches to (`_tick001_duplicate_ids`, `_cov001`,
+: `_test006`, `_inv005`, and dozens of siblings across gates/__init__.py
+: and its `_*.py` split modules) returns one of these three shapes --
+: `Violation`, `list[Violation]`, or `tuple[Violation, ...]` -- because
+: `Violation` is `frob.gates`'s own domain type: nothing outside the
+: gates package constructs one. A shared return type built entirely from
+: `Violation`/collections of it is therefore the intentional common gate/
+: rule-builder contract this package registers every check through, the
+: same shape `_is_check_registry_family` already carves out for
+: `frob.arch`'s own `check_*`/`run_*_checks` convention -- not duplicate
+: logic, regardless of how many members happen to share it or what they
+: are individually named (a structural discriminator, mirroring
+: `_is_language_parity_family`'s per-language tag check, rather than a
+: name-pattern one like `_is_check_registry_family`'s, since gate/rule-
+: builder names do not share one fixed prefix/suffix convention the way
+: `check_*`/`run_*_checks` do).
+frob:ticket T-1195

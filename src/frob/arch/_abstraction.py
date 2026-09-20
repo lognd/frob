@@ -231,21 +231,7 @@ def _is_dispatch_family(
 # frob:ticket T-1195
 _LANGUAGE_TAGS = ("py", "rust", "kt", "ts", "cpp")
 
-#: T-1181 (refiled from the T-1083 disposition, w20-arch a8085d7f): a
-#: same-signature parity family sometimes spells its per-language segment
-#: out in FULL (`python`/`typescript`/`kotlin`/`cplusplus`) rather than
-#: `_LANGUAGE_TAGS`' short form (`collect_python_tests`/
-#: `collect_typescript_tests`/... in `frob.testing._collect*`) -- the short
-#: form alone never matches `python` as a whole underscore-delimited
-#: segment (it is not a substring of any short tag), so these genuinely-
-#: parity families fell through uncaught and polluted the abstraction-
-#: opportunity count as false positives. This maps each long form to its
-#: canonical short tag so `_language_tag` normalizes both spellings to the
-#: SAME identity before the distinctness check in
-#: `_is_language_parity_family` runs -- `rust`/`cpp` have no separate long
-#: form in this codebase's own naming convention, so they are omitted
-#: rather than guessed at.
-# frob:ticket T-1195
+# see T-1181 for the history behind this
 _LANGUAGE_TAG_SYNONYMS = {
     "python": "py",
     "typescript": "ts",
@@ -319,23 +305,7 @@ def _is_language_parity_family(members: list[tuple[str, str]]) -> bool:
     return len(set(tags)) == len(tags)
 
 
-#: `frob.arch`'s own detector-registry naming convention (T-1112, filed
-#: from T-1084): every `check_*` function across the package (`_python.py`,
-#: `_rust.py`, `_typescript.py`, `_async_hazards.py`, and siblings) is a
-#: detector plugged into the SAME `(NormalizedModule) -> list[ArchSuggestion]`
-#: registry contract -- the arity mismatch is why a signature-shape check
-#: alone cannot tell these apart from a real duplication (a handful of
-#: `check_*` detectors take an extra param), so this is name-based, like
-#: `_is_dispatch_family`/`_is_language_parity_family`'s own checks, never
-#: raw text proximity. Measured empirically (T-1112) to also need each
-#: family's own top-level `run_*_checks` aggregator (e.g. `_smells.py`'s
-#: `run_smell_checks`, `_srp.py`'s `run_srp_checks`) alongside the bare
-#: `check_*` detectors themselves -- an aggregator has the exact same
-#: `(NormalizedModule) -> list[ArchSuggestion]` shape as the detectors it
-#: calls (it just concatenates their results), so the same 27-member group
-#: this ticket was filed to exclude is ~20 `check_*` detectors plus 7
-#: `run_*_checks` aggregators, not `check_*` alone.
-# frob:ticket T-1195
+# see T-1112 for the history behind this
 _CHECK_REGISTRY_NAME_RE = re.compile(r"^(check_[a-z_]+|run_[a-z_]+_checks)$")
 
 
@@ -358,26 +328,7 @@ def _is_check_registry_family(members: list[tuple[str, str]]) -> bool:
     return all(_CHECK_REGISTRY_NAME_RE.match(fname) for _, fname in members)
 
 
-#: `frob.gates`'s own gate/rule-builder return-type convention (T-1141,
-#: filed from T-1114 as the mirror of T-1112's `check_*` registry
-#: exclusion): every gate function (`*_gate`) and every rule-builder
-#: helper it dispatches to (`_tick001_duplicate_ids`, `_cov001`,
-#: `_test006`, `_inv005`, and dozens of siblings across gates/__init__.py
-#: and its `_*.py` split modules) returns one of these three shapes --
-#: `Violation`, `list[Violation]`, or `tuple[Violation, ...]` -- because
-#: `Violation` is `frob.gates`'s own domain type: nothing outside the
-#: gates package constructs one. A shared return type built entirely from
-#: `Violation`/collections of it is therefore the intentional common gate/
-#: rule-builder contract this package registers every check through, the
-#: same shape `_is_check_registry_family` already carves out for
-#: `frob.arch`'s own `check_*`/`run_*_checks` convention -- not duplicate
-#: logic, regardless of how many members happen to share it or what they
-#: are individually named (a structural discriminator, mirroring
-#: `_is_language_parity_family`'s per-language tag check, rather than a
-#: name-pattern one like `_is_check_registry_family`'s, since gate/rule-
-#: builder names do not share one fixed prefix/suffix convention the way
-#: `check_*`/`run_*_checks` do).
-# frob:ticket T-1195
+# see T-1141 for the history behind this
 _GATE_RULE_BUILDER_RETURN_TYPES = frozenset(
     {"Violation", "list[Violation]", "tuple[Violation, ...]"}
 )
@@ -394,27 +345,7 @@ def _is_gate_rule_builder_family(ret: str) -> bool:
     return ret in _GATE_RULE_BUILDER_RETURN_TYPES
 
 
-#: `frob.process`/`frob.check`'s own check-stage-runner return-type
-#: convention (T-1144, filed from T-1124 as the mirror of T-1112's
-#: `check_*` registry exclusion and T-1141's gate/rule-builder
-#: exclusion): every check-stage runner/tool-result builder across
-#: `src/frob/check/**`, `src/frob/process/parsers/**`, and the
-#: individual arch/cycle/dup CLI runners returns `ToolResult` or
-#: `ToolResult | None`, because `ToolResult` is `frob.process`'s own
-#: domain type -- nothing outside the check/process stack constructs
-#: one. T-1144's own investigation confirmed the genuine body-level
-#: duplication in this area (`_opt_in_deploy_stage_result`,
-#: `_missing_tool_result` forwarding to `tool_unavailable_result`) was
-#: already extracted by T-1124; what remained across all 4 ToolResult-
-#: shaped groups (24 members measured) was purely this same
-#: convention-shape false positive, not a further extraction
-#: opportunity -- a lone unrelated member like `parse_junit_xml`
-#: (real XML-parsing logic that happens to share `(str, str) ->
-#: ToolResult` with three trivial synthetic-result builders purely
-#: because its `tool` parameter has a default) makes that especially
-#: clear: there is no one coherent family to extract here, only the
-#: shared return type.
-# frob:ticket T-1195
+# see T-1144 for the history behind this
 _TOOL_RESULT_BUILDER_RETURN_TYPES = frozenset({"ToolResult", "ToolResult | None"})
 
 
@@ -631,20 +562,12 @@ def _abstraction_group_evidence(
     return _near_duplicate_cluster(members_with_body)
 
 
-#: T-1182 (refiled from the T-1083 disposition, w20-arch a8085d7f): the
-#: token budget a call-through forwarder's serialized body
-#: (`_body_fingerprint`/`_serialize_py_body`) may spend before it no
-#: longer reads as "single statement". `RenderWriter.heading`'s body --
-#: `self . _emit ( heading ( _v0 , color = self . color ) )` -- is 14
-#: tokens; this is a generous but still narrow ceiling meant to admit
-#: exactly that shape (one attribute-chain call wrapping one delegated
-#: call, at most a couple of keyword arguments), not an arbitrary
-#: multi-statement body that merely happens to mention its own name.
 # frob:waive PII012 reason="'token' here means a normalized body-fingerprint lexical \
 # token (_serialize_py_body's output), not a credential/auth token -- a name-signature \
 # false positive, same class as frob.outline's existing PII012 waiver for its own \
 # unrelated lexical-token vocabulary"
 # frob:ticket T-1195
+# see T-1182 for the history behind this
 _FORWARDER_BODY_TOKEN_LIMIT = 20
 
 

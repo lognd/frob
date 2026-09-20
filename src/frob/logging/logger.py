@@ -10,20 +10,7 @@ from pathlib import Path
 _CONFIG_PATH = Path(__file__).parent / "config.toml"
 _initialized = False
 
-# T-2979: the documented escape hatch back to full DEBUG chatter
-# (`gitio: spawning ...`, `process: spawning ...`, `tickets: v2 index
-# cache hit`, `is_baseline_stale: ...` and friends) -- see also `frob`'s
-# global `-v`/`--verbose` flag, which sets `FROB_VERBOSE` before any
-# logger is first touched (src/frob/__main__.py). `FROB_VERBOSE=1` is
-# reused deliberately rather than inventing a second knob: T-2582 already
-# wired it through `frob.logging.quiet.quiet_query_stdout` as the escape
-# hatch for 8 human-mode query runners (debt/deprecated/exports/fleet/
-# gitlog/mutate/outline/xref), which unconditionally suppress stdout-bound
-# INFO/DEBUG to WARNING otherwise -- `-v` needs to disarm THAT suppression
-# too, not just raise the base handler level, or it would restore
-# nothing for any of those 8 commands. `FROB_LOG_LEVEL=<name>` is also
-# read, for a caller who wants a specific level (e.g. `INFO`) rather than
-# the `-v` default of full `DEBUG`.
+# see T-2979 for the history behind this
 _VERBOSE_ENV_VAR = "FROB_VERBOSE"
 _LOG_LEVEL_ENV_VAR = "FROB_LOG_LEVEL"
 # T-3263: opt-in escape hatch for a test that deliberately wants frob's OWN
@@ -106,27 +93,7 @@ def _init() -> None:
     # frob:waive SEC110 reason="FROB_FORCE_LOG_HANDLERS is a boolean test-harness \
     # opt-in, not a secret"
     if _under_pytest() and os.environ.get(_FORCE_HANDLERS_ENV_VAR) != "1":
-        # T-1621: every record frob logs was appearing TWICE in pytest's
-        # own report, in two different formats -- not two copies from one
-        # handler, but ONE record reaching the terminal via two
-        # INDEPENDENT reporters that both sit on the root logger. Path 1:
-        # frob's own `_LazyStderrHandler`/`_LazyStdoutHandler` (below)
-        # write a frob-formatted line straight to `sys.stderr`/`sys.
-        # stdout`, which pytest's output capturing reports back verbatim
-        # as "Captured stderr/stdout call". Path 2: pytest's OWN logging-
-        # capture plugin attaches its own `LogCaptureHandler` directly to
-        # the root logger for the duration of every test (unconditionally,
-        # regardless of `log_cli`/dictConfig -- this repo's own dictConfig
-        # neither installs nor could remove it), and reports the SAME
-        # record again as "Captured log call" in pytest's own default
-        # format. Root's own handler list is left empty here rather than
-        # setting `propagate = False`: `propagate` must stay on so path 2
-        # (which does not depend on frob's own handlers at all) keeps
-        # working for `caplog`-based tests, and so a downstream consumer
-        # of this library who attaches their OWN handler above frob's
-        # loggers still receives every record -- only frob's OWN
-        # stdout/stderr handlers are skipped, and only under pytest, where
-        # path 2 already reports every record on its own.
+        # see T-1621 for the history behind this
         cfg["root"]["handlers"] = []
     logging.config.dictConfig(cfg)
     _initialized = True

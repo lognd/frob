@@ -9,11 +9,24 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: condense check-registry convention rationale into T-1112 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3391
+  new_length: 4610
 evidence:
 - tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged
 - tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged
@@ -21,6 +34,9 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Filed from T-1084 (triage of the 27 arch-package abstraction-opportunity
 findings T-1067 handed off). After reading every one of the 27 groups'
@@ -75,3 +91,22 @@ name/structure-based, never raw text proximity). Re-measure
 `abstraction-opportunity` count after landing and confirm the drop is
 exactly the check-registry groups, mirroring T-1068's own before/after
 methodology.
+
+<!-- narrative-moved:src/frob/arch/_abstraction.py:322:T-1112 -->
+: `frob.arch`'s own detector-registry naming convention (T-1112, filed
+: from T-1084): every `check_*` function across the package (`_python.py`,
+: `_rust.py`, `_typescript.py`, `_async_hazards.py`, and siblings) is a
+: detector plugged into the SAME `(NormalizedModule) -> list[ArchSuggestion]`
+: registry contract -- the arity mismatch is why a signature-shape check
+: alone cannot tell these apart from a real duplication (a handful of
+: `check_*` detectors take an extra param), so this is name-based, like
+: `_is_dispatch_family`/`_is_language_parity_family`'s own checks, never
+: raw text proximity. Measured empirically (T-1112) to also need each
+: family's own top-level `run_*_checks` aggregator (e.g. `_smells.py`'s
+: `run_smell_checks`, `_srp.py`'s `run_srp_checks`) alongside the bare
+: `check_*` detectors themselves -- an aggregator has the exact same
+: `(NormalizedModule) -> list[ArchSuggestion]` shape as the detectors it
+: calls (it just concatenates their results), so the same 27-member group
+: this ticket was filed to exclude is ~20 `check_*` detectors plus 7
+: `run_*_checks` aggregators, not `check_*` alone.
+frob:ticket T-1195

@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/**
 - src/frob/graph/dsl.py
@@ -18,6 +22,15 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: condense branch-node complexity-proxy rationale into T-0289 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1349
+  new_length: 2562
 evidence:
 - tests/test_arch_gate.py::TestArchComplexityAware::test_flat_long_function_not_flagged
 - tests/test_arch_gate.py::TestArchComplexityAware::test_complex_long_function_flagged
@@ -45,5 +58,26 @@ acceptance:
   evidence: []
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 User asked my opinion on per-function arch overrides. Opinion, recorded as the design: YES, worth having, but only if built the frob way. (1) Overrides belong AT THE CODE as reasoned frob:waive-style directives, not in central config -- a qualname table in frob.toml rots silently on rename and hides the exception from the reader; an in-comment waiver travels with the function and justifies the exception at its site, matching every other frob waiver. (2) It must be a WAIVER (counted, auditable, reason-required), never a silent mute -- an un-reasoned override is rejected like a reason-less frob:waive. (3) Prefer a justified CEILING bump over a boolean allow-long: a 45-line match waived to 50 still re-fires if it balloons to 200, keeping the exception honest. (4) Do NOT sanction raising the global threshold -- that is exactly the lazy-developer escape the tool exists to prevent. (5) MOST valuable half: make the heuristic complexity-aware so the bulk of false positives never fire -- a long-but-FLAT function (one match/dict-literal, shallow nesting, low cyclomatic) is not the smell the rule targets; only long-AND-complex is. Auto-exempt flat, require a reasoned waiver for the complex-but-justified residue. This also relieves the arch<->dup tension (T-0288): stop forcing atomic bodies to shatter into helpers that then hide/duplicate.
+
+<!-- narrative-moved:src/frob/arch/_python.py:61:T-0289 -->
+T-0289: the long-function rule must be complexity-aware, not just line-count
+aware -- a long-but-FLAT function (linear setup+asserts, a big match/case,
+a literal dispatch table) is not the smell the rule targets; only
+long-AND-complex fires. `_BRANCH_NODE_TYPES` is a cheap McCabe-style
+decision-point proxy computed off the existing tree-sitter parse (no new
+dependency): `if_statement` (python's grammar folds an entire if/elif/else
+chain into ONE `if_statement` node with `elif_clause` children, so a long
+elif dispatch chain scores the same as a single `if`, deliberately -- see
+below), `for_statement`/`while_statement` (loops), `except_clause`
+(exception branches), `boolean_operator` (`and`/`or` short-circuit
+branches), and `conditional_expression` (the ternary `a if b else c`).
+`match_statement`/`case_clause` are deliberately EXCLUDED: a match/case is
+the canonical flat-dispatch shape this rule must NOT punish, and (unlike
+python's if/elif folding) each `case_clause` is tree-sitter's own separate
+node, so counting them would make the exact "big match/case" case the
+ticket calls out score as maximally complex -- the opposite of intent.

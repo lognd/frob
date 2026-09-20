@@ -10,6 +10,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/**
 - src/frob/app/check_runner.py
@@ -20,6 +24,8 @@ scope:
 - docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/system/test_cli_check.py
@@ -57,6 +63,13 @@ scope_changes:
     and refusal alongside the agent playbook
   actor: logan
   at: '2026-07-22'
+body_changes:
+- mode: append
+  reason: condense --only preset grouping rationale into T-0627 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 999
+  new_length: 2358
 evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_only_list_prints_stages_and_returns
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_bare_check_refuses_under_frob_agent
@@ -81,5 +94,31 @@ acceptance:
   - tests/system/test_cli_check.py::TestCheckAgentRefusal::test_bare_check_refused_under_frob_agent
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Recurring dispatch friction, 4 occurrences in one session (T-0554, T-0261, T-0435, T-0609 agents): a full frob check / --stamp-baseline run exceeds the 120s agent foreground cap, the harness auto-backgrounds it, the sub-agent ends its turn waiting for a notification that can never reach it (playbook 3b), and the mission stalls until a coordinator manually pokes it. The playbook documents the anti-pattern but agents keep tripping because there is no sanctioned fast path. Provide one: either (a) a "frob check --stage NAME" chunked invocation where each stage reliably completes under ~90s so agents can loop stages in-foreground, or (b) a "--budget SECONDS" mode that runs as many gates as fit and reports the remainder as explicitly-not-run, or (c) make --stamp-baseline itself incremental. Update the agent playbook section 3b/6 with the sanctioned invocation once it exists. Related but distinct: T-0581 (process-pool parallelism), T-0582 (perf re-measurement), T-0584 (PRE001 sweep timeout).
+
+<!-- narrative-moved:src/frob/check/__init__.py:1278:T-0627 -->
+frob:ticket T-0627
+: Named `--only` presets grouping related stages so an agent can budget one
+: chunk of `frob check` per invocation instead of the full run (T-0627: a
+: full `--only gates` pass on this repo measured ~113s wall time, over the
+: ~120s agent foreground cap documented in `docs/guides/agent-playbook.md`
+: section 3b -- past that cap the harness auto-backgrounds the command and
+: a dispatched sub-agent stalls forever waiting on a notification that can
+: never reach it). Membership names are tool names (this module's own
+: `_TOOL_STAGES`) or gate names (`frob.gates._ALL_GATES`); `_resolve_only`
+: expands a group alias into its members before doing its existing
+: gate/tool split, so a group behaves exactly like hand-listing its
+: members on `--only`. The gate-name split mirrors
+: `frob.gates._PROCESS_POOL_GATES` (the CPU-bound gates dispatched to a
+: process pool) vs. the thread-pool remainder: `gates-native`/
+: `gates-security` each take a few of the CPU-bound giants (measured
+: comfortably under the 90s per-stage target), `gates-fast` takes every
+: cheap/I/O-bound gate (also well under budget on its own).
+frob:ticket T-0788
+frob:ticket T-0665
+: `lint`/`static` name tools (this module's own `_TOOL_STAGES`), never
+: gates, so they are safe to hand-list directly.

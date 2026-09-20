@@ -134,28 +134,7 @@ class DupResult(BaseModel):
 # File scanning
 # ---------------------------------------------------------------------------
 
-#: T-2970: a directory-prefix-scoped floor layered ON TOP of the repo-wide
-#: `min_lines` default (never below it -- see `_effective_min_lines`).
-#: T-2955's triage of the unscoped `tests/` frob-dup cluster (480 unwaived
-#: groups, measured 2026-08-26) spot-checked 4 large/varied groups and
-#: found all 4 to be deliberate fixture/arrange-block repetition (a test's
-#: own setup calls -- `write_text(...)`, dict/tuple construction -- echoing
-#: a sibling test's setup), not shared-logic debt. A repo-wide measurement
-#: (T-2970) of the full 480-group population found the same shape
-#: dominates the small end: 391 of 480 groups (81%) are under 20 lines,
-#: the range where a short arrange-block or a handful of near-identical
-#: assertion calls trivially exceeds the repo-wide `min_lines=6` floor by
-#: sheer repetition of `frob check`/`assert`-shaped test scaffolding
-#: without encoding any independently-reusable LOGIC. Raising `tests/`'s
-#: own floor to 20 retires that population while leaving every group at or
-#: above 20 lines -- including every one of T-2955's 4 sampled groups
-#: (47-50 lines each) -- still individually reviewable, not silently
-#: exempted. This is deliberately NOT a blanket `tests/` exclusion (T-0375's
-#: own history shows real test-helper duplication exists and does desync)
-#: and NOT a per-group waiver at 480x volume (its own debt) -- see this
-#: module's `find_duplicates` docstring and
-#: `tests/unit/test_dup.py::TestTestsDirectoryFloor` for the positive
-#: control proving a genuine >=20-line test-helper duplicate still fires.
+# see T-2970 for the history behind this
 _MIN_LINES_OVERRIDES: tuple[tuple[str, int], ...] = (("tests/", 20),)
 
 

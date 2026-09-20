@@ -300,6 +300,13 @@ scope_changes:
   reason: 'COV001: doc anchor for the extracted frob.nodeid.symref_to_nodeid'
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: condense CYCLE001 SCC-history investigation into T-3350 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2868
+  new_length: 5092
 evidence:
 - tests/system/test_cli_cycle.py::test_toplevel_two_module_cycle_fires
 - tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire
@@ -371,3 +378,41 @@ assumed.
 Not a release blocker: the cycle is waived (well, tracked as debt as of
 T-2667's close) and was not among the 213 CI-hard release-blocking
 errors. Scheduled for post-1.0.0.
+
+<!-- narrative-moved:src/frob/__init__.py:16:T-3350 -->
+T-3350 (superseding T-2363/T-2667's SUPERSEDED analysis below): the
+160/185/282-node CYCLE001 SCC every earlier investigation on this file
+measured was a MEASUREMENT ARTIFACT, not a real import-time cycle --
+`frob.check._python._build_import_graph` (and `frob cycle`'s own
+`frob.app.cycle_runner`) were counting function/method/class-body-local
+imports and `if TYPE_CHECKING:` imports as import-time edges, when
+deferring an import is the STANDARD REMEDY for a cycle, not a second
+occurrence of one. Fixed at the source (`frob.lang._extract.
+extract_import_edges`, T-3350): both graph builders now add only
+genuinely import-time edges. Re-measured with correct counting: the
+real import-time graph has 6 small SCCs, largest 16 nodes -- not 160-282.
+
+That 16-node SCC (`frob.gates` <-> `frob.tickets`) had exactly ONE
+genuine runtime back-edge: `frob.tickets._scope_coverage`'s top-level
+`from frob.gates import _symref_to_nodeid`, a pure string-transform
+helper with no real dependency on either package. Extracted to
+`frob.nodeid` (a dependency-free leaf module) -- this SCC is gone.
+
+Of the five further small SCCs correct counting exposed (2-3 nodes
+each), four were the `package.__init__` importing/re-exporting its own
+submodule(s) shape and are also gone: `frob.arch.__init__`'s self-
+import of its own submodules, `frob.arch._abstraction` <->
+`frob.arch._python`, `frob.tickets._leases` <-> `frob.tickets.
+_worktree_sweep`, and `frob.serve` <-> `frob.serve._events` <->
+`frob.serve._socketd` (all fixed T-3350: plain `import a.b as b`
+statements or a redirected re-export, matching this ticket's own
+established pattern for the shape).
+
+The two remaining small SCCs (`frob.graph` <-> `frob.graph.lock`, and
+`frob.app.telemetry` <-> `_footguns` <-> `_usage`) are also gone
+(T-3411, owner-decided leaf-module extraction): `resolve`/`GraphError`
+moved to `frob.graph._resolve`/`frob.graph._models`, and
+`is_disabled`/`_telemetry_path`/`_home_config_state_hash`/
+`_external_path_arg_hash` moved to `frob.app.telemetry._state` --
+both packages' bottom-of-file import ordering workarounds (T-0362,
+T-2694) are removed along with them. Zero CYCLE001 findings remain.

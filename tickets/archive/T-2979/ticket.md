@@ -64,6 +64,13 @@ scope_changes:
     its json/usage siblings do
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: condense FROB_VERBOSE escape-hatch rationale into T-2979 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2734
+  new_length: 3731
 evidence:
 - tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_no_flag_or_env_var_is_none
 - tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_dash_v_in_argv_is_debug
@@ -134,3 +141,19 @@ ACCEPTANCE
   then it is still shown. Must-still-show fixture required.
 - Given `--json`, when the command runs, then output is byte-identical to
   today.
+
+<!-- narrative-moved:src/frob/logging/logger.py:13:T-2979 -->
+T-2979: the documented escape hatch back to full DEBUG chatter
+(`gitio: spawning ...`, `process: spawning ...`, `tickets: v2 index
+cache hit`, `is_baseline_stale: ...` and friends) -- see also `frob`'s
+global `-v`/`--verbose` flag, which sets `FROB_VERBOSE` before any
+logger is first touched (src/frob/__main__.py). `FROB_VERBOSE=1` is
+reused deliberately rather than inventing a second knob: T-2582 already
+wired it through `frob.logging.quiet.quiet_query_stdout` as the escape
+hatch for 8 human-mode query runners (debt/deprecated/exports/fleet/
+gitlog/mutate/outline/xref), which unconditionally suppress stdout-bound
+INFO/DEBUG to WARNING otherwise -- `-v` needs to disarm THAT suppression
+too, not just raise the base handler level, or it would restore
+nothing for any of those 8 commands. `FROB_LOG_LEVEL=<name>` is also
+read, for a caller who wants a specific level (e.g. `INFO`) rather than
+the `-v` default of full `DEBUG`.

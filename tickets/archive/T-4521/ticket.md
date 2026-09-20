@@ -88,6 +88,13 @@ scope_changes:
     not unrelated scope creep
   actor: logan
   at: '2026-09-16'
+body_changes:
+- mode: append
+  reason: condense admin-group restore-parser-reuse rationale into T-4521 body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 607
+  new_length: 1584
 evidence:
 - tests/unit/test_ticket_cli_surface.py::TestHiddenInternalCallbacks::test_merge_driver_still_dispatches
 - tests/unit/test_ticket_cli_surface.py::TestRemovedVerbsExitTwo::test_migrate_removed_notice_names_replacement
@@ -123,3 +130,20 @@ anchor_reason: null
 land_commit: null
 ---
 Measured 2026-09-16: ticket has 53 subverbs (next largest group 10). 14 are maintenance/one-off: migrate (one-time ledger migration already run), merge-driver (a git merge-driver callback, _progress.py:201, not a user verb), sweep-async (spawned by land, _closeout_evidence.py:536), runs-last-parallel-safe (a 26-char verb setting one boolean, _metadata.py:691), ticket debt / ticket deprecated (pure aliases of top-level verbs, _ticket/__init__.py:185,189; 4 and 1 references), renumber/restore/reconcile (disaster-recovery only). Zero-reference leaves: waive-audit scan, waive-audit complete, sprint show.
+
+<!-- narrative-moved:src/frob/_cli_parsers/_ticket/__init__.py:192:T-4521 -->
+T-4521: `admin` groups the disaster-recovery-only verbs (renumber/
+restore/reconcile) under one help heading. `renumber`/`reconcile`
+are registered fresh here via the same builders their now-hidden
+top-level aliases use (`_add_ticket_lifecycle_parsers`, above,
+already built and SUPPRESS-hid those). `restore` cannot be
+rebuilt the same way -- its builder lives in
+`_closeout_evidence.py`, under a concurrent ticket's file lease --
+so the ALREADY-BUILT top-level `restore` parser object (registered
+by `_add_ticket_lifecycle_parsers` above, via
+`_add_ticket_fail_evidence_archive_parsers`) is reused verbatim
+under `admin` too: the same `ArgumentParser` instance is shared
+between both subparsers registries, which is safe (argparse
+actions carry no back-reference to their owning subparsers
+action), and byte-for-byte identical to the old top-level verb by
+construction, not by re-implementation.
