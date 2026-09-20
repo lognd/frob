@@ -65,6 +65,13 @@ scope_changes:
   reason: unused in final diff -- freeing for T-4599
   actor: logan
   at: '2026-09-19'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve caller-name detail trimmed from _fix_engine_sync.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 0
+  new_length: 432
 evidence:
 - tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_drops_git_metadata_path_such_as_a_lease_file
 - tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_leaves_a_real_tickets_dir_finding_alone
@@ -79,3 +86,11 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+
+T-4709 follow-up (condensed from a comment in fix_sys111_capability_
+ratchet_sync in src/frob/gates/_fix_engine_sync.py, trimmed for
+DOCARCH002's 12-line cap): this handler's two current callers are
+_land_cmd._sweep_apply_tier_a_pre_commit and
+_sweep_apply_tier_a_and_commit. This is the exact T-4563 regression
+shape, but for this module's OWN unconditional write rather than the
+one T-4563 already gated in frob.strata._effects.
