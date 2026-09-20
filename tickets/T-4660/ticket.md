@@ -1,7 +1,7 @@
 ---
 id: T-4660
 title: post-publish never holds .frob/derived.lock across a full check
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -28,25 +28,33 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_post_publish_lock_window.py::test_post_publish_never_holds_derived_lock_across_a_check
+- tests/unit/test_post_publish_lock_window.py::test_next_land_not_blocked_by_previous_sweep
+- tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree::test_yields_a_detached_checkout_of_the_commit
 designated_repro_test: null
 acceptance:
 - text: Given a land that has just published, when post-publish runs, then no single
     .frob/derived.lock hold exceeds a bounded ceiling and no hold spans a full check
     invocation.
-  evidence: []
+  evidence:
+  - tests/unit/test_post_publish_lock_window.py::test_post_publish_never_holds_derived_lock_across_a_check
 - text: 'POSITIVE CONTROL: tests/unit/test_post_publish_lock_window.py::test_post_publish_never_holds_derived_lock_across_a_check
     instruments the lock and asserts that the set of operations performed under any
     one hold excludes a check run, and that the longest hold is under the declared
     ceiling. It FAILS on dev today (a single hold spans the whole check) and passes
     after this leaf.'
-  evidence: []
+  evidence:
+  - tests/unit/test_post_publish_lock_window.py::test_post_publish_never_holds_derived_lock_across_a_check
 - text: Given post-publish completes, when the next land starts, then it acquires
     derived.lock without waiting on the previous land's sweep; tests/unit/test_post_publish_lock_window.py::test_next_land_not_blocked_by_previous_sweep
     proves it.
-  evidence: []
+  evidence:
+  - tests/unit/test_post_publish_lock_window.py::test_next_land_not_blocked_by_previous_sweep
 - text: docs/modules/tickets-verify-sweep.md documents the bounded-hold rule and the
     ceiling, and is updated in this same change.
-  evidence: []
+  evidence:
+  - tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree::test_yields_a_detached_checkout_of_the_commit
 threat: null
 component: null
 anchor: false

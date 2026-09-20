@@ -1581,6 +1581,50 @@ Under `rapid`, `_land_core_finish_post_land` calls
    `.frob/rapid-sweep/<id>-<sha12>.log`;
 3. returns immediately -- the land does not wait.
 
+### Bounded lock window: the check never holds root's own lock (T-4660)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_run_full_check_in_snapshot -->
+
+"The land does not wait" (step 3 above) is only true if the detached
+sweep's own full check never contends with a land's own lock acquisition
+later. It used to: `frob check` holds `derived_state_lock(root,
+exclusive=False)` (SHARED) for its ENTIRE run, and the deferred sweep's
+`full=True` check ran directly against the shared checkout `root` --
+MEASURED incident (2026-09-19 15:36): a `sweep-async T-4588` child's
+`frob check --json` held that SHARED lock for 29 minutes, and the next
+`frob ticket land`'s EXCLUSIVE acquire on the SAME `.frob/derived.lock`
+waited 25 of those minutes; killing the sweep freed the land within 20
+seconds. A SECOND incident (15:45) compounded it: an orphaned check child
+outlived its own `sweep-async` parent and kept holding the lock alone.
+
+The FIRST incident is closed at the sweep call site
+(`_measure_fresh_sweep_state`/`_run_full_check_in_snapshot`), never by
+touching `frob check` itself:
+
+- **Snapshot isolation.** `_snapshot_worktree(root, commit_sha)` checks
+  `commit_sha` out into a throwaway `git worktree` under
+  `.frob/rapid-sweep-snapshots/` before the full check runs, and the
+  check is spawned with that snapshot as its `cwd` instead of `root`.
+  `frob check`'s own `derived_state_lock` acquisition then lands on the
+  SNAPSHOT's `.frob/derived.lock` -- a different file, on a different
+  path, from `root`'s -- so a land's EXCLUSIVE acquire on `root`'s lock
+  is never behind a sweep's check at all: not bounded, genuinely absent.
+  The worktree is always removed on exit, success or failure. A `root`
+  that is not (yet) a usable git checkout for a worktree add (unit-test
+  fixtures; `commit_sha` failing to resolve) degrades to the pre-T-4660
+  call shape -- checking `root` directly -- which a real land's checkout
+  never exercises.
+
+The SECOND incident (an orphaned check child outliving a killed sweep
+worker) is NOT closed by this ticket: a "kill this worker's process group
+when it dies" handler needs a new `process-control` capability declared
+on this file in `design/frob.strata`'s `cli` node (the same
+`capability_kind` `src/frob/testing/_stackdump.py`'s SIGUSR1 handler
+already carries), and `design/frob.strata` was leased by another
+in-progress ticket at the time this ticket was worked. Filed as a
+follow-up (T-4686) rather than shipped unwaived.
+
 The child runs `run_deferred_post_land_sweep`, which pays exactly ONE
 unscoped check by diffing against a **rolling baseline**
 (`.frob/rapid-sweep-baseline.json`, the previous deferred sweep's

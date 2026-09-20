@@ -82,6 +82,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
@@ -4188,12 +4189,173 @@ def _check_claim_divergence_post_land(
         )
 
 
+# frob:ticket T-4660
+#: where a sweep's throwaway snapshot worktrees live -- under
+#: `.frob/` (local, disposable, per-checkout, same posture as `_BASELINE_
+#: REL` above), never `/tmp` directly, so they land on the SAME
+#: filesystem as `root` (a same-filesystem `git worktree add` is a cheap
+#: hardlink/checkout, not a cross-device copy) and are trivially found
+#: and swept if a killed worker ever leaves one behind.
+_SNAPSHOT_DIR_REL = Path(".frob") / "rapid-sweep-snapshots"
+
+# frob:ticket T-4660
+#: how long `_snapshot_worktree`'s own `git worktree add`/
+#: `remove` calls may take -- these are plain filesystem checkouts, not
+#: the multi-minute `frob check` that runs inside the result, so a
+#: generous-but-bounded ceiling (rather than the check's own 1800s)
+#: catches a genuinely wedged git process instead of hanging this
+#: function forever.
+_SNAPSHOT_WORKTREE_TIMEOUT_S = 120
+
+
+# frob:ticket T-4660
+# frob:tests tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree.test_yields_a_detached_checkout_of_the_commit  # noqa: E501
+# frob:tests tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree.test_removes_the_worktree_on_exit  # noqa: E501
+# frob:tests tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree.test_yields_none_when_the_commit_does_not_resolve  # noqa: E501
+@contextmanager
+def _snapshot_worktree(root: Path, commit_sha: str) -> Iterator[Path | None]:
+    """T-4660: check out `commit_sha` into a throwaway `git worktree`
+    under `root`'s own `.frob/rapid-sweep-snapshots/`, so a full unscoped
+    `frob check` can run against it INSTEAD of `root` -- see
+    `_run_full_check_in_snapshot`'s docstring for why: the check
+    subprocess's own `derived_state_lock` acquisition then lands on the
+    SNAPSHOT's `.frob/derived.lock`, an entirely different file from
+    `root`'s, so it can never be the thing a land's EXCLUSIVE acquire on
+    `root`'s lock is waiting on.
+
+    Yields `None` (never raises) when the worktree cannot be created --
+    `commit_sha` does not resolve, `root` is not a git checkout at all,
+    or `git` itself is unavailable -- so the caller can treat that as its
+    own unmeasurable-this-round outcome. Always removes the worktree (and
+    its directory) on exit, success or failure, so a killed sweep leaves
+    at most one stale snapshot directory behind rather than accumulating
+    one per land."""
+    snapshot_dir = root / _SNAPSHOT_DIR_REL
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix="sweep-", dir=snapshot_dir))
+    registered = False
+    try:
+        added = subprocess.run(  # noqa: S603 -- fixed argv, root-relative git call
+            ["git", "worktree", "add", "--detach", "--force", str(tmp), commit_sha],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=_SNAPSHOT_WORKTREE_TIMEOUT_S,
+        )
+        if added.returncode != 0:
+            _log.error(
+                "rapid sweep: T-4660 snapshot worktree add failed for %s (rc=%d): %s",
+                commit_sha[:12],
+                added.returncode,
+                added.stderr.strip(),
+            )
+            yield None
+            return
+        registered = True
+        yield tmp
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        _log.error(
+            "rapid sweep: T-4660 snapshot worktree add for %s raised %s: "
+            "%s -- treating as unavailable this round",
+            commit_sha[:12],
+            type(exc).__name__,
+            exc,
+        )
+        yield None
+    finally:
+        if registered:
+            removed = subprocess.run(  # noqa: S603 -- fixed argv
+                ["git", "worktree", "remove", "--force", str(tmp)],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=_SNAPSHOT_WORKTREE_TIMEOUT_S,
+            )
+            if removed.returncode != 0:
+                _log.warning(
+                    "rapid sweep: T-4660 snapshot worktree remove failed "
+                    "for %s (rc=%d): %s -- removing the directory directly",
+                    tmp,
+                    removed.returncode,
+                    removed.stderr.strip(),
+                )
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# frob:ticket T-4660
+# frob:tests tests/unit/test_post_publish_lock_window.py::test_post_publish_never_holds_derived_lock_across_a_check  # noqa: E501
+# frob:tests tests/unit/test_post_publish_lock_window.py::test_next_land_not_blocked_by_previous_sweep  # noqa: E501
+def _run_full_check_in_snapshot(
+    root: Path, final_id: str, commit_sha: str
+) -> Result[frozenset[tuple[str, str]], RapidSweepError]:
+    """T-4660: the bounded-lock-window replacement call site for the
+    sweep's full unscoped check -- runs it inside a throwaway
+    `_snapshot_worktree` of `commit_sha` instead of directly against
+    `root`, so its `derived_state_lock` SHARED hold (for the check's
+    entire multi-minute run) lands on the snapshot's own lock file, never
+    on `root`'s. This is the fix for the measured incident: a land's
+    EXCLUSIVE acquire on `root`'s `.frob/derived.lock` no longer waits on
+    a sweep's check at all, because the sweep's check never takes that
+    lock in the first place -- not "bounded", genuinely absent.
+
+    Delegates the actual spawn/parse to `_land_cmd`'s own
+    `_unscoped_error_findings(effective_root, final_id, full=True)`
+    UNCHANGED -- only `effective_root` differs from the pre-T-4660 call
+    site (`snapshot_root` when the snapshot could be created, `root`
+    itself as a degrade otherwise). This keeps the finding-identity
+    format, the `FROB_ALLOW_FULL_CHECK`/1800s-ceiling/budget-deferral-
+    detection semantics, and every existing caller's mock seam (tests
+    that monkeypatch `_land_cmd._unscoped_error_findings` directly) as
+    the ONE implementation, rather than a second hand-duplicated spawn/
+    parse path here.
+
+    Falls back to `root` itself -- the pre-T-4660 call shape -- ONLY when
+    `root` is not a usable git checkout for `_snapshot_worktree` (e.g. a
+    plain directory in a unit test fixture, or `commit_sha` does not
+    resolve). A real land always runs inside a real git checkout, so this
+    fallback is never exercised in production.
+
+    The SECOND measured incident (a check child surviving its dead sweep
+    worker) is a separate, filed follow-up (T-4686): closing it
+    properly needs a new `process-control` capability declaration in
+    `design/frob.strata`'s `cli` node, which is currently leased by
+    another in-progress ticket (T-4112) -- see that follow-up ticket's
+    body for the design and the `ScopeLeaseConflict` this ticket hit
+    trying to add it here."""
+    from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
+
+    with _snapshot_worktree(root, commit_sha) as snapshot_root:
+        effective_root = root if snapshot_root is None else snapshot_root
+        if snapshot_root is None:
+            _log.warning(
+                "rapid sweep: %s T-4660 snapshot worktree unavailable -- "
+                "falling back to checking root directly (pre-T-4660 "
+                "behavior); a real git checkout never hits this path",
+                final_id,
+            )
+        else:
+            _log.debug(
+                "rapid sweep: %s T-4660 running the full check against "
+                "snapshot %s -- root's own derived.lock is never touched",
+                final_id,
+                snapshot_root,
+            )
+        # T-4660: matches the exact pre-fix call shape (no `base`) --
+        # `_measure_fresh_sweep_state`'s caller never threaded a target
+        # branch through this seam either.
+        fresh = _unscoped_error_findings(effective_root, final_id, full=True)
+        if fresh is None:
+            return Err(RapidSweepError.Unmeasurable)
+        return Ok(fresh)
+
+
 # frob:ticket T-1684
 # frob:ticket T-2009
 # frob:ticket T-2571
 # frob:ticket T-2595
 # frob:ticket T-4318
 # frob:ticket T-4335
+# frob:ticket T-4660
 # frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_calls_unscoped_error_findings_with_full_true  # noqa: E501
 def _measure_fresh_sweep_state(
@@ -4249,15 +4411,18 @@ def _measure_fresh_sweep_state(
     `_FULL_CHECK_TIMEOUT_S` (1800s) as its hard ceiling instead, so this
     sweep now measures the real tree rather than a wall-clock-truncated
     guess of it."""
-    from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
-
     _log.info(
         "rapid sweep: %s starting deferred unscoped sweep at %s",
         final_id,
         commit_sha[:12],
     )
-    fresh = _unscoped_error_findings(root, final_id, full=True)
-    if fresh is None:
+    # T-4660: routed through the snapshot-worktree spawn (never `root`
+    # itself) so this multi-minute full check's own `derived_state_lock`
+    # hold can never be the thing a land's EXCLUSIVE acquire on `root`'s
+    # `.frob/derived.lock` waits on -- see `_run_full_check_in_snapshot`'s
+    # docstring.
+    measured_fresh = _run_full_check_in_snapshot(root, final_id, commit_sha)
+    if measured_fresh.is_err:
         _log.error(
             "rapid sweep: %s deferred unscoped sweep was UNMEASURABLE "
             "(refused spawn, timeout, or unparsable output) -- baseline "
@@ -4265,7 +4430,8 @@ def _measure_fresh_sweep_state(
             final_id,
             commit_sha[:12],
         )
-        return Err(RapidSweepError.Unmeasurable)
+        return Err(measured_fresh.danger_err)
+    fresh = measured_fresh.danger_ok
     # T-2036: normalize BEFORE any comparison/baseline-write
     # below -- everything downstream (new_findings, vanished, the
     # persisted baseline, the recorded ticket identities) must see the
