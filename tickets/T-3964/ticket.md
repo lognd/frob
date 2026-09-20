@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: high
 parent: T-3942
 tier: ticket
-sprint: null
+sprint: v0.539.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -37,6 +37,13 @@ scope_changes:
 - op: add
   glob: docs/strata/dataset-construct.md
   reason: 'standalone doc row: docs/modules/gates.md leased'
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.539.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
