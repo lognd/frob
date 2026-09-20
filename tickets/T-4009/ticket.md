@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: medium
 parent: null
 tier: ticket
-sprint: v1.1.0
+sprint: v0.540.0
 runs_last: false
 milestone: v1.1.0
 runs_last_parallel_safe: false
@@ -37,6 +37,13 @@ scope_changes:
     src/frob/gates/_bug_repro.py
   actor: logan
   at: '2026-09-06'
+triage_changes:
+- field: sprint
+  old_value: v1.1.0
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
