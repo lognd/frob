@@ -36,6 +36,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 1439
   new_length: 1456
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1456
+  new_length: 1450
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/vet.strata exists with its
@@ -65,7 +72,7 @@ land_commit: null
 Migration leaf for module `vet` (members: vet, registry (foreign), registry_model). Hub-adjacent: bidirectional with gates, graph and strata.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is no sys-split tool; the owner rejected one). Write design/vet.strata with:
+there is NO a sys-split tool (rejected) tool). Write design/vet.strata with:
   - `module vet` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
