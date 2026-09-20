@@ -2,7 +2,7 @@
 id: T-4624
 title: 'Clean docstrings: test_tickets_acceptance/refs_gate/hook_root_write_guard/docptr/check_runner/scan_tree/etc
   (DOCARCH001)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-09-19'
@@ -38,11 +38,14 @@ triage_changes:
   reason: child of T-4421 docarch debloat split
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to these 12 files, when DOCARCH001 is measured,
     then the combined finding count is 0
-  evidence: []
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
 threat: null
 component: null
 anchor: false

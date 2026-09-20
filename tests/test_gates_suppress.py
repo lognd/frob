@@ -92,6 +92,7 @@ class TestLineSuppressions:
         assert _line_suppressions("x = y", dialects) == {}
 
 
+# frob:ticket T-4624
 class TestRelativize:
     """`_relativize`: normalising a checker-reported path to root-relative."""
 
@@ -118,16 +119,14 @@ class TestRelativize:
         monkeypatch.chdir(tmp_path)
         assert _relativize("src/mod.py", tmp_path) == "src/mod.py"
 
+    # frob:ticket T-4624
     def test_relative_path_under_nested_root_is_not_doubled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-4493 regression: when `root` is a worktree nested under the
-        checker process's real cwd (`tmp_path`), a checker-reported path
-        already relative to `tmp_path` (e.g.
-        `.claude/worktrees/x/tests/mod.py`) must resolve to the file
-        relative to `root` (`tests/mod.py`) -- NOT get `root` joined onto
-        it a second time (the old bug: `root/.claude/worktrees/x/.claude/
-        worktrees/x/tests/mod.py`, which cannot exist)."""
+        """Asserts a checker-reported path already relative to
+        `tmp_path` resolves to the file relative to `root`, when `root`
+        is a worktree nested under the checker process's real cwd,
+        without `root` being joined onto it twice."""
         monkeypatch.chdir(tmp_path)
         nested_root = tmp_path / ".claude" / "worktrees" / "x"
         (nested_root / "tests").mkdir(parents=True)
@@ -147,17 +146,11 @@ class TestRelativize:
 
 
 # frob:ticket T-1635
+# frob:ticket T-4624
 class TestMypyOracleCacheDir:
-    """T-1635 regression: `_mypy_diagnostics` must pin `--cache-dir`
-    inside the caller's own root.
-
-    Before this fix the oracle invocation inherited mypy's default
-    `.mypy_cache` resolved against the PROCESS CWD, so every concurrent
-    pytest-xdist worker shared one cache directory. A torn read then
-    returned ZERO diagnostics for a file that genuinely had one -- the
-    silent-under-report shape this drive kept hitting, here making the
-    ty-vs-mypy oracle disagree at random and reddening SUPPRESS001 tests
-    only under load."""
+    """Asserts `_mypy_diagnostics` pins `--cache-dir` inside the
+    caller's own root, rather than mypy's default (process-cwd-relative)
+    `.mypy_cache` shared across concurrent pytest-xdist workers."""
 
     def test_mypy_invocation_pins_cache_dir_under_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

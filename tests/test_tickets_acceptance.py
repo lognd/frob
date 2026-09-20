@@ -209,6 +209,7 @@ class TestAddEvidenceAccepts:
 
 
 # frob:ticket T-3837
+# frob:ticket T-4624
 class TestAcceptsOneBasedMisBinding:
     """T-3837 (F-032): `--accepts N` was 0-based through T-0572..T-0844.
     0-based indexing plus an out-of-range check that only rejects i<0 or
@@ -238,16 +239,13 @@ class TestAcceptsOneBasedMisBinding:
             ),
         )
 
+    # frob:ticket T-4624
     def test_must_fire_the_old_0_based_third_criterion_index_now_binds_second(
         self, tmp_path: Path
     ) -> None:
-        """The exact T-3837 mis-binding shape: under the OLD 0-based
-        scheme, a caller who means "the 3rd criterion" (as displayed,
-        `[3] third criterion`) would type `--accepts 2` -- landing INSIDE
-        the valid 0..3 range and silently binding the SECOND criterion
-        instead. Under the fixed 1-based scheme, `accepts=[2]` now means
-        exactly what the display says: the second criterion -- so the
-        would-be mis-binding is simply gone, not merely caught."""
+        """Asserts `accepts=[2]` binds the second criterion under the
+        1-based scheme, matching what the `[2] ...` display says, rather
+        than mis-binding under an old 0-based interpretation."""
         self._seed_four(tmp_path)
         result = add_evidence(
             tmp_path,
@@ -622,6 +620,7 @@ def _seed_ticket(tmp_path: Path, acceptance: list[str]) -> str:
     return created.danger_ok.id
 
 
+# frob:ticket T-4624
 class TestAmendAcceptance:
     """`frob.tickets.amend_acceptance`/`remove_acceptance` (T-1422): the
     supported alternative to hand-editing `tickets.md` for a criterion
@@ -710,13 +709,15 @@ class TestAmendAcceptance:
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendIndexOutOfRange
 
+    # frob:ticket T-4624
     def test_amend_refuses_zero_index_not_the_first_criterion(
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_zero_index_not_the_first_criterion  # noqa: E501
-        """T-3908: `--amend 0` -- the most likely leftover habit from the
-        old 0-based scheme -- must be a loud typed refusal, never treated
-        as "the first criterion" (which is 1, matching the display)."""
+        """Asserts `--amend 0` is a typed refusal
+        (`AcceptanceAmendIndexOutOfRange`), never treated as "the first
+        criterion" (which is index 1, matching the display), and leaves
+        the criterion untouched."""
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])
         result = amend_acceptance(tmp_path, ticket_id, 0, "new text", reason="why")
         assert result.is_err
@@ -769,16 +770,15 @@ class TestAmendAcceptance:
         assert entry.new_text is None
         assert "unsatisfiable" in entry.reason
 
+    # frob:ticket T-4624
     def test_remove_refuses_zero_index_does_not_drop_the_first_criterion(
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_zero_index_does_not_drop_the_first_criterion  # noqa: E501
-        """T-3908, THE DESTRUCTIVE CASE: `--remove 0` must be a loud
-        refusal, never a silent drop of "index 0" under the old 0-based
-        scheme -- that would delete the FIRST criterion (the one the
-        display calls [1]) while the audit trail records a reason against
-        a removal that, from the operator's 1-based mental model, never
-        happened to the thing they named."""
+        """Asserts `--remove 0` is a typed refusal
+        (`AcceptanceAmendIndexOutOfRange`) and drops no criterion, rather
+        than silently deleting the first criterion under a 0-based
+        interpretation of the index."""
         ticket_id = _seed_ticket(tmp_path, ["first criterion", "second criterion"])
         result = remove_acceptance(tmp_path, ticket_id, 0, reason="why")
         assert result.is_err

@@ -336,14 +336,13 @@ def test_perf004_does_not_fire_when_sorted_is_the_loop_iterable(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
+# frob:ticket T-4624
 def test_perf004_does_not_fire_on_sort_after_loop_same_indent(tmp_path):
-    """T-0367: PERF004 does not fire on a `sorted()`/`.sort()` call that
-    occurs textually AFTER a `for` loop at the same (or an outer) indent --
-    it runs once per function call, not once per iteration. The old
-    token/bracket-depth heuristic (`_loop_gate`) is indentation-blind and
-    cannot see that this sort is a SIBLING statement, not a descendant of
-    the loop body; the fix is AST body-field containment
-    (`_enclosing_loop_body_hit`)."""
+    """Asserts PERF004 does not fire on a `sorted()`/`.sort()` call
+    that occurs textually after a `for` loop at the same (or an outer)
+    indent, since `_enclosing_loop_body_hit`'s AST body-field containment
+    recognizes it as a sibling statement, not a descendant of the loop
+    body."""
     # frob:ticket T-0367
     # frob:tests src/frob/perf/_rules.py::perf_rules
     src = (
@@ -655,14 +654,12 @@ def test_perf005_does_not_fire_on_non_recursive_function(tmp_path):
     assert not any(v.rule in ("PERF005", "PERF006") for v in violations)
 
 
+# frob:ticket T-4624
 def test_perf005_fires_when_descent_is_outside_the_call_args(tmp_path):
-    """Reviewer-caught bug (T-0290 round 2): `loop_forever(n) - 1 if n > 0
-    else 0` puts the `- 1` OUTSIDE the recursive call's own argument list --
-    `n` itself is never narrowed inside the call -- so this is genuine
-    infinite recursion and PERF005 MUST still fire. The prior fixed
-    `tokens[i+2:i+12]` lookahead window scanned past the call's own parens
-    into the surrounding expression and misread the outer `- 1` as descent,
-    silently missing this case."""
+    """Asserts PERF005 fires on `loop_forever(n) - 1 if n > 0 else 0`,
+    where the `- 1` sits outside the recursive call's own argument list
+    (`n` is never narrowed inside the call), instead of the lookahead
+    window misreading the outer `- 1` as descent."""
     # frob:ticket T-0290
     # frob:tests src/frob/perf/_recursion.py::recursion_rules
     src = "def loop_forever(n):\n    return loop_forever(n) - 1 if n > 0 else 0\n"

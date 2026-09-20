@@ -68,6 +68,7 @@ def _doc007_repo(tmp_path: Path) -> Path:
     return root
 
 
+# frob:ticket T-4624
 class TestApplyTierAAndReverify:
     """`_apply_tier_a_and_reverify`: T-1260's CLI wiring of
     `apply_tier_a_fixes` plus the same-invocation gate re-run."""
@@ -310,13 +311,12 @@ class TestApplyTierAAndReverify:
         mod = root / "src" / "pkg" / "mod.py"
         assert "TestX::test_y" in mod.read_text(encoding="utf-8")
 
+    # frob:ticket T-4624
     def test_fix_all_still_runs_repo_wide_when_explicitly_requested(
         self, tmp_path: Path
     ) -> None:
-        """MUST-STAY-QUIET fixture (T-3326): a deliberate repo-wide fix
-        pass (`--fix --fix-all`, no `--ticket`) still works exactly as
-        before this ticket -- the repo-wide case is gated behind an
-        explicit opt-in, not removed."""
+        """Asserts a repo-wide fix pass (`--fix --fix-all`, no
+        `--ticket`) still runs when explicitly requested."""
         # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
         # kind="unit"
         root = _doc007_repo(tmp_path)
@@ -449,6 +449,7 @@ def _claude_config_repo(tmp_path: Path, monkeypatch) -> Path:  # noqa: ANN001
     return root
 
 
+# frob:ticket T-4624
 class TestClaudeConfigDriftStage:
     """`_claude_config_drift_result` (T-1809): the `frob check` extra
     stage gating T-1808's Claude-config sync drift. Acceptance shape: a
@@ -461,17 +462,14 @@ class TestClaudeConfigDriftStage:
     (`test_not_applicable_when_home_claude_root_absent`)."""
 
     # frob:tests \
-    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_h\
-    # ome_claude_root_absent
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_home_claude_root_absent  # noqa: E501
+    # frob:ticket T-4624
     def test_not_applicable_when_home_claude_root_absent(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        """T-3600: `_claude_config_repo`'s own `$HOME` fixture never
-        creates `~/.claude` -- exactly a fresh CI runner's shape. Before
-        this ticket this FAILed (exit_code=1, one CLAUDE001 error per
-        managed file); the fix reports NOT_APPLICABLE (exit_code=0, a
-        single `info`-severity diagnostic) instead, since there is
-        nothing to reconcile against on this machine."""
+        """Asserts the claude-config-drift stage reports NOT_APPLICABLE
+        (exit_code=0, a single `info`-severity diagnostic) when
+        `~/.claude` does not exist, rather than failing."""
         root = _claude_config_repo(tmp_path, monkeypatch)
         result = _claude_config_drift_result(root)
         assert result is not None
@@ -484,15 +482,14 @@ class TestClaudeConfigDriftStage:
         assert "NOT_APPLICABLE" in result.summary
 
     # frob:tests \
-    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_ho\
-    # me_claude_present_but_file_differs
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_home_claude_present_but_file_differs  # noqa: E501
+    # frob:ticket T-4624
     def test_reports_drift_when_home_claude_present_but_file_differs(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        """T-3600 discriminator: `~/.claude` EXISTS (unlike the
-        NOT_APPLICABLE case above) but the managed file under it is
-        still absent/stale -- this is a genuine reconciliation failure
-        and must still FAIL exactly as before this ticket."""
+        """Asserts the claude-config-drift stage still fails when
+        `~/.claude` exists but the managed file under it is
+        absent/stale."""
         root = _claude_config_repo(tmp_path, monkeypatch)
         (Path.home() / ".claude").mkdir(parents=True, exist_ok=True)
         result = _claude_config_drift_result(root)
@@ -520,8 +517,7 @@ class TestClaudeConfigDriftStage:
         assert result.diagnostics == []
 
     # frob:tests \
-    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_ha\
-    # s_no_managed_config
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no_managed_config  # noqa: E501
     def test_no_stage_when_repo_has_no_managed_config(self, tmp_path: Path) -> None:
         root = tmp_path / "bare"
         root.mkdir()

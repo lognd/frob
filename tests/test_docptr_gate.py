@@ -135,6 +135,7 @@ class TestDoc006DocAnchor:
 
 
 # frob:ticket T-2559
+# frob:ticket T-4624
 class TestDoc006Cli:
     """Kind 2: CLI INVOCATION -- `<prog> <subcommand>` / `--flag` checked
     against the live argparse registry (same [[docblocks.commands]] config
@@ -171,15 +172,14 @@ class TestDoc006Cli:
         assert not _by_rule(violations, "docs/guide.md")
 
     # frob:ticket T-2533
+    # frob:ticket T-4624
     def test_dispatch_bypassed_worktree_remove_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        """T-2533: `_dispatch_worktree` bypasses `_build_parser()` entirely
-        for the whole `worktree` verb, and `_build_parser()`'s own
-        `--help`-only mirror used to register `sweep` alone -- a doc
-        naming the REAL `frob worktree remove` command (confirmed working:
-        `frob worktree remove --help` resolves cleanly) must not be
-        flagged as pointing at a nonexistent subcommand."""
+        """Asserts a doc naming `frob worktree remove` is not flagged
+        as pointing at a nonexistent subcommand, even though
+        `_dispatch_worktree` bypasses `_build_parser()`'s own
+        `--help`-only mirror for the whole `worktree` verb."""
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
         _write(tmp_path, "docs/guide.md", "Run `frob worktree remove` to clean up.\n")
@@ -1457,20 +1457,13 @@ class TestDoc006TitleFieldExclusion:
 
 
 # frob:ticket T-3979
+# frob:ticket T-4624
 class TestDoc006OldTextNewTextFieldExclusion:
-    """T-3979: `acceptance_amendments[].old_text`/`.new_text` (written by
-    `frob ticket accept --amend/--remove`) are free-text prose in exactly
-    the sense `reason`/`title` are (T-3724/T-3843) -- with the sharper
-    no-exit `old_text` adds: `--amend` is the SANCTIONED remedy for a
-    DOC006 finding in a criterion's own text, and it is what WRITES the
-    superseded (violating) text into `old_text`, so re-amending to clear
-    the finding only appends another record carrying the same string.
-    Measured on tickets/T-3976/ticket.md (T-3979's own motivating case).
-    Positive control both directions, matching `TestDoc006ReasonFieldExclusion`/
-    `TestDoc006TitleFieldExclusion`'s shape: the frontmatter `old_text`/
-    `new_text` are exempt (must-stay-quiet), the ticket BODY (real prose)
-    still fires (must-fire), and the amend-that-fixes-a-violation no-exit
-    is made checkable directly."""
+    """Asserts `acceptance_amendments[].old_text`/`.new_text` frontmatter
+    fields are exempt from DOC006 (must-stay-quiet) while the ticket
+    body's own prose still fires (must-fire), matching
+    `TestDoc006ReasonFieldExclusion`/`TestDoc006TitleFieldExclusion`'s
+    shape."""
 
     def test_old_text_field_not_flagged(self, tmp_path: Path) -> None:
         """A dead config-section pointer preserved verbatim in `old_text`
@@ -1573,20 +1566,14 @@ class TestDoc006OldTextNewTextFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert _by_rule(violations, "tickets/T-9018/ticket.md")
 
+    # frob:ticket T-4624
     def test_amend_that_removes_a_doc006_violation_leaves_ticket_clean(
         self, tmp_path: Path
     ) -> None:
-        """THE NO-EXIT, MADE CHECKABLE (T-3979's own acceptance criterion):
-        `frob ticket accept --amend`'s sanctioned remedy for a DOC006
-        violation in a criterion's own text is to rewrite it -- which
-        writes the OLD, violating wording into `old_text` as an audit
-        record. Before this fix that re-created the violation the amend
-        was meant to clear; this asserts the amended ticket -- corrected
-        `acceptance[0].text`, `new_text` matching it, and `old_text`
-        carrying the original violating string verbatim, exactly the
-        shape `frob ticket accept --amend` produces -- is DOC006-clean
-        end to end, with no exemption of any file/section wider than the
-        two prose fields this fix targets."""
+        """Asserts a ticket amended via `frob ticket accept --amend`
+        (corrected `acceptance[0].text`, `new_text` matching it, and
+        `old_text` carrying the original wording verbatim) is
+        DOC006-clean end to end."""
         _init_repo(tmp_path)
         clean_text = "given a clean criterion, when it runs, then it passes"
         violating_text = (

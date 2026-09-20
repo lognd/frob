@@ -157,19 +157,15 @@ class TestClaimsReverifyOutcomeDistinguishesSkipFromPass:
 
 # frob:ticket T-4281
 # frob:tests \
-# tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSk\
-# ip.test_check_gates_infra_failure_is_infra_unmeasured_not_skipped
+# tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSkip.test_check_gates_infra_failure_is_infra_unmeasured_not_skipped  # noqa: E501
 # frob:tests \
-# tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSk\
-# ip.test_check_gates_without_a_reason_attribute_is_unaffected
+# tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSkip.test_check_gates_without_a_reason_attribute_is_unaffected  # noqa: E501
+# frob:ticket T-4624
 class TestInfraUnmeasuredDistinctFromDeliberateSkip:
-    """T-4281: a `check_gates()` that was actually CALLED but returned
-    `None` because of an infrastructure failure (a graph-cache lock, a
-    crash) must surface as `INFRA_UNMEASURED`, never the plain
-    `SKIPPED_UNMEASURED` a DELIBERATE, never-attempted skip (this same
-    module's `TestClaimsReverifyOutcomeDistinguishesSkipFromPass`) prints
-    -- the two used to be the identical outcome with no way to tell them
-    apart."""
+    """Asserts a `check_gates()` that was called but returned `None`
+    due to an infrastructure failure surfaces as `INFRA_UNMEASURED`,
+    distinct from the `SKIPPED_UNMEASURED` a deliberate, never-attempted
+    skip prints."""
 
     def _ticket_with_matching_claims(self, repo: Path) -> str:
         created = new_ticket(repo, _spec("Infra-failure captured claims"))
@@ -218,17 +214,14 @@ class TestInfraUnmeasuredDistinctFromDeliberateSkip:
         assert result.danger_ok is _ClaimsReverifyOutcome.INFRA_UNMEASURED
         assert result.danger_ok is not _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
 
+    # frob:ticket T-4624
     def test_check_gates_without_a_reason_attribute_is_unaffected(
         self, repo: Path
     ) -> None:
-        """A plain `check_gates` callable with no `.unmeasured_reason`
-        attribute at all (every pre-T-4281 caller/test) must keep its
-        prior, unmeasured-but-not-infra-classified behavior: the test-
-        count claim still gets checked, the gate-state half is silently
-        (from this function's OWN return value) folded into a real
-        `PASSED`, exactly as before this ticket -- this fixture's
-        `check_gates` returning `None` with no reason must not itself
-        manufacture an `INFRA_UNMEASURED` classification."""
+        """Asserts a `check_gates` callable with no `.unmeasured_reason`
+        attribute still has its test-count claim checked, with the
+        gate-state half folded into `PASSED` rather than manufacturing
+        an `INFRA_UNMEASURED` classification."""
         tid = self._ticket_with_matching_claims(repo)
 
         result = _reverify_done_report_claims_post_merge(

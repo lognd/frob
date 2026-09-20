@@ -332,6 +332,7 @@ class TestDefaultRootManifestExempt:
         assert "REF001" in _rule_ids(violations, "sub/tickets-archive.md")
 
 
+# frob:ticket T-4624
 class TestGithubConventionExempt:
     """T-4145: GitHub's own community-health files and issue/PR templates
     are exempt from REF001/REF002 with no declaration required -- their
@@ -339,22 +340,19 @@ class TestGithubConventionExempt:
     directory convention, never another tracked file's text."""
 
     # frob:tests \
-    # tests/test_refs_gate.py::TestGithubConventionExempt.test_standard_community_files\
-    # _and_templates_pass_with_no_waivers kind="unit"
+    # tests/test_refs_gate.py::TestGithubConventionExempt.test_standard_community_files_and_templates_pass_with_no_waivers kind="unit"  # noqa: E501
     # frob:waive SELFAUDIT001 reason="the literal GitHub convention paths this fixture \
     # writes (feature_request.yml, PULL_REQUEST_TEMPLATE.md) contain a 'request' \
     # substring the capability scanner reads as a net.connect needle; this only writes \
     # plain fixture text into a synthetic tmp_path repo, no network call of any kind"
+    # frob:ticket T-4624
     def test_standard_community_files_and_templates_pass_with_no_waivers(
         self, tmp_path: Path
     ) -> None:
-        """MUST-FIRE fixture: a repository containing the standard
-        community health files and GitHub templates, and nothing else
-        unusual, passes the reference gate with no waivers -- including
-        `.github/ISSUE_TEMPLATE/config.yml`, which has genuinely ZERO
-        other tracked-file mentions (T-4145's own REF001 case) and the
-        two issue-template `.yml` files and `PULL_REQUEST_TEMPLATE.md`,
-        each of which had exactly one (REF002's case) before this fix."""
+        """Asserts a repository containing the standard community
+        health files and GitHub templates passes the reference gate with
+        no waivers, including `.github/ISSUE_TEMPLATE/config.yml` and
+        the issue-template `.yml`/`PULL_REQUEST_TEMPLATE.md` files."""
         _init_repo(tmp_path)
         _write(tmp_path, "README.md", "See CONTRIBUTING.md for details.\n")
         _write(
@@ -403,8 +401,7 @@ class TestGithubConventionExempt:
             assert _rule_ids(violations, f) == [], f"{f} unexpectedly flagged"
 
     # frob:tests \
-    # tests/test_refs_gate.py::TestGithubConventionExempt.test_a_genuinely_orphaned_fil\
-    # e_outside_the_convention_still_fires_ref001 kind="unit"
+    # tests/test_refs_gate.py::TestGithubConventionExempt.test_a_genuinely_orphaned_file_outside_the_convention_still_fires_ref001 kind="unit"  # noqa: E501
     def test_a_genuinely_orphaned_file_outside_the_convention_still_fires_ref001(
         self, tmp_path: Path
     ) -> None:
@@ -773,12 +770,11 @@ class TestMarkdownWaive:
         assert _rule_ids(violations, "docs/single.md") == ["REF002"]
 
 
+# frob:ticket T-4624
 class TestBacktickTokenizer:
-    """T-0467: a backtick-wrapped path mention (`` `docs/target.md` ``,
-    the repo's own doc convention) counts as a real inbound reference --
-    previously only "/'-quoted strings and markdown `[]()` links were
-    tokenized, so a doc referenced ONLY via a backtick mention was a
-    false-positive REF001 orphan."""
+    """Asserts a backtick-wrapped path mention (`` `docs/target.md` ``)
+    counts as a real inbound reference, alongside quoted strings and
+    markdown `[]()` links."""
 
     def test_backtick_wrapped_path_mention_counts_as_reference(
         self, tmp_path: Path
@@ -859,21 +855,12 @@ class TestJsTsRootManifestExempt:
 
 
 # frob:ticket T-3031
+# frob:ticket T-4624
 class TestVendoredTreeExempt:
-    """T-3031: a git-tracked path under a built-in vendored/dependency
-    tree (`frob.excludes.BUILTIN_SKIP_DIRS` -- `node_modules`, `.venv`,
-    `target`, `build`, `dist`, ...) is exempt from REF001/REF002 --
-    such a tree is tooling-managed and never "referenced" by another
-    tracked file's text the way authored source is, and every OTHER
-    stage in this repo already prunes these same directory names
-    (`frob.excludes.is_skipped_dir`/`walk_pruned`) before scanning.
-    Previously `ref_gate` only consulted `[graph].exclude` globs, never
-    the built-in skip set -- a project committing (or, as here,
-    symlinking) `node_modules` at its root failed REF001 on that single
-    tracked entry with no way to silence it short of a manual
-    `[graph].exclude`/`frob:waive` a real adopter should never have to
-    write for a directory frob itself already treats as build tooling
-    everywhere else."""
+    """Asserts a git-tracked path under a built-in vendored/dependency
+    tree (`frob.excludes.BUILTIN_SKIP_DIRS`, e.g. `node_modules`) is
+    exempt from REF001/REF002, since `ref_gate` consults the built-in
+    skip set in addition to `[graph].exclude` globs."""
 
     def test_node_modules_root_entry_is_exempt(self, tmp_path: Path) -> None:
         # frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_node_modules_root_entry_is_exempt kind="unit"  # noqa: E501
@@ -921,8 +908,7 @@ class TestTicketLedgerV2Exempt:
 
     # frob:ticket T-4153
     # frob:tests \
-    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_ticket_md_is_exempt_with_n\
-    # o_declaration kind="unit"
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_ticket_md_is_exempt_with_no_declaration kind="unit"  # noqa: E501
     def test_ticket_md_is_exempt_with_no_declaration(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
@@ -935,8 +921,7 @@ class TestTicketLedgerV2Exempt:
 
     # frob:ticket T-4153
     # frob:tests \
-    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_done_report_md_is_exempt_w\
-    # ith_no_declaration kind="unit"
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_done_report_md_is_exempt_with_no_declaration kind="unit"  # noqa: E501
     def test_done_report_md_is_exempt_with_no_declaration(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
@@ -950,8 +935,7 @@ class TestTicketLedgerV2Exempt:
 
     # frob:ticket T-4153
     # frob:tests \
-    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_archived_ticket_md_is_exem\
-    # pt_with_no_declaration kind="unit"
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_archived_ticket_md_is_exempt_with_no_declaration kind="unit"  # noqa: E501
     def test_archived_ticket_md_is_exempt_with_no_declaration(
         self, tmp_path: Path
     ) -> None:
@@ -972,8 +956,7 @@ class TestTicketLedgerV2Exempt:
 
     # frob:ticket T-4153
     # frob:tests \
-    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_unrelated_file_in_ticket_d\
-    # ir_still_fires_ref001 kind="unit"
+    # tests/test_refs_gate.py::TestTicketLedgerV2Exempt.test_unrelated_file_in_ticket_dir_still_fires_ref001 kind="unit"  # noqa: E501
     def test_unrelated_file_in_ticket_dir_still_fires_ref001(
         self, tmp_path: Path
     ) -> None:

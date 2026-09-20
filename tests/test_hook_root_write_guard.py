@@ -383,14 +383,12 @@ def test_bash_ticket_verb_with_coordinator_marker_is_allowed(tmp_path):
 
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-2895
+# frob:ticket T-4624
 def test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd(tmp_path):
-    """T-2895 defect 3, must-now-pass: `frob ticket done-report` (a
-    ledger-only mutating verb, never `land`) run from the primary checkout
-    with no `cd`, no `--path`, and NO markers set is now ALLOWED -- matching
-    the module docstring's and `REASON`'s standing claim that
-    `tickets.md`/`tickets/**` writes are exempt, which previously held only
-    for the `Write`/`Edit` tool path and never for this `Bash`-invoked CLI
-    shape."""
+    """Asserts `frob ticket done-report` run from the primary checkout
+    with no `cd`, no `--path`, and no markers set is allowed, matching
+    the module's standing `tickets.md`/`tickets/**` write exemption for
+    this `Bash`-invoked CLI shape."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
@@ -852,14 +850,11 @@ def test_bash_ticket_land_still_refused_alongside_quoted_prose(tmp_path):
 
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-3694
+# frob:ticket T-4624
 def test_bash_set_prefixed_cd_into_worktree_is_allowed(tmp_path):
-    """MUST-STAY-QUIET (T-3694): the other live false-positive this drive's
-    session hit -- a leading `set -e;` (or similar) segment before the
-    `cd` -- previously defeated the single-regex `_leading_cd_target`
-    entirely, so the redirect target resolved against the PRE-cd cwd
-    (the primary checkout) instead of the effective one. The token-walk
-    `_effective_cwd_from_tokens` skips the harmless `set -e;` prefix and
-    still finds the `cd` into the worktree."""
+    """Asserts `_effective_cwd_from_tokens` skips a leading `set -e;`
+    (or similar) segment and still finds the `cd` into the worktree, so
+    the redirect target resolves against the effective cwd."""
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
@@ -902,19 +897,12 @@ def test_bash_set_prefixed_cd_into_primary_still_refused(tmp_path):
 
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-3694
+# frob:ticket T-4624
 def test_bash_heredoc_body_containing_delimiter_substring_is_allowed(tmp_path):
-    """MUST-STAY-QUIET (T-3694): the third live false-positive this
-    drive's session hit -- a heredoc appending to a path OUTSIDE the
-    repo root entirely, whose BODY happens to contain the closing
-    delimiter word as a mid-line SUBSTRING (documentation prose like
-    "...EOF's own recovery recipe...") and separate lines with `>`/`>>`
-    example text. The old `^\\1\\b` terminator let that substring occurrence
-    end the blanked span early, leaving the rest of the body (with its
-    own `>` example text) for `_shell_tokens` to misparse as real
-    operator tokens targeting a RELATIVE path that resolved under the
-    primary checkout. The tightened `^\\1[ \\t]*$` terminator (real
-    heredoc grammar: the delimiter alone on its own line) only ends the
-    span at the TRUE closing delimiter."""
+    """Asserts a heredoc body containing the closing delimiter word as
+    a mid-line substring (not alone on its own line) is not treated as
+    the heredoc's end, so its own `>`/`>>` example text is not misparsed
+    as real redirect operators."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     outside_target = tmp_path / "outside-the-repo.md"
     command = (

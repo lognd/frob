@@ -88,8 +88,7 @@ class TestResolveSymbol:
 
     def test_missing_module_is_target_not_found(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestResolveSymbol.test_missing_module_is_target_not_f\
-        # ound
+        # tests/test_refactor.py::TestResolveSymbol.test_missing_module_is_target_not_found  # noqa: E501
         root = _repo(tmp_path)
         result = resolve_symbol(root, SymbolRef(module="pkg.absent", qualname="x"))
         assert result.is_err
@@ -97,8 +96,7 @@ class TestResolveSymbol:
 
     def test_missing_qualname_is_target_not_found(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestResolveSymbol.test_missing_qualname_is_target_not\
-        # _found
+        # tests/test_refactor.py::TestResolveSymbol.test_missing_qualname_is_target_not_found  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def other():\n    pass\n")
         result = resolve_symbol(root, SymbolRef(module="pkg.mod", qualname="greet"))
@@ -145,8 +143,7 @@ class TestScanReferences:
     # frob:ticket T-3690
     def test_self_import_skip_str_compare_is_not_per_node(self, tmp_path, monkeypatch):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_self_import_skip_str_compare_\
-        # is_not_per_node
+        # tests/test_refactor.py::TestScanReferences.test_self_import_skip_str_compare_is_not_per_node  # noqa: E501
         # T-3690 (PERF003): `str(file_path) == dest_file_path` used to
         # rerun once per matching `ast.walk` node inside the self-import
         # skip branch (T-3653) instead of once per file -- assert the
@@ -190,8 +187,7 @@ class TestScanReferences:
 
     def test_auto_alias_on_call_site_name_collision(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_auto_alias_on_call_site_name_\
-        # collision
+        # tests/test_refactor.py::TestScanReferences.test_auto_alias_on_call_site_name_collision  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -217,8 +213,7 @@ class TestScanReferences:
 
     def test_semicolon_joined_from_import_refuses_rewrite(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_semicolon_joined_from_import_\
-        # refuses_rewrite
+        # tests/test_refactor.py::TestScanReferences.test_semicolon_joined_from_import_refuses_rewrite  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -241,8 +236,7 @@ class TestScanReferences:
 
     def test_function_local_import_does_not_false_refuse(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_function_local_import_does_no\
-        # t_false_refuse
+        # tests/test_refactor.py::TestScanReferences.test_function_local_import_does_not_false_refuse  # noqa: E501
         # T-3066: a function-local `from` import has no true sibling
         # statement on its line -- `ast.walk` previously matched the
         # import's OWN enclosing `FunctionDef` (whose span always
@@ -265,8 +259,7 @@ class TestScanReferences:
 
     def test_if_block_import_does_not_false_refuse(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_if_block_import_does_not_fals\
-        # e_refuse
+        # tests/test_refactor.py::TestScanReferences.test_if_block_import_does_not_false_refuse  # noqa: E501
         # T-3066: an `if`-block-nested import has no true sibling either --
         # the enclosing `If` node's span overlaps its own body.
         root = _repo(tmp_path)
@@ -290,8 +283,7 @@ class TestScanReferences:
 
     def test_try_block_import_does_not_false_refuse(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_try_block_import_does_not_fal\
-        # se_refuse
+        # tests/test_refactor.py::TestScanReferences.test_try_block_import_does_not_false_refuse  # noqa: E501
         # T-3066: a `try`-block-nested import has no true sibling either --
         # the enclosing `Try` node's span overlaps its own body.
         root = _repo(tmp_path)
@@ -316,8 +308,7 @@ class TestScanReferences:
 
     def test_untouched_symbol_nested_import_does_not_gate_move(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_untouched_symbol_nested_impor\
-        # t_does_not_gate_move
+        # tests/test_refactor.py::TestScanReferences.test_untouched_symbol_nested_import_does_not_gate_move  # noqa: E501
         # T-3066 defect 2: a nested import of a DIFFERENT, non-moved
         # symbol from the same source module must never gate the move of
         # an unrelated symbol.
@@ -342,8 +333,7 @@ class TestScanReferences:
 
     def test_unresolved_attribute_style_reference_surfaces(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_unresolved_attribute_style_re\
-        # ference_surfaces
+        # tests/test_refactor.py::TestScanReferences.test_unresolved_attribute_style_reference_surfaces  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -367,8 +357,7 @@ class TestScanReferences:
 
     def test_mixed_moved_and_untouched_names_leaves_import_alone(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_mixed_moved_and_untouched_nam\
-        # es_leaves_import_alone
+        # tests/test_refactor.py::TestScanReferences.test_mixed_moved_and_untouched_names_leaves_import_alone  # noqa: E501
         # T-3105: a call site importing the moved name ALONGSIDE an
         # untouched name must not have the whole statement repointed at
         # the destination module -- `farewell` is not defined there. The
@@ -398,8 +387,7 @@ class TestScanReferences:
 
     def test_reexport_line_with_many_names_leaves_import_alone(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_reexport_line_with_many_names\
-        # _leaves_import_alone
+        # tests/test_refactor.py::TestScanReferences.test_reexport_line_with_many_names_leaves_import_alone  # noqa: E501
         # T-3105: the same mixed-names hazard, but with more names on one
         # line (the `gates/__init__.py`-shaped re-export case that broke
         # ~130 files in the first T-3086 attempt).
@@ -428,8 +416,7 @@ class TestScanReferences:
 
     def test_also_moving_sibling_on_same_line_is_folded_into_rewrite(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_also_moving_sibling_on_same_l\
-        # ine_is_folded_into_rewrite
+        # tests/test_refactor.py::TestScanReferences.test_also_moving_sibling_on_same_line_is_folded_into_rewrite  # noqa: E501
         # T-3143: MEASURED against the real T-3086 split -- `greet` and
         # `farewell` are BOTH being moved together in the same split
         # batch (`also_moving` names `farewell`), so the shared import
@@ -468,8 +455,7 @@ class TestScanReferences:
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_also_moving_sibling_plus_genu\
-        # inely_untouched_name_still_blocks
+        # tests/test_refactor.py::TestScanReferences.test_also_moving_sibling_plus_genuinely_untouched_name_still_blocks  # noqa: E501
         # T-3143: a line naming the current symbol, a co-moving sibling,
         # AND a genuinely untouched third name must still be left alone
         # entirely -- folding siblings in must never regress T-3105's
@@ -501,8 +487,7 @@ class TestScanReferences:
 
     def test_type_checking_guarded_mixed_import_not_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_type_checking_guarded_mixed_i\
-        # mport_not_rewritten
+        # tests/test_refactor.py::TestScanReferences.test_type_checking_guarded_mixed_import_not_rewritten  # noqa: E501
         # T-3105: mixed moved/untouched names inside a `TYPE_CHECKING`
         # block must get the same treatment as module-scope -- left alone.
         root = _repo(tmp_path)
@@ -531,8 +516,7 @@ class TestScanReferences:
     # frob:ticket T-3109
     def test_function_local_import_rewrite_preserves_indentation(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_function_local_import_rewrite\
-        # _preserves_indentation
+        # tests/test_refactor.py::TestScanReferences.test_function_local_import_rewrite_preserves_indentation  # noqa: E501
         # T-3109: `_rebuild_from_import` builds a bare, unindented
         # replacement statement -- the op replacing an INDENTED call
         # site's import must restore its leading whitespace, or the
@@ -556,8 +540,7 @@ class TestScanReferences:
 
     def test_function_local_mixed_import_not_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_function_local_mixed_import_n\
-        # ot_rewritten
+        # tests/test_refactor.py::TestScanReferences.test_function_local_mixed_import_not_rewritten  # noqa: E501
         # T-3105 + T-3066 combined shape: a function-local import naming
         # both a moved and an untouched name must neither false-refuse
         # (T-3066) nor get repointed as a whole (T-3105) -- left alone.
@@ -643,8 +626,7 @@ class TestApplyPlan:
     # frob:ticket T-3109
     def test_apply_indented_import_call_site_stays_parseable(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestApplyPlan.test_apply_indented_import_call_site_st\
-        # ays_parseable
+        # tests/test_refactor.py::TestApplyPlan.test_apply_indented_import_call_site_stays_parseable  # noqa: E501
         # T-3109 end-to-end: a function-local import call site, rewritten
         # through the full move pipeline, must leave a file that still
         # parses -- the bug wrote an unindented replacement over an
@@ -722,8 +704,7 @@ class TestApplyPlan:
         self, tmp_path, monkeypatch
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestApplyPlan.test_apply_failed_on_write_error_report\
-        # s_apply_failed
+        # tests/test_refactor.py::TestApplyPlan.test_apply_failed_on_write_error_reports_apply_failed  # noqa: E501
         from frob.refactor._models import RefactorKind, RefactorPlan, RewriteOp
 
         root = _repo(tmp_path)
@@ -776,8 +757,7 @@ def _fake_resolved(file_path: str):
 class TestBuildPlan:
     def test_plan_includes_move_and_reference_ops(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestBuildPlan.test_plan_includes_move_and_reference_o\
-        # ps
+        # tests/test_refactor.py::TestBuildPlan.test_plan_includes_move_and_reference_ops  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -831,6 +811,7 @@ class TestBuildPlan:
         assert result.danger_err == RefactorError.TargetNotFound
 
 
+# frob:ticket T-4624
 class TestRunRefactor:
     def test_dirty_working_tree_refuses(self, tmp_path):
         # frob:tests \
@@ -882,8 +863,7 @@ class TestRunRefactor:
 
     def test_target_not_found_refuses_with_no_writes(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRunRefactor.test_target_not_found_refuses_with_no\
-        # _writes
+        # tests/test_refactor.py::TestRunRefactor.test_target_not_found_refuses_with_no_writes  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _commit_all(root, "initial")
@@ -952,19 +932,17 @@ class TestRunRefactor:
         assert "def greet" in restored
 
     # frob:ticket T-1885
+    # frob:ticket T-4624
     def test_run_refactor_does_not_roll_back_on_ticket_md_evidence_carrier(
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestRunRefactor.test_run_refactor_does_not_roll_back_\
-        # on_ticket_md_evidence_carrier
-        """T-1885 end-to-end repro: a real ticket carrying a structured
-        evidence citation for the moving symbol used to make the Verify
-        phase's `verify_import_resolution` step `ast.parse` the rewritten
-        `tickets/<id>/ticket.md` as Python, raise `SyntaxError` on the
-        `T-####`-shaped id, and roll the whole transaction back --
-        even though the actual symbol rename was correct. With the
-        `.py`-suffix filter, this must now succeed and commit."""
+        # tests/test_refactor.py::TestRunRefactor.test_run_refactor_does_not_roll_back_on_ticket_md_evidence_carrier  # noqa: E501
+        """Asserts a run_refactor transaction touching a ticket carrying
+        a structured evidence citation for the moved symbol succeeds and
+        commits, since the `.py`-suffix filter keeps
+        `verify_import_resolution` from `ast.parse`-ing
+        `tickets/<id>/ticket.md`."""
         from frob.tickets import TicketKind, TicketSpec, load_all, new_ticket
         from frob.tickets._models import Origin
 
@@ -1021,8 +999,7 @@ class TestRunRefactor:
 
     def test_apply_failure_recovers_clean_precommit_tree(self, tmp_path, monkeypatch):
         # frob:tests \
-        # tests/test_refactor.py::TestRunRefactor.test_apply_failure_recovers_clean_pre\
-        # commit_tree
+        # tests/test_refactor.py::TestRunRefactor.test_apply_failure_recovers_clean_precommit_tree  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -1091,8 +1068,7 @@ class TestRunRefactor:
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestRunRefactor.test_per_ticket_evidence_rewrite_rout\
-        # es_through_replace_evidence
+        # tests/test_refactor.py::TestRunRefactor.test_per_ticket_evidence_rewrite_routes_through_replace_evidence  # noqa: E501
         """T-1854: a moving method's pytest node-id citation, actually
         bound as a ticket's structured evidence, is rebound through
         `frob.tickets.replace_evidence` (an audited `EvidenceChangeEntry`
@@ -1165,8 +1141,7 @@ class TestRunRefactor:
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestRunRefactor.test_evidence_rewrite_not_in_structur\
-        # ed_evidence_falls_back_to_raw_op
+        # tests/test_refactor.py::TestRunRefactor.test_evidence_rewrite_not_in_structured_evidence_falls_back_to_raw_op  # noqa: E501
         """T-1854: a per-ticket file citing the moving node id in free
         PROSE (never bound as real structured evidence) is not something
         `replace_evidence` can rebind (`EvidenceReplaceNotFound`) -- the
@@ -1215,6 +1190,7 @@ class TestRunRefactor:
         assert new_node_id in ledger_op.new_text
 
 
+# frob:ticket T-4624
 class TestVerify:
     def test_import_resolution_catches_syntax_error(self, tmp_path):
         # frob:tests \
@@ -1290,8 +1266,7 @@ class TestVerify:
     # frob:ticket T-3136
     def test_pytest_collect_skips_non_python_touched_files(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerify.test_pytest_collect_skips_non_python_touch\
-        # ed_files
+        # tests/test_refactor.py::TestVerify.test_pytest_collect_skips_non_python_touched_files  # noqa: E501
         """T-3136: `touched_files` is the FULL set a `RefactorPlan.
         reference_ops` entry rewrote, not just Python source -- a non-.py
         carrier (e.g. a `docs/**` prose citation) reaching pytest's own
@@ -1311,8 +1286,7 @@ class TestVerify:
     # frob:ticket T-3136
     def test_pytest_collect_passes_when_all_touched_files_non_python(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerify.test_pytest_collect_passes_when_all_touche\
-        # d_files_non_python
+        # tests/test_refactor.py::TestVerify.test_pytest_collect_passes_when_all_touched_files_non_python  # noqa: E501
         """T-3136: if every touched file is non-Python, there is nothing
         to collect -- this must pass-with-note, matching
         `verify_import_resolution`'s own empty-`trees` shape, not refuse."""
@@ -1364,8 +1338,7 @@ class TestVerify:
 
     def test_import_resolution_catches_dangling_reference(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerify.test_import_resolution_catches_dangling_re\
-        # ference
+        # tests/test_refactor.py::TestVerify.test_import_resolution_catches_dangling_reference  # noqa: E501
         from frob.refactor import verify_import_resolution
 
         root = _repo(tmp_path)
@@ -1385,8 +1358,7 @@ class TestVerify:
 
     def test_import_resolution_local_import_resolves(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerify.test_import_resolution_local_import_resolv\
-        # es
+        # tests/test_refactor.py::TestVerify.test_import_resolution_local_import_resolves  # noqa: E501
         from frob.refactor import verify_import_resolution
 
         root = _repo(tmp_path)
@@ -1400,17 +1372,14 @@ class TestVerify:
         assert outcome.passed is True
 
     # frob:ticket T-1885
+    # frob:ticket T-4624
     def test_import_resolution_skips_non_python_touched_file(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerify.test_import_resolution_skips_non_python_to\
-        # uched_file
-        """T-1885: a non-`.py` touched file (a real `tickets/<id>/
-        ticket.md` evidence carrier, T-1546) must never reach `ast.parse`
-        at all -- before this fix, a ticket.md body containing a
-        `T-0001`-shaped id raised a spurious `SyntaxError` ("leading
-        zeros in decimal integer literals are not permitted"), and this
-        check reported `passed=False`, forcing `run_refactor` to roll
-        back a transaction whose actual rewrite was correct."""
+        # tests/test_refactor.py::TestVerify.test_import_resolution_skips_non_python_touched_file  # noqa: E501
+        """Asserts `verify_import_resolution` never passes a non-`.py`
+        touched file (a `tickets/<id>/ticket.md` evidence carrier) to
+        `ast.parse`, even when its body contains a `T-0001`-shaped
+        id."""
         from frob.refactor import verify_import_resolution
 
         ticket_md = _write(
@@ -1428,8 +1397,7 @@ class TestVerify:
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestVerify.test_import_resolution_still_catches_synta\
-        # x_error_in_py_file_among_non_py
+        # tests/test_refactor.py::TestVerify.test_import_resolution_still_catches_syntax_error_in_py_file_among_non_py  # noqa: E501
         """The T-1885 non-`.py` skip must not widen what a genuinely
         broken `.py` file among the touched set is verified against --
         only the extension-filtering changed, not the Python-file
@@ -1743,8 +1711,7 @@ class TestCli:
 
     def test_run_refactor_command_dispatches_split_end_to_end(self, tmp_path, capsys):
         # frob:tests \
-        # tests/test_refactor.py::TestCli.test_run_refactor_command_dispatches_split_en\
-        # d_to_end
+        # tests/test_refactor.py::TestCli.test_run_refactor_command_dispatches_split_end_to_end  # noqa: E501
         import argparse
         import os
 
@@ -1788,8 +1755,7 @@ class TestCli:
 
     def test_run_refactor_command_split_refusal_exit_code(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestCli.test_run_refactor_command_split_refusal_exit_\
-        # code
+        # tests/test_refactor.py::TestCli.test_run_refactor_command_split_refusal_exit_code  # noqa: E501
         import argparse
         import os
 
@@ -1829,8 +1795,7 @@ class TestDirectiveCarrier:
 
     def test_attached_waiver_moves_with_symbol(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestDirectiveCarrier.test_attached_waiver_moves_with_\
-        # symbol
+        # tests/test_refactor.py::TestDirectiveCarrier.test_attached_waiver_moves_with_symbol  # noqa: E501
         source: str = (
             "# frob:waive ARCH101 reason=\"test\"\ndef greet():\n    return 'hi'\n"
         )
@@ -1841,16 +1806,14 @@ class TestDirectiveCarrier:
 
     def test_unrelated_comment_not_extended(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestDirectiveCarrier.test_unrelated_comment_not_exten\
-        # ded
+        # tests/test_refactor.py::TestDirectiveCarrier.test_unrelated_comment_not_extended  # noqa: E501
         source: str = "# just a regular comment\ndef greet():\n    return 'hi'\n"
         lines = source.splitlines()
         assert extend_span_for_attached_directives(lines, 2) == 2
 
     def test_directive_target_elsewhere_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestDirectiveCarrier.test_directive_target_elsewhere_\
-        # rewritten
+        # tests/test_refactor.py::TestDirectiveCarrier.test_directive_target_elsewhere_rewritten  # noqa: E501
         import os
 
         root = _repo(tmp_path)
@@ -1879,8 +1842,7 @@ class TestDirectiveCarrier:
 
     def test_lock_ack_carried_to_new_symref(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestDirectiveCarrier.test_lock_ack_carried_to_new_sym\
-        # ref
+        # tests/test_refactor.py::TestDirectiveCarrier.test_lock_ack_carried_to_new_symref  # noqa: E501
         import json
         import os
 
@@ -1910,8 +1872,7 @@ class TestDirectiveCarrier:
 
     def test_move_carries_attached_waiver_end_to_end(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestDirectiveCarrier.test_move_carries_attached_waive\
-        # r_end_to_end
+        # tests/test_refactor.py::TestDirectiveCarrier.test_move_carries_attached_waiver_end_to_end  # noqa: E501
         import os
 
         root = _repo(tmp_path)
@@ -2013,8 +1974,7 @@ class TestRepointer:
 
     def test_per_ticket_ledger_file_evidence_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRepointer.test_per_ticket_ledger_file_evidence_re\
-        # written
+        # tests/test_refactor.py::TestRepointer.test_per_ticket_ledger_file_evidence_rewritten  # noqa: E501
         """T-1546: `tickets/<id>/ticket.md` -- the real ledger-v2 file a
         live ticket's Evidence lives in -- gets the same rewrite the
         legacy `tickets.md` monofile does."""
@@ -2035,8 +1995,7 @@ class TestRepointer:
 
     def test_archived_per_ticket_ledger_file_evidence_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRepointer.test_archived_per_ticket_ledger_file_ev\
-        # idence_rewritten
+        # tests/test_refactor.py::TestRepointer.test_archived_per_ticket_ledger_file_evidence_rewritten  # noqa: E501
         """T-1546: `tickets/archive/<id>/ticket.md` -- a CLOSED ticket's
         archived ledger-v2 file -- also gets the rewrite; a closed
         ticket's own Evidence is exactly the case T-1520's incident (and
@@ -2100,8 +2059,7 @@ class TestRepointer:
     # frob:ticket T-1854
     def test_ticket_id_from_ledger_path_legacy_monofile_is_none(self):
         # frob:tests \
-        # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_legacy_\
-        # monofile_is_none
+        # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_legacy_monofile_is_none  # noqa: E501
         from frob.refactor._repointer import _ticket_id_from_ledger_path
 
         assert _ticket_id_from_ledger_path("/repo/tickets.md") is None
@@ -2110,8 +2068,7 @@ class TestRepointer:
     # frob:ticket T-1854
     def test_evidence_citation_targets_matches_scan_inputs(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRepointer.test_evidence_citation_targets_matches_\
-        # scan_inputs
+        # tests/test_refactor.py::TestRepointer.test_evidence_citation_targets_matches_scan_inputs  # noqa: E501
         from frob.refactor._repointer import _evidence_citation_targets
 
         root = _repo(tmp_path)
@@ -2140,8 +2097,7 @@ class TestProseCarrier:
 
     def test_docstring_mention_elsewhere_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestProseCarrier.test_docstring_mention_elsewhere_rew\
-        # ritten
+        # tests/test_refactor.py::TestProseCarrier.test_docstring_mention_elsewhere_rewritten  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -2163,8 +2119,7 @@ class TestProseCarrier:
 
     def test_directive_line_skipped_by_prose_scan(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestProseCarrier.test_directive_line_skipped_by_prose\
-        # _scan
+        # tests/test_refactor.py::TestProseCarrier.test_directive_line_skipped_by_prose_scan  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         old_symref = "src/pkg/mod.py::greet"
@@ -2186,8 +2141,7 @@ class TestProseCarrier:
 
     def test_docs_prose_and_code_block_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestProseCarrier.test_docs_prose_and_code_block_rewri\
-        # tten
+        # tests/test_refactor.py::TestProseCarrier.test_docs_prose_and_code_block_rewritten  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(
@@ -2208,8 +2162,7 @@ class TestProseCarrier:
 
     def test_heading_and_anchor_rewritten_together(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestProseCarrier.test_heading_and_anchor_rewritten_to\
-        # gether
+        # tests/test_refactor.py::TestProseCarrier.test_heading_and_anchor_rewritten_together  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
         _write(root, "docs/guide.md", "# greet\n\nSome text.\n")
@@ -2233,8 +2186,7 @@ class TestProseCarrier:
 
     def test_anchor_text_inside_string_literal_survives_untouched(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestProseCarrier.test_anchor_text_inside_string_liter\
-        # al_survives_untouched
+        # tests/test_refactor.py::TestProseCarrier.test_anchor_text_inside_string_literal_survives_untouched  # noqa: E501
         # T-3656: a `.py` file whose STRING/bytes literal happens to
         # contain the exact `docs/guide.md#greet` anchor text (not a real
         # `frob:doc`/`frob:describes` comment) must survive the rewrite
@@ -2274,8 +2226,7 @@ class TestProseCarrier:
 
     def test_unreadable_doc_file_disclosed_in_unresolved(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestProseCarrier.test_unreadable_doc_file_disclosed_i\
-        # n_unresolved
+        # tests/test_refactor.py::TestProseCarrier.test_unreadable_doc_file_disclosed_in_unresolved  # noqa: E501
         import os
         import stat
 
@@ -2309,8 +2260,7 @@ class TestAliasPolicy:
 
     def test_rename_dest_renames_existing_symbol_and_its_callers(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestAliasPolicy.test_rename_dest_renames_existing_sym\
-        # bol_and_its_callers
+        # tests/test_refactor.py::TestAliasPolicy.test_rename_dest_renames_existing_symbol_and_its_callers  # noqa: E501
         root = _repo(tmp_path)
         _write(
             root,
@@ -2336,8 +2286,7 @@ class TestAliasPolicy:
 
     def test_build_plan_error_policy_still_refuses(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestAliasPolicy.test_build_plan_error_policy_still_re\
-        # fuses
+        # tests/test_refactor.py::TestAliasPolicy.test_build_plan_error_policy_still_refuses  # noqa: E501
         root = _repo(tmp_path)
         _write(
             root,
@@ -2356,8 +2305,7 @@ class TestAliasPolicy:
 
     def test_build_plan_rename_dest_policy_proceeds(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestAliasPolicy.test_build_plan_rename_dest_policy_pr\
-        # oceeds
+        # tests/test_refactor.py::TestAliasPolicy.test_build_plan_rename_dest_policy_proceeds  # noqa: E501
         root = _repo(tmp_path)
         _write(
             root,
@@ -2385,15 +2333,13 @@ class TestSplitChunking:
 
     def test_chunk_symbols_preserves_order_and_size(self):
         # frob:tests \
-        # tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_preserves_order_\
-        # and_size
+        # tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_preserves_order_and_size  # noqa: E501
         groups = chunk_symbols(["a", "b", "c", "d", "e"], 2)
         assert groups == [["a", "b"], ["c", "d"], ["e"]]
 
     def test_chunk_symbols_clamps_nonpositive_size_to_one(self):
         # frob:tests \
-        # tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_clamps_nonpositi\
-        # ve_size_to_one
+        # tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_clamps_nonpositive_size_to_one  # noqa: E501
         groups = chunk_symbols(["a", "b"], 0)
         assert groups == [["a"], ["b"]]
 
@@ -2404,8 +2350,7 @@ class TestSplitReexport:
 
     def test_shim_op_imports_every_moved_name(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestSplitReexport.test_shim_op_imports_every_moved_na\
-        # me
+        # tests/test_refactor.py::TestSplitReexport.test_shim_op_imports_every_moved_name  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/mod.py", "x = 1\n")
         op = build_reexport_shim_op(root, "pkg.mod", "pkg.newmod", ["b", "a"])
@@ -2423,8 +2368,7 @@ class TestRunSplit:
 
     def test_split_moves_symbols_and_leaves_reexport_shim(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRunSplit.test_split_moves_symbols_and_leaves_reex\
-        # port_shim
+        # tests/test_refactor.py::TestRunSplit.test_split_moves_symbols_and_leaves_reexport_shim  # noqa: E501
         root = _repo(tmp_path)
         _write(
             root,
@@ -2485,8 +2429,7 @@ class TestRunSplit:
     # frob:ticket T-3645
     def test_split_merges_carried_imports_into_existing_top_block(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRunSplit.test_split_merges_carried_imports_into_e\
-        # xisting_top_block
+        # tests/test_refactor.py::TestRunSplit.test_split_merges_carried_imports_into_existing_top_block  # noqa: E501
         """T-3645's own repro shape: `A` and `B` each need a DIFFERENT
         import (`Path`, `OrderedDict`) not already present at the
         destination, split into the SAME destination module across TWO
@@ -2553,8 +2496,7 @@ class TestRunSplit:
     # frob:ticket T-3122
     def test_split_carries_forward_imports_moved_body_needs(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved\
-        # _body_needs
+        # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved_body_needs  # noqa: E501
         """T-3122: `run_split` must copy forward every top-level import a
         moved symbol's own body/base-classes/annotations reference --
         `import_resolution`'s own check only covers call-site imports and
@@ -2606,8 +2548,7 @@ class TestRunSplit:
 
     def test_split_chunk_failure_does_not_touch_later_chunks(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRunSplit.test_split_chunk_failure_does_not_touch_\
-        # later_chunks
+        # tests/test_refactor.py::TestRunSplit.test_split_chunk_failure_does_not_touch_later_chunks  # noqa: E501
         root = _repo(tmp_path)
         _write(
             root,
@@ -2664,8 +2605,7 @@ class TestRunSplit:
         self, tmp_path, monkeypatch
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestRunSplit.test_run_chunk_verify_scopes_pytest_coll\
-        # ect_to_touched_files
+        # tests/test_refactor.py::TestRunSplit.test_run_chunk_verify_scopes_pytest_collect_to_touched_files  # noqa: E501
         """T-3119: `_run_chunk_verify` delegates to `run_verify_outcomes`
         with `pytest_scope_touched_only=True` ALWAYS -- a chunk's own
         touched-file set was always this function's only pytest-collect
@@ -2702,8 +2642,7 @@ class TestOperands:
 
     def test_parse_symbol_operand_refuses_module_shaped(self):
         # frob:tests \
-        # tests/test_refactor.py::TestOperands.test_parse_symbol_operand_refuses_module\
-        # _shaped
+        # tests/test_refactor.py::TestOperands.test_parse_symbol_operand_refuses_module_shaped  # noqa: E501
         result = parse_symbol_operand("app.mod")
         assert result.is_err
         assert result.danger_err == OperandError.WrongOperandKind
@@ -2714,8 +2653,7 @@ class TestOperands:
 
     def test_parse_module_operand_refuses_symbol_shaped(self):
         # frob:tests \
-        # tests/test_refactor.py::TestOperands.test_parse_module_operand_refuses_symbol\
-        # _shaped
+        # tests/test_refactor.py::TestOperands.test_parse_module_operand_refuses_symbol_shaped  # noqa: E501
         result = parse_module_operand("app:run")
         assert result.is_err
         assert result.danger_err == OperandError.WrongOperandKind
@@ -2734,8 +2672,7 @@ class TestOperands:
 
     def test_validate_destination_refuses_existing_module(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestOperands.test_validate_destination_refuses_existi\
-        # ng_module
+        # tests/test_refactor.py::TestOperands.test_validate_destination_refuses_existing_module  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/existing.py", "x = 1\n")
         result = validate_module_destination(root, ModuleRef(module="pkg.existing"))
@@ -2800,8 +2737,7 @@ class TestModuleLang:
 
     def test_unregistered_language_has_no_adapter(self):
         # frob:tests \
-        # tests/test_refactor.py::TestModuleLang.test_unregistered_language_has_no_adap\
-        # ter
+        # tests/test_refactor.py::TestModuleLang.test_unregistered_language_has_no_adapter  # noqa: E501
         assert adapter_for("typescript") is None
         assert adapter_for("rust") is None
 
@@ -2853,8 +2789,7 @@ class TestModuleScanPython:
 
     def test_rewrites_from_package_import_module(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_package_impor\
-        # t_module
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_package_import_module  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/__init__.py", "")
         _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
@@ -2873,8 +2808,7 @@ class TestModuleScanPython:
 
     def test_rewrites_from_module_import_name(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_module_import\
-        # _name
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_module_import_name  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/__init__.py", "")
         _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
@@ -2926,8 +2860,7 @@ class TestModuleScanPython:
 
     def test_rewrites_dynamic_import_module(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_dynamic_import_mod\
-        # ule
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_dynamic_import_module  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/__init__.py", "")
         _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
@@ -3072,8 +3005,7 @@ class TestCommit:
     # frob:ticket T-3596
     def test_run_verify_outcomes_runs_requested_checks(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestCommit.test_run_verify_outcomes_runs_requested_ch\
-        # ecks
+        # tests/test_refactor.py::TestCommit.test_run_verify_outcomes_runs_requested_checks  # noqa: E501
         root = _repo(tmp_path)
         good = _write(root, "src/pkg/good.py", "x = 1\n")
         outcomes = run_verify_outcomes(
@@ -3132,8 +3064,7 @@ class TestBuildModulePlan:
 class TestRunMoveModule:
     def test_move_module_succeeds_and_commits(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestRunMoveModule.test_move_module_succeeds_and_commi\
-        # ts
+        # tests/test_refactor.py::TestRunMoveModule.test_move_module_succeeds_and_commits  # noqa: E501
         root = _repo(tmp_path)
         _write(root, "src/pkg/__init__.py", "")
         _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
@@ -3249,8 +3180,7 @@ class TestVerifyStructural:
 
     def test_no_undefined_names_catches_free_variable(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_catches_\
-        # free_variable
+        # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_catches_free_variable  # noqa: E501
         """T-3596 gap 3 repro shape: a function body reads a module
         global (`msvcrt`-style) that is bound NOWHERE in this file --
         `import`ing the module alone never executes the function body,
@@ -3269,8 +3199,7 @@ class TestVerifyStructural:
 
     def test_no_undefined_names_passes_clean_module(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_passes_c\
-        # lean_module
+        # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_passes_clean_module  # noqa: E501
         from frob.refactor import verify_no_undefined_names
 
         good = _write(
@@ -3284,8 +3213,7 @@ class TestVerifyStructural:
 
     def test_no_self_import_catches_self_reference(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_catches_self\
-        # _reference
+        # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_catches_self_reference  # noqa: E501
         """T-3596 gap 4 repro shape: `split` observed inserting a `from
         <destination module> import (...)` line INTO that same
         destination module."""
@@ -3305,8 +3233,7 @@ class TestVerifyStructural:
 
     def test_no_self_import_passes_clean_module(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_passes_clean\
-        # _module
+        # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_passes_clean_module  # noqa: E501
         from frob.refactor import verify_no_self_import
 
         root = _repo(tmp_path)
@@ -3316,8 +3243,7 @@ class TestVerifyStructural:
 
     def test_decorators_preserved_catches_dropped_decorator(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_catche\
-        # s_dropped_decorator
+        # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_catches_dropped_decorator  # noqa: E501
         """T-3596 gap 4 repro shape: the destination def is missing the
         `@contextmanager` decorator the source symbol had at Plan time."""
         from frob.refactor import ResolvedSymbol, SymbolRef, verify_decorators_preserved
@@ -3344,8 +3270,7 @@ class TestVerifyStructural:
 
     def test_decorators_preserved_passes_when_intact(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_passes\
-        # _when_intact
+        # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_passes_when_intact  # noqa: E501
         from frob.refactor import ResolvedSymbol, SymbolRef, verify_decorators_preserved
 
         root = _repo(tmp_path)
@@ -3377,8 +3302,7 @@ class TestGapRegressions:
     # frob:ticket T-3596
     def test_gap1_move_carries_forward_default_arg_import(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap1_move_carries_forward_def\
-        # ault_arg_import
+        # tests/test_refactor.py::TestGapRegressions.test_gap1_move_carries_forward_default_arg_import  # noqa: E501
         """Gap 1: `move` (not just `split`) must copy forward a top-level
         import a moved function's DEFAULT ARGUMENT reads -- the ticket's
         own repro (`_violation(severity=Severity.WARN)` moved to
@@ -3423,8 +3347,7 @@ class TestGapRegressions:
     # frob:ticket T-3596
     def test_gap2_move_repoints_same_module_bare_name_reference(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap2_move_repoints_same_modul\
-        # e_bare_name_reference
+        # tests/test_refactor.py::TestGapRegressions.test_gap2_move_repoints_same_module_bare_name_reference  # noqa: E501
         """Gap 2: a sibling function LEFT BEHIND in the source module that
         references the moved symbol as a bare name (no `from SOURCE
         import symbol` statement to rewrite, since it lived in the same
@@ -3470,8 +3393,7 @@ class TestGapRegressions:
     # frob:ticket T-3596
     def test_gap3_split_carries_forward_module_level_free_variable(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap3_split_carries_forward_mo\
-        # dule_level_free_variable
+        # tests/test_refactor.py::TestGapRegressions.test_gap3_split_carries_forward_module_level_free_variable  # noqa: E501
         """Gap 3 -- the `_lock.py` repro shape: a module-level global
         populated by a `try`/`except ImportError` platform shim (not an
         `import` statement `needed_import_ops_for_symbols`'s ORIGINAL
@@ -3522,8 +3444,7 @@ class TestGapRegressions:
     # frob:ticket T-3596
     def test_gap4_split_preserves_decorator_and_no_self_import(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap4_split_preserves_decorato\
-        # r_and_no_self_import
+        # tests/test_refactor.py::TestGapRegressions.test_gap4_split_preserves_decorator_and_no_self_import  # noqa: E501
         """Gap 4 -- the `derived_state_lock` repro shape: splitting a
         `@contextmanager`-decorated function must keep the decorator AND
         must not insert a self-import into the newly-created destination
@@ -3576,8 +3497,7 @@ class TestGapRegressions:
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap5_split_after_move_no_self\
-        # _import_when_dest_already_defines_helper
+        # tests/test_refactor.py::TestGapRegressions.test_gap5_split_after_move_no_self_import_when_dest_already_defines_helper  # noqa: E501
         """T-3628/T-3650 repro shape: `_run_git` is `move`d out of
         `mod.py` into `helpers.py` first (leaving a gap-2 bare-name
         repoint import -- `from pkg.helpers import _run_git` -- behind in
@@ -3646,8 +3566,7 @@ class TestGapRegressions:
     # frob:ticket T-3650
     def test_gap5_split_seed_repo_referencing_git_helper_no_self_import(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap5_split_seed_repo_referenc\
-        # ing_git_helper_no_self_import
+        # tests/test_refactor.py::TestGapRegressions.test_gap5_split_seed_repo_referencing_git_helper_no_self_import  # noqa: E501
         """T-3595 repro shape: `_git` relocated to `conftest.py` first
         (`move`), then `_seed_repo` (which references `_git` as a bare
         name, still in the original module) `split` into the SAME
@@ -3709,8 +3628,7 @@ class TestGapRegressions:
         self, tmp_path
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_gap5_stale_dest_import_become\
-        # s_circular_when_its_own_symbol_later_moves_in
+        # tests/test_refactor.py::TestGapRegressions.test_gap5_stale_dest_import_becomes_circular_when_its_own_symbol_later_moves_in  # noqa: E501
         """T-3653's own repro shape: `_worker` (references `_key`, still in
         `mod.py`) is `move`d into `helpers.py` first -- gap 3's free-
         variable carry-forward correctly adds `from pkg.mod import _key`
@@ -3783,8 +3701,7 @@ class TestGapRegressions:
         self, tmp_path, monkeypatch
     ):
         # frob:tests \
-        # tests/test_refactor.py::TestGapRegressions.test_stale_dest_import_ops_sorts_e\
-        # ach_stale_set_once
+        # tests/test_refactor.py::TestGapRegressions.test_stale_dest_import_ops_sorts_each_stale_set_once  # noqa: E501
         # T-3690 (PERF004): `stale_dest_import_ops` used to call
         # `sorted()` twice over the SAME per-node `stale` list (once for
         # the log line, once for the `RewriteOp.reason` string) -- assert

@@ -538,14 +538,11 @@ class TestRunEvidenceCommandNoShell:
 
 
 # frob:ticket T-0796
+# frob:ticket T-4624
 class TestCmdEvidenceAcceptsBinding:
-    """T-0796 regression: `frob ticket evidence T-X --evidence-cmd CMD
-    --accepts N` must bind the recorded cmd evidence onto acceptance index
-    N exactly like `--evidence <pytest-node-id> --accepts N` already does
-    -- before this fix `add_cmd_evidence` had no `accepts` parameter and
-    both CLI call sites (`_close`, `_evidence`) dropped `cfg.ticket_accepts`
-    for the cmd-evidence path, so a docs-kind ticket's acceptance criterion
-    stayed UNBOUND despite the operator passing `--accepts`."""
+    """Asserts `frob ticket evidence T-X --evidence-cmd CMD --accepts N`
+    binds the recorded cmd evidence onto acceptance index N, the same
+    way `--evidence <pytest-node-id> --accepts N` does."""
 
     def _seed_docs_ticket_with_acceptance(self, tmp_path: Path) -> None:
         from frob.tickets import (
@@ -905,8 +902,7 @@ class TestReplaceEvidenceCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_a\
-        # rchived_reaches_the_archive kind="unit"
+        # tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_archived_reaches_the_archive kind="unit"  # noqa: E501
         """T-1561: the 2026-08-05 incident this fixes -- COV003 scans
         `tickets-archive.md`/`tickets/archive/**` too, but `evidence
         --replace` (no `--archived`) only ever reaches active storage
@@ -963,8 +959,7 @@ class TestReplaceEvidenceCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_w\
-        # ithout_archived_flag_cannot_reach_an_archived_ticket kind="unit"
+        # tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_without_archived_flag_cannot_reach_an_archived_ticket kind="unit"  # noqa: E501
         """Control case: the SAME archived ticket, replaced WITHOUT
         `--archived`, must fail NotFound -- proving the flag is load-
         bearing, not a no-op."""
@@ -1016,8 +1011,7 @@ class TestDesignateReproReasonCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_first_ti\
-        # me_designation_needs_no_reason
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_first_time_designation_needs_no_reason  # noqa: E501
         _patch_collect(monkeypatch, frozenset({"tests/x.py::test_a"}))
         _patch_passing(monkeypatch)
         cfg = AppConfig(
@@ -1046,8 +1040,7 @@ class TestDesignateReproReasonCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesign\
-        # ation_without_reason_exits_nonzero_and_writes_nothing
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesignation_without_reason_exits_nonzero_and_writes_nothing  # noqa: E501
         _patch_collect(
             monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
         )
@@ -1090,8 +1083,7 @@ class TestDesignateReproReasonCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesign\
-        # ation_with_reason_records_audit_entry
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesignation_with_reason_records_audit_entry  # noqa: E501
         _patch_collect(
             monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
         )
@@ -1140,8 +1132,7 @@ class TestDesignateReproReasonCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesign\
-        # ation_reason_file_is_read_verbatim
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesignation_reason_file_is_read_verbatim  # noqa: E501
         _patch_collect(
             monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
         )
@@ -1187,8 +1178,7 @@ class TestDesignateReproReasonCli:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_reason_a\
-        # nd_reason_file_together_exits_nonzero
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_reason_and_reason_file_together_exits_nonzero  # noqa: E501
         _patch_collect(
             monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
         )
@@ -1232,8 +1222,7 @@ class TestDesignateReproReasonCli:
 
     def test_from_external_carries_both_new_fields(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_from_ext\
-        # ernal_carries_both_new_fields
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_from_external_carries_both_new_fields  # noqa: E501
         """T-1851's `--designate-repro-reason`/`--designate-repro-reason-
         file` dests must survive the REAL argparse-Namespace ->
         `AppConfig.from_external` -> field round trip, not just direct
@@ -1331,14 +1320,11 @@ class TestEvidenceChangesSurfaced:
 
 
 # frob:ticket T-3925
+# frob:ticket T-4624
 class TestTicketEvidenceVitestOracle:
-    """T-3925 (F-134/F-039 recurrence): `--evidence` ids must resolve
-    against every OTHER registered `frob.testing.LANGUAGE_COLLECTORS`
-    entry too, not just python/rust -- a vitest node id (collected via
-    `collect_ts_tests`) was rejected as unknown evidence before this fix,
-    even though T-3847 had already wired the SAME registry into
-    verification. Mirrors `TestTicketEvidenceRustOracle` above, one
-    language over."""
+    """Asserts `--evidence` accepts a vitest node id (collected via
+    `collect_ts_tests`), resolving against every registered
+    `frob.testing.LANGUAGE_COLLECTORS` entry, not only python/rust."""
 
     def test_vitest_node_id_from_fake_collect_ts_resolves(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

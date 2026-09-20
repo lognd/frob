@@ -174,11 +174,11 @@ class TestScanTreeWithLocalSource:
         assert "cve-fingerprint" in verdict.signals
 
 
+# frob:ticket T-4624
 class TestScanTreeSourceUnavailableFailClosed:
-    """T-0400 audit finding #1: a dependency whose source is not present
-    locally used to be silently APPROVED (empty capability set, zero
-    violations) -- indistinguishable from "checked and clean". This is now
-    a fail-closed VET-SOURCE-UNAVAILABLE ERROR finding."""
+    """Asserts a dependency whose source is not present locally
+    produces a fail-closed VET-SOURCE-UNAVAILABLE ERROR finding, rather
+    than a silent, indistinguishable-from-clean APPROVED result."""
 
     def test_missing_source_surfaces_error_violation(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_scan.py::_scan_located_source kind="unit"
@@ -229,10 +229,10 @@ class TestScanTreeSourceUnavailableFailClosed:
         assert any(v.severity is Severity.ERROR for v in report.violations)
 
 
+# frob:ticket T-4624
 class TestScanTreeMultipleLockfiles:
-    """T-0400 audit finding #2: a repo with more than one supported
-    lockfile used to have every lockfile after the first silently
-    unscanned."""
+    """Asserts a repo with more than one supported lockfile has every
+    lockfile scanned, not only the first."""
 
     def test_scan_tree_scans_every_lockfile(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_scan.py::scan_tree kind="unit"

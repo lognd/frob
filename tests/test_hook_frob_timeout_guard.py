@@ -70,20 +70,19 @@ def _denial_reason(result) -> str | None:
 
 # frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
 # frob:ticket T-2248
+# frob:ticket T-4624
 def test_ticket_work_under_min_timeout_is_blocked():
-    """T-2248 acceptance criterion 1: `uv run frob ticket work T-XXXX` with
-    no (or too-small) tool timeout is blocked -- failed before this ticket
-    because the pattern lacked `work`."""
+    """Asserts `uv run frob ticket work T-XXXX` with no (or too-small)
+    tool timeout is blocked."""
     result = _run_hook("uv run frob ticket work T-2248")
     assert _denial_reason(result) is not None
 
 
 # frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
 # frob:ticket T-2248
+# frob:ticket T-4624
 def test_ticket_new_under_min_timeout_is_blocked():
-    """T-2248 acceptance criterion 2: `frob ticket new` with no tool timeout
-    is blocked -- failed before this ticket because the pattern lacked
-    `new`."""
+    """Asserts `frob ticket new` with no tool timeout is blocked."""
     result = _run_hook("uv run frob ticket new --title 'x' --kind bug")
     assert _denial_reason(result) is not None
 
