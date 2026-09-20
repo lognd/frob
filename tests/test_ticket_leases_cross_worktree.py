@@ -24,6 +24,7 @@ from frob.tickets import (
     TicketState,
     add_evidence,
     doable,
+    drop_ticket,
     leased_by,
     load_all,
     mutate_scope,
@@ -33,8 +34,10 @@ from frob.tickets import (
 )
 from frob.tickets._leases import (
     _git_common_dir,
+    _lease_path,
     force_release_lease,
     lease_holder_worktree,
+    leases_dir,
     read_all_leases,
     same_worktree_lease,
 )
@@ -171,6 +174,47 @@ class TestCrossWorktreeLeaseVisibility:
         assert not any(
             lease.ticket_id == tid for lease in read_all_leases(second_worktree)
         )
+
+    def test_drop_from_a_worktree_that_never_saw_in_progress_still_releases(
+        self, repo: Path
+    ) -> None:
+        """T-4684 (the T-3259 incident's true root cause): a ticket filed
+        and PLANNED (and committed) on `repo`, then a SECOND worktree cut
+        from that same commit starts it `IN_PROGRESS` on its OWN branch
+        (never merged back). Dropping the ticket FROM `repo` -- exactly
+        the coordinator-runs-from-the-primary-checkout shape T-3259
+        measured -- must still release the lease: gating on `repo`'s
+        local `from_state` (still `PLANNED`, never `IN_PROGRESS`, since
+        `repo` never merged the second worktree's commit) is the bug
+        `_sync_cross_worktree_lease` fixed. `second_worktree` (the shared
+        fixture) is NOT used here -- it branches off `repo` at `repo`'s
+        INITIAL commit, before this test's own ticket exists, so a fresh
+        worktree is cut after filing+planning instead, matching the
+        measured incident's actual ordering."""
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_drop_from_a_worktree_that_never_saw_in_progress_still_releases  # noqa: E501
+        created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        _commit_all(repo, "plan")
+
+        wt = repo.parent / "wt-drop-repro"
+        _run(["git", "worktree", "add", "-b", "feature-wt-drop-repro", str(wt)], repo)
+
+        # `wt` starts the ticket on ITS OWN branch, without that
+        # transition ever reaching `repo`.
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        _commit_all(wt, "start")
+
+        lease_path = _lease_path(leases_dir(repo).danger_ok, tid)
+        assert lease_path.exists()
+
+        # `repo`'s own local ledger view of `tid` is still PLANNED here --
+        # it never merged `wt`'s IN_PROGRESS commit.
+        dropped = drop_ticket(repo, tid, "coordinator drop from the primary checkout")
+        assert dropped.is_ok
+        assert not lease_path.exists()
 
     def test_stale_lease_for_a_removed_worktree_is_skipped(
         self, repo: Path, second_worktree: Path, tmp_path: Path

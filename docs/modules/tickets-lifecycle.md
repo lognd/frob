@@ -292,6 +292,33 @@ when an in-progress ticket's scope changes. The local `tickets.md`
 this worktree already knows about; the lease record is a DERIVED mirror
 of that, kept in sync by `mutate_scope`, never the other way around.
 
+### Cross-worktree release is keyed on the lease file, not local state (T-4684)
+
+`frob.tickets._evidence._sync_cross_worktree_lease` (the one place
+`transition()` syncs the T-0473 side channel) releases a lease on EVERY
+transition that does not enter `IN_PROGRESS`, unconditionally --
+`release_lease` is idempotent (`Ok(None)` when no lease file exists for
+the ticket id), so calling it costs nothing extra on a transition that
+never held one.
+
+Before T-4684, the release call was instead gated on `from_state is
+TicketState.IN_PROGRESS` -- the CALLING worktree's own local `Ticket.
+state` immediately before the transition. Because `tickets.md` is
+per-branch (T-0473's whole premise), that local view can be stale: a
+ticket filed and `PLANNED` on the primary checkout, then started
+`IN_PROGRESS` from a SECOND worktree's own branch (never merged back),
+has a lease file the primary checkout's own `tickets.md` never recorded.
+Dropping/closing/requeuing that ticket FROM the primary checkout -- the
+ordinary coordinator shape -- saw `from_state` as still `PLANNED` there,
+so the release branch never fired, and the lease file the second
+worktree wrote survived indefinitely (the measured T-3259 incident:
+`frob ticket drop T-3259` left `.git/frob-leases/T-3259.json` in place
+until a human ran `frob worktree release-lease` by hand). The fix drops
+the `from_state` check entirely for the release side: a lease's
+existence, not any one checkout's opinion of what state the ticket was
+in a moment ago, is the fact that determines whether there is something
+to release.
+
 **T-1993: the re-write is a delta-reconciliation against the lease's own
 prior state, not a wholesale overwrite from the caller's local ledger
 snapshot.** Before T-1993, `mutate_scope` re-wrote the lease as the

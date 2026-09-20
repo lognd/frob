@@ -1,7 +1,7 @@
 ---
 id: T-4684
 title: cross-worktree lease release must not gate on the LOCAL ticket's prior state
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
