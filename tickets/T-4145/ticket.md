@@ -488,6 +488,14 @@ scope_changes:
     declared site, required alongside the design/frob.strata declaration to land'
   actor: logan
   at: '2026-09-07'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve T-4131/T-3931 backstory and REF002-scope decision reasoning
+    trimmed from _refs.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5130
+  new_length: 6650
 evidence:
 - tests/test_refs_gate.py::TestGithubConventionExempt::test_standard_community_files_and_templates_pass_with_no_waivers
 - tests/test_refs_gate.py::TestGithubConventionExempt::test_a_genuinely_orphaned_file_outside_the_convention_still_fires_ref001
@@ -599,3 +607,28 @@ ACCEPTANCE
 - The oversized module split, not waived.
 - The self-gate confirmed at 0 errors on CI.
 - All three fixtures committed.
+
+
+T-4770 follow-up (condensed from _GITHUB_CONVENTION_EXEMPT's docstring
+in src/frob/gates/_refs.py, trimmed for DOCARCH002's 12-line cap): the
+regression was found after T-4131 added CONTRIBUTING.md/SECURITY.md/
+CODE_OF_CONDUCT.md and immediately tripped REF001/REF002 on every one
+of them -- the exact "fresh project not gate-clean on day one" shape
+T-3931 reported, this time from doing the most ordinary thing a project
+can do: adding a contributing guide. GitHub also recognizes a
+.github/ or docs/ copy, but a project using one of those instead can
+add its own [[refs.entrypoint]] line, same as any other genuinely
+external-facing file -- the default covers the common root-file case so
+a fresh project is not forced to write that declaration itself.
+
+DECISION RECORDED (T-4145's own acceptance item: whether REF002's
+one-inbound-reference rule should apply to non-code files at all): a
+markdown doc linked exactly once from README is the ordinary shape for
+authored docs, not an inherently fragile one -- the actual defect this
+ticket found was never "REF002 fires on docs", it was "REF002 does not
+know a file's real consumer is an external platform reading by path
+convention, not another tracked file's text". Blanket-exempting every
+non-code file would mean a genuinely single-anchored design doc,
+changelog fragment, or abandoned draft (the ordinary way documentation
+rots) would stop being flagged at all, for every project that adopts
+frob, on the strength of one convention-anchored file family's needs.
