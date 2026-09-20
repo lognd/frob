@@ -2,7 +2,7 @@
 id: T-4437
 title: Sweep leaked disposable worktrees (bug002 repro, land squash, stale .claude/worktrees
   entries)
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-12'
@@ -18,10 +18,35 @@ scope:
 - src/frob/app/clean*.py
 - src/frob/worktrees/*.py
 - tests/unit/test_clean_worktrees*.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/gates/_bug_repro.py
+- src/frob/tickets/_land_compose.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: wire the --sweep-disposable-worktrees flag onto frob clean and stamp creator
+    pid at the two disposable-worktree creation sites this tickets own acceptance
+    criteria 1/2 name
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: src/frob/gates/_bug_repro.py
+  reason: wire the --sweep-disposable-worktrees flag onto frob clean and stamp creator
+    pid at the two disposable-worktree creation sites this tickets own acceptance
+    criteria 1/2 name
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: src/frob/tickets/_land_compose.py
+  reason: wire the --sweep-disposable-worktrees flag onto frob clean and stamp creator
+    pid at the two disposable-worktree creation sites this tickets own acceptance
+    criteria 1/2 name
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: sprint
   old_value: v0.532.0
