@@ -11,7 +11,7 @@ parent: null
 tier: epic
 sprint: v0.538.0
 runs_last: false
-milestone: v0.542.0
+milestone: 1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -28,6 +28,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: milestone
+  old_value: v0.542.0
+  new_value: 1.1.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: set
   reason: 'adds F-339, which arrived after filing: a doc-pointer rule that is silent
