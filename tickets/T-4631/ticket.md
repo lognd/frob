@@ -8,7 +8,7 @@ created: '2026-09-19'
 priority: medium
 parent: T-4419
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -55,6 +55,13 @@ scope_changes:
   glob: tests/unit/gates/test_sys_selfaudit.py
   reason: collides with in-progress T-4615 lease on tests/**/test_sys*.py; deferred,
     noted in why-file
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
