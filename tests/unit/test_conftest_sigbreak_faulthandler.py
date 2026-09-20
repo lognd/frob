@@ -27,24 +27,24 @@ pytestmark = pytest.mark.skip(
 # frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_noop_off_win32  # noqa: E501
 # frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_noop_when_no_sigbreak_attribute  # noqa: E501
 class TestSigbreakFaultHandlerCrossPlatformSafety:
-    """Superseded by T-3577's revert -- every case below is a fixed skip."""
+    """Every case in this class is a fixed skip and asserts nothing; see the module docstring."""
 
     def test_succeeds_when_faulthandler_register_is_absent_on_simulated_win32(
         self,
     ) -> None:
-        """Superseded (T-3577): the function under test no longer exists."""
+        """No-op skip: the covered function is not present in tests/conftest.py."""
 
     def test_installs_a_signal_handler_when_register_is_absent(self) -> None:
-        """Superseded (T-3577): the function under test no longer exists."""
+        """No-op skip: the covered function is not present in tests/conftest.py."""
 
     def test_dump_then_chain_calls_dump_traceback_then_previous_handler(self) -> None:
-        """Superseded (T-3577): the function under test no longer exists."""
+        """No-op skip: the covered function is not present in tests/conftest.py."""
 
     def test_still_prefers_faulthandler_register_when_it_exists(self) -> None:
-        """Superseded (T-3577): the function under test no longer exists."""
+        """No-op skip: the covered function is not present in tests/conftest.py."""
 
     def test_noop_off_win32(self) -> None:
-        """Superseded (T-3577): the function under test no longer exists."""
+        """No-op skip: the covered function is not present in tests/conftest.py."""
 
     def test_noop_when_no_sigbreak_attribute(self) -> None:
-        """Superseded (T-3577): the function under test no longer exists."""
+        """No-op skip: the covered function is not present in tests/conftest.py."""

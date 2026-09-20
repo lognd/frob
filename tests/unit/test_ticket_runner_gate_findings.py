@@ -420,11 +420,8 @@ _DERIVED_STATE_ABORT_STDOUT = json.dumps(
 
 
 class TestCheckGateFindingsFn:
-    """`_check_gate_findings_fn` parsing/filtering behavior -- each method
-    below carries its own `frob:tests` edge (T-1055: this class docstring
-    used to itself be a class-level `frob:tests` directive, flagged
-    PLACE001 as class-falling-back when it was really meant for the
-    method immediately below, which already has its own directive)."""
+    """Covers `_check_gate_findings_fn`'s parsing/filtering behavior; each
+    method below carries its own `frob:tests` edge."""
 
     # frob:ticket T-0846
     # frob:ticket T-0850
@@ -865,8 +862,7 @@ class TestBudgetSkippedGroupsFromPayload:
     # frob:ticket T-2713
     def test_reads_top_level_skipped_groups(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPa\
-        # yload.test_reads_top_level_skipped_groups
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_reads_top_level_skipped_groups  # noqa: E501
         """The exact `_BUDGET_RESUME_NARROWED_STDOUT` fixture whose
         `results` list carries no BUDGET001 diagnostic at all must still
         surface its 4 top-level `skipped_groups` names via this
@@ -878,8 +874,7 @@ class TestBudgetSkippedGroupsFromPayload:
     # frob:ticket T-2713
     def test_empty_when_complete_or_absent(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPa\
-        # yload.test_empty_when_complete_or_absent
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_empty_when_complete_or_absent  # noqa: E501
         """A non-budgeted payload (no `"budget"` key) and a fully-complete
         budgeted payload (`skipped_groups: []`) both report `()` -- the
         must-still-pass positive control for a genuinely measured run."""
@@ -906,8 +901,7 @@ class TestBudgetDeferredGroupsFromStdout:
     # frob:ticket T-2456
     def test_extracts_deferred_groups_from_json_stdout(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
-        # tdout.test_extracts_deferred_groups_from_json_stdout
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_extracts_deferred_groups_from_json_stdout  # noqa: E501
         """The exact `_BUDGET_TRUNCATED_STDOUT` fixture `_parse_error_
         findings_from_stdout` treats as unmeasured must still yield the
         one deferred group name by this reading."""
@@ -919,8 +913,7 @@ class TestBudgetDeferredGroupsFromStdout:
     # frob:ticket T-2456
     def test_empty_for_non_json_stdout(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
-        # tdout.test_empty_for_non_json_stdout
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_for_non_json_stdout  # noqa: E501
         """Legacy plain-text `stdout` (not `--json`) has nothing this
         function can parse -- `()`, never a crash or a guessed name."""
         assert ticket_runner._budget_deferred_groups_from_stdout("not json") == ()
@@ -928,8 +921,7 @@ class TestBudgetDeferredGroupsFromStdout:
     # frob:ticket T-2456
     def test_empty_when_no_deferral_present(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
-        # tdout.test_empty_when_no_deferral_present
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_when_no_deferral_present  # noqa: E501
         """A clean, fully-run `--json` payload (no `"budget"` tool result
         at all) reports zero deferred groups -- the must-still-land
         positive control at this layer."""
@@ -952,8 +944,7 @@ class TestBudgetDeferredGroupsFromStdout:
     # frob:ticket T-2713
     def test_includes_resume_narrowed_skipped_groups(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
-        # tdout.test_includes_resume_narrowed_skipped_groups
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_includes_resume_narrowed_skipped_groups  # noqa: E501
         """T-2713: a resume-narrowed run (no `BUDGET001` diagnostic, only
         a top-level `budget.skipped_groups`) must still name its skipped
         groups here -- a `LAND-PROOF: budget_deferred=` line reading only
@@ -967,11 +958,8 @@ class TestBudgetDeferredGroupsFromStdout:
 
 # frob:ticket T-3305
 class TestPythonForTree:
-    """`_python_for_tree` resolution -- each method below carries its own
-    `frob:tests` edge (T-1055: this class docstring used to itself be a
-    class-level `frob:tests` directive, flagged PLACE001 as class-falling-
-    back when it was really meant for the method immediately below,
-    which already has its own directive)."""
+    """Covers `_python_for_tree` interpreter resolution; each method below
+    carries its own `frob:tests` edge."""
 
     # frob:ticket T-0846
     # frob:ticket T-3305
@@ -1073,10 +1061,9 @@ class TestPythonForTree:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_check_gates_summary_fn_spawns_the_tree_venv_python  # noqa: E501
-        """Same T-0441 fix, the sibling count-only closure: `_check_gates_
-        summary_fn` must resolve the SAME tree-local interpreter, not just
-        `_check_gate_findings_fn` -- both closures hit the identical
-        catch-22 independently before this fix."""
+        """Asserts `_check_gates_summary_fn`'s spawned subprocess uses the
+        tree-local `.venv/bin/python`, not `sys.executable`, same
+        interpreter-resolution contract as `_check_gate_findings_fn`."""
         venv_bin = tmp_path / ".venv" / "bin"
         venv_bin.mkdir(parents=True)
         venv_python = venv_bin / "python"
@@ -1102,11 +1089,10 @@ class TestPythonForTree:
 
 # frob:ticket T-2076
 class TestSharedCheckSpawnFn:
-    """T-0919: `_shared_check_spawn_fn` spawns `frob check --ticket <id>`
-    AT MOST ONCE, caching the result for every later call -- the fix for
-    `done-report`/`land` each wiring up BOTH `_check_gates_summary_fn` and
-    `_check_gate_findings_fn`, which before this ticket meant two full,
-    serial `frob check --ticket` subprocess runs per command."""
+    """Asserts `_shared_check_spawn_fn` spawns `frob check --ticket <id>`
+    at most once and caches the result for every later call, so
+    `done-report`/`land` do not each run a separate, serial `frob check
+    --ticket` subprocess. See T-0919 for the design rationale."""
 
     # frob:ticket T-0919
     def test_second_call_does_not_spawn_again(
@@ -1280,23 +1266,19 @@ class TestSharedCheckSpawnFn:
 
 # frob:ticket T-2345
 class TestParseErrorFindingsFromJsonDropsBlankIdentity:
-    """T-2345: `_parse_error_findings_from_json` was the actual SOURCE of
-    the blank-identity defect T-2313 fixed one layer downstream (in
-    `_rapid_sweep.py::_normalize_identities`, a consumer-side filter). Any
-    error-severity diagnostic with BOTH `code` and `file` empty/missing
-    used to become a genuine `("", "")` member of the returned set here;
-    it must now be dropped, loudly (a WARNING naming the emitting tool),
-    at this actual entry point instead."""
+    """Asserts `_parse_error_findings_from_json` drops (with a WARNING
+    naming the emitting tool) any error-severity diagnostic whose `code`
+    and `file` are both empty/missing, rather than returning a genuine
+    `("", "")` identity member. See T-2345 for the design rationale."""
 
     # frob:ticket T-2345
     # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity.test_blank_identity_diagnostic_is_dropped_not_added  # noqa: E501
     def test_blank_identity_diagnostic_is_dropped_not_added(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """Positive control 1 (T-2345): a diagnostic with both `code` and
-        `file` empty/missing does NOT appear as `("", "")` in the parsed
-        set -- this MUST FAIL on main (the old code unconditionally added
-        it)."""
+        """Asserts a diagnostic with both `code` and `file` empty/missing
+        does not appear as `("", "")` in the parsed set, and that the
+        drop is logged."""
         import logging
 
         from frob.app.ticket_runner._verify import _parse_error_findings_from_json
@@ -1378,30 +1360,22 @@ class TestParseErrorFindingsFromJsonDropsBlankIdentity:
 
 # frob:ticket T-3419
 class TestErrorFindingIdentityOffFileAnchors:
-    """T-3419: SELFAUDIT001 (and any other rule whose `Violation.file` is
-    a repo-wide constant anchor rather than a per-finding path --
-    `frob.gates._sys_selfaudit._selfaudit_violation`'s `file=design_dir`)
-    used to collapse EVERY such finding repo-wide onto one `(rule,
-    "design")` identity. The post-land sweep's `frozenset` comparison
-    then silently deduped a real newly-introduced finding against an
-    unrelated pre-existing one sharing that same anchor -- the actual
-    T-3419 incident (a real SELFAUDIT001/SYS102 regression the sweep did
-    not file, while SYS003/TEST001/WIRE002 findings from the identical
-    land WERE filed). `_error_finding_identity` now extracts the real
-    file named in the message when `file` looks anchor-shaped."""
+    """Asserts `_error_finding_identity` extracts the real file named in a
+    finding's message when `Violation.file` is a repo-wide constant
+    anchor (e.g. SELFAUDIT001's `file=design_dir`), so two findings that
+    share an anchor but name different files get distinct identities
+    instead of colliding into one `(rule, anchor)` pair. See T-3419 for
+    the design rationale."""
 
     # frob:ticket T-3419
     # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors.test_must_fire_new_selfaudit001_finding_not_deduped_against_unrelated_one  # noqa: E501
     def test_must_fire_new_selfaudit001_finding_not_deduped_against_unrelated_one(
         self,
     ) -> None:
-        """MUST-FIRE fixture (T-3419's own acceptance): a land that newly
-        introduces a SELFAUDIT001 finding about one file must be reported
-        as a NEW identity distinct from an unrelated pre-existing
-        SELFAUDIT001 about a different file -- both used to collapse onto
-        the single `("SELFAUDIT001", "design")` identity, so the new one
-        was indistinguishable from (and got deduped against) the old one.
-        This MUST FAIL on main."""
+        """Asserts a newly-introduced SELFAUDIT001 finding about one file
+        is reported as an identity distinct from an unrelated
+        pre-existing SELFAUDIT001 about a different file, both sharing
+        the anchor-shaped `file=design_dir`."""
         from frob.app.ticket_runner._verify import _parse_error_findings_from_json
 
         baseline = _parse_error_findings_from_json(
@@ -1540,8 +1514,7 @@ class TestUnmeasuredReasonFromResult:
     # frob:ticket T-4281
     def test_none_result_is_a_refusal(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
-        # t.test_none_result_is_a_refusal
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_none_result_is_a_refusal  # noqa: E501
         from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
 
         reason = _unmeasured_reason_from_result(None)
@@ -1551,8 +1524,7 @@ class TestUnmeasuredReasonFromResult:
     # frob:ticket T-4281
     def test_cache_lock_contention_names_the_holder(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
-        # t.test_cache_lock_contention_names_the_holder
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_cache_lock_contention_names_the_holder  # noqa: E501
         from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
 
         proc = _FakeProc(
@@ -1574,8 +1546,7 @@ class TestUnmeasuredReasonFromResult:
     # frob:ticket T-4281
     def test_nonzero_exit_without_lock_marker_is_a_generic_crash(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
-        # t.test_nonzero_exit_without_lock_marker_is_a_generic_crash
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_nonzero_exit_without_lock_marker_is_a_generic_crash  # noqa: E501
         from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
 
         proc = _FakeProc(2, stderr="Traceback...\nValueError: boom")
@@ -1587,8 +1558,7 @@ class TestUnmeasuredReasonFromResult:
     # frob:ticket T-4281
     def test_clean_exit_is_never_a_reason(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResul\
-        # t.test_clean_exit_is_never_a_reason
+        # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_clean_exit_is_never_a_reason  # noqa: E501
         from frob.app.ticket_runner._verify import _unmeasured_reason_from_result
 
         proc = _FakeProc(0, stdout="not json")

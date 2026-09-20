@@ -1,7 +1,7 @@
 ---
 id: T-4419
 title: Clean tests/unit docstrings of change-narrative (DOCARCH001)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -254,6 +254,6 @@ Cluster 5 -- 14 findings, 14 files (all weight-1):
   tests/unit/vet/test_capability_modes.py
 
 
-Filed child tickets for clusters 1-5 (kind=docs, parent T-4419): T-draft-c59d62f0 (cluster 1), T-draft-a2f2c3f2 (cluster 2), T-draft-05ad774f (cluster 3), T-draft-be0fd2f1 (cluster 4), T-draft-283ebe53 (cluster 5, also carries the 2 leased-file deferrals). T-4419 itself is narrowed to cluster 0 (32 findings, 5 files, scope set above).
+Filed child tickets for clusters 1-5 (kind=docs, parent T-4419): T-4632 (cluster 1), T-4630 (cluster 2), T-4628 (cluster 3), T-4631 (cluster 4), T-4629 (cluster 5, also carries the 2 leased-file deferrals). T-4419 itself is narrowed to cluster 0 (32 findings, 5 files, scope set above).
 
-Renumbered by a land squash (T-4524, commit ade7d9db3): T-draft-c59d62f0->T-4632 (cluster 1), T-draft-a2f2c3f2->T-4630 (cluster 2), T-draft-05ad774f->T-4628 (cluster 3), T-draft-be0fd2f1->T-4631 (cluster 4), T-draft-283ebe53->T-4629 (cluster 5).
+Renumbered by a land squash (T-4524, commit ade7d9db3): T-4632->T-4632 (cluster 1), T-4630->T-4630 (cluster 2), T-4628->T-4628 (cluster 3), T-4631->T-4631 (cluster 4), T-4629->T-4629 (cluster 5).

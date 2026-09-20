@@ -53,8 +53,11 @@ def _recipe_body(target: str) -> str:
 
 # frob:ticket T-2240
 class TestCoverageRecipeDelegatesToFrobCoverageFull:
-    """T-2240 acceptance[0]: `coverage:`'s recipe body is a single `uv run
-    frob coverage --full` line, not the old ~40-line inline shell block."""
+    """Asserts the Makefile `coverage:` recipe body is a single `uv run
+    frob coverage --full` delegation line (at most two non-comment lines,
+    no direct pytest/coverage invocation, `core` as a prerequisite rather
+    than a recipe-body `$(MAKE)` call). See T-2240 for the design
+    rationale."""
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull.test_recipe_body_is_at_most_two_non_comment_lines  # noqa: E501
     def test_recipe_body_is_at_most_two_non_comment_lines(self) -> None:
@@ -93,20 +96,14 @@ class TestCoverageRecipeDelegatesToFrobCoverageFull:
 
 
 class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
-    """T-1235's acceptance [2]: previously-exercised-but-zero symbols
-    (excludes.py, doctor.py, serve/, __main__.py) report real coverage in
-    a corrected full run, and the TEST005 count reflects it.
-
-    This ticket's own scope has no direct pytest surface for "the next
-    full `make coverage` run" -- that run is a coordinator-only step
-    (docs/guides/agent-playbook.md section 6b), and its raw `coverage.xml`
-    does not survive past the run that produced it (section 6d). The
-    committed `frob-coverage.lock.json` (`write_coverage_lock`,
-    `frob.gates._coverage`) is this repo's own durable, attestable summary
-    of that same run -- reading it directly, rather than re-deriving a
-    fresh (and necessarily locally-scoped, per section 6c) coverage.xml
-    from this worktree, is the only way to verify this acceptance
-    criterion without forcing an unverifiable claim.
+    """Asserts a fixed module list (excludes.py, doctor.py, serve/,
+    __main__.py) attributes nonzero coverage in the committed
+    `frob-coverage.lock.json` (read via `write_coverage_lock`'s output,
+    `frob.gates._coverage`) -- the durable, attestable summary of the
+    last full `make coverage` run, since that run itself is a
+    coordinator-only step whose raw `coverage.xml` does not survive
+    locally (docs/guides/agent-playbook.md sections 6b-6d). See T-1235
+    for the design rationale.
     """
 
     #: T-1235's own named acceptance-criterion module groups.
@@ -141,16 +138,11 @@ class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
 
 # frob:ticket T-1469
 class TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor:
-    """T-1469: `coverage:`/`coverage-fast:` must run `frob ticket
-    reconcile --apply` before `frob doctor` -- a stale IN_PROGRESS
-    ticket hold with no live lease (`scan_stale_ticket_leases`, T-1131)
-    used to make the doctor precondition abort the whole recipe before
-    pytest ever ran; `reconcile --apply` auto-requeues exactly that shape
-    (logging which ticket(s) it requeued) and is a no-op otherwise, so
-    the precondition can no longer abort on THIS specific, mechanically
-    healable condition while every other doctor-checked condition
-    (missing natives, corrupt derived state, a live land.lock, venv shim
-    drift) still fails the recipe hard."""
+    """Asserts the `coverage:`/`coverage-fast:` recipe body runs `uv run
+    frob ticket reconcile --apply` before `uv run frob doctor`, so a
+    stale IN_PROGRESS ticket lease auto-requeues instead of aborting the
+    recipe at the doctor precondition. See T-1469 for the design
+    rationale."""
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor.test_coverage_reconciles_before_doctor  # noqa: E501
     def test_coverage_reconciles_before_doctor(self) -> None:
@@ -268,10 +260,10 @@ class TestRepointedTargetsStillFailNonzeroOnRealViolations:
     def test_frob_format_exits_nonzero_on_an_unfixable_syntax_error(
         self, tmp_path: Path
     ) -> None:
-        """`format:`/`lint-fix:` both now call `frob.app.pyfmt_runner.run`
-        (T-2251) -- a real ruff-unfixable syntax error must still exit 1,
-        same as the raw `ruff check --fix`/`ruff format` invocations did
-        before this ticket's Makefile repoint."""
+        """Asserts `frob.app.pyfmt_runner.run` exits 1 (via `SystemExit`)
+        against a real ruff-unfixable syntax error, the code path behind
+        the Makefile `format:`/`lint-fix:` recipes. See T-2251 for the
+        design rationale."""
         import pytest
 
         from frob.app.config import AppConfig
@@ -303,11 +295,10 @@ class TestRepointedTargetsStillFailNonzeroOnRealViolations:
 
 # frob:ticket T-2708
 class TestInstallToolUsesServeExtraPackageSpecNotUnsupportedFlag:
-    """T-2708: `uv tool install` has no `--extra` flag (measured on uv
-    0.11.19 -- `error: unexpected argument '--extra' found`); the serve
-    extra must be folded into the package spec (`".[serve]"`) instead, or
-    `install-tool` is the repo's only documented install path and it is
-    simply broken."""
+    """Asserts the `install-tool` recipe carries no `--extra` flag and
+    instead folds the serve extra into the package spec (`".[serve]"`),
+    since `uv tool install` has no `--extra` flag. See T-2708 for the
+    design rationale."""
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestInstallToolUsesServeExtraPackageSpecNotUnsupportedFlag.test_install_tool_recipe_has_no_extra_flag  # noqa: E501
     def test_install_tool_recipe_has_no_extra_flag(self) -> None:

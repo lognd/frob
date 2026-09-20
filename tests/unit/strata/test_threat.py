@@ -665,16 +665,11 @@ class TestDischargeChokepointShape:
     # kind="unit"
     # frob:ticket T-0501
     def test_noflow_from_a_specific_foreign_trust_node_discharges(self):
-        """`_discharges_as_chokepoint` accepts a `NoFlow` naming a
-        specific foreign-trust node directly (not just the `"foreign"`
-        trust level) as the correct SHAPE. T-0501: the flow from `Evil`
-        to `Web` and its matching mitigation boundary must both be
-        modeled for the OVERALL discharge to pass now -- before this
-        ticket, this test passed with NEITHER a flow NOR a boundary
-        declared at all, i.e. it was itself an undetected G2 vacuous
-        discharge (confirmed: dropping the `flows`/`boundaries` below
-        reproduces the pre-fix `THREAT003 ... proves NoFlow vacuously`
-        finding this ticket now raises)."""
+        """Asserts `_discharges_as_chokepoint` accepts a `NoFlow` naming a
+        specific foreign-trust node directly, provided a real flow and a
+        matching mitigation boundary are also modeled (dropping either
+        reproduces a `THREAT003 ... proves NoFlow vacuously` finding).
+        See T-0501 for the design rationale."""
         node = Node(id="Web", trust="trusted", may=("html_render",))
         evil = Node(id="Evil", trust="foreign")
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -1166,18 +1161,13 @@ class TestCodeBoundMitigationPredicate:
 
 # frob:ticket T-0501
 class TestFlowCompletenessGap:
-    """T-0501 (docs/audits/strata.md G2): a `NoFlow(src="foreign", ...)`
-    claim used to discharge THREAT003 vacuously the moment the closure
-    found no path to the sink -- regardless of WHY there was no path.
-    This left an incomplete/attacker-authored `.strata` that declares a
-    real adversary elsewhere in the model, but simply never wires a flow
-    into the node firing the obligation, "PROVED" with zero mitigation
-    modeled. These fixtures confirm that shape now fails closed with a
-    distinct finding naming the incompleteness, while the genuinely
-    foreign-less T-0223 library-mode discharge (no `trust foreign` node
-    ANYWHERE in the model, `TestLibraryModeForeignlessDischarge` above)
-    and a model with no flows/boundaries declared at all keep discharging
-    exactly as before -- neither of those is the flagged gap."""
+    """Asserts a `.strata` that declares a real foreign adversary
+    elsewhere in the model but never wires a flow into the node firing
+    the THREAT003 obligation fails closed with a distinct incompleteness
+    finding, while the genuinely foreign-less library-mode case
+    (`TestLibraryModeForeignlessDischarge`) and a model with no
+    flows/boundaries at all keep discharging by absence. See T-0501
+    (docs/audits/strata.md G2) for the design rationale."""
 
     # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
     # kind="unit"
@@ -1248,11 +1238,11 @@ class TestFlowCompletenessGap:
     # kind="unit"
     # frob:ticket T-0501
     def test_no_foreign_node_anywhere_still_discharges_by_absence(self):
-        """Regression guard for T-0223: a model with ZERO `trust foreign`
-        nodes anywhere is the documented library-mode case, not the G2
-        gap -- it must keep discharging by absence exactly as before this
-        ticket (see also `TestLibraryModeForeignlessDischarge`, which
-        proves the same thing through the real parser)."""
+        """Asserts a model with zero `trust foreign` nodes anywhere (the
+        documented library-mode case) keeps discharging by absence; see
+        also `TestLibraryModeForeignlessDischarge`, which proves the same
+        thing through the real parser. See T-0223 for the design
+        rationale."""
         web = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
         model = KernelModel(
@@ -1684,13 +1674,10 @@ class TestCapabilityCompleteness:
 
 
 class TestEvalFiresCwe94:
-    """T-0401 (docs/audits/strata.md G3): `eval` used to be globally
-    `BenignCapability`-excused with the (false) reason "no CWE_CATALOG
-    entry targets dynamic code evaluation" -- CWE-94 IS that entry, just
-    never joined to the `eval` kind. Non-vacuous pair: BEFORE the fix an
-    `eval` node fired no obligation at all (the vulnerable case, proven
-    here via the empty `benign` default no longer excusing it); the
-    hardened case is a real `weakness:CWE-94:<node>` discharge."""
+    """Asserts a node declaring `may "eval"` maps to CWE-94: with no
+    excuse it is classified (not silently benign-excused), and with a
+    matching mitigation claim it discharges as `weakness:CWE-94:<node>`.
+    See T-0401 (docs/audits/strata.md G3) for the design rationale."""
 
     # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
     def test_eval_capability_is_classified_not_benign_excused(self):
@@ -2169,14 +2156,10 @@ class TestCheckEffectCompleteness:
     def test_effect_on_a_file_absent_from_owner_does_not_crash(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
-        """strata audit G8 (T-0497) counterexample: `extract_effects`
-        filters to non-FOREIGN owned files today, so `effect.file` is
-        always a `binding.owner` key in practice -- but
-        `check_effect_completeness` used to trust that via a bare
-        `binding.owner[effect.file]` subscript. Force the untrusted case
-        directly (an effect naming a file `extract_effects` never actually
-        would) and prove the join degrades to a FOREIGN-owner Violation
-        instead of raising KeyError."""
+        """Asserts `check_effect_completeness` degrades to a FOREIGN-owner
+        `Violation` instead of raising `KeyError` when an effect names a
+        file absent from `binding.owner`, by forcing that case directly.
+        See T-0497 (docs/audits/strata.md G8) for the design rationale."""
         from frob.strata import _threat as threat_module
         from frob.strata._effects import ObservedEffect
 

@@ -145,14 +145,12 @@ def _force_empty_rows_for_column(conn: sqlite3.Connection, column: str) -> None:
 
 
 # frob:ticket T-4018
+# frob:ticket T-4419
 class TestEmptyRowGuard:
-    """`fetchone()` can return `()` -- present but zero columns -- not just
-    `None`, on the empty-row condition CI hit under xdist load (T-4018).
-    `row is not None` is True for `()`, so the old guard's `row[0]` raised
-    `IndexError`; the fix is a truthiness guard (`if row`), which covers
-    both `None` and `()`. `row_factory` is the only way to construct the
-    condition directly rather than racing for it (a real sqlite
-    `fetchone()` on a matched single-column SELECT never returns `()`)."""
+    """Asserts the empty-row guard handles `fetchone()` returning `()`
+    (present but zero columns) the same as `None`, using a `row_factory`
+    to construct the `()` condition directly. See T-4018 for the design
+    rationale."""
 
     # frob:ticket T-4018
     @staticmethod
@@ -290,6 +288,7 @@ while time.monotonic() < deadline:
 
 
 # frob:ticket T-3607
+# frob:ticket T-4419
 class TestRecreateConcurrentReaderSurvives:
     """Positive control for the T-3607 SIGBUS incident: a sibling PROCESS
     with an already-open, long-lived WAL reader connection must survive
@@ -306,8 +305,7 @@ class TestRecreateConcurrentReaderSurvives:
     in-place unlink-then-recreate-at-the-same-path can."""
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling\
-    # _reader_survives_concurrent_recreate
+    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_reader_survives_concurrent_recreate  # noqa: E501
     @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_sibling_reader_survives_concurrent_recreate(self, tmp_path: Path) -> None:
         """A real sibling process reading in a tight loop never dies from
@@ -339,24 +337,17 @@ class TestRecreateConcurrentReaderSurvives:
             "the T-3607 concurrent-recreate-vs-live-reader race reproduced"
         )
 
+    # frob:ticket T-4419
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_ne\
-    # ver_absent_during_recreate
+    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501
     def test_path_never_absent_during_recreate(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-4454: `_recreate` must never leave `path` absent, at ANY
-        observable point -- the old quarantine-`path`-aside-then-replace
-        ordering had exactly one such window (between `_quarantine_
-        sidecars` renaming `path` away and `_replace_with_retry`
-        publishing the fresh db there), wide enough for a concurrent
-        `connect_readonly` sibling to land inside it and raise
-        `OperationalError: unable to open database file` (this ticket's
-        own macOS CI regression). Patches the three primitives `_recreate`
-        can touch `path` through (`os.replace`, `os.link`, and `Path.
-        rename` for the sidecar quarantine) to record whether `path`
-        existed immediately before and immediately after each call, then
-        asserts every single recorded observation says `True`."""
+        """Asserts `path` is present immediately before and after every
+        call to the three primitives `_recreate` touches `path` through
+        (`os.replace`, `os.link`, `Path.rename` for the sidecar
+        quarantine), by patching each to record path existence around
+        the call. See T-4454 for the design rationale."""
         path = tmp_path / "cache.db"
         conn = graph_cache.connect(path)
         graph_cache.store_parsed_artifact(
@@ -402,8 +393,7 @@ class TestRecreateConcurrentReaderSurvives:
         )
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarant\
-    # ined_sidecars_are_renamed_not_unlinked
+    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarantined_sidecars_are_renamed_not_unlinked  # noqa: E501
     def test_quarantined_sidecars_are_renamed_not_unlinked(
         self, tmp_path: Path
     ) -> None:
@@ -420,8 +410,7 @@ class TestRecreateConcurrentReaderSurvives:
         assert path.exists(), "_recreate must still leave a fresh db at path"
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sweep_r\
-    # emoves_only_old_quarantined_sidecars
+    # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sweep_removes_only_old_quarantined_sidecars  # noqa: E501
     def test_sweep_removes_only_old_quarantined_sidecars(self, tmp_path: Path) -> None:
         """`_sweep_stale_quarantined_sidecars` removes a quarantined sidecar
         older than the sweep age, and leaves a fresh one alone."""
@@ -500,20 +489,15 @@ else:
 
 # frob:ticket T-3623
 # frob:ticket T-3700
+# frob:ticket T-4419
 class TestRecreateNeverExposesASchemaIncompleteDb:
-    """T-3623: a fresh replacement db built by `_recreate` (or the very
-    first `connect()` at a brand-new path) must never be OBSERVABLE by a
-    concurrent connection before its schema is fully applied. Before this
-    fix, `_recreate` opened a plain, empty sqlite file directly at the
-    real path and relied on a LATER step in the SAME connect() call to
-    apply the schema -- any other connection racing in that window saw a
-    valid-but-tableless file and got `OperationalError: no such table:
-    meta` straight out of `_check_fingerprint`, which has no rebuild-on-
-    miss handling of its own (run 33466891764, macOS)."""
+    """Asserts a fresh replacement db built by `_recreate` (or the first
+    `connect()` at a brand-new path) is never observable by a concurrent
+    connection before its schema is fully applied. See T-3623 for the
+    design rationale."""
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # recreate_replacement_always_has_meta_table
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_recreate_replacement_always_has_meta_table  # noqa: E501
     def test_recreate_replacement_always_has_meta_table(self, tmp_path: Path) -> None:
         """The instant `_recreate` returns, `path` already has its `meta`
         table -- there is no intermediate state where the file exists but
@@ -540,8 +524,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
         )
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # first_ever_connect_never_exposes_a_tableless_file
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_first_ever_connect_never_exposes_a_tableless_file  # noqa: E501
     def test_first_ever_connect_never_exposes_a_tableless_file(
         self, tmp_path: Path
     ) -> None:
@@ -568,8 +551,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
 
     # frob:ticket T-3700
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # two_processes_connecting_concurrently_never_see_no_such_table_meta
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_processes_connecting_concurrently_never_see_no_such_table_meta  # noqa: E501
     # reason: two-process sqlite recreate/connect race sized to a wall-clock
     # window (3.0s); underlying bug fixed through 9 rounds (T-3623/T-3700),
     # residual failure is timing starvation under xdist CI load, not a
@@ -646,22 +628,17 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
         )
 
     # frob:ticket T-3706
+    # frob:ticket T-4419
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # run_with_stale_reconnect_recovers_from_bare_database_error
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_run_with_stale_reconnect_recovers_from_bare_database_error  # noqa: E501
     def test_run_with_stale_reconnect_recovers_from_bare_database_error(
         self, tmp_path: Path
     ) -> None:
-        """T-3706 (round 8, macOS run 33680767948): sqlite raises the
-        "file is not a database" torn-read shape as a bare
-        `sqlite3.DatabaseError` -- the PARENT exception class, not a
-        subclass of `OperationalError` -- confirmed directly here rather
-        than assumed. `_run_with_stale_reconnect` used to catch only
-        `OperationalError`, so this shape escaped its retry loop uncaught
-        even though `_is_stale_or_corrupt_connection` already matched the
-        message (T-3634). This deterministically forces the shape (no
-        timing dependency, unlike the two-process test above) and asserts
-        the retry loop recovers instead of propagating."""
+        """Asserts `_run_with_stale_reconnect` catches a bare
+        `sqlite3.DatabaseError` ("file is not a database", not a subclass
+        of `OperationalError`) and recovers via its retry loop instead of
+        propagating, by deterministically forcing the error shape rather
+        than racing for it. See T-3706 for the design rationale."""
         assert not issubclass(sqlite3.DatabaseError, sqlite3.OperationalError), (
             "sqlite3.DatabaseError became a subclass of OperationalError -- "
             "this test's premise (why the narrower catch missed it) no "
@@ -686,8 +663,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
 
     # frob:ticket T-3706
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # check_fingerprint_with_recovery_recovers_from_bare_database_error
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_check_fingerprint_with_recovery_recovers_from_bare_database_error  # noqa: E501
     def test_check_fingerprint_with_recovery_recovers_from_bare_database_error(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -717,21 +693,18 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
         )
 
     # frob:ticket T-3733
+    # frob:ticket T-4419
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # run_with_stale_reconnect_recovers_from_interface_error
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_run_with_stale_reconnect_recovers_from_interface_error  # noqa: E501
     def test_run_with_stale_reconnect_recovers_from_interface_error(
         self, tmp_path: Path
     ) -> None:
-        """T-3733 (round 9, macOS CI run 33729699769): a stale/closed
-        sqlite connection raises `sqlite3.InterfaceError('bad parameter
-        or other API misuse')` -- confirmed directly here rather than
-        assumed to be a SIBLING of `sqlite3.DatabaseError` under
-        `sqlite3.Error`, not a subclass of it. `_run_with_stale_reconnect`
-        used to catch only `DatabaseError` (T-3706), so this shape still
-        escaped its retry loop uncaught. This deterministically forces the
-        shape (no timing dependency) and asserts the retry loop recovers
-        instead of propagating."""
+        """Asserts `_run_with_stale_reconnect` catches
+        `sqlite3.InterfaceError('bad parameter or other API misuse')`
+        (a sibling of `DatabaseError` under `sqlite3.Error`, not a
+        subclass of it) and recovers via its retry loop instead of
+        propagating, by deterministically forcing the error shape rather
+        than racing for it. See T-3733 for the design rationale."""
         assert not issubclass(sqlite3.InterfaceError, sqlite3.DatabaseError), (
             "sqlite3.InterfaceError became a subclass of DatabaseError -- "
             "this test's premise (why the T-3706 widened catch still "
@@ -757,8 +730,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
 
     # frob:ticket T-3733
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # check_fingerprint_with_recovery_recovers_from_interface_error
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_check_fingerprint_with_recovery_recovers_from_interface_error  # noqa: E501
     def test_check_fingerprint_with_recovery_recovers_from_interface_error(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -790,8 +762,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
 
     # frob:ticket T-3733
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # is_stale_or_corrupt_connection_matches_interface_error_by_type
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_is_stale_or_corrupt_connection_matches_interface_error_by_type  # noqa: E501
     def test_is_stale_or_corrupt_connection_matches_interface_error_by_type(
         self,
     ) -> None:
@@ -809,8 +780,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
         )
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
-    # apply_schema_rebuild_replacement_always_has_files_table
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_apply_schema_rebuild_replacement_always_has_files_table  # noqa: E501
     def test_apply_schema_rebuild_replacement_always_has_files_table(
         self, tmp_path: Path
     ) -> None:
@@ -851,8 +821,7 @@ class TestConnectNeverReturnsAStaleConnection:
     invalidated."""
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_conn\
-    # ect_after_forced_schema_rebuild_returns_a_fresh_live_connection
+    # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection  # noqa: E501
     @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection(
         self, tmp_path: Path
@@ -883,8 +852,7 @@ class TestConnectNeverReturnsAStaleConnection:
         )
 
     # frob:tests \
-    # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_recr\
-    # eate_closed_connection_raises_a_clean_programming_error_not_interface_error
+    # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_recreate_closed_connection_raises_a_clean_programming_error_not_interface_error  # noqa: E501
     def test_recreate_closed_connection_raises_a_clean_programming_error_not_interface_error(  # noqa: E501
         self, tmp_path: Path
     ) -> None:
@@ -904,12 +872,11 @@ class TestConnectNeverReturnsAStaleConnection:
 
 
 # frob:ticket T-3654
+# frob:ticket T-4419
 class TestLockBackoff:
-    """T-3654 (cache round 5): `_lock_backoff_seconds` replaces the prior
-    fixed `_LOCK_POLL_SECONDS` sleep between lock-retry attempts with
-    exponential backoff, so darwin's slower fs contention (run
-    33513484322) gets far more attempts within the same overall
-    deadline instead of exhausting a small, evenly-spaced retry count."""
+    """Covers `_lock_backoff_seconds`'s exponential backoff between
+    lock-retry attempts, replacing a fixed sleep interval. See T-3654 for
+    the design rationale."""
 
     # frob:tests src/frob/graph/cache.py::_lock_backoff_seconds
     def test_backoff_doubles_up_to_the_cap(self) -> None:
@@ -955,14 +922,11 @@ def _publish_marked_db(path: Path, marker: str) -> None:
 
 
 # frob:ticket T-3669
+# frob:ticket T-4419
 class TestHandleIdentity:
-    """T-3669 (cache round 6): a `sqlite3.Connection` opened before a
-    sibling's `os.replace` stays bound to the OLD inode -- it reads
-    pre-replace state indefinitely (the ~20-cycle `fingerprint None`
-    rebuild thrash of run 33529632605) and its writes surface as `attempt
-    to write a readonly database`, which rounds 1-5 all retried on that
-    same doomed handle. The fix is lifecycle, not retry: detect the
-    replace and REOPEN at the canonical path."""
+    """Asserts a connection detects a sibling's `os.replace` and reopens
+    at the canonical path, rather than staying bound to a stale/readonly
+    inode. See T-3669 for the design rationale."""
 
     @staticmethod
     def _read_meta(path: Path, key: str) -> str | None:
@@ -1262,8 +1226,7 @@ class TestCorruptCacheSelfHeals:
 
     def test_integrity_check_reports_corrupt(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_chec\
-        # k_reports_corrupt
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_reports_corrupt  # noqa: E501
         """MUST-FIRE half 1: a deliberately corrupted db fails the check.
         Positive control (MUST-STAY-QUIET): an untouched db still passes."""
         path = tmp_path / "cache.db"
@@ -1276,8 +1239,7 @@ class TestCorruptCacheSelfHeals:
 
     def test_corrupt_cache_self_heals(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_\
-        # self_heals
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_heals  # noqa: E501
         """MUST-FIRE fixture (THIRD FIXTURE): `_rebuild_because_corrupt`
         replaces a corrupt db with a fresh, empty, schema-complete one
         rather than raising or handing back the bad bytes."""
@@ -1311,8 +1273,7 @@ class TestCorruptCacheSelfHeals:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale\
-        # _reconnect_rebuilds_and_completes_on_corruption
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption  # noqa: E501
         """MUST-FIRE fixture, end to end: an ALREADY-OPEN connection
         (mirroring production, where `connect()` succeeded before the db
         went bad mid-session) that hits "database disk image is
@@ -1354,8 +1315,7 @@ class TestCorruptCacheSelfHeals:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_\
-        # closes_the_callers_stale_connection_first
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_win32_rebuild_closes_the_callers_stale_connection_first  # noqa: E501
         """T-4402 (Linux-runnable): a Windows regression (CI run
         34546329688) had this exact rebuild fail with `PermissionError:
         [WinError 5] Access is denied` from `os.replace(tmp_path, path)`
@@ -1410,8 +1370,7 @@ class TestCorruptCacheSelfHeals:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_healthy_cache_\
-        # never_triggers_a_rebuild
+        # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_healthy_cache_never_triggers_a_rebuild  # noqa: E501
         """MUST-STAY-QUIET: an ordinary, healthy cache never calls the new
         rebuild path -- this fix must not degrade the common case."""
         path = tmp_path / "cache.db"
@@ -1455,8 +1414,7 @@ class TestLockedDbNeverRebuilds:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_n\
-        # ever_classified_as_unreadable
+        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_locked_db_is_never_classified_as_unreadable  # noqa: E501
         """Positive control (real second connection holding an exclusive
         lock, not a synthetic monkeypatch of the error): `connect()` must
         wait out the lock and succeed, never rebuild. Rebuild is detected
@@ -1506,8 +1464,7 @@ class TestLockedDbNeverRebuilds:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_lock_exhaustio\
-        # n_raises_cache_locked_naming_the_holder
+        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_lock_exhaustion_raises_cache_locked_naming_the_holder  # noqa: E501
         """A lock that never clears within the retry budget must surface
         as `CacheLocked` naming the lock, never a rebuild."""
         path = tmp_path / "cache.db"
@@ -1541,8 +1498,7 @@ class TestLockedDbNeverRebuilds:
 
     def test_genuinely_malformed_db_still_rebuilds(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malf\
-        # ormed_db_still_rebuilds
+        # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malformed_db_still_rebuilds  # noqa: E501
         """Positive control: a truly non-sqlite file (never a lock error)
         must still self-heal via `connect()`'s pre-existing T-0141
         recreate path -- this fix narrows the lock case only, it must not
