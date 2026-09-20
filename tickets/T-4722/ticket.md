@@ -33,7 +33,6 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/tickets/_unlanded.py
 - src/frob/tickets/_worktree_sweep.py
-- src/frob/tickets/_land_squash.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +47,12 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land_squash.py
   reason: no-op retry to force mirror sync
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/tickets/_land_squash.py
+  reason: released to the critical DOC006/T-3324 fix; its comment runs go to the ninth
+    narrative cluster
   actor: logan
   at: '2026-09-19'
 evidence:
