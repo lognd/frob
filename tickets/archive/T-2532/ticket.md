@@ -30,6 +30,13 @@ scope_changes:
     citation blocks close unless it is re-pointed here
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve call-shape example detail trimmed from _wire.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1214
+  new_length: 1640
 evidence:
 - tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_classmethod_called_dotted_qualified_is_not_flagged
 - tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_genuinely_unwired_method_still_flagged
@@ -74,3 +81,12 @@ kind only) to also match a dotted-qualified call
 ClassName.method(...) call site counts as reached, the same way
 wrapper_pattern already allows an optional name.-qualified prefix for
 its dict-table-value shape.
+
+
+T-4770 follow-up (condensed from a comment in src/frob/gates/_wire.py's
+method call-pattern builder, trimmed for DOCARCH002's 12-line cap): the
+two legal call shapes are ClassName.method_name(...) or
+instance.method_name(...). A dot-preceded short( match for a
+module-level function/const/type is someone ELSE's attribute of the
+same name, not a real call -- that is why the exclusion is right there
+but wrong for methods.
