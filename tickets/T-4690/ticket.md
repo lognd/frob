@@ -79,13 +79,6 @@ body_changes:
   at: '2026-09-19'
   old_length: 3436
   new_length: 4480
-- mode: set
-  reason: 'DOC006: planned options must not read as cli invocation pointers (second
-    occurrence)'
-  actor: logan
-  at: '2026-09-19'
-  old_length: 4480
-  new_length: 4493
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
@@ -168,7 +161,7 @@ DELETE, each with a one-minor-version shim:
     surface; `docs`'s docstring-extraction mode survives under that one name
   - `status` vs `verify status` vs `fleet status`: three spellings, one concept.
     Keep top-level `status`; `verify status` and `fleet status` become shims.
-  - `whereis` folded into `doctor` (a whereis option on doctor (planned) or a section of
+  - `whereis` folded into `doctor` (`frob doctor --whereis` or a section of
     plain `frob doctor` output). `whereis` (T-4299) answers "which interpreter
     is this frob" -- that is a doctor question.
 
