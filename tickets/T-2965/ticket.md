@@ -44,6 +44,14 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+body_changes:
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1801
+  new_length: 1787
 evidence:
 - tests/test_tickets_parent.py::TestSetParentClear::test_clear_detaches_to_root
 - tests/test_tickets_parent.py::TestSetParentClear::test_clear_records_a_triage_entry
@@ -64,8 +72,7 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Measured directly while working T-2959: `frob ticket set-parent <id>
-<parent-id>` (T-2770, src/frob/tickets/_setters.py::set_parent) has no
+Measured directly while working T-2959: the planned ticket set form (T-2770, src/frob/tickets/_setters.py::set_parent) has no
 route to CLEAR a ticket's parent edge back to `null` -- `parent-id` is
 a required positional argument and `_validate_parent_edge` refuses any
 value that does not resolve to an existing ticket in the queue
