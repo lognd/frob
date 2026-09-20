@@ -2,7 +2,7 @@
 id: T-5100
 title: 'test_ticket_runner_base_forward_t4105: stale spawn-fn fake after T-4550 added
   files= kwarg'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -33,3 +33,6 @@ anchor_reason: null
 land_commit: null
 ---
 CI run 35448990233 (dev tip beedd71c4) failed all 3 platforms: TestDoneReportBaseResolution::test_default_main_resolves_to_no_base_forwarded and ::test_non_main_base_ref_is_forwarded. TypeError: _fake_shared_check_spawn_fn() got an unexpected keyword argument files. T-4550 (landed) added --files scoping support to _shared_check_spawn_fn (src/frob/app/ticket_runner/_verify.py) but this test file's local fake was never updated to accept the new kwarg. Update the fake signature to match production.
+
+## Failure log
+- 2026-09-20 attempt 1: coordinator: in-progress with no worktree or branch carrying work; requeued for a fresh agent
