@@ -2,7 +2,7 @@
 id: T-4911
 title: 'WIRE the boundary admit block: parsed into AdmitPhase and read by nothing,
   while _backpressure.py regex-infers the same quantity from source'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-19'
@@ -22,6 +22,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_admit_phase_wiring.py::TestAdmitPhaseValidation::test_valid_admit_rate_and_size_elaborates
+- tests/unit/strata/test_admit_phase_wiring.py::TestAdmitPhaseValidation::test_admit_rate_limit_with_wrong_dimension_fails_closed
+- tests/unit/strata/test_admit_phase_wiring.py::TestBackpressureDeclaredCeiling::test_declared_admit_ceiling_discharges_with_no_code_token
+- tests/unit/strata/test_admit_phase_wiring.py::TestBackpressureDeclaredCeiling::test_no_admit_block_still_uses_regex_fallback
 designated_repro_test: null
 acceptance:
 - text: Given admit/rate_limit/max_size/judge are the audit's 4 DEAD-CANDIDATE keywords
@@ -30,19 +35,23 @@ acceptance:
     only the AST definition and prose) -- when this lands, then _elaborate.py validates
     the admit phase alongside the existing parse/effect/record/refuse validators in
     _validate_boundary_phases.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_admit_phase_wiring.py::TestAdmitPhaseValidation::test_valid_admit_rate_and_size_elaborates
+  - tests/unit/strata/test_admit_phase_wiring.py::TestAdmitPhaseValidation::test_admit_rate_limit_with_wrong_dimension_fails_closed
 - text: Given _backpressure.py:105-110 infers bounded intake from source text with
     _BOUNDED_INTAKE_TOKEN_RE, whose own comment concedes it is 'not a claim the matched
     token bounds the SAME queue the node models', when this lands, then a declared
     admit rate_limit CHANGES the backpressure ceiling -- a positive control using
     a model whose bound code contains NO bounded-intake token, which fails at HEAD
     where the declaration is parsed and then ignored.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_admit_phase_wiring.py::TestBackpressureDeclaredCeiling::test_declared_admit_ceiling_discharges_with_no_code_token
 - text: Given the regex path must survive for models that declare no admit block,
     when no admit block is declared, then a test asserts the regex inference still
     applies, and the code logs at INFO which path produced the verdict so a backpressure
     result always says whether it was declared or guessed.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_admit_phase_wiring.py::TestBackpressureDeclaredCeiling::test_no_admit_block_still_uses_regex_fallback
 threat: null
 component: strata
 anchor: false

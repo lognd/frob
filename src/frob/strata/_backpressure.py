@@ -40,6 +40,15 @@ a declared bounded-intake obligation and its code-level evidence, not a
 specific queue depth or drop policy. No `strata-core` change needed (this
 ticket's scope is `src/frob/strata/**`/`docs/strata/**`/
 `tests/unit/strata/**` only, same as T-0640/T-0641/T-0642's).
+
+T-4911 (WIRE the boundary admit block): a node fed by a boundary that
+declares `admit { rate_limit ...; max_size ... }` has a PRECISE, DECLARED
+bounded-intake ceiling (elaborated into `BoundClaim` facts by
+`_elaborate.py::_admit_bound_claims_for`) -- prefer that declaration over
+`_BOUNDED_INTAKE_TOKEN_RE`'s source-text regex guess, which stays only as
+the fallback for nodes with no declared admit block. Every REL261 verdict
+logs at INFO whether it was DECLARED or GUESSED (silent-zero discipline:
+memory/silent-zero-is-the-dominant-bug-class.md).
 """
 
 from __future__ import annotations
@@ -54,7 +63,7 @@ from frob.logging import get_logger
 
 from ._code_binding import bind_code
 from ._errors import StrataError
-from ._models import KernelModel
+from ._models import BoundClaim, KernelModel, Metric
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
 from ._waive import apply_waivers, stale_relwaive_violations
 
@@ -174,21 +183,68 @@ def _missing_bounded_intake_violations(
     return violations
 
 
+# frob:ticket T-4911
+def _admit_ceiling_boundary_ids(model: KernelModel) -> dict[str, str]:
+    """Every boundary id whose inbound flow feeds a node, keyed by that
+    node's id (T-4911) -- the join `_declared_admit_ceiling` needs to go
+    from a queue/consumer node back to the boundary that may `admit` into
+    it."""
+    flow_dst_by_id = {f.id: f.dst for f in model.flows}
+    return {
+        flow_dst_by_id[b.flow_id]: b.id
+        for b in model.boundaries
+        if b.flow_id in flow_dst_by_id
+    }
+
+
+# frob:ticket T-4911
+def _declared_admit_ceiling(model: KernelModel, node_id: str) -> bool:
+    """Whether `node_id` is fed by a boundary with a DECLARED `admit`
+    ceiling (T-4911): a `BoundClaim` over `Metric.RATE`/`Metric.SIZE`
+    targeting that boundary, elaborated from its `admit { rate_limit ...;
+    max_size ... }` block. Declared beats guessed -- the precise reason
+    `_backpressure.py`'s regex inference exists as a fallback, not a
+    replacement, once a model bothers to declare its intake policy."""
+    boundary_id = _admit_ceiling_boundary_ids(model).get(node_id)
+    if boundary_id is None:
+        return False
+    return any(
+        isinstance(claim.body, BoundClaim)
+        and claim.body.target == boundary_id
+        and claim.body.metric in (Metric.RATE, Metric.SIZE)
+        for claim in model.claims
+    )
+
+
 def _unproven_bounded_intake_violations(
     model: KernelModel, owner_by_node: dict[str, list[str]], root: Path
 ) -> list[BackpressureViolation]:
     """REL261: every `queue`/`consumer` node declaring `bounded_intake`
     with bound code, but whose bound code carries no real bounded-queue/
-    backpressure-shaped token (PROVABILITY CONSTRAINT). Mirrors
-    `_circuit_breaker.py::_unproven_circuit_breaker_violations` exactly,
+    backpressure-shaped token (PROVABILITY CONSTRAINT). A DECLARED `admit`
+    ceiling on the node's inbound boundary (T-4911) proves the obligation
+    outright, ahead of the regex guess -- mirrors
+    `_circuit_breaker.py::_unproven_circuit_breaker_violations` otherwise,
     parameterized on `_BOUNDED_INTAKE_TOKEN_RE`."""
     violations: list[BackpressureViolation] = []
     for node in model.nodes:
         if not _is_queue_or_consumer(node.attrs) or not _has_bounded_intake(node.attrs):
             continue
+        if _declared_admit_ceiling(model, node.id):
+            _log.info(
+                "backpressure: REL261 node %s bounded intake DECLARED via "
+                "admit block, regex inference skipped",
+                node.id,
+            )
+            continue
         if not node_has_bound_code(node.id, owner_by_node):
             continue
         if files_evidence_token(owner_by_node[node.id], root, _BOUNDED_INTAKE_TOKEN_RE):
+            _log.info(
+                "backpressure: REL261 node %s bounded intake GUESSED from "
+                "source token (no admit block declared)",
+                node.id,
+            )
             continue
         _log.warning(
             "backpressure: REL261 node %s declares bounded_intake but bound "

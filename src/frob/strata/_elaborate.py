@@ -68,6 +68,7 @@ from ._models import (
     Reach,
     RemoveNode,
     Rewrite,
+    Rung,
     ScaleRate,
     Scenario,
     SetTrust,
@@ -620,15 +621,50 @@ def _validate_boundary_phase_refuse(
     )
 
 
+# frob:ticket T-4911
+def _validate_boundary_phase_admit(boundary: BoundaryDecl) -> Result[None, StrataError]:
+    """`admit` phase quantities must carry the right dimension (T-4911):
+    `rate_limit` is a rate quantity, `max_size` is a size quantity. This is
+    the validator T-4911's audit found missing -- `admit`/`rate_limit`/
+    `max_size` were parsed and modelled but read by nothing; see
+    `_validate_boundary_phases`."""
+    phases = boundary.phases
+    assert phases is not None
+    admit = phases.admit
+    if admit is None:
+        return Ok(None)
+    if admit.rate_limit is not None:
+        dim = admit.rate_limit.dimension()
+        if dim.is_err or dim.danger_ok != "rate":
+            _log.error(
+                "boundary %s: admit rate_limit %r is not a rate quantity",
+                boundary.id,
+                admit.rate_limit,
+            )
+            return Err(StrataError.UnitMismatch)
+    if admit.max_size is not None:
+        dim = admit.max_size.dimension()
+        if dim.is_err or dim.danger_ok != "size":
+            _log.error(
+                "boundary %s: admit max_size %r is not a size quantity",
+                boundary.id,
+                admit.max_size,
+            )
+            return Err(StrataError.UnitMismatch)
+    return Ok(None)
+
+
+# frob:ticket T-4911
 def _validate_one_boundary_phases(
     boundary: BoundaryDecl,
     known: set[str],
     append_only: set[str],
     labels: frozenset[str],
 ) -> Result[None, StrataError]:
-    """All four phase checks for one boundary, in fail-closed order."""
+    """All five phase checks for one boundary, in fail-closed order."""
     for checked in (
         _validate_boundary_phase_parse(boundary),
+        _validate_boundary_phase_admit(boundary),
         _validate_boundary_phase_effect(boundary, known),
         _validate_boundary_phase_record(boundary, known),
         _validate_boundary_phase_refuse(boundary, known, append_only, labels),
@@ -638,6 +674,56 @@ def _validate_one_boundary_phases(
     return Ok(None)
 
 
+# frob:ticket T-4911
+def _admit_bound_claims_for(boundary: BoundaryDecl) -> list[Claim]:
+    """Desugar one boundary's declared `admit` quantities into `BoundClaim`
+    facts (T-4911): `Bound(rate, boundary) <= rate_limit` and `Bound(size,
+    boundary) <= max_size`. `Bound` is one of the six kernel primitives
+    (`_models.py::BoundClaim`), so this is desugaring under charter law 1,
+    not a kernel extension -- the prover sees an ordinary claim, never a
+    Python-side `admit` special case."""
+    phases = boundary.phases
+    admit = phases.admit if phases is not None else None
+    if admit is None:
+        return []
+    claims: list[Claim] = []
+    if admit.rate_limit is not None:
+        claims.append(
+            Claim(
+                id=f"{boundary.id}.admit.rate",
+                body=BoundClaim(
+                    metric=Metric.RATE, target=boundary.id, limit=admit.rate_limit
+                ),
+                assumed=True,
+                required_rung=Rung.L1,
+            )
+        )
+    if admit.max_size is not None:
+        claims.append(
+            Claim(
+                id=f"{boundary.id}.admit.size",
+                body=BoundClaim(
+                    metric=Metric.SIZE, target=boundary.id, limit=admit.max_size
+                ),
+                assumed=True,
+                required_rung=Rung.L1,
+            )
+        )
+    return claims
+
+
+# frob:ticket T-4911
+def _elaborate_admit_bound_claims(module: Module) -> tuple[Claim, ...]:
+    """Every declared `admit` block's `BoundClaim` facts across `module`'s
+    boundaries (T-4911); see `_admit_bound_claims_for`."""
+    return tuple(
+        claim
+        for boundary in module.boundaries
+        for claim in _admit_bound_claims_for(boundary)
+    )
+
+
+# frob:ticket T-4911
 def _validate_boundary_phases(module: Module) -> Result[None, StrataError]:
     """Structural checks for every `boundary ... { phase_block* }` (T-0069, v0).
 
@@ -646,8 +732,9 @@ def _validate_boundary_phases(module: Module) -> Result[None, StrataError]:
     six-phase contract exists to kill, docs/strata/boundary.md#the-six-
     phases); an `effect`/`refuse` frame target that is not a declared node;
     a `refuse` frame target that is not `append_only` (the audit-only
-    rule); a `record` audit target that is not declared; or a `refuse`
-    `respond` label that is not a level in the labels lattice.
+    rule); a `record` audit target that is not declared; an `admit`
+    `rate_limit`/`max_size` quantity with the wrong dimension (T-4911); or
+    a `refuse` `respond` label that is not a level in the labels lattice.
     """
     known = _known_node_ids(module)
     append_only = _append_only_ids(module)
@@ -1281,6 +1368,7 @@ def _run_elaborate_validators(module: Module) -> Result[None, StrataError]:
     return Ok(None)
 
 
+# frob:ticket T-4911
 def _build_base_kernel_model(module: Module) -> KernelModel:
     """Elaborate every top-level construct into the pre-infra/secrets/refine model."""
     elaborated_nodes = tuple(_elaborate_node(n) for n in module.nodes)
@@ -1300,7 +1388,10 @@ def _build_base_kernel_model(module: Module) -> KernelModel:
         nodes=elaborated_nodes,
         flows=(*(_elaborate_flow(f) for f in module.flows), *extra_flows),
         boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
-        claims=tuple(_elaborate_claim(c) for c in module.claims),
+        claims=(
+            *(_elaborate_claim(c) for c in module.claims),
+            *_elaborate_admit_bound_claims(module),
+        ),
         scenarios=tuple(_elaborate_scenario(s) for s in module.scenarios),
     )
 
