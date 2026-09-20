@@ -29,6 +29,16 @@ body_changes:
   old_length: 540
   new_length: 1101
 designated_repro_test: null
+acceptance:
+- text: 'All actions/checkout, actions/cache, actions/upload-artifact, actions/download-artifact
+    and astral-sh/setup-uv uses: refs in .github/workflows/*.yml are 40-hex SHA pins
+    with matching trailing version comments, bumped per Dependabot PRs 6-10'
+  evidence: []
+- text: 'dependabot.yml declares target-branch: dev for the github-actions ecosystem'
+  evidence: []
+- text: 'release.yml artifact-download steps using pattern: still pass merge-multiple:
+    true and upload-artifact retention-days is preserved across the version bump'
+  evidence: []
 threat: null
 component: null
 anchor: false
