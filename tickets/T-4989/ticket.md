@@ -1,5 +1,5 @@
 ---
-id: T-draft-6681a088
+id: T-4989
 title: 'refs gate: reference conventional scaffold files by default'
 state: queued
 kind: feature
