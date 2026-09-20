@@ -20,13 +20,101 @@ prover never learns a domain word (law 1 in `charter.md`).
 Kernel types are frozen pydantic models (T-0055); the fact base is a tuple
 store with a semi-naive Datalog fixpoint over it (T-0056).
 
-## Conditional flows (the one extension beyond plain graphs)
+## Conditional flows (an extension beyond plain graphs)
 
 A flow may carry a condition: an outcome (`on Ok`, `on Err`) or a phase
 (`in parse`, `in commit`). Frames desugar to conditional flow permissions:
 "modifies X on Ok, nothing on Err" is two permission sets over write-flows
 to stores. Boundary phases (`boundary.md`) and failure atomicity both
-reduce to this; no other kernel extension exists or is planned.
+reduce to this.
+
+Conditional flows are not the only kernel extension. See "Kernel
+extensions beyond the six primitives" below: measurement over the surface
+grammar (scratchpad/STRATA-KEYWORDS.md, 139 keyword rows) found roughly
+79 of 139 surface keywords do not desugar into the six primitives above,
+spanning eight domains. The six primitives remain accurate as the
+PROVER's fact language -- law 1 below still holds for all eight domains --
+but the surface language is materially larger than the six primitives
+suggest.
+
+## Kernel extensions beyond the six primitives
+
+The six primitives are the prover's fact language, not the whole surface
+grammar. Law 1 (`charter.md`) is "the prover never learns a domain word":
+a keyword is **law-1-bearing** when the elaborator does NOT desugar it
+into the six primitives above but instead hands a new field to the
+prover, or routes it to a non-Datalog evaluator entirely. By that test,
+eight domains are deliberate, recorded extensions -- not drift, and not
+candidates for silent deletion. Whether each one should eventually be
+desugared into the six primitives or stay a recorded extension is a
+separate, per-domain decision (tracked on T-4681); this section documents
+each domain as it exists today and pre-empts none of those decisions.
+
+1. **Code binding** (`code`) -- `_code_binding.py`; the tier-2 SYS100-103
+   surface. Law-1 record: `code` binds a Node/Flow to a code-graph
+   reference; the prover never sees source, imports, or effects directly
+   -- it only sees the boolean/interval facts SYS100-103 derive from the
+   frob code graph and hand across as ordinary tier-2 facts.
+
+2. **Capability via-lists** (`may` / `via` / `of` / `exclusive`) --
+   `_effects.py`. The six-primitive table above lists Node's `may` set
+   but not per-atom via-lists or the exclusivity relation between
+   capability atoms; SYS111's ratchet reads via-lists and exclusivity
+   directly. Law-1 record: `may` atoms themselves cross into the fact
+   base as capability facts (law-1-compliant, already kernel); the
+   via-list/`of`/`exclusive` structure around each atom is evaluated by
+   `_effects.py` in Python and never reaches the prover as a fact --
+   SYS111 reasons over it before any Datalog fixpoint runs.
+
+3. **Waivers** (`waive` / `reason` / `ticket`) -- `_waive.py`. These are
+   meta-facts ABOUT findings (which verdict was downgraded, by what
+   policy, with what ticket) rather than facts about the modeled system.
+   Law-1 record: waiver records never enter the Datalog fact base; the
+   `enables` cascade (see "Claim evaluation" below) consumes them
+   entirely in Python before or after a claim pass, never inside one.
+
+4. **Entity/architecture** (`entity` / `architecture` / `obligation` /
+   `binds` / `configuration`) -- `_design_load.py:289,374-429`.
+   SYS300-303 are structural refusals enforced at parse/load time, a
+   second type system alongside the six primitives. Law-1 record: none
+   of these words are Datalog facts at all; they are validated by direct
+   Python structural checks on the loaded design before a `KernelModel`
+   is even built, so the prover never learns them because they never
+   reach the model.
+
+5. **vmodel** (`vmodel_node` / `vmodel_edge` / `kind` / `level` /
+   `runnable` / `code_ref` / `src` / `dst`) -- `gates/_vmodel.py`;
+   `grammar_core.rs:76-92` calls these "new, independent top-level
+   statement kinds". This is a second graph, independent of Node/Flow,
+   used heavily in consumer designs (the `vmodel.strata` family: `kind`
+   x1292, `dst` x764, `runnable` x269, `code_ref` x259). Law-1 record:
+   the vmodel graph has its own gate family (VMOD) that evaluates it
+   directly; it is never lowered into Node/Flow facts, so the prover
+   never learns a vmodel word.
+
+6. **Policy** (`policy` / `forbid` / `confine` / `mediate` / `require` /
+   `call` / `import`) -- `_policy.py`. Lexical/AST rules over source
+   under a refinement-monotonicity checker, not graph facts. Law-1
+   record: policy rules are evaluated by a standalone Python checker
+   walking source ASTs; no policy keyword or its result is inserted into
+   the Datalog fact base.
+
+7. **Host/ACL** (`runs_as` / `unit` / `owns` / `listens` / `acl` /
+   `sudoers` / ...) -- `_host.py`, `_host_isolation*.py`. HOST001/002 are
+   plain Python joins over host/unit/ACL declarations. Law-1 record:
+   host and ACL facts are consumed entirely by the HOST gates in Python;
+   they do not pass through the six-primitive fact base or the Datalog
+   fixpoint.
+
+8. **Kerberos** (`realm` / `kdc` / `spn` / `delegation` / `trusts` /
+   ...) -- `_krb.py`. A third graph beside Node/Flow and vmodel. Law-1
+   record: the Kerberos trust graph is elaborated and evaluated in its
+   own module; none of its facts are lowered into kernel Node/Flow/Bound
+   facts, so the prover never learns a Kerberos word.
+
+None of the eight domains above is scheduled for deletion; each is a
+recorded, deliberate extension of the surface grammar beyond the six
+primitives it lowers to (or, for domains 3-8, does not lower to at all).
 
 ## Lattice semantics
 
