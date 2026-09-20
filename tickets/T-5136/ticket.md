@@ -1,5 +1,5 @@
 ---
-id: T-draft-d098cf91
+id: T-5136
 title: 'PERF015-018: N+1 spawn, per-iteration git pathspec, success-only cache write,
   discarded hoisted value -- the rule family the 2026-09-20 audit found missing'
 state: queued
