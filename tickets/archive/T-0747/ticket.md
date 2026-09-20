@@ -13,6 +13,10 @@ blocked_by:
 parent: T-0739
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
@@ -21,6 +25,8 @@ scope:
 - docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/gates.md
@@ -56,6 +62,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-07-26'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve circular-import incident detail trimmed from _protocol_summary.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 883
+  new_length: 1489
 evidence:
 - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
 - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_release_before_return_is_not_flagged
@@ -79,5 +92,19 @@ acceptance:
   - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Child 4 of T-0739. Cleanup obligations: (a) intraprocedural -- every acquisition (transition into a resource-held state) must be postdominated by its release on ALL exits, using T-0686 may-raise sets for the exceptional edges (blocked_by T-0686), UNLESS the resource escapes (returned/stored) -- escape transfers the obligation to the receiver via the summary (T-0745); (b) per-protocol cleanup policy: cleanup = always | on-error | process-exit-ok, declared in the protocol (T-0744), default on-error; the *_deinit-never-called case = a protocol with cleanup=always whose deinit is unreachable from entrypoint terminating paths = ERROR. NO-FAIL-SILENT: a path the analysis cannot classify (poisoned/Unknown) is an ERROR at the acquisition site; escapes into containers/globals the summary cannot track are reported as obligation-escaped-untracked findings (waivable), never dropped.
+
+
+T-4770 follow-up (condensed from _ADAPTER_FACTORY_BY_SUFFIX's docstring
+in src/frob/gates/_protocol_summary.py, trimmed for DOCARCH002's
+12-line cap): the import chain is frob.arch -> _async_hazards ->
+_python -> frob.dup -> frob.gates. This ticket's own first pass shipped
+a module-level `_python.PythonAdapter()` instantiation and
+tests/unit/test_arch.py (which imports frob.arch directly, triggering
+that exact order) caught the AttributeError. Constructing the adapters
+inside a function defers the attribute lookup until first CALL, by
+which point every module in the cycle has finished importing.
