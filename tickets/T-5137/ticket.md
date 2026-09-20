@@ -1,5 +1,5 @@
 ---
-id: T-draft-ffc9b97d
+id: T-5137
 title: 'Automatic per-ticket agent token accounting from harness transcripts: zero
   model cost, bounded IO, one shared usage module, None for human work'
 state: queued
