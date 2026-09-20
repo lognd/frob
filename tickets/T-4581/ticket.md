@@ -9,7 +9,7 @@ created: '2026-09-18'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.533.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,6 +32,13 @@ scope_changes:
   reason: existing test proves the fix (test_no_cell_is_both_patterned_and_excused)
   actor: logan
   at: '2026-09-18'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.533.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: 'bound([''tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_cell_is_both_patterned_and_excused'',
