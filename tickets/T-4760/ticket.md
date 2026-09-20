@@ -2,7 +2,7 @@
 id: T-4760
 title: 'Derived wrappers: scaffold apply regenerates Makefile and make.bat as managed
   blocks of run calls, plus a drift gate'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -28,20 +28,42 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: make.bat is a new derived wrapper file; its manifest entry per type lives
+    in project.py's render manifest, required by the ticket's own acceptance criteria
+  actor: logan
+  at: '2026-09-19'
+- op: remove
+  glob: src/frob/scaffold/project.py
+  reason: never touched; earlier scope-add attempt landed after a retry once ticket
+    work had already moved on without needing it
+  actor: logan
+  at: '2026-09-19'
+evidence:
+- tests/unit/test_wrapper_drift.py::TestWrapperDriftGate::test_inline_sequence_in_target_body_is_wrap001
+- tests/unit/test_wrapper_drift.py::TestWrapperDriftGate::test_target_for_removed_commands_entry_is_wrap002
+- tests/unit/test_wrapper_drift.py::TestApplyGeneratesWrapperBlocks::test_second_apply_is_byte_identical
+- tests/unit/test_wrapper_drift.py::TestApplyGeneratesWrapperBlocks::test_makefile_and_makebat_target_sets_are_equal
 designated_repro_test: null
 acceptance:
 - text: Given a rendered project whose Makefile target body expands two steps inline,
     when frob check runs, then the drift gate reports it and names the target
-  evidence: []
+  evidence:
+  - tests/unit/test_wrapper_drift.py::TestWrapperDriftGate::test_inline_sequence_in_target_body_is_wrap001
 - text: Given a Makefile target for an entry removed from [commands], when frob check
     runs, then it is reported
-  evidence: []
+  evidence:
+  - tests/unit/test_wrapper_drift.py::TestWrapperDriftGate::test_target_for_removed_commands_entry_is_wrap002
 - text: Given scaffold apply run twice, when the second run completes, then the wrapper
     files are byte-identical to after the first
-  evidence: []
+  evidence:
+  - tests/unit/test_wrapper_drift.py::TestApplyGeneratesWrapperBlocks::test_second_apply_is_byte_identical
 - text: Given a rendered project, when the generated Makefile and make.bat target
     sets are compared, then they are equal
-  evidence: []
+  evidence:
+  - tests/unit/test_wrapper_drift.py::TestApplyGeneratesWrapperBlocks::test_makefile_and_makebat_target_sets_are_equal
 threat: null
 component: null
 anchor: false
