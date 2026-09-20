@@ -2,7 +2,7 @@
 id: T-4806
 title: 'ci: bump pinned GitHub Actions from Dependabot PRs 6-10 on dev in one commit
   and retarget Dependabot to dev'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -28,17 +28,28 @@ body_changes:
   at: '2026-09-19'
   old_length: 540
   new_length: 1101
+evidence:
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_ci_workflow_uses_are_all_sha_pinned
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_release_workflow_uses_are_all_sha_pinned
+- tests/test_ci_workflow_toolchain_pins.py::TestUvVersionIsPinned::test_every_setup_uv_step_pins_the_shared_version
+- 'cmd:grep -n "target-branch: \"dev\"" .github/dependabot.yml exit=0 sha256=3ff22f8116b6'
+- cmd:bash /tmp/verify_ac3.sh exit=0 sha256=8eec9caf6cb7
 designated_repro_test: null
 acceptance:
 - text: 'All actions/checkout, actions/cache, actions/upload-artifact, actions/download-artifact
     and astral-sh/setup-uv uses: refs in .github/workflows/*.yml are 40-hex SHA pins
     with matching trailing version comments, bumped per Dependabot PRs 6-10'
-  evidence: []
+  evidence:
+  - tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_ci_workflow_uses_are_all_sha_pinned
+  - tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_release_workflow_uses_are_all_sha_pinned
+  - tests/test_ci_workflow_toolchain_pins.py::TestUvVersionIsPinned::test_every_setup_uv_step_pins_the_shared_version
 - text: 'dependabot.yml declares target-branch: dev for the github-actions ecosystem'
-  evidence: []
+  evidence:
+  - 'cmd:grep -n "target-branch: \"dev\"" .github/dependabot.yml exit=0 sha256=3ff22f8116b6'
 - text: 'release.yml artifact-download steps using pattern: still pass merge-multiple:
     true and upload-artifact retention-days is preserved across the version bump'
-  evidence: []
+  evidence:
+  - cmd:bash /tmp/verify_ac3.sh exit=0 sha256=8eec9caf6cb7
 threat: null
 component: null
 anchor: false

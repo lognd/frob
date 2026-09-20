@@ -49,10 +49,19 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+    # T-4806: checkout v4->v7, setup-uv v5->v10, cache v4->v6,
+    # upload-artifact v4->v7 and download-artifact v4->v8 bumped
+    # throughout this workflow (Dependabot PRs 6-10). Checked for
+    # breaking changes: every multi-artifact download below already
+    # passes `merge-multiple: true` (required since download-artifact
+    # v4 when using `pattern:` against more than one matching artifact),
+    # `retention-days` on upload-artifact is still a supported input in
+    # v7, and setup-uv is not given cache inputs here so its v10 cache
+    # default change has no effect. No input changes were needed.
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - name: Resolve ci.yml's status for this exact commit SHA
         env:
           GH_TOKEN: ${{ github.token }}
@@ -134,9 +143,9 @@ jobs:
     timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - name: Build frob-core wheel (abi3-py311)
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
@@ -202,13 +211,13 @@ jobs:
             "$python_bin" -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
           fi
       - name: Upload frob-core wheel
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frob-core-${{ matrix.target }}
           path: frob-core/dist/*.whl
           retention-days: 90
       - name: Upload frob-strata wheel
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: strata-core-${{ matrix.target }}
           path: strata-core/dist/*.whl
@@ -217,9 +226,9 @@ jobs:
   build-sdists:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
       - name: frob-core sdist
@@ -236,17 +245,17 @@ jobs:
           args: --out dist
       - name: frob sdist + wheel (pure Python)
         run: uv build
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frob-core-sdist
           path: frob-core/dist/*.tar.gz
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: strata-core-sdist
           path: strata-core/dist/*.tar.gz
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frob-dist
           path: dist/*
@@ -310,16 +319,16 @@ jobs:
     timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - name: Download the universal frob wheel (built once, build-sdists)
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: frob-dist
           path: smoke-dist/frob
       - name: Download this platform's frob-core/strata-core wheels
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: "*-core-${{ matrix.target }}"
           path: smoke-dist/cores
@@ -384,7 +393,7 @@ jobs:
       # Merges every frob-core-* artifact (5 platform wheels + sdist)
       # into one flat dir.
       - name: Download frob-core artifacts (wheels + sdist)
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: frob-core-*
           path: dist-staging/frob-core
@@ -402,7 +411,7 @@ jobs:
       id-token: write
     steps:
       - name: Download frob-strata artifacts (wheels + sdist)
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: strata-core-*
           path: dist-staging/strata-core
@@ -425,7 +434,7 @@ jobs:
       id-token: write
     steps:
       - name: Download frob artifact (wheel + sdist)
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: frob-dist
           path: dist-staging/frob

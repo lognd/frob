@@ -96,10 +96,16 @@ jobs:
     # 40-minute step budget without leaving a hang to run for hours
     # before anyone notices.
     timeout-minutes: 150
+    # T-4806: checkout v4->v7 and setup-uv v5->v10 bumped here (Dependabot
+    # PRs 6/7). Checked for breaking changes: this workflow pins uv's own
+    # version via env.UV_VERSION rather than relying on setup-uv's cache
+    # defaults, and all GitHub-hosted runners in this file already default
+    # to the Node 24 runtime v7+ actions require, so no input changes were
+    # needed.
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           version: ${{ env.UV_VERSION }}
       - name: Install Rust
@@ -151,7 +157,7 @@ jobs:
       # unconditionally, so even a cache HIT with a coincidentally-stale
       # wheel cannot reach the smoke stage.
       - name: Cache cargo
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
@@ -1145,9 +1151,9 @@ jobs:
   standalone-install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           version: ${{ env.UV_VERSION }}
       # T-3935: frob-core/strata-core are hard `==`-pinned DEFAULT deps
