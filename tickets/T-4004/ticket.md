@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: high
 parent: T-4050
 tier: ticket
-sprint: v0.540.0
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -36,6 +36,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: sprint
+  old_value: v0.540.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: set
   reason: 'internal corroboration of consumer F-218: my own implementer measured 30-367+
