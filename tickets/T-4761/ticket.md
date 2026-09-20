@@ -2,7 +2,7 @@
 id: T-4761
 title: 'Green on day one: refs regression, doc anchors, tickets/ and integration dirs,
   39 bare TODOs, and a readable rendered frob.toml'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -27,10 +27,20 @@ scope:
 - src/frob/scaffold/project.py
 - docs/guides/frob-toml.md
 - tests/unit/test_scaffold_frob_toml.py
+- src/frob/scaffold/data/shared/python/README.md.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/shared/python/README.md.j2
+  reason: bare TODO markers ship into every python-library/python-tool project on
+    day one (TODO001); this file's TODO is the same class of finding the ticket's
+    acceptance criterion 3 measures, and it is the one remaining bare TODO within
+    reach of this ticket's python-side scope
+  actor: logan
+  at: '2026-09-19'
 triage_changes:
 - field: sprint
   old_value: null
