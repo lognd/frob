@@ -1,5 +1,5 @@
 ---
-id: T-draft-053aec44
+id: T-5134
 title: 'Remove ticket citations (T-####) from all user-facing help and docs: argparse
   help strings, docs/, refusal and remedy text'
 state: queued
