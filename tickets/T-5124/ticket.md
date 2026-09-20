@@ -1,5 +1,5 @@
 ---
-id: T-draft-36c347fe
+id: T-5124
 title: 'frob-suggest: dedupe dual hook registration and make attempt counter per-agent-session'
 state: in-progress
 kind: bug

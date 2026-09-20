@@ -58,12 +58,10 @@ class TestCiBuildMatrixCoversAllThreePlatforms:
 
 
 class TestCoverageStepUsesFrobNotMake:
-    """T-3077 (T-1382 epic: decouple frob from the Makefile): the T-1366
-    "coverage stamp + delta baseline" step used to shell out to `make
-    coverage`, which depends on a `make` binary that windows-latest never
-    installs -- so the one job that would prove the make-free path works
-    never actually exercised it. The step must call `uv run frob coverage
-    --full` directly instead."""
+    """The "coverage stamp + delta baseline" CI step must call `uv run
+    frob coverage --full` directly, never shell out to `make coverage` --
+    windows-latest never installs a `make` binary, so a `make`-dependent
+    step would never actually exercise the make-free path."""
 
     # frob:tests .github/workflows/ci.yml
     def test_coverage_step_is_gated_to_ubuntu_only(self) -> None:
@@ -293,17 +291,11 @@ class TestWindowsTestStepMitigationsStayPinned:
 
     # frob:tests .github/workflows/ci.yml
     def test_win32_test_step_budget_covers_n2_measured_wall_time(self) -> None:
-        """T-4372: with -n2 (T-4360, above) the windows Test step's own
-        internal FROB_TEST_TOTAL_BUDGET_SECONDS cap and the outer
-        Wait-Process backstop must both be raised to cover the -n2
-        wall-clock cost, not stay at their old -n4-era values. Measured
-        on run 34371162715 (win4.log): the -n2 suite hit the OLD 4500s
-        cap at 83% of collected items done, which linearly extrapolates
-        to ~5423s for 100% -- so the new internal cap must be strictly
-        above that extrapolated completion time, and the outer
-        Wait-Process backstop must stay above the internal cap so the
-        internal cap fires first with a diagnostic (T-3749's own
-        ordering contract)."""
+        """With `-n2`, the windows Test step's internal
+        `FROB_TEST_TOTAL_BUDGET_SECONDS` cap must strictly exceed the
+        measured `-n2` extrapolated completion time, and the outer
+        Wait-Process backstop must stay above the internal cap, so the
+        internal cap fires first with a diagnostic."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
@@ -328,10 +320,8 @@ class TestWindowsTestStepMitigationsStayPinned:
 
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """The windows Test step must stay gated to windows-latest and
-        must never carry its own continue-on-error (that stays on the
-        job's advisory `continue-on-error` flag, T-4236, not this step;
-        see T-3604/T-3609, whose diagnostic step this test used to
-        distinguish the real Test step from was removed in T-4265)."""
+        must never carry its own `continue-on-error` -- that advisory
+        flag belongs on the job, not this step."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
@@ -344,18 +334,13 @@ class TestWindowsTestStepMitigationsStayPinned:
 
 
 class TestMacosTestStepPutsVenvBinOnPath:
-    """T-4368: the macOS Test step invokes the venv's own interpreter
-    directly (`.venv/bin/python -m pytest`, T-4274's fix, no `uv run`
-    supervisor in between) rather than through `uv run`, which never
-    activates the target project's own bin dir onto `PATH`. Without
-    `.venv/bin` on `PATH`, `shutil.which("ty")`/`shutil.which("mypy")`
-    inside the test process resolve to nothing even though ty/mypy are
-    this repo's own dev dependencies, sitting right at `.venv/bin/ty`/
-    `.venv/bin/mypy` -- reproduced locally, platform-independent PATH-
-    content defect: `env -i PATH=/usr/bin:/bin .venv/bin/python -m
-    pytest -q tests/test_gates_suppress.py::TestSuppressionDialects::
-    test_available_reflects_path_not_project_config` fails with
-    `dialects["ty"].available is False` before this fix, passes after."""
+    """The macOS Test step invokes the venv's own interpreter directly
+    (`.venv/bin/python -m pytest`, no `uv run` supervisor in between),
+    which never activates `.venv/bin` onto `PATH` -- so it must export
+    `PATH` itself, prepending `.venv/bin`, or `shutil.which("ty")`/
+    `shutil.which("mypy")` inside the test process resolve to nothing
+    even though both are this repo's own dev dependencies sitting right
+    at `.venv/bin/ty`/`.venv/bin/mypy`."""
 
     # frob:tests .github/workflows/ci.yml
     def test_macos_test_step_run_script_prepends_venv_bin_to_path(self) -> None:
@@ -392,8 +377,7 @@ class TestTestStepsNoRerunFlakes:
     by fixing the specific flaky tests instead (T-3775)."""
 
     # frob:tests \
-    # tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes.test_ubuntu_test_ste\
-    # p_no_reruns_flakes
+    # tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes.test_ubuntu_test_step_no_reruns_flakes  # noqa: E501
     def test_ubuntu_test_step_no_reruns_flakes(self) -> None:
         """The ubuntu Test step's pytest invocation must not carry
         --reruns/--reruns-delay (T-3777)."""

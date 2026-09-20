@@ -266,11 +266,9 @@ class TestRunGatesUseCache:
         assert cold_fp == warm1_fp == warm2_fp
 
     def test_ack_invalidates_cached_drift001(self, tmp_path: Path) -> None:
-        """T-1454 regression: a `frob ack` that rewrites `frob.lock` (with no
-        tracked SOURCE file digest changing) must invalidate a previously
-        cached DRIFT001 result on the very next cached `frob check` -- the
-        exact staleness the reporter observed workarounding with
-        `FROB_NO_GATE_CACHE=1`. frob:tests
+        """A `frob ack` that rewrites `frob.lock` (with no tracked source
+        file digest changing) must invalidate a previously cached
+        DRIFT001 result on the very next cached `frob check`. frob:tests
         src/frob/gates/__init__.py::_cacheable_gate_call"""
         widget = '''class Widget:
     """A widget."""
@@ -569,21 +567,16 @@ class TestRunGatesUseCacheProcessGates:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """A real tree edit must force a fresh `archgate` result, not a
-        stale cached one -- the T-1445 correctness bar mirrored from
-        `TestEvaluateCacheableGate.test_edit_to_touched_file_forces_miss`.
-
-        T-4351 (Windows): this used to read `stats.timing_s["archgate"]
-        != 0.0` as the "was it actually recomputed" signal -- MEASURED on
-        windows-latest, a genuine recompute of this one-line file can
-        finish inside `time.process_time()`'s own clock granularity and
-        legitimately report 0.0, indistinguishable from the 0.0
-        `_seed_preloaded_process_cache` sentinel a cache HIT reports on
-        every platform. `FROB_DISABLE_POOL_PRELOAD=1` runs the process
-        gate serially IN this test's own process/thread (T-3670) instead
-        of a `ProcessPoolExecutor` worker, so a monkeypatched
-        `frob.gates.arch_gate` spy actually observes the call and gives a
-        platform-independent, clock-free answer to the one question this
-        test asks: did `arch_gate` run again."""
+        stale cached one -- mirrors
+        `TestEvaluateCacheableGate.test_edit_to_touched_file_forces_miss`'s
+        correctness bar for a process-pool gate. `FROB_DISABLE_POOL_PRELOAD=1`
+        runs the process gate serially in this test's own process/thread
+        instead of a `ProcessPoolExecutor` worker, so a monkeypatched
+        `frob.gates.arch_gate` spy directly observes whether it was
+        called again -- a platform-independent, clock-free answer,
+        unlike reading `stats.timing_s["archgate"]`, which can
+        legitimately read 0.0 on a fast recompute and be indistinguishable
+        from a cache hit's own 0.0 sentinel."""
         monkeypatch.setenv("FROB_DISABLE_POOL_PRELOAD", "1")
         _write(tmp_path, "a.py", "def f():\n    pass\n")
         _git_init(tmp_path)
@@ -862,15 +855,11 @@ class TestRunReplay:
     def test_sweep_write_invalidates_a_ticket_scoped_replay(
         self, tmp_path: Path
     ) -> None:
-        """MUST-FIRE (T-3301, F-026/F-031/F-043/F-048): a ticket-scoped
-        replay stored while PRE001's own `.frob/prework/<id>.json` sweep
-        record is missing/stale must MISS once a fresh `frob ticket sweep
-        <id>` writes a NEW sweep record for that ticket -- even though
-        that write is gitignored and never touches `root_content_key`'s
-        tracked-file walk. Reproduced directly against the real CLI
-        before this fix: `scope --add` + `sweep` (both untracked-only
-        after the scope commit) followed by two `frob check --ticket
-        <id>` calls replayed the PRE-sweep PRE001 verdict on both.
+        """A ticket-scoped replay stored while PRE001's own
+        `.frob/prework/<id>.json` sweep record is missing/stale must MISS
+        once a fresh `frob ticket sweep <id>` writes a new sweep record
+        for that ticket -- even though that write is gitignored and
+        never touches `root_content_key`'s tracked-file walk.
         frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
         frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay
         frob:tests src/frob/gates/_gate_cache.py::_replay_fingerprint"""
@@ -1021,10 +1010,10 @@ class TestGateBuildFingerprint:
     def test_upgrade_forces_real_replay_on_unchanged_tree(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        """T-2723's required positive control, direction 1: store a replay
-        under one build, then simulate an upgrade with NO tree edit at all
-        -- the stored replay must miss, forcing a real re-run, never
-        reprinting the old build's (possibly pre-fix) verdict.
+        """A replay stored under one build, then looked up after an
+        upgrade with no tree edit at all, must miss -- forcing a real
+        re-run, never reprinting the old build's (possibly pre-fix)
+        verdict.
         frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
         frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay"""
         import frob.gates._gate_cache as gc
@@ -1093,10 +1082,9 @@ class TestGateBuildFingerprint:
     def test_tree_change_still_invalidates_under_same_build(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        """T-2723's required positive control, direction 3: the build
-        fingerprint is folded IN ADDITION to tree content, never in place
-        of it -- a tracked-file edit under a fixed, unchanged build must
-        still force a miss, exactly as it did before this ticket.
+        """The build fingerprint is folded in addition to tree content,
+        never in place of it -- a tracked-file edit under a fixed,
+        unchanged build must still force a miss.
         frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay"""
         import frob.gates._gate_cache as gc
         from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay

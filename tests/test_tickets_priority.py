@@ -166,8 +166,7 @@ class TestSetPriority:
         to `ticket.triage_changes` recording the field, old/new value,
         reason, actor, and date -- the audit trail this ticket adds."""
         # frob:tests \
-        # tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_\
-        # triage_entry
+        # tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_entry  # noqa: E501
         import subprocess
 
         from frob.tickets import Origin as _Origin
@@ -216,21 +215,12 @@ class TestTick004QueueRot:
     def test_severity_is_utc_deterministic_across_local_timezones(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-4393: `_tick004_queue_rot`'s severity for a ticket sitting
-        exactly at the 2x-threshold ERROR boundary must be a pure function
-        of `_utc_today()`'s injected value, never of the process's local
-        wall clock. Before this fix, the gate read local `date.today()`
-        directly -- a CI runner whose local timezone reads a different
-        calendar date near a UTC-midnight instant than another runner in
-        the same matrix could flip WARN into ERROR (or the reverse) for
-        the identical ticket on the identical commit (the measured
-        Windows-only shape, CI run 34415921529: 10+ HIGH tickets at
-        exactly 15d/threshold-7d reported ERROR on Windows, WARN
-        everywhere else). This monkeypatches `_utc_today` itself (the
-        seam the fix introduced) rather than TZ/os.environ, so the same
-        ticket data produces ERROR one day past the boundary and WARN one
-        day before it, regardless of what the local clock says -- proving
-        the gate's severity tracks ONLY the injected UTC date."""
+        """`_tick004_queue_rot`'s severity for a ticket sitting exactly at
+        the 2x-threshold ERROR boundary must be a pure function of
+        `_utc_today()`'s injected value, never of the process's local
+        wall clock -- monkeypatching `_utc_today` must produce ERROR one
+        day past the boundary and WARN one day before it, regardless of
+        what the local clock says, for the identical ticket data."""
         from frob.gates import _tickets_gate
 
         created = date(2026, 1, 1)
@@ -356,10 +346,9 @@ class TestTick004QueueRot:
     def test_unsprinted_ticket_past_2x_threshold_still_errors(
         self, tmp_path: Path
     ) -> None:
-        """T-4424 must-stay-quiet control: an UNSPRINTED ticket in the
-        identical shape (HIGH priority, 16d since `created`) keeps
-        escalating to ERROR exactly as before this fix -- narrowing the
-        false-positive sprinted case must not weaken the untriaged one."""
+        """An unsprinted ticket (HIGH priority, 16d since `created`) must
+        keep escalating to ERROR -- narrowing the false-positive sprinted
+        case must not weaken the untriaged one."""
         stale = _ticket(
             ticket_id="T-3005",
             priority=Priority.HIGH,
@@ -502,13 +491,10 @@ class TestTick004QueueRot:
     def test_decomposed_epic_past_double_threshold_stays_warn_not_error(
         self, tmp_path: Path
     ) -> None:
-        """MUST-STAY-QUIET fixture (T-3399): the measured 2026-08-29
-        incident's exact shape -- a decomposed epic (a live non-terminal
-        child) whose age has ALSO crossed the 2x-threshold ERROR line
-        must stay capped at WARN, never escalate to ERROR. Before this
-        fix, `severity` was computed from age alone BEFORE the decomposed
-        branch ran, so this exact case still reported ERROR despite the
-        message already saying "already decomposed and being worked"."""
+        """A decomposed epic (a live non-terminal child) whose age has also
+        crossed the 2x-threshold ERROR line must stay capped at WARN,
+        never escalate to ERROR -- the decomposed-epic check must run
+        before severity is computed from age alone."""
         epic = _ticket(
             ticket_id="T-0969",
             priority=Priority.HIGH,

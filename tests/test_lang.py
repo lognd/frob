@@ -34,6 +34,7 @@ def _symbol(pf, qualname: str):
 
 # frob:ticket T-1028
 # frob:ticket T-1033
+# frob:ticket T-4627
 class TestParsePython:
     def test_symbols_and_nesting(self) -> None:
         # frob:tests src/frob/lang/__init__.py::parse_file
@@ -114,14 +115,14 @@ class TestParsePython:
         assert const.public is True
 
     # frob:ticket T-1028
+    # frob:ticket T-4627
     def test_bare_literal_assignment_extracted_as_type_symbol(
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_lang.py::TestParsePython.test_bare_literal_assignment_extracted_as_type_symbol  # noqa: E501
-        """T-1028: a bare module-level `X = Literal[...]` assignment (the
-        real repro, `frob.arch._models.ArchCategory`) is now a
-        `SymbolKind.TYPE` symbol, not silently absent from the graph the
-        way it used to be (only def/class were indexed)."""
+        """A bare module-level `X = Literal[...]` assignment must parse as
+        a `SymbolKind.TYPE` symbol, not be silently absent from the graph
+        (only def/class indexed)."""
         source = (
             '"""mod docstring."""\n'
             "from typing import Literal\n\n"
@@ -278,13 +279,12 @@ class TestParsePython:
         assert comments["sum them"].enclosing == "top_level"
 
     # frob:tests src/frob/lang/_common.py::_find_following_symbol
+    # frob:ticket T-4627
     def test_directive_binds_across_two_blank_lines(self, tmp_path: Path) -> None:
-        """T-0434 (audit finding G4, docs/audits/graph.md): the fixed
-        following-symbol window used to be `end < span[0] <= end + 2`, so a
-        directive followed by TWO blank lines then a `def` fell outside it
-        and silently rebound to the enclosing/module fallback instead of
-        the intended function. `_FOLLOWING_SYMBOL_WINDOW` widened to 3
-        lines to cover this common formatting gap."""
+        """A directive followed by two blank lines then a `def` must still
+        bind to that function, not silently rebind to the
+        enclosing/module fallback -- `_FOLLOWING_SYMBOL_WINDOW` covers
+        this common formatting gap."""
         src = _write(
             tmp_path,
             "two_blanks.py",
@@ -295,19 +295,16 @@ class TestParsePython:
         assert directive.following == "target"
 
     # frob:tests src/frob/lang/_common.py::_find_following_symbol
+    # frob:ticket T-4627
     def test_comment_before_a_methods_last_statement_binds_to_that_method(
         self, tmp_path: Path
     ) -> None:
-        """T-1667: a comment sitting directly above the LAST statement of a
-        method's body, with a sibling method starting within
-        `_FOLLOWING_SYMBOL_WINDOW` lines afterward, used to mis-bind to
-        that NEXT sibling method (`_find_following_symbol` only checked
-        the window, not whether the candidate was still inside the same
-        enclosing scope as the comment). The live incident:
-        `src/frob/logging/filter.py`'s `frob:waive OPAQUE001` comment,
-        placed directly above the `getattr(...)` call closing
-        `_BelowLevelFilter.__init__`'s body, resolved to
-        `_BelowLevelFilter.filter` instead of `.__init__`."""
+        """A comment sitting directly above the last statement of a
+        method's body must bind to that method, not mis-bind to a sibling
+        method starting within `_FOLLOWING_SYMBOL_WINDOW` lines afterward
+        -- `_find_following_symbol` must check that the candidate is
+        still inside the same enclosing scope as the comment, not only
+        the window."""
         src = _write(
             tmp_path,
             "trailing_comment.py",
@@ -415,6 +412,7 @@ class TestFormattingInsensitivity:
         assert o.doc_text != e.doc_text
 
 
+# frob:ticket T-4627
 class TestParseTsRustCppC:
     def test_typescript(self) -> None:
         pf = parse_file(_FIXTURES / "sample.ts").danger_ok
@@ -512,17 +510,15 @@ class TestParseTsRustCppC:
         pf = parse_file(_write(tmp_path, "novec.rs", source)).danger_ok
         assert not any(s.qualname.endswith("!") for s in pf.symbols)
 
+    # frob:ticket T-4627
     def test_rust_directive_binds_above_stacked_attributes(
         self, tmp_path: Path
     ) -> None:
-        """T-0278 (Bug D): a `// frob:doc`/`// frob:tests` comment placed
-        above a stack of 2+ attribute lines (`#[derive(...)]`,
-        `#[serde(...)]`) on a pub item must still associate with that
-        item -- rust's grammar keeps each attribute as its own sibling
-        node before the item (unlike python's `decorated_definition`
-        wrapper), so the item's own span used to start at the item
-        keyword line, more than 2 lines below a 2+-attribute stack's
-        comment (`frob.lang._common._find_following_symbol`'s window)."""
+        """A `// frob:doc`/`// frob:tests` comment placed above a stack of
+        2+ attribute lines (`#[derive(...)]`, `#[serde(...)]`) on a pub
+        item must still associate with that item -- rust's grammar keeps
+        each attribute as its own sibling node before the item, unlike
+        python's `decorated_definition` wrapper."""
         source = (
             "// frob:doc docs/x.md#anchor\n"
             "#[derive(Debug)]\n"

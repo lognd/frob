@@ -227,8 +227,7 @@ class TestNewTicket:
     # frob:ticket T-1541
     def test_marker_lookalike_body_line_is_defused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicket.test_marker_lookalike_body_line_is_defus\
-        # ed kind="unit"
+        # tests/test_tickets.py::TestNewTicket.test_marker_lookalike_body_line_is_defused kind="unit"  # noqa: E501
         """T-1541: `ticket new --body-file` is caller-authored free text
         spliced directly into the ticket's body -- the same
         marker-lookalike-corruption class T-1536 defused for the
@@ -269,8 +268,7 @@ class TestNewTicketExactDuplicateRefusal:
 
     def test_exact_title_and_scope_match_is_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_exact_title_an\
-        # d_scope_match_is_refused
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_exact_title_and_scope_match_is_refused  # noqa: E501
         from frob.tickets import TicketSpec
 
         spec = TicketSpec(
@@ -294,8 +292,7 @@ class TestNewTicketExactDuplicateRefusal:
 
     def test_scope_order_does_not_evade_the_match(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_scope_order_do\
-        # es_not_evade_the_match
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_scope_order_does_not_evade_the_match  # noqa: E501
         from frob.tickets import TicketSpec
 
         first_spec = TicketSpec(
@@ -315,8 +312,7 @@ class TestNewTicketExactDuplicateRefusal:
 
     def test_different_title_is_not_a_duplicate(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_different_titl\
-        # e_is_not_a_duplicate
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_different_title_is_not_a_duplicate  # noqa: E501
         """HIGH PRECISION: a near-identical but not exact title (the
         common shape for a genuinely distinct follow-up in this repo)
         must NOT be refused -- a fuzzy match here would block legitimate
@@ -340,8 +336,7 @@ class TestNewTicketExactDuplicateRefusal:
 
     def test_different_scope_is_not_a_duplicate(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_different_scop\
-        # e_is_not_a_duplicate
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_different_scope_is_not_a_duplicate  # noqa: E501
         from frob.tickets import TicketSpec
 
         first_spec = TicketSpec(
@@ -358,8 +353,7 @@ class TestNewTicketExactDuplicateRefusal:
 
     def test_dropped_duplicate_does_not_block_refiling(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_dropped_duplic\
-        # ate_does_not_block_refiling
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_dropped_duplicate_does_not_block_refiling  # noqa: E501
         """A `dropped` ticket (obsolete/absorbed) must not permanently
         block the same title+scope from ever being filed again --
         circumstances change, and refusing here would itself be a false
@@ -385,8 +379,7 @@ class TestNewTicketExactDuplicateRefusal:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_unreadable_led\
-        # ger_does_not_block_filing
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_unreadable_ledger_does_not_block_filing  # noqa: E501
         """Fail-open on "cannot verify": an unreadable ledger must never
         block ticket creation outright -- the duplicate class this check
         exists to catch is strictly worse than an occasional unnoticed
@@ -419,8 +412,7 @@ class TestNewTicketFindingDuplicateRefusal:
 
     def test_same_finding_is_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_same_finding\
-        # _is_refused
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_same_finding_is_refused  # noqa: E501
         from frob.tickets import TicketSpec
 
         first_spec = TicketSpec(
@@ -452,8 +444,7 @@ class TestNewTicketFindingDuplicateRefusal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_different_fi\
-        # ndings_in_the_same_file_are_both_allowed
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_different_findings_in_the_same_file_are_both_allowed  # noqa: E501
         """File-level matching would be too coarse and would block
         legitimate parallel work -- only an exact shared (rule, file)
         pair is a duplicate (T-2760's own explicit positive control)."""
@@ -477,8 +468,7 @@ class TestNewTicketFindingDuplicateRefusal:
 
     def test_no_findings_declared_is_never_checked(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_no_findings_\
-        # declared_is_never_checked
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_no_findings_declared_is_never_checked  # noqa: E501
         from frob.tickets import TicketSpec
 
         first_spec = TicketSpec(
@@ -498,8 +488,7 @@ class TestNewTicketFindingDuplicateRefusal:
 
     def test_done_finding_does_not_block_refiling(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_done_finding\
-        # _does_not_block_refiling
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_done_finding_does_not_block_refiling  # noqa: E501
         """A finding whose owning ticket already shipped is not currently
         owned by anyone -- filing a fresh ticket against a regression of
         the same (rule, file) must not be refused."""
@@ -529,8 +518,7 @@ class TestNewTicketFindingDuplicateRefusal:
 
     def test_title_duplicate_check_still_works_unchanged(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_title_duplic\
-        # ate_check_still_works_unchanged
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_title_duplicate_check_still_works_unchanged  # noqa: E501
         """The pre-existing title+scope duplicate check (T-1744) is
         untouched by this ticket's finding-identity addition."""
         from frob.tickets import TicketSpec
@@ -558,8 +546,7 @@ class TestTicketStartWarnsOnFindingDuplicate:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestTicketStartWarnsOnFindingDuplicate.test_start_warn\
-        # s_and_names_the_other_ticket
+        # tests/test_tickets.py::TestTicketStartWarnsOnFindingDuplicate.test_start_warns_and_names_the_other_ticket  # noqa: E501
         import logging
 
         from frob.tickets import TicketSpec
@@ -683,24 +670,21 @@ class TestEvidenceValidation:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_leaves_c\
-        # orrect_double_colon_form_unchanged kind="unit"
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_leaves_correct_double_colon_form_unchanged kind="unit"  # noqa: E501
         result = validate_evidence("tests/test_foo.py::TestFoo::test_a")
         assert result.is_ok
         assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a"
 
     def test_validate_evidence_normalizes_dot_with_parametrized_suffix(self) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_normaliz\
-        # es_dot_with_parametrized_suffix kind="unit"
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_normalizes_dot_with_parametrized_suffix kind="unit"  # noqa: E501
         result = validate_evidence("tests/test_foo.py::TestFoo.test_a[x]")
         assert result.is_ok
         assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a[x]"
 
     def test_validate_evidence_ignores_plain_ids_without_double_colon(self) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_ignores_\
-        # plain_ids_without_double_colon kind="unit"
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_ignores_plain_ids_without_double_colon kind="unit"  # noqa: E501
         # No `::` prefix at all (cmd: evidence, bare strings) -- nothing to
         # normalize, must pass through untouched.
         result = validate_evidence("cmd:sha256=deadbeefcafefeed")
@@ -712,8 +696,7 @@ class TestEvidenceValidation:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_rejects_\
-        # three_or_more_double_colon_segments kind="unit"
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_rejects_three_or_more_double_colon_segments kind="unit"  # noqa: E501
         """T-1706: a genuinely malformed 3+-segment id -- a shape no real
         pytest node id or `cmd:` entry ever takes -- is rejected at the
         schema layer instead of silently accepted and only failing
@@ -726,8 +709,7 @@ class TestEvidenceValidation:
     # frob:ticket T-1706
     def test_validate_evidence_accepts_ordinary_two_segment_pytest_form(self) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_accepts_\
-        # ordinary_two_segment_pytest_form kind="unit"
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_accepts_ordinary_two_segment_pytest_form kind="unit"  # noqa: E501
         """T-1706: the ordinary 2-`::`-segment pytest node id (the exact
         shape `pytest --collect-only` prints, and the resolution-critical
         form `matches_collected` needs) must NEVER be rejected by the new
@@ -996,8 +978,7 @@ class TestDoableStaleBlockedBySelfHeals:
     # frob:ticket T-2104
     def test_narrowed_in_progress_blocker_self_heals(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_narrowed_in_pro\
-        # gress_blocker_self_heals
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_narrowed_in_progress_blocker_self_heals  # noqa: E501
         """(MUST FAIL FIRST on main): once the IN_PROGRESS blocker's live
         scope no longer overlaps the blocked ticket's own scope, `doable`
         (given `root`) must stop excluding the blocked ticket -- fails
@@ -1025,8 +1006,7 @@ class TestDoableStaleBlockedBySelfHeals:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_still_overlappi\
-        # ng_in_progress_blocker_still_blocks
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_still_overlapping_in_progress_blocker_still_blocks  # noqa: E501
         """MUST-STILL-PASS control: an IN_PROGRESS blocker whose scope
         STILL overlaps the blocked ticket's own scope keeps blocking --
         this is narrowing-triggered self-heal, never a blanket bypass."""
@@ -1046,8 +1026,7 @@ class TestDoableStaleBlockedBySelfHeals:
     # frob:ticket T-2104
     def test_queued_blocker_never_self_heals_on_scope(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_queued_blocker_\
-        # never_self_heals_on_scope
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_queued_blocker_never_self_heals_on_scope  # noqa: E501
         """A block against a QUEUED (not IN_PROGRESS) blocker is left
         untouched regardless of scope overlap -- `frob ticket block` is a
         general dependency-ordering primitive, not exclusively a scope-
@@ -1086,8 +1065,7 @@ class TestStartHonorsSelfHealedBlockedBy:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_narrowed_in_pr\
-        # ogress_blocker_no_longer_blocks_start
+        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_narrowed_in_progress_blocker_no_longer_blocks_start  # noqa: E501
         """(MUST FAIL FIRST on main): once the IN_PROGRESS blocker's live
         scope no longer overlaps the blocked ticket's own scope, `transition`
         to IN_PROGRESS must succeed -- fails today: `_start_blockers` never
@@ -1110,8 +1088,7 @@ class TestStartHonorsSelfHealedBlockedBy:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_still_overlapp\
-        # ing_in_progress_blocker_still_refuses_start
+        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_still_overlapping_in_progress_blocker_still_refuses_start  # noqa: E501
         """MUST-STILL-PASS control: an IN_PROGRESS blocker whose scope
         STILL overlaps the blocked ticket's own scope keeps refusing the
         start -- narrowing-triggered self-heal only, never a blanket
@@ -1134,8 +1111,7 @@ class TestStartHonorsSelfHealedBlockedBy:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_queued_blocker\
-        # _still_refuses_start_regardless_of_scope
+        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_queued_blocker_still_refuses_start_regardless_of_scope  # noqa: E501
         """MUST-STILL-PASS control: a genuine dependency edge against a
         QUEUED (not IN_PROGRESS, no live lease) blocker is honored exactly
         as before -- disjoint scope is not license to self-heal a
@@ -1190,8 +1166,7 @@ class TestFailureLog:
     # frob:ticket T-1541
     def test_marker_lookalike_summary_line_is_defused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestFailureLog.test_marker_lookalike_summary_line_is_d\
-        # efused kind="unit"
+        # tests/test_tickets.py::TestFailureLog.test_marker_lookalike_summary_line_is_defused kind="unit"  # noqa: E501
         """T-1541: `entry.summary` (`ticket fail`) is caller-authored free
         text spliced into the body's '## Failure log' section -- the same
         marker-lookalike-corruption class T-1536 defused for the
@@ -1215,6 +1190,7 @@ class TestFailureLog:
 
 
 # frob:ticket T-0579
+# frob:ticket T-4627
 class TestDropTicket:
     # frob:ticket T-0579
     def test_drops_queued_ticket_with_reason(self, tmp_path: Path) -> None:
@@ -1272,8 +1248,7 @@ class TestDropTicket:
     # frob:ticket T-1541
     def test_marker_lookalike_reason_line_is_defused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestDropTicket.test_marker_lookalike_reason_line_is_de\
-        # fused kind="unit"
+        # tests/test_tickets.py::TestDropTicket.test_marker_lookalike_reason_line_is_defused kind="unit"  # noqa: E501
         """T-1541: `reason` (`ticket drop --reason`/`--reason-file`) is
         caller-authored free text spliced into the body's '## Drop
         reason' section -- the same marker-lookalike-corruption class
@@ -1293,21 +1268,18 @@ class TestDropTicket:
         assert set(reloaded.danger_ok.tickets) == {"T-0001"}
 
     # frob:ticket T-2078
+    # frob:ticket T-4627
     def test_terminal_ticket_transition_refused_before_any_write(
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
         # tests/test_tickets.py::TestDropTicket.test_terminal_ticket_transition_refused_before_any_write  # noqa: E501
-        """T-2078: a ticket already in a TERMINAL state (`done`) must be
-        refused with zero writes -- the old order (rewrite the body under
-        '## Drop reason', THEN attempt the state transition) destructively
-        overwrote a `done` ticket's '## Done report' section and only
-        THEN discovered the transition itself was illegal, leaving the
-        destructive rewrite sitting in the working tree with no
-        transition to show for it (the T-2078 incident: a `done -> dropped`
-        InvalidTransition on a real ticket deleted a 50+ line Done report
-        containing a FIX narrative and an attribution correction with
-        commit shas). This test MUST fail against pre-fix main."""
+        """A ticket already in a terminal state (`done`) must be refused
+        with zero writes -- the state transition must be validated before
+        the body is rewritten under '## Drop reason', never after, so an
+        illegal transition can never leave a destructive rewrite (e.g. a
+        deleted '## Done report' section) sitting in the working tree
+        with no transition to show for it."""
         done_report = (
             "## Done report\n\n"
             "FIX: of the 5 (rule, file) identities this ticket named, "
@@ -1395,15 +1367,12 @@ class TestDropCli:
 
 
 # frob:ticket T-1131
+# frob:ticket T-4627
 class TestFailCliRequeues:
-    """T-1131 (the T-1050 incident): `frob ticket fail` used to only
-    append a Failure log entry, never transitioning the ticket -- an
-    IN_PROGRESS ticket stayed IN_PROGRESS (and its cross-worktree lease
-    stayed held) forever after a fail-log, even once the worktree that
-    held the lease was removed. `_fail` now requeues (IN_PROGRESS ->
-    QUEUED) whenever the ticket was IN_PROGRESS, which is exactly the
-    `transition` call that releases the lease
-    (`_sync_cross_worktree_lease`)."""
+    """`_fail` must requeue an in-progress ticket (IN_PROGRESS -> QUEUED),
+    not only append a Failure log entry -- otherwise the ticket (and its
+    cross-worktree lease, via `_sync_cross_worktree_lease`) stays held
+    forever, even once the worktree that held the lease is removed."""
 
     def test_fail_requeues_an_in_progress_ticket(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_fail kind="unit"
@@ -2233,6 +2202,7 @@ class TestArchiveRefusesDuringInFlightWork:
         assert "T-0001" not in active.tickets
 
 
+# frob:ticket T-4627
 class TestSingleFileLedger:
     def _spec(self, title="a ticket"):
         from frob.tickets import Origin, TicketKind, TicketSpec
@@ -2280,12 +2250,11 @@ class TestSingleFileLedger:
         assert result.danger_err == TicketError.MalformedFrontmatter
 
     # frob:ticket T-0505
+    # frob:ticket T-4627
     def test_write_ticket_never_touches_a_sibling_ticket_bytes(self, tmp_path):
-        """T-0505 regression: writing ticket A must not change ANY byte of
-        ticket B's section, even when B's on-disk section is stale/unusual
-        relative to what a fresh parse+re-render would produce (formatting
-        drift is exactly what let a sibling's state silently travel through
-        an unrelated write before this fix)."""
+        """Writing ticket A must not change any byte of ticket B's section,
+        even when B's on-disk section is stale/unusual relative to what a
+        fresh parse+re-render would produce."""
         from frob.tickets import TicketState, load_queue, new_ticket, transition
         from frob.tickets._store import ledger_path
 
@@ -3249,8 +3218,7 @@ class TestV2IndexCache:
 
     def test_same_mtime_different_size_is_not_a_hit(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestV2IndexCache.test_same_mtime_different_size_is_not\
-        # _a_hit
+        # tests/test_tickets.py::TestV2IndexCache.test_same_mtime_different_size_is_not_a_hit  # noqa: E501
         """T-2100 must-fire case: a real incident
         (`TestRevalidateDispatchableSweepTickets` flaked exactly this
         way) -- two writes to the same ticket file landing within the
@@ -3286,8 +3254,7 @@ class TestV2IndexCache:
 
     def test_identical_mtime_and_size_still_hits_cache(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestV2IndexCache.test_identical_mtime_and_size_still_h\
-        # its_cache
+        # tests/test_tickets.py::TestV2IndexCache.test_identical_mtime_and_size_still_hits_cache  # noqa: E501
         """T-2100 must-NOT-fire case: an ordinary unchanged file (same
         mtime, same size across two loads) must still serve from cache --
         the size check must not turn every load into a forced miss."""
@@ -3304,6 +3271,7 @@ class TestV2IndexCache:
 
 
 # frob:ticket T-1257
+# frob:ticket T-4627
 class TestV2StateTransitions:
     """Design section 4.4: cycle-time/velocity mining derived purely from
     `git log --follow` diff hunks on a v2-mode ticket's own `state:`
@@ -3363,19 +3331,16 @@ class TestV2StateTransitions:
         root = self._repo(tmp_path)
         assert v2_state_transitions(root, "T-9999") == ()
 
+    # frob:ticket T-4627
     def test_byte_similar_sibling_ticket_does_not_drop_transitions(
         self, tmp_path: Path
     ) -> None:
-        """T-1543 regression: two v2 tickets sharing the standard template
-        (id/title/state/body differ, ~8 other frontmatter fields
-        identical) clear git's --follow >=50%-byte-similarity threshold
-        for copy detection, which used to make git misattribute the
-        second ticket's creation commit as a "copy from" the first
-        ticket's file -- silently dropping every subsequent real
-        transition for the second ticket. Reproduces the exact shape:
-        file T-0001, file a near-identical T-0002 (same template, same
-        body, differing only in id/title/state), then advance BOTH
-        through in-progress/done and assert neither loses a transition."""
+        """Two v2 tickets sharing the standard template (id/title/state/body
+        differ, ~8 other frontmatter fields identical) clear git's
+        `--follow` >=50%-byte-similarity threshold for copy detection --
+        both must still keep every real state transition, never have one
+        misattributed as a "copy from" the other's file and silently
+        dropped."""
         # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
         from frob.tickets._store import v2_state_transitions
 
@@ -3529,8 +3494,7 @@ class TestContainerTicketCloseWithoutPytestEvidence:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
-        # tainer_with_all_children_terminal_closes_without_evidence
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_container_with_all_children_terminal_closes_without_evidence  # noqa: E501
         # MUST-STAY-QUIET (T-3852): a container with every child
         # terminal (done/dropped) closes with a rollup report and zero
         # pytest evidence -- the exact refusal (MissingEvidence) the
@@ -3559,8 +3523,7 @@ class TestContainerTicketCloseWithoutPytestEvidence:
     # frob:ticket T-3852
     def test_container_with_an_open_child_still_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
-        # tainer_with_an_open_child_still_refuses
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_container_with_an_open_child_still_refuses  # noqa: E501
         # MUST-FIRE (T-3852): the container exemption from MissingEvidence
         # must never let a container close while a child is still open --
         # T-1382's counter-example (all children "terminal" reporting a
@@ -3590,8 +3553,7 @@ class TestContainerTicketCloseWithoutPytestEvidence:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_lea\
-        # f_ticket_with_no_scope_declared_and_no_children_still_refuses
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_leaf_ticket_with_no_scope_declared_and_no_children_still_refuses  # noqa: E501
         # MUST-FIRE (T-3852): `no_scope_declared=True` alone (a pure
         # decision record, no children at all) is NOT a container in
         # this ticket's sense -- there is nothing to roll up, so the
@@ -3618,8 +3580,7 @@ class TestContainerTicketCloseWithoutPytestEvidence:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
-        # tainer_that_owns_real_scope_still_owes_evidence
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_container_that_owns_real_scope_still_owes_evidence  # noqa: E501
         # MUST-FIRE (T-3852's own acceptance): a story/epic that DOES own
         # a real scope of its own (even alongside children) is never
         # exempted -- `_is_container_ticket` requires an EMPTY scope, not
@@ -3648,8 +3609,7 @@ class TestContainerTicketCloseWithoutPytestEvidence:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_con\
-        # tainer_scope_not_covering_a_leaf_test_file_still_closes
+        # tests/test_tickets.py::TestContainerTicketCloseWithoutPytestEvidence.test_container_scope_not_covering_a_leaf_test_file_still_closes  # noqa: E501
         # T-3852's addendum FACT 1: the leaf-evidence-borrow workaround
         # fails EvidenceScopeUnbound when the container's own scope does
         # not cover the borrowed test file. The rollup path sidesteps
@@ -3926,16 +3886,11 @@ class TestStaleClaimsGuard:
         assert result.is_ok
 
 
+# frob:ticket T-4627
 class TestEvidenceNullNormalization:
-    """T-4143 (F-347): a `null` YAML `evidence:` key -- on `Ticket` itself
-    or on one `acceptance` criterion -- must normalize to the empty tuple
-    at the loader boundary, not crash. Before this fix, `AcceptanceCriterion.
-    evidence: null` raised a raw, uncaught `TypeError: 'NoneType' object is
-    not iterable` out of `_split_scope_entries` (reached via `Ticket.
-    model_validate`), and a bare `evidence: null` on `Ticket` itself failed
-    `MalformedFrontmatter` outright -- either way the ticket could not be
-    loaded, which made `frob ticket scope --add/--remove` on that exact
-    ticket impossible too, with no way back out of the null field."""
+    """A `null` YAML `evidence:` key -- on `Ticket` itself or on one
+    `acceptance` criterion -- must normalize to the empty tuple at the
+    loader boundary, never crash or fail to load."""
 
     def test_ticket_level_evidence_null_normalizes_to_empty(self) -> None:
         # frob:tests src/frob/tickets/_models.py::Ticket

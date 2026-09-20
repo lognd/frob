@@ -1026,13 +1026,11 @@ class TestAssertTouchedFilesTypeCheckPreLand:
 
 # frob:ticket T-3061
 class TestAssertTouchedFilesLintCleanPreLand:
-    """`_assert_touched_files_lint_clean_pre_land` (T-3061): a real `ruff
+    """`_assert_touched_files_lint_clean_pre_land` runs a real `ruff
     check` subprocess scoped to this ticket's own touched `.py` files,
-    run unconditionally at land regardless of profile -- mirrors
-    `TestAssertTouchedFilesTypeCheckPreLand` one class up, same real-
-    subprocess-not-mocked-parser posture, for the gap `override_ratchet`
-    (T-1681) opened: it disables the only sweep that used to run lint
-    before a commit reached main."""
+    unconditionally at land regardless of profile -- mirrors
+    `TestAssertTouchedFilesTypeCheckPreLand` one class up, same
+    real-subprocess-not-mocked-parser posture."""
 
     def test_a_lint_error_in_a_touched_file_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_lint_error_in_a_touched_file_refuses_the_land  # noqa: E501
@@ -1081,12 +1079,11 @@ class TestAssertTouchedFilesLintCleanPreLand:
 # frob:ticket T-2114
 # frob:ticket T-2201
 class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
-    """`_assert_new_public_symbols_have_doc_and_test_edge_pre_land`
-    (T-2114): generalizes T-1907's touched-set shape from the type family
-    to the doc/test-edge families -- a rapid-profile land that introduces
-    a new public top-level symbol with no `frob:doc`/`frob:tests` edge
-    used to publish it anyway, red until the DEFERRED post-land sweep
-    eventually caught it against an already-published commit."""
+    """`_assert_new_public_symbols_have_doc_and_test_edge_pre_land` must
+    refuse a rapid-profile land that introduces a new public top-level
+    symbol with no `frob:doc`/`frob:tests` edge, rather than publish it
+    and rely on the deferred post-land sweep to catch it against an
+    already-published commit."""
 
     def test_a_new_public_symbol_with_no_edges_refuses_the_land(
         self, repo: Path
@@ -1823,12 +1820,11 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
 
 # frob:ticket T-1907
 class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
-    """T-1907 proposal (2): a Done report with no `### Captured claims`
-    section used to make `_reverify_done_report_claims_post_merge` a
-    silent no-op -- this land's fresh gate-state check is simply never
-    compared, with nothing in the log distinguishing "compared and
-    passed" from "never compared at all". Now it logs a WARNING naming
-    that distinction explicitly."""
+    """A Done report with no `### Captured claims` section must make
+    `_reverify_done_report_claims_post_merge` log a WARNING naming the
+    unknown-gate-state distinction, not silently no-op -- the log must
+    always distinguish "compared and passed" from "never compared at
+    all"."""
 
     def test_no_captured_claims_section_logs_unknown_not_clean(
         self, repo: Path, caplog: pytest.LogCaptureFixture
@@ -2032,11 +2028,11 @@ class TestPostLandUnscopedSweep:
     def test_fix_commit_stages_only_touched_paths_not_git_add_dash_a(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-1513: a Tier-A fix commit must stage ONLY the paths Tier-A
-        actually touched -- never `git add -A`, which used to also sweep
-        up an unrelated dirty file (standing in for the perpetually-dirty
-        land-owned `uv.lock`) and get the whole commit refused by a
-        pre-commit hook that inspects staged paths."""
+        """A Tier-A fix commit must stage only the paths Tier-A actually
+        touched, never `git add -A` -- staging an unrelated dirty file
+        (standing in for the perpetually-dirty land-owned `uv.lock`)
+        could otherwise get the whole commit refused by a pre-commit hook
+        that inspects staged paths."""
         root, pre_sha = self._landed_repo(tmp_path)
         baseline = frozenset({("X001", "a.txt")})
         calls = {"n": 0}

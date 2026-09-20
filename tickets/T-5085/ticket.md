@@ -49,14 +49,14 @@ scope_changes:
   at: '2026-09-19'
 - op: remove
   glob: tests/test_hook_frob_suggest.py
-  reason: T-draft-36c347fe leases this test file and hasn't landed yet; will re-add
+  reason: T-5124 leases this test file and hasn't landed yet; will re-add
     once it lands
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/test_hook_frob_suggest_rules.py
   reason: golden tests for narrowed rule verdicts, in a new file to avoid lease collision
-    with T-draft-36c347fe's tests/test_hook_frob_suggest.py
+    with T-5124's tests/test_hook_frob_suggest.py
   actor: logan
   at: '2026-09-19'
 triage_changes:

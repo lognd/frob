@@ -1,117 +1,135 @@
 ## Done report
 
-T-4625: Clean docstrings: test_ticket_leases/hook_frob_suggest/graph (DOCARCH001)
-Worktree: /home/logan/projects/frob/.claude/worktrees/t-4625 (branch t-4625)
-Final HEAD: eb283038e
+T-4627: Clean docstrings: test_tickets/gate_cache/land_finish/pii/lang/ci_matrix/priority (DOCARCH001)
+Worktree: /home/logan/projects/frob/.claude/worktrees/t-4627 (branch t-4627)
+Final HEAD: 8e9810717
 Parent: T-4421
+
+Note: this ticket's title mentions test_pii_structural_gate.py, but that
+file was already removed from this ticket's declared scope when it was
+filed (leased by in-progress T-4073) -- see T-4421's why-file for that
+decision. This ticket's real scope is the 6 files below.
 
 ## What changed
 
 Docstring-only changes, no behavior changes, in:
-- tests/test_graph.py (7 symbols): TestBuildIncremental.
-  test_stored_hash_matches_bytes_actually_parsed,
-  TestExclude.test_claude_hooks_are_walked_not_pruned,
-  TestExclude.test_walk_source_files_prunes_before_descent,
-  TestExclude.test_walk_repo_files_classifies_top_level_readme_as_doc,
-  TestSchemaLockContentionRecovery,
-  TestConcurrentCache.test_connect_on_current_schema_does_not_block_on_a_held_write_lock,
-  TestScopePrivateHelperGaps.test_flat_dir_imported_helper_shared_name_only_flags_the_real_import
-- tests/test_hook_frob_suggest.py (7 symbols):
-  test_ack_prefixed_first_attempt_is_allowed_through,
-  test_floor_count_stays_quiet_when_grepping_a_rule_id,
-  test_raw_worktree_no_longer_recommends_enterworktree,
-  test_hand_edit_ledger_stays_quiet_on_an_unrelated_file,
-  test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory,
-  test_make_target_stays_quiet_as_prose_in_a_commit_message,
-  TestHandRenameEditMultifile.test_refactor_residue_prose_fix_never_fires
-- tests/test_ticket_leases.py (13 symbols): TestLedgerCommitRepairMarker (class
-  + test_resolved_race_clears_the_marker_without_a_false_alarm),
-  TestRefuseIfLandInProgress.test_refuses_while_land_lock_held,
-  TestRefuseIfLandInProgress.test_refuses_while_ledger_lock_held,
-  TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file,
-  TestDispatchLandGuard (class + test_orphaned_squash_residue_is_reclaimed_before_a_mutating_verb_dispatches),
-  TestReleaseOrphanedLease.test_refuses_an_in_progress_ticket_lease_on_a_live_worktree,
-  TestReadAllLeasesReconciliation, TestWorktreeReleaseLeaseCli.test_release_lease_cli_releases_a_scope_diverged_lease,
-  TestNewDropFailAutoCommit.test_new_without_no_commit_never_warns_dirty,
-  TestNewTicketProgrammaticAutoCommit, TestRenumberMigratesLeaseEndToEnd
+- tests/test_ci_workflow_matrix.py (4 symbols): TestCoverageStepUsesFrobNotMake,
+  TestWindowsTestStepMitigationsStayPinned.test_win32_test_step_budget_covers_n2_measured_wall_time,
+  TestWindowsTestStepMitigationsStayPinned.test_test_step_is_untouched_and_still_windows_only,
+  TestMacosTestStepPutsVenvBinOnPath
+- tests/test_gate_cache.py (5 symbols): TestRunGatesUseCache.test_ack_invalidates_cached_drift001,
+  TestRunGatesUseCacheProcessGates.test_tracked_file_edit_forces_process_gate_recompute,
+  TestRunReplay.test_sweep_write_invalidates_a_ticket_scoped_replay,
+  TestGateBuildFingerprint.test_upgrade_forces_real_replay_on_unchanged_tree,
+  TestGateBuildFingerprint.test_tree_change_still_invalidates_under_same_build
+- tests/test_lang.py (4 symbols): TestParsePython.test_bare_literal_assignment_extracted_as_type_symbol,
+  TestParsePython.test_directive_binds_across_two_blank_lines,
+  TestParsePython.test_comment_before_a_methods_last_statement_binds_to_that_method,
+  TestParseTsRustCppC.test_rust_directive_binds_above_stacked_attributes
+- tests/test_ticket_work_and_land_finish.py (4 symbols):
+  TestAssertTouchedFilesLintCleanPreLand, TestAssertNewPublicSymbolsHaveDocAndTestEdges,
+  TestReverifyDoneReportClaimsDisclosesUnknownGateState,
+  TestPostLandUnscopedSweep.test_fix_commit_stages_only_touched_paths_not_git_add_dash_a
+- tests/test_tickets.py (5 symbols): TestDropTicket.test_terminal_ticket_transition_refused_before_any_write,
+  TestFailCliRequeues, TestSingleFileLedger.test_write_ticket_never_touches_a_sibling_ticket_bytes,
+  TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions,
+  TestEvidenceNullNormalization
+- tests/test_tickets_priority.py (3 symbols): TestTick004QueueRot.test_severity_is_utc_deterministic_across_local_timezones,
+  TestTick004QueueRot.test_unsprinted_ticket_past_2x_threshold_still_errors,
+  TestTick004QueueRot.test_decomposed_epic_past_double_threshold_stays_warn_not_error
 
 Each rewritten docstring now states WHAT the test proves, not the
 ticket-by-ticket history that produced it. Every ticket cited in a stripped
 docstring was checked individually via `frob ticket show` before deleting
-its narrative -- all of them (T-0433, T-1838, T-0239, T-0245, T-0544,
-T-1239, T-0232, T-4286, T-1012, T-3071, T-2908, T-2927, T-3069, T-2989,
-T-2714, T-4273, T-3612, T-1779, T-2048, T-4172, T-2175, T-1891, T-1758,
-T-1755, T-1615, T-1173) already carry the equivalent narrative in their own
-title/scope/body, so no `frob ticket body --append` was needed this pass
-(unlike T-4421, where two citations genuinely needed appending).
+its narrative -- all of them (T-3077, T-1382, T-4372, T-4360, T-3749,
+T-4368, T-4274, T-1454, T-1445, T-4351, T-3670, T-3301, T-2723, T-1028,
+T-0434, T-1667, T-0278, T-3061, T-2114, T-2201, T-1907, T-1513, T-2078,
+T-1131, T-0505, T-1543, T-4143, T-4393, T-4424, T-3399) already carry the
+equivalent narrative in their own title/scope/body, so no
+`frob ticket body --append` was needed this pass. Two citations
+(T-1050 under TestFailCliRequeues's old docstring and T-1681 under
+TestAssertTouchedFilesLintCleanPreLand's) turned out to be misattributed --
+they resolve to unrelated tickets (T-1050: vet/opaque detector work,
+dropped; T-1681: a docs rule-catalog backfill) that have nothing to do with
+the narrative being described. Their removal loses nothing real since the
+citation itself was wrong; flagging this here rather than silently
+dropping it.
 
-Also added `# frob:ticket T-4625` directives to every symbol COV002 flagged
-as "changed with no frob:ticket edge to an OPEN ticket" -- their existing
-directives all pointed at now-done tickets. 36 directives added across the
-three files (11 test_graph.py, 8 test_hook_frob_suggest.py, 17
-test_ticket_leases.py; several symbols needed both a class-level and a
-method-level directive since COV002 flagged both).
+Also added `# frob:ticket T-4627` directives to the 14 symbols COV002
+flagged as "changed with no frob:ticket edge to an OPEN ticket" (all in
+tests/test_lang.py and tests/test_tickets.py; the other 4 files' existing
+directives already pointed at still-open tickets, so none needed one).
 
 ## How the acceptance criterion is proven
 
-Acceptance[1] ("Given a frob check scoped to tests/test_ticket_leases.py,
-tests/test_hook_frob_suggest.py, tests/test_graph.py, when DOCARCH001 is
-measured, then the combined finding count is 0") needed no amendment --
-already matched this ticket's declared scope exactly.
+Acceptance[1] ("Given a frob check scoped to these 7 files, when DOCARCH001
+is measured, then the combined finding count is 0") needed no amendment
+in wording, but note the ticket's actual scope is 6 files (see the note
+above about test_pii_structural_gate.py being excluded at filing time).
 
 Baseline measured first: `frob check --only gates --files
-tests/test_ticket_leases.py --files tests/test_hook_frob_suggest.py --files
-tests/test_graph.py --base dev`, filtered to DOCARCH001 -- 27 findings
-(13+7+7), matching the ticket's own measured estimate exactly (no
-undercount this time).
+tests/test_tickets.py --files tests/test_gate_cache.py --files
+tests/test_ticket_work_and_land_finish.py --files tests/test_lang.py
+--files tests/test_ci_workflow_matrix.py --files
+tests/test_tickets_priority.py --base dev`, filtered to DOCARCH001 -- 25
+findings (4+5+4+4+5+3), close to the ticket's own ~29-minus-pii estimate.
 
-Post-edit re-measure: same command, same filter -- 0 hits under the three
-scoped paths (`gate:DOCARCH` reports "pass" in the tool summary; the 522
-warnings shown are repo-wide/unscoped, down from 529 before this ticket's
-fixes, confirming the reduction is attributable to these files).
+Post-edit re-measure: same command, same filter -- 0 hits under the six
+scoped paths.
 
 No dedicated per-path DOCARCH001-zero test exists in the repo, so evidence
-is bound to the docarch gate's own wiring test, same as T-4421:
+is bound to the docarch gate's own wiring test, same as T-4421/T-4625:
 tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 (collected via `pytest --collect-only`, 15 items, 0 failed).
 
 ## Gates (checklist results)
 
-- ruff check + ruff format --check on all 3 touched files: "All checks
-  passed!" / "3 files already formatted".
-- ty check on all 3 touched files: "All checks passed!"
-- `frob check --only gates --files <touched> --base dev` (full re-measure):
-  gate:DOCARCH pass (0 errors under our paths); no ERROR-level finding
-  attributable to our files anywhere in the run (grepped explicitly); the
-  113 repo-wide errors present (DRIFT/DSL/LANG/MILE/PERF/PRE/REF/SCOPE/
-  SEC/TEST/TICK/TODO/WIRE) are all pre-existing and unrelated, confirmed by
-  grepping each against the three touched paths -- none matched.
+- ruff check + ruff format --check on all 6 touched files: "All checks
+  passed!" / "6 files already formatted".
+- ty check on all 6 touched files: "All checks passed!"
+- `frob check --only gates --files <touched> --base dev`: gate:DOCARCH
+  pass (0 errors under our 6 paths); the repo-wide FAIL rows present
+  (ARCH, COV, DRIFT, DSL, and others) were each grepped against the six
+  touched paths -- none matched, all pre-existing and unrelated (the ARCH
+  failures are in src/frob/app/config.py, src/frob/doctor.py,
+  .claude/hooks/sync-claude-config.py, scripts/fleet_status.py -- none of
+  which this ticket touches).
 - `frob check --only coverage --files <touched> --base dev`: first pass
-  found 36 COV002 findings (missing frob:ticket edge to an open ticket) on
-  symbols this ticket changed; fixed by adding `# frob:ticket T-4625`
-  directives; second pass: 0 COV002 attributable to touched files (12
-  remaining errors repo-wide, unrelated).
+  found 14 COV002 findings on symbols this ticket changed (in
+  test_lang.py and test_tickets.py only); fixed by adding
+  `# frob:ticket T-4627` directives; second pass: 0 COV002 attributable to
+  touched files.
+- `frob check --only arch --files <touched> --base dev`: pass, no
+  ARCH001/LARGE001.
 - `frob check --only sys --files <touched> --base dev`: 0 SYS/SELFAUDIT
   findings attributable to touched files.
-- `frob check --only arch --files <touched> --base dev`: pass, no
-  ARCH001/LARGE001 (542 advisory pattern-recommendation suggestions,
-  pre-existing style, not gating).
-- All 3 files parse cleanly (`python3 -c "import ast; ast.parse(...)"`).
+- All 6 files parse cleanly (`python3 -c "import ast; ast.parse(...)"`).
 
 Cross-ticket: `git diff --name-only dev...HEAD` for this commit touches only
-the 3 files in T-4625's own declared lease -- confirmed no other
-in-progress ticket leases any of them
-(`grep -l <path> .git/frob-leases/*.json` before starting: only
-T-4625.json matched, both before and after the dev merge mid-task).
+the 6 files in T-4627's own declared lease -- confirmed no other
+in-progress ticket leases any of them before starting
+(`grep -l <path> .git/frob-leases/*.json`: only T-4627.json matched, both
+before and after the mid-task dev merge).
 
-Evidence bound AFTER the last content commit (4308f203b) -- no code commit
-follows evidence (final HEAD eb283038e is a ledger-only evidence-record
+Evidence bound AFTER the last content commit (b068b78f1) -- no code commit
+follows evidence (final HEAD 8e9810717 is a ledger-only evidence-record
 commit).
+
+Note on worktree setup: `frob ticket work T-4627` was refused twice by
+`LandInProgress` (a concurrent land holding the ledger lock) before
+succeeding on retry, per the standing retry-loop instruction. The
+succeeding attempt's own start-transition commit then hit a 30s spawn
+timeout under fleet load and reported the worktree DIRTY; running the
+suggested `git add && git commit` by hand showed "nothing to commit,
+working tree clean" -- the commit had actually completed, only the
+wrapper's wait timed out. Confirmed via `frob ticket show T-4627` (state:
+in-progress, clean working tree) before starting real work.
 
 ## Skipped
 
-Nothing in this ticket's declared scope was skipped -- all 27 measured
-findings across all 3 files were addressed.
+Nothing in this ticket's declared scope (the 6 files) was skipped -- all 25
+measured findings were addressed. tests/test_pii_structural_gate.py was
+never in scope (excluded at filing time, see T-4421's why-file).
 
 ### Changed
 ```
@@ -226,6 +244,7 @@ findings across all 3 files were addressed.
  docs/modules/tickets-lifecycle.md                  |   58 +
  docs/modules/tickets.md                            |   70 +-
  docs/strata/surface.md                             |   40 +
+ force-overrides.jsonl                              |    1 +
  frob.lock                                          |   42 +-
  frob.toml                                          |   18 +
  pyproject.toml                                     |   22 +-
@@ -372,22 +391,25 @@ findings across all 3 files were addressed.
  tests/gates_suite/test_guard_closure.py            |  228 +++
  tests/gates_suite/test_invariant.py                |  116 ++
  tests/test_check_gate_base.py                      |   54 +
+ tests/test_ci_workflow_matrix.py                   |   51 +-
  tests/test_docenum_gate.py                         |   41 +
  tests/test_excludes.py                             |   75 +
+ tests/test_gate_cache.py                           |   62 +-
  tests/test_gates_suppress.py                       |   34 +-
  tests/test_gitio.py                                |   56 +
- tests/test_graph.py                                |   94 +-
- tests/test_hook_frob_suggest.py                    |  112 +-
+ tests/test_hook_frob_suggest.py                    |   47 +
  tests/test_hook_frob_timeout_guard.py              |   54 +
  tests/test_hook_root_write_guard.py                |   89 ++
- tests/test_lang.py                                 |   90 ++
+ tests/test_lang.py                                 |  142 +-
  tests/test_lang_conformance_gate.py                |   81 +-
  tests/test_narrative_blocks.py                     |   27 +
  tests/test_testing.py                              |  106 +-
- tests/test_ticket_leases.py                        |  452 +++---
- tests/test_ticket_work_and_land_finish.py          |  206 +--
+ tests/test_ticket_leases.py                        |  313 ++--
+ tests/test_ticket_work_and_land_finish.py          |  248 +--
+ tests/test_tickets.py                              |   72 +-
  tests/test_tickets_migration.py                    |  121 +-
  tests/test_tickets_parent.py                       |  208 +++
+ tests/test_tickets_priority.py                     |   39 +-
  tests/test_tickets_registry_files.py               |  206 +++
  tests/test_waive_gate.py                           |  145 ++
  tests/ticket_land_suite/test_verify_intent.py      |   85 +-
@@ -1006,9 +1028,9 @@ findings across all 3 files were addressed.
  tickets/T-4620/ticket.md                           |   58 +
  tickets/T-4623/ticket.md                           |   70 +
  tickets/T-4624/ticket.md                           |   52 +
- tickets/T-4625/ticket.md                           |   46 +
+ tickets/T-4625/ticket.md                           |   43 +
  tickets/T-4626/ticket.md                           |   27 +
- tickets/T-4627/ticket.md                           |   58 +
+ tickets/T-4627/ticket.md                           |   55 +
  tickets/T-4640/ticket.md                           |   37 +
  tickets/T-4641/ticket.md                           |   29 +
  tickets/T-4643/ticket.md                           |   29 +
@@ -1066,7 +1088,7 @@ findings across all 3 files were addressed.
  tickets/T-4714/ticket.md                           |   86 ++
  tickets/T-4715/ticket.md                           |  175 +++
  tickets/T-4716/ticket.md                           |   47 +
- tickets/T-4717/ticket.md                           |   82 +
+ tickets/T-4717/ticket.md                           |   85 ++
  tickets/T-4718/ticket.md                           |  163 ++
  tickets/T-4719/ticket.md                           |  189 +++
  tickets/T-4720/ticket.md                           |   36 +
@@ -1148,16 +1170,16 @@ findings across all 3 files were addressed.
  tickets/T-5079/ticket.md                           |   75 +
  tickets/T-5080/ticket.md                           |   76 +
  tickets/T-5081/ticket.md                           |  125 ++
- tickets/T-5083/ticket.md                           |   87 ++
+ tickets/T-5083/ticket.md                           |   90 ++
  tickets/T-5084/ticket.md                           |   29 +
  tickets/T-5085/ticket.md                           |   99 ++
  tickets/T-5086/ticket.md                           |   99 ++
  tickets/T-5087/ticket.md                           |  123 ++
  tickets/T-5088/ticket.md                           |   36 +
- tickets/T-5089/ticket.md                           |   34 +
+ tickets/T-5089/ticket.md                           |   37 +
  tickets/T-5090/ticket.md                           |   38 +
  tickets/T-5091/ticket.md                           |   99 ++
- tickets/T-5092/ticket.md                           |   60 +
+ tickets/T-5092/ticket.md                           |   63 +
  tickets/T-5093/ticket.md                           |   99 ++
  tickets/T-5094/ticket.md                           |  107 ++
  tickets/T-5095/ticket.md                           |   30 +
@@ -1165,7 +1187,7 @@ findings across all 3 files were addressed.
  tickets/T-5097/ticket.md                           |  106 ++
  tickets/T-5098/ticket.md                           |   52 +
  tickets/T-5099/ticket.md                           |   52 +
- tickets/T-5100/ticket.md                           |   35 +
+ tickets/T-5100/ticket.md                           |   38 +
  tickets/T-5101/ticket.md                           |   45 +
  tickets/T-5102/ticket.md                           |   74 +
  tickets/T-5103/ticket.md                           |  120 ++
@@ -2214,7 +2236,7 @@ findings across all 3 files were addressed.
  tickets/archive/T-5082/done-report.md              |   38 +
  tickets/archive/T-5082/ticket.md                   |  345 +++++
  uv.lock                                            |    2 +-
- 2099 files changed, 105159 insertions(+), 5168 deletions(-)
+ 2103 files changed, 105162 insertions(+), 5195 deletions(-)
 ```
 
 ### Evidence

@@ -2,14 +2,14 @@
 id: T-4627
 title: 'Clean docstrings: test_tickets/gate_cache/land_finish/pii/lang/ci_matrix/priority
   (DOCARCH001)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-09-19'
 priority: medium
 parent: T-4421
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -38,17 +38,14 @@ triage_changes:
   reason: child of T-4421 docarch debloat split
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to these 7 files, when DOCARCH001 is measured, then
     the combined finding count is 0
-  evidence: []
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 threat: null
 component: null
 anchor: false
