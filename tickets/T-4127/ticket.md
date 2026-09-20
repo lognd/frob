@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: medium
 parent: T-4665
 tier: ticket
-sprint: v0.536.0
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,6 +32,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: sprint
+  old_value: v0.536.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: set
   reason: 'folds in T-4121 (consumer report F-308, dropped as a duplicate of this
