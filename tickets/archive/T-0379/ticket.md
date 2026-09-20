@@ -27,6 +27,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 367
   new_length: 2590
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_c.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2589
+  new_length: 3724
 evidence:
 - tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_macro_alias_detected
 - tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_call_before_local_shadow_still_detected
@@ -76,3 +82,21 @@ kept verbatim below.
 # is over-approximated to "the whole enclosing function" -- matching the
 # python/rust resolvers' function-granularity, not per-block C scoping;
 # documented, not a silent gap.
+
+T-4718 sweep (condensed from src/frob/vet/_capability_c.py, the
+`_C_DECLARATOR_CHILD_TYPES` block, trimmed for DOCARCH002's 12-line
+cap): the trimmed block's full original text, kept verbatim below.
+
+#: `declaration` node direct-child types `_c_collect_declaration_names`
+#: treats as a declarator worth resolving through `_c_declared_name` (T-
+#: 0662 extends T-0379's original `identifier`/`init_declarator`-only pair
+#: with the bare, uninitialized declarator shapes an ordinary variable
+#: declaration wraps its name in when there is no `= value` at all --
+#: `void (*f)(const char*);` parses its declared name directly under a
+#: `function_declarator` -> `parenthesized_declarator` -> `pointer_
+#: declarator` chain, never an `init_declarator`, since tree-sitter-c only
+#: wraps a declarator in `init_declarator` when an initializer is present).
+#: Without this, a forward-declared function-pointer variable's later
+#: `f = &do_exec;` assignment could never resolve: `_c_shadowing_scope`
+#: would never find `f` bound anywhere, so `_record_c_assignment_alias`'s
+#: scope lookup (keyed off THAT SAME shadow check) always misses.
