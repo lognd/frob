@@ -8,7 +8,6 @@ origin: human
 created: '2026-09-19'
 priority: critical
 blocked_by:
-- T-4709
 - T-4722
 - T-4693
 parent: null
@@ -48,3 +47,6 @@ Plan:
 3. Positive controls: (a) fixture ticket body with a backticked nonexistent command produces no DOC006 error; (b) a land whose merge brings in such a ticket file is not refused; (c) a real docs/*.md unresolved pointer still fires.
 
 BLOCKED: src/frob/gates/_docptr.py is under live cross-worktree lease by T-4709 (docs narrative ticket) and src/frob/tickets/_land_squash.py is under live cross-worktree lease by T-4722 (docs narrative ticket); docs/modules/gates.md is leased by T-4693. This ticket cannot acquire scope on any of its three required files right now.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4709 -- lease released
