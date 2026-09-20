@@ -29,10 +29,6 @@ body_changes:
   old_length: 1054
   new_length: 21915
 designated_repro_test: null
-attachments:
-- path: T-draft-809836e5/attachments/01-untitled.md
-  caption: ''
-  sha256: 691a6d138f193accd62f741252dcc8d1450af8dc00102f030d4ff2bec9f4ca1f
 threat: elevation-of-privilege
 component: gates
 anchor: false

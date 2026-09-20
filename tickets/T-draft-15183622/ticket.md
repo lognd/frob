@@ -28,10 +28,6 @@ body_changes:
   old_length: 703
   new_length: 21643
 designated_repro_test: null
-attachments:
-- path: T-draft-15183622/attachments/01-untitled.md
-  caption: ''
-  sha256: 2fbf3b7440adcca7e1da5b172a3245c13fe52200e8e0752d7e7bb87a3b93e481
 threat: spoofing
 component: gates
 anchor: false

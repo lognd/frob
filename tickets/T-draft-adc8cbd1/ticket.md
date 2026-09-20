@@ -28,10 +28,6 @@ body_changes:
   old_length: 1794
   new_length: 23704
 designated_repro_test: null
-attachments:
-- path: T-draft-adc8cbd1/attachments/01-untitled.md
-  caption: ''
-  sha256: d7d52247be114d264d1f193a9a1b5685b25bad3fa52a8945620e9032c058499c
 threat: null
 component: gates
 anchor: false

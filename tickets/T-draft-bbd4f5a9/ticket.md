@@ -37,10 +37,6 @@ body_changes:
   old_length: 1947
   new_length: 29185
 designated_repro_test: null
-attachments:
-- path: T-draft-bbd4f5a9/attachments/01-untitled.md
-  caption: ''
-  sha256: 61ae5aaf8e0c15d1db4babcbd841bf1b64899623cc7ece209cfe01ca0048ca45
 acceptance:
 - text: given the dev ledger, when frob ticket doable runs twice within the cache
     TTL, then the second run spawns no re-measure and completes in under 5 s
