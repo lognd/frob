@@ -91,6 +91,10 @@ acceptance:
     51, then it reports 12 or fewer verbs excluding live deprecation shims, and the
     Done report states both numbers (surface, and surface plus live shims)
   evidence: []
+- text: Given frob ticket --help after all seven leaves land, when the subverb count
+    is re-measured with the same command that produced the 2026-09-19 baseline of
+    54, then it reports 25 or fewer subverbs excluding live deprecation shims
+  evidence: []
 threat: null
 component: null
 anchor: false
