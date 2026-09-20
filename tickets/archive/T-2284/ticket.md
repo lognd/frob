@@ -46,6 +46,13 @@ scope_changes:
     at gates.md''s existing Tier-A section'
   actor: logan
   at: '2026-08-17'
+body_changes:
+- mode: append
+  reason: 'T-4709: preserve agent-playbook cross-reference trimmed from _fix_engine_scope.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 4052
+  new_length: 4499
 evidence:
 - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
 - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
@@ -165,3 +172,12 @@ gates a handler on what the landing ticket is allowed to modify.
 it shares the defect and say so. The scope/lease information already exists --
 the land knows its own ticket, and T-2225 built resolved-path expansion -- so
 this is a wiring fix, not new detection.
+
+
+T-4709 follow-up (condensed from _REPO_WIDE_EXEMPT_RULES's docstring in
+src/frob/gates/_fix_engine_scope.py, trimmed for DOCARCH002's 12-line
+cap): pyproject.toml/CHANGELOG.md/uv.lock are files
+docs/guides/agent-playbook.md section 4b already forbids declaring in
+ANY ticket's own scope. The exemption belongs on the rule, named and
+reasoned here, rather than reverting real release-sync state and
+leaving REL001 to fail confusingly afterward.
