@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: T-4757
 tier: ticket
-sprint: null
+sprint: v0.533.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -41,6 +41,13 @@ scope_changes:
     work had already moved on without needing it
   actor: logan
   at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.533.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 evidence:
 - tests/unit/test_wrapper_drift.py::TestWrapperDriftGate::test_inline_sequence_in_target_body_is_wrap001
 - tests/unit/test_wrapper_drift.py::TestWrapperDriftGate::test_target_for_removed_commands_entry_is_wrap002
