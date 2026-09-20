@@ -90,6 +90,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 6316
   new_length: 6340
+- mode: set
+  reason: 'DOC006: planned CLI forms written as prose so unrelated lands are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6340
+  new_length: 6340
 designated_repro_test: null
 acceptance:
 - text: Given frob --help after all seven leaves land, when the top-level verb count
