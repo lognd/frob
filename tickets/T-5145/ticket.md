@@ -1,5 +1,5 @@
 ---
-id: T-draft-65687926
+id: T-5145
 title: 'COMPLY: required pages, disclosures and config for CCPA/CPRA, CalOPPA, GDPR
   and ePrivacy, UK, Canada, Brazil, Australia, Japan, India, US state laws, HIPAA/GLBA/COPPA/FERPA,
   AI transparency laws, CASL/CAN-SPAM/TCPA, DSA, breach notification -- each rule
