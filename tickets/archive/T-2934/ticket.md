@@ -94,6 +94,14 @@ scope_changes:
     writing frob.lock
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve typani-convention and test-fixture detail trimmed from
+    _walk_lint.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1474
+  new_length: 2079
 evidence:
 - tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_no_lock_primitive_refuses_loudly
 - tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_windows_backend_round_trips
@@ -139,3 +147,15 @@ timeout-degrade posture may not be appropriate there at all and a loud
 refusal may be the ONLY correct choice). Out of scope for T-2919, which
 built the DETECTOR; this ticket is the fix-the-5-real-findings-it-found
 follow-up.
+
+
+T-4709/T-4770 follow-up (condensed from _TYPED_EXIT_RESULT_CONSTRUCTORS's
+docstring in src/frob/gates/_walk_lint.py, trimmed for DOCARCH002's
+12-line cap): this matches this repo's dominant error-handling
+convention (see ~/.claude/refs/typani.md, "PREFER pydantic and
+typani"). The full name is
+frob.tickets._land_git_ops.reclaim_orphaned_squash_residue, whose whole
+job is "decide whether it is SAFE to mutate" -- Ok(False) there is a
+real, visible, controlled abort of the risky operation. The must-fire
+fixture is TestPlatform001._WARN_AND_CONTINUE_SRC, which returns None
+with no such constructor.
