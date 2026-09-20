@@ -14,10 +14,19 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/unit/test_land_cmd_quarantine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_cmd_quarantine.py
+  reason: 'T-4611: TestQuarantineUndisposedSummary already covers _quarantine_undisposed_summary
+    in this file; the new (rule,file)-naming test belongs alongside it'
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: sprint
   old_value: null
