@@ -34,6 +34,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 985
   new_length: 1507
+- mode: append
+  reason: 'T-4770: preserve DeclarativeBase/Model detail trimmed from _python_fields.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1506
+  new_length: 2092
 evidence:
 - tests/test_pii_structural_gate.py::TestFieldNames::test_camelcase_password_hash_field_fires
 - tests/test_pii_structural_gate.py::TestFieldNames::test_camelcase_date_of_birth_field_fires
@@ -72,3 +78,14 @@ a `ContextVar` reset token, or a `uuid4().hex` random directory suffix.
 The other homonyms are this repo's own `frob doctor` diagnostic feature
 name, PII010's own cross-language gate test names literally testing the
 detector, and a plain-English comment word.
+
+
+T-4770 follow-up (condensed from _STRUCTURE_BASE_NAMES's docstring in
+src/frob/gates/_pii_structural/_python_fields.py, trimmed for
+DOCARCH002's 12-line cap): this was gates-quality audit finding 14.
+`DeclarativeBase` is SQLAlchemy 2.0's own base (class Base(DeclarativeBase)
+is the documented idiom so a project's Base is one hop from this name,
+not zero); `Model` is Django's models.Model, matched on the bare
+Attribute.attr suffix the same way BaseModel/TypedDict already are. The
+unresolved third-hop example: class User(OrmBase) where OrmBase itself
+subclasses DeclarativeBase.
