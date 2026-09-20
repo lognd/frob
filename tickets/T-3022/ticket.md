@@ -11,7 +11,7 @@ parent: T-2994
 tier: epic
 sprint: v0.534.0
 runs_last: false
-milestone: 0.534.0
+milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -40,6 +40,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+- field: milestone
+  old_value: 0.534.0
+  new_value: 1.0.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 threat: null
 component: null
