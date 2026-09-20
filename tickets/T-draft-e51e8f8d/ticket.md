@@ -36,6 +36,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 1400
   new_length: 1417
+- mode: set
+  reason: 'DOC006: planned or rejected CLI forms written as prose so unrelated lands
+    are not refused'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1417
+  new_length: 1411
 designated_repro_test: null
 acceptance:
 - text: Given the land, when it completes, then design/natives.strata exists with
@@ -66,7 +73,7 @@ land_commit: null
 Migration leaf for module `natives` (members: natives). Leaf consumer: out-degree 2, fan-in 1.
 
 One-time reviewed rewrite, by hand, module by module (owner decision D-M6:
-there is no sys-split tool; the owner rejected one). Write design/natives.strata with:
+there is NO a sys-split tool (rejected) tool). Write design/natives.strata with:
   - `module natives` header (dotted path form);
   - an explicit, HAND-WRITTEN export surface: only the names other modules
     actually need. An export list derived mechanically from the tangle is
