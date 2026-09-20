@@ -153,21 +153,14 @@ _log = get_logger(__name__)
 __all__ = ["doc004_gate", "doc005_gate", "doc012_gate"]
 
 
-# ---------------------------------------------------------------------------
 # Manifest-derived project namespaces (T-0436 refinement 3)
-# ---------------------------------------------------------------------------
 #
-# T-2231: `_ProjectNamespaces`, `_read_toml`, and `_doc004_violation` moved
-# to `frob.gates._docblocks_shared` -- both this module (for
-# `_ProjectNamespaces`/`_read_toml`, used below) and `_docblocks_refs.py`
-# (for all three, including `_doc004_violation`, which this module never
-# calls directly) need them, and this module importing the bulk of
-# DOC004's parsing/checking logic back from `_docblocks_refs.py` (below)
-# while `_docblocks_refs.py` imported these three names from here made the
-# pair a real, module-level import cycle. `_ProjectNamespaces`/`_read_toml`
-# re-imported above under their original names so every existing
-# `_read_toml(...)`/`_ProjectNamespaces(...)` call site in this file keeps
-# working unchanged.
+# T-2231: `_ProjectNamespaces`, `_read_toml`, and `_doc004_violation`
+# moved to `frob.gates._docblocks_shared` to break a real, module-level
+# import cycle between this module and `_docblocks_refs.py`.
+# `_ProjectNamespaces`/`_read_toml` re-imported above under their
+# original names so every existing call site in this file keeps working
+# unchanged.
 
 
 def _python_namespaces(root: Path) -> frozenset[str]:
@@ -348,43 +341,33 @@ def _doc004_block_violations(
 
 # frob:doc docs/modules/gates.md#doc004-unbound-stale-doc-code-blocks-t-0436
 # frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_python_import_of_nonexistent_s\
-# ymbol_is_stale
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_python_import_of_nonexistent_symbol_is_stale  # noqa: E501
 # frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_anchored_block_passes
 # frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_unanchored_but_valid_import_wa\
-# rns_unbound
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_unanchored_but_valid_import_warns_unbound  # noqa: E501
 # frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_waive_doc004_suppresses
 # frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_generic_external_shell_block_n\
-# ot_flagged
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_generic_external_shell_block_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_package_name_differs_from_dire\
-# ctory_name
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_package_name_differs_from_directory_name  # noqa: E501
 # frob:tests \
 # tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_missing_item_is_stale
 # frob:tests \
-# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_real_item_passes_or_\
-# warns_never_stale
+# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_real_item_passes_or_warns_never_stale  # noqa: E501
 # frob:tests \
 # tests/test_docblocks_gate.py::TestRustNamespace.test_external_crate_use_not_flagged
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcomm\
-# and_is_stale
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcommand_is_stale  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anc\
-# hored_passes
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anchored_passes  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_una\
-# nchored_warns_unbound
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_unanchored_warns_unbound  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_co\
-# nsole_stale
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_console_stale  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_\
-# console_checking
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_checking  # noqa: E501
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
     references to THIS PROJECT's own code surface (manifest-derived
@@ -480,23 +463,17 @@ def _doc005_violation(doc_path: str, line: int, message: str) -> Violation:
 
 # frob:doc docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435
 # frob:tests \
-# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_missing_row_for_real_co\
-# mmand_fails
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_missing_row_for_real_command_fails  # noqa: E501
 # frob:tests \
-# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_stale_row_for_removed_c\
-# ommand_fails
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_stale_row_for_removed_command_fails  # noqa: E501
 # frob:tests \
-# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_fully_covered_table_pas\
-# ses
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_fully_covered_table_passes  # noqa: E501
 # frob:tests \
-# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_mismatch_fa\
-# ils
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_mismatch_fails  # noqa: E501
 # frob:tests \
-# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_matching_pa\
-# sses
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_matching_passes  # noqa: E501
 # frob:tests \
-# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_no_config_means_no_read\
-# me_checking
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_no_config_means_no_readme_checking  # noqa: E501
 # frob:ticket T-1011
 # frob:enforces CHK-GATE-DOC005
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_passes_after_sync  # noqa: E501
@@ -886,17 +863,13 @@ def _doc012_violation(name: str, prog: str) -> Violation:
 
 # frob:doc docs/modules/gates.md#doc012-dedicated-command-section-drift-lock-t-1783
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_undocumented_subcomm\
-# and_fails
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_undocumented_subcommand_fails  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_documented_subcomman\
-# d_passes
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_documented_subcommand_passes  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_table_row_alone_does\
-# _not_satisfy
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_table_row_alone_does_not_satisfy  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_no_config_means_no_c\
-# hecking
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_no_config_means_no_checking  # noqa: E501
 # frob:enforces CHK-GATE-DOC012
 def doc012_gate(root: Path) -> tuple[Violation, ...]:
     """DOC012 (T-1783): for every top-level subcommand the SAME live

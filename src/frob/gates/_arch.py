@@ -94,28 +94,18 @@ _ARCH_CATEGORY_TO_RULE = {
 #: not deferrable debt. Read as an allowlist (not the reverse) so a future
 #: category added to `_ARCH_CATEGORY_TO_RULE` defaults to the existing
 #: WARN precedent unless explicitly opted into ERROR here. T-2831
-#: promotes large-file to this set: T-2375's 9 child splits/waivers
-#: (T-2822..T-2830) are all terminal and re-measurement against a live
-#: build_graph snapshot confirmed zero unwaived LARGE001 findings before
-#: this flip -- see this file's docstring history and the ticket's Done
-#: report for the exact count. Any newly-created oversized file now reds
 #: main immediately at LARGE001 instead of warning; a future split must
 #: land its `frob:waive LARGE001` alongside the new file in the same
 #: change, not after.
+# see T-1034 for the history behind this
 _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws", "large-file"})
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:enforces ACC-2-1-LONG-FUNCTION
 # frob:enforces CHK-GATE-ARCH001
-# T-1020-followup: T-0728 disclosed CHK-GATE-ARCH101/102/103 as a land
-# obligation left for a later pass -- this closes it, same
-# `_ARCH_CATEGORY_TO_RULE` sites ARCH001 already binds to.
 # frob:enforces CHK-GATE-ARCH101
 # frob:enforces CHK-GATE-ARCH102
-# T-0339-close pass: CPPTHROW001 channels through this same
-# category-to-rule map (T-1034 wired it above), so its enforces edge
-# binds here with its ARCH siblings.
 # frob:enforces CHK-GATE-CPPTHROW001
 # frob:enforces CHK-GATE-ARCH103
 # T-1102: large-file channels through this same category-to-rule map.
@@ -133,6 +123,7 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws", "large-file"})
 # frob:tests \
 # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001
 # frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
+# see T-1020 for the history behind this
 def arch_gate(root: Path) -> tuple[Violation, ...]:
     """ARCH001: one `Violation` per long-AND-complex python/C++ function
     `frob.arch.analyze_project` still flags after its complexity filter

@@ -24,12 +24,19 @@ no_scope_declared: false
 no_scope_declared_reason: null
 body_changes:
 - mode: append
+  reason: 'T-4709: keep BUG002 waiver ticket.body-scan rationale in place; move T-2870
+    escape-aware-grammar duplication history into T-1421'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3934
+  new_length: 4772
+- mode: append
   reason: 'T-4709: preserve graph-exclusion mechanism detail trimmed from _bug_repro.py
     docstring for the 12-line cap'
   actor: logan
   at: '2026-09-19'
-  old_length: 3934
-  new_length: 4650
+  old_length: 4772
+  new_length: 4888
 evidence:
 - tests/test_gates_mutation_evidence.py::TestBugRepro::test_reconstructed_uncalled_guard_passes_at_both_is_refused
 - tests/test_gates_mutation_evidence.py::TestBugRepro::test_reconstructed_wired_guard_fails_at_parent_is_permitted
@@ -103,6 +110,18 @@ Reuse rather than rebuild. frob already has the machinery: T-0754's ClaimDiverge
 
 WHAT SUCCESS LOOKS LIKE. Reconstruct any one of the five tickets above as a fixture: a ticket whose bound evidence passes at BOTH the parent and the fix commit must be refused. A ticket whose evidence fails at the parent and passes at the fix must be permitted. Both directions need a regression test, or this gate is exactly the kind of unverified guard it exists to prevent.
 
+<!-- narrative-moved:src/frob/gates/_bug_repro.py:76:T-1421 -->
+: T-2870: escape-aware value grammar (`\"` does NOT terminate the
+: value), the exact same fix T-2857 applied to `frob.graph.dsl`'s
+: markdown `frob:waive` regex (`_MD_WAIVE_VALUE_RE`) -- this is a SECOND,
+: independent implementation of the same "waive with reason=" shape,
+: living here rather than routed through `frob.graph.dsl` because (per
+: the module docstring above) `tickets.md`/`ticket.body` is deliberately
+: excluded from the general markdown graph walk, so there is no shared
+: call path to reuse without also breaking that exclusion. Kept as an
+: explicit, documented duplication rather than a silent one: if this
+: value grammar ever needs a third fix, check `_MD_WAIVE_VALUE_RE` too,
+: and vice versa -- the two are meant to accept exactly the same shape.
 
 T-4709 follow-up (further condensation): _BUG002_WAIVER_RE's docstring in
 src/frob/gates/_bug_repro.py originally also spelled out *why* the ticket.body

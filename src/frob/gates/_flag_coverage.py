@@ -59,28 +59,18 @@ from frob.process._project_tool import project_import_argv
 
 _log = get_logger(__name__)
 
-# T-4147: FLAGCOV001's whole point is checking a project OTHER than frob
-# itself (any consumer that declares [[docblocks.commands]]) -- resolving
-# `parser`/`config`/`forwarded` via a plain `importlib.import_module` in
-# FROB's own interpreter (the pre-T-4147 mechanism, `resolve_dotted_
-# symbol`) works only by accident when the checked project happens to
-# share frob's own dependency versions. A consumer whose own venv pins a
-# different version of a dependency the parser/config module imports at
-# module scope gets an ImportError here and FLAGCOV001 reports UNRESOLVED
-# forever, never MEASURED -- the exact defect this ticket exists to close
-# (frob.process._project_tool's own T-4125 docstring: "a bare name
-# resolves through the SPAWNING process's own PATH/interpreter, not the
-# checked project's own"). Unlike a ty/ruff/pytest spawn (T-3887/T-4125),
-# there is no existing subprocess CLI that reports "does this dotted path
-# resolve, and what argparse dests / pydantic fields does it carry" --
+# T-4147: FLAGCOV001's whole point is checking a project OTHER than
+# frob itself -- resolving via a plain `importlib.import_module` in
+# FROB's own interpreter works only by accident when the checked
+# project shares frob's own dependency versions; a version mismatch
+# gets an ImportError here and FLAGCOV001 reports UNRESOLVED forever,
+# never MEASURED (frob.process._project_tool's own T-4125 docstring: "a
+# bare name resolves through the SPAWNING process's own PATH/
+# interpreter, not the checked project's own"). Unlike a ty/ruff/pytest
+# spawn (T-3887/T-4125), there is no existing subprocess CLI for this,
 # so this module's own small resolver script is spawned inside the
-# project's own `uv run --project <root>` environment instead, then only
-# the plain string/list data it prints (never a live object) crosses the
-# process boundary. `find_dropped_cli_flags`'s own compare step
-# (`_all_parser_dests(parser) & frozenset(config_cls.model_fields) -
-# forwarded`) is pure set arithmetic over names, so this loses nothing by
-# doing that arithmetic back in frob's own process once the three name
-# sets come home as JSON.
+# project's own `uv run --project <root>` environment instead, and only
+# plain string/list data crosses the process boundary.
 # frob:waive OPAQUE001 reason="T-4147: this is a triple-quoted STRING LITERAL, never \
 # code frob's own interpreter executes -- OPAQUE001's scan is lexical/textual over the \
 # file, not AST-scoped to real statements, so it fires on the substring \

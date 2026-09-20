@@ -48,21 +48,17 @@ import re
 _FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
 
 #: An inline `` `code` `` span, CommonMark-correct on the backtick-RUN
-#: length: opens with a run of N backticks (`` (`+) ``, captured as group
-#: 1) and closes with the NEXT run of exactly N backticks (`` \1 ``,
-#: matched via backreference, never a shorter or longer run) -- the T-1700
-#: fix for the two-backtick-delimited-span bug this module's own docstring
-#: describes (a single-backtick-only version of this regex silently fails
-#: to match `` `` `text` `` `` as one span at all). Content allows AT MOST
-#: ONE embedded newline (a genuine line-wrapped span, e.g.
-#: `` `frob quality \n bind` `` is still one token) but never two
-#: consecutive newlines (a blank line -- a real paragraph break, meaning
-#: the opening and closing backtick runs were unrelated stray characters,
-#: not one span) -- `(?!\1)` inside the content group also stops a SHORTER
-#: internal backtick run from being consumed as if it could close the
-#: span early. Non-greedy (`+?`) so two separate spans on the same line
-#: are matched as two, not merged into one spanning the prose between
-#: them.
+#: length: opens with a run of N backticks (captured as group 1) and
+#: closes with the NEXT run of exactly N backticks (matched via
+#: backreference, never a shorter or longer run) -- the T-1700 fix for
+#: the two-backtick-delimited-span bug (a single-backtick-only version
+#: silently fails to match a doubled-backtick span as one span at all).
+#: Content allows AT MOST ONE embedded newline (a line-wrapped span is
+#: still one token) but never two consecutive newlines (a paragraph
+#: break, meaning the runs were unrelated); `(?!\1)` inside the content
+#: group also stops a SHORTER internal run from closing the span early.
+#: Non-greedy (`+?`) so two separate spans on the same line are matched
+#: as two, not merged.
 _INLINE_CODE_RE = re.compile(r"(`+)(?:(?!\1)[^\n]|\n(?!\n))+?\1")
 
 

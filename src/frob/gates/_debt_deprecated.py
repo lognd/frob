@@ -39,21 +39,15 @@ from frob.xref import _collect_source_files, _definition_symbols
 _log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# T-0412: the debt-vs-waive distinction
-#
-# `frob:waive <RULE> reason="..."` is PERMANENT: a genuine, forever-
-# acceptable exception. `frob:debt <RULE> reason="..." ticket="T-####"
-# [until="..."]` is its TEMPORARY counterpart -- an accepted gap that is
-# TRACKED as owed, bound to an open ticket (never optional, unlike a
-# waiver's ticket-free reason), and escalates to a hard ERROR once its
-# `until` boundary (a date `YYYY-MM-DD` or a semver `X.Y.Z`) passes. The
-# release gate additionally refuses to bless a release while ANY debt is
-# still open at all, expired or not (`_release_open_debt_violations`) --
-# debt is collected and re-raised before shipping, never silently carried
-# forward as a de facto permanent exception the way an un-audited
-# `frob:waive` can be.
-# ---------------------------------------------------------------------------
+# T-0412: the debt-vs-waive distinction. `frob:waive <RULE>
+# reason="..."` is PERMANENT: a genuine, forever-acceptable exception.
+# `frob:debt <RULE> reason="..." ticket="T-####" [until="..."]` is its
+# TEMPORARY counterpart -- an accepted gap TRACKED as owed, bound to an
+# open ticket, escalating to a hard ERROR once its `until` boundary
+# passes. The release gate additionally refuses to bless a release
+# while ANY debt is still open at all, expired or not -- debt is
+# collected and re-raised before shipping, never silently carried
+# forward the way an un-audited `frob:waive` can be.
 
 
 def _debt_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
@@ -290,38 +284,18 @@ def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, .
     return tuple(violations)
 
 
-# ---------------------------------------------------------------------------
 # Deprecated-symbol gate (T-0576): `frob:debt` generalized to the API
 # surface itself. A `frob:deprecated <since> sunset="YYYY-MM-DD"
-# ticket="T-####" [reason="..."]` directive on a public symbol declares a
-# ticket-bound, dated exit -- distinct from `frob:debt` in that its subject
-# is the symbol's continued EXISTENCE, not a suppressed lint finding.
-#
-# DEPR001: malformed directive (missing/invalid `sunset=`/`ticket=`), same
-# shape as DEBT001. DEPR002: the bound ticket is not open (missing, or
-# closed with the directive -- and presumably the symbol -- still in
-# place), same shape and severity as DEBT002. DEPR003: the sunset date has
-# not yet passed -- a WARNING, not an error, so a live-but-scheduled
-# deprecation stays visible in ordinary `frob check` output rather than
-# being wholly silent until the date arrives (`frob:debt` has no equivalent
-# "still valid" signal; a deprecated PUBLIC symbol needs one, per T-0576's
-# body). DEPR004: the sunset date has passed -- escalates to ERROR, mirroring
-# DEBT003's expiry escalation. DEPR003/DEPR004 are mutually exclusive per
-# edge (a given `frob:deprecated` is either still in its warning window or
-# past sunset, never both), and DEPR002 suppresses both when the ticket
-# itself is not open (a mistracked deprecation is the more actionable
-# finding). DEPR005 (T-0639): a deprecated symbol's reference set gained a
-# NEW member absent from the committed `frob-deprecated-baseline.lock.json`
-# baseline (`frob.gates._deprecated_baseline`) -- a fresh adopter of a
-# symbol already declared on its way out, distinct from DEPR003/004's
-# sunset-clock states and orthogonal to them (a symbol can be both
-# in-window/past-sunset AND gaining new callers). `release_gate` additionally
-# refuses to stamp a release while
-# ANY *expired* deprecation is still open (`_release_expired_deprecated_
-# violations`) -- unlike DEBT's release check, a still-live deprecation
-# (within its warning window) does not block a release; the point is that
-# an unenforced sunset never quietly survives past its own date.
-# ---------------------------------------------------------------------------
+# ticket="T-####" [reason="..."]` directive on a public symbol declares
+# a ticket-bound, dated exit -- its subject is the symbol's continued
+# EXISTENCE, not a suppressed lint finding. DEPR001/002 mirror DEBT001/
+# 002 (malformed directive; bound ticket not open). DEPR003 (sunset not
+# yet passed) is a WARNING so a scheduled deprecation stays visible;
+# DEPR004 (sunset passed) escalates to ERROR; the two are mutually
+# exclusive per edge, and DEPR002 suppresses both. DEPR005 (T-0639): a
+# deprecated symbol gained a NEW reference absent from the committed
+# baseline. `release_gate` refuses to stamp a release while ANY expired
+# deprecation is open; a still-live one does not block a release.
 
 
 def _deprecated_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
@@ -1059,8 +1033,7 @@ def _release_expired_deprecated_violations(
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_names_every_blocking_ticket  # noqa: E501
 # frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_queue_unavailable_does_not_crash  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_v_prefixed_ti\
-# cket_milestone_refuses
+# tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_v_prefixed_ticket_milestone_refuses  # noqa: E501
 def _release_open_milestone_violations(
     root: Path, release_version: str
 ) -> tuple[Violation, ...]:

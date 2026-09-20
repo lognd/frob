@@ -76,149 +76,71 @@ _BUG_REPRO_WORKTREE_TIMEOUT_S = 30.0
 #: `frob:waive BUG002 reason="..." ` -- BUG002's escape hatch (T-1421,
 #: modeled on `--skip-mutation-evidence`'s loud/justification-required
 #: posture). Deliberately a plain regex scan of the TICKET'S OWN BODY TEXT
-#: rather than a `frob.graph` `WAIVE` edge: `frob.graph.build_graph`
-#: excludes `tickets.md` from both its doc-file and source-file walks
-#: (see `frob.graph._collect_files`'s `is_ledger` exclusion) precisely so
-#: a Done report quoting `frob:waive`/`frob:describes` verbatim does not
-#: resurrect a phantom edge -- so a waiver comment physically placed in
-#: `tickets.md` can never become a real `WAIVE` edge for
-#: `_waive.py`'s`_match_waiver`/`_apply_waivers` spine to find. Scanning
-#: `ticket.body` directly (the one place a bug ticket's own justification
-#: naturally lives) is therefore not a shortcut around that machinery --
-#: it is the only place this override CAN live for a ledger-resident
-#: ticket. Requires `reason="..."` to actually suppress (same as
-#: WAIVE001's contract elsewhere in this repo); a bare `frob:waive BUG002`
-#: with no parseable reason is treated as ABSENT (the check still runs)
-#: rather than a silent pass.
-#:
-#: T-2870: escape-aware value grammar (`\"` does NOT terminate the
-#: value), the exact same fix T-2857 applied to `frob.graph.dsl`'s
-#: markdown `frob:waive` regex (`_MD_WAIVE_VALUE_RE`) -- this is a SECOND,
-#: independent implementation of the same "waive with reason=" shape,
-#: living here rather than routed through `frob.graph.dsl` because (per
-#: the module docstring above) `tickets.md`/`ticket.body` is deliberately
-#: excluded from the general markdown graph walk, so there is no shared
-#: call path to reuse without also breaking that exclusion. Kept as an
-#: explicit, documented duplication rather than a silent one: if this
-#: value grammar ever needs a third fix, check `_MD_WAIVE_VALUE_RE` too,
-#: and vice versa -- the two are meant to accept exactly the same shape.
+#: rather than a `frob.graph` `WAIVE` edge -- `tickets.md` is excluded
+#: from the graph walk (see T-1421), so scanning `ticket.body` directly
+#: is the only place this override CAN live for a ledger-resident
+#: ticket, not a shortcut around `_waive.py`'s machinery. Requires
+#: `reason="..."` to actually suppress (same as WAIVE001's contract
+#: elsewhere in this repo); a bare `frob:waive BUG002` with no
+#: parseable reason is treated as ABSENT (the check still runs) rather
+#: than a silent pass.
+# see T-1421 for the history behind this
 _BUG002_WAIVER_RE = re.compile(
     r'frob:waive\s+BUG002\s+reason="(?P<value>(?:[^"\\]|\\.)*)"'
 )
 
 #: T-2870: a looser "shape-like" match -- `frob:waive BUG002 reason=`
-#: (an attempt at the reason attribute specifically), WITHOUT requiring
-#: the value to actually be well-formed. Used only to detect the
-#: silent-drop incident this ticket exists to fix (T-2857 mode 2,
-#: measured): an agent writes `frob:waive BUG002 reason=` with a bare,
-#: UNQUOTED value (no opening `"` at all), or opens `reason="` but never
-#: closes it anywhere in the rest of the body -- both shapes make
-#: `_BUG002_WAIVER_RE` above simply not match, which `_bug002_waiver_
-#: reason` used to treat exactly like "no waiver was ever attempted"
-#: (BUG002 runs silently, no diagnostic). `_bug002_malformed_waiver`
-#: below distinguishes those two outcomes: a candidate match here with
-#: no corresponding `_BUG002_WAIVER_RE` match at the SAME start position
-#: means a waiver was ATTEMPTED and could not be parsed, which must be
-#: reported loudly instead of silently falling through.
-#:
-#: Deliberately requires `reason=` to already be present (not just bare
-#: `frob:waive BUG002`) -- a measured false positive during this fix's
-#: own repo-wide scan: `tickets/T-1748/ticket.md` discusses the mechanism
-#: in plain prose ("...plus a frob:waive BUG002 on the second -- both
-#: checks disabled...") with no `reason=` anywhere nearby and no quoting
-#: markup at all, so `_is_quoted`'s code-span/blockquote exclusion (T-2218)
-#: does not apply to it either. A bare `frob:waive BUG002` mention with no
-#: `reason=` attempt is exactly as likely to be prose ABOUT the mechanism
-#: as a genuine (if incomplete) attempt to invoke it, so it is left as
-#: "silently absent" (unchanged, pre-existing behavior) rather than risk
-#: a false "malformed" warning against real ticket prose; only once
-#: `reason=` itself appears is intent to waive rather than mere mention.
-#:
-#: Deliberately does NOT attempt to also catch a genuinely UNESCAPED
-#: internal `"` splitting an otherwise-quoted value mid-sentence (T-2857
-#: mode 1's shape) -- unlike a markdown anchor's single physical line
-#: bounded by a `-->` terminator, a ticket body's `reason="..."` value is
-#: free-form prose that legitimately spans multiple lines and
-#: parenthetical asides (this repo's own tickets/ already carry several
-#: multi-paragraph BUG002 waivers), so there is no safe, terminator-
-#: bounded "end of directive" to tail-check the way `frob.graph.dsl._md_
-#: waive_reason_tail_error` does for one markdown line without risking a
-#: false positive against those live waivers. If a genuine instance of
-#: that specific shape is ever measured for BUG002 (as opposed to
-#: markdown), it should reuse `_MD_WAIVE_VALUE_RE`'s escape-aware grammar
-#: rather than re-deriving a bespoke tail-check here.
+#: with no well-formed value -- used only to distinguish an ATTEMPTED,
+#: malformed waiver (reported loudly by `_bug002_malformed_waiver`) from
+#: no waiver at all (`_BUG002_WAIVER_RE` simply not matching).
+#: Deliberately requires `reason=` itself to be present before treating a
+#: bare `frob:waive BUG002` mention as an attempt, not mere prose ABOUT
+#: the mechanism -- see T-1748's false-positive scan.
+#: Deliberately does NOT also catch an unescaped internal `"` splitting
+#: an otherwise-quoted value (T-2857 mode 1's shape): a ticket body's
+#: `reason="..."` value legitimately spans multiple lines/parentheticals,
+#: so there is no safe terminator to tail-check the way markdown's
+#: single-line `frob:waive` can (T-2218). See T-2857.
 _BUG002_WAIVER_CANDIDATE_RE = re.compile(r"frob:waive\s+BUG002\s+reason=")
 
 #: `frob:no-behavior-change reason="..."` (T-1616): the honest home for
-#: refactor/deletion-shaped work filed as `bug`/`security` kind (there is
-#: no `refactor` kind -- T-1616's own text weighed adding one against a
-#: body-text attribute and picked the attribute, mirroring
-#: `_BUG002_WAIVER_RE`'s precedent immediately above rather than adding a
-#: new `Ticket` field + CLI verb for a single gate's own obligation-swap).
-#: When present, BUG002's whole check INVERTS (see `bug_repro_violations`)
-#: instead of being skipped: the designated evidence test must PASS at the
-#: parent commit (proving behavior is unchanged there too), and a genuine
-#: FAILURE at the parent becomes the violation -- the work's own claim
-#: ("nothing behavioral changed") would be falsified by its own repro
-#: test failing at the pre-change commit. This keeps a real, mechanically
-#: checked obligation rather than removing one, per T-1616's requirement
-#: that reclassification-shaped work get a swapped obligation, not a
-#: skipped one. Same `reason="..."` requirement as `_BUG002_WAIVER_RE`; a
-#: bare directive with no parseable reason is treated as ABSENT (the
-#: ordinary defect-repro check still runs).
+#: refactor/deletion-shaped work filed as `bug`/`security` kind. When
+#: present, BUG002's whole check INVERTS (see `bug_repro_violations`)
+#: instead of being skipped: the designated evidence test must PASS at
+#: the parent commit (proving behavior is unchanged there too), and a
+#: genuine FAILURE at the parent becomes the violation -- the work's own
+#: claim ("nothing behavioral changed") would be falsified by its own
+#: repro test failing at the pre-change commit. Same `reason="..."`
+#: requirement as `_BUG002_WAIVER_RE`; a bare directive with no
+#: parseable reason is treated as ABSENT (the ordinary defect-repro
+#: check still runs).
 _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"')
 
 #: `frob:must-still-pass NODE-ID` (T-2193): the explicit, author-named
-#: positive-direction control BUG002 has no counterpart for. BUG002/
-#: TEST016 both only ever prove a NEGATIVE claim -- a repro test that
-#: failed before this ticket's change, or a mutant this ticket's evidence
-#: kills -- so a fix that NARROWS a decision rule (resolution, matching,
-#: filtering, gating) until it silently accepts/matches NOTHING passes
-#: both checks vacuously: there is no surviving false positive to find
-#: (BUG002/TEST016 are satisfied), and there is also no proof the
-#: narrowed rule still accepts anything real (T-2156/T-2177/`frob cycle`
-#: -- see this module's own docstring reference and T-2193's ticket body
-#: for the three measured instances, all of which passed every existing
-#: gate). `_must_still_pass_controls` below extracts each declared
-#: NODE-ID from `ticket.body` verbatim (same body-text-scan rationale as
-#: `_BUG002_WAIVER_RE`/`_NO_BEHAVIOR_CHANGE_RE` immediately above -- there
-#: is no `Ticket` model field for this, deliberately: this ticket's own
-#: scope is this file alone, and the body-text directive is the only
-#: mechanism reachable without touching `frob.tickets._models`/the CLI
-#: parsers). A bare `frob:must-still-pass` with no NODE-ID is ignored
-#: (matches nothing), same as a bare `frob:waive` with no `reason=`.
+#: positive-direction control BUG002 has no counterpart for -- BUG002/
+#: TEST016 only ever prove a NEGATIVE claim, so a fix that NARROWS a
+#: decision rule until it silently accepts/matches NOTHING passes both
+#: checks vacuously (see T-2156/T-2177 and T-2193's ticket body for the
+#: measured instances). `_must_still_pass_controls` below extracts each
+#: declared NODE-ID from `ticket.body` verbatim (same scan rationale as
+#: `_BUG002_WAIVER_RE`/`_NO_BEHAVIOR_CHANGE_RE`; no `Ticket` model field,
+#: deliberately, since this ticket's scope is this file alone). A bare
+#: `frob:must-still-pass` with no NODE-ID is ignored (matches nothing),
+#: same as a bare `frob:waive` with no `reason=`.
 _MUST_STILL_PASS_RE = re.compile(r"frob:must-still-pass\s+(\S+)")
 
 #: `frob:env-absent VAR1,VAR2,...` (T-3104): the honest evidence route for
-#: a bug whose trigger is something MISSING from the environment (a
-#: missing global git identity, an unset env var) rather than a function
-#: of the code -- the class T-3075's own five tests hit, where BUG002 and
-#: TEST016 both had to be waived because this repo's own verification
-#: sandbox always HAS the thing whose absence is the defect (developer
-#: git identity, `~/.claude`, ...), so the ordinary repro-at-parent
-#: subprocess (which inherits THIS process's environment wholesale, see
-#: `_spawn_designated_test`) can never actually observe the absent case.
-#: Declaring the variable names here makes the absence part of the
-#: REPRODUCTION itself: `_spawn_designated_test` strips every listed name
-#: from the subprocess env before running the designated test at the
-#: parent ref (and, for the one name that cannot be simply deleted
-#: without breaking the subprocess outright, `HOME`, redirects it to a
-#: fresh empty directory instead -- see `_spawn_designated_test`'s own
-#: comment). A test that only fails when the variable is genuinely gone
-#: (T-1321/T-3075's own shape: `_retry_commit_with_fallback_identity`
-#: falls back to a throwaway identity only when `git commit` reports
-#: "Author identity unknown") now gets a real `FAILED_AT_PARENT` verdict
-#: through the SAME classifier every other repro uses -- no new evidence
-#: format, no new ticket field, mirroring T-3156's
-#: `scope_has_python_surface` precedent of one predicate wired into the
-#: existing checkpoint rather than a parallel mechanism.
-#:
-#: Deliberately body-text (not a `Ticket` model field), same rationale as
-#: `_BUG002_WAIVER_RE`/`_MUST_STILL_PASS_RE` immediately above: this
-#: ticket's own scope is this file alone. Comma-separated, no spaces
-#: required around commas; a bare `frob:env-absent` with no names is
-#: ignored (matches nothing), same posture as a bare `frob:must-still-
-#: pass`.
+#: a bug whose trigger is something MISSING from the environment, not a
+#: function of the code -- the ordinary repro-at-parent subprocess
+#: inherits THIS process's environment wholesale, so it can never observe
+#: an absent case on its own (T-1321/T-3075). Declaring the variable
+#: names here makes the absence part of the REPRODUCTION itself:
+#: `_spawn_designated_test` strips every listed name from the subprocess
+#: env (redirecting `HOME` rather than deleting it) before running the
+#: test at the parent ref, so it gets a real `FAILED_AT_PARENT` verdict
+#: through the SAME classifier every other repro uses. Body-text, not a
+#: `Ticket` model field, same rationale as `_BUG002_WAIVER_RE` above;
+#: comma-separated, a bare `frob:env-absent` with no names is ignored.
 _ENV_ABSENT_RE = re.compile(
     r"frob:env-absent\s+([A-Za-z_][A-Za-z0-9_]*(?:,[A-Za-z_][A-Za-z0-9_]*)*)"
 )  # noqa: E501
@@ -227,21 +149,19 @@ _ENV_ABSENT_RE = re.compile(
 #: degrade for the residual of the environment-absence class that
 #: `frob:env-absent` cannot mechanise -- a missing BINARY on PATH, an
 #: unsupported POSIX primitive, a platform difference no env-var strip
-#: can simulate. Distinct from `frob:waive BUG002 reason="..."`: a plain
-#: waiver suppresses the check with no claim about WHY beyond its own
-#: reason text and reads, in the ledger, exactly like every other
-#: waived check; this directive keeps `bug_repro_violations` reporting a
-#: NAMED, distinct outcome (`ENV_ABSENCE_UNVERIFIABLE`, surfaced as
-#: `UNVERIFIABLE-IN-SANDBOX`) instead -- T-1664's standing doctrine that
-#: UNRESOLVED is never silently counted as either pass or fail, applied
-#: to the one class of bug this repo's own gate is structurally unable
-#: to verify. Same `reason="..."` requirement as `_BUG002_WAIVER_RE`; a
-#: bare directive with no parseable reason is treated as ABSENT.
+#: can simulate. Distinct from a plain `frob:waive`: keeps
+#: `bug_repro_violations` reporting a NAMED, distinct outcome
+#: (`ENV_ABSENCE_UNVERIFIABLE`, surfaced as `UNVERIFIABLE-IN-SANDBOX`)
+#: rather than reading, in the ledger, like every other waived check --
+#: T-1664's standing doctrine that UNRESOLVED is never silently counted
+#: as pass or fail. Same `reason="..."` requirement as
+#: `_BUG002_WAIVER_RE`; a bare directive is treated as ABSENT.
 _ENV_ABSENT_UNVERIFIABLE_RE = re.compile(
     r'frob:env-absent-unverifiable\s+reason="(?P<value>(?:[^"\\]|\\.)*)"'
 )
 
 
+# frob:ticket T-4709
 class _BugReproOutcome(Enum):
     """The six possible outcomes of running BUG002's single designated
     reproduction test against the ticket's parent commit."""
@@ -267,26 +187,15 @@ class _BugReproOutcome(Enum):
     #: The designated test spawn HIT ITS TIME BUDGET (T-2480) -- the
     #: subprocess was still running when `timeout_s` elapsed and was
     #: killed, never allowed to reach a real exit code at all. Distinct
-    #: from `NO_VERDICT`'s other infra-failure causes (spawn refused,
-    #: kill switch, collection error) because it carries DIFFERENT
-    #: information for a reader: "this test may well genuinely
-    #: reproduce the defect, but could not be MEASURED within the
-    #: budget" is not the same fact as "something about the environment
-    #: or the test itself made a verdict impossible". T-2480's own
-    #: motivating incident: a repro test that elaborates the full strata
-    #: design plus the entire SYS gate legitimately exceeds a 60s budget
-    #: on real hardware, and repro tests for architecture/design-level
-    #: defects are STRUCTURALLY the slowest ones (demonstrating the
-    #: defect means elaborating the whole model) -- so a fixed budget
-    #: selectively disenfranchises exactly the repro tests covering the
-    #: broadest, highest-consequence defects. Every caller that already
-    #: treats `NO_VERDICT` as "cannot be trusted as evidence" must treat
-    #: `TIMEOUT` identically for that same purpose (never a false
-    #: `FAILED_AT_PARENT`/`PASSED_AT_PARENT`) -- the split exists so the
-    #: MESSAGE a human or `--designate-repro-force`'s recorded reason
-    #: sees can say "budget exceeded, raise --repro-timeout-s or
-    #: re-measure" instead of the generic NO_VERDICT wording, not so any
-    #: caller's gating logic branches on it specially.
+    #: from `NO_VERDICT`'s other infra-failure causes because it carries
+    #: DIFFERENT information: "may well genuinely reproduce the defect,
+    #: but could not be MEASURED within the budget" vs. "something about
+    #: the environment or the test itself made a verdict impossible".
+    #: Every caller that treats `NO_VERDICT` as untrustworthy evidence
+    #: must treat `TIMEOUT` identically (never a false FAILED_AT_PARENT/
+    #: PASSED_AT_PARENT) -- the split exists only so the message can say
+    #: "budget exceeded, raise --repro-timeout-s" instead of the generic
+    #: NO_VERDICT wording, not so gating logic branches on it specially.
     TIMEOUT = auto()
     #: `base_ref` resolves to the SAME commit as HEAD -- the comparison is
     #: structurally impossible, not merely undecided (T-1678). This is the
@@ -302,56 +211,30 @@ class _BugReproOutcome(Enum):
     #: PASSED_AT_PARENT violation, never a false FAILED_AT_PARENT pass).
     SAME_AS_HEAD = auto()
     #: `test_id` does not exist AT ALL in `base_ref`'s checked-out tree --
-    #: pytest's own exit 5 ("no tests ran": collection succeeded, zero
-    #: items matched the node id), never confused with the generic
-    #: infra-failure NO_VERDICT (T-2025). This is the structural,
+    #: pytest's own exit 5 ("no tests ran"), never confused with the
+    #: generic infra-failure NO_VERDICT (T-2025). This is the structural,
     #: BY-CONSTRUCTION consequence of `frob ticket land` squashing every
-    #: worktree commit into ONE commit on main: once a ticket is landed,
-    #: no ref in main's history ever contains that ticket's repro test
-    #: WITHOUT its own fix already applied, because the test and the fix
-    #: land together, atomically, in the same commit. Re-running
-    #: `--check-repro` against any post-land ref for a newly-added test is
-    #: therefore not merely inconclusive, it is IMPOSSIBLE by
-    #: construction -- distinct from `NO_VERDICT` (a genuine infra
-    #: failure that a retry or a different environment might resolve) so
-    #: the caller can say exactly that instead of the generic "could not
-    #: even collect" wording, which reads like a transient, maybe-
-    #: retryable failure when it is actually a permanent one for this
-    #: `test_id`/`base_ref` pair. Treated identically to `NO_VERDICT` by
-    #: every violation-producing caller (never a false PASSED_AT_PARENT
-    #: violation, never a false FAILED_AT_PARENT pass) -- this is a
-    #: messaging refinement, not a new gating behavior. A caller with a
-    #: genuinely earlier commit where the test predates the fix (e.g. a
-    #: worktree branch's own pre-land, pre-squash commit, still reachable
-    #: before the worktree is removed -- see T-2021's own evidence for the
-    #: technique) passes that commit as an explicit `--base-ref` and gets
-    #: a real `FAILED_AT_PARENT`/`PASSED_AT_PARENT` verdict as before;
-    #: this outcome only fires when no such commit is reachable, which is
-    #: unconditionally true for `base_ref="main"` (the default) against
-    #: any ticket that has already landed.
+    #: worktree commit into ONE commit on main: no ref in main's history
+    #: ever contains a landed ticket's repro test WITHOUT its own fix
+    #: already applied. Re-running `--check-repro` against any post-land
+    #: ref for a newly-added test is therefore IMPOSSIBLE by
+    #: construction, not merely inconclusive -- a messaging refinement
+    #: over `NO_VERDICT`, not a new gating behavior. A caller with a
+    #: genuinely earlier commit (a pre-land worktree commit, see T-2021)
+    #: passes that as an explicit `--base-ref` and gets a real verdict.
     TEST_ABSENT_AT_PARENT = auto()
     #: T-3104: the ticket declares `frob:env-absent-unverifiable
     #: reason="..."` -- the defect's trigger is an environment absence
-    #: (a missing binary on PATH, an unsupported platform primitive) that
-    #: `frob:env-absent VAR,...` cannot mechanise by simply stripping
-    #: environment variables (see that directive's own docstring on
-    #: `_env_absent_vars`), so no subprocess this checkpoint can spawn is
-    #: capable of reproducing the absence at all. Distinct from every
-    #: other outcome above for the SAME reason `TIMEOUT`/`SAME_AS_HEAD`/
+    #: that `frob:env-absent VAR,...` cannot mechanise by stripping
+    #: variables, so no subprocess this checkpoint can spawn is capable
+    #: of reproducing the absence at all. Distinct from every other
+    #: outcome above for the SAME reason `TIMEOUT`/`SAME_AS_HEAD`/
     #: `TEST_ABSENT_AT_PARENT` are each their own outcome rather than
-    #: folded into `NO_VERDICT`: a reader (and the ledger) needs to be
-    #: able to tell "this repro could not be run" apart from "this class
-    #: of defect cannot be run in this sandbox at all, and the author
-    #: said so explicitly" -- T-1664's own standing doctrine that
-    #: UNRESOLVED is never silently counted as either pass or fail.
-    #: `bug_repro_violations` reports this as `UNVERIFIABLE-IN-SANDBOX`,
-    #: a named, ledger-visible outcome distinct from a `frob:waive
-    #: BUG002` (which this directive is NOT a synonym for: a waiver
-    #: suppresses the check with no claim about WHY beyond the reason
-    #: text; this directive keeps the check running far enough to
-    #: DISTINGUISH "cannot verify" from "did not bother to try", which is
-    #: exactly what a growing `frob:waive BUG002` population cannot do
-    #: (T-3104's own measured count, see this ticket's Done report)).
+    #: folded into `NO_VERDICT` -- T-1664's standing doctrine that
+    #: UNRESOLVED is never silently counted as pass or fail. Reported as
+    #: `UNVERIFIABLE-IN-SANDBOX`, distinct from a `frob:waive BUG002`:
+    #: this directive keeps the check running far enough to DISTINGUISH
+    #: "cannot verify" from "did not bother to try".
     ENV_ABSENCE_UNVERIFIABLE = auto()
 
 
@@ -359,17 +242,12 @@ class _BugReproOutcome(Enum):
 # frob:doc docs/modules/tickets.md#public-api
 #: Public alias for `_BugReproOutcome` (T-1929): an on-demand caller
 #: outside this module (`frob.app.ticket_runner._verify`'s validate-at-
-#: designate check, `frob ticket evidence --check-repro`) needs to inspect
-#: which of the outcomes `bug_repro_outcome_at_ref` returned --
-#: FAILED_AT_PARENT is the only acceptable one to treat as a genuine
-#: repro; PASSED_AT_PARENT, NO_VERDICT, (T-2480) TIMEOUT, SAME_AS_HEAD,
-#: and (T-2025) TEST_ABSENT_AT_PARENT must never be silently treated as
-#: a pass by any caller. (T-3104) ENV_ABSENCE_UNVERIFIABLE is never
-#: returned BY `bug_repro_outcome_at_ref` itself -- it is
-#: `bug_repro_violations`' own declared-and-recognized-early outcome for
-#: a `frob:env-absent-unverifiable` ticket, named here so its ledger-
-#: visible label (`.name`) has one canonical spelling, same reasoning as
-#: every other named member of this enum.
+#: designate check, `frob ticket evidence --check-repro`) needs to
+#: inspect which outcome `bug_repro_outcome_at_ref` returned --
+#: FAILED_AT_PARENT is the only one acceptable as a genuine repro; every
+#: other member must never be silently treated as a pass by any caller.
+#: `ENV_ABSENCE_UNVERIFIABLE` is never returned BY
+#: `bug_repro_outcome_at_ref` itself -- see T-3104's own docstring above.
 BugReproOutcome = _BugReproOutcome
 
 
@@ -1071,8 +949,7 @@ def _env_absent_vars_logged(ticket: Ticket) -> tuple[str, ...]:
 
 # frob:enforces CHK-GATE-BUG002
 # frob:doc \
-# docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-repr\
-# oduces
+# docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-reproduces  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_non_bug_kind_never_checked  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_no_pytest_evidence_no_violation  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_waived_with_reason_no_violation  # noqa: E501

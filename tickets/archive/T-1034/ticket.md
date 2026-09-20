@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/**
 - tests/test_arch_gate.py
@@ -16,6 +20,8 @@ scope:
 - src/frob/arch/_cpp_mayraise.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_arch_gate.py
@@ -34,6 +40,14 @@ scope_changes:
     file
   actor: logan
   at: '2026-07-27'
+body_changes:
+- mode: append
+  reason: 'T-4709: condense _ERROR_SEVERITY_CATEGORIES narrative; move T-2831/T-2375
+    measurement history into T-1034 body'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 542
+  new_length: 954
 evidence:
 - tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_with_catch_all_does_not_fire_cppthrow001
 - tests/test_arch_gate.py::TestArchGateCppThrow::test_cppthrow001_is_waivable_with_reason
@@ -41,5 +55,15 @@ evidence:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-0687 landed frob.arch._cpp_mayraise.check_cpp_noexcept_violations, wired into analyze_project's live cpp dispatch branch, producing ArchSuggestion(category=cpp-noexcept-throws, severity=error). Promoting this into an enforced, unwaivable src/frob/gates/** gate finding (the way frob.gates._unwaivable_channel_rules already does for every other ArchCategory) was out of T-0687's declared scope (arch/**, lang/**, tests/unit/test_arch.py only). Wire it the same way EXHAUST001/002 (T-0688) and errors-as-values-recommended eventually will be.
+
+<!-- narrative-moved:src/frob/gates/_arch.py:91:T-1034 -->
+: promotes large-file to this set: T-2375's 9 child splits/waivers
+: (T-2822..T-2830) are all terminal and re-measurement against a live
+: build_graph snapshot confirmed zero unwaived LARGE001 findings before
+: this flip -- see this file's docstring history and the ticket's Done
+: report for the exact count. Any newly-created oversized file now reds

@@ -1186,87 +1186,34 @@ def _tick006_refile_for_ticket(
 
 
 # frob:ticket T-2922
-# T-2922/T-2920: `_fix_sys100_both_cases` (T-1531 CORE + T-1545 EXTENDED,
-# unified per T-1924) used to widen a node's `may=` declaration to cover
-# whatever undeclared capability SYS100 observed the code exercising.
-# That is deleted, not merely disabled: a node's `may=` list is a CEILING
-# a human declares on what its code is ALLOWED to do, and an auto-fix
-# that edits the ceiling to match observed behavior makes the ceiling
-# meaningless -- it can never say no. T-1623/T-1628 deliberately put this
-# auto-widening in place as accepted policy at the time; T-2922/T-2920
-# reverse that decision on the user's explicit instruction (the SYS111
-# capability-via-ratchet lock this same module still syncs was built
-# BECAUSE of this widening's failure mode -- see this file's own T-2001
-# docstring below). SYS100 the DETECTOR is unaffected: `frob.strata.
-# _selfconform`/`sys_gate` still fires exactly as before, unwaived, on
-# any undeclared capability use. Only the silent auto-capitulation is
-# gone -- a human must now widen a `may=` grant by hand, the same as any
-# other declared-surface change. The two callees this wrapper combined
-# (`fix_sys100_may_via_union`, `fix_sys100_extended_whole_node_grant`)
-# are deleted from `_fix_engine_sync.py` in the same change; their
-# writer, `frob.strata._sync_may`, was left in place for one commit to
-# avoid racing T-2920's own concurrent work, and is now ALSO deleted
-# (T-2935 confirmed zero remaining importers and removed it -- see
-# `_sync_may.py`'s own T-2920 docstring).
+# T-2922/T-2920: `_fix_sys100_both_cases` (T-1531 CORE + T-1545
+# EXTENDED, unified per T-1924) used to widen a node's `may=`
+# declaration to cover whatever undeclared capability SYS100 observed.
+# That is deleted, not merely disabled: a `may=` list is a CEILING a
+# human declares; an auto-fix that edits the ceiling to match observed
+# behavior makes it meaningless. SYS100 the DETECTOR is unaffected:
+# `frob.strata._selfconform`/`sys_gate` still fires exactly as before,
+# unwaived. Only the silent auto-capitulation is gone -- a human must
+# now widen a `may=` grant by hand. See this file's `_fix_engine_sync.py`
+# sibling's "SYS100 auto-widening -- REMOVED" comment and T-2922's
+# ticket body for the full history.
 
 
 #: One rule id -> one Tier-A handler, uniform `(root, snapshot, queue) ->
-#: list[FixApplied]` call shape (T-1261 promotes `apply_tier_a_fixes`'s
-#: prior positional-call list to this explicit dict, keyed by rule id, per
-#: docs/design/check-fix-engine.md's "Fix-handler protocol" section -- so
-#: the fixability-registry-field ticket has a real table to introspect by
-#: name). A handler whose OWN signature differs (three take `(root,
-#: snapshot)`, one takes `(root, queue)`, `fix_waive004_stale_waiver` takes
-#: extra keyword-only scope params) is adapted here via a thin lambda,
-#: never by changing that handler's own signature -- T-1260's design-
-#: review advisory noted this inconsistency and deferred the minimal fix
-#: to this ticket; this dict IS that minimal fix, at the call-site layer
-#: only. Order matters: DOC007/DOC002/INV006-carry/FMT001/SUPPRESS001/
-#: REG010/REL002/DOCENUM001 are pure rewrites with no ledger interaction; TICK002
-#: touches the ticket ledger; WAIVE004 runs LAST since it re-invokes the
-#: whole gates suite itself and should see every other handler's
-#: rewrites already applied, not a stale pre-fix tree. SUPPRESS001 runs
-#: immediately AFTER FMT001, never before -- both can act on an
-#: over-long line, and FMT001's directive-wrap gets first refusal
-#: (T-1341: SUPPRESS001 never touches a `frob:`-directive-bearing line
-#: at all, see `_FROB_DIRECTIVE_MARKER_RE`, so the two never actually
-#: collide on the same physical line in practice -- the ordering is
-#: still fixed explicitly rather than left to dict insertion accident).
-#: SYS100 (T-1531) used to be a pure `.strata` text rewrite (same
-#: category as DOC007/DOC002/INV006-carry/FMT001/REG010/REL002) reusing
-#: the `frob.strata._sync_may` writer -- deleted by T-2922/T-2920 (see
-#: `_fix_sys100_both_cases`'s own T-2922 comment above): a node's `may=`
-#: ceiling must never be auto-widened, so SYS100 has NO Tier-A handler
-#: any more, on purpose. T-1870: SYS104 (the `interface=` sibling of
-#: this same category) is deliberately NOT wired here any more -- deleted
-#: entirely, along with its writer and every other `interface=` mutation
-#: path, per an explicit owner directive that no code path may
-#: auto-update declared public-symbol surface. T-1872 wired a
-#: `SYS-IFACE-ORDER` entry here too (declared-name presentation reorder
-#: only, no membership decision); T-1916 removed it again -- REG002 found
-#: no gate/policy rule of that id had ever existed to justify the
-#: registry's "live, enforced gate rule" claim about it, and every OTHER
-#: entry in this dict is backed by a real detector somewhere. See
-#: `_fix_engine_sync.py`'s own module docstring for the retirement
-#: reasoning in full.
+#: list[FixApplied]` call shape (T-1261); a differing handler signature
+#: is adapted via a thin lambda, never by changing the handler itself.
+#: Order matters: pure rewrites run first, TICK002 touches the ticket
+#: ledger, WAIVE004 runs LAST (re-invokes the whole gates suite and
+#: should see every other handler's rewrites already applied).
+#: SUPPRESS001 runs immediately AFTER FMT001, never before (T-1341).
+#: SYS100 has NO handler on purpose (T-2922/T-2920: a `may=` ceiling
+#: must never be auto-widened); SYS104/SYS-IFACE-ORDER were wired then
+#: removed (T-1870/T-1872/T-1916, see `_fix_engine_sync.py`'s module
+#: docstring). Every handler also takes `ticket_id`/`merge_target_ids`
+#: (T-1548/T-2400) for the one handler each that needs it.
 # frob:ticket T-1531
 # frob:ticket T-1924
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-#: T-1548: every handler now takes a 4th `ticket_id: str | None` argument
-#: (the landing ticket's id, when `apply_tier_a_fixes` is called from a
-#: land context -- `None` for a bare `frob check --fix`) -- every existing
-#: handler simply ignores it, only `fix_cov002_ticket_directive_insertion`
-#: reads it, since inserting a `frob:ticket <id>` directive is the one
-#: Tier-A fix that structurally needs to know WHICH ticket is landing
-#: (there is no other way to derive that from `root`/`snapshot`/`queue`
-#: alone -- multiple tickets can be simultaneously open).
-#: T-2400: every handler now ALSO takes a 5th `merge_target_ids:
-#: MergeTargetKnownIds | None` argument, same uniform-shape precedent as
-#: T-1548's `ticket_id` -- `None` for a bare `frob check --fix` (no land
-#: merge target to resolve). Only `fix_tick006_phantom_refile` reads it,
-#: for the identical reason `ticket_id` above is read by only one
-#: handler: resolving a phantom citation against the land's actual merge
-#: target, not just this worktree's own stale ledger view.
 TIER_A_HANDLERS: dict[
     str,
     Callable[

@@ -142,22 +142,17 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         "    2\n"
         "}\n"
     ),
-    # T-2365: C's grammar (per the ISO C standard, tree-sitter-c included)
-    # treats a trailing `\` at end-of-physical-line as a genuine line
-    # splice EVERYWHERE, including inside a `//` comment -- so a two-
-    # physical-line `// frob:tests \` / `// <target>` pair is not two
-    # `RawComment`s to fold at all, it is tree-sitter's OWN grammar
-    # already merging them into ONE comment node before frob.lang ever
-    # sees it, with the backslash-newline literally still embedded in the
-    # node text (`// frob:tests \\\n// <target>` as one token, not two
-    # lines `_fold_continuations` can walk). Confirmed empirically while
-    # building this fixture: the two-line form parses to 1 malformed
-    # directive here, 0 for every OTHER language's identical two-line
-    # shape. C/C++'s fixture therefore uses a single-physical-line
-    # directive instead -- a real, disclosed language-boundary quirk, not
-    # a gap in `_behavioral_capability_check`'s continuation coverage
-    # (python/typescript/rust/kotlin/strata all exercise the real
-    # continuation fold; see docs/modules/lang.md).
+    # T-2365: C's grammar (tree-sitter-c included) treats a trailing `\`
+    # at end-of-physical-line as a genuine line splice EVERYWHERE,
+    # including inside a `//` comment -- so a two-physical-line
+    # `// frob:tests \` / `// <target>` pair is not two `RawComment`s to
+    # fold, it is tree-sitter's OWN grammar already merging them into ONE
+    # comment node before frob.lang ever sees it. Confirmed empirically:
+    # the two-line form parses to 1 malformed directive here, 0 for
+    # every OTHER language's identical shape. C/C++'s fixture therefore
+    # uses a single-physical-line directive instead -- a real, disclosed
+    # language-boundary quirk, not a gap in `_behavioral_capability_
+    # check`'s continuation coverage (see docs/modules/lang.md).
     "c": (
         "// Capability fixture module doc.\n\n"
         "#include <stdio.h>\n\n"
@@ -249,25 +244,16 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         "    }\n"
         "}\n"
     ),
-    # T-1602: a __global__ kernel is CUDA's publicness analog (the ticket's
-    # own framing); #include is the import/include statement, identical to
-    # plain C/C++. SINGLE physical line, not a continuation -- inherits
-    # the SAME `.c`/`.cpp` quirk docs/modules/lang.md already documents
-    # (the C standard's `//`-comment line-splice rule means tree-sitter-
+    # T-1602: a __global__ kernel is CUDA's publicness analog; #include
+    # is identical to plain C/C++. SINGLE physical line, not a
+    # continuation -- inherits the SAME `.c`/`.cpp` quirk (tree-sitter-
     # cuda, being the identical grammar, ALSO merges a two-physical-line
-    # `// frob:tests \` / `// <target>` pair into one comment node before
-    # `frob.lang` ever sees two lines to fold -- not a new, CUDA-specific
-    # gap, the same disclosed one c/cpp already carry).
+    # directive pair into one comment node before `frob.lang` ever sees
+    # two lines to fold -- not a new, CUDA-specific gap).
     #
-    # T-3541: this claim was UNVERIFIED against the behavioral check
-    # until now -- measured directly: a genuine two-line continuation
-    # here produces "0 edge(s), 1 malformed" (the merged single-token
-    # comment fails to parse as a directive at all, never reaching
-    # `frob.lang`'s own fold logic), confirming the quirk is real for
-    # cuda, not just asserted by analogy. `TestBehavioralCapabilityCheck.
-    # test_directive_continuation_folds_correctly_not_just_present` now
-    # skips cuda the same way it already skips c/cpp, with this same
-    # measurement cited there.
+    # T-3541: measured directly: a genuine two-line continuation here
+    # produces "0 edge(s), 1 malformed", confirming the quirk is real
+    # for cuda, not just asserted by analogy (see docs/modules/lang.md).
     "cuda": (
         "// Capability fixture module doc.\n\n"
         "#include <cuda_runtime.h>\n\n"
@@ -293,63 +279,17 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     ),
 }
 
-# T-2365: the original four capabilities `frob.lang.parse_file` alone (no
-# repo-wide scan, no build system) can behaviorally exercise in isolation.
-# T-1599 added call_graph/import_graph to this set: both turned out to be
-# exercisable from the SAME single-file fixture `frob.lang.parse_file`
-# already drives -- `build_call_graph`/`extract_imports` both resolve
-# intra-file edges/specifiers from one parsed file, no multi-file repo
-# tree required, contrary to this comment's own prior claim (corrected
-# here, not just in the ticket that found it). Each per-language fixture
-# above now has its public function call its private one (call_graph) and
-# a real import/include/use statement (import_graph).
-#
-# T-2682: test_discovery joins this set too, but NOT uniformly across
-# every language -- every `_TEST_DISCOVERY_COLLECTORS` entry
-# (`frob.testing.collect_*_tests`) shells out to the language's real
-# toolchain, and those toolchains have wildly different costs, measured
-# directly while building this (T-2682's own Done report has the
-# numbers): `uv run pytest --collect-only` on a throwaway fixture is
-# ~10ms, cheap enough to run on every `frob check` invocation the same
-# way the other six capabilities already do. cpp's collector only ever
-# lists an ALREADY-CONFIGURED cmake build directory (never invokes
-# cmake itself, per its own docstring) -- exercising it behaviorally
-# would mean this gate running `cmake` configure itself, a second,
-# heavier toolchain step. typescript's collector needs a `vitest`
-# dependency actually resolvable via `npx` in the fixture project --
-# `npm install` in a tmp dir is a NETWORK call, unacceptable for a gate
-# that must stay fast and offline-safe. kotlin's collector reads
-# ALREADY-PRODUCED gradle JUnit reports (never invokes gradle itself,
-# per its own docstring) -- producing one means a cold JVM + gradle
-# build, the heaviest of the four remaining.
-#
-# T-2698: rust MOVED from this excluded set into `_TEST_DISCOVERY_
-# BUILDERS`/`_BEHAVIORAL_CAPABILITY_LANGUAGES` below -- re-measured at
-# ~0.9s cold (`cargo test --lib -- --list` on a two-file, zero-
-# dependency fixture crate, this repo's own environment, T-2682's
-# original ~2.3s figure was measured on a colder cargo registry cache)
-# and, critically, fully OFFLINE: the fixture crate declares no
-# dependencies, so `cargo test` never touches the network the way
-# typescript's `npm install` would. Bounded and offline-safe was
-# exactly the bar `_BEHAVIORAL_CAPABILITY_LANGUAGES`'s own prior
-# comment asked a future revisit to clear; rust clears it, the other
-# three do not (cpp needs a whole second toolchain step this gate does
-# not otherwise run; typescript needs the network; kotlin needs a cold
-# JVM+gradle build) -- a real, disclosed, COST-driven partial delivery
-# (1 of 4 remaining), not a forced uniform rollout.
-#
-# `_BEHAVIORAL_CAPABILITY_LANGUAGES` (below) is the language-scoped
-# restriction this requires: `_BEHAVIORALLY_CHECKED_CAPABILITIES`
-# alone means "check this capability for every language with an
-# IMPLEMENTED cell" (true and fine for the other six, which are all
-# single-file-fixture-cheap regardless of language) -- test_discovery
-# is the first capability where that blanket rule is wrong. typescript/
-# c/cpp/kotlin test_discovery stay structural-only for now, same honest
-# status they had before T-2682 (LANG001 still holds them to the
-# structural-completeness bar) -- a real, disclosed, COST-driven cut,
-# not silence. Revisit if/when a bounded, offline-safe way to exercise
-# them exists (e.g. a pre-built, checked-in fixture project per
-# toolchain instead of a from-scratch tmp-dir build every gate run).
+# T-2365/T-1599: the capabilities `frob.lang.parse_file` alone can
+# behaviorally exercise -- call_graph/import_graph both resolve
+# intra-file edges from one parsed file, no repo-wide scan/build needed.
+# T-2682/T-2698: test_discovery joins this set too, but NOT uniformly:
+# each `_TEST_DISCOVERY_COLLECTORS` entry shells out to the language's
+# real toolchain at wildly different costs. rust is bounded and
+# offline-safe (~0.9s cold) so it moved into
+# `_BEHAVIORAL_CAPABILITY_LANGUAGES` below; cpp/typescript/kotlin did
+# not (toolchain/network/JVM cost respectively) and stay
+# structural-only under LANG001 -- a disclosed, COST-driven cut,
+# revisit if a bounded offline way to exercise them exists.
 _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
     {
         CAPABILITY_SYMBOL_WALK,
@@ -643,37 +583,17 @@ def _behavioral_capability_check(
 
 
 # T-0406: well-known general-purpose-language extensions frob has NO
-# `frob.lang` grammar registration for at all (as opposed to T-0405's
-# `KNOWN_GAP`, which covers a registered language missing ONE facet) --
-# a file matching one of these in a downstream repo gets literally zero
-# frob coverage (no capability scan, no dup detection, no arch check, no
-# doc-drift check) and nothing today ever says so. Deliberately a small,
-# named, well-known set (not "any extension frob does not recognize",
-# which would flag every config/asset file in a repo) -- the exact
-# languages the T-0406 acceptance criteria name (Kotlin/Swift/Go) plus a
-# few equally common general-purpose siblings.
+# `frob.lang` grammar registration for at all (unlike T-0405's
+# `KNOWN_GAP`, a registered language missing ONE facet) -- a file
+# matching one of these gets literally zero frob coverage and nothing
+# today ever says so. Deliberately a small, named, well-known set (not
+# "any extension frob does not recognize").
 #
-# T-1234: kotlin (`.kt`/`.kts`) was one of the T-0406 acceptance-criteria
-# languages at the time this dict was written, but `frob.lang` gained a
-# real kotlin grammar registration in T-0723 (`frob.lang._walk_kotlin`,
-# `frob.lang.__init__._EXTENSION_TABLE` -- see `language_for_extension`).
-# Leaving `.kt`/`.kts` here would make LANG002 fire a false "frob has NO
-# grammar registration for this language at all" ERROR on any downstream
-# repo containing kotlin source, which is simply wrong once a grammar
-# exists -- this repo's own tree just happens to contain no `.kt`/`.kts`
-# files today, so the stale entries never actually fired here (the
-# "coincidentally right" behavior T-1234 was filed to close before some
-# future repo/file tripped it). Removed rather than left as dead weight:
-# any language added to this set that later gains real `frob.lang`
+# T-1234/T-1600/T-1601: kotlin/csharp/java were removed from this set
+# once `frob.lang` gained real grammar registrations for each (T-0723
+# for kotlin) -- leaving them here would make LANG002 fire a false "NO
+# grammar at all" ERROR. Any language added here that later gains real
 # registration must be pulled out the same way, or LANG002 lies.
-#
-# T-1600: `.cs` (csharp) removed for the identical T-1234 reason -- a
-# real `frob.lang` grammar registration now exists
-# (`frob.lang._walk_csharp`, `frob.lang.__init__._EXTENSION_TABLE`).
-#
-# T-1601: `.java` removed for the identical T-1234 reason -- a real
-# `frob.lang` grammar registration now exists (`frob.lang._walk_java`,
-# `frob.lang.__init__._EXTENSION_TABLE`).
 _UNREGISTERED_CANDIDATE_LANGUAGES: dict[str, str] = {
     ".swift": "swift",
     ".go": "go",

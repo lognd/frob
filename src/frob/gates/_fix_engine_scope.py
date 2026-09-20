@@ -72,27 +72,20 @@ _log = get_logger(__name__)
 
 # frob:ticket T-2284
 #: Rule ids this filter never applies to -- a NAMED, disclosed exemption
-#: (T-2284 acceptance[4]: "if one exists, say what it should do instead
-#: rather than silently exempting it"), not a handler that happens to
-#: pass every scope/lease check by coincidence. `REL002` is the one
-#: member today: `fix_rel002_release_sync` writes `pyproject.toml`/
-#: `CHANGELOG.md`/`uv.lock` -- files docs/guides/agent-playbook.md
-#: section 4b already forbids declaring in ANY ticket's own scope (they
-#: are land-owned, exclusively written by `frob ticket land` itself,
-#: never a worktree's declared work); a scope check against them would
-#: not catch a genuine leak, it would revert REL002's own correct,
-#: load-bearing output on every single land. Genuinely repo-wide by
-#: design, not merely broad -- the exemption belongs on the rule, named
-#: and reasoned here, rather than reverting real release-sync state and
-#: leaving REL001 to fail confusingly afterward.
+#: (T-2284: "if one exists, say what it should do instead rather than
+#: silently exempting it"), not a coincidence. `REL002` is the one
+#: member: `fix_rel002_release_sync` writes `pyproject.toml`/
+#: `CHANGELOG.md`/`uv.lock`, files land-owned and exclusively written by
+#: `frob ticket land` itself -- a scope check against them would not
+#: catch a genuine leak, it would revert REL002's own correct, load-
+#: bearing output on every single land. Genuinely repo-wide by design.
 _REPO_WIDE_EXEMPT_RULES = frozenset({"REL002"})
 
 
 # frob:ticket T-2284
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_i\
-# s_reverted_and_reported kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_is_reverted_and_reported kind="unit"  # noqa: E501
 class SkippedFix(BaseModel):
     """One Tier-A fix a handler produced but `filter_fixes_by_scope_and_
     lease` refused to keep -- same identity a kept `FixApplied` carries
@@ -216,20 +209,15 @@ def _revert_fix_file(
 # frob:ticket T-2284
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_i\
-# s_reverted_and_reported kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_is_reverted_and_reported kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_live_leased_file_s\
-# kipped_even_when_in_landing_scope kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_live_leased_file_skipped_even_when_in_landing_scope kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_in_scope_fix_is_ke\
-# pt_unchanged kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_in_scope_fix_is_kept_unchanged kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_no_ticket_id_passe\
-# s_every_fix_through_unfiltered kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_no_ticket_id_passes_every_fix_through_unfiltered kind="unit"  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_rel002_is_a_named_\
-# repo_wide_exemption_not_a_silent_pass kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass kind="unit"  # noqa: E501
 def filter_fixes_by_scope_and_lease(
     root: Path,
     queue: TicketQueue,

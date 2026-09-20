@@ -181,32 +181,16 @@ def read_line_length(root: Path) -> int:
 
 
 # T-1606 DESIGN DECISION (recorded here, not left implicit): before this
-# ticket, `format_paths`/`_fix_engine_text`/`_land_cmd`/`_todo_fmt` all
-# called `read_line_length(root)` exactly ONCE per run and passed that
-# single ruff-derived int to every file regardless of language -- correct
-# for Python (ruff owns Python's width, and a noqa suppression for E501 is what a
-# directive wrap is standing in for there) but wrong for every other
-# language `frob fmt` wraps (Rust/TS/JS/C-family), which each have their
-# OWN formatter and their own width knob. `resolve_line_length` below is
-# the per-FILE replacement: each supported language gets its own width
-# resolved from that language's own toolchain config (walking upward from
-# the file, nearest-wins, matching how the real tools resolve a monorepo),
-# falling back to that tool's own documented default when the config is
-# absent -- never to ruff's number. `None` is a first-class answer here:
-# a formatter with no configurable width (T-1606's own examples: gofmt,
-# `zig fmt`, `shfmt`) must never be wrapped on width at all, or `frob fmt`
-# would keep reformatting such a file every run for no reason. Go/Zig/
-# Bash are not yet entries in `_MARKERS` (no adapter registers `.go`/
-# `.zig`/`.sh` here today) -- when one is added, its `_LANGUAGE_WIDTH_
-# SOURCES` entry should be `None` outright (no config lookup at all),
-# exercising the exact same "no width limit" contract
-# `TestResolveLineLength.test_no_limit_language_never_wraps` proves at the
-# `canonicalize_text`/`_canonical_lines` level today. `.strata` (frob's
-# own DSL, no external formatter) is deliberately left OUT of this table
-# and keeps falling through to the `_DEFAULT_WIDTH_SOURCE` (ruff-derived)
-# branch below -- unlike Go/Zig/Bash it has no formatter of its own to
-# defer to, so preserving T-0441's original repo-wide behavior for it is
-# the least-surprising default rather than an unstated policy call.
+# ticket, callers passed one ruff-derived int to every file regardless of
+# language -- correct for Python but wrong for every other language
+# `frob fmt` wraps, each with its OWN formatter and width knob.
+# `resolve_line_length` below is the per-FILE replacement: each
+# supported language gets its own width from that language's own
+# toolchain config (nearest-wins), falling back to that tool's
+# documented default, never to ruff's number. `None` is a first-class
+# answer: a formatter with no configurable width (gofmt, `zig fmt`,
+# `shfmt`) must never be wrapped on width at all. `.strata` is
+# deliberately left OUT and keeps the ruff-derived default (T-0441).
 _RUST_CONFIG_FILES: tuple[str, ...] = ("rustfmt.toml", ".rustfmt.toml")
 """rustfmt's own config filenames, most-specific first (rustfmt itself
 accepts either name; `_find_nearest_config` tries both at each directory
@@ -482,6 +466,7 @@ def _wrap_cut_point(remaining: str, budget: int) -> tuple[str, str] | None:
     return remaining[: cut + 1], remaining[cut + 1 :]
 
 
+# frob:ticket T-4709
 def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list[str]:
     """Split `text` (one logical directive's delimiter-stripped content,
     e.g. `frob:waive RULE reason="..."`) into the fewest physical comment
@@ -544,22 +529,17 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
         if cut_point is None:
             # frob:ticket T-4475
             # T-4179 made this line intentionally over `limit` (never
-            # split the token) -- for Python (`marker == "#"`, the only
-            # `#`-comment language `_MARKERS` maps at all; E501 is a
-            # ruff/Python-specific rule) that over-length line is then a
-            # NEW E501 finding at land time (T-4473 refused twice on
-            # exactly this: a directive canonicalized mid-land into a
-            # 109-column line, land's own pre-land `ruff check` then
-            # blocking on it). Append ruff's own `# noqa: E501` suppression
-            # -- the SAME escape hatch a human already uses today for an
-            # unwrappable node id (`_NOQA_SUFFIX_RE`, T-0985) -- so the
-            # line is simultaneously whole (T-4179's own guarantee) and
+            # split the token) -- for Python that over-length line is
+            # then a NEW E501 finding at land time (T-4473 refused twice
+            # on exactly this). Append ruff's own `# noqa: E501`
+            # suppression -- the SAME escape hatch a human already uses
+            # today for an unwrappable node id (`_NOQA_SUFFIX_RE`,
+            # T-0985) -- so the line is simultaneously whole and
             # E501-clean. Idempotent by construction: the next
-            # canonicalization pass folds this physical line back into a
-            # `logical_text` that itself now ends in `# noqa: E501`, which
-            # `_rewrite_directive_run`'s existing `_NOQA_SUFFIX_RE` check
-            # already passes through byte-identical -- no new stripping
-            # logic needed here.
+            # canonicalization pass folds this back into a
+            # `logical_text` that already ends in `# noqa: E501`, which
+            # `_rewrite_directive_run`'s existing check already passes
+            # through byte-identical.
             suffix = "  # noqa: E501" if marker == "#" else ""
             lines.append(f"{prefix}{remaining}{suffix}")
             return lines

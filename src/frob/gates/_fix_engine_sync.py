@@ -326,57 +326,18 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
     return applied
 
 
-# ---------------------------------------------------------------------------
-# SYS100 auto-widening -- REMOVED (T-2922, security-critical, blocks epic
-# T-2920). Two handlers used to live here: `fix_sys100_may_via_union`
-# (T-1531 CORE, per-file `via`-list widening) and `fix_sys100_extended_
-# whole_node_grant` (T-1545 EXTENDED, whole-node grant insertion for
-# eval/process-control/ffi/... kinds with no per-file evidence to narrow
-# to). Both did the same wrong thing: when frob's own SYS100 self-
-# conformance check observed a file exercising a capability its node's
-# `may=` declaration did not grant, they edited the DECLARATION to grant
-# it. A node's `may=` list exists specifically as a CEILING a human
-# places on what its code is allowed to do -- an auto-fix that silently
-# raises the ceiling to match whatever the code already does is a ratchet
-# with no teeth; the ceiling becomes a restatement of behavior, never a
-# constraint on it.
+# SYS100 auto-widening -- REMOVED (T-2922, security-critical; see T-2920
+# for the full history). A node's `may=` list is a CEILING a human places
+# on what its code is allowed to do -- auto-widening it to match observed
+# behavior is a ratchet with no teeth; a `may=` grant may only ever be
+# narrowed automatically, never widened, going forward.
 #
-# T-1623/T-1628 put this auto-widening in place as a deliberate, accepted
-# policy at the time (T-1531's/T-1545's own docstrings, now deleted along
-# with them, said so explicitly). T-2922/T-2920 SUPERSEDE that decision
-# on the user's explicit instruction: the shrink-only ratchet rework
-# (T-2920, `src/frob/strata/**` + `design/**`) establishes that a `may=`
-# grant may only ever be narrowed automatically, never widened, and this
-# ticket removes the one live code path that violated that going forward.
-# The SYS111 capability-via-ratchet-lock sync just below this comment
-# (`fix_sys111_capability_ratchet_sync`, T-2001) was itself built BECAUSE
-# of this widening's failure mode (T-1977/T-1665: a SYS100 auto-widening
-# would satisfy SYS100/SYS104 while leaving the ratchet lock's committed
-# ceiling stale) -- it is UNAFFECTED by this removal beyond becoming a
-# structural no-op wherever its own growth-attribution finds nothing new
-# to bump, since SYS100 no longer produces any growth for it to sync.
-#
-# SYS100 the DETECTOR is NOT touched by this ticket and must not be:
-# `frob.strata._selfconform`/`sys_gate`'s production entrypoint still
-# fires SYS100 (and SELFAUDIT001's fold of it) exactly as before, unwaived,
-# on any undeclared capability use -- see
-# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::
-# test_sys100_core_violation_still_fires_and_is_not_auto_resolved and
-# ::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
-# for the must-still-fire / must-not-auto-resolve proof pair. Only the
-# silent auto-capitulation is gone: a human must now widen a `may=` grant
-# by hand, the same as any other declared-surface change, and dropping a
-# declared-but-unused capability (the SHRINKING direction) remains fully
-# legitimate and is not affected by this removal at all.
-#
-# `frob.strata._sync_may`'s `apply_sync_may`/`sync_may_report`/
-# `apply_sync_may_extended`/`sync_may_extended_report`/
-# `WholeNodeMayGrantDiff` writer functions these two handlers called are
-# DELETED (T-2920, once this ticket's own land confirmed zero remaining
-# importers) -- `src/frob/strata/_sync_may.py` now holds only the shared
-# `.strata` body-span scanner (`node_body_span`) `frob.strata._shrink`
-# (T-2923) still uses; see that module's own T-2920 docstring.
-# ---------------------------------------------------------------------------
+# SYS100 the DETECTOR is NOT touched and must not be:
+# `frob.strata._selfconform`/`sys_gate` still fires SYS100 unwaived on
+# any undeclared capability use (test_sys100_core_violation_still_fires_
+# and_is_not_auto_resolved). Only the silent auto-capitulation is gone: a
+# human must now widen a `may=` grant by hand; dropping a
+# declared-but-unused capability (SHRINKING) remains fully legitimate.
 
 
 # COV002 (T-1548): a changed symbol with no `frob:ticket` edge to an open
@@ -524,46 +485,24 @@ _WAIVE_SINGLE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
 #: T-1323 incident guard: how many WAIVE004 candidates for the SAME target
 #: rule in one self-manufactured `run_gates()` call is treated as a mass
 #: invalidation signature rather than N independent legitimately-stale
-#: waivers. The 2026-07-29 incident stripped 50 files' worth of
-#: `frob:waive PERF00x` comments in one `apply_tier_a_fixes` pass because a
-#: natives-degraded verification run under-reported PERF findings to zero
-#: across the whole tree -- every real PERF waiver looked simultaneously
-#: stale. A handful of a rule genuinely going stale together (e.g. a
-#: refactor that deletes the pattern a few waivers covered) is plausible;
-#: dozens going stale in the SAME run is not -- it is the signature of the
-#: verification itself under-reporting, not of the waivers. Chosen well
-#: below the incident's own 50-waiver footprint so this guard would have
-#: caught it with margin to spare, and well above the handful a normal
-#: single-PR cleanup would ever produce for one rule at once.
-#:
+#: waivers. Set well below the 2026-07-29 incident's 50-waiver footprint
+#: (a degraded verification run under-reported PERF findings to zero,
+#: stripping 50 files' `frob:waive PERF00x` comments in one pass) and
+#: well above a normal single-PR cleanup's footprint for one rule.
 #: T-1620: this absolute count is STRUCTURALLY BLIND to any rule with
-#: fewer than this many live waivers total -- a rule with exactly 2 live
-#: `frob:waive` directives can never reach 5 candidates no matter how
-#: degraded the run is, so both of its waivers silently pass through
-#: this guard and get deleted. `_mass_invalidation_rules` below now also
-#: flags the PROPORTIONAL case (every one of a rule's live waivers going
-#: stale in the same run) regardless of the raw count -- 2 of 2 is at
-#: least as suspicious as 40 of 40, arguably more so.
+#: fewer live waivers than this threshold -- `_mass_invalidation_rules`
+#: below also flags the PROPORTIONAL case (every one of a rule's live
+#: waivers going stale in the same run) regardless of raw count.
 _WAIVE004_MASS_INVALIDATION_THRESHOLD = 5
 
-#: T-1886: the PROPORTIONAL check below is a sample-size argument ("all of
-#: this rule's live waivers going stale together is suspicious regardless
-#: of count") and, like any sample-size argument, has no discriminating
-#: power at `N=1` -- a rule with exactly one live `frob:waive` directive
-#: reads as "100% went stale" the instant that single waiver is genuinely
-#: dead, indistinguishable from a degraded run by construction. Without a
-#: floor this makes `fix_waive004_stale_waiver` structurally unable to
-#: ever delete a lone dead waiver for a low-traffic rule -- not a rare
-#: edge case, since a repo with exactly one live waiver for some rule is
-#: an entirely ordinary state, not itself a degradation signal. Mirrors
-#: the `_DEFLATION_MIN_KNOWN_MODULES` precedent (`frob.gates._coverage`):
-#: below a minimum sample size, the check simply does not fire rather
-#: than firing on noise. Chosen at 2 (not the absolute threshold's 5) so
-#: the guard keeps its full bite the moment there is ANY sample size to
-#: reason about proportionally -- 2-of-2 and up still trip it exactly as
-#: before; only the N=1 case, which carries no proportional signal at
-#: all, now falls through to the (also fully intact) absolute-threshold
-#: check alone.
+#: T-1886: the PROPORTIONAL check below has no discriminating power at
+#: `N=1` -- a rule with exactly one live waiver reads as "100% went
+#: stale" the instant that waiver is genuinely dead, indistinguishable
+#: from a degraded run by construction. This floor (2, not the absolute
+#: threshold's 5) mirrors the `_DEFLATION_MIN_KNOWN_MODULES` precedent
+#: (`frob.gates._coverage`): below a minimum sample size, the check
+#: simply does not fire rather than firing on noise; the N=1 case falls
+#: through to the (fully intact) absolute-threshold check alone.
 _WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT = 2
 
 #: `GateStats.skipped` names that `_build_ticket_scoped_jobs` (`frob.gates.
@@ -829,20 +768,15 @@ def _drop_untrustworthy_mass_stale_candidates(
 
 #: T-2011: PERF001-008 and PERF010-014 are fed exclusively from
 #: `frob.perf.perf_rules(snapshot, parsed)`, where `parsed` is exactly the
-#: file set `perf_gate`'s own `_perf_gate_candidate_paths` +
-#: `_perf_gate_parse_files` computes (same "has a registered tree-sitter
-#: grammar, and `parse_file` succeeded on it" test `frob.gates.
-#: _coverage_sites._perf_examined_sites` re-derives independently) --
-#: confirmed by reading `perf_gate`/`perf_rules` directly, not inferred
-#: from the "perf" family name. PERF009 (`frob.perf._ratchet.
-#: ratchet_violations`) is DELIBERATELY EXCLUDED: `perf_gate` reads it
-#: from `.frob/perf/ratchet_findings.json`, a precomputed `frob perf
-#: collect` artifact never derived from this run's own parse pass --
-#: `_perf_examined_sites` reports nothing about whether that artifact is
-#: fresh, so a PERF009 waiver's site being in the perf-examined set would
-#: not actually mean PERF009 itself was re-evaluated this run. Including
-#: PERF009 here would be the exact unsound "family name matches, so
-#: assume covered" mistake this ticket's brief warns against.
+#: file set `_perf_examined_sites` re-derives independently (confirmed by
+#: reading `perf_gate`/`perf_rules` directly, not inferred from the
+#: "perf" family name). PERF009 is DELIBERATELY EXCLUDED: `perf_gate`
+#: reads it from a precomputed `frob perf collect` artifact never
+#: derived from this run's own parse pass, so a PERF009 waiver's site
+#: being in the perf-examined set would not mean PERF009 was actually
+#: re-evaluated this run -- including it would be the exact unsound
+#: "family name matches, so assume covered" mistake this ticket warns
+#: against.
 _PERF_RULE_IDS = frozenset(
     {
         "PERF001",
@@ -1066,22 +1000,15 @@ def _waive004_target_rule(message: str) -> str | None:
     return match.group(1) if match else None
 
 
-# ---------------------------------------------------------------------------
-# SYS111 (T-2001): the capability-via-ratchet lock (`docs/design/registry/
-# capability-via-ratchet.lock.json`) was built as the sibling half of the
-# now-DELETED SYS100 auto-widening handlers (T-1531/T-1545, removed by
-# T-2922 -- see this file's "SYS100 auto-widening -- REMOVED" comment
-# block above): those handlers widened a node's grant in `design/
-# frob.strata`'s own via-lists, satisfying SYS100/SYS104 while leaving
-# this ratchet's committed ceiling stale, so the breach surfaced on a
-# LATER, unrelated land's SYS111 check instead of the one that caused it.
-# Measured twice in one hour (T-1977, T-1665) before this handler existed.
-# T-2922: with the SYS100 auto-widener gone, this handler's own
-# growth-attribution finds nothing new to bump in the ordinary case --
-# it is not deleted, since a human-authored `may=` widening (still a
-# legitimate, explicit action) can still grow the via-site count and
-# still needs its ratchet ceiling re-baselined the same way.
-# ---------------------------------------------------------------------------
+# SYS111 (T-2001): the capability-via-ratchet lock was built as the
+# sibling half of the now-deleted SYS100 auto-widening handlers (see this
+# file's "SYS100 auto-widening -- REMOVED" comment above): those handlers
+# widened a node's grant while leaving this ratchet's committed ceiling
+# stale, so the breach surfaced on a LATER, unrelated land's SYS111 check
+# instead of the one that caused it (measured twice in one hour, T-1977/
+# T-1665, before this handler existed). With the auto-widener gone
+# (T-2922), this handler is not deleted -- a human-authored `may=`
+# widening still needs its ratchet ceiling re-baselined the same way.
 
 
 def _frob_toml_tracked_at_head(root: Path) -> bool:
@@ -1310,6 +1237,7 @@ def _raw_capability_ratchet_lock(lock_path: Path) -> dict:
 
 
 # frob:enforces CHK-GATE-SYS111
+# frob:ticket T-4709
 def _apply_capability_ratchet_bumps(
     root: Path, current_counts: "dict[str, int]", before_counts: "dict[str, int]"
 ) -> list[FixApplied]:
@@ -1380,19 +1308,14 @@ def _apply_capability_ratchet_bumps(
         return []
     # frob:ticket T-4607
     if not _land_commit_in_progress(root):
-        # T-4607: this handler's own two current callers
-        # (`_land_cmd._sweep_apply_tier_a_pre_commit`/`_sweep_apply_
-        # tier_a_and_commit`) both run while `land()` holds `land.lock`
-        # for its whole run, so the write below normally lands inside
-        # that land's own composed commit -- but ANY other caller of
-        # Tier-A (an interactive `frob check --fix`, or a future sweep
-        # wiring) does not hold that lock, and writing the ratchet lock
-        # there rewrites the PLAIN root working tree with no commit
-        # absorbing it, leaving it dirty and DirtyMain-blocking the next
-        # land -- the exact T-4563 regression shape, for this module's
-        # OWN unconditional write rather than the one T-4563 already
-        # gated in `frob.strata._effects`. Growth is still reported as a
-        # real SYS111 violation by the gate itself; only the auto-bump
+        # T-4607: this handler's current callers run while `land()` holds
+        # `land.lock`, so the write below normally lands inside that
+        # land's own composed commit -- but any OTHER Tier-A caller
+        # (interactive `frob check --fix`, a future sweep) does not hold
+        # that lock, and writing here would dirty the plain root working
+        # tree with no commit absorbing it, DirtyMain-blocking the next
+        # land (the T-4563 regression shape, see that ticket). Growth is
+        # still reported as a real SYS111 violation; only the auto-bump
         # write is skipped here.
         _log.warning(
             "fix_sys111_capability_ratchet_sync: %d capability-ratchet "

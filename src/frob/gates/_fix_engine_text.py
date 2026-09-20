@@ -45,34 +45,18 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# FMT001 (T-1261): a diff-touched `frob:` directive comment line over the
-# project's configured line length -- `frob fmt` names itself as its own
-# remedy.
+# FMT001 (T-1261): a diff-touched `frob:` directive comment line over
+# the project's configured line length -- `frob fmt` names itself as
+# its own remedy.
 #
-# T-1391: `format_paths` being content-preserving everywhere it does NOT
-# rewrite (a line already canonical anywhere else in the tree is left
-# byte-for-byte alone by construction) does not make a whole-tree write
-# SAFE from a land-scope-discipline standpoint -- a rewrite of a file
-# outside a ticket's declared scope is still an out-of-scope WRITE, and
-# land's own guards then reject the land that produced it (measured for
-# real: `frob:waive` reason comments in an unrelated file mechanically
-# rewritten by lands that never touched it, forcing one agent to widen
-# its own ticket's scope record just to absorb the collateral edit).
+# T-1391: content-preserving everywhere it does NOT rewrite does not
+# make a whole-tree write SAFE from a land-scope-discipline standpoint
+# -- a rewrite outside a ticket's declared scope is still an
+# out-of-scope WRITE that land's own guards reject.
 # `fix_fmt001_directive_wrap`'s `only_paths` keyword restricts the
-# rewrite to a caller-supplied set of `root`-relative paths instead of
-# walking the whole tree; `only_paths=None` (the default) preserves the
-# original whole-tree behaviour verbatim -- what a standalone `frob
-# check --fix` still gets, and every existing caller until it opts in.
-# This mirrors `fix_waive004_stale_waiver`'s `gates`/`ticket` keyword-
-# only params below: a default-preserves-prior-behaviour scoping lever,
-# testable directly with no change needed at any `TIER_A_HANDLERS`/
-# `apply_tier_a_fixes` call site. Wiring a real caller (`frob ticket
-# land`'s pre-land absorption step, `src/frob/app/ticket_runner/
-# _land_cmd.py`, a different module) to actually pass its ticket's
-# touched-file set through `only_paths` is tracked as a follow-up,
-# outside this file's own scope.
-# ---------------------------------------------------------------------------
+# rewrite to a caller-supplied path set; `only_paths=None` (default)
+# preserves the original whole-tree behaviour. Wiring a real caller is
+# tracked as a follow-up, outside this file's scope.
 
 
 # frob:ticket T-2761
@@ -480,11 +464,9 @@ def _line_suppressions_for_fix(
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_mypy_suppres\
-# sed_ty_unsuppressed_gets_paired_suppression kind="unit"
+# tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression kind="unit"  # noqa: E501
 # frob:tests \
-# tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idempotent_s\
-# econd_fix_pass_is_a_no_op kind="unit"
+# tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idempotent_second_fix_pass_is_a_no_op kind="unit"  # noqa: E501
 def fix_suppress001_paired_suppression(
     root: Path, snapshot: GraphSnapshot
 ) -> list[FixApplied]:
