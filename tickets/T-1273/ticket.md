@@ -10,7 +10,7 @@ parent: T-0969
 tier: epic
 sprint: v0.541.0
 runs_last: false
-milestone: v0.551.0
+milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -24,6 +24,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: milestone
+  old_value: v0.551.0
+  new_value: 1.0.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: GIVEN this epic WHEN all child packages reach zero TEST005 findings at unit_branch_cov=75/module_line_cov=70
