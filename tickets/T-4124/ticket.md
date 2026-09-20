@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.540.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -65,6 +65,13 @@ scope_changes:
     per T-4124''s own audit findings'
   actor: logan
   at: '2026-09-06'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.540.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: set
   reason: 'flags scope_matches as the highest-priority site in this population: the
