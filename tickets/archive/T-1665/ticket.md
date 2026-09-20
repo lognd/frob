@@ -213,6 +213,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-10'
+body_changes:
+- mode: append
+  reason: 'T-4770: preserve removed-function names trimmed from _refs.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 2596
+  new_length: 2963
 evidence:
 - tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
 - tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
@@ -286,3 +293,11 @@ While here, check whether the existing REF001 waivers were compensating for the 
 
 ## Failure log
 - 2026-08-10 attempt 1: investigated, not landed: no resolved-import substrate exists in frob.graph (EdgeKind is directive-edges-only; callgraph.py excludes public/exported symbols by design); measured today's REF001 findings (2, both non-code, 0 waived) -- semantic rewrite would not change either. Design + prerequisite filed as T-1985, blocking this ticket.
+
+
+T-4770 follow-up (condensed from a comment in src/frob/gates/_refs.py,
+trimmed for DOCARCH002's 12-line cap): the removed text regex functions
+were _FROM_IMPORT_RE/_PLAIN_IMPORT_RE/_split_import_names/
+_python_import_targets. The removed false-comfort case was
+_tokens_reach's Python-only stem-matching branch, which could produce a
+bare stem/dotted-suffix guess.
