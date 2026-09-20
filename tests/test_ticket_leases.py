@@ -1400,15 +1400,15 @@ class TestCommitTicketLedgerChange:
 
 # frob:ticket T-2714
 # frob:ticket T-4290
+# frob:ticket T-4625
 class TestLedgerCommitRepairMarker:
-    """T-2714: a process killed strictly between `git add` and `git
-    commit` inside `_add_and_commit_tickets_md` used to strand the shared
-    root DIRTY, DirtyMain-blocking every other agent's land/ledger-write
-    until a human adjudicated by hand. `_repair_stale_ledger_commit_
-    markers` reconciles this the same way `frob.tickets._land`'s T-0907/
-    T-2679 marker families do: a marker recorded before `git add`, cleared
-    right after, reconciled -- by finishing the already-staged commit,
-    never by discarding it -- at the start of the NEXT ledger commit."""
+    """`_repair_stale_ledger_commit_markers` reconciles a process killed
+    strictly between `git add` and `git commit` inside
+    `_add_and_commit_tickets_md`, which would otherwise strand the shared
+    root dirty and DirtyMain-block every other agent's land/ledger-write.
+    A marker recorded before `git add`, cleared right after, is
+    reconciled -- by finishing the already-staged commit, never by
+    discarding it -- at the start of the next ledger commit."""
 
     def test_no_marker_is_a_silent_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
@@ -1516,23 +1516,18 @@ class TestLedgerCommitRepairMarker:
 
     # frob:ticket T-4273
     # frob:ticket T-4290
+    # frob:ticket T-4625
     def test_resolved_race_clears_the_marker_without_a_false_alarm(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_\
         # clears_the_marker_without_a_false_alarm  # noqa: E501
-        """T-4273: the marker's premise -- "content was written but the
-        commit was lost" -- is FALSE when a concurrent call already
-        committed the exact same pathspecs first. Reproduced by calling
-        `_finish_ledger_commit_marker` directly against pathspecs that are
-        ALREADY clean (as they would be right after a sibling call's
-        commit landed): its own `git add` is then a no-op and `git commit
-        -- <pathspecs>` fails with git's "nothing to commit" on stdout and
-        an empty stderr -- the exact signature the real incident's
-        `returncode=1 stderr=''` log line showed. This must clear the
-        marker and log the resolved-race explanation, never the "needs a
-        human" alarm the old blind-retry code always raised here."""
+        """When a concurrent call already committed the marker's exact
+        pathspecs first (git's "nothing to commit" on stdout, empty
+        stderr), `_finish_ledger_commit_marker` must clear the marker and
+        log the resolved-race explanation, never a "needs a human"
+        alarm."""
         import logging
 
         from frob.tickets import transition
@@ -1723,6 +1718,7 @@ class TestTicketsLedgerLockRelSingleSource:
 
 # frob:ticket T-1619
 # frob:ticket T-4314
+# frob:ticket T-4625
 class TestRefuseIfLandInProgress:
     """T-1619: `refuse_if_land_in_progress` -- the exclusive-lease probe
     every ledger-committing verb now runs (via `_add_and_commit_tickets_md`)
@@ -1741,13 +1737,11 @@ class TestRefuseIfLandInProgress:
         assert result.is_ok
 
     # frob:ticket T-3612
+    # frob:ticket T-4625
     def test_refuses_while_land_lock_held(self, repo: Path, caplog) -> None:
-        """T-3612: contract changed -- `land.lock` held for a land's
-        whole slow phase (gates/precheck), with `tickets.lock` untouched,
-        is the EXACT starvation window this ticket closes:
-        `refuse_if_land_in_progress` now probes `tickets.lock` only, so
-        a live `land.lock` holder no longer refuses anything by itself
-        (this test used to assert the opposite, pre-T-3612)."""
+        """`refuse_if_land_in_progress` probes `tickets.lock` only -- a
+        live `land.lock` holder (held for a land's whole slow phase:
+        gates/precheck) must not refuse anything by itself."""
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         import fcntl
@@ -1771,12 +1765,12 @@ class TestRefuseIfLandInProgress:
             os.close(holder_fd)
 
     # frob:ticket T-3612
+    # frob:ticket T-4625
     def test_refuses_while_ledger_lock_held(self, repo: Path, caplog) -> None:
-        """T-3612: the narrowed replacement for the old land.lock-based
-        assertion above -- `tickets.lock` held (the land's actual splice,
-        or any other ledger write) DOES still refuse, and still names
-        the correlated `land.lock` holder (best-effort) in its log line
-        when one happens to be recorded too."""
+        """`tickets.lock` held (the land's actual splice, or any other
+        ledger write) must still refuse, and still name the correlated
+        `land.lock` holder (best-effort) in its log line when one happens
+        to be recorded too."""
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         import fcntl
@@ -2128,24 +2122,18 @@ class TestRefuseIfLandInProgress:
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
     )
+    # frob:ticket T-4625
     def test_belt_and_braces_process_scan_without_the_lock_file(
         self, repo: Path, caplog
     ) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
-        """T-3612: contract changed -- T-1619's original requirement
-        (refuse even with NO land.lock held, as long as a real `frob
-        ticket land`-shaped process is alive with `root` as its cwd)
-        applied to a check that refused for a land's WHOLE duration.
-        T-3612 deliberately removes this belt-and-braces process scan
-        from `refuse_if_land_in_progress` specifically: the resource
-        that check now probes is `tickets.lock` itself, which a live
-        land process that has not yet reached its splice does not hold,
-        so a filing verb must NOT be refused here just because a land
-        process exists somewhere (this test used to assert the
-        opposite, pre-T-3612). `_scan_for_live_land_process` itself is
-        untouched and still backs `_land_in_progress_for_ticket`'s own,
-        separate lease-staleness use -- only THIS choke point stopped
-        consulting it."""
+        """A live `frob ticket land`-shaped process that has not yet
+        reached its `tickets.lock` splice must not refuse a filing verb
+        here just because it exists -- `refuse_if_land_in_progress`
+        probes `tickets.lock` only, not a belt-and-braces process scan.
+        `_scan_for_live_land_process` itself is untouched and still backs
+        `_land_in_progress_for_ticket`'s own, separate lease-staleness
+        use."""
         from frob.tickets._leases import refuse_if_land_in_progress
 
         assert not (repo / ".frob" / "land.lock").exists()
@@ -2353,13 +2341,13 @@ class TestRefuseIfLandInProgress:
 
 
 # frob:ticket T-1779
+# frob:ticket T-4625
 class TestDispatchLandGuard:
-    """T-1779: `_refuse_if_land_in_progress_for_dispatch` -- the
-    pre-dispatch closing of gap 1 (`refuse_if_land_in_progress` used to
-    run only at COMMIT time, inside `_add_and_commit_tickets_md`, after a
-    mutating verb's handler had already written its change to the
-    working tree). This guard runs BEFORE `handler(root, cfg)` for every
-    verb except the read-only allowlist and land's own exempt set."""
+    """`_refuse_if_land_in_progress_for_dispatch` runs
+    `refuse_if_land_in_progress` before `handler(root, cfg)`, for every
+    verb except the read-only allowlist and land's own exempt set -- so a
+    mutating verb's handler never writes to the working tree before the
+    refusal check runs."""
 
     # frob:ticket T-3612
     def test_refuses_mutating_verb_while_land_in_progress(
@@ -2429,17 +2417,16 @@ class TestDispatchLandGuard:
             os.close(holder_fd)
 
     # frob:ticket T-2714
+    # frob:ticket T-4625
     def test_orphaned_squash_residue_is_reclaimed_before_a_mutating_verb_dispatches(
         self, repo: Path
     ) -> None:
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
-        """T-2714: `reclaim_orphaned_squash_residue` used to be reachable
-        ONLY from inside `land()` itself -- a killed land's staged residue
-        stayed DirtyMain-stranded until someone happened to run `land`
-        again, blocking every OTHER mutating verb in the meantime. The
-        pre-dispatch guard now reclaims it for ANY non-exempt, non-
-        read-only verb too, BEFORE the DirtyMain-adjacent refusal below
-        even has a chance to fire on residue that is safely reclaimable."""
+        """The pre-dispatch guard reclaims orphaned squash residue (a
+        killed land's staged, DirtyMain-stranded content) for any
+        non-exempt, non-read-only verb, before the DirtyMain-adjacent
+        refusal below even has a chance to fire on residue that is
+        safely reclaimable -- not only from inside `land()` itself."""
         from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
         from frob.tickets._land import _write_land_repair_marker
 
@@ -2890,6 +2877,7 @@ class TestOrphanedTicketLocks:
 
 
 # frob:ticket T-1789
+# frob:ticket T-4625
 class TestReleaseOrphanedLease:
     """T-1779 finding 7: `release_orphaned_lease` -- the SAFE, targeted
     release primitive (`frob worktree release-lease TICKET-ID`) that
@@ -3077,12 +3065,13 @@ class TestReleaseOrphanedLease:
         assert result.is_ok, result
         assert not lease_file.exists()
 
+    # frob:ticket T-4625
     def test_refuses_an_in_progress_ticket_lease_on_a_live_worktree(
         self, repo: Path, second_worktree: Path
     ) -> None:
-        """T-2048 acceptance 3: no over-reach -- a NON-terminal
-        (`in-progress`) ticket's lease on a live worktree, fresh TTL,
-        must still refuse exactly as before this ticket."""
+        """A non-terminal (`in-progress`) ticket's lease on a live
+        worktree, fresh TTL, must still refuse -- `release_orphaned_lease`
+        must not over-reach into a genuinely live lease."""
         # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
         from frob.tickets._leases import (
             LeaseError,
@@ -3390,15 +3379,13 @@ class TestLeaseStalenessReason:
 
 
 # frob:ticket T-4172
+# frob:ticket T-4625
 class TestReadAllLeasesReconciliation:
-    """T-4172: `read_all_leases` -- the function every scope-collision
-    check (`frob.tickets._scope`) calls -- must not go on reporting a
-    lease whose OWN ticket has already finished on the ledger, even
-    though the lease's worktree is still perfectly live. Before this
-    ticket, `read_all_leases` pruned on worktree liveness alone, so a
-    lease left behind by a ticket that reached `done`/`dropped` through
-    a path that skipped `release_lease` outlived its ticket forever and
-    kept blocking any new colliding scope."""
+    """`read_all_leases` (which every scope-collision check in
+    `frob.tickets._scope` calls) must not go on reporting a lease whose
+    own ticket has already reached a terminal state on the ledger, even
+    though the lease's worktree is still perfectly live -- worktree
+    liveness alone is not enough to keep a lease active."""
 
     def test_terminal_lease_does_not_block(
         self, repo: Path, second_worktree: Path
@@ -3502,6 +3489,7 @@ class TestReadAllLeasesReconciliation:
 
 
 # frob:ticket T-1789
+# frob:ticket T-4625
 class TestWorktreeReleaseLeaseCli:
     """`frob worktree release-lease TICKET-ID`'s CLI entry point."""
 
@@ -3529,21 +3517,16 @@ class TestWorktreeReleaseLeaseCli:
         assert "released orphaned lease for T-9001" in out
         assert not lease_file.exists()
 
+    # frob:ticket T-4625
     def test_release_lease_cli_releases_a_scope_diverged_lease(
         self, repo: Path, second_worktree: Path, capsys
     ) -> None:
-        """T-2175: a lease whose recorded `scope` shares NOTHING with the
-        ticket's own CURRENT declared scope in the ledger is exactly the
-        real incident shape -- an id that briefly belonged to a different
-        ticket before being renumbered, leaving a stale lease recorded
-        under the OLD identity's scope pointing at a worktree that still
-        exists and a ticket id that still resolves (so none of T-1806's
-        path-gone/ticket-gone/ticket-terminal shapes fire), with `recorded_
-        at` set to right now (so `holder-dead`'s TTL gate cannot fire
-        either, no matter how long this actually sat). FAILS FIRST against
-        current main: `release_orphaned_lease`/`lease_staleness_reason`
-        have no shape for this at all, so `release-lease` refuses with the
-        canned LeaseWorktreeMismatch message and exits 1."""
+        """`frob worktree release-lease` must release a lease whose
+        recorded `scope` shares nothing with the ticket's own current
+        declared scope in the ledger, even though the lease's worktree
+        still exists, its ticket id still resolves, and `recorded_at` is
+        too fresh for a TTL-based staleness reason to fire -- none of
+        those other staleness shapes cover a scope-diverged lease."""
         # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
         import os as _os
 
@@ -3683,6 +3666,7 @@ class TestWorktreeReleaseLeaseCli:
 
 
 # frob:ticket T-1130
+# frob:ticket T-4625
 class TestNewDropFailAutoCommit:
     """T-1130: `frob ticket new`/`drop`/`fail` each auto-commit their own
     ledger write (parity with `start`'s T-1054 auto-commit) unless
@@ -3735,17 +3719,16 @@ class TestNewDropFailAutoCommit:
         assert status.stdout.strip() != ""
 
     # frob:ticket T-1891
+    # frob:ticket T-4625
     def test_new_without_no_commit_never_warns_dirty(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_new_without_no_commit_never_warns_dirty  # noqa: E501
-        """T-1891: reproduces the 2026-08-09 coordinator incident directly
-        -- plain `frob ticket new` (no `--no-commit` anywhere) must never
+        """Plain `frob ticket new` (no `--no-commit` anywhere) must never
         print 'left DIRTY by --no-commit', because it always commits for
-        real. The warning used to fire from `new_ticket`'s OWN internal
-        batching call (`no_commit=True`, purely to defer the commit to
-        `_new`'s outer call a few lines later in the SAME command), which
-        is genuinely dirty at that instant but never left that way."""
+        real -- even though `new_ticket`'s own internal batching call
+        passes `no_commit=True` purely to defer the commit to `_new`'s
+        outer call a few lines later in the same command."""
         import logging
 
         main_repo = tmp_path / "main"
@@ -3857,18 +3840,14 @@ class TestNewDropFailAutoCommit:
 
 
 # frob:ticket T-1758
+# frob:ticket T-4625
 class TestNewTicketProgrammaticAutoCommit:
-    """T-1758: `new_ticket` (the LIBRARY function, called directly rather
-    than through the `frob ticket new` CLI verb) auto-commits its own
-    ledger write -- the structural fix for the gap T-1755 first hit and
-    patched with a per-caller wrapper (`_rapid_sweep._commit_regression_
-    ticket`): T-1615's uniform auto-commit only ever covered the CLI
-    dispatch table, never a programmatic caller like
+    """`new_ticket` (the library function, called directly rather than
+    through the `frob ticket new` CLI verb) auto-commits its own ledger
+    write, so a programmatic caller like
     `frob.tickets._mutation_sweep_queue`, `frob.testing._stability`,
-    `frob.app.sys_runner`, or `frob.fleet` -- all of which call
-    `new_ticket` directly and, before this fix, left `tickets.md`
-    uncommitted every time, DirtyMain-blocking the next `frob ticket
-    land` repo-wide."""
+    `frob.app.sys_runner`, or `frob.fleet` never leaves `tickets.md`
+    uncommitted and DirtyMain-blocking the next `frob ticket land`."""
 
     def test_programmatic_call_auto_commits(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit.test_programmatic_call_auto_commits  # noqa: E501
@@ -4378,17 +4357,15 @@ class TestRenameLease:
 
 
 # frob:ticket T-1173
+# frob:ticket T-4625
 class TestRenumberMigratesLeaseEndToEnd:
-    """T-1173 regression, real draft+lease fixture end to end: a ticket
-    filed off the default branch (minting a provisional T-draft-XXXXXXXX
-    id), started IN_PROGRESS in that same worktree (recording its lease
-    under the draft id), then renumbered to a final id in the SAME
-    worktree (`renumber_one`/`finalize_draft_for_land`, exactly what
-    `frob ticket land` does) must leave the worktree still holding a
-    resolvable lease under the FINAL id -- the incident T-1172's close
-    hit: the lease was left behind under the old draft id, so a
-    subsequent `frob check --ticket <final-id>` in that same worktree saw
-    no recorded lease at all."""
+    """A ticket filed off the default branch (minting a provisional
+    `T-draft-XXXXXXXX` id), started in-progress in that same worktree
+    (recording its lease under the draft id), then renumbered to a final
+    id in the same worktree (`renumber_one`/`finalize_draft_for_land`,
+    exactly what `frob ticket land` does) must leave the worktree still
+    holding a resolvable lease under the final id, never behind under the
+    old draft id."""
 
     def test_renumber_one_migrates_the_lease_the_worktree_still_holds(
         self, repo: Path, second_worktree: Path

@@ -277,14 +277,12 @@ def test_fourth_attempt_needs_the_ack_again(tmp_path: Path):
 
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-4625
 def test_ack_prefixed_first_attempt_is_allowed_through(tmp_path: Path):
-    """T-3071: `FROB_SUGGEST_ACK=1 <command>` passes on the FIRST
-    encounter of that command string, not only from the third attempt
-    onward -- a caller who already knows the raw command is right should
-    not have to eat a block and blindly re-run the exact same string
-    just to prove it. Must FAIL against pre-T-3071 main: the old
-    `_escalate` denied unconditionally on attempt 1 regardless of
-    `acked`."""
+    """`FROB_SUGGEST_ACK=1 <command>` must pass on the first encounter of
+    that command string, not only from a later attempt -- a caller who
+    already knows the raw command is right should not have to eat a
+    block and blindly re-run the exact same string just to prove it."""
     # frob:tests tests/test_hook_frob_suggest.py::test_ack_prefixed_first_attempt_is_allowed_through  # noqa: E501
     home = tmp_path / "home"
     root = tmp_path / "repo"
@@ -429,10 +427,11 @@ def test_floor_count_still_fires_on_a_genuine_counting_pipeline(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
+# frob:ticket T-4625
 def test_floor_count_stays_quiet_when_grepping_a_rule_id(tmp_path: Path):
-    """T-2908: listing findings by rule id is the single most common
-    legitimate need this rule used to block outright with no usable
-    alternative -- `| grep LANG003` must now stay quiet."""
+    """Grepping `frob check` output for a rule id (e.g. `| grep LANG003`),
+    a severity filter, or a plain `tail` must stay quiet -- a legitimate,
+    common need this rule must not block."""
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
@@ -488,12 +487,12 @@ def test_raw_worktree_still_fires(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
+# frob:ticket T-4625
 def test_raw_worktree_no_longer_recommends_enterworktree(tmp_path: Path):
-    """T-2908: the old recommendation (EnterWorktree) pins the whole
-    session cwd, hard-blocks concurrent agents, and refuses outright from a
-    subagent -- exactly the audience this nudge fires for most often. The
-    message must steer toward `frob ticket work` and explicitly warn off
-    EnterWorktree, not recommend it as the primary fix."""
+    """A raw `git worktree add` must be steered toward `frob ticket work`
+    and explicitly warned off EnterWorktree (which pins the whole session
+    cwd, hard-blocks concurrent agents, and refuses outright from a
+    subagent), not recommend EnterWorktree as the primary fix."""
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
@@ -523,11 +522,11 @@ def test_hand_edit_ledger_still_fires_on_the_real_ledger(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
+# frob:ticket T-4625
 def test_hand_edit_ledger_stays_quiet_on_an_unrelated_file(tmp_path: Path):
-    """T-2908 audit finding: the pattern matched "tickets.md" as a bare
-    SUBSTRING with no trailing boundary, so an unrelated file like
-    `tickets.md.example` false-positived. Demonstrated directly: `sed -i
-    's/x/y/' docs/tickets.md.example` used to block."""
+    """`sed -i 's/x/y/' docs/tickets.md.example` (a file whose name merely
+    contains "tickets.md" as a substring, not the real ledger) must not
+    block."""
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
@@ -550,11 +549,11 @@ def test_recursive_grep_still_fires_unscoped_at_repo_root(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
+# frob:ticket T-4625
 def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path):
-    """T-2908 audit finding: same false-positive shape as `raw-find-name`
-    -- `grep -rn 'foo' src/frob/strata` cannot walk .venv/, .git/, or a
-    sibling worktree, but used to block anyway with no negative pattern at
-    all."""
+    """`grep -rn 'foo' src/frob/strata` (scoped to a real subdirectory,
+    unable to walk .venv/, .git/, or a sibling worktree) must stay
+    quiet."""
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
@@ -621,12 +620,12 @@ def test_make_target_still_fires_at_command_position(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2927
+# frob:ticket T-4625
 def test_make_target_stays_quiet_as_prose_in_a_commit_message(tmp_path: Path):
-    """T-2927: `make-target` has no dedicated negative pattern of its own,
-    but `_POS`'s command-position anchor (shared by every rule) already
-    keeps it quiet for a prose mention inside quoted text -- e.g. a git
-    commit message describing what changed. No test previously exercised
-    this for `make-target` specifically."""
+    """A `make` target named only in prose inside quoted text (e.g. a git
+    commit message describing what changed) must stay quiet, via
+    `_POS`'s shared command-position anchor -- `make-target` has no
+    dedicated negative pattern of its own."""
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
@@ -871,6 +870,7 @@ def test_hand_rename_sed_still_fires_when_import_is_in_the_script_itself(
     assert "frob refactor" in reason
 
 
+# frob:ticket T-4625
 class TestHandRenameEditMultifile:
     """T-3069's second high-precision signal: the SECOND-and-later Edit in
     a session that rewrites an existing import of the SAME module in a
@@ -944,11 +944,12 @@ class TestHandRenameEditMultifile:
 
     # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
     # frob:ticket T-3069
+    # frob:ticket T-4625
     def test_refactor_residue_prose_fix_never_fires(self, tmp_path: Path):
-        """Must-stay-quiet: fixing residue the refactor verb deliberately
-        does not rewrite (a docstring/anchor citation) is correct
-        behaviour, not a violation (T-2989's own hand-fixed-6-citations
-        case) -- the OLD string has no import line at all."""
+        """Fixing residue the refactor verb deliberately does not rewrite
+        (a docstring/anchor citation whose old string has no import line
+        at all) must stay quiet -- it is correct behaviour, not a
+        violation."""
         home = tmp_path / "home"
         root = tmp_path / "repo"
         _init_repo(root)

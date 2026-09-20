@@ -1,7 +1,7 @@
 ---
 id: T-4625
 title: 'Clean docstrings: test_ticket_leases/hook_frob_suggest/graph (DOCARCH001)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-09-19'
@@ -28,12 +28,15 @@ triage_changes:
   reason: child of T-4421 docarch debloat split
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 designated_repro_test: null
 acceptance:
 - text: Given a frob check scoped to tests/test_ticket_leases.py, tests/test_hook_frob_suggest.py,
     tests/test_graph.py, when DOCARCH001 is measured, then the combined finding count
     is 0
-  evidence: []
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 threat: null
 component: null
 anchor: false

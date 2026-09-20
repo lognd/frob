@@ -725,6 +725,7 @@ class TestParseFailures:
         assert snap.parse_failures == ()
 
 
+# frob:ticket T-4625
 class TestBuildIncremental:
     def _tree(self, tmp_path: Path) -> Path:
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -848,18 +849,19 @@ class TestBuildIncremental:
         assert "frob" in graph_cache._FINGERPRINT_PACKAGES
         assert "frob-strata" in graph_cache._FINGERPRINT_PACKAGES
 
+    # frob:ticket T-4625
     def test_stored_hash_matches_bytes_actually_parsed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/graph/__init__.py::_parse_source_file_fresh
-        """T-0433 (G7 fix): the row `build_graph` stores for a reparsed file
-        carries `parsed.content_hash` -- the hash of the bytes `frob.lang`
-        itself read and parsed -- not a hash the caller read separately
-        beforehand. Simulate the old TOCTOU by making the early decision
-        hash (`frob.graph._content_hash`) return a value that does NOT
-        match what `parse_file` will actually hash; if the fix regressed
-        back to storing that stale value, the stored hash would equal the
-        deliberately-wrong decision hash instead of the real parsed hash."""
+        """The row `build_graph` stores for a reparsed file carries
+        `parsed.content_hash` -- the hash of the bytes `frob.lang` itself
+        read and parsed -- never a hash the caller read separately
+        beforehand. Simulates a TOCTOU by making the early decision hash
+        (`frob.graph._content_hash`) return a value that does not match
+        what `parse_file` will actually hash; the stored hash must still
+        equal the real parsed hash, never the deliberately-wrong decision
+        hash."""
         import frob.graph as graph_mod
 
         root = self._tree(tmp_path)
@@ -954,6 +956,7 @@ class TestMalformedFileVisibility:
         )
 
 
+# frob:ticket T-4625
 class TestExclude:
     """`[graph] exclude` in frob.toml is additive to the built-in dir excludes.
 
@@ -1000,14 +1003,14 @@ class TestExclude:
         assert "src/a.py" in paths
         assert not any(".claude/worktrees" in p for p in paths)
 
+    # frob:ticket T-4625
     def test_claude_hooks_are_walked_not_pruned(self, tmp_path: Path) -> None:
-        """T-1838: `.claude` used to be a `BUILTIN_SKIP_DIRS` name-match, so
-        `.claude/hooks/**` -- a real, non-nested-worktree source dir --
-        was pruned by name before `os.walk` ever descended into it, making
-        every `frob:waive` comment placed there permanently invisible to
-        the graph that resolves waivers. Nested `.claude/worktrees/agent-*`
-        checkouts must still prune (own `.git` dir, covered by the
-        preceding test); `.claude/hooks/**` must not."""
+        """`.claude/hooks/**` -- a real, non-nested-worktree source dir --
+        must be walked, not pruned, so a `frob:waive` comment placed there
+        is visible to the graph that resolves waivers. Nested
+        `.claude/worktrees/agent-*` checkouts must still prune (own `.git`
+        dir, covered by the preceding test); `.claude/hooks/**` must
+        not."""
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
         _write(
             tmp_path,
@@ -1020,16 +1023,15 @@ class TestExclude:
         assert "src/a.py" in paths
         assert ".claude/hooks/dispatch-telemetry.py" in paths
 
+    # frob:ticket T-4625
     def test_walk_source_files_prunes_before_descent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """`_walk_repo_files` never calls `os.walk` into an excluded
         subtree -- directory pruning happens via `dirnames[:]` before the
         walk descends, not by filtering files after a full traversal
-        (T-0239's actual perf bug: filtering post-walk still pays the full
-        `os.walk`/stat cost of every excluded subtree). T-0245 merged the
-        old `_walk_source_files`/`_walk_doc_files` pair into one combined
-        walk; this still exercises the source-file half of it."""
+        (which would still pay the full `os.walk`/stat cost of every
+        excluded subtree)."""
         import os as os_mod
 
         from frob.graph import _walk_repo_files
@@ -1059,14 +1061,14 @@ class TestExclude:
 
     # frob:ticket T-0544
     # frob:ticket T-0561
+    # frob:ticket T-4625
     def test_walk_repo_files_classifies_top_level_readme_as_doc(
         self, tmp_path: Path
     ) -> None:
-        """T-0544: a `frob:describes` anchor in README.md (or any other
-        top-level *.md note) must be discoverable -- before this fix,
-        `_walk_repo_files` only ever classified files under `docs/` as doc
-        files, so a repo-root README.md was silently invisible to the
-        design graph and its DESCRIBES edge never existed."""
+        """A `frob:describes` anchor in a top-level `*.md` note (README.md
+        included, not only files under `docs/`) must be discoverable:
+        `_walk_repo_files` classifies both as doc files, a nested
+        `notes/deep.md` as neither."""
         from frob.graph import _walk_repo_files
 
         _write(tmp_path, "README.md", "# Title\n")
@@ -1431,14 +1433,12 @@ class TestCorruptCacheRecovery:
 
 
 # frob:ticket T-1239
+# frob:ticket T-4625
 class TestSchemaLockContentionRecovery:
     """`_apply_schema_with_recovery` must tell lock contention (a
     concurrent process's own in-flight schema migration) apart from real
-    corruption (T-1239): before this fix, a "database is locked"
-    `OperationalError` -- caught by the pre-fix `except DatabaseError`,
-    since `OperationalError` subclasses it -- triggered a delete-and-
-    recreate exactly like real corruption, racing a concurrent writer and
-    surfacing as a THIRD process's "no such table: files"."""
+    corruption: a "database is locked" `OperationalError` must retry, not
+    trigger a delete-and-recreate."""
 
     # frob:tests src/frob/graph/cache.py::_apply_schema_with_recovery
     def test_locked_error_retries_instead_of_recreating(
@@ -1893,6 +1893,7 @@ class TestCacheModule:
             ro_conn.close()
 
 
+# frob:ticket T-4625
 class TestConcurrentCache:
     # frob:ticket T-0029
     def test_concurrent_connections_do_not_raise_disk_io(self, tmp_path):
@@ -1928,21 +1929,16 @@ class TestConcurrentCache:
             assert all(f.result() for f in futures)
 
     # frob:ticket T-0232
+    # frob:ticket T-4625
     def test_connect_on_current_schema_does_not_block_on_a_held_write_lock(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/graph/cache.py::connect
-        """T-0232: `connect()` on an already-initialized, current-schema db
-        must not itself take a write lock -- `_apply_schema` used to run
-        `CREATE TABLE IF NOT EXISTS` unconditionally on every connect, and
-        sqlite always treats DDL as a write regardless of whether it
-        changes anything. That meant every read-only caller (e.g.
-        `load_graph`, or a concurrent gate job) queued behind any other
-        process's write transaction on this same db, even though it had no
-        actual data to write. Pin the fix: a second connection to a db
-        already at the current schema version must return promptly while a
-        different connection is mid-write (holds an uncommitted insert),
-        instead of blocking for anywhere near the 30s busy timeout."""
+        """`connect()` on an already-initialized, current-schema db must not
+        itself take a write lock: a second connection must return
+        promptly while a different connection is mid-write (holds an
+        uncommitted insert), instead of blocking for anywhere near the
+        30s busy timeout."""
         import time
         from concurrent.futures import ThreadPoolExecutor
 
@@ -2844,6 +2840,7 @@ class TestVerifyImportsTransitiveReachability:
 
 
 # frob:ticket T-0998
+# frob:ticket T-4625
 class TestScopePrivateHelperGaps:
     """`frob.graph.callgraph.scope_private_helper_gaps` (T-0998 direction
     3): scoped code calling a private helper defined outside scope is
@@ -2958,18 +2955,17 @@ class TestScopePrivateHelperGaps:
         assert gaps[0].callee == "flat/test_b.py::_git"
 
     # frob:ticket T-4286
+    # frob:ticket T-4625
     def test_flat_dir_imported_helper_shared_name_only_flags_the_real_import(
         self, tmp_path: Path
     ) -> None:
-        """T-4286: the residual false-positive T-1012 did not cover -- a
-        caller that reaches a shared private helper through a real
-        IMPORT (not a same-file definition of its own) used to resolve
-        against every sibling file in the flat directory defining the
-        same short name, one false gap per unrelated sibling. Here three
-        sibling files each define their own private `_write`; the caller
-        imports ONLY `flat/helpers_a.py`'s -- only that one may be
-        flagged, the other two same-named, never-imported `_write`
-        definitions must not appear at all."""
+        """When a caller reaches a shared private helper through a real
+        import (not a same-file definition), `scope_private_helper_gaps`
+        must resolve it against only the imported definition -- never
+        against every sibling file in the flat directory that happens to
+        define the same short name. Three sibling files each define their
+        own private `_write`; the caller imports only
+        `flat/helpers_a.py`'s, so only that one may be flagged."""
         # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
         from frob.graph.callgraph import scope_private_helper_gaps
 
