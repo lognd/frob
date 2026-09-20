@@ -9,7 +9,7 @@ created: '2026-09-19'
 priority: high
 parent: null
 tier: story
-sprint: null
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -18,6 +18,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: story is a tracking parent; work happens in 4 leaf tickets
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.536.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: '2026-09-19: record the cross-story ordering on .claude/hooks/tool-call-telemetry.py
