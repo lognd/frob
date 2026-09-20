@@ -1,5 +1,5 @@
 ---
-id: T-draft-94870246
+id: T-5139
 title: 'Missing or failing external tools are loud: one tool registry, Result-typed
   adapters, an UNMEASURED summary block at the end of every check and land, non-zero
   exit when a relevant tool is absent'
