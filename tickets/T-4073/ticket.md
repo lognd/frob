@@ -8,7 +8,7 @@ created: '2026-09-06'
 priority: high
 parent: T-4071
 tier: ticket
-sprint: null
+sprint: v0.538.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -27,6 +27,13 @@ scope_changes:
     per the ticket''s own ''positive control, failing test first, evidence'' instruction.
 
     '
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
