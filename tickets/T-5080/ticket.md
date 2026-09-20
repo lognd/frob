@@ -1,5 +1,5 @@
 ---
-id: T-draft-1225aa76
+id: T-5080
 title: 'DECISION: kernel extension domain 8/8 -- kerberos (realm/kdc/spn/delegation/trusts),
   a third graph beside Node/Flow and vmodel: desugar to the six primitives, or record
   as an extension?'
