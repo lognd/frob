@@ -32,6 +32,13 @@ body_changes:
   at: '2026-09-19'
   old_length: 2839
   new_length: 3718
+- mode: set
+  reason: repair the DOC006 rewrite that left 'NO a sys-split tool tool' and restore
+    the hierarchy section in one coherent body
+  actor: logan
+  at: '2026-09-19'
+  old_length: 3718
+  new_length: 3734
 designated_repro_test: null
 threat: null
 component: null
@@ -62,7 +69,7 @@ D-M4 kernel: exactly ONE new attribute, `module` on Node. Nothing else. No
 Module primitive, no module-level flows, no module trust levels.
 D-M5 partition: KEEP the 11 modules of the proposal (platform, tickets, graph,
 gates, strata, vet, deploy, natives, serve, app, test).
-D-M6 OVERRIDDEN: there will be NO a sys-split tool tool. The split of
+D-M6 OVERRIDDEN: there will be no sys-split tool; the owner rejected one. The split of
 design/frob.strata is a one-time reviewed rewrite done by agents, module by
 module, with the 111 duplicate declaration lines (SF-10) removed in the
 process. The migration must NOT leave a half-split state on dev: each module
@@ -84,7 +91,6 @@ Refused by construction (section 5 of the proposal): wildcard imports, implicit
 re-export, global name fallback, string-path cross-module references,
 module-level flows, auto-generated exports, `part of` fragments as the
 modularity story.
-
 
 ## Module hierarchy (D-M9, owner 2026-09-19 19:30)
 
