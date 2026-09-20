@@ -1,7 +1,7 @@
 ---
 id: T-5075
 title: same_worktree_lease rescans all leases on every ticket-holder pair
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -15,10 +15,42 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_leases.py
+- src/frob/tickets/_doable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator design: thread a leases snapshot down from doable() to same_worktree_lease'
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: test_real_repo_ledger_is_tick008_clean completes well within its Windows CI
