@@ -2,7 +2,7 @@
 id: T-4952
 title: kernel.md:29 claims no other kernel extension exists or is planned; eight domains
   and ~79 non-sugar keywords say otherwise
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-09-19'
@@ -21,6 +21,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_kernel_doc_extensions.py::test_law_one_record_present_for_each_domain
+- tests/unit/strata/test_kernel_doc_extensions.py::test_all_eight_extension_domains_are_named
+- tests/unit/strata/test_kernel_doc_extensions.py::test_false_no_other_extension_claim_is_gone
 designated_repro_test: null
 acceptance:
 - text: Given docs/strata/kernel.md:29 states verbatim 'no other kernel extension
@@ -29,17 +33,23 @@ acceptance:
     vmodel, policy, host/ACL, kerberos), when this lands, then that sentence is gone
     and all eight domains are named as deliberate extensions -- a docs check that
     fails at HEAD c8f56ef10.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_kernel_doc_extensions.py::test_law_one_record_present_for_each_domain
+  - tests/unit/strata/test_kernel_doc_extensions.py::test_false_no_other_extension_claim_is_gone
 - text: 'Given charter law 1 is ''the prover never learns a domain word'', when each
     domain is named, then it carries a law-1 record stating what crosses into the
     prover and what stays Python-side, using the audit''s test: law-1-bearing means
     the elaborator does not desugar it into the six primitives.'
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_kernel_doc_extensions.py::test_all_eight_extension_domains_are_named
+  - tests/unit/strata/test_kernel_doc_extensions.py::test_law_one_record_present_for_each_domain
 - text: Given whether each domain should be desugared or declared a recorded extension
     is one decision per domain blocked by the module-system story, when this lands,
     then it documents the eight domains AS THEY ARE today and pre-empts none of those
     decisions.
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_kernel_doc_extensions.py::test_all_eight_extension_domains_are_named
+  - tests/unit/strata/test_kernel_doc_extensions.py::test_false_no_other_extension_claim_is_gone
 threat: null
 component: strata
 anchor: false
