@@ -90,6 +90,13 @@ scope_changes:
     the static-using fallback hijack a member-access base'
   actor: logan
   at: '2026-09-16'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _capability_csharp.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 1057
+  new_length: 2848
 evidence:
 - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_plain_using_namespace_resolves_fs_write
 - tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_using_alias_follows_to_the_same_capability
@@ -126,3 +133,33 @@ GIVEN a .cs file with 'using System.IO;' and a File.WriteAllText call, WHEN frob
 GIVEN 'using IO = System.IO;' (an alias) and a call through the alias, WHEN scanned, THEN the resolver follows the alias to the same capability.
 GIVEN 'using static System.Console;' and a bare WriteLine call, WHEN scanned, THEN the static-using resolves to the correct fully-qualified symbol.
 GIVEN a .cs file with no dangerous APIs, WHEN scanned, THEN zero findings (no false positives from the wired resolver).
+
+T-4718 sweep (condensed from src/frob/vet/_capability_csharp.py:19-43,
+trimmed for DOCARCH002's 12-line cap): the trimmed block's full original
+text, kept verbatim below.
+
+# --------------------------------------------------------------- csharp (T-4536)  # noqa: E501
+#
+# C# static-binding resolution (docs/design/capability-evasion-taxonomy.md's
+# csharp lineage -- the sixth per-language resolver after python/TS/rust/
+# c-cpp/kotlin). `frob.lang.raw_tree`'s `"csharp"` label reaches
+# `frob.lang._walk_csharp`'s grammar via T-1600's central-dispatch wiring.
+#
+# SCOPE, disclosed up front rather than silently narrowed: like kotlin
+# (`_capability_kotlin.py`'s own docstring note), this resolver uses a
+# FLAT, FILE-WIDE alias table -- no per-method/per-block shadow discipline.
+# A local variable that happens to share a name with an imported alias or
+# another `var`-typed local is NOT distinguished by scope here. This is a
+# REDUCED-FIDELITY model versus the C/C++/rust resolvers, accepted for the
+# same reason kotlin's was: an over-approximation risk (a spurious
+# resolved match on a locally-shadowed name), never a silent gap.
+#
+# A plain `using X.Y;` (no alias, no `static`) is C#'s closest analogue to
+# kotlin's wildcard import -- it brings every type in that namespace into
+# unqualified scope, so a BARE `File.WriteAllText(...)` resolves only
+# because `System.IO` was `using`'d. Mirroring kotlin's `_KT_WILDCARD_
+# DANGEROUS_MODULES` fail-closed-by-curation posture (never resolve
+# bare-identifier lookups against an arbitrary imported namespace), this
+# module curates the namespace set to exactly the ones the csharp registry
+# slice (`_dangerous_ops_bash_csharp.py`) actually declares dangerous APIs
+# under -- an unlisted namespace's bare-name usage resolves nothing.
