@@ -28,37 +28,18 @@ from ._capability_core import ByteSpan, _fully_in_any_span, _needle_matches_reso
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
 from ._capability_rust import _record_rust_binding
 
-# T-0379: import/binding-aware resolution for C/C++, the fourth binding
-# resolver alongside T-0328 (python) / T-0377 (TS) / T-0378 (rust). C/C++'s
-# dominant renaming idiom is the preprocessor, not an import system: `#define
-# SYS system` makes `SYS("sh")` a call to `system` with no `"system("`
-# substring anywhere in the file's own text, evading the raw-text needle
-# scan the same way an aliased python `import`/rust `use` does. Only a
-# SIMPLE object-like macro whose value is a single bare identifier is
-# resolved (`#define SYS system`) -- a function-like macro (`#define SYS(x)
-# system(x)`) is a `preproc_function_def` node, a structurally different
-# shape, and is a documented, deliberately out-of-scope limitation here
-# (mirrors the T-0378 grouped-`use` limitation note above): a function-like
-# macro already re-expands to literal "system(" text at its call site in
-# common usage, so the raw-text lexical scan still has a real (if weaker)
-# chance at it, unlike the pure-rename case this resolver targets.
-#
-# A `using NAMESPACE::NAME;` declaration or namespace-qualified call site
-# (`fs::system(...)` after `namespace fs = std;`) needs NO special
-# resolution here: the registry's own needles are bare substrings
-# (`"system("`), which still occur verbatim inside a qualified call --
-# `_needle_hits_outside_comments` already catches those lexically. Type-only
-# aliases (`typedef`/C++11 `using X = Y;` alias-declarations) do not rename
-# a CALLABLE and are out of scope for the same reason.
-#
-# Shadow-awareness mirrors `_rust_shadowing_scope`'s POSITION-aware
-# discipline (T-0378 round 2, T-0339 fail-closed): a local variable or
-# function parameter sharing a macro alias's name must not have a call site
-# textually BEFORE its own declaration wrongly treated as shadowed. Block
-# scoping (nested `compound_statement` scopes each shadowing independently)
-# is over-approximated to "the whole enclosing function" -- matching the
-# python/rust resolvers' function-granularity, not per-block C scoping;
-# documented, not a silent gap.
+# Import/binding-aware resolution for C/C++. C/C++'s dominant renaming
+# idiom is the preprocessor, not an import system: `#define SYS system`
+# makes `SYS("sh")` a call to `system` with no `"system("` substring
+# anywhere in the file's own text. Only a SIMPLE object-like macro whose
+# value is a single bare identifier is resolved -- a function-like macro
+# (`#define SYS(x) system(x)`) already re-expands to literal `system(`
+# text at its call site, so the raw-text scan still has a real chance
+# at it and it is deliberately out of scope here. A `using NAMESPACE::
+# NAME;` or namespace-qualified call needs no special handling: the
+# registry's needles are bare substrings, still matched lexically.
+# Shadow-awareness is POSITION-aware, over-approximated to function
+# granularity, not per-block C scoping.
 _C_SCOPE_TYPES = ("function_definition", "translation_unit")
 
 #: sentinel `bound` position meaning "shadows from the very start of the
@@ -141,18 +122,16 @@ def _c_declared_name(node) -> str | None:  # noqa: ANN001
 
 
 #: `declaration` node direct-child types `_c_collect_declaration_names`
-#: treats as a declarator worth resolving through `_c_declared_name` (T-
-#: 0662 extends T-0379's original `identifier`/`init_declarator`-only pair
-#: with the bare, uninitialized declarator shapes an ordinary variable
+#: treats as a declarator worth resolving through `_c_declared_name`:
+#: the bare, uninitialized declarator shapes an ordinary variable
 #: declaration wraps its name in when there is no `= value` at all --
 #: `void (*f)(const char*);` parses its declared name directly under a
 #: `function_declarator` -> `parenthesized_declarator` -> `pointer_
 #: declarator` chain, never an `init_declarator`, since tree-sitter-c only
-#: wraps a declarator in `init_declarator` when an initializer is present).
+#: wraps a declarator in `init_declarator` when an initializer is present.
 #: Without this, a forward-declared function-pointer variable's later
 #: `f = &do_exec;` assignment could never resolve: `_c_shadowing_scope`
-#: would never find `f` bound anywhere, so `_record_c_assignment_alias`'s
-#: scope lookup (keyed off THAT SAME shadow check) always misses.
+#: would never find `f` bound anywhere.
 _C_DECLARATOR_CHILD_TYPES = (
     "identifier",
     "init_declarator",

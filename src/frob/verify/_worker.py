@@ -104,24 +104,18 @@ from frob.verify._watermark import (
 
 _log = get_logger(__name__)
 
-# T-1694 incident this closes: a dead worker (killed between the queue
-# read and the watermark write, or anywhere in between) must never leave
-# main looking verified past a batch that was never actually confirmed
-# green. This marker names the batch (its tip commit) and is written
-# BEFORE `verify_fn` is even called -- the moment this run starts making a
-# claim about `tip.commit_sha` -- and cleared unconditionally once this
-# run reaches ANY stable outcome (green, red, baseline-established,
-# unmeasurable, or a raised exception), via a `finally` block mirroring
-# `_clear_land_repair_marker`'s/`_clear_post_land_verify_marker`'s own
-# unconditional-cleanup shape (T-0907/T-1523 precedent). A marker still
-# present at the START of the next `run_coalesced_verification` call means
-# a prior run died somewhere inside that window -- `_reconcile_stale_
-# in_flight_marker` treats that batch as UNVERIFIED unless the watermark
-# it finds on disk already independently confirms the same commit (the
-# rare case where the crash landed after `advance_watermark`/
-# `compact_queue` both actually completed and only the marker clear
-# itself was lost) -- it never assumes green from the marker's mere
-# presence.
+# A dead worker (killed between the queue read and the watermark write)
+# must never leave main looking verified past a batch that was never
+# actually confirmed green. This marker names the batch (its tip commit)
+# and is written BEFORE `verify_fn` is called, and cleared
+# unconditionally once this run reaches ANY stable outcome (green, red,
+# baseline-established, unmeasurable, or a raised exception), via a
+# `finally` block. A marker still present at the START of the next
+# `run_coalesced_verification` call means a prior run died inside that
+# window -- `_reconcile_stale_in_flight_marker` treats that batch as
+# UNVERIFIED unless the watermark on disk already independently
+# confirms the same commit -- it never assumes green from the marker's
+# mere presence.
 # frob:ticket T-1694
 _IN_FLIGHT_MARKER_REL = Path(".frob") / "verify-in-flight.json"
 
@@ -319,8 +313,7 @@ def _default_available_memory_mb() -> int | None:
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t\
-# -1695
+# docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t-1695  # noqa: E501
 # frob:tests \
 # tests/unit/verify/test_worker.py::TestBackpressure.test_yields_at_lease_ceiling
 # frob:tests \
@@ -376,8 +369,7 @@ _PRIORITY_REDUCED = False
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t\
-# -1695
+# docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t-1695  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_applies_nice_and_ionice_exactly_once  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_failed_nice_call_never_raises  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Resource budget: \
@@ -497,25 +489,18 @@ class WorkerOutcome(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    #: "empty" (nothing queued, verify_fn never called), "baseline-
-    #: established" (first-ever run, no prior baseline to compare against
-    #: -- NOT a proven-green claim, so the watermark is deliberately left
-    #: untouched here too), "red" (new findings vs the rolling baseline,
-    #: filed/disposed to `filed_ticket`, or genuinely ownerless with
-    #: `filed_ticket=None`), "vanished" (T-3464: every new finding was
-    #: unfileable ONLY because none of them reproduced any more by T-3222's
-    #: file-time recheck -- there is nothing durable to own and nothing
-    #: real left to pin on, so this advances like green despite
-    #: `filed_ticket=None`), or "green" (no new findings).
-    #: T-2324: "red" no longer implies `advanced_watermark=False` -- check
-    #: that field directly, never infer it from `status`. A red result
-    #: whose findings got a durable owner (`filed_ticket` is not `None`)
-    #: still advances the watermark and compacts the queue, exactly like
-    #: green; only a red result that could not even be FILED
-    #: (`filed_ticket is None`) leaves the watermark untouched -- see
-    #: `_resolve_verification_outcome`'s own docstring for why. "vanished"
-    #: is the one exception to THAT rule too: `filed_ticket=None` there
-    #: as well, but `advanced_watermark=True`.
+    #: "empty" (nothing queued), "baseline-established" (first-ever run,
+    #: no prior baseline -- NOT a proven-green claim, so the watermark is
+    #: left untouched here too), "red" (new findings, filed/disposed to
+    #: `filed_ticket`, or genuinely ownerless with `filed_ticket=None`),
+    #: "vanished" (every new finding stopped reproducing before it could
+    #: be filed -- nothing real left to pin on, so this advances like
+    #: green despite `filed_ticket=None`), or "green" (no new findings).
+    #: "red" does NOT imply `advanced_watermark=False` -- check that
+    #: field directly. A red result with a durable owner (`filed_ticket`
+    #: is not `None`) still advances the watermark like green; only an
+    #: unfileable red result leaves it untouched. "vanished" is the one
+    #: exception to that too.
     status: str
     commit_sha: str | None = None
     advanced_watermark: bool = False
@@ -586,14 +571,11 @@ def _make_unmeasurable_reason_handler():  # noqa: ANN201
 
 # frob:doc docs/modules/tickets-verify-sweep.md#unmeasurable-cause-separation-t-3886
 # frob:tests \
-# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_child_timeout_l\
-# og_line_classified
+# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_child_timeout_log_line_classified  # noqa: E501
 # frob:tests \
-# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_spawn_refused_l\
-# og_line_classified
+# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_spawn_refused_log_line_classified  # noqa: E501
 # frob:tests \
-# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_no_matching_log\
-# _line_is_unmeasurable
+# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_no_matching_log_line_is_unmeasurable  # noqa: E501
 def _capture_unmeasurable_reason():  # noqa: ANN201
     """T-3886: a context manager yielding a one-element list (`[reason]`)
     -- attaches a temporary handler to `frob.app.ticket_runner._land_cmd`'s
@@ -765,20 +747,17 @@ def run_coalesced_verification(
             else _default_verify_fn(root, tip.commit_sha)
         )
         if fresh is None:
-            # T-1703/T-1688: unmeasurable is never zero, never green, and
-            # this early return is the ONLY thing standing between this
-            # branch and the rest of the function -- advance_watermark is
-            # not even reachable from here.
+            # Unmeasurable is never zero, never green, and this early
+            # return is the ONLY thing standing between this branch and
+            # the rest of the function -- advance_watermark is not even
+            # reachable from here.
             #
-            # T-3886: the SPECIFIC reason -- our own child timed out, our
-            # own spawn was refused, or the check genuinely could not
-            # measure -- is looked up here rather than collapsed into one
-            # undifferentiated "unmeasurable" (F-043's own incident: a
-            # reporter having to infer, by hand, that a 45-minute land
-            # stall was OUR child dying, not the repository being
-            # unmeasurable). `pop` (not a bare read) so a later, unrelated
-            # `None` for a DIFFERENT commit can never accidentally reuse
-            # this commit's stale classification.
+            # The SPECIFIC reason -- our own child timed out, our own
+            # spawn was refused, or the check genuinely could not measure
+            # -- is looked up here rather than collapsed into one
+            # undifferentiated "unmeasurable". `pop` (not a bare read) so
+            # a later, unrelated `None` for a DIFFERENT commit can never
+            # accidentally reuse this commit's stale classification.
             worker_error = _LAST_UNMEASURABLE_REASON.pop(
                 tip.commit_sha, WorkerError.Unmeasurable
             )

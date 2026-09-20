@@ -33,73 +33,18 @@ from ._capability_core import (
 )
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
 
-# T-0328: import/binding-aware resolution for Python, the priority language
-# (highest coverage). The plain substring scan above is EVADED by ordinary
-# aliasing/from-import Python -- `import subprocess as sp; sp.run(x)` never
-# contains the literal text "subprocess.run(" the needle table looks for,
-# and `from os import system as e; e(x)` contains neither "os.system(" nor
-# "eval(", so the scanner observes NOTHING even though the code genuinely
-# execs. This block builds a per-file IMPORT/BINDING TABLE from the same
-# tree-sitter parse `_comment_byte_spans` already uses, resolves each
-# call/attribute site's leftmost name through it (reconstructing the
-# fully-qualified target, e.g. `sp.run` -> `subprocess.run`), and re-checks
-# the SAME needle tables against the RESOLVED identity string instead of
-# raw source text -- no new registry field, no new needle vocabulary, just
-# a second pass over a synthesized "what this call/attribute actually
-# refers to" string. Every resolved match is still confirmed against
-# `comment_spans` before counting (T-0209 posture unchanged).
+# Import/binding-aware resolution for Python: builds a per-file
+# IMPORT/BINDING TABLE from the tree-sitter parse, resolves each call/
+# attribute site's leftmost name through it, and re-checks the needle
+# tables against the RESOLVED identity instead of raw source text.
 #
-# Scope-awareness (mandatory to avoid FALSE POSITIVES): a LOCAL binding --
-# a function/method parameter, an assignment target, a `for`/`with ... as`
-# target, or a nested `def`/`class` name -- SHADOWS an import of the same
-# name in every enclosing scope from the site up to module level. `def
-# g(system): system(x)` (param) and `class Job: def run(self): ...` then
-# `Job().run()` (method access on an unrelated object) must NOT resolve to
-# `os.system`/a dangerous `run`, because the leftmost name in each case
-# either resolves to a local binding (shadowed) or to an expression this
-# resolver deliberately does not chase further (a `call` node, e.g.
-# `Job()`, is not a resolvable "object" for attribute-chain purposes, so
-# `Job().run` never reaches the import table at all).
+# SCOPE-AWARENESS (mandatory to avoid false positives): a LOCAL binding
+# SHADOWS an import of the same name in every enclosing scope up to
+# module level; a `call` node (e.g. `Job()`) is never chased further.
 #
-# Known limitations, documented rather than silently eaten (mirrors this
-# module's existing "Honest limits" posture): `from X import *` adds no
-# binding (a star-imported name is untraceable without also modeling X's
-# own exports); a function-scoped `import` is folded into the SAME
-# file-wide binding table as a module-level one (a narrow, safe-direction
-# over-approximation -- it can only ADD a resolution, never suppress a
-# real one); a relative import's dotted text (`from . import x`) is kept
-# as literal text (`"..x"`-shaped), which will not coincidentally collide
-# with any real registry needle in practice. TS/C-C++ are OUT of scope for
-# this pass -- C/C++'s `#include` is coarse-only by design (module
-# docstring), and TS's binding table is noted as follow-up work, not
-# attempted here. Rust gets its own binding-aware pass, T-0378 below.
-#
-# T-1626: two evasions the T-0328 resolver used to miss silently (the
-# ticket's own worked examples) are now resolved rather than dropped:
-# `functools.partial(dangerous, ...)` (`_resolve_py_expr`'s `call` branch
-# recognizes a resolved-`functools.partial` callee and resolves through to
-# its first positional argument -- `p = functools.partial(os.system, cmd);
-# p()` now resolves `p()` to `os.system`), and a literal-keyed dict/list
-# dispatch (`_record_py_dict_container_alias`/`_record_py_list_container_
-# alias` record one alias entry per literal key/index at assignment time,
-# `_resolve_py_subscript` looks it up at the call site -- `funcs = {"run":
-# subprocess.run}; funcs["run"](cmd)` now resolves). Both stayed
-# genuinely silent before: a NON-literal key/index or a dynamically
-# computed `getattr` name is a SEPARATE, already-covered case --
-# `frob.gates._opaque`'s OPAQUE001 (`RUNTIME_OPAQUE_CONSTRUCTS`/
-# `RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS`, `_capability_scan.py`) already
-# fires fail-closed on those (non-literal subscript-then-call, bare
-# `getattr(`/`setattr(`/`eval(`/`exec(`/`__import__(`) -- this module
-# only had to close the LITERAL-key gap OPAQUE001 explicitly defers to
-# "the ordinary resolver's job" (`_subscript_key_looks_literal`'s
-# docstring) but the ordinary resolver never actually implemented until
-# now, which meant a literal-keyed dict/list dispatch fell through BOTH
-# mechanisms: too resolvable to trip OPAQUE001, never actually resolved
-# by this module. Cross-file wrapper attribution (a helper in another
-# module forwarding to a dangerous callable) is NOT attempted here -- it
-# needs `frob.graph.callgraph`-backed cross-file call resolution, a
-# larger, separate unit of work; see T-1626's Done report / follow-up
-# ticket for the split.
+# KNOWN LIMITATIONS: `from X import *` adds no binding; TS/C-C++ are
+# out of scope here; rust has its own pass. Non-literal dict/list
+# keys are OPAQUE001's job, not this module's.
 _PY_SCOPE_TYPES = ("function_definition", "class_definition", "module")
 
 
@@ -1381,8 +1326,7 @@ def _python_binding_operations(
 
 # frob:ticket T-1752
 # frob:tests \
-# tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_wrapper_capab\
-# ilities_resolve_cross_file_via_call_graph kind="unit"
+# tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_wrapper_capabilities_resolve_cross_file_via_call_graph kind="unit"  # noqa: E501
 def _build_wrapper_call_graph(root: Path, python_paths: Sequence[str]) -> CallGraph:
     """`frob.graph.callgraph.build_call_graph` over `python_paths` (repo-
     root-relative POSIX paths), built ONCE per scanned source tree and

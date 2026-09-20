@@ -97,50 +97,20 @@ _FINGERPRINT_CATALOG_PATH = (
     Path(__file__).parent.parent / "strata" / "_cve_fingerprint.py"
 ).resolve()
 
-# T-0253: `_SELF_PATH`/`_REGISTRY_PATH`/`_FINGERPRINT_CATALOG_PATH` above are
-# identity anchors for THIS running package's own files -- correct only when
-# the scanned tree and the running package are the SAME checkout (editable
-# install: `uv run frob ...`). Under a non-editable global install (`uv tool
-# install frob`), the running package's files resolve to a `site-packages`
-# copy, so identity comparison against a SCANNED tree that is frob's own
-# repo checkout never matches and every pattern-catalog needle self-matches
-# again (36 false SYS100s under `frob sys audit` vs. 0 under `uv run frob
-# sys audit`).
-#
-# Round 1 fix (REJECTED on review): matching by bare PATH SUFFIX (the last
-# three path components: package dir / subpackage / filename) with no
-# further check. That closed the false-positive but opened a real hole:
-# `is_self_pattern_path` is reached from `_scan_directory_capabilities`/
-# `_scan_directory_fingerprints`, the SAME public entrypoints `frob vet` uses
-# to scan a VENDORED/THIRD-PARTY dependency tree. A malicious dependency
-# that places a file at a path ending in `frob/vet/_capability.py` (trivial:
-# nest it under any vendor path, or name the package `frob` outright) would
-# be silently excluded from capability scanning by suffix alone --
-# `is_self_pattern_path` cannot tell "we are auditing frob's own checkout"
-# from "we are vetting someone else's tree that happens to mimic frob's
-# layout" using the scanned PATH alone.
-#
-# Round 2 fix (this one): the suffix match stays as the within-frob file
-# check, but it is only REACHABLE when a separate SCAN-TARGET discriminator,
-# `_is_frob_repo_root`, says the tree actually being scanned is frob's own
-# repository -- not the running package's install location (round 1's
-# mistake), not the scanned FILE's path alone (round 1 REJECT's mistake),
-# but the scanned tree's ROOT identity: `root/pyproject.toml` declares
-# `name = "frob"` AND the root also has the `frob-core`/`strata-core` Rust
-# crate directories this monorepo actually ships. Requiring both the name
-# and the crate directories raises the forgery bar well past "name a PyPI
-# package frob" -- a typosquat sdist would also need to vendor two dummy
-# top-level directories with those exact names purely to fool this check,
-# and gains nothing from doing so since `frob vet`'s dependency scan target
-# is the DEPENDENCY's own extracted source root, not frob's repo root,
-# in every real invocation. Self-conformance (`_selfconform.py`/
-# `_effects.py`) always passes frob's own repo root as `root` by
-# construction (self-conformance audits ITS OWN tree), so the discriminator
-# is a no-op there; `frob vet` scanning a dependency passes that
-# dependency's own source root, which is never frob's repo, so the
-# discriminator (correctly) refuses the exclusion and the file gets scanned
-# like any other.
+# `_is_frob_repo_root` gates `is_self_pattern_path`'s suffix match: the
+# suffix check alone is a forgery hole (a vendored dependency file named
+# `frob/vet/_capability.py` would be silently excluded from scanning by
+# suffix alone), so it is only reachable when the SCANNED TREE's root
+# identity -- not the running package's install location, not the
+# scanned file's path alone -- says the tree actually being scanned is
+# frob's own repository: `root/pyproject.toml` declares `name = "frob"`
+# AND the root has the `frob-core`/`strata-core` Rust crate directories
+# this monorepo ships. Self-conformance always passes frob's own repo
+# root, so the discriminator is a no-op there; `frob vet` scanning a
+# dependency passes that dependency's own source root, so the
+# discriminator refuses the exclusion and the file gets scanned normally.
 # frob:ticket T-0910
+# frob:ticket T-4718
 _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     ("frob", "vet", "_capability.py"),
     # T-1420 (portion 5): `_capability.py`'s own scanner-core primitives
@@ -185,37 +155,22 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     ("frob", "vet", "_capability_registry", "_matrix.py"),
     ("frob", "vet", "_capability_registry", "_opaque.py"),
     ("frob", "strata", "_cve_fingerprint.py"),
-    # T-0729: `frob.arch._srp`'s ARCH103 mixed-concern check stores its
-    # I/O-classifier signals (`_IO_MODULE_PREFIXES`: `socket.`,
-    # `subprocess.`, `requests.`, `urllib.`, ...) as literal string data too
-    # -- the exact same self-match class as the two `_capability_registry`/
-    # `_cve_fingerprint` entries above: the scanner (by design, for evasion
-    # detection) keys on string-literal CONTENT, so a classifier table that
-    # merely *names* `socket.`/`subprocess.`/etc. as data reads as live
-    # net/exec/fetch_url capability USAGE on the `graphlang` node, which is
-    # dishonest -- `_srp.py` does no such I/O itself (module docstring: it
-    # only imports `frob.arch._models`/`frob.arch._normalized`). Declaring
-    # `may net`/`may exec` on `graphlang` to silence this would be an
-    # equally dishonest fix in the other direction, so this file is excluded
-    # from self-conformance's capability scan the same way, not given a
-    # capability it does not have.
+    # T-0729: `_IO_MODULE_PREFIXES` (`socket.`, `subprocess.`, `requests.`,
+    # `urllib.`, ...) is an I/O-classifier signal stored as literal string
+    # data -- the scanner keys on string-literal CONTENT (by design, for
+    # evasion detection), so a table that merely *names* these substrings
+    # as data reads as live net/exec/fetch_url USAGE, which is dishonest:
+    # `_srp.py` does no such I/O itself. Declaring `may net`/`may exec` to
+    # silence this would be equally dishonest, so this file is excluded
+    # from self-conformance's capability scan instead.
     ("frob", "arch", "_srp.py"),
-    # T-0910: `frob.arch._logging_checks`'s ARCH1xx logging-discipline
-    # checks store the same class of I/O-classifier signal as `_srp.py`
-    # above -- `_BOUNDARY_CALLEE_MARKERS` (`subprocess.`, `requests.`,
-    # `httpx.`, `socket.`, ...) is a bare-text needle tuple this module's
-    # `_is_boundary_call` compares a CALLEE STRING against, not code that
-    # itself execs/opens a socket/fetches a URL. The scanner (by design,
-    # for evasion detection) keys on string-literal CONTENT, so a
-    # classifier table that merely *names* these substrings as data reads
-    # as live net/exec/fetch_url capability USAGE on the `graphlang` node,
-    # which is dishonest -- `_logging_checks.py` does no such I/O itself
-    # (module docstring: it is written once against `NormalizedModule`,
-    # a parsed-fact model, and never touches subprocess/network/sockets
-    # directly). Declaring `may net`/`may exec` on `graphlang` to silence
-    # this would be an equally dishonest fix in the other direction, so
-    # this file is excluded from self-conformance's capability scan the
-    # same way `_srp.py` is, not given a capability it does not have.
+    # T-0910: `_BOUNDARY_CALLEE_MARKERS` is the same class of I/O-
+    # classifier signal as `_srp.py` above, stored as literal string data
+    # -- the scanner keys on string-literal CONTENT, so a table that
+    # merely *names* these substrings reads as live capability USAGE,
+    # which is dishonest: `_logging_checks.py` does no such I/O itself.
+    # Excluded from self-conformance's capability scan the same way
+    # `_srp.py` is, not given a capability it does not have.
     ("frob", "arch", "_logging_checks.py"),
     # T-0915: `frob.arch._async_hazards`'s blocking-call classifier stores
     # the same class of I/O-classifier signal as `_srp.py`/`_logging_checks
@@ -302,23 +257,18 @@ def _binding_fingerprints(
     return tuple(matched)
 
 
-# The CVE-fingerprint sibling of `_scan_file_operations` (T-0153): a
-# fingerprint's `language` must match `path`'s scanned language bucket AND
-# at least one of its `needles` must appear in the file's text, the SAME
-# recall-over-precision substring philosophy `_matched_capabilities`
-# already uses (module docstring). Imports `frob.strata` LAZILY (not at
-# module scope): `frob.strata._effects` imports THIS module for its own
-# `_PATTERNS`/`language_for` join, so a top-level `frob.strata` import
-# here would be a genuine import cycle -- deferred until call time, when
-# both packages have finished initializing.
+# The CVE-fingerprint sibling of `_scan_file_operations`: a fingerprint's
+# `language` must match `path`'s scanned language bucket AND at least
+# one of its `needles` must appear in the file's text. Imports
+# `frob.strata` LAZILY (not at module scope): `frob.strata._effects`
+# imports THIS module for its own `_PATTERNS`/`language_for` join, so a
+# top-level `frob.strata` import here would be a genuine import cycle.
 #
-# T-0380: lexical needle-matching alone lets an aliased import evade a
+# Lexical needle-matching alone lets an aliased import evade a
 # fingerprint (`import pickle as p; p.loads(...)` never contains the
-# literal text `pickle.loads(`) even where capability scanning is already
-# binding-aware for the same module. `_binding_fingerprints` folds in
-# every fingerprint the file's binding tables resolve to, unioned with the
-# existing lexical result by `id` (a fingerprint caught either way is
-# reported once, not twice).
+# literal text `pickle.loads(`). `_binding_fingerprints` folds in every
+# fingerprint the file's binding tables resolve to, unioned with the
+# existing lexical result by `id` (caught either way, reported once).
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
@@ -678,48 +628,17 @@ def _is_test_path(path: Path) -> bool:
     return "test" in path.parts or "tests" in path.parts
 
 
-# True for this module's own source file, the T-0158 registry it compiles
-# `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
-# `_scan_file_fingerprints` against (excluded from directory aggregation
-# since all three contain every needle as literal data, guaranteeing a
-# self-match unrelated to what the code does). Public (T-0201): the
-# SINGLE shared self-match exclusion -- vet's own directory aggregation
-# below AND every `frob.strata._selfconform`/`_effects` join path must
-# call this same function rather than keep parallel private copies, or a
-# future pattern-catalog file re-introduces the T-0151 self-match class
-# in whichever join path forgot to exclude it. This was T-0201's root
-# cause: `_selfconform.py`'s extended-kind/all-kind scans and
-# `_effects.py`'s line-effect scan all predated this export and had no
-# exclusion of their own.
+# Public: the SINGLE shared self-match exclusion -- every directory-
+# aggregation/join path must call this rather than keep parallel
+# private copies, or a future pattern-catalog file re-introduces a
+# self-match class some join path forgot to exclude.
 #
-# T-0253 round 1 (REJECTED): matched by `_SELF_PATTERN_SUFFIXES` (package-
-# relative path suffix) alone, with no scan-target check. That closed the
-# non-editable-install false positive but opened a real evasion hole: a
-# malicious dependency placing a file at a path ending in
-# `frob/vet/_capability.py` would be silently excluded from `frob vet`'s
-# capability scan too, since suffix matching cannot distinguish "this is
-# frob auditing itself" from "this is frob vetting someone else's tree
-# that happens to mimic frob's layout."
-#
-# T-0253 round 2 (this version): `root` is now the caller's scan-target
-# discriminator -- the suffix match only fires when `_is_frob_repo_root
-# (root)` says `root` IS frob's own repository checkout (its own
-# `pyproject.toml` name plus its `frob-core`/`strata-core` crate
-# directories), never based on `path` alone and never based on where the
-# RUNNING package's own files happen to live (round 0's bug, identity
-# comparison against `_SELF_PATH` et al., which broke under a non-
-# editable global install). `root` defaults to `None`, which ALWAYS
-# fails the discriminator (fail-closed, deny-by-default, matching this
-# codebase's charter posture elsewhere) -- a caller that omits `root`
-# gets "never exclude, always scan" rather than a crash, so this stays
-# source-compatible with any caller written against the pre-T-0253
-# one-argument signature while still closing the evasion hole for every
-# real caller in this repo (all of which pass `root` explicitly).
-# Self-conformance callers (`_selfconform.py`/`_effects.py`) always pass
-# frob's own repo root by construction, so this is a no-op there; `frob
-# vet` scanning a dependency passes that dependency's own source root,
-# which is never frob's repo, so the exclusion correctly never fires and
-# the file is scanned like any other.
+# `root` is the caller's scan-target discriminator: the suffix match
+# only fires when `_is_frob_repo_root(root)` says `root` IS frob's own
+# repository checkout, never based on `path` alone. `root` defaults to
+# `None`, which ALWAYS fails the discriminator (fail-closed, deny-by-
+# default). Self-conformance always passes frob's own repo root; `frob
+# vet` scanning a dependency never does, so exclusion never fires there.
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0201
 # frob:ticket T-0253
@@ -1291,16 +1210,13 @@ def _subscript_key_looks_literal(content: bytes) -> bool:
 # T-1659: the python builtins whose `RUNTIME_OPAQUE_CONSTRUCTS` needle is a
 # BARE, unqualified name (`eval(`, `exec(`, `getattr(`, `setattr(`,
 # `__import__(`) -- these are exactly the needles a raw substring scan
-# cannot tell apart from (a) the same characters appearing as the tail of a
-# longer identifier (`_mutation_for_eval(`, `test_...flags_exec(`, both real
-# incidents this repo's own OPAQUE001 waivers already hand-documented as
-# "scanner false positive on the ... name") or (b) a dotted attribute/method
-# access ending in the same name (`monkeypatch.setattr(`, `model.eval(` --
-# pytest's own monkeypatch fixture and z3's `Model.eval`, neither the
-# python builtin). Constructs whose needle is ALREADY dotted
-# (`importlib.import_module(`) are not in this set -- they need the
-# opposite verification (an exact attribute chain, not a bare name) and had
-# no reported false positives, so left on the pre-existing text-scan path.
+# cannot tell apart from (a) the tail of a longer identifier
+# (`_mutation_for_eval(`, real incidents this repo's own OPAQUE001
+# waivers already document) or (b) a dotted attribute/method access
+# ending in the same name (`monkeypatch.setattr(`, `model.eval(` --
+# neither the python builtin). Dotted needles (`importlib.import_
+# module(`) are not in this set -- they need the opposite verification
+# and had no reported false positives.
 _BARE_PYTHON_BUILTIN_NEEDLES = frozenset(
     {"eval(", "exec(", "getattr(", "setattr(", "__import__("}
 )

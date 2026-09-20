@@ -157,19 +157,15 @@ FAMILY_MODES: Final[dict[str, tuple[str, ...]]] = {
 }
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-#: Families whose mode split is WIRED into a live join this pass (module
-#: docstring's "wiring status"): `expand_declared_kind`/`normalize_
-#: observed_kind` only ever explode a bare family name from THIS set into
-#: its `FAMILY_MODES` union -- a family present in `FAMILY_MODES` but NOT
-#: here (proc/ffi today) has its vocabulary DEFINED but its
-#: scanner/declaration join still coarse (a bare `may "proc"` stays exactly
-#: `{"proc"}`, never silently exploded into a mode set that no
-#: scanner-observed kind could ever match, which would make every
+#: Families whose mode split is WIRED into a live join: `expand_declared_
+#: kind`/`normalize_observed_kind` only ever explode a bare family name
+#: from THIS set into its `FAMILY_MODES` union -- a family present in
+#: `FAMILY_MODES` but NOT here (proc/ffi today) has its vocabulary
+#: DEFINED but its scanner/declaration join still coarse (a bare `may
+#: "proc"` stays exactly `{"proc"}`, never silently exploded into a mode
+#: set no scanner-observed kind could ever match, which would make every
 #: existing bare `may "proc"` declaration spuriously go SYS101-stale).
-#: T-1075 adds `env` (module docstring's wiring-status update): env-read/
-#: env-write now has a real tier-2 join (`_effects.py::_KIND_MAP`), so a
-#: coarse `may "env"` declaration can safely explode too. Extending this
-#: set further (`proc`/`ffi`) is the next sibling ticket's job.
+#: Extending this set further (`proc`/`ffi`) is a follow-up ticket's job.
 WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs", "net", "env"})
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write

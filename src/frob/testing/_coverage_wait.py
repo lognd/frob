@@ -84,8 +84,7 @@ from frob.process._lock import (
 
 # frob:doc docs/modules/testing.md#public-api
 # frob:tests \
-# tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_lock_pri\
-# mitive_refuses_loudly
+# tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
 class CoverageLockUnavailable(RuntimeError):
     """Raised when neither `fcntl` (POSIX) nor `msvcrt` (Windows) exists
     on this platform -- refusing to serialize concurrent coverage runs
@@ -398,29 +397,18 @@ def _is_stamp_fresh(root: Path, snapshot: GraphSnapshot) -> bool:
 # frob:tests tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run
 # frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err
 # frob:tests tests/test_coverage.py::TestRunCoverageWaitNativeDefault.test_default_command_none_calls_native_refresh  # noqa: E501
-#
-# T-1516: `command=None` (the default) auto-wires the refresh through the
-# in-process native path -- see the T-1516 note above `_run_and_settle_
-# shared` for what that means and why.
-#
-# T-1095: before falling through to the per-worktree lock/run below, this
-# checks the CROSS-worktree layer first -- `tree_digest` computed from the
-# same snapshot, a shared cache keyed by that digest under
-# `shared_state_dir`. A cache hit (another worktree with byte-for-byte
-# identical tracked source already settled this digest) adopts that
-# result (`_adopt_shared_result`) and returns immediately, with ZERO
-# subprocess spawned in THIS worktree -- acceptance [0]. A cache miss
-# acquires the shared per-digest lock (serializing every worktree sharing
-# this digest onto one real run, re-checking the cache once more after
-# acquiring it in case a racing worktree just finished), runs the refresh
-# exactly as before, and records the settled result for every other
-# worktree sharing this digest to find. Two worktrees whose tracked source
-# DIFFERS resolve to different digests -- different lock paths, different
-# cache entries -- so they never contend or share a result with each
-# other at all (acceptance [1]).
-#
-# T-1126: the OUTER lock is `_worktree_lock` (daemon lease when reachable,
-# else `_coverage_lock`).
+# T-1516: `command=None` auto-wires the refresh through the in-process
+# native path. Before falling to the per-worktree lock/run below, this
+# checks the CROSS-worktree layer first -- `tree_digest` computed from
+# the same snapshot, a shared cache keyed by that digest under
+# `shared_state_dir`. A cache hit adopts that result
+# (`_adopt_shared_result`) and returns immediately with ZERO subprocess
+# spawned in THIS worktree. A cache miss acquires the shared per-digest
+# lock, re-checks the cache (a racing worktree may have just finished),
+# runs the refresh, and records the result for other worktrees sharing
+# this digest. DIFFERING tracked source resolves to different digests
+# and never shares a result. The OUTER lock is `_worktree_lock` (daemon
+# lease when reachable, else `_coverage_lock`).
 def run_coverage_wait(
     root: Path,
     *,

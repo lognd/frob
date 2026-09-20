@@ -410,19 +410,15 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         (),
     ),
     # -- python: fs-write --------------------------------------------------
-    # T-2457: "open(" removed from this entry's needles. The bare
-    # substring matched ANY open() call regardless of mode -- a read-mode
-    # `open(path, "rb")` satisfied this fs-write rule on its own, which is
-    # exactly the false-positive this ticket fixes (it forced seven false
-    # `fs.write` declarations into design/frob.strata for modules that
-    # provably only read). `open(`/`.open(` calls are now classified by
+    # T-2457: "open(" removed from this entry's needles -- the bare
+    # substring matched ANY open() call regardless of mode, including
+    # read-mode. `open(`/`.open(` calls are now classified by
     # `frob.vet._capability_core._has_write_mode_open_call`, a mode-aware
-    # token-level parse of the call's arguments wired in via
-    # `_SPECIAL_CHECKS`/`_operation_entry_matches` (this entry's own empty
-    # `needles` tuple is what routes it through that fallback -- see
-    # `_operation_entry_matches`'s T-2457 comment). `.write(` stays a
-    # plain needle: any `.write(...)` call is unambiguously a write
-    # regardless of what it's called on.
+    # token-level parse wired in via `_SPECIAL_CHECKS`/
+    # `_operation_entry_matches` (this entry's own empty `needles` tuple
+    # routes it through that fallback). `.write(` stays a plain needle:
+    # any `.write(...)` call is unambiguously a write regardless of what
+    # it's called on.
     _op(
         "python",
         "builtins",
@@ -722,26 +718,18 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("boto3.client(", "boto3.resource("),
         (),
     ),
-    # T-2479: split out of the coarse "boto3.client(/resource(" needle above
-    # -- boto3's mutating operation names are PER-SERVICE (S3's put_object/
-    # delete_object vs DynamoDB's put_item/delete_item vs IAM's
-    # create_user/delete_user) and only ever called on the object a
-    # `.client("service")`/`.resource("service")` call returns, with no
-    # library-name prefix at the call site itself -- a flat needle cannot
-    # distinguish these from a read (get_object/get_item/list_users)
-    # without a binding-aware resolver. `frob.vet._capability_python`'s
-    # `_resolve_py_boto3_client_call` (T-2479) resolves
-    # `x = boto3.client("s3")` to the synthetic identity
-    # `boto3.client(s3)`, so `x.put_object(...)` resolves all the way to
-    # `boto3.client(s3).put_object` and matches the needles below.
-    # Additive: the coarse "boto3.client(" / "boto3.resource(" needle
-    # above is UNCHANGED and still fires on every boto3 usage including
-    # these calls -- this is a strictly more precise SECOND observation.
-    # Scope disclosed, matching T-2464's own precedent: this covers three
-    # HIGH-VALUE services (S3, DynamoDB, IAM) with a representative, not
-    # exhaustive, mutating-verb list for each -- a full per-service survey
-    # across boto3's ~350 services is out of scope here (filed as a
-    # follow-up, see T-2479's Done report).
+    # T-2479: boto3's mutating operation names are PER-SERVICE (S3's
+    # put_object/delete_object vs DynamoDB's put_item/delete_item vs
+    # IAM's create_user/delete_user) and only ever called on the object
+    # a `.client("service")`/`.resource("service")` call returns, with
+    # no library-name prefix at the call site -- a flat needle cannot
+    # distinguish these from a read without a binding-aware resolver.
+    # `_resolve_py_boto3_client_call` resolves `x = boto3.client("s3")`
+    # to the synthetic identity `boto3.client(s3)`, so `x.put_object(...)`
+    # matches the needles below. Additive: the coarse needle above is
+    # UNCHANGED and still fires too. Covers three HIGH-VALUE services
+    # (S3, DynamoDB, IAM) with a representative, not exhaustive, verb
+    # list -- a full per-service survey is out of scope here.
     _op(
         "python",
         "boto3",

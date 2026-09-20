@@ -110,19 +110,17 @@ ByteSpan = tuple[int, int]
 
 
 # frob:ticket T-1223
-#: Process-lifetime memo of compiled `(comment-type) @c` alternation Queries,
-#: keyed by `language_label` (T-1223: the interim zero-Rust half of the
-#: report's Rust-migration candidate #1 -- replace the Python-recursion span
-#: walk with a tree-sitter Query captured in C). A `Query` is bound to the
+#: Process-lifetime memo of compiled `(comment-type) @c` alternation
+#: Queries, keyed by `language_label`. A `Query` is bound to the
 #: `tree_sitter.Language` instance it was compiled against, but two
 #: `Language` instances for the SAME grammar/ABI are interchangeable for
-#: `QueryCursor.captures` purposes (verified: compiling against one file's
-#: `tree.language` and running the cursor over an unrelated file's tree of
-#: the same grammar returns identical results) -- so the first tree seen for
-#: a given `language_label` compiles the Query once, and every later file of
-#: that language reuses it. Not keyed by `id(tree.language)`: `frob.lang`
-#: does not itself cache `Language` objects across `_parse` calls, so a
-#: per-instance cache would never hit past the first file.
+#: `QueryCursor.captures` purposes (verified: compiling against one
+#: file's `tree.language` and running the cursor over an unrelated
+#: file's tree of the same grammar returns identical results) -- so the
+#: first tree seen for a given `language_label` compiles the Query once.
+#: Not keyed by `id(tree.language)`: `frob.lang` does not itself cache
+#: `Language` objects across `_parse` calls, so a per-instance cache
+#: would never hit past the first file.
 _comment_query_cache: dict[str, QueryCursor] = {}
 _comment_query_cache_lock = threading.Lock()
 
@@ -200,34 +198,18 @@ def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> boo
 
 # frob:ticket T-1223
 # frob:ticket T-2885
-#: The python docstring Query source (T-1223): every module/class/function
-#: body whose FIRST named child (after skipping any leading `comment`
-#: nodes, T-2885) is a bare `string` node, or an `expression_statement`
-#: wrapping one -- mirrors the exact shape `_py_leading_docstring_node`
-#: (pre-T-1223) tested node-by-node in Python.
-#: NOTE: `expression_statement` is a tree-sitter-python SUPERTYPE, not a
-#: concrete node kind -- it also matches concrete nodes like `assignment`
-#: (verified: `(expression_statement (string) @doc)` alone spuriously
-#: captured an enum member's VALUE string, e.g. `NotADirectory = "..."`,
-#: because `assignment` conforms to the `expression_statement` supertype
-#: and its own `string` child satisfies the inner pattern). `_PY_DOC_CAPTURE
-#: _FILTER` below is the required post-filter closing that gap: a capture
-#: only counts as a real docstring if its immediate parent's own `.type` is
-#: literally `"module"`, `"block"` (the bare-string case), or
-#: `"expression_statement"` (the wrapped case) -- never `"assignment"` or
-#: any other expression_statement-conforming concrete kind.
-#: T-2885: the `.` anchor requires the docstring to be tree-sitter's
-#: IMMEDIATE first named child -- this project's tree-sitter-python
-#: grammar does NOT mark `comment` as an `extra` node the query engine
-#: treats as anchor-transparent (confirmed empirically), so a file that
-#: opens with a `#`-comment (e.g. any `frob:waive`/`frob:ticket` header
-#: block, common repo-wide) silently defeated the anchor and the "real"
-#: docstring was reported as unstarted, exposing every needle-shaped
-#: substring in its prose to the needle-scan gates it should have been
-#: excluded from (OPAQUE001, the `sys` capability scanner). Each pattern
-#: now explicitly tolerates zero-or-more leading `(comment)*` nodes
-#: before the anchored string/expression_statement, so a header comment
-#: no longer breaks docstring-span detection.
+#: The python docstring Query source: every module/class/function body
+#: whose FIRST named child (after skipping leading `comment` nodes) is a
+#: bare `string` node, or an `expression_statement` wrapping one.
+#: `expression_statement` is a tree-sitter-python SUPERTYPE -- it also
+#: matches `assignment` (an enum member's VALUE string spuriously
+#: captured otherwise). `_PY_DOC_CAPTURE_FILTER` below is the required
+#: post-filter: parent `.type` must be literally `"module"`, `"block"`,
+#: or `"expression_statement"` -- never `"assignment"`. The `.` anchor
+#: requires the docstring to be tree-sitter's IMMEDIATE first named
+#: child; each pattern tolerates zero-or-more leading `(comment)*` nodes
+#: first since this grammar does not treat `comment` as anchor-
+#: transparent.
 _PY_DOCSTRING_QUERY_SRC = """
 (module . (comment)* . (string) @doc)
 (module . (comment)* . (expression_statement (string) @doc))
@@ -289,17 +271,11 @@ def _docstring_byte_spans_from_tree(tree, language_label: str) -> list[ByteSpan]
 
 #: Process-lifetime memo for `_non_executable_byte_spans`, keyed on
 #: `(str(path), sha256(source).hexdigest())` -- the same content-hash-keyed
-#: shape as `frob.lang`'s own `_parse_cache` (T-0414), never mtime/size, so
-#: a content change always misses and a byte-identical revisit always hits
-#: regardless of which caller (gate, path) asks first (T-1210). Before this,
-#: `sys`+`opaque` each independently re-walked the SAME file's comment and
-#: docstring node trees once per public entry point that touches it
-#: (`scan_file_capabilities`, `_scan_file_operations`, `_scan_file_
-#: fingerprints`, `_opaque_indirection_findings`, `non_executable_line_
-#: numbers` -- five call sites in `_capability.py` alone, each independently
-#: recomputing the same spans for the same file within one `frob check`
-#: run). Guarded by a lock for the same reason `_parse_cache` is: gate
-#: stages run concurrently in a `ThreadPoolExecutor`.
+#: shape as `frob.lang`'s own `_parse_cache`, never mtime/size, so a
+#: content change always misses and a byte-identical revisit always hits
+#: regardless of which caller asks first. Guarded by a lock for the same
+#: reason `_parse_cache` is: gate stages run concurrently in a
+#: `ThreadPoolExecutor`.
 _span_cache_lock = threading.Lock()
 _span_cache: dict[tuple[str, str], tuple[ByteSpan, ...]] = {}
 
@@ -441,20 +417,17 @@ def _needle_hits_as_bare_call(
         start = idx + 1
 
 
-# T-0244: embedded-code blind spot. Every needle table above only ever
-# scans a file's OWN source-grammar text; a large HTML/JS-shaped STRING
-# LITERAL sitting inside a Python module (the malmberg pilot P3 shape -- a
-# 5400-line dashboard's markup/script embedded as a python string) is
-# structurally invisible to it. The functions below detect such a region
-# (a size + HTML/JS-signal heuristic over python tree-sitter `string`
-# nodes) and ALWAYS emit the `embedded_code` capability kind for a region
-# found, independent of whether the best-effort typescript-needle re-scan
-# over the region's own text turns up anything specific -- fail-closed per
-# docs/design/structural-linter-adversarial-hardening.md rule 3: the
-# region is declared, never silently passed, even when the re-scan is
-# empty. Python only for this pass (the ticket's own reported shape);
-# extending detection to other host languages embedding HTML/JS strings is
-# a documented follow-up, not attempted here.
+# Embedded-code blind spot: every needle table above only ever scans a
+# file's OWN source-grammar text; a large HTML/JS-shaped STRING LITERAL
+# sitting inside a Python module is structurally invisible to it. The
+# functions below detect such a region (a size + HTML/JS-signal
+# heuristic over python tree-sitter `string` nodes) and ALWAYS emit the
+# `embedded_code` capability kind for a region found, independent of
+# whether the best-effort typescript-needle re-scan over the region's
+# own text turns up anything specific -- fail-closed: the region is
+# declared, never silently passed, even when the re-scan is empty.
+# Python only for this pass; other host languages are a documented
+# follow-up, not attempted here.
 
 #: minimum embedded-string byte length before the heuristic even looks at
 #: signal tokens (T-0244) -- short strings (an error message, a single CSS
@@ -1012,8 +985,7 @@ _SEGMENT_SEP_RE = re.compile(r"::|\.")
 
 # frob:ticket T-2507
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_family_prefix_still_reaches_sibling_family
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_reaches_sibling_family  # noqa: E501
 def _dotted_segments(target: str) -> list[str]:
     """Split a resolved identity or registry needle into its dotted
     segments (T-2507) -- `"::"` (rust/c++ path separator, e.g.
@@ -1029,29 +1001,21 @@ def _dotted_segments(target: str) -> list[str]:
 
 # frob:ticket T-2507
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_module_prefix_matches_with_and_without_trailing_dot
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_matches_with_and_without_trailing_dot  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_call_target_matches_with_and_without_trailing_paren
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_call_target_matches_with_and_without_trailing_paren  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_bare_identifier_matches_with_and_without_trailing_paren
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_bare_identifier_matches_with_and_without_trailing_paren  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_family_prefix_still_reaches_sibling_family
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_reaches_sibling_family  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_no_false_positive_on_module_name_substring
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_module_name_substring  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_no_false_positive_on_call_target_substring
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_call_target_substring  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_no_false_positive_on_bare_identifier_substring
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_bare_identifier_substring  # noqa: E501
 # frob:tests \
-# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
-# st_module_prefix_does_not_match_unrelated_leading_segment
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_does_not_match_unrelated_leading_segment  # noqa: E501
 def _needle_matches_resolved(needle: str, resolved: str) -> bool:
     """True if `needle` (a registry needle string -- a bare identifier
     like `"Popen"`, a dotted module prefix like `"subprocess."`, a fully-
@@ -1110,21 +1074,13 @@ def _needle_matches_resolved(needle: str, resolved: str) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0169
 #: Every language bucket `_EXT_LANGUAGE` maps at least one extension to --
-#: i.e. every language a capability-scan CALLER (self-conformance's
-#: `_selfconform.py::_sorted_capability_files`, `vet`'s dependency scan)
-#: actually reaches via `language_for`/`scan_file_capabilities`. Exists so
-#: a drift-lock test can assert this set equals
-#: `_capability_registry.LANGUAGES` (the registry's claimed-supported set)
-#: without either side hand-duplicating the other's language list -- a new
-#: registry language with no `_EXT_LANGUAGE` extension entry (or vice
-#: versa) fails that test loudly instead of silently going unscanned
-#: (T-0169: this exact class of gap is what let TS/JS self-conformance
-#: scanning go dark in the logand.app pilot).
-#:
-#: T-2358: moved here (from `_capability.py`) alongside `language_for` --
-#: `_capability_core.py` already defines `_EXT_LANGUAGE` both symbols are
-#: derived from, so this was the natural home once `_capability_scan.py`
-#: needed `language_for` back (see `language_for`'s own T-2358 note).
+#: i.e. every language a capability-scan CALLER actually reaches via
+#: `language_for`/`scan_file_capabilities`. Exists so a drift-lock test
+#: can assert this set equals `_capability_registry.LANGUAGES` (the
+#: registry's claimed-supported set) without either side hand-
+#: duplicating the other's language list -- a new registry language with
+#: no `_EXT_LANGUAGE` extension entry (or vice versa) fails that test
+#: loudly instead of silently going unscanned.
 SCANNED_LANGUAGES: frozenset[str] = frozenset(_EXT_LANGUAGE.values())
 
 

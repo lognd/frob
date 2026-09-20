@@ -66,27 +66,15 @@ _UNITY_OPERATIONS: tuple[_DangerousOperation, ...] = (
         (),
     ),
     # T-4554: the bare coarse "net" capability_kind these four entries
-    # used (T-4514's own acceptance criterion names "the net capability"
-    # specifically for `UnityWebRequest.Get`) is a RETIRED scanner kind
-    # (`_effects.py::_KIND_MAP`'s own module docstring: "the old bare
-    # `net`:`net` entry is retired since no registry entry emits the
-    # unqualified `net` vet-kind anymore" -- T-0771's precise net-connect/
-    # net-listen split). It slipped through unnoticed at T-4514 land time
-    # because nothing enforced that claim until
-    # `TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_
-    # kind_map` (tests/unit/strata/test_selfconform.py) started failing
-    # on dev: `all_pattern_kinds` (every kind any registry entry emits)
-    # then contained a bare "net" neither `_EXTENDED_KINDS` nor
-    # `_KIND_MAP` accounts for. Recategorized to `net-connect` -- the SAME
-    # precise kind `_dotnet_bcl.py`'s `Dns.GetHostAddresses`/etc already
-    # use for an outbound-network-reach signal with no listen-side
-    # semantics, and (`_kinds.py`'s `WIRED_MODE_FAMILIES`) a coarse
-    # `may "net"` declaration still covers `net-connect` exactly as it
-    # covered the retired bare `net`, so no resolver behavior change: a
-    # node that already declared `may "net"` for these call sites keeps
-    # passing; only the raw scanner-kind bucket these needles land in
-    # changes, from an unenforceable orphan to a normalized, drift-lock-
-    # accounted-for one.
+    # used is a RETIRED scanner kind -- no registry entry emits the
+    # unqualified `net` vet-kind anymore (T-0771's net-connect/net-listen
+    # split). Recategorized to `net-connect` -- the SAME precise kind
+    # `_dotnet_bcl.py`'s outbound-network calls already use, and a
+    # coarse `may "net"` declaration still covers `net-connect` exactly
+    # as it covered the retired bare `net`, so no resolver behavior
+    # change: only the raw scanner-kind bucket these needles land in
+    # changes, from an unenforceable orphan to a drift-lock-accounted-for
+    # one.
     _op(
         "csharp",
         "UnityEngine.Networking",

@@ -10,19 +10,9 @@ from __future__ import annotations
 #: every language the matrix reasons about. C and C++ share one bucket
 #: (`c-cpp`) since the dangerous idioms -- `system`/`popen`/`exec*`/
 #: `dlopen`/`strcpy`-family -- are identical C ABI surface in both.
-#: T-2906: bash and csharp added -- each gets real `_DangerousOperation`
-#: patterns for its highest-value idioms (exec/eval/fetch_url/env/fs) in
-#: `_dangerous_ops_other.py`, plus generated `CAPABILITY_MATRIX_EXCUSES`
-#: cells (`_new_adapter_matrix_excuses` in `_matrix.py`, mirrors `frob.
-#: dup._exhaustiveness._non_python_excuses`'s generated-not-hand-copied
-#: shape) for every kind that genuinely has no idiom in that language.
-#: T-3492: java added, same discipline -- real patterns for its
-#: highest-value idioms (net/env-read/exec/deserialize) in the new
-#: `_dangerous_ops_java.py`, generated excuses for the rest.
-#: T-3493: cuda added, same discipline -- a `.cu`/`.cuh` file compiles
-#: with a HOST C/C++ compiler, so its real patterns in the new
-#: `_dangerous_ops_cuda.py` mirror c-cpp's own exec/fs/ffi/net entries
-#: verbatim (same C ABI), generated excuses for the rest.
+#: Each added language gets real `_DangerousOperation` patterns for its
+#: highest-value idioms plus generated `CAPABILITY_MATRIX_EXCUSES` cells
+#: for every kind with no idiom in that language.
 LANGUAGES: tuple[str, ...] = (
     "python",
     "typescript",
@@ -67,20 +57,12 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     "net-connect",
     "net-listen",
     #: T-2464: mutating-VERB signal for the highest-precision HTTP client
-    #: libraries (`requests`/`httpx` module-level `post(`/`put(`/
-    #: `delete(`/`patch(` convenience calls) -- a DIFFERENT axis from
-    #: connect-vs-listen (socket ROLE): this is read-vs-write over an
-    #: already-connected client, the network-capability analog of
-    #: `fs-write`/`fs-read`. Deliberately UNWIRED (module docstring's
-    #: "Wiring status" section in `frob.vet._capability_modes` -- same
-    #: posture as `proc`/`ffi`): no `FAMILY_MODES`/`WIRED_MODE_FAMILIES`
-    #: entry exists for it yet, so a coarse `may "net"` declaration does
-    #: NOT yet expand to cover it and no SYS100/SYS101 join reads it --
-    #: this is a SCANNER-only signal for now, additive to (never
-    #: replacing) the existing coarse `net-connect` observation. Building
-    #: the tier-2 join, and covering more libraries than requests/httpx,
-    #: is real follow-up work (see T-2464's own Done report for what is
-    #: and is not covered).
+    #: libraries (module-level `post(`/`put(`/`delete(`/`patch(` calls) --
+    #: read-vs-write over an already-connected client, distinct from
+    #: connect-vs-listen. Deliberately UNWIRED: no `FAMILY_MODES`/
+    #: `WIRED_MODE_FAMILIES` entry exists for it yet, so a coarse `may
+    #: "net"` declaration does NOT expand to cover it -- SCANNER-only,
+    #: additive to the existing coarse `net-connect` observation.
     "net-mutate",
     #: T-0771: `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES` excuses
     #: THREAT005 against the tier-2 `_effects.py::_KIND_MAP`-NORMALIZED

@@ -475,28 +475,15 @@ def _scan_dependencies_parallel(
 
 
 # frob:ticket T-3708
-# CORRECTNESS NOTE (review round 1 of T-0794 caught the predecessor issue,
-# preserved and updated here): the original shape used a `with
-# ThreadPoolExecutor(...)` block, whose `__exit__` calls `shutdown(wait=
-# True)` unconditionally, including when the body returns early on a
-# timeout -- so a naive `with pool: ... except FutureTimeoutError: return
-# ...` blocks the caller for the FULL underlying task duration, not
-# `timeout`, defeating the entire point of this function. T-0794 fixed
-# that by constructing the pool WITHOUT a `with` and explicitly calling
-# `shutdown(wait=False)` on the timeout path. T-3708 found that fix
-# incomplete: `shutdown(wait=False)` does not actually free the abandoned
-# worker from the interpreter -- `concurrent.futures.thread` keeps a
-# process-global registry of every worker thread any `ThreadPoolExecutor`
-# has created and its own atexit handler unconditionally joins all of them
-# at interpreter shutdown, so a genuinely-still-blocked abandoned worker
-# hangs process exit (this was the win32 CI ~120s teardown gap). This
-# function now runs `_process_dependency` via
+# CORRECTNESS NOTE: `_process_dependency` runs via
 # `frob._daemon_timeout.run_bounded`, a plain `daemon=True` thread that
-# `concurrent.futures.thread` never registers -- an abandoned worker keeps
-# running in the background for as long as `_process_dependency` takes
-# (Python cannot preempt a running thread; same disclosed trade-off as
-# `_scan_dependencies`' docstring) but can no longer block interpreter
-# shutdown.
+# `concurrent.futures.thread` never registers in its process-global
+# worker registry -- a `ThreadPoolExecutor`'s own atexit handler
+# unconditionally joins every registered worker at interpreter
+# shutdown, so an abandoned (timed-out) pool worker there hangs process
+# exit. An abandoned daemon thread here keeps running in the background
+# for as long as `_process_dependency` takes (Python cannot preempt a
+# running thread) but can no longer block interpreter shutdown.
 
 
 # frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_slow_package_returns_within_timeout_not_task_duration  # noqa: E501

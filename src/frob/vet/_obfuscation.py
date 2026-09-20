@@ -33,38 +33,17 @@ _log = get_logger(__name__)
 _ENTROPY_THRESHOLD = 4.5
 _MIN_STRING_LEN = 24
 
-# T-0208: `_high_entropy_strings` used to scan with a regex whose alternation
-# `(?:\\.|(?!\1).)*` catastrophically backtracks on real files -- a 9.6KB
-# fixture (blib2to3/pgen2/conv.py, stdlib-adjacent, nothing adversarial in
-# it) profiled at ~90ms in the regex alone vs ~0.3ms for the entropy math
-# over the same matches, and the pilot-repo profile that filed this ticket
-# showed 82 of 120 profiled seconds inside this function across 785 calls.
-# `_iter_string_literals` below replaces it with a single left-to-right scan
-# (no backtracking, no lookahead) that is O(len(text)) by construction.
+# `_high_entropy_strings` used to scan with a regex that catastrophically
+# backtracks on real files. `_iter_string_literals` replaces it with a
+# single left-to-right scan (no backtracking, no lookahead) that is
+# O(len(text)) by construction.
 #
-# T-0208 review round 2: a 4096-char truncation of the CONTENT fed to the
-# entropy check (rather than just the returned/logged snippet) is WRONG,
-# not just a perf tradeoff -- Shannon entropy is a property of the whole
-# sample, and truncating a real hit can pull its score back under
-# threshold. Measured on a real file (cryptography's pkcs7.py, a
-# mismatched-quote span, not even a real payload): entropy(full 7575-char
-# span) = 4.602 (fires, matches the old regex), entropy(same span
-# truncated to 4096) = 4.472 (silent -- a genuine detection loss, not the
-# disclosed "truncating a base64 blob still trips on its opening bytes"
-# case that reasoning assumed). `_iter_string_literals` therefore no
-# longer truncates content: the O(n) argument for the underlying scan
-# does not depend on a length cap -- every successful (closing) literal's
-# scan consumes its own span once and the outer loop never revisits those
-# characters, so total scan work across ALL successful literals in a file
-# is bounded by `len(text)` regardless of how any single literal's length
-# is distributed; only a FAILED open needs to be O(1) (the
-# `last_single`/`last_double` reject below already guarantees that). What
-# remains is a pure memory/DoS safety ceiling, `_MAX_CANDIDATE_LEN`,
-# raised to 1MB so it is never reached by a real source string and only
-# guards against a single-file OOM from an adversarial multi-hundred-MB
-# "string". The candidate-COUNT cap remains a distinct, still-needed
-# safety valve against files with huge numbers of small quoted tokens
-# (generated data tables).
+# Truncating the CONTENT fed to the entropy check is WRONG, not just a
+# perf tradeoff -- Shannon entropy is a property of the whole sample, and
+# truncating a real hit can pull its score back under threshold.
+# `_iter_string_literals` never truncates content: total scan work is
+# bounded by `len(text)`. `_MAX_CANDIDATE_LEN` (1MB) is a pure DoS
+# ceiling, separate from the still-needed candidate-COUNT cap.
 _MAX_CANDIDATE_LEN = 1_000_000
 _MAX_CANDIDATES_PER_FILE = 4000
 
@@ -75,32 +54,18 @@ _MAX_CANDIDATES_PER_FILE = 4000
 _MAX_SCAN_BYTES = 2 * 1024 * 1024
 
 
-# Escapes (`\\x`) are skipped as a pair. Entropy is computed over the FULL
-# literal, never truncated (review round 2 -- see the T-0208 note above:
-# truncating changes the entropy score and can hide a real hit).
-# `_MAX_CANDIDATE_LEN` is a 1MB memory-safety ceiling, not a normal-path
-# cap; the file is capped at `_MAX_CANDIDATES_PER_FILE` literals.
+# Escapes (`\\x`) are skipped as a pair. Entropy is computed over the
+# FULL literal, never truncated (see T-0208 above).
+# `_MAX_CANDIDATE_LEN` is a memory-safety ceiling, not a normal-path cap.
 #
-# UNTERMINATED CANDIDATES (review round 1 caught this): a quote char with
-# no matching close anywhere later in the file is NOT a literal -- it
-# matches the OLD regex's actual behavior (a failed match attempt at that
-# start position, retried one char later), not "run to end of text".
-# Treating it as a literal was an undisclosed behavior change: after a
-# mismatched-quote region consumes the file's last `'`, the old regex
-# gives up on that open quote and correctly re-syncs on the next
-# docstring's triple-quote; the old (buggy) version of this function
-# instead swallowed that docstring into one giant unterminated "literal",
-# silently DROPPING it from the entropy check -- a detection gap, not a
-# disclosed false-positive tradeoff.
-#
-# Detecting "no closing quote anywhere later" naively (scan-to-EOF, then
-# discard and retry one char over) reintroduces the exact quadratic
-# blowup T-0208 fixed, for a file with many trailing unmatched quote
-# chars. Fixed with an O(1) reject: `last_single`/`last_double` are each
-# quote type's LAST raw occurrence in the text, computed once; if a
-# candidate opens at or after that position, it can never close and is
-# rejected without scanning -- one linear pre-pass plus O(1) per
-# rejection keeps the whole function O(len(text)).
+# UNTERMINATED CANDIDATES: a quote char with no matching close anywhere
+# later in the file is NOT a literal -- treating it as one would
+# silently swallow the rest of the file into one giant "literal",
+# dropping it from the entropy check. Detecting this naively (scan-to-
+# EOF, discard, retry) reintroduces the same quadratic blowup T-0208
+# fixed. Fixed with an O(1) reject: `last_single`/`last_double` are
+# each quote type's LAST raw occurrence, computed once; a candidate
+# opening at or after that position can never close.
 def _iter_string_literals(text: str) -> list[str]:
     """Single-pass, backtracking-free scan for `'...'`/`"..."` literal
     bodies (single-char delimiters only, matching the prior regex's scope)."""

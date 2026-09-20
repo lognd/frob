@@ -16,30 +16,17 @@ from frob.lang import node_text, raw_tree
 from ._capability_core import ByteSpan, _fully_in_any_span, _needle_matches_resolved
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
 
-# --------------------------------------------------------------- kotlin (T-0664)
+# Kotlin static-binding resolution via `frob.lang._walk_kotlin`.
 #
-# Kotlin static-binding resolution (docs/design/capability-evasion-
-# taxonomy.md's Kotlin table, T-0664 -- the fourth per-language resolver
-# after T-0328/T-0377/T-0378/T-0379/T-0662/T-0663's python/TS/rust/C/C++
-# ones). `frob.lang.raw_tree`'s `"kotlin"` label reaches `frob.lang._walk_
-# kotlin`'s grammar via T-0723's central-dispatch wiring.
-#
-# SCOPE, disclosed up front rather than silently narrowed: this resolver
-# uses a FLAT, FILE-WIDE alias table (no per-scope/position shadow
-# discipline the way `_c_shadowing_scope`/`_rust_shadowing_scope` give the
-# C/rust resolvers) -- a local variable that happens to share a name with
-# an imported/aliased binding is NOT distinguished from the import here.
-# This is a REDUCED-FIDELITY model versus the other four resolvers (a
-# genuine over-approximation risk, not a silent gap: a shadowing local
-# could theoretically cause a spurious "detected" on a name that is
-# locally rebound to something harmless), accepted for this pass given
-# kotlin's own grammar has no separate compilation-unit-vs-function-body
-# scope split as clean as C's `_C_SCOPE_TYPES`/rust's `_RUST_SCOPE_TYPES`
-# to hang position-aware bookkeeping off of without materially more
-# machinery than this ticket's own time budget allows. A future pass
-# tightening this to per-function scoping (mirroring `_c_scope_bound_
-# names`'s shape against kotlin's `function_declaration`/`class_body`
-# nodes) is a natural follow-up, not attempted here.
+# SCOPE: this resolver uses a FLAT, FILE-WIDE alias table -- no per-
+# scope/position shadow discipline. A local variable sharing a name
+# with an imported/aliased binding is NOT distinguished from the
+# import -- a REDUCED-FIDELITY model, a genuine over-approximation
+# risk (a spurious "detected" on a locally-rebound name), never a
+# silent gap. Kotlin's grammar has no clean compilation-unit-vs-
+# function-body scope split to hang position-aware bookkeeping off of
+# without materially more machinery. A future pass tightening this to
+# per-function scoping is a natural follow-up, not attempted here.
 _KT_WILDCARD_DANGEROUS_MODULES = frozenset({"java.lang"})
 
 

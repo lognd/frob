@@ -94,18 +94,16 @@ if TYPE_CHECKING:
 _log = get_logger(__name__)
 
 #: LAST-RESORT fallback only (T-3275): the package this repo's own
-#: coverage recipe measures (mirrors `Makefile`'s `--cov=src/frob`).
-#: `native_coverage_refresh`'s default now RESOLVES the real target from
-#: the scanned repo's own `pyproject.toml` `[project].name` via
-#: `_resolve_cov_target` below, so a consumer repo whose package is not
-#: literally `frob` measures its own code instead of silently measuring
-#: frob's (T-3275, FROBLEMS.md F-011: a consumer's `frob coverage` run
-#: measured `src/frob`, got "No data was collected", and was marked
-#: DEGRADED). This literal is now reached only when that resolution
-#: cannot determine an answer (missing/malformed pyproject.toml, or a
-#: declared name whose src-layout directory does not exist) -- an
-#: explicit `cov_target=` caller (both existing call sites pass none
-#: today) always wins over both.
+#: coverage recipe measures. `native_coverage_refresh`'s default now
+#: RESOLVES the real target from the scanned repo's own
+#: `pyproject.toml` `[project].name` via `_resolve_cov_target` below,
+#: so a consumer repo whose package is not literally `frob` measures
+#: its own code instead of silently measuring frob's. This literal is
+#: reached only when that resolution cannot determine an answer
+#: (missing/malformed pyproject.toml, or a declared name whose
+#: src-layout directory does not exist) -- an explicit `cov_target=`
+#: caller always wins over both. Full incident history: T-4718 sweep,
+#: T-3275 ticket body.
 # frob:ticket T-1516
 # frob:ticket T-3275
 _DEFAULT_COV_TARGET = "src/frob"
@@ -296,41 +294,16 @@ _KILL_GRACE_PERIOD_S = 5.0
 # frob:ticket T-1677
 # frob:ticket T-2087
 #: The xdist worker-crash signature this module knows how to detect and
-#: retry serially (T-1672's "killed worker" incident, folded in here per
-#: this ticket's own body: "fold T-1672 into this if one implementation
-#: covers both"). `INTERNALERROR` is pytest's own marker for an
-#: uncaught exception in its own machinery (xdist's scheduler raises
-#: exactly this shape, `KeyError: <WorkerController gwNN>`, when a worker
-#: process disappears out from under it, IF it happens); `gwNN` node-down
-#: report lines are `execnet`'s. Matching any is enough to classify the
-#: abort as an ENVIRONMENT failure (a worker got killed, most often OOM)
-#: rather than a genuine test regression -- T-1672's item 3, "a resource
-#: kill and a real suite failure both surface as exited 3; classify them
-#: differently."
-#:
-#: T-2087: `worker\s+gw\d+\s+crashed` never actually matched on THIS
-#: repo's pinned pytest-xdist (3.8.0) -- verified directly with both a
-#: voluntary `os._exit` and a real `SIGKILL` inside a worker, run under
-#: this repo's own installed xdist. The real summary line quotes the
-#: node id (`worker 'gw1' crashed while running '...'`), which the old
-#: pattern's bare `gw\d+` (no room for the surrounding `'...'`) could
-#: never match. In practice this was masked rather than silent: every
-#: reproduced crash shape ALSO printed `replacing crashed worker gwNN`
-#: (the OTHER alternative here) earlier in the same output, so
-#: `_pytest_outcome` still classified correctly end to end -- but the
-#: summary-line branch existed to catch exactly the case where that
-#: earlier line is NOT present in the captured output (e.g. a watchdog-
-#: truncated capture, T-1677's own `_spawn_with_watchdog`), and in that
-#: case it was silently dead. `'?` (both quote styles, and none, in one
-#: pattern) fixes the summary-line branch without touching the other two.
-#: The ORIGINAL `INTERNALERROR>...KeyError: <WorkerController gwNN>`
-#: shape T-1672's own field incident recorded was NOT reproduced on this
-#: pytest-xdist version despite both an `os._exit` and a `SIGKILL` repro
-#: (see `TestWorkerCrashSignatureRealSubprocess` below) -- it may be
-#: specific to an older xdist version this repo has since upgraded past;
-#: the pattern is kept (matching it costs nothing and it may still occur
-#: under a different failure timing this repro did not hit) but is no
-#: longer the only, or even the primary, real-world match path.
+#: retry serially. `INTERNALERROR` is pytest's own marker for an
+#: uncaught exception in its own machinery; `worker '?gwNN'?  crashed`
+#: (both quote styles, and none) is xdist's own summary line;
+#: `replacing crashed worker gwNN` is execnet's node-down report.
+#: Matching any is enough to classify the abort as an ENVIRONMENT
+#: failure (a worker got killed, most often OOM) rather than a genuine
+#: test regression. All three alternatives are kept even though only
+#: one may fire on a given xdist version, since each guards a different
+#: failure-reporting path. Full investigation history: T-4718 sweep,
+#: T-1672/T-1677/T-2087 ticket bodies.
 _WORKER_CRASH_SIGNATURE_RE = re.compile(
     r"INTERNALERROR>.*WorkerController|worker\s+'?gw\d+'?\s+crashed|"
     r"replacing crashed worker"

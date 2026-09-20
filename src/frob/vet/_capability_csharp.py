@@ -16,31 +16,18 @@ from frob.lang import node_text, raw_tree
 from ._capability_core import ByteSpan, _fully_in_any_span, _needle_matches_resolved
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
 
-# --------------------------------------------------------------- csharp (T-4536)  # noqa: E501
+# C# static-binding resolution via `frob.lang._walk_csharp`.
 #
-# C# static-binding resolution (docs/design/capability-evasion-taxonomy.md's
-# csharp lineage -- the sixth per-language resolver after python/TS/rust/
-# c-cpp/kotlin). `frob.lang.raw_tree`'s `"csharp"` label reaches
-# `frob.lang._walk_csharp`'s grammar via T-1600's central-dispatch wiring.
+# SCOPE: this resolver uses a FLAT, FILE-WIDE alias table -- no per-
+# method/per-block shadow discipline. A local variable sharing a name
+# with an imported alias is NOT distinguished by scope -- a REDUCED-
+# FIDELITY model, accepted as an over-approximation risk, never a gap.
 #
-# SCOPE, disclosed up front rather than silently narrowed: like kotlin
-# (`_capability_kotlin.py`'s own docstring note), this resolver uses a
-# FLAT, FILE-WIDE alias table -- no per-method/per-block shadow discipline.
-# A local variable that happens to share a name with an imported alias or
-# another `var`-typed local is NOT distinguished by scope here. This is a
-# REDUCED-FIDELITY model versus the C/C++/rust resolvers, accepted for the
-# same reason kotlin's was: an over-approximation risk (a spurious
-# resolved match on a locally-shadowed name), never a silent gap.
-#
-# A plain `using X.Y;` (no alias, no `static`) is C#'s closest analogue to
-# kotlin's wildcard import -- it brings every type in that namespace into
+# A plain `using X.Y;` brings every type in that namespace into
 # unqualified scope, so a BARE `File.WriteAllText(...)` resolves only
-# because `System.IO` was `using`'d. Mirroring kotlin's `_KT_WILDCARD_
-# DANGEROUS_MODULES` fail-closed-by-curation posture (never resolve
-# bare-identifier lookups against an arbitrary imported namespace), this
-# module curates the namespace set to exactly the ones the csharp registry
-# slice (`_dangerous_ops_bash_csharp.py`) actually declares dangerous APIs
-# under -- an unlisted namespace's bare-name usage resolves nothing.
+# because `System.IO` was `using`'d. The namespace set is curated to
+# exactly the ones the csharp registry declares dangerous APIs under --
+# fail-closed: an unlisted namespace's bare-name usage resolves nothing.
 _CS_WILDCARD_DANGEROUS_NAMESPACES = frozenset(
     {
         "System",
