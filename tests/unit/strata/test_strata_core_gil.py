@@ -160,9 +160,9 @@ class TestGilActuallyReleased:
 
 
 class TestResultsUnchanged:
-    """T-3457 must-stay-quiet: `py.allow_threads` is a pure concurrency
-    change -- every kernel's return value is bit-for-bit identical to
-    before this ticket."""
+    """Proves each strata-core kernel's return value is bit-for-bit
+    identical across the pyo3 FFI boundary under `py.allow_threads`, a
+    pure concurrency change with no effect on results (see T-3457)."""
 
     def test_worst_age_result_unchanged(self) -> None:
         """Mirrors `worst_age_takes_the_stalest_path`'s shape in

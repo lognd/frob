@@ -71,12 +71,11 @@ class TestGitattributesEolNormalization:
         assert _check_attr("text", "tickets/T-0001/attachments/x.md") == "unset"
 
     def test_rapid_debt_no_longer_carries_an_explicit_pin(self) -> None:
-        """T-2997: rapid-debt.jsonl moved to gitignored `.frob/` and its
-        explicit T-2586 `text eol=lf` pin was removed alongside it -- it
-        still resolves `eol=lf` (via the repo-wide `* text=auto eol=lf`
-        default), but `text` now reads `auto`, not the explicit `set` an
-        untracked, gitignored file's attributes are irrelevant to
-        anyway (git never applies attributes to a path it never sees)."""
+        """Proves `rapid-debt.jsonl` (gitignored, under `.frob/`) resolves
+        `eol=lf` via the repo-wide `* text=auto eol=lf` default and
+        `text` reads `auto`, not an explicit `set`, matching that an
+        untracked path's attributes are moot: git never applies
+        attributes to a path it never sees (see T-2997)."""
         assert _check_attr("eol", "rapid-debt.jsonl") == "lf"
         assert _check_attr("text", "rapid-debt.jsonl") == "auto"
 

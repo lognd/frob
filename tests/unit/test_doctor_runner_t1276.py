@@ -71,8 +71,7 @@ def _report(
 
 class TestDoctorRunnerHealthy:
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_plai\
-    # n_prints_all_available_and_does_not_exit
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_plain_prints_all_available_and_does_not_exit  # noqa: E501
     def test_healthy_plain_prints_all_available_and_does_not_exit(
         self, monkeypatch, capsys
     ) -> None:
@@ -91,8 +90,7 @@ class TestDoctorRunnerHealthy:
         assert "frob_core" in out and "strata_core" in out
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_json\
-    # _emits_parseable_report
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_json_emits_parseable_report  # noqa: E501
     def test_healthy_json_emits_parseable_report(self, monkeypatch, caplog) -> None:
         """`--json` emits the report's JSON on the log channel and does not
         exit when healthy."""
@@ -110,16 +108,16 @@ class TestDoctorRunnerHealthy:
 
 
 # frob:ticket T-2979
+# frob:ticket T-4631
 class TestDoctorRunnerPlainPathQuieted:
-    """T-2979: `run`'s plain (human, non-`--json`) path now wraps
-    `run_diagnosis()` in `quiet_query_stdout()`, matching its `doctor_json`
-    sibling -- previously it was the one path in this file left unwrapped,
-    so an INFO-level log line emitted from inside `run_diagnosis` leaked
-    onto stdout ahead of the real report by default. Asserted by handler
-    level (not stdout text) because frob's own root StreamHandlers are
-    skipped under pytest (T-1621) -- `quiet_query_stdout`/`quiet_stdout_
-    logs` act on the handler list directly, so `_stdout_handler_levels()`
-    is the effect that is actually observable in-process."""
+    """Proves `run`'s plain (human, non-`--json`) path wraps
+    `run_diagnosis()` in `quiet_query_stdout()`, matching its
+    `doctor_json` sibling, so an INFO-level log line emitted inside
+    `run_diagnosis` does not leak onto stdout ahead of the real report
+    (see T-2979). Asserted via `_stdout_handler_levels()` (the handler
+    list `quiet_query_stdout`/`quiet_stdout_logs` act on directly)
+    because frob's own root StreamHandlers are skipped under pytest, so
+    stdout text itself is not observable in-process (see T-1621)."""
 
     def _install_probe_handler(self):
         """Add a real stdout `StreamHandler` to root (T-1621: frob's own
@@ -135,8 +133,7 @@ class TestDoctorRunnerPlainPathQuieted:
         return handler
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_pla\
-    # in_path_raises_stdout_handlers_to_warning_by_default
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_raises_stdout_handlers_to_warning_by_default  # noqa: E501
     def test_plain_path_raises_stdout_handlers_to_warning_by_default(
         self, monkeypatch
     ) -> None:
@@ -163,8 +160,7 @@ class TestDoctorRunnerPlainPathQuieted:
         assert levels_seen_inside == [logging.WARNING]
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_pla\
-    # in_path_leaves_stdout_handlers_alone_under_frob_verbose
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose  # noqa: E501
     def test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose(
         self, monkeypatch
     ) -> None:
@@ -193,8 +189,7 @@ class TestDoctorRunnerPlainPathQuieted:
 
 class TestDoctorRunnerUnhealthy:
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_\
-    # plain_exits_1_and_prints_remediation
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
     def test_unhealthy_plain_exits_1_and_prints_remediation(
         self, monkeypatch, capsys
     ) -> None:
@@ -215,8 +210,7 @@ class TestDoctorRunnerUnhealthy:
         assert "run: make core" in out
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_\
-    # no_remediation_prints_empty_not_none
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_no_remediation_prints_empty_not_none  # noqa: E501
     def test_unhealthy_no_remediation_prints_empty_not_none(
         self, monkeypatch, capsys
     ) -> None:
@@ -236,8 +230,7 @@ class TestDoctorRunnerUnhealthy:
         assert "None" not in out
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_\
-    # json_exits_1
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_json_exits_1  # noqa: E501
     def test_unhealthy_json_exits_1(self, monkeypatch) -> None:
         """`--json` on an unhealthy report still exits 1, matching the
         plain-mode preflight-check contract."""
@@ -264,8 +257,7 @@ class TestDoctorRunnerOrphanedLandLockDisclosure:
 
     # frob:ticket T-1634
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosur\
-    # e.test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line  # noqa: E501
     def test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line(
         self, monkeypatch, capsys
     ) -> None:
@@ -294,8 +286,7 @@ class TestDoctorRunnerOrphanedLandLockDisclosure:
 
     # frob:ticket T-1634
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosur\
-    # e.test_healthy_report_with_no_land_lock_prints_nothing_extra
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_no_land_lock_prints_nothing_extra  # noqa: E501
     def test_healthy_report_with_no_land_lock_prints_nothing_extra(
         self, monkeypatch, capsys
     ) -> None:
@@ -323,8 +314,7 @@ class TestDoctorRunnerScaffoldDisclosure:
     exact same informational-only-but-still-surfaced pattern."""
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_h\
-    # ealthy_report_with_scaffold_needs_apply_prints_disclosure_line
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line  # noqa: E501
     def test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line(
         self, monkeypatch, capsys
     ) -> None:
@@ -354,8 +344,7 @@ class TestDoctorRunnerScaffoldDisclosure:
         assert "does not affect the exit code" in out
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_h\
-    # ealthy_report_with_no_scaffold_blocks_prints_nothing_extra
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra  # noqa: E501
     def test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra(
         self, monkeypatch, capsys
     ) -> None:

@@ -82,13 +82,12 @@ class TestNoFlow:
 
     # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"
     def test_real_leak_through_a_utility_hub_still_refutes(self):
-        """T-0496 (docs/audits/strata.md G5) litmus, straight from the
-        ticket's own repro: `log_hub{utility}` from `secret_store` to
-        `logger`, then a REAL leak edge `logger -> foreign_sink` -- before
-        this fix, `noflow(secret_store, foreign_sink)` PROVED despite the
-        two-hop leak (the `utility` marker made `logger` unreachable-past
-        even though `logger` had its own transitive outgoing edge). Must
-        now REFUTE with the full two-hop witness."""
+        """Proves `noflow(secret_store, foreign_sink)` REFUTES, with the
+        full two-hop witness, when a `utility`-marked `log_hub` edge from
+        `secret_store` to `logger` is followed by a real leak edge from
+        `logger` to `foreign_sink`: the `utility` marker must not make
+        `logger` unreachable-past its own transitive outgoing edge (see
+        T-0496, docs/audits/strata.md G5)."""
         model = KernelModel(
             nodes=(_node("secret_store"), _node("logger"), _node("foreign_sink")),
             flows=(

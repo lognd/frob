@@ -119,8 +119,7 @@ class TestSiblingStateRegressionGuard:
     `land()` itself."""
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_\
-    # no_regression_when_sibling_state_only_improves_or_holds
+    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_no_regression_when_sibling_state_only_improves_or_holds  # noqa: E501
     def test_no_regression_when_sibling_state_only_improves_or_holds(
         self, tmp_path: Path
     ) -> None:
@@ -149,8 +148,7 @@ class TestSiblingStateRegressionGuard:
         assert _assert_no_sibling_state_regression(tmp_path, "T-9999", pre) == ()
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_\
-    # regressed_sibling_is_detected_by_rank_comparison
+    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_regressed_sibling_is_detected_by_rank_comparison  # noqa: E501
     def test_regressed_sibling_is_detected_by_rank_comparison(
         self, tmp_path: Path
     ) -> None:
@@ -175,8 +173,7 @@ class TestSiblingStateRegressionGuard:
         assert regressed == ("T-1000",)
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_\
-    # pre_fix_shape_would_have_silently_reverted_sibling
+    # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_fix_shape_would_have_silently_reverted_sibling  # noqa: E501
     def test_pre_fix_shape_would_have_silently_reverted_sibling(
         self, v2_repo: Path
     ) -> None:
@@ -263,8 +260,7 @@ class TestSelfConflictAutoResolve:
     this ticket exists to auto-resolve."""
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self\
-    # _conflict_lands_by_keeping_newer_state
+    # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self_conflict_lands_by_keeping_newer_state  # noqa: E501
     def test_self_conflict_lands_by_keeping_newer_state(self, v2_repo: Path) -> None:
         created = new_ticket(v2_repo, _spec("Land L", scope=("src/widget.py",)))
         assert created.is_ok
@@ -307,8 +303,7 @@ class TestSelfConflictAutoResolve:
         )
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_genu\
-    # ine_sibling_conflict_still_refuses
+    # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_genuine_sibling_conflict_still_refuses  # noqa: E501
     def test_genuine_sibling_conflict_still_refuses(self, v2_repo: Path) -> None:
         """The exact `test_pre_fix_shape_would_have_silently_reverted_
         sibling` shape, restated here to pin down that T-2289's self-
@@ -392,8 +387,7 @@ class TestAuditedReopenEscape:
         )
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_audited_\
-    # reopen_is_not_flagged_as_regression
+    # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_audited_reopen_is_not_flagged_as_regression  # noqa: E501
     # frob:ticket T-4287
     def test_audited_reopen_is_not_flagged_as_regression(self, v2_repo: Path) -> None:
         sibling = _seed_v2_ticket(v2_repo, "T-3030", scope=("src/sibling2.py",))
@@ -433,8 +427,7 @@ class TestAuditedReopenEscape:
         assert landed.danger_ok["T-3030"].state == TicketState.QUEUED
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_hand_res\
-    # urrection_without_reopen_log_is_still_refused
+    # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_hand_resurrection_without_reopen_log_is_still_refused  # noqa: E501
     # frob:ticket T-4287
     def test_hand_resurrection_without_reopen_log_is_still_refused(
         self, v2_repo: Path
@@ -507,8 +500,7 @@ class TestNamesStrandedWorktreesBeforeReopen:
     DONE -> QUEUED transition."""
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReope\
-    # n.test_worktrees_carrying_terminal_copy_are_named
+    # tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReopen.test_worktrees_carrying_terminal_copy_are_named  # noqa: E501
     # frob:ticket T-4287
     def test_worktrees_carrying_terminal_copy_are_named(self, v2_repo: Path) -> None:
         from frob.tickets._reporting import _worktrees_carrying_terminal_copy
@@ -545,17 +537,16 @@ class TestNamesStrandedWorktreesBeforeReopen:
 
 # frob:ticket T-4435
 class TestSharedSiblingLoad:
-    """T-4435: `_sibling_ticket_states` and `_sibling_reopen_log_signatures`
-    each used to call `load_all(worktree)` independently -- two full
-    ledger loads per snapshot (pre-merge, then again post-merge) instead
-    of one. Both now accept an already-loaded ticket map via `loaded=`
-    and `_timed_load_all` is the single shared entry point `_land_
-    merge_stage`/`_assert_no_sibling_state_regression` call once per
-    snapshot and pass to both helpers."""
+    """Proves `_sibling_ticket_states` and
+    `_sibling_reopen_log_signatures` both accept an already-loaded ticket
+    map via `loaded=`, so `_timed_load_all` is called once per snapshot
+    (pre-merge, then post-merge) by `_land_merge_stage`/
+    `_assert_no_sibling_state_regression` and shared between the two
+    helpers, rather than each doing its own full ledger load (see
+    T-4435)."""
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_loa\
-    # d_is_reused_by_both_helpers
+    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_load_is_reused_by_both_helpers  # noqa: E501
     def test_shared_load_is_reused_by_both_helpers(self, tmp_path: Path) -> None:
         """A single `_timed_load_all` result, passed as `loaded=` to both
         helpers, is read verbatim -- no second `load_all` call happens
@@ -591,8 +582,7 @@ class TestSharedSiblingLoad:
         assert signatures == {"T-1000": ()}
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_a_fake_led\
-    # ger_of_n_tickets_loads_once_for_both_helpers
+    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_a_fake_ledger_of_n_tickets_loads_once_for_both_helpers  # noqa: E501
     def test_a_fake_ledger_of_n_tickets_loads_once_for_both_helpers(
         self, tmp_path: Path
     ) -> None:
@@ -618,8 +608,7 @@ class TestSharedSiblingLoad:
         assert all(v == () for v in signatures.values())
 
     # frob:tests \
-    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_default_no\
-    # _loaded_arg_still_loads_standalone
+    # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_default_no_loaded_arg_still_loads_standalone  # noqa: E501
     def test_default_no_loaded_arg_still_loads_standalone(self, tmp_path: Path) -> None:
         """`loaded=None` (the default) preserves the original standalone
         behavior -- unchanged for every existing caller/test that does not

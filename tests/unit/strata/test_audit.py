@@ -896,10 +896,10 @@ class TestCodeBoundWiring:
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_waived_gap_detail_folds_in_reason_and_rule(self):
-        """A matching `waive` clause on the finding's own node must move
-        the gap into `report.waived` with the waiver's rule and reason
-        folded into `detail` (`_waived_detail`, T-1415 remainder) -- never
-        just silently dropped."""
+        """Proves a matching `waive` clause on the finding's own node
+        moves the gap into `report.waived`, with `_waived_detail` adding
+        the waiver's rule and reason to `detail` rather than dropping the
+        gap silently (see T-1415)."""
         model = KernelModel(
             nodes=(
                 Node(

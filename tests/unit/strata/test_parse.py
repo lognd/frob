@@ -284,12 +284,12 @@ class TestParseModuleNativeExtensionUnavailable:
 
 # frob:ticket T-2707
 class TestStrataCoreImportError:
-    """T-2707: `strata_core_import_error()` surfaces the REAL exception a
-    guarded `import strata_core` raised, rather than discarding it -- the
-    masking defect a downstream consumer (aprog-public) hit: any
-    `ImportError` (a genuinely absent extension, an ABI/symbol mismatch,
-    or a failing secondary import inside the module) previously collapsed
-    to the same fixed "not installed" guess."""
+    """Proves `strata_core_import_error()` surfaces the real exception a
+    guarded `import strata_core` raised -- a genuinely absent extension,
+    an ABI/symbol mismatch, and a failing secondary import inside the
+    module are each distinguishable, none collapsing to a fixed "not
+    installed" guess -- and reports no error when the import succeeds
+    (see T-2707)."""
 
     # frob:ticket T-2707
     # frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_none_when_import_succeeded  # noqa: E501

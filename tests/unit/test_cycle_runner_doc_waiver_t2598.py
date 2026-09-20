@@ -21,9 +21,10 @@ class TestCycleRunnerDocWaiver:
     """Doc content and waiver-removal checks for the T-2598 fix."""
 
     def test_app_doc_describes_current_cycle_runner_contract(self) -> None:
-        """`docs/modules/app.md`'s `cycle_runner.run` bullet must describe
-        the T-2588 root-resolution and exit-code behavior, not the old
-        always-exit-0 contract."""
+        """Proves `docs/modules/app.md`'s `cycle_runner.run` bullet
+        describes the current root-resolution (nearest-enclosing
+        pyproject.toml) and per-outcome exit-code contract, so an
+        always-exit-0 reading of the doc is not possible (see T-2588)."""
         doc_text = (_REPO_ROOT / "docs/modules/app.md").read_text()
         start = doc_text.index("`cycle_runner.run` --")
         end = doc_text.index("\n- `map_runner.run`", start)

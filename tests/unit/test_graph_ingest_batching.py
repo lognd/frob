@@ -41,25 +41,15 @@ def _write_source(root: Path, rel: str, content: str) -> Path:
 def test_build_graph_commits_in_batches_not_one_final_transaction(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """T-4282 obligation [1]: before this fix, `build_graph` left every
-    per-file write in ONE open, uncommitted transaction until its own
-    final `_finalize_build` commit. Once sqlite's rollback-journal
-    writer spills its dirty page cache even once (routine for a
-    multi-file ingest), it holds an EXCLUSIVE lock for the rest of that
-    transaction -- starving every concurrent reader/builder for the
-    WHOLE remaining build, not just a brief flush. Pinning "a reader
-    gets through mid-build" directly is timing-dependent and would
-    need thousands of rows to force a real page-cache spill (too slow
-    for a unit test); this instead pins the mechanism the fix actually
-    relies on -- `conn.commit()` firing MORE OFTEN with a small batch
-    size than with a batch size larger than the whole ingest (i.e. the
-    pre-T-4282 shape, one commit at the very end plus whatever
-    unrelated per-file commits `store_parsed_artifact` already made on
-    its own). A differential comparison rather than a fixed expected
-    count, since the exact baseline includes those unrelated commits
-    too and asserting a literal number would just re-encode that
-    incidental detail instead of the property this ticket cares about.
-    """
+    """Proves `build_graph` commits in batches: `conn.commit()` fires
+    more often with a small `_INGEST_COMMIT_BATCH_SIZE` than with a
+    batch size larger than the whole ingest (one commit at the very end
+    plus whatever unrelated per-file commits `store_parsed_artifact`
+    makes on its own), so sqlite's rollback-journal writer does not hold
+    an EXCLUSIVE lock across the whole ingest once it spills its dirty
+    page cache (see T-4282). Uses a differential comparison, not a fixed
+    expected count, since the exact baseline includes those unrelated
+    commits too."""
     import frob.graph as graph_module
 
     def _commit_count(root: Path, cache: Path, *, batch_size: int) -> int:

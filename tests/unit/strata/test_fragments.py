@@ -45,8 +45,7 @@ class TestParseFragmentGrammar:
         assert m.extends[0].may_grants[0].via == ("b.py",)
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_root_has_no_pa\
-    # rt_of
+    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_root_has_no_part_of  # noqa: E501
     def test_root_has_no_part_of(self) -> None:
         """A plain `module NAME` file (the pre-T-2502 shape) still parses
         with `part_of=None`, `extends=()` -- no behavior change for the
@@ -56,8 +55,7 @@ class TestParseFragmentGrammar:
         assert m.extends == ()
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_fragment_canno\
-    # t_declare_module
+    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_fragment_cannot_declare_module  # noqa: E501
     def test_fragment_cannot_declare_module(self) -> None:
         """A file cannot say both `part of` and `module` -- refused at
         parse time (structural, not a loader-level check)."""
@@ -65,8 +63,7 @@ class TestParseFragmentGrammar:
         assert r.is_err
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_fragment_canno\
-    # t_declare_new_node
+    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_fragment_cannot_declare_new_node  # noqa: E501
     def test_fragment_cannot_declare_new_node(self) -> None:
         """A fragment introducing a fresh top-level `node` is refused at
         parse time -- fragments extend, they do not stand alone."""
@@ -74,8 +71,7 @@ class TestParseFragmentGrammar:
         assert r.is_err
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_extend_cannot_\
-    # set_clearance
+    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_extend_cannot_set_clearance  # noqa: E501
     def test_extend_cannot_set_clearance(self) -> None:
         """An `extend node` block cannot spell `clearance` (or any other
         node field) -- the grammar only has vocabulary for `may ... via
@@ -85,8 +81,7 @@ class TestParseFragmentGrammar:
         assert r.is_err
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_extend_grant_r\
-    # equires_via
+    # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_extend_grant_requires_via  # noqa: E501
     def test_extend_grant_requires_via(self) -> None:
         """A via-less `may "ATOM";` inside `extend node` is refused -- an
         unscoped grant is a fresh whole-node bless, not a widening of
@@ -97,8 +92,7 @@ class TestParseFragmentGrammar:
 
 class TestResolveFragments:
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_widens_existing_gr\
-    # ant
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_widens_existing_grant  # noqa: E501
     def test_widens_existing_grant(self) -> None:
         """POSITIVE CONTROL: a fragment extending a declared node's
         EXISTING grant loads and takes effect -- the root's via-list is
@@ -115,8 +109,7 @@ class TestResolveFragments:
         assert grant.via == ("a.py", "b.py", "c.py")
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_extend_takes_effec\
-    # t_through_elaborate_merged
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_extend_takes_effect_through_elaborate_merged  # noqa: E501
     def test_extend_takes_effect_through_elaborate_merged(self) -> None:
         """POSITIVE CONTROL, end to end: the widened grant survives the
         full `elaborate_merged` pipeline used by the real loader."""
@@ -165,8 +158,7 @@ class TestResolveFragments:
         assert paths == {"a.strata", "b.strata"}
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unrelated_multi_mo\
-    # dule_merge_is_unaffected
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unrelated_multi_module_merge_is_unaffected  # noqa: E501
     def test_unrelated_multi_module_merge_is_unaffected(self) -> None:
         """T-1196's pre-existing multi-file merge (several independently
         named `module` files, no fragments at all) passes through
@@ -180,8 +172,7 @@ class TestResolveFragments:
         assert resolved.danger_ok == (("a.strata", a), ("b.strata", b))
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_root_name_\
-    # is_error
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_root_name_is_error  # noqa: E501
     def test_unknown_root_name_is_error(self) -> None:
         """NEGATIVE CONTROL: a fragment names a root that was never
         loaded -- refused as a distinct case from an unknown node."""
@@ -194,8 +185,7 @@ class TestResolveFragments:
         assert "nonexistent root" in resolved.danger_err[0].message
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_node_is_er\
-    # ror
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_node_is_error  # noqa: E501
     def test_unknown_node_is_error(self) -> None:
         """NEGATIVE CONTROL: `extend node` targets an id the root never
         declared -- refused as a distinct case from an unknown atom."""
@@ -208,8 +198,7 @@ class TestResolveFragments:
         assert "never declared" in resolved.danger_err[0].message
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_atom_is_er\
-    # ror
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_atom_is_error  # noqa: E501
     def test_unknown_atom_is_error(self) -> None:
         """NEGATIVE CONTROL, the hard constraint: a fragment cannot grant
         a capability the root never granted to that node in the first
@@ -226,8 +215,7 @@ class TestResolveFragments:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_single_file_design\
-    # _passes_through_unchanged
+    # tests/unit/strata/test_fragments.py::TestResolveFragments.test_single_file_design_passes_through_unchanged  # noqa: E501
     def test_single_file_design_passes_through_unchanged(self) -> None:
         """MUST-STILL-PASS control: a single root file with no fragments
         (the current `design/frob.strata` shape) passes through
@@ -256,17 +244,13 @@ def attempt_insert_fresh_atom(sealed: SealedGrantSet) -> None:
 
 
 class TestSealedGrantSet:
-    """T-2530: the fragment merge (`_multifile._widen_node_grants` and its
-    callers) used to pass a plain `dict[str, MayGrantDecl]` around and
-    mutate it directly -- correct only because every call site happened
-    to union into an existing key, a property nothing enforced. These
-    tests assert the STRONGER contract `SealedGrantSet` replaces it
-    with: inserting a fresh atom is impossible, not merely untested, in
-    both the type checker and at runtime."""
+    """Proves `SealedGrantSet` (the fragment merge's grant-dict wrapper)
+    enforces that inserting a fresh atom is impossible, not merely
+    untested, both statically (type checker) and at runtime -- widening
+    an already-declared atom still works (see T-2530)."""
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_at\
-    # om_still_works
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_atom_still_works  # noqa: E501
     def test_widen_on_declared_atom_still_works(self) -> None:
         """POSITIVE CONTROL (direction 1, unchanged from T-2502): widening
         an ALREADY-DECLARED atom's `via` list still works through the
@@ -283,8 +267,7 @@ class TestSealedGrantSet:
         assert sealed.grants["exec"].via == ("a.py", "b.py")
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_\
-    # atom_refuses_closed
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_atom_refuses_closed  # noqa: E501
     def test_widen_on_undeclared_atom_refuses_closed(self) -> None:
         """POSITIVE CONTROL (direction 2, unchanged from T-2502): an atom
         the root never granted still refuses closed -- `widen` returns
@@ -295,8 +278,7 @@ class TestSealedGrantSet:
         assert "net.out" not in sealed.grants
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_\
-    # at_runtime
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_at_runtime  # noqa: E501
     def test_fresh_insert_raises_at_runtime(self) -> None:
         """NEW POSITIVE CONTROL this ticket adds: an attempt IN CODE to
         assign a fresh key through the public `grants` view raises
@@ -309,8 +291,7 @@ class TestSealedGrantSet:
             sealed.grants["net.out"] = _may_grant("net.out", ())  # ty: ignore[invalid-assignment]
 
     # frob:tests \
-    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_fails_s\
-    # tatic_type_check
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_fails_static_type_check  # noqa: E501
     def test_fresh_insert_fails_static_type_check(self, tmp_path: Path) -> None:
         """NEW POSITIVE CONTROL this ticket adds, the STATIC half: the
         exact same fresh-insert attempt, written as ordinary source and

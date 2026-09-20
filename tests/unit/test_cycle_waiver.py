@@ -65,11 +65,10 @@ class TestCycleWaiverPipeline:
     # frob:ticket T-2584
     # frob:tests tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline.test_matching_waiver_suppresses_the_cycle  # noqa: E501
     def test_matching_waiver_suppresses_the_cycle(self, tmp_path: Path) -> None:
-        """A `frob:waive CYCLE001` in the cycle's own representative file
-        (the lower-sorted of the two nodes -- `_cycle_representative_file`)
-        suppresses the finding entirely. This is the exact repro T-2584
-        recorded by hand: adding the comment used to change NOTHING,
-        byte-for-byte identical diagnostic text before and after."""
+        """Proves a `frob:waive CYCLE001` in the cycle's own
+        representative file (`_cycle_representative_file`: the
+        lower-sorted of the two nodes) suppresses the finding entirely
+        (see T-2584)."""
         # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
         # frob:tests src/frob/check/_python.py::_cycle_apply_waivers kind="unit"
         _make_cyclic_fixture(tmp_path, waiver_in="a.py")  # min("a.py","b.py")=a.py

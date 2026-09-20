@@ -182,15 +182,13 @@ class TestLexcheck001:
         assert hit_keys == self._KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG
 
     def test_vet_needle_matcher_shape_is_flagged(self, tmp_path: Path) -> None:
-        """T-2466's own must-now-fire control: a detector living under
-        `src/frob/vet/` that decides via `bytes.find` needle matching (the
-        literal mechanism T-2457's pre-fix `fs.write` detector used) and
-        constructs a symref-less `Violation` is caught, where it would
-        NOT have been before this ticket (wrong package, wrong trigger).
-        This is a single-function COLLAPSE of T-2457's real cross-module
-        shape (module docstring's "Known v1 limitation" note explains
-        why a byte-for-byte reproduction cannot be caught by the v1
-        per-function detection shape either, before or after T-2466)."""
+        """Proves `lexical_selfcheck_gate` flags a detector under
+        `src/frob/vet/` that decides via `bytes.find` needle matching and
+        constructs a symref-less `Violation`, covering package roots
+        beyond `frob.gates` (see T-2466). It is a single-function collapse
+        of the cross-module shape; the module docstring's "Known v1
+        limitation" note explains why a byte-for-byte reproduction of
+        that shape falls outside the v1 per-function detector."""
         _init_repo(tmp_path)
         pkg = tmp_path / "src" / "frob" / "vet"
         pkg.mkdir(parents=True)

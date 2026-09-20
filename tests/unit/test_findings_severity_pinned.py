@@ -20,12 +20,11 @@ from tests.conftest import _ticket
 
 
 def test_violation_defaults_severity_pinned_false() -> None:
-    """T-4447: an ordinary `Violation` (no verdict-builder involvement) is
-    unpinned by default, so `[gates.severity]` continues to govern it as
-    before this ticket's fix."""
+    """Proves an ordinary `Violation` (no verdict-builder involvement)
+    defaults `severity_pinned` to `False`, so `[gates.severity]` governs
+    its severity (see T-4447)."""
     # frob:tests \
-    # tests/unit/test_findings_severity_pinned.py::test_violation_defaults_severity_pin\
-    # ned_false
+    # tests/unit/test_findings_severity_pinned.py::test_violation_defaults_severity_pinned_false  # noqa: E501
     v = Violation(
         rule="COV003", severity=Severity.WARN, file="a.py", line=1, message="m"
     )
@@ -38,8 +37,7 @@ def test_platform_skip_violation_is_pinned() -> None:
     cannot distinguish this deliberate WARN from any other COV003 WARN and
     silently promotes it to ERROR under `[gates.severity]` COV003=error."""
     # frob:tests \
-    # tests/unit/test_findings_severity_pinned.py::test_platform_skip_violation_is_pinn\
-    # ed
+    # tests/unit/test_findings_severity_pinned.py::test_platform_skip_violation_is_pinned  # noqa: E501
     ticket = _ticket()
     v = _platform_skip_violation(
         ticket, "tests/test_x.py::test_y", "POSIX-only feature"
@@ -54,8 +52,7 @@ def test_test002_platform_skipped_is_pinned() -> None:
     `severity_pinned=True`, belt-and-suspenders alongside its existing
     `Severity.UNRESOLVED` exemption (T-4386)."""
     # frob:tests \
-    # tests/unit/test_findings_severity_pinned.py::test_test002_platform_skipped_is_pin\
-    # ned
+    # tests/unit/test_findings_severity_pinned.py::test_test002_platform_skipped_is_pinned  # noqa: E501
     record = SimpleNamespace(
         symref="pkg.mod::fn",
         span=(10, 20),

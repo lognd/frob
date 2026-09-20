@@ -103,14 +103,11 @@ def _simulate_orphaned_squash_stage(root: Path, *, ticket_id: str = "T-9999") ->
 class TestReclaimOrphanedSquashResidue:
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock kind="unit"  # noqa: E501
     def test_reclaims_when_no_live_land_holds_the_lock(self, tmp_path: Path) -> None:
-        """FAILS FIRST against current main (pre-fix): before this ticket,
-        nothing in `_land_git_ops.py` could safely clear a killed land's
-        staged residue at all -- `reclaim_orphaned_squash_residue` did not
-        exist. This is the acceptance test: a land killed mid-squash-merge
-        (simulated directly -- staged content in `root` with land.lock
-        held by nobody, exactly what the kernel leaves behind the instant
-        a SIGKILL'd holder exits, T-1515) must leave `git status
-        --porcelain` in the shared root clean after reclaim."""
+        """Proves `reclaim_orphaned_squash_residue` leaves `git status
+        --porcelain` in the shared root clean, given a land killed
+        mid-squash-merge (simulated as staged content in `root` with
+        `land.lock` held by nobody, exactly what the kernel leaves behind
+        the instant a SIGKILL'd holder exits, see T-1515)."""
         root = _seed_root(tmp_path)
         _simulate_orphaned_squash_stage(root)
 

@@ -188,16 +188,14 @@ class _FakeReport:
 
 
 # frob:ticket T-3246
+# frob:ticket T-4631
 class TestSuiteResultDidNotComplete:
-    """T-3246: `pytest_sessionfinish`'s DID-NOT-COMPLETE labelling of an
-    ABORTED run (pytest exitstatus 2/3/4/5) -- the fix for a confirmed
-    conflation: an aborted run (e.g. exitstatus=3, xdist's loadscope
-    scheduler crashing on a dead worker) rendered in the EXACT SAME
-    `SUITE-RESULT:` line shape as a completed run with real failures,
-    differing only in an unlabelled `exitstatus=` digit. `failed=24` on an
-    aborted run is a lower bound of unknown looseness, not a count -- the
-    author of this fix mistook it for one themselves before noticing the
-    exit status, which is the evidence the old format was misleading."""
+    """Proves `pytest_sessionfinish` labels an ABORTED run (pytest
+    exitstatus 2/3/4/5, e.g. xdist's loadscope scheduler crashing on a
+    dead worker) as DID-NOT-COMPLETE in its `SUITE-RESULT:` line, so it
+    is distinguishable from a completed run with real failures: on an
+    aborted run, `failed=N` is a lower bound of unknown looseness, not a
+    count (see T-3246)."""
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_labels_did_not_complete_runs  # noqa: E501
     # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \

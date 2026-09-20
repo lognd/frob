@@ -27,8 +27,7 @@ class TestCommitRapidDebt:
 
     def test_leaves_the_repo_clean(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_leaves_\
-        # the_repo_clean
+        # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_leaves_the_repo_clean  # noqa: E501
         # T-2997: record_rapid_debt now writes under gitignored .frob/,
         # so the repo is already clean before _commit_rapid_debt even
         # runs -- it stays a correct, harmless no-op (nothing tracked to
@@ -188,14 +187,11 @@ class TestCommitRapidDebt:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_commit_failure_persists_a_diagnostic_log  # noqa: E501
-        """T-2671: reproduces the T-2669-shaped commit-failure directly
-        (the scaffolded pre-commit hook refuses the commit spawn because
-        neither lease-env var is set) and proves a retained diagnostic
-        log survives it -- the exact artifact that did not exist for the
-        real recurrence this ticket investigates. Before this fix,
-        `_commit_rapid_debt`'s failure branch logged a one-line summary
-        via the module logger and nothing else; this test would have
-        found zero files under `.frob/rapid-sweep/` naming the failure."""
+        """Proves `_commit_rapid_debt`'s failure branch persists a
+        diagnostic log file under `.frob/rapid-sweep/` naming the
+        failure, not just a one-line logger summary, when the scaffolded
+        pre-commit hook refuses the commit spawn because neither
+        lease-env var is set (see T-2671)."""
         from frob.scaffold import install_worktree_lease_hook
 
         repo = _seed_repo(tmp_path)
@@ -395,8 +391,7 @@ class TestDescribeRootDirt:
 
     def test_names_the_paths(self) -> None:
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_\
-        # the_paths
+        # tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
         from frob.tickets._land_git_ops import _render_dirty_paths
 
         assert _render_dirty_paths(("a.py", "b.md")) == "a.py, b.md"
@@ -836,15 +831,13 @@ class TestTicketIsOpen:
 
     def test_open_ticket_is_open(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_open_ticke\
-        # t_is_open
+        # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_open_ticket_is_open  # noqa: E501
         ticket_id = _seed_ticket(tmp_path)
         assert _ticket_is_open(tmp_path, ticket_id) is True
 
     def test_done_ticket_is_not_open(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_done_ticke\
-        # t_is_not_open
+        # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_done_ticket_is_not_open  # noqa: E501
         from frob.tickets._models import TicketState
 
         ticket_id = _seed_ticket(tmp_path, state=TicketState.DONE)

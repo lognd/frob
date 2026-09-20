@@ -123,9 +123,9 @@ class TestDoneReportTouchedFiles:
 
 
 class TestSharedCheckSpawnFnTimeout:
-    """`_shared_check_spawn_fn`'s `timeout` parameter (T-4550):
-    `_done_report` now passes its own budget through here instead of the
-    fixed 600s every caller used to get unconditionally."""
+    """Proves `_shared_check_spawn_fn`'s `timeout` parameter defaults to
+    600s and `_done_report` passes its own budget through it, so a
+    caller is not bound to a fixed 600s unconditionally (see T-4550)."""
 
     def test_default_timeout_is_600(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

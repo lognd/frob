@@ -62,8 +62,7 @@ class TestClaimsMalformedAttrs:
     """Malformed `skew=`/`growth=` node/flow attrs (T-0160)."""
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malform\
-    # ed_skew_attr_is_ignored
+    # tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malformed_skew_attr_is_ignored  # noqa: E501
     def test_malformed_skew_attr_is_ignored(self, caplog) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=10, unit="req/s"), replicas_max=2
@@ -92,8 +91,7 @@ class TestClaimsMalformedAttrs:
         assert result.verdict is Verdict.PROVED
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malform\
-    # ed_growth_attr_is_ignored
+    # tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malformed_growth_attr_is_ignored  # noqa: E501
     def test_malformed_growth_attr_is_ignored(self, caplog) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=10, unit="req/s"), replicas_max=1
@@ -130,8 +128,7 @@ class TestAssumeReviewDates:
     """`assume` claims' review-date detail branches (malformed/overdue)."""
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_malformed_\
-    # review_date_logs_and_notes
+    # tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_malformed_review_date_logs_and_notes  # noqa: E501
     def test_malformed_review_date_logs_and_notes(self, caplog) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -156,8 +153,7 @@ class TestAssumeReviewDates:
         assert "malformed review date" in caplog.text
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_overdue_re\
-    # view_date_is_flagged
+    # tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_overdue_review_date_is_flagged  # noqa: E501
     def test_overdue_review_date_is_flagged(self, caplog) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -187,8 +183,7 @@ class TestBoundClaimEdgeCases:
     refutation branches."""
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_age_unkn\
-    # own_target_fails_closed
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_age_unknown_target_fails_closed  # noqa: E501
     def test_age_unknown_target_fails_closed(self) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -208,8 +203,7 @@ class TestBoundClaimEdgeCases:
         assert outcome.danger_err is StrataError.UnknownReference
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_rate_unk\
-    # nown_target_fails_closed
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_rate_unknown_target_fails_closed  # noqa: E501
     def test_rate_unknown_target_fails_closed(self) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -229,8 +223,7 @@ class TestBoundClaimEdgeCases:
         assert outcome.danger_err is StrataError.UnknownReference
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilizat\
-    # ion_wrong_dimension_limit_errors
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilization_wrong_dimension_limit_errors  # noqa: E501
     def test_utilization_wrong_dimension_limit_errors(self) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=10, unit="req/s"), replicas_max=1
@@ -253,8 +246,7 @@ class TestBoundClaimEdgeCases:
         assert outcome.danger_err is StrataError.UnitMismatch
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilizat\
-    # ion_zero_ceiling_refutes
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilization_zero_ceiling_refutes  # noqa: E501
     def test_utilization_zero_ceiling_refutes(self) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=0, unit="req/s"), replicas_max=1
@@ -278,8 +270,7 @@ class TestBoundClaimEdgeCases:
         assert "zero service ceiling" in result.detail
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilizat\
-    # ion_skewed_zero_ceiling_refutes
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilization_skewed_zero_ceiling_refutes  # noqa: E501
     def test_utilization_skewed_zero_ceiling_refutes(self) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=0, unit="req/s"), replicas_max=2
@@ -306,8 +297,7 @@ class TestBoundClaimEdgeCases:
         assert "zero service ceiling" in result.detail
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_latency_\
-    # unknown_flow_fails_closed
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_latency_unknown_flow_fails_closed  # noqa: E501
     def test_latency_unknown_flow_fails_closed(self) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -328,12 +318,11 @@ class TestBoundClaimEdgeCases:
 
     # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_latency_on_a_real_flow_is_refused_not_silently_refuted  # noqa: E501
     def test_latency_on_a_real_flow_is_refused_not_silently_refuted(self) -> None:
-        """strata audit G11 (T-0497) counterexample: before this fix, a
-        LATENCY bound against a REAL flow (not just an unknown target) would
-        silently REFUTE-as-missing every time, forever -- `Flow` has no
-        `latency` field to ever declare. Prove it now comes back as a typed
-        `UnsupportedMetric` error instead of a fake ordinary-looking
-        REFUTED verdict."""
+        """Proves a LATENCY bound claim against a real flow returns a
+        typed `UnsupportedMetric` error, not a REFUTED verdict, because
+        `Flow` has no `latency` field to declare -- a REFUTED verdict
+        here would look ordinary while actually meaning "unmeasurable"
+        (see strata audit G11, T-0497)."""
         model = KernelModel(
             nodes=(_node("a"), _node("b")),
             flows=(_flow("f1", "a", "b"),),
@@ -353,8 +342,7 @@ class TestBoundClaimEdgeCases:
         assert outcome.danger_err is StrataError.UnsupportedMetric
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_size_no_\
-    # declared_size_refutes
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_size_no_declared_size_refutes  # noqa: E501
     def test_size_no_declared_size_refutes(self) -> None:
         model = KernelModel(
             nodes=(_node("a"), _node("b")),
@@ -390,8 +378,7 @@ class TestTicketStoreParsing:
         )
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_tic\
-    # ket_file_no_frontmatter_block
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_ticket_file_no_frontmatter_block  # noqa: E501
     def test_parse_ticket_file_no_frontmatter_block(self, tmp_path: Path) -> None:
         path = tmp_path / "T-0001-x.md"
         path.write_text("no frontmatter here at all\n", encoding="utf-8")
@@ -400,8 +387,7 @@ class TestTicketStoreParsing:
         assert result.danger_err is TicketError.MalformedFrontmatter
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_tic\
-    # ket_file_bad_yaml
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_ticket_file_bad_yaml  # noqa: E501
     def test_parse_ticket_file_bad_yaml(self, tmp_path: Path) -> None:
         path = tmp_path / "T-0001-x.md"
         path.write_text("---\n[unterminated: [flow\n---\nbody\n", encoding="utf-8")
@@ -410,8 +396,7 @@ class TestTicketStoreParsing:
         assert result.danger_err is TicketError.MalformedFrontmatter
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_tic\
-    # ket_file_roundtrips_valid
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_ticket_file_roundtrips_valid  # noqa: E501
     def test_parse_ticket_file_roundtrips_valid(self, tmp_path: Path) -> None:
         ticket = self._base_ticket()
         path = tmp_path / "T-0001-x.md"
@@ -437,8 +422,7 @@ class TestTicketStoreWriteAndMigrate:
         )
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_w\
-    # rite_ticket_single_mode_existing_load_error_propagates
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_write_ticket_single_mode_existing_load_error_propagates  # noqa: E501
     def test_write_ticket_single_mode_existing_load_error_propagates(
         self, tmp_path: Path
     ) -> None:
@@ -452,8 +436,7 @@ class TestTicketStoreWriteAndMigrate:
         assert result.danger_err is TicketError.MalformedFrontmatter
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_w\
-    # rite_all_dir_mode_prunes_stale_files
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_write_all_dir_mode_prunes_stale_files  # noqa: E501
     def test_write_all_dir_mode_prunes_stale_files(self, tmp_path: Path) -> None:
         # Dir-mode is selected by the absence of a single-file tickets.md
         # plus at least one tickets/*.md file already present.
@@ -470,16 +453,14 @@ class TestTicketStoreWriteAndMigrate:
         assert any(tickets_dir.glob("T-0001-*.md"))
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_m\
-    # igrate_to_ledger_empty_is_noop
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_migrate_to_ledger_empty_is_noop  # noqa: E501
     def test_migrate_to_ledger_empty_is_noop(self, tmp_path: Path) -> None:
         result = migrate_to_ledger(tmp_path)
         assert result.is_ok
         assert result.danger_ok == 0
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_m\
-    # igrate_to_ledger_malformed_file_fails_closed
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_migrate_to_ledger_malformed_file_fails_closed  # noqa: E501
     def test_migrate_to_ledger_malformed_file_fails_closed(
         self, tmp_path: Path
     ) -> None:
@@ -491,8 +472,7 @@ class TestTicketStoreWriteAndMigrate:
         assert result.danger_err is TicketError.MalformedFrontmatter
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_m\
-    # igrate_to_ledger_moves_dir_files_into_ledger
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_migrate_to_ledger_moves_dir_files_into_ledger  # noqa: E501
     def test_migrate_to_ledger_moves_dir_files_into_ledger(
         self, tmp_path: Path
     ) -> None:
@@ -508,8 +488,7 @@ class TestTicketStoreWriteAndMigrate:
         assert (tmp_path / "tickets.md").exists()
 
     # frob:tests \
-    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_a\
-    # tomic_write_oserror_returns_write_failed
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_atomic_write_oserror_returns_write_failed  # noqa: E501
     def test_atomic_write_oserror_returns_write_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

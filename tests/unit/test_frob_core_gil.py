@@ -166,9 +166,9 @@ class TestGilActuallyReleased:
 
 
 class TestResultsUnchanged:
-    """T-3481 must-stay-quiet: `py.allow_threads` is a pure concurrency
-    change -- every kernel's return value is bit-for-bit identical to
-    before this ticket."""
+    """Proves each frob-core kernel's return value is bit-for-bit
+    identical under `py.allow_threads`, a pure concurrency change with
+    no effect on results (see T-3481)."""
 
     def test_near_duplicate_indices_result_unchanged(self) -> None:
         """Two clearly-similar bodies cluster together; a clearly

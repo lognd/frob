@@ -276,12 +276,12 @@ class TestDisposableSquashWorktree:
     def test_load_graph_does_not_cold_start_against_a_warm_primary_cache(
         self, scratch_repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """T-4411 acceptance criterion 3: with a real (unmocked) built
-        cache.db in the primary checkout, `compose_squash_in_disposable_
-        worktree`'s seeding leaves the disposable worktree's `.frob/
-        cache.db` warm -- so `load_graph` against it never logs
-        'load_graph: no cache at ...', the exact cold-start warning a land
-        used to print for a repo with a warm primary cache."""
+        """Proves that with a real, built `cache.db` in the primary
+        checkout, `compose_squash_in_disposable_worktree`'s seeding
+        leaves the disposable worktree's `.frob/cache.db` warm, so
+        `load_graph` against it never logs the 'load_graph: no cache at
+        ...' cold-start warning for a repo whose primary cache is warm
+        (see T-4411)."""
         import logging
 
         from frob.graph import build_graph, load_graph

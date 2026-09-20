@@ -333,9 +333,9 @@ class TestRequireCoreWheels:
         artifact_smoke._require_core_wheels(core_dir, pins)  # must not raise
 
     def test_no_pins_skips_version_check(self, tmp_path: Path) -> None:
-        """`pins=None` (the pre-T-4465 default) must not enforce a
-        version match -- callers with no pin to check against keep the
-        prior, version-blind behavior."""
+        """Proves `_require_core_wheels` with `pins=None` does not
+        enforce a version match: a caller with no pin to check against
+        stays version-blind (see T-4465)."""
         core_dir = tmp_path / "cores"
         _touch_core_wheels(core_dir)  # writes 0.1.0-tagged wheels
         artifact_smoke._require_core_wheels(core_dir)  # must not raise

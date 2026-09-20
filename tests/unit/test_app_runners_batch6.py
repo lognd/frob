@@ -1043,23 +1043,14 @@ class TestCheckRunner:
     def test_stamp_baseline_only_chunk_completes_and_stamps(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        """The last missing `--only` chunk merges every recorded chunk's
-        violations, writes the real baseline, and deletes the scratch
-        accumulator (T-0751).
-
-        T-2633: seeding "already covered" as only `gates-native` +
-        `gates-security` used to equal `_ALL_GATES - gates-fast` exactly,
-        so running the `gates-fast` chunk always completed the set. Since
-        this test was written, new gates were added to `_ALL_GATES` that
-        `_STAGE_GROUPS` does not slot into any of its three groups (each
-        becomes its own trailing chunk in `_stamp_baseline_gate_chunks`,
-        per that function's own docstring) -- `gates-native` +
-        `gates-security` no longer covers everything outside `gates-fast`,
-        so the old seed left real, ungrouped gates uncovered and the run
-        legitimately took the "chunk recorded, not yet complete" branch
-        instead of stamping. Derive the seed as the complement of
-        `gates-fast` directly, so it stays correct regardless of how many
-        ungrouped trailing chunks exist."""
+        """Proves running the last missing `--only` chunk merges every
+        recorded chunk's violations, writes the real baseline, and
+        deletes the scratch accumulator (see T-0751). Seeds "already
+        covered" as the complement of `gates-fast` derived directly from
+        `_ALL_GATES`/`_STAGE_GROUPS`, so the seed stays correct
+        regardless of how many gates fall outside the three named stage
+        groups and become their own trailing chunk in
+        `_stamp_baseline_gate_chunks` (see T-2633)."""
         import json
 
         import frob.gates as gates_mod
@@ -1458,16 +1449,14 @@ class TestTaskProgressCallback:
 
     def test_none_progress_returns_none(self) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_pro\
-        # gress_returns_none
+        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_progress_returns_none  # noqa: E501
         from frob.app.check_runner import _task_progress_callback
 
         assert _task_progress_callback(None, "python") is None
 
     def test_updates_progress_with_language_qualified_label(self) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_\
-        # progress_with_language_qualified_label
+        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_progress_with_language_qualified_label  # noqa: E501
         import io
 
         from frob.app.check_runner import _task_progress_callback

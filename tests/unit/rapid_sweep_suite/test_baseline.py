@@ -480,12 +480,10 @@ class TestWriteBaselineCas:
 
 # frob:ticket T-2571
 class TestPhantomDeletedPathNotFiledAsRegression:
-    """T-2571 acceptance criterion 1, end-to-end: watch
-    `test_phantom_deleted_path_is_not_filed_first` FAIL first against the
-    unfixed code -- before this ticket, a (rule, file) identity naming a
-    file the SAME land deleted was filed as an ordinary new regression,
-    exactly the measured T-2381/T-2474/T-2525 shape (TICK003/TICK004
-    against a deleted tickets.md)."""
+    """Proves a (rule, file) finding whose file the same land deletes is
+    NOT filed as an ordinary new regression -- the identity is recognized
+    as phantom rather than a genuine new violation (see T-2571; the
+    TICK003/TICK004-against-a-deleted-tickets.md shape)."""
 
     def test_phantom_deleted_path_is_not_filed_first(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

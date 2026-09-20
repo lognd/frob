@@ -54,12 +54,11 @@ def test_search(tmp_path):
 
 
 def test_extract_docstrings_non_python_file_returns_empty(tmp_path):
-    """C# is now a supported language (see
-    test_extract_docstrings_csharp_class_and_method below), so this
-    fixture moved to a genuinely unsupported extension -- what still
-    returns [] is a language frob.lang has no grammar for at all, not
-    "non-python" (T-3232 removed that narrower contract; T-1286 binds
-    evidence to this exact test name, so the name is kept)."""
+    """Proves `extract_docstrings` returns `[]` for a language
+    `frob.lang` has no grammar for at all (`.frobnotalang`), the
+    contract this test's name still names as "non-python" while C# is a
+    supported language covered separately, see
+    `test_extract_docstrings_csharp_class_and_method` (T-3232, T-1286)."""
     # frob:tests src/frob/docs/__init__.py::extract_docstrings kind="unit"
     src = tmp_path / "mod.frobnotalang"
     src.write_text("/// A doc comment for a language that does not exist.\n")

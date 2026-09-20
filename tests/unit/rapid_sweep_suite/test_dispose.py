@@ -70,18 +70,12 @@ class TestAutoDisposeFiledFindings:
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_leaves_quarantine_raised_when_other_findings_remain_undisposed  # noqa: E501
-        """T-2604 rewrote this test's original setup: it used to lean on
-        a finding attributed to an already-open ticket to construct "one
-        finding in the raised record this call never touches". Exactly
-        the bug T-2604 fixes means such a finding is now dropped from
-        the quarantine raise entirely, before this scenario can even
-        arise through `_file_regression_ticket`'s own attribution path.
-        Exercising `_auto_dispose_filed_findings` directly against a
-        record raised independently (simulating one left over from an
-        earlier, unrelated red batch this call's `unfiled_pairs` never
-        names) keeps this test's real subject -- `clear_quarantine`'s
-        atomic all-or-nothing contract -- intact and independent of how
-        the record came to have two findings in it."""
+        """Proves `_auto_dispose_filed_findings`, given a quarantine
+        record with two findings but `unfiled_pairs` naming only one,
+        leaves `clear_quarantine`'s atomic all-or-nothing contract
+        intact: the untouched finding keeps the quarantine raised rather
+        than being silently cleared alongside the disposed one (see
+        T-2604)."""
         from frob.app.ticket_runner._rapid_sweep import _auto_dispose_filed_findings
         from frob.verify._quarantine import (
             QuarantinedFinding,

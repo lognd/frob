@@ -280,15 +280,12 @@ def _simulate_standalone_rebuild_then_write(
 
 
 class TestWriteLockGranularity:
-    """T-1224: `derived_state_write_lock` is now taken individually inside
-    `put_fingerprint`/`put_verdict`, around just the write, rather than
-    around `find_clones`'s entire rung ladder. Before this fix, a
-    standalone rebuild held a real cross-process EXCLUSIVE lock for its
-    WHOLE computation, stalling any concurrent SHARED reader (e.g. a
-    sibling agent's `frob check`) for that whole duration (observed ~240s
-    under profiling with four concurrent agents). This test proves a
-    concurrent SHARED reader is NOT blocked during the standalone
-    rebuild's compute phase -- only (briefly) during its actual write."""
+    """Proves `derived_state_write_lock` is held only around the actual
+    write inside `put_fingerprint`/`put_verdict`, not around
+    `find_clones`'s entire rung ladder: a concurrent SHARED reader (e.g.
+    a sibling agent's `frob check`) is not blocked during a standalone
+    rebuild's compute phase, only briefly during its write (see
+    T-1224)."""
 
     def test_shared_reader_not_blocked_during_standalone_compute_phase(
         self, tmp_path: Path

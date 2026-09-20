@@ -1151,20 +1151,12 @@ class TestTodoFreeTextNote:
 
 # frob:ticket T-3856
 class TestTodoDirectiveInsideDocstring:
-    """T-3856 finding 2's "measure it" instruction: a `frob:todo` (or any
-    `frob:`) directive written inside a python docstring with the repo's
-    own `#`-prefixed convention (e.g. `src/frob/perf/_dup_spawn.py`) used
-    to reach `parse_directives` STILL carrying its literal `#` -- never
-    stripped, because `_strip_comment_delims` only runs on real comment
-    nodes, not on `_walk_python_docstring_comments`' raw docstring text.
-
-    MEASURED VERDICT: yes, DSL001 was vacuous for this convention -- the
-    line failed `stripped.startswith("frob:")` and was silently dropped,
-    no Edge and no MalformedDirective either (a genuine silent-zero, not
-    merely "accepted" as the original report assumed). `parse_directives`
-    now strips one optional leading '#' before the prefix check, so this
-    convention validates exactly like a real comment line.
-    """
+    """Proves `parse_directives` strips a docstring-embedded `frob:`
+    directive's leading `#` (the repo's own convention, e.g.
+    `src/frob/perf/_dup_spawn.py`) before the prefix check, so a
+    directive inside a python docstring parses into an `Edge` and a
+    malformed one is reported as a `MalformedDirective`, on par with a
+    real `#`-comment directive (see T-3856)."""
 
     def test_todo_note_inside_docstring_with_hash_prefix_is_parsed(
         self, tmp_path: Path

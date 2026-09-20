@@ -256,10 +256,9 @@ class TestDocsRunnerJsonGuard:
 # changed by adding it; app.md#runners already describes the runner under test \
 # unchanged; filed T-2491 for the doc sync"
 class TestGraphQueryRunnerJsonGuard:
-    """`frob graph query --json`: T-2492 found `_try_query_via_daemon`'s
-    own "daemon disabled" INFO log landing unguarded on stdout (no guard
-    existed anywhere in `graph_runner.py` before this ticket), confirmed
-    by real execution."""
+    """Proves `frob graph query --json`'s `_try_query_via_daemon` keeps
+    its "daemon disabled" INFO log off stdout under real execution, so
+    the JSON output stream stays clean (see T-2492)."""
 
     # frob:doc docs/modules/app.md#runners
     # frob:tests tests/unit/test_app_runners_json_guard_t2492.py::TestGraphQueryRunnerJsonGuard.test_daemon_disabled_log_does_not_reach_stdout kind="unit"  # noqa: E501

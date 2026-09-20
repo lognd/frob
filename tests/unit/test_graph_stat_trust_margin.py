@@ -208,14 +208,13 @@ class TestStatTrustMarginAndTrustworthy:
     def test_coarse_granularity_widens_the_untrusted_window(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        """T-4279 obligation [1], the acceptance criterion this whole
-        ticket is about: on a filesystem whose granularity is coarser
-        than the OLD fixed 250ms margin (a simulated 2-second-granularity
-        mount, matching the ticket's own "older removable formats"
-        example), a stat pair recorded 1 second ago -- outside the old
-        fixed margin, but comfortably inside a granularity-derived one --
-        must NOT be trusted. The old fixed-250ms behavior would have
-        wrongly trusted it and returned a stale verdict."""
+        """Proves that on a filesystem whose granularity is coarser than
+        a fixed 250ms margin (a simulated 2-second-granularity mount,
+        matching removable-format hardware), a stat pair recorded 1
+        second ago is NOT trusted: a fixed 250ms margin alone falls
+        outside this window and would wrongly trust it, returning a
+        stale verdict, where a granularity-derived margin does not (see
+        T-4279)."""
         monkeypatch.setattr(
             graph_module,
             "_mtime_granularity_ns",
