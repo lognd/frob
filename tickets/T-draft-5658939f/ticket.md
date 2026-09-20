@@ -8,7 +8,7 @@ created: '2026-09-19'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.537.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -37,6 +37,13 @@ scope_changes:
   glob: src/frob/_cli_parsers/**
   reason: narrow to the two files that actually need the fix; ** collided with T-3995's
     lease on _check.py
+  actor: logan
+  at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.537.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
 designated_repro_test: null
