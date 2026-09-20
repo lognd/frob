@@ -34,12 +34,17 @@ scope:
 - src/frob/excludes.py
 - src/frob/findings.py
 - src/frob/logging/logger.py
-- src/frob/narrative/_migrate.py
 - src/frob/perf/_hotpath_smells.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/narrative/_migrate.py
+  reason: leased by T-4697, collision at start
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 acceptance:
 - text: 'given the 21 files in this cluster, when the sweep is done, then zero comment
