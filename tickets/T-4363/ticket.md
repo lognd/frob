@@ -8,7 +8,7 @@ created: '2026-09-09'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -26,6 +26,12 @@ triage_changes:
   reason: 'Premise corrected: not a blocker, the step completes with headroom'
   actor: logan
   at: '2026-09-09'
+- field: sprint
+  old_value: null
+  new_value: v0.541.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: 'Correct a false premise: the step completed in 92 min of 120; downgrade
