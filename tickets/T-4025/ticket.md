@@ -9,7 +9,7 @@ created: '2026-09-06'
 priority: high
 parent: null
 tier: epic
-sprint: v0.537.0
+sprint: v0.538.0
 runs_last: false
 milestone: 0.537.0
 runs_last_parallel_safe: false
@@ -20,6 +20,13 @@ no_scope_declared: true
 no_scope_declared_reason: 'tier=epic: decomposition container for the sixth consumer
   audit list; scope lives on the children, which must be filed before any code is
   written'
+triage_changes:
+- field: sprint
+  old_value: v0.537.0
+  new_value: v0.538.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 designated_repro_test: null
 threat: null
 component: null
