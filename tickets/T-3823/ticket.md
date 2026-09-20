@@ -79,6 +79,22 @@ body_changes:
   old_length: 1548
   new_length: 4432
 designated_repro_test: null
+acceptance:
+- text: Given docs/strata's secret grammar and the charter prose describe 'rotate
+    within ...' and 'revoke via ...' forms that strata-core's parser does not accept,
+    and the owner decided the PARSER is incomplete rather than the prose wrong, when
+    this lands, then the documented forms PARSE and ELABORATE, proven by design/litmus/secret_lifecycle.strata
+    -- a litmus case that fails to parse at HEAD c8f56ef10 and passes after.
+  evidence: []
+- text: Given this ticket's finding is that there is no way to NAME the revocation
+    flow, when this lands, then a revocation flow can be named in the model and the
+    elaborator reports it, exercised by the same litmus case.
+  evidence: []
+- text: Given revoke, within, lifetime and issued_by already appear in the lexer but
+    only inside design/litmus fixtures (SF-09), when this ticket starts, then what
+    actually parses today is established first and recorded, since the keyword list
+    is only a lower bound on what the grammar reaches.
+  evidence: []
 threat: null
 component: null
 anchor: false
