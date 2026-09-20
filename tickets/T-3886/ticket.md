@@ -44,6 +44,13 @@ scope_changes:
     document/verify
   actor: logan
   at: '2026-09-05'
+body_changes:
+- mode: append
+  reason: 'T-4718 sweep: move narrative out of over-length comment run in _worker.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 6513
+  new_length: 7614
 evidence:
 - tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason::test_child_timeout_log_line_classified
 - tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason::test_spawn_refused_log_line_classified
@@ -178,3 +185,22 @@ F-049's SECOND, separate half (agents' uv sync pulling member dev groups
 that the per-ticket gate environment does not) is an environment-consistency
 defect of the T-3887 family (gates executing project code in frob's own
 interpreter) -- not this ticket's shape, and not fixed here.
+
+T-4718 sweep (condensed from src/frob/verify/_worker.py, the "unmeasurable
+early return" block, trimmed for DOCARCH002's 12-line cap): the trimmed
+block's full original text, kept verbatim below.
+
+            # T-1703/T-1688: unmeasurable is never zero, never green, and
+            # this early return is the ONLY thing standing between this
+            # branch and the rest of the function -- advance_watermark is
+            # not even reachable from here.
+            #
+            # T-3886: the SPECIFIC reason -- our own child timed out, our
+            # own spawn was refused, or the check genuinely could not
+            # measure -- is looked up here rather than collapsed into one
+            # undifferentiated "unmeasurable" (F-043's own incident: a
+            # reporter having to infer, by hand, that a 45-minute land
+            # stall was OUR child dying, not the repository being
+            # unmeasurable). `pop` (not a bare read) so a later, unrelated
+            # `None` for a DIFFERENT commit can never accidentally reuse
+            # this commit's stale classification.
