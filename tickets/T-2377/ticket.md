@@ -11,7 +11,7 @@ blocked_by:
 - T-2568
 parent: T-0969
 tier: ticket
-sprint: null
+sprint: v0.541.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -168,6 +168,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-18'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.541.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-19'
 body_changes:
 - mode: append
   reason: 'owner decision: mint EXHAUST004 approved, promote to ERROR after burn-down'
