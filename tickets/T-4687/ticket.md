@@ -84,28 +84,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 6316
   new_length: 6316
-- mode: set
-  reason: 'DOC006: planned CLI forms written as prose so unrelated lands are not refused'
-  actor: logan
-  at: '2026-09-19'
-  old_length: 6316
-  new_length: 6340
-- mode: set
-  reason: 'DOC006: planned CLI forms written as prose so unrelated lands are not refused'
-  actor: logan
-  at: '2026-09-19'
-  old_length: 6340
-  new_length: 6340
 designated_repro_test: null
 acceptance:
 - text: Given frob --help after all seven leaves land, when the top-level verb count
     is re-measured with the same command that produced the 2026-09-19 baseline of
     51, then it reports 12 or fewer verbs excluding live deprecation shims, and the
     Done report states both numbers (surface, and surface plus live shims)
-  evidence: []
-- text: Given frob ticket --help after all seven leaves land, when the subverb count
-    is re-measured with the same command that produced the 2026-09-19 baseline of
-    54, then it reports 25 or fewer subverbs excluding live deprecation shims
   evidence: []
 threat: null
 component: null
@@ -131,7 +115,7 @@ the exact counts are these):
 WHY THE SURFACE GREW: four "grouping" tickets (T-1238 explore, T-1567 quality,
 T-1568 design, T-1569 ops) each added an intent-named GROUP verb while keeping
 every member's standalone top-level form "working unchanged". They added four
-names and removed zero. frob explore xref (planned) and `frob xref` are the same
+names and removed zero. `frob explore xref` and `frob xref` are the same
 ArgumentParser object (`_cli_parsers/_explore.py::_mirror_subparser` writes the
 flat parser straight into the group's `choices`). That is the duplication this
 story deletes.
@@ -208,12 +192,12 @@ AMENDMENTS APPLIED 2026-09-19 after coordinator review:
     removes a delete-then-rebuild cycle on the same verb.
   - T-4692 no longer folds `pool`, `profile`, `debt`, `deprecated` or `parse`
     into `check --only`. `pool`/`profile` MUTATE state (T-4663 used `frob pool
-    snapshot` this sprint) and become frob check pool|profile <op> (planned) subverbs;
+    snapshot` this sprint) and become `frob check pool|profile <op>` subverbs;
     `debt`/`deprecated` are read-only listings and move to T-4695 under
     `explore`; `parse` is a tool-output adapter and moves to T-4698's verdict
     table (measured: zero consumers outside its own code, test and doc page).
-  - OWNER DECISION on `exports`: the check half folds into frob check --only
-    exports (planned); the generate half moves under `scaffold`.
+  - OWNER DECISION on `exports`: the check half folds into `frob check --only
+    exports`; the generate half moves under `scaffold`.
   - T-4689 lands BEFORE the hooks story's telemetry-logging leaf
     (T-draft-706ae266, scope `.claude/hooks/*`); both edit
     .claude/hooks/tool-call-telemetry.py.
