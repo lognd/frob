@@ -9,7 +9,7 @@ created: '2026-09-20'
 priority: high
 parent: T-5140
 tier: story
-sprint: v0.534.0
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -18,6 +18,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: sprint
+  old_value: v0.534.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: 'owner 2026-09-20: carry the research corpus in the ticket body, not only
