@@ -10,7 +10,7 @@ blocked_by:
 - T-3985
 parent: T-3984
 tier: ticket
-sprint: null
+sprint: v0.533.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -28,6 +28,13 @@ scope_changes:
   reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-4650
   actor: logan
   at: '2026-09-19'
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.533.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 evidence:
 - tests/gates_suite/test_coverage.py::TestTestmock001::test_satisfied_by_a_companion_test_leaving_one_collaborator_real
 - tests/gates_suite/test_coverage.py::TestTestmock001::test_t3933_shaped_dynamic_dispatch_table_scenario_fires
