@@ -11,7 +11,7 @@ blocked_by:
 - T-4550
 parent: T-3611
 tier: ticket
-sprint: v0.535.0
+sprint: v0.533.0
 runs_last: false
 milestone: 0.532.0
 runs_last_parallel_safe: false
@@ -86,6 +86,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: sprint
+  old_value: v0.535.0
+  new_value: v0.533.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: record blocking lease conflicts found while scoping T-3614
