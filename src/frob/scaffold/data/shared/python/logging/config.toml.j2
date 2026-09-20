@@ -25,6 +25,11 @@ formatter = "stderr_fmt"
 stream = "ext://sys.stderr"
 level = "WARNING"
 
-[root]
+# T-4764: this project's OWN top-level logger, named after its package
+# (never the literal Python root) -- so two scaffolded projects loaded
+# in the same process never share a logger identity. propagate = false
+# keeps records from also reaching the real root logger's handlers.
+[loggers."{{ project.import_name }}"]
 level = "DEBUG"
 handlers = ["stdout", "stderr"]
+propagate = false

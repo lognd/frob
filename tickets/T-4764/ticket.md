@@ -2,7 +2,7 @@
 id: T-4764
 title: Logging by project package name, App startup wiring, real AppConfig fields,
   and a docblocks commands entry
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -23,21 +23,27 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 designated_repro_test: null
 acceptance:
 - text: Given two projects rendered with different names, when their logging modules
     are loaded, then their root logger names differ and each equals its own package
     name
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 - text: Given the rendered entry point is run, when logs are captured, then at least
     one record is emitted at startup
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 - text: Given the rendered python-tool, when frob check runs, then FLAGCOV001 is measured
     rather than unresolved
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 - text: Given the rendered AppConfig, when an unknown field is supplied, then the
     configured behaviour is observed, proving the model configuration is in effect
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 threat: null
 component: null
 anchor: false

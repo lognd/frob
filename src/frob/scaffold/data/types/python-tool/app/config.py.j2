@@ -1,30 +1,95 @@
+"""AppConfig: {{ project.name }}'s runtime configuration and its Result-returning loader."""
+
 from __future__ import annotations
 
 import argparse
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typani import Err, ErrorSet, Ok, Result, propagate
+
+from {{ project.import_name }}.logging import get_logger
+
+_log = get_logger(__name__)
+
+#: T-4764: names of AppConfig fields the CLI parser is expected to forward.
+#: FLAGCOV001 diffs this against the parser's own flags to catch a flag
+#: that parses but never reaches AppConfig -- update it as CLI flags and
+#: config fields are added. Private: internal wiring for the docblocks
+#: gate config, not part of this project's own public API.
+_FORWARDED_FIELDS: frozenset[str] = frozenset({"verbose"})
+
+
+# frob:doc docs/index.md#public-api
+class ConfigError(ErrorSet):
+    """Errors that can occur while loading {{ project.name }}'s configuration."""
+
+    NotFound = "the config file does not exist"
+    ReadFailed = "the config file could not be read"
+    ParseFailed = "the config file is not valid TOML"
 
 
 # frob:doc docs/index.md#public-api
 class AppConfig(BaseModel):
-    # TODO: add your config fields here
+    """Runtime configuration for {{ project.name }}, merged from file and CLI args."""
 
+    model_config = {"extra": "forbid"}
+
+    verbose: bool = Field(
+        default=False, description="Enable DEBUG-level logging instead of INFO."
+    )
+    # TODO: add your own config fields here
+
+    # frob:doc docs/index.md#public-api
     @classmethod
+    @propagate
     def from_external(
         cls, args: argparse.Namespace, config_file: Path | None = None
-    ) -> "AppConfig":
-        # frob:doc docs/index.md#public-api
+    ) -> Result["AppConfig", ConfigError]:
+        """Build an AppConfig, merging an optional TOML file with CLI args."""
         file_cfg: dict = {}
-        # Defaults to pyproject.toml in cwd; pass an explicit path to override
-        resolved = config_file if config_file is not None else Path("pyproject.toml")
-        if resolved.exists():
-            with resolved.open("rb") as f:
-                data = tomllib.load(f)
-            # TODO: update the section key to match your tool name
-            file_cfg = data.get("tool", {}).get("{{ project.name }}", {})
+        if config_file is not None:
+            # An explicitly-named config file must exist; a caller who names
+            # one and gets nothing back should see an error value, not a
+            # silently-empty config.
+            if not config_file.exists():
+                _log.error("config file not found: %s", config_file)
+                return Err(ConfigError.NotFound).note(f"looking for {config_file}")
+            _log.debug("loading config from explicit file %s", config_file)
+            file_cfg = _load_section(config_file, "{{ project.name }}").unwrap()
+        else:
+            # No explicit file: pyproject.toml in cwd is optional.
+            default = Path("pyproject.toml")
+            if default.exists():
+                _log.debug("loading config from default file %s", default)
+                file_cfg = _load_section(default, "{{ project.name }}").unwrap()
+            else:
+                _log.debug("no config file found, using defaults")
 
         # TODO: extract CLI args into d and merge with file_cfg (CLI wins)
         d: dict = {**file_cfg}
-        return cls(**d)
+        return Ok(cls(**d))
+
+
+def _load_section(path: Path, section: str) -> Result[dict, ConfigError]:
+    """Read and parse `path` as TOML, returning the `[tool.<section>]` table."""
+    text = (
+        Result.catch(
+            lambda: path.read_text(),
+            OSError,
+            on_error=lambda exc: ConfigError.ReadFailed,
+        )
+        .note(f"while reading {path}")
+        .unwrap()
+    )
+    data = (
+        Result.catch(
+            lambda: tomllib.loads(text),
+            Exception,
+            on_error=lambda exc: ConfigError.ParseFailed,
+        )
+        .note(f"while parsing {path}")
+        .unwrap()
+    )
+    return Ok(data.get("tool", {}).get(section, {}))

@@ -1,3 +1,7 @@
-from {{ project.import_name }}.logging.logger import get_logger
+"""Logging setup for {{ project.name }}: dictConfig-driven, named after this package."""
 
-__all__ = ["get_logger"]
+from __future__ import annotations
+
+from {{ project.import_name }}.logging.logger import ROOT_LOGGER_NAME, get_logger, get_root_logger
+
+__all__ = ["ROOT_LOGGER_NAME", "get_logger", "get_root_logger"]

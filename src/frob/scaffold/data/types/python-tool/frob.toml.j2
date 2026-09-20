@@ -37,6 +37,15 @@ command = ["uv", "run", "pytest", "-q", "{ids}"]
 all_command = ["uv", "run", "pytest", "-q"]
 cwd = "."
 
+# T-4764: python-tool is the only scaffold type that ships a CLI, so it
+# is the only type where FLAGCOV001 (a flag that parses but never
+# reaches AppConfig) can be measured instead of permanently unresolved.
+[[docblocks.commands]]
+prog = "{{ project.name }}"
+parser = "{{ project.import_name }}.__main__:_build_parser"
+config = "{{ project.import_name }}.app.config:AppConfig"
+forwarded = "{{ project.import_name }}.app.config:_FORWARDED_FIELDS"
+
 # T-3277: REF001/REF002 (anti-orphan gate) flags every one of these on a
 # freshly scaffolded, untouched repo -- each is read by something OUTSIDE
 # this project's own tracked-file graph (a human, GitHub Actions, a CI/CD

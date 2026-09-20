@@ -6,6 +6,7 @@ import ast
 import importlib
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 
@@ -48,6 +49,32 @@ def test_logging_package_wires_end_to_end():
     from {{ project.import_name }}.logging import get_logger
 
     get_logger(__name__).info("smoke test")
+
+
+def test_typani_floor_is_the_recorded_release():
+    """The pyproject typani floor must equal 0.2.3 -- the latest published
+    release recorded in T-4763 -- so a future bump is a deliberate edit,
+    not silent drift."""
+    # frob:tests pyproject.toml kind="unit"
+    pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
+    data = tomllib.loads(pyproject.read_text())
+    deps = data["project"]["dependencies"]
+    typani_dep = next(d for d in deps if d.startswith("typani"))
+    assert typani_dep == "typani>=0.2.3"
+
+
+def test_typani_lint_is_clean():
+    """`python -m typani.lint` must report zero findings over this
+    project's generated source -- the positive control that the
+    generated code follows typani's own house style."""
+    # frob:tests src/{{ project.import_name }}/app/config.py kind="integration"
+    src_root = Path(__file__).parent.parent.parent / "src"
+    r = subprocess.run(
+        [sys.executable, "-m", "typani.lint", str(src_root), "--json"],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
 
 
 def test_no_syntax_errors_in_src():

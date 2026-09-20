@@ -1,4 +1,8 @@
-from {{ project.import_name }}.app.app import App
-from {{ project.import_name }}.app.config import AppConfig
+"""App/AppConfig public surface for {{ project.name }}."""
 
-__all__ = ["App", "AppConfig"]
+from __future__ import annotations
+
+from {{ project.import_name }}.app.app import App
+from {{ project.import_name }}.app.config import AppConfig, ConfigError
+
+__all__ = ["App", "AppConfig", "ConfigError"]

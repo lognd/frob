@@ -1,11 +1,29 @@
+"""The application: config in, side effects out."""
+
+from __future__ import annotations
+
 from {{ project.import_name }}.app.config import AppConfig
+from {{ project.import_name }}.logging import get_logger
+
+_log = get_logger(__name__)
 
 
 # frob:doc docs/index.md#public-api
 class App:
+    """Runs {{ project.name }} for one AppConfig; construct it, then call it."""
+
     def __init__(self, cfg: AppConfig) -> None:
+        """Store cfg; heavy setup is deferred to __call__."""
         self._cfg = cfg
 
     def __call__(self) -> None:
-        # TODO: implement app logic here
-        pass
+        """Run this app once, logging startup, work, and shutdown."""
+        _log.info("starting {{ project.name }} (verbose=%s)", self._cfg.verbose)
+        try:
+            # TODO: implement app logic here
+            pass
+        except Exception:
+            _log.error("{{ project.name }} failed", exc_info=True)
+            raise
+        else:
+            _log.info("{{ project.name }} finished")

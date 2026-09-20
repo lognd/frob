@@ -8,6 +8,8 @@ TODO: one-paragraph overview of what this project does and why.
 <!-- frob:describes src/{{ project.import_name }}/app/app.py::App -->
 <!-- frob:describes src/{{ project.import_name }}/app/config.py::AppConfig -->
 <!-- frob:describes src/{{ project.import_name }}/app/config.py::AppConfig.from_external -->
+<!-- frob:describes src/{{ project.import_name }}/app/config.py::ConfigError -->
+<!-- frob:describes src/{{ project.import_name }}/__main__.py::_build_parser -->
 <!-- frob:describes src/{{ project.import_name }}/logging/logger.py::get_logger -->
 <!-- frob:describes src/{{ project.import_name }}/logging/formatter.py::SimpleFormatter -->
 <!-- frob:describes src/{{ project.import_name }}/logging/formatter.py::SimpleFormatter.format -->
@@ -15,5 +17,7 @@ TODO: one-paragraph overview of what this project does and why.
 <!-- frob:describes src/{{ project.import_name }}/logging/filter.py::BelowLevelFilter.filter -->
 
 `main` parses CLI args, builds an `AppConfig` from CLI/TOML, and runs `App`.
+`AppConfig.from_external` returns a `typani.Result`; a `ConfigError` member
+signals a missing, unreadable, or malformed config file instead of raising.
 The `logging` subpackage provides `get_logger`, wired per the house
 logging convention (stdout for DEBUG/INFO, stderr for WARNING+).

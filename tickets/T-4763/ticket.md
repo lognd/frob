@@ -2,7 +2,7 @@
 id: T-4763
 title: typani floor to 0.2.3 and python-tool demonstrates Result at the config file-IO
   boundary
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -21,17 +21,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 designated_repro_test: null
 acceptance:
 - text: Given the rendered pyproject, when the typani floor is read, then it equals
     0.2.3, the latest published release recorded in this ticket
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 - text: Given the rendered python-tool config loader pointed at a nonexistent file,
     when it is called, then it returns an error value and no exception escapes
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 - text: Given the rendered python-tool, when typani's own lint is run over it, then
     it is clean
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 threat: null
 component: null
 anchor: false

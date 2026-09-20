@@ -1,11 +1,22 @@
+"""{{ project.name }}'s CLI entry point."""
+
+from __future__ import annotations
+
 import argparse
+import sys
 
 from dotenv import load_dotenv
+from typani import Err, Ok
 
 from {{ project.import_name }}.app import App, AppConfig
+from {{ project.import_name }}.logging import get_logger
+
+_log = get_logger(__name__)
 
 
+# frob:doc docs/index.md#public-api
 def _build_parser() -> argparse.ArgumentParser:
+    """Build this tool's top-level argument parser."""
     p = argparse.ArgumentParser(prog="{{ project.name }}")
     # TODO: add subparsers / arguments here
     return p
@@ -13,10 +24,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
 # frob:doc docs/index.md#public-api
 def main() -> None:
+    """Entry point: load env, parse args, build the config, and run the App."""
     load_dotenv()
     args = _build_parser().parse_args()
-    cfg = AppConfig.from_external(args)
-    App(cfg)()
+    match AppConfig.from_external(args):
+        case Ok(cfg):
+            _log.debug("config resolved, launching App")
+            App(cfg)()
+        case Err(error):
+            _log.error("config resolution failed: %s", error)
+            print(f"error: {error}", file=sys.stderr)
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

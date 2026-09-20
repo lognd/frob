@@ -6,10 +6,17 @@ import tomllib
 from pathlib import Path
 
 _CONFIG_PATH = Path(__file__).parent / "config.toml"
+
+#: This project's own top-level logger name -- baked in at render time so
+#: every scaffolded project gets a distinct name, never a name shared
+#: across projects in the same process.
+ROOT_LOGGER_NAME = "{{ project.import_name }}"
+
 _initialized = False
 
 
 def _init() -> None:
+    """Load config.toml into logging.config.dictConfig, once per process."""
     global _initialized
     if _initialized:
         return
@@ -24,3 +31,9 @@ def get_logger(name: str) -> logging.Logger:
     """Return a configured logger. Call with __name__ from each module."""
     _init()
     return logging.getLogger(name)
+
+
+# frob:doc docs/index.md#public-api
+def get_root_logger() -> logging.Logger:
+    """Return this project's own configured top-level logger (ROOT_LOGGER_NAME)."""
+    return get_logger(ROOT_LOGGER_NAME)
