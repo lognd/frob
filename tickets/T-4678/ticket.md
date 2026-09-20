@@ -28,6 +28,18 @@ body_changes:
   at: '2026-09-19'
   old_length: 4344
   new_length: 7736
+- mode: append
+  reason: 'BUG002 front door (T-2393): 2026-09-19: DECISION ticket whose sole deliverable
+    is an owner decision recorded in the body. Owner decided NO DELETIONS -- dormant
+    keywords are wired, not removed; the pessimistic keyword audit returned an empty
+    delete list (0 DEAD of 139). The two measured corrections to SF-09''s own evidence
+    (86 not 56 in-repo unused; twelve consumer designs totalling 5,682 lines that
+    SF-09 never searched) are recorded in the body. No keyword deleted, no file changed
+    under this id.'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 7735
+  new_length: 8241
 evidence:
 - cmd:git grep -n 'NO DELETIONS' -- tickets/T-4678/ticket.md exit=0 sha256=cdf9b2ed3d21
 designated_repro_test: null
@@ -185,3 +197,5 @@ fixed in the audit file, so the original overreach stays visible.
 
 Closing with no behavior change: the deliverable of a DECISION ticket is the
 decision, now recorded above. No keyword was deleted and no file changed here.
+
+frob:no-behavior-change reason="2026-09-19: DECISION ticket whose sole deliverable is an owner decision recorded in the body. Owner decided NO DELETIONS -- dormant keywords are wired, not removed; the pessimistic keyword audit returned an empty delete list (0 DEAD of 139). The two measured corrections to SF-09's own evidence (86 not 56 in-repo unused; twelve consumer designs totalling 5,682 lines that SF-09 never searched) are recorded in the body. No keyword deleted, no file changed under this id."
