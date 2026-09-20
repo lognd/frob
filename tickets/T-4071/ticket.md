@@ -11,7 +11,7 @@ parent: null
 tier: epic
 sprint: v0.538.0
 runs_last: false
-milestone: 0.538.0
+milestone: 1.1.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -19,6 +19,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: 'tier=epic: decomposition container for the eighth consumer
   audit list; scope lives on the children'
+triage_changes:
+- field: milestone
+  old_value: 0.538.0
+  new_value: 1.1.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 threat: null
 component: null
