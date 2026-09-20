@@ -114,6 +114,12 @@ body_changes:
   at: '2026-08-19'
   old_length: 1645
   new_length: 5870
+- mode: append
+  reason: 'T-4709: preserve capability-checking history trimmed from _lang_conformance.py'
+  actor: logan
+  at: '2026-09-19'
+  old_length: 5869
+  new_length: 6682
 evidence:
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-call_graph]
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-import_graph]
@@ -450,3 +456,17 @@ verb exists -- see frob.tickets._doable._open_blockers's own docstring,
 which documents this exact gap from a prior incident (T-2076) and notes
 it "had to be cleared through the store API by hand, because no unblock
 verb existed." Filing a follow-up ticket for that CLI gap separately.
+
+
+T-4709 follow-up (condensed from _BEHAVIORALLY_CHECKED_CAPABILITIES's
+comment block in src/frob/gates/_lang_conformance.py, trimmed for
+DOCARCH002's 12-line cap): the original four capabilities were what
+`frob.lang.parse_file` alone (no repo-wide scan, no build system) could
+behaviorally exercise in isolation. T-1599 added call_graph/import_graph
+to this set: both turned out to be exercisable from the SAME
+single-file fixture `frob.lang.parse_file` already drives --
+`build_call_graph`/`extract_imports` both resolve intra-file
+edges/specifiers from one parsed file, contrary to this comment's own
+prior claim (corrected here, not just in the ticket that found it).
+Each per-language fixture has its public function call its private one
+(call_graph) and a real import/include/use statement (import_graph).
