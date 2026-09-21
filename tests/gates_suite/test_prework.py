@@ -891,14 +891,10 @@ class TestScope002ClosureGate:
 
 # frob:ticket T-0584
 class TestPreworkSweepBounds:
-    """T-0240: the sweep's xref half used to call `xref(symbol, root)` --
-    ALWAYS the full repo root, ignoring the per-pattern scan path it had
-    already computed -- and derived its search term from a raw glob-syntax
-    stem (`Path(pattern).stem`), producing nonsense terms like `"**"`. Both
-    made `frob ticket start`/`sweep` unbounded and slow on real scopes.
-    These pin the fix: excludes/skip-dirs are honored (reusing
-    `frob.excludes`, not a second copy of the rule) and every xref hit is a
-    real, graph-known symbol name."""
+    """The sweep's xref half honors excludes/skip-dirs (reusing
+    `frob.excludes`, not a second copy of the rule) and only searches for
+    real, graph-known symbol names, never a raw glob-syntax stem (see
+    T-0240 for the unbounded-scan bug this bounds)."""
 
     def test_sweep_ticket_honors_graph_excludes(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_prework.py::sweep_ticket

@@ -101,8 +101,7 @@ class TestPiiStructuralCrossLanguage:
         assert any("unresolvable" in v.message for v in pii010)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_proc\
-    # ess_env_fires
+    # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
     def test_ts_process_env_fires(self, tmp_path: Path) -> None:
         """`process.env.SECRET_KEY` fires SEC110 -- the TS equivalent of
         `os.environ[...]`/`os.getenv(...)`."""
@@ -130,8 +129,7 @@ class TestPiiStructuralCrossLanguage:
         assert any("API_TOKEN" in v.message and "config2.ts" in v.file for v in sec110)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_impo\
-    # rt_meta_env_fires
+    # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_import_meta_env_fires  # noqa: E501
     def test_ts_import_meta_env_fires(self, tmp_path: Path) -> None:
         """`import.meta.env.VITE_SECRET` (Vite-style bundler env access)
         fires SEC110 -- the ticket-named `import.meta.env` equivalent."""
@@ -200,8 +198,7 @@ class TestPiiStructuralCrossLanguage:
         assert not _by_rule(violations, "PII010")
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_rust_en\
-    # v_var_fires
+    # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
     def test_rust_env_var_fires(self, tmp_path: Path) -> None:
         """`std::env::var("API_KEY")` fires SEC110 -- the Rust equivalent
         of `os.getenv(...)`."""
@@ -614,8 +611,7 @@ class TestExhaustiveHandlingGate:
     <Type>` fires EXHAUST002."""
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_partial_cat\
-    # ch_of_named_type_fires_exhaust002
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002  # noqa: E501
     def test_partial_catch_of_named_type_fires_exhaust002(self, tmp_path: Path) -> None:
         """`boundary` catches only ValueError but `risky` (which it calls)
         raises TypeError -- the leaked TypeError is named in EXHAUST002."""
@@ -720,8 +716,7 @@ class TestExhaustiveHandlingGate:
         assert subscript and "LookupError" in subscript[0].message
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unknown_wit\
-    # hout_catch_all_fires_exhaust001
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fires_exhaust001  # noqa: E501
     def test_unknown_without_catch_all_fires_exhaust001(self, tmp_path: Path) -> None:
         """T-0688 original name kept in place (T-0685/T-0688's own Done-
         report evidence cites this exact node id) -- T-1402 UPDATES what it
@@ -754,17 +749,14 @@ class TestExhaustiveHandlingGate:
         assert any(v.symref == "mod.py::boundary" for v in found)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unresolvabl\
-    # e_callee_fires_exhaust003_not_exhaust001
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unresolvable_callee_fires_exhaust003_not_exhaust001  # noqa: E501
     def test_unresolvable_callee_fires_exhaust003_not_exhaust001(
         self, tmp_path: Path
     ) -> None:
-        """T-1402's own name for the same assertion
-        `test_unknown_without_catch_all_fires_exhaust001` above now makes
-        (kept a second, descriptively-named copy alongside the
-        historically-evidenced original rather than only renaming it, so
-        this ticket's own `frob:tests` directive names something that
-        describes current behavior)."""
+        """An unresolvable callee inside a bare `except: pass` fires
+        EXHAUST003 (unresolvable-callee), never EXHAUST001 (missing-catch-
+        all) -- see T-1402 for the naming history behind this test's
+        duplicate coverage of the assertion above."""
         from frob.gates._exhaustive_handling import exhaustive_handling_gate
 
         _write(
@@ -785,8 +777,7 @@ class TestExhaustiveHandlingGate:
         assert any(v.symref == "mod.py::boundary" for v in found)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_ambiguous_b\
-    # are_reraise_still_fires_exhaust001
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_ambiguous_bare_reraise_still_fires_exhaust001  # noqa: E501
     def test_ambiguous_bare_reraise_still_fires_exhaust001(
         self, tmp_path: Path
     ) -> None:
@@ -816,8 +807,7 @@ class TestExhaustiveHandlingGate:
         assert not _by_rule(violations, "EXHAUST003")
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_catch_all_o\
-    # f_unknown_does_not_fire_exhaust001
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
     def test_catch_all_of_unknown_does_not_fire_exhaust001(
         self, tmp_path: Path
     ) -> None:
@@ -841,8 +831,7 @@ class TestExhaustiveHandlingGate:
         assert not _by_rule(violations, "EXHAUST001")
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_declared_fr\
-    # ob_raises_directive_discharges_exhaust002
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002  # noqa: E501
     def test_declared_frob_raises_directive_discharges_exhaust002(
         self, tmp_path: Path
     ) -> None:
@@ -870,8 +859,7 @@ class TestExhaustiveHandlingGate:
         assert not _by_rule(violations, "EXHAUST002")
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_function_wi\
-    # th_no_catches_is_not_a_boundary
+    # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary  # noqa: E501
     def test_function_with_no_catches_is_not_a_boundary(self, tmp_path: Path) -> None:
         """`caller` calls `risky` (which raises TypeError) but has no
         `except` clause of its own -- it is plain propagation, not a
@@ -904,8 +892,7 @@ class TestFfiBoundaryGate:
     ctypes-loaded library handle."""
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_f\
-    # fi001
+    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001  # noqa: E501
     def test_pyo3_drift_fires_ffi001(self, tmp_path: Path) -> None:
         """The Rust side constructs PyValueError but the `.pyi` stub's
         `frob:raises` omits it -- FFI001 names both sides."""
@@ -944,8 +931,7 @@ class TestFfiBoundaryGate:
         assert any(v.symref == "crate.pyi::foo" for v in found)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matc\
-    # hes_no_drift
+    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
     def test_pyo3_declared_matches_no_drift(self, tmp_path: Path) -> None:
         """Same Rust side, but the `.pyi` stub declares `# frob:raises
         ValueError` above `def foo` -- no FFI001."""
@@ -982,8 +968,7 @@ class TestFfiBoundaryGate:
         assert not _by_rule(violations, "FFI001")
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_withou\
-    # t_declaration_fires_ffi002
+    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
     def test_ctypes_call_without_declaration_fires_ffi002(self, tmp_path: Path) -> None:
         """A call through a ctypes.CDLL-loaded handle with no callee-raises
         comment (`# frob` + `:callee-raises`) on its own line fires
@@ -1001,8 +986,7 @@ class TestFfiBoundaryGate:
         assert any("do_thing" in v.message for v in found)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_with_e\
-    # mpty_declaration_clean
+    # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
     def test_ctypes_call_with_empty_declaration_clean(self, tmp_path: Path) -> None:
         """The same call, but with a bare `# frob:callee-raises` comment
         (the valid "raises nothing, errno convention" declaration) on its
@@ -1030,8 +1014,7 @@ class TestErrorsAsValuesAdvisory:
     named as the sketch."""
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_public_rais\
-    # er_with_no_handling_caller_recommends_result
+    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_no_handling_caller_recommends_result  # noqa: E501
     def test_public_raiser_with_no_handling_caller_recommends_result(
         self,
     ) -> None:
@@ -1066,8 +1049,7 @@ class TestErrorsAsValuesAdvisory:
         assert any(s.symref == "mod.py::risky" for s in matches)
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_public_rais\
-    # er_with_handling_caller_not_flagged
+    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_handling_caller_not_flagged  # noqa: E501
     def test_public_raiser_with_handling_caller_not_flagged(self) -> None:
         from frob.arch._exceptions import check_errors_as_values
         from frob.arch._normalized import (
@@ -1100,8 +1082,7 @@ class TestErrorsAsValuesAdvisory:
         )
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_private_rai\
-    # ser_not_flagged
+    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_private_raiser_not_flagged  # noqa: E501
     def test_private_raiser_not_flagged(self) -> None:
         from frob.arch._exceptions import check_errors_as_values
         from frob.arch._normalized import (
@@ -1123,8 +1104,7 @@ class TestErrorsAsValuesAdvisory:
         )
 
     # frob:tests \
-    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_only_ubiqui\
-    # tous_or_unknown_raises_not_flagged
+    # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_only_ubiquitous_or_unknown_raises_not_flagged  # noqa: E501
     def test_only_ubiquitous_or_unknown_raises_not_flagged(self) -> None:
         """`risky` calls an unresolvable function only (contributes solely
         `UNKNOWN`, no `_RECOVERABLE_EXCEPTION_TYPES` member) -- never

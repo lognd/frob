@@ -139,32 +139,13 @@ class TestProtocolVerificationGate:
     def test_finds_the_violation_even_when_cwd_relativization_diverges(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-3667 (win32 gates_suite campaign, T-3659): reproduces, on ANY
-        platform, the general shape of the bug that made `protocol_
-        summary_gate` silently find ZERO violations on win32 for every
-        one of this file's 10 fixtures. `_package_edges` used to rebuild
-        `ParsedFile.path`'s own string via a SEPARATE `str(root /
-        rel_path)` computation and `.replace()` it out of each edge's
-        `src`/`origin` -- but `ParsedFile.path` is actually built by
-        `frob.lang._display_path`, which prefers a path RELATIVE TO
-        `Path.cwd()` when possible, and ALWAYS normalizes via
-        `.as_posix()`. Whenever that computed string differs even
-        slightly from a separately-recomputed `str(root / rel_path)`
-        (win32's native `\\` vs `_display_path`'s hardcoded `/` is one
-        way; `Path.cwd()` landing under `tmp_path` -- forced here via
-        monkeypatch -- so `_display_path` takes its relative-to-cwd
-        branch entirely, producing a SHORT relative string instead of
-        the long absolute one `str(root / rel_path)` still computes --
-        is another, POSIX-reproducible way), the old `.replace()` call
-        silently no-ops and every `Edge.src`/`origin` is left as the
-        WRONG (still-`_display_path`-shaped) string, which never equals
-        the POSIX-relative `entrypoints` `_tagged_symbols_by_package`
-        computes -- so PROTO002/003/004's `edge.src == symref` lookups
-        find nothing, for every fixture, on every language. The fix
-        (`abs_path = result.danger_ok.path`, i.e. reusing `ParsedFile.
-        path`'s OWN string rather than recomputing a second one that can
-        drift from it) makes this `.replace()` match unconditionally,
-        regardless of `Path.cwd()` or platform."""
+        """`_package_edges` reuses `ParsedFile.path`'s own string (never a
+        separately-recomputed `str(root / rel_path)`) so its path match
+        holds regardless of `Path.cwd()` or platform -- forcing
+        `Path.cwd()` under `tmp_path` here reproduces, on any platform,
+        the general shape of a divergence that made
+        `protocol_summary_gate` miss every violation on win32 (see T-3667/
+        T-3659 for the original bug)."""
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -535,8 +516,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_rust_drop_impl_discharges(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # rust_drop_impl_discharges
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges  # noqa: E501
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         source = "struct Net;\nimpl Drop for Net {\n    fn drop(&mut self) {}\n}\n"
@@ -546,8 +526,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # rust_mem_forget_revokes_the_drop_discharge
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget_revokes_the_drop_discharge  # noqa: E501
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         source = (
@@ -561,8 +540,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_rust_manually_drop_revokes_the_discharge(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # rust_manually_drop_revokes_the_discharge
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_drop_revokes_the_discharge  # noqa: E501
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         source = (
@@ -576,8 +554,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_rust_no_drop_impl_is_not_discharged(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # rust_no_drop_impl_is_not_discharged
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_impl_is_not_discharged  # noqa: E501
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         result = rust_drop_discharge("struct Net;\n", "Net")
@@ -585,8 +562,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_cpp_raii_destructor_discharges(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # cpp_raii_destructor_discharges
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destructor_discharges  # noqa: E501
         from frob.arch._protocol_excuse import cpp_raii_discharge
 
         source = "class Net {\npublic:\n    ~Net() {}\n};\n"
@@ -596,8 +572,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_cpp_no_destructor_is_not_discharged(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # cpp_no_destructor_is_not_discharged
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destructor_is_not_discharged  # noqa: E501
         from frob.arch._protocol_excuse import cpp_raii_discharge
 
         result = cpp_raii_discharge("class Net {\n};\n", "Net")
@@ -605,8 +580,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_python_with_block_discharges(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # python_with_block_discharges
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_python_with_block_discharges  # noqa: E501
         from frob.arch._protocol_excuse import python_with_discharge
 
         result = python_with_discharge("with Net() as n:\n    pass\n", "Net")
@@ -615,8 +589,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_python_no_with_block_is_not_discharged(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # python_no_with_block_is_not_discharged
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_block_is_not_discharged  # noqa: E501
         from frob.arch._protocol_excuse import python_with_discharge
 
         result = python_with_discharge("Net().connect()\n", "Net")
@@ -624,8 +597,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_typescript_using_discharges(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # typescript_using_discharges
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges  # noqa: E501
         from frob.arch._protocol_excuse import typescript_using_discharge
 
         result = typescript_using_discharge("using n = Net();\n", "Net")
@@ -634,8 +606,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_typescript_try_finally_discharges(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # typescript_try_finally_discharges
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_finally_discharges  # noqa: E501
         from frob.arch._protocol_excuse import typescript_using_discharge
 
         source = "try {\n  n.use();\n} finally {\n  n.close();\n}\n"
@@ -645,8 +616,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_typescript_bare_call_is_not_discharged(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # typescript_bare_call_is_not_discharged
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare_call_is_not_discharged  # noqa: E501
         from frob.arch._protocol_excuse import typescript_using_discharge
 
         result = typescript_using_discharge("net.connect();\n", "net")
@@ -654,8 +624,7 @@ class TestProtocolLanguageExcuseDischarge:
 
     def test_gc_finalizer_never_discharges(self) -> None:
         # frob:tests \
-        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_\
-        # gc_finalizer_never_discharges
+        # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_never_discharges  # noqa: E501
         from frob.arch._protocol_excuse import gc_finalizer_discharge
 
         result = gc_finalizer_discharge("Net")

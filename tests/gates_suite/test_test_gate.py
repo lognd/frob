@@ -249,13 +249,10 @@ class TestTestGate:
     def test_test002_satisfied_by_rust_directive_bound_cross_file(
         self, tmp_path: Path
     ) -> None:
-        """Regression for T-0090: a `frob:tests` directive living in a
-        different rust file than its target symbol must still count as unit
-        evidence. T-0092 gave rust a real execution-based collector
-        (`collect_rust_tests`), so this now asserts through the FIRST branch
-        of `_valid_edges` (real collected node id), not the structural
-        fallback the T-0090 comment used to describe -- `.rs` was removed
-        from `_NATIVE_TEST_EXTENSIONS` accordingly."""
+        """A `frob:tests` directive living in a different rust file than
+        its target symbol counts as unit evidence, resolved through
+        `_valid_edges`'s real-collected-node-id branch rather than a
+        structural fallback (see T-0090/T-0092)."""
         from typani.option import Nothing
 
         _write(
@@ -309,22 +306,12 @@ class TestTestGate:
     def test_test001_002_explicit_unit_edge_honored_regardless_of_test_name(
         self, tmp_path: Path
     ) -> None:
-        """Regression for T-0336 (root-caused while adding
-        `tests/test_graph.py::TestGeneratedSource` for T-0234's
-        `is_generated_source`): `_test_edges` used to index unit TESTS
-        edges by `edge.target` only, but the directive convention used
-        throughout this codebase for "written directly above the source
-        function, naming its covering test" (`docs/modules/testing.md`)
-        binds `src` to the source symbol and `target` to the test id --
-        `record.symref` (the source) can then only ever match `edge.src`,
-        never `edge.target`, so a target-only index can structurally never
-        find it. `zebra_helper` is deliberately tested by
-        `test_alpha_omega_case`, a name that shares no token with
-        `zebra_helper` -- `_inferred_unit_cases`' naming-convention fallback
-        cannot match it, so TEST001/002 can only stay clean here via the
-        explicit `frob:tests ... kind="unit"` edge being both found
-        (`_unit_test_edges` indexing `edge.src`) and honored as real
-        execution evidence (`_valid_edges` checking `edge.target` too)."""
+        """An explicit `frob:tests ... kind="unit"` edge, indexed by
+        `edge.src` (the source symbol, per `docs/modules/testing.md`'s
+        directive convention) and honored as real execution evidence,
+        keeps TEST001/002 clean for a test whose name shares no token
+        with its source symbol -- so the naming-convention fallback in
+        `_inferred_unit_cases` cannot match it (see T-0336/T-0234)."""
         from typani.option import Nothing
 
         source = (
@@ -720,15 +707,10 @@ class TestTestGate:
         assert any(v.rule == "TEST003" for v in waived)
 
     def test_match_waiver_prefix_reach_gated_to_package_scoped_rules(self) -> None:
-        """T-0470 counterexample: BEFORE this fix, `_match_waiver`'s
-        directory-prefix branch ran for every symref-less violation
-        regardless of rule -- any rule whose `violation.file` happened to
-        be directory-shaped (no extension) inherited unbounded prefix
-        reach it was never reviewed for. A non-package-scoped rule (i.e.
-        not in `_PACKAGE_SCOPED_RULES`) with a directory-shaped `file`
-        must now match ONLY a waiver whose own site is that exact
-        file/directory string -- never a waiver nested somewhere under
-        it via the prefix fallback."""
+        """A non-package-scoped rule (not in `_PACKAGE_SCOPED_RULES`) with
+        a directory-shaped `file` matches only a waiver whose own site is
+        that exact file/directory string, never one nested under it via
+        `_match_waiver`'s directory-prefix fallback (see T-0470)."""
         # frob:tests src/frob/gates/_waive.py::_match_waiver
         from frob.gates import _match_waiver
         from frob.graph import Edge, EdgeKind
@@ -776,11 +758,10 @@ class TestTestGate:
     def test_match_waiver_picks_line_nearest_of_two_same_file_same_rule(
         self,
     ) -> None:
-        """T-2338: a file with 2+ `frob:waive PERF008` comments at
-        DIFFERENT lines (the real T-2321 incident shape) must have each
-        violation matched to the waiver comment nearest ITS OWN line, not
-        whichever waiver happens to come first in build order -- this
-        MUST FAIL on main (the old code always returned `candidates[0]`)."""
+        """A file with 2+ `frob:waive PERF008` comments at different lines
+        has each violation matched to the waiver comment nearest its own
+        line, never whichever comes first in build order (see T-2338/
+        T-2321)."""
         # frob:tests src/frob/gates/_waive.py::_match_waiver
         from frob.gates import _match_waiver
         from frob.graph import Edge, EdgeKind
@@ -866,25 +847,11 @@ class TestTestGate:
 
     # frob:ticket T-2438
     def test_match_waiver_symref_formatting_difference_still_waives(self) -> None:
-        """T-2438 must-now-waive control: reproduces the confirmed live
-        mismatch -- `frob.arch`'s hand-rolled C++ symref producer
-        (`frob.lang._common._cpp_class_methods`, shared by
-        `frob.arch._cpp`/`_cpp_mayraise`) spells a method's symref with
-        the native `Class::method` scope operator
-        (`violation.symref == "x.cpp::Foo::bar"`), while the DSL/graph
-        symbol table that binds a symbol-bound `frob:waive` comment
-        (`frob.lang._walk_c`) always dot-joins qualname segments
-        (`waiver.src == "x.cpp::Foo.bar"`). BEFORE this fix, `_match_
-        waiver`'s symbol-exact branch compared these two spellings with
-        plain `==`, found no match, and returned None unconditionally --
-        the waiver never suppressed the finding even though both sides
-        genuinely name the same method. Verified directly against real
-        producers: `frob.arch._cpp._check_long_functions` on a synthetic
-        long C++ method yields `symref='<path>::Foo::bar'`, and `frob.
-        lang.parse_file` + `frob.graph.dsl.parse_directives` on the same
-        source with a `frob:waive ARCH001` comment above `bar` binds
-        `Edge.src == '<path>::Foo.bar'` -- the exact two strings this
-        test hardcodes."""
+        """`_match_waiver`'s symbol-exact branch matches a C++ method's
+        `Class::method`-spelled violation symref against its dot-joined
+        `Class.method` waiver `src` -- the two spellings real producers
+        (`frob.arch._cpp`'s finding vs. `frob.lang._walk_c`'s directive
+        binding) genuinely use for the same method (see T-2438)."""
         # frob:tests src/frob/gates/_waive.py::_match_waiver
         from frob.gates import _match_waiver
         from frob.graph import Edge, EdgeKind
@@ -1418,12 +1385,10 @@ class TestTestGate:
     def test_test005_unmeasured_symbol_in_measured_file_flags_as_zero(
         self, tmp_path: Path
     ) -> None:
-        """T-0557 (B4): a symbol with NO entry in `symbol_branch` -- never
-        executed at all -- must still be flagged at 0% branch coverage when
-        its FILE genuinely was measured (has a `module_line` entry).
-        Previously `_test005_symbols` skipped any symbol absent from
-        `symbol_branch`, silently clearing dead code that a test suite never
-        calls into even once."""
+        """A symbol with no entry in `symbol_branch` -- never executed at
+        all -- is flagged at 0% branch coverage when its file genuinely
+        was measured (has a `module_line` entry), rather than silently
+        skipped by `_test005_symbols` (see T-0557/B4)."""
         from typani.option import Some
 
         from frob.gates import CoverageData
@@ -1907,21 +1872,11 @@ class TestTestGate:
         assert violations == ()
 
     def test_ci_workflow_self_gate_does_not_swallow_errors(self) -> None:
-        """T-1265 (CHK-THEME-GITIGNORED-TRUST successor): the CI self-gate
-        step used to run `uv run frob check || echo "::warning..."` --
-        swallowing every finding, ERROR-tier included, so a real gate
-        error never failed the build. Locks that the swallow is gone.
-
-        T-4460/T-4481: the self-gate step now tees its output to
-        `$RUNNER_TEMP/frob-check.log` (so a follow-up job-summary step can
-        read it even on a failing self-gate) -- `run: uv run frob check\\n`
-        alone no longer matches. Asserts the SURVIVING intent structurally
-        instead of pinning one literal line, via `_self_gate_run_script_
-        errors` (this class's own reusable check, exercised against
-        synthetic swallow shapes by
-        `TestSelfGateRunScriptSwallowDetection` below so this real-file
-        assertion is proven to actually fire, not just proven true by
-        construction against the one script it happens to read)."""
+        """The CI self-gate step's `run:` script does not swallow gate
+        findings (no bare `|| echo "::warning..."` catch-all), asserted
+        structurally via `_self_gate_run_script_errors` against the real
+        workflow file rather than pinning one literal line (see T-1265,
+        T-4460/T-4481)."""
         # frob:tests .github/workflows/ci.yml
         run = _self_gate_run_script(_load_ci_workflow_for_test_gate())
         assert _self_gate_run_script_errors(run) == []
@@ -2009,12 +1964,9 @@ class TestTestGate:
         assert _changelog_mentions(tmp_path, "1.2.3") is True
 
     def test_test006_stale_on_new_file_not_in_stamp(self, tmp_path: Path) -> None:
-        """T-0403 B15: a file added after the last stamp has no entry in
-        `file_hashes` at all -- it must be reported stale, not silently
-        skipped (a prior version only compared hashes for paths already
-        present in the stamp, so brand-new files' coverage went unmeasured
-        while TEST006 stayed green).
-        """
+        """A file added after the last stamp, with no entry in
+        `file_hashes` at all, is reported stale rather than silently
+        skipped (see T-0403/B15)."""
         _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
         _write(tmp_path, "src/frob/pkg/b.py", "def other(x):\n    return x\n")
         snap = _snapshot(tmp_path)
@@ -2527,14 +2479,11 @@ class TestNativeTestCollectors:
     # frob:ticket T-0730
     def test_ts_structural_only_edge_no_longer_credited(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_ts_structural_only_edge_no_longer_credited  # noqa: E501
-        """Acceptance (T-0730): a TS `frob:tests` edge that only LOOKS like
-        test code by name/path, with NO real collected vitest evidence, no
-        longer gets any TEST001-004 credit at all -- the structural
-        fallback `_edge_is_native_unverified` used to grant TS (T-0552) is
-        retired for `.ts`. The edge still exists (so TEST001, "no edge at
-        all", stays clean), but it now counts zero cases instead of the one
-        the retired fallback used to grant, so it is a genuine TEST002
-        finding rather than a silent pass or a TEST013 warning."""
+        """A TS `frob:tests` edge that only looks like test code by name/
+        path, with no real collected vitest evidence, gets zero TEST001-
+        004 credit -- the structural fallback is retired for `.ts`, so
+        the edge still exists (TEST001 stays clean) but counts zero
+        cases, producing a genuine TEST002 finding (see T-0730/T-0552)."""
         from typani.option import Nothing
 
         _write(
@@ -2745,26 +2694,13 @@ class TestNativeTestCollectors:
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_cpp_directive_resolves_via_real_ctest_node_id  # noqa: E501
-        """T-1266 (CHK-SUBSYS-GATES-ACCOUNTING successor): the C/C++ mirror
-        of `test_ts_directive_resolves_via_real_vitest_node_id` above --
-        T-0886 already made `collect_cpp_tests` source-accurate for the
-        common single-source-per-target case (see `TestCppSourceAccurateCollection`
-        in this file, which proves the collector itself produces
-        `<source>::<name>` node ids), but nothing previously proved that a
-        REAL `frob:tests` edge in the graph actually resolves against one
-        of those node ids via `_edge_has_execution_evidence`'s first real-
-        evidence branch (`_node_id_collected`/`_symref_to_nodeid`), rather
-        than falling through to the c/cpp structural fallback
-        (`_edge_is_native_unverified`) the same way `test_fires_on_
-        structural_only_edge` above proves the UNRESOLVED case does. This
-        closes that gap: `tests.node_ids` here holds exactly the node id
-        shape `collect_cpp_tests` emits for an unambiguous single-source
-        ctest test (`_cpp_node_id`, verified directly in
-        `TestCppSourceAccurateCollection.
-        test_single_source_target_is_source_accurate`), so a passing run
-        here proves the edge takes the REAL-evidence path, not the
-        disclosed-unverified one -- TEST013 must NOT fire, matching
-        acceptance[0]."""
+        """A real `frob:tests` edge in the graph resolves against a
+        `collect_cpp_tests`-emitted node id (`_cpp_node_id`'s single-
+        source-per-target shape) via `_edge_has_execution_evidence`'s
+        real-evidence branch, not the c/cpp structural fallback -- TEST013
+        does not fire (see T-1266/T-0886, and
+        `TestCppSourceAccurateCollection` for the collector's own node-id
+        accuracy proof)."""
         from typani.option import Nothing
 
         _write(

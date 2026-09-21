@@ -81,10 +81,9 @@ class TestCoverageGate:
     def test_cov003_remediation_hint_names_no_nonexistent_flag(
         self, tmp_path: Path
     ) -> None:
-        """T-0292: the COV003 message used to tell users to run
-        `frob test --collect`, a flag `frob test` has never accepted
-        (argparse would reject it). The hint must not name any `frob test`
-        flag other than ones `_add_test_parser` actually registers."""
+        """The COV003 remediation hint never names a `frob test` flag other
+        than one `_add_test_parser` actually registers (see T-0292 for the
+        historical `--collect` naming bug this guards against)."""
         import argparse
         import re
 
@@ -1052,11 +1051,10 @@ class TestCoverageGate:
     def test_cov008_silent_on_rename_with_rebound_citation(
         self, tmp_path: Path
     ) -> None:
-        """MUST-STAY-QUIET fixture #2 (T-2688): a rename whose citation was
-        ALREADY rebound to the test's new node id must stay silent -- the
-        ticket's evidence no longer names the vanished old path at all, so
-        there is nothing left for COV008 to match against the old path's
-        disappearance."""
+        """COV008 stays silent on a rename whose citation was already
+        rebound to the test's new node id -- the ticket's evidence no
+        longer names the vanished old path, so there is nothing left to
+        match against its disappearance."""
         _git_init(tmp_path)
         _write(tmp_path, "tests/test_x.py", "def test_foo():\n    pass\n")
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
@@ -1559,12 +1557,11 @@ class TestCoverageGate:
     # frob:ticket T-0525
     # frob:tests tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov006_violation_carries_edge_src_as_symref kind="unit"  # noqa: E501
     def test_cov006_violation_carries_edge_src_as_symref(self, tmp_path: Path) -> None:
-        """T-0525: a COV006 finding's `symref` is the offending `frob:tests`
-        edge's own `src` (the test's symref), not `None` -- this is what
-        lets `_match_waiver` do symbol-exact matching instead of falling
-        back to file-scope, where a single waiver anywhere in the file
-        used to silently suppress every COV006 finding in it (T-0148's
-        precedent for TEST005, applied here)."""
+        """A COV006 finding's `symref` is the offending `frob:tests` edge's
+        own `src` (the test's symref), never `None` -- this is what lets
+        `_match_waiver` do symbol-exact matching instead of file-scope
+        fallback (see T-0525 for the file-scope-suppression bug this
+        precision fixes)."""
         _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
         _write(
             tmp_path,
@@ -1587,14 +1584,11 @@ class TestCoverageGate:
     def test_cov006_waiver_does_not_blanket_suppress_the_whole_file(
         self, tmp_path: Path
     ) -> None:
-        """T-0525 regression: two independent, unsound `frob:tests` edges
-        in the SAME test file each produce their own COV006 finding; a
-        `frob:waive COV006` comment bound to only ONE of the two tests
-        must suppress only that one -- NOT both, the T-0148-class
-        blanket-waiver bug this ticket fixes for COV006 specifically
-        (previously verified live: one waiver comment in tests/test_gates.py
-        silently absorbed all 7 COV006 findings then present in that
-        file)."""
+        """Two independent, unsound `frob:tests` edges in the same file
+        each produce their own COV006 finding; a `frob:waive COV006`
+        bound to only ONE of the two tests suppresses only that one, never
+        both (see T-0525 for the blanket-waiver bug this precision
+        fixes)."""
         _write(
             tmp_path,
             "src/a.py",
@@ -1673,12 +1667,10 @@ class TestCoverageGate:
     def test_cov006_third_file_reachable_skips_unresolved_callee_sentinel(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        """T-0814 (T-0809 reviewer condition b): `_cov006_third_file_reachable`
-        iterates `closure(...)`'s output and used to do
-        `helper_symref.split("::", 1)[1]` unconditionally -- a bare
-        `UNRESOLVED_CALLEE` sentinel entry (no `::`) IndexErrors that.
-        Forcing `closure` to always return the sentinel proves the
-        function now skips it and returns cleanly instead of raising."""
+        """`_cov006_third_file_reachable` skips a bare `UNRESOLVED_CALLEE`
+        sentinel entry in `closure(...)`'s output and returns cleanly
+        instead of raising (see T-0814 for the IndexError this guards
+        against)."""
         import frob.graph.callgraph as callgraph_mod
         from frob.gates import _cov006_third_file_reachable
         from frob.graph import Edge, EdgeKind
@@ -2042,12 +2034,10 @@ class TestCoverageGate:
     def test_cov001_waiver_does_not_blanket_suppress_sibling_symbol(
         self, tmp_path: Path
     ) -> None:
-        """T-0553 (B11): a `frob:waive COV001` placed above ONE public
-        symbol must not also suppress COV001 for a DIFFERENT public symbol
-        in the same file -- before this fix, COV001's `Violation` carried
-        no `symref`, so `_match_waiver` fell back to file-scoped matching
-        and one directive silently waived every undocumented symbol in the
-        file, not just the one it was written above."""
+        """A `frob:waive COV001` placed above one public symbol does not
+        suppress COV001 for a different public symbol in the same file
+        (see T-0553 for the file-scoped-matching bug this symref
+        precision fixes)."""
         source = (
             "def waived_helper(x):\n"
             '    # frob:waive COV001 reason="legacy code, ticket filed"\n'

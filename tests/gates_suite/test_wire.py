@@ -202,13 +202,10 @@ class TestDeadSymbolGate:
     # frob:ticket T-1652
     def test_waiver_directly_above_symbol_suppresses_it(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
-        """T-1651: DEAD001's Violation now carries `symref`, so a
-        `frob:waive DEAD001 reason="..."` placed directly above the
-        flagged symbol (the exact pattern the gate's own message
-        recommends) actually matches via `_match_waiver`'s symbol-exact
-        path -- previously every such waiver silently failed to bind
-        because the Violation left `symref` unset (None), forcing every
-        DEAD001 waiver onto the file-scoped fallback instead."""
+        """A `frob:waive DEAD001 reason="..."` placed directly above the
+        flagged symbol matches via `_match_waiver`'s symbol-exact path,
+        since DEAD001's `Violation` carries `symref` (see T-1651 for the
+        unset-`symref` bug this fixes)."""
         from frob.gates import _apply_waivers
         from frob.gates._dead_symbols import dead_symbol_gate
 
@@ -254,12 +251,10 @@ class TestDeadSymbolGate:
     # frob:ticket T-1652
     def test_autouse_pytest_fixture_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
-        """T-1651: an `@pytest.fixture(autouse=True)` fixture is invoked
-        implicitly by pytest's own injection machinery for every test in
-        its module, never by a name/call token this gate's reference-graph
-        scan can see -- `_is_autouse_pytest_fixture` (moved here from
-        WIRE001's own T-1510 rescue) exempts it. DEAD001 previously lacked
-        this exemption entirely."""
+        """`_is_autouse_pytest_fixture` exempts an
+        `@pytest.fixture(autouse=True)` fixture from DEAD001, since
+        pytest invokes it implicitly with no name/call token this gate's
+        reference-graph scan can see (see T-1651)."""
         from frob.gates._dead_symbols import dead_symbol_gate
 
         _write(
@@ -519,12 +514,9 @@ class TestWireGate:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
-        """T-1746: a helper called directly from a genuine `test_*`
-        function in its OWN defining file now counts as reached -- the
-        same-file test-fixture-reuse false positive this ticket exists
-        for (T-1727's motivating case: a shared fixture two test classes
-        in one file both call from real `test_*` methods). Superseded the
-        pre-T-1746 assertion that same-file usage never counts."""
+        """A helper called directly from a genuine `test_*` function in
+        its own defining file counts as reached (see T-1746/T-1727 for
+        the same-file test-fixture-reuse false positive this fixes)."""
         from frob.gates._wire import wire_gate
 
         _write(
@@ -1736,15 +1728,12 @@ class TestWire001DiffScopingMissesPreExistingDeadSymbols:
 
 
 class TestWire001RuleIdViolationsUnion:
-    """T-2454: `_wire001_rule_id_violations` (WIRE001 case 2, T-1421's
-    BUG002 shape) is the diff-scoped check that actually serialized this
-    ticket's measured incident -- it fires the instant a ticket's OWN
-    diff constructs a new `rule="..."` literal, well before land/close
-    time, and used to compare only against the hand-maintained
-    `_KNOWN_GATE_RULES` literal. It now also recognizes a standard-shape
-    construction via a fresh `generated_gate_rule_ids` scan, so a ticket
-    adding a brand-new gate rule in its own module never needs to also
-    take a write lease on `src/frob/gates/_waive.py` in the same diff."""
+    """`_wire001_rule_id_violations` (WIRE001 case 2) recognizes a
+    standard-shape new `rule="..."` construction via a fresh
+    `generated_gate_rule_ids` scan, not only the hand-maintained
+    `_KNOWN_GATE_RULES` literal -- so a ticket adding a brand-new gate
+    rule never needs a write lease on `src/frob/gates/_waive.py` in the
+    same diff (see T-2454/T-1421)."""
 
     # frob:ticket T-2454
     def test_standard_shape_new_rule_not_flagged_without_hand_registration(

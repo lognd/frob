@@ -1,7 +1,7 @@
 ---
 id: T-4420
 title: Clean land and gates test-suite docstrings of change-narrative (DOCARCH001)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-11'
@@ -36,203 +36,203 @@ scope_changes:
   glob: tests/gates_suite/test_compliance.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_coverage.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_debt.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_depr003_severity_override.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_doc.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_guard_closure.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_prework.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_protocol.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_run.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_severity_overrides_pin.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_test_gate.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_waive.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/gates_suite/test_wire.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/conftest.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_archive.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_claim_close.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_dirt_ownership.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_draft.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_land_core.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_land_lock.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_land_plan.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_land_target_branch.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_ledger_splice.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_push.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_release.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_verify_intent.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_verify_reset.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_waive_deletion.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: add
   glob: tests/ticket_land_suite/test_wip.py
   reason: 'T-4420: docstring-only DOCARCH001 cleanup; excluded files leased by in-progress
     tickets (test_sys.py/T-4622, test_fix_engine.py/T-draft-ede38ca6, test_invariant.py/T-4221,
-    test_tick.py/T-4649)'
+    test_tick.py/T-draft-cdd5b1eb)'
   actor: logan
   at: '2026-09-19'
 - op: remove
@@ -351,12 +351,17 @@ body_changes:
   at: '2026-09-19'
   old_length: 220
   new_length: 1473
+evidence:
+- cmd:/tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/t4420_evidence_run.sh
+  exit=0 sha256=7440b8a5c31c
 designated_repro_test: null
 acceptance:
 - text: Given a frob check on tests/gates_suite's 13 files scoped to this ticket (test_sys.py/test_tick.py/test_invariant.py/test_fix_engine.py
-    excluded, leased by T-4622/T-4649/T-4221/T-draft-ede38ca6), when DOCARCH001 is
-    measured, then the count is 0
-  evidence: []
+    excluded, leased by T-4622/T-draft-cdd5b1eb/T-4221/T-draft-ede38ca6), when DOCARCH001
+    is measured, then the count is 0
+  evidence:
+  - cmd:/tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/t4420_evidence_run.sh
+    exit=0 sha256=7440b8a5c31c
 acceptance_amendments:
 - op: replace
   index: 1
@@ -364,8 +369,8 @@ acceptance_amendments:
     when DOCARCH001 is measured, then their combined finding count is 0
   new_text: Given a frob check on tests/gates_suite's 13 files scoped to this ticket
     (test_sys.py/test_tick.py/test_invariant.py/test_fix_engine.py excluded, leased
-    by T-4622/T-4649/T-4221/T-draft-ede38ca6), when DOCARCH001 is measured, then the
-    count is 0
+    by T-4622/T-draft-cdd5b1eb/T-4221/T-draft-ede38ca6), when DOCARCH001 is measured,
+    then the count is 0
   reason: Narrowed T-4420 to tests/gates_suite only; tests/ticket_land_suite split
     to child T-draft-7bdec243 (42 findings there vs. this cluster's 33)
   actor: logan
@@ -392,7 +397,7 @@ own repo-wide summary count which is not file-scoped):
   test_run.py 5, test_wire.py 4, test_waive.py 4,
   test_severity_overrides_pin.py 1, test_protocol.py 1, test_prework.py 1,
   test_compliance.py 1; excluded: test_sys.py 2/T-4622,
-  test_tick.py 5/T-4649, test_invariant.py 1/T-4221,
+  test_tick.py 5/T-draft-cdd5b1eb, test_invariant.py 1/T-4221,
   test_fix_engine.py 0-here-but-leased/T-draft-ede38ca6).
 
 Narrowed this ticket (T-4420) to tests/gates_suite's 13 unleased files

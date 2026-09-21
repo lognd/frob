@@ -101,8 +101,7 @@ class TestDupPipelineClosureConsumers:
 
     # frob:ticket T-0814
     # frob:tests \
-    # tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers.test_is_symref_d\
-    # up kind="unit"
+    # tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers.test_is_symref_dup kind="unit"  # noqa: E501
     def test_is_symref_dup(self) -> None:
         """T-0814: `frob.dup._pipeline._is_symref` mirrors `frob.gates`'s
         helper of the same name -- both files are outside a shared home
@@ -117,12 +116,9 @@ class TestDupPipelineClosureConsumers:
     # frob:ticket T-0814
     # frob:tests tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers.test_callee_name_map_skips_unresolved_callee_sentinel kind="unit"  # noqa: E501
     def test_callee_name_map_skips_unresolved_callee_sentinel(self) -> None:
-        """T-0814: `_callee_name_map` iterates `graph.calls.get(caller, ())`
-        and used to do `callee_symref.split("::", 1)[1]` unconditionally --
-        a bare `UNRESOLVED_CALLEE` sentinel entry (no `::`) IndexErrors
-        that. A `CallGraph` carrying the sentinel alongside a real callee
-        must not raise, and the real callee must still resolve -- the
-        sentinel is skipped, not silently swallowing real entries too."""
+        """`_callee_name_map` skips a bare `UNRESOLVED_CALLEE` sentinel
+        entry without raising, while a real callee alongside it still
+        resolves (see T-0814 for the IndexError this guards against)."""
         from frob.dup._pipeline import _callee_name_map
         from frob.graph.callgraph import UNRESOLVED_CALLEE, CallGraph
 
@@ -155,15 +151,11 @@ class TestDsl001:
         assert violations[0].severity == Severity.ERROR
 
     def test_docarch001_wiring_comment_does_not_self_match(self) -> None:
-        """T-3255 regression: a plain `#` comment near
-        `docarch001_violations`'s `run_gates` call site used to describe
-        the discriminator as applying to "frob:waive reasons" -- the
-        literal `frob:waive` token mid-prose parsed as a malformed
-        directive and DSL001 fired against the gate module's OWN source
-        (production self-match, not a test fixture). Runs against the
-        real, checked-out `src/frob/gates/__init__.py` (not a synthetic
-        tmp_path fixture) so a future reintroduction of a bare `frob:`
-        verb token in prose is caught the same way this one was."""
+        """No plain `#` comment near `docarch001_violations`'s `run_gates`
+        call site contains a bare `frob:` verb token that DSL001 would
+        parse as a malformed directive -- run against the real, checked-
+        out `src/frob/gates/__init__.py`, not a synthetic fixture (see
+        T-3255 for the production self-match this catches)."""
         from pathlib import Path as _Path
 
         from frob.gates import _dsl001_violations  # noqa: PLC0415
@@ -905,20 +897,12 @@ class TestWaive004ExaminedSitesGuard:
     def test_files_examined_entries_are_always_posix_shaped(
         self, tmp_path: Path
     ) -> None:
-        """T-3664 (win32 gates_suite campaign, T-3659): `analyze_project`'s
-        `ArchResult.files_examined` must never carry a native path
-        separator -- `_drop_unexamined_archgate_candidates`'s `site_
-        examined(stats, "archgate", file)` membership test compares each
-        entry against a WAIVE004 `Violation.file`, which is ALWAYS
-        repo-relative POSIX (every other gate's own convention). Before
-        this fix, `analyze_project` built `files_examined` via bare
-        `str(path.relative_to(scan_root))`, which renders native `\\`
-        separators on win32 -- so `"src/examined.py" in files_examined`
-        would be `False` there even for a genuinely examined file (this
-        POSIX worktree cannot literally reproduce a backslash appearing,
-        since `str()` and `.as_posix()` coincide here -- this asserts
-        the INVARIANT the fix establishes, which CI's win32 leg is the
-        real end-to-end verifier for)."""
+        """`analyze_project`'s `ArchResult.files_examined` never carries a
+        native path separator -- always repo-relative POSIX, matching the
+        `Violation.file` convention `_drop_unexamined_archgate_candidates`
+        compares it against (see T-3664/T-3659; CI's win32 leg is the
+        real end-to-end verifier since this POSIX worktree cannot
+        literally reproduce a backslash appearing)."""
         from frob.arch import analyze_project
 
         root = tmp_path / "repo"
@@ -955,16 +939,11 @@ class TestWaive004ExaminedSitesGuard:
 
 # frob:ticket T-4392
 class TestMatchWaiverPathShape:
-    """T-4392: `_match_waiver`'s file-scoped/package-prefix branch used to
-    compare `waiver.src`/`waiver_file` against `violation.file` as raw
-    strings. `violation.file` is always POSIX-relative (producers build it
-    via `Path.relative_to(root).as_posix()`), but a waiver's `src` file
-    component can be built from an OS-native path on the platform that
-    recorded the directive -- backslash-separated on Windows. An
-    un-normalized comparison then never matches there even though the
-    identical waiver matches fine on Linux/macOS, so a finding like
-    LARGE001 surfaces as an unwaived ERROR only on Windows. This is
-    reproducible on ANY platform with a `PureWindowsPath`-shaped `src`."""
+    """`_match_waiver`'s file-scoped/package-prefix branch normalizes a
+    backslash-separated (Windows-native) waiver `src` before comparing it
+    against `violation.file`, which is always POSIX-relative -- reproduced
+    on any platform with a `PureWindowsPath`-shaped `src` (see T-4392 for
+    the Windows-only unwaived-ERROR bug this fixes)."""
 
     def test_backslash_waiver_path_still_matches_posix_violation(self) -> None:
         # frob:tests src/frob/gates/_waive.py::_match_waiver

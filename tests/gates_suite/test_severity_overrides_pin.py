@@ -24,8 +24,7 @@ def test_override_never_escalates_pinned_warn(tmp_path: Path) -> None:
     because the override could not tell a pinned platform-skip WARN apart
     from an ordinary one."""
     # frob:tests \
-    # tests/gates_suite/test_severity_overrides_pin.py::test_override_never_escalates_p\
-    # inned_warn
+    # tests/gates_suite/test_severity_overrides_pin.py::test_override_never_escalates_pinned_warn  # noqa: E501
     _write_fixture(tmp_path, "frob.toml", '[gates.severity]\nCOV003 = "error"\n')
     v = Violation(
         rule="COV003",
@@ -41,13 +40,11 @@ def test_override_never_escalates_pinned_warn(tmp_path: Path) -> None:
 
 # frob:ticket T-4447
 def test_override_still_escalates_unpinned_warn(tmp_path: Path) -> None:
-    """T-4447: the pin is precise, not a blanket exemption for the rule --
-    an ordinary (unpinned) COV003 WARN of the same rule must still be
-    promoted to ERROR when `[gates.severity]` says so, exactly as before
-    this ticket's fix."""
+    """The pin is precise, not a blanket exemption for the rule -- an
+    ordinary (unpinned) COV003 WARN of the same rule is still promoted to
+    ERROR when `[gates.severity]` says so (see T-4447)."""
     # frob:tests \
-    # tests/gates_suite/test_severity_overrides_pin.py::test_override_still_escalates_u\
-    # npinned_warn
+    # tests/gates_suite/test_severity_overrides_pin.py::test_override_still_escalates_unpinned_warn  # noqa: E501
     _write_fixture(tmp_path, "frob.toml", '[gates.severity]\nCOV003 = "error"\n')
     v = Violation(
         rule="COV003",

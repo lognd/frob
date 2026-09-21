@@ -173,10 +173,10 @@ class TestRunGates:
 
 # frob:ticket T-4019
 class TestInvariantLoadBlastRadius:
-    """T-4019: this repo's own `invariants/` is empty (T-3928), so nothing
-    here previously proved this code path -- these fixtures build a real
-    `invariants/*.md` file, including a malformed one, rather than relying
-    on this repo's vacuous invariant gate."""
+    """Exercises invariant loading against real, fixture-built
+    `invariants/*.md` files, including a malformed one, rather than
+    relying on this repo's own (possibly empty) `invariants/` directory
+    (see T-4019/T-3928)."""
 
     def test_must_fire_malformed_invariant_file_produces_named_error(
         self, tmp_path: Path
@@ -301,10 +301,9 @@ class TestNativeAvailabilityGate:
     def test_every_native_importable_runs_the_normal_pipeline(
         self, tmp_path: Path
     ) -> None:
-        """No `[[native]]` declared at all (the common case for a repo with
-        no compiled extensions) must never trip the T-1148 short-circuit --
-        `run_gates` proceeds to its normal multi-gate pipeline exactly as
-        before this ticket."""
+        """No `[[native]]` declared at all never trips the native-
+        availability short-circuit -- `run_gates` proceeds to its normal
+        multi-gate pipeline (see T-1148)."""
         _git_init(tmp_path)
         cfg = GateConfig(
             root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
@@ -633,19 +632,11 @@ class TestProcessPoolGates:
     def test_process_pool_start_method_falls_back_to_spawn_without_forkserver(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-3665 (win32 gates_suite campaign, T-3659): reproduces, on
-        ANY platform, the exact win32 shape `_process_pool_start_method`
-        must handle -- `multiprocessing.get_all_start_methods()`
-        reporting `["spawn"]` only, no `"forkserver"` (CPython never
-        registers `forkserver` on win32, since it needs `os.fork`).
-        `_process_pool_start_method()` must fall back to `"spawn"`
-        rather than raising or returning something
-        `get_all_start_methods()` does not actually offer -- this is the
-        exact property `test_open_process_pool_preloads_forkserver_when_
-        available`'s OWN final assertion (before this ticket's fix)
-        failed to check for on win32, by hardcoding `"forkserver" in
-        get_all_start_methods()` unconditionally instead of checking
-        against whichever method was actually chosen."""
+        """`_process_pool_start_method()` falls back to `"spawn"`, never
+        raising or returning a method `get_all_start_methods()` does not
+        offer, when that call reports `["spawn"]` only (CPython's win32
+        shape, since `forkserver` needs `os.fork`) -- reproduced here on
+        any platform (see T-3665/T-3659)."""
         import multiprocessing
 
         from frob.gates import _process_pool_start_method
@@ -979,15 +970,11 @@ class TestOptInGates:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/__init__.py::perf_gate
-        """T-2314 (MUST FAIL FIRST on main): before this fix, `perf_gate`'s
-        `Violation.file` carried an ABSOLUTE path (`parse_file(root /
-        rel_path)`'s `ParsedFile.path` flowed straight through to
-        `_violation`), while every other gate -- and `frob:waive`'s own
-        graph-derived edge `src` -- uses a repo-relative path. This is the
-        root cause of the waiver-defect T-2314 exists to fix: `_match_
-        waiver`'s file-level fallback does exact string equality, so an
-        absolute `violation.file` could never match a relative waiver
-        `src`."""
+        """`perf_gate`'s `Violation.file` carries a repo-relative path,
+        matching every other gate and `frob:waive`'s own graph-derived
+        edge `src`, never the absolute path `ParsedFile.path` would
+        otherwise flow straight through (see T-2314 for the waiver-match
+        defect this fixes)."""
         from frob.gates import perf_gate
 
         _write(
@@ -1227,11 +1214,9 @@ class TestScopeDigest:
 
 # frob:ticket T-0688
 class TestRunGatesQueueFailureThreadsRealTicketError:
-    """T-2710: `run_gates` used to collapse ANY ticket-queue load failure
-    into the bare `GateError.QueueUnavailable` sentinel -- a reader could
-    not tell a duplicate id from a malformed frontmatter file without a
-    separate `frob ticket list`/`frob ticket show <id>` run. It must now
-    propagate the REAL `TicketError` `load_queue` hit."""
+    """`run_gates` propagates the real `TicketError` a ticket-queue load
+    failure raises, rather than collapsing every failure into the bare
+    `GateError.QueueUnavailable` sentinel (see T-2710)."""
 
     # frob:tests \
     # tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError.test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror  # noqa: E501
