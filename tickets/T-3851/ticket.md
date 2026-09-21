@@ -2,7 +2,7 @@
 id: T-3851
 title: 'frob-suggest ack is line-anchored while its trigger scan is not: a per-segment
   FROB_SUGGEST_ACK=1 is ignored'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -51,12 +51,22 @@ triage_changes:
   reason: 'pass2 backlog org: theme bucket consumer-audit'
   actor: logan
   at: '2026-09-11'
-designated_repro_test: null
+evidence:
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it
+- tests/test_hook_frob_suggest.py::TestAckSegmentation::test_bare_unacked_trigger_is_still_blocked
+- tests/test_hook_frob_suggest.py::TestAckSegmentation::test_unrelated_segment_ack_does_not_disarm_the_real_trigger
+- tests/test_hook_frob_suggest.py::TestAckSegmentation::test_quoted_ack_mention_does_not_disarm_a_real_trigger
+- tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_as_first_token_of_whole_line_still_disarms
+- tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_leading_its_own_segment_after_cd_disarms
+- tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_on_each_triggering_segment_of_multi_segment_command_disarms
+designated_repro_test: tests/test_hook_frob_suggest.py::TestAckSegmentation::test_unrelated_segment_ack_does_not_disarm_the_real_trigger
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3851
+branch: t-3851
 ---
 Reported as typani FROBLEMS T-016. VERIFIED against the source 2026-09-05.
 

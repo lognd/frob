@@ -1016,3 +1016,107 @@ class TestHandRenameEditMultifile:
             env={"FROB_SUGGEST_ACK": "1"},
         )
         assert fourth_acked.stdout.strip() == ""
+
+
+# T-3851: the Bash-command ack was matched with `^` against the WHOLE raw
+# command string, so it was honoured only as the first token of the
+# entire line. The trigger scan itself has no such whole-string anchor
+# (`_RULES`' `_POS`-anchored patterns fire at any command position, and
+# `handrolled-fleet-probe` searches the whole string with no anchor at
+# all) -- these fixtures pin the two scans to agree in scope.
+class TestAckSegmentation:
+    """Fixtures for T-3851: per-segment ack detection agreeing with the
+    (also per-command-position, not per-whole-line) trigger scan."""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3851
+    def test_bare_unacked_trigger_is_still_blocked(self, tmp_path: Path):
+        """MUST-FIRE: a bare un-acked trigger command, no change from
+        today's behaviour."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        result = _run_hook("ruff check src/", home=home, cwd=root)
+        assert _denial_reason(result) is not None
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3851
+    def test_unrelated_segment_ack_does_not_disarm_the_real_trigger(
+        self, tmp_path: Path
+    ):
+        """MUST-FIRE: the ack leads the FIRST segment (an unrelated
+        `echo`), while the real trigger -- the `handrolled-fleet-probe`
+        combination -- sits entirely in later, un-acked segments. Must
+        FAIL against pre-fix main: the old whole-string `^` anchor
+        matched this ack (it IS the first token of the whole line) and
+        treated the entire command as acked, silently letting the real,
+        un-acked trigger through."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        command = (
+            "FROB_SUGGEST_ACK=1 echo start ; "
+            "git status --porcelain && ps aux | grep frob"
+        )
+        result = _run_hook(command, home=home, cwd=root)
+        reason = _denial_reason(result)
+        assert reason is not None, "expected the un-acked probe segment to block"
+        assert "fleet_status.py" in reason
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3851
+    def test_quoted_ack_mention_does_not_disarm_a_real_trigger(self, tmp_path: Path):
+        """MUST-FIRE: a quoted string that merely MENTIONS the ack must
+        not count as an acknowledgement for a real, un-acked trigger
+        elsewhere in the same command."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        command = "echo 'prefix with FROB_SUGGEST_ACK=1 to skip' ; ruff check src/"
+        result = _run_hook(command, home=home, cwd=root)
+        reason = _denial_reason(result)
+        assert reason is not None, "expected the real trigger to still block"
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3851
+    def test_ack_as_first_token_of_whole_line_still_disarms(self, tmp_path: Path):
+        """MUST-STAY-QUIET: the ack as the first token of the whole
+        line -- today's pre-fix behaviour, no regression."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        command = "FROB_SUGGEST_ACK=1 git status --porcelain && ps aux | grep frob"
+        result = _run_hook(command, home=home, cwd=root)
+        assert result.stdout.strip() == ""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3851
+    def test_ack_leading_its_own_segment_after_cd_disarms(self, tmp_path: Path):
+        """MUST-STAY-QUIET: the reporter's measured case -- the ack leads
+        its OWN segment after a `cd ... &&`, not the whole line. Must
+        FAIL against pre-fix main, whose `^` anchor only recognised the
+        ack at position zero of the entire raw string."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        command = "cd src && FROB_SUGGEST_ACK=1 ruff check ."
+        result = _run_hook(command, home=home, cwd=root)
+        assert result.stdout.strip() == ""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3851
+    def test_ack_on_each_triggering_segment_of_multi_segment_command_disarms(
+        self, tmp_path: Path
+    ):
+        """MUST-STAY-QUIET: a multi-segment trigger (the fleet-probe
+        combination) with the ack leading EACH segment that participates
+        in it."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        command = (
+            "FROB_SUGGEST_ACK=1 git status --porcelain && "
+            "FROB_SUGGEST_ACK=1 ps aux | FROB_SUGGEST_ACK=1 grep frob"
+        )
+        result = _run_hook(command, home=home, cwd=root)
+        assert result.stdout.strip() == ""

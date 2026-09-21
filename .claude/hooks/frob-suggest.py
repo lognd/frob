@@ -65,6 +65,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _shellscan import POS as _POS  # noqa: E402
+from _shellscan import strip_and_blank_prefixed_segments as _strip_and_blank
 from _shellscan import strip_quoted as _strip_quoted
 
 #: Markers older than this are pruned, so a command nudged long ago is
@@ -444,10 +445,14 @@ def _prune(now: float) -> None:
         pass
 
 
-#: A leading `FROB_SUGGEST_ACK=1 ` on the command is the explicit
+#: A leading `FROB_SUGGEST_ACK=1 ` on a SEGMENT is the explicit
 #: acknowledgement T-2164's escalation asks for on a third-or-later repeat
 #: -- stripped before digesting/matching so the SAME underlying command
 #: (acked or not) still maps to the same marker and the same repeat count.
+#: T-3851: checked per segment (`_segment_is_acked` below), never against
+#: the whole raw string -- `_match`'s own `POS`-anchored patterns fire at
+#: ANY command position, not only position zero, so an ack anchored only
+#: to position zero disagreed with the scan it was meant to answer.
 _ACK_PREFIX = re.compile(r"^\s*FROB_SUGGEST_ACK=1\s+")
 
 #: From this many total attempts at the identical command onward, a bare
@@ -714,25 +719,30 @@ def _handle_edit(payload: dict) -> None:
     )
 
 
+# frob:ticket T-3851
 def _handle_bash(payload: dict, root: Path) -> None:
-    """The pre-existing Bash-command branch, unchanged in behaviour --
-    split out of `main` only so T-3069's Edit branch has a sibling
-    function at the same level rather than being wedged inline."""
+    """The pre-existing Bash-command branch -- T-3851 replaced its
+    whole-string ack anchor with a per-segment one so the acknowledgement
+    agrees in scope with `_match`'s own command-position trigger scan."""
     raw_command = (payload.get("tool_input") or {}).get("command") or ""
     if not raw_command.strip():
         return
 
-    # T-2164: an explicit `FROB_SUGGEST_ACK=1 ` prefix is the escalation
-    # acknowledgement -- stripped before matching so its presence never
-    # changes which rule (if any) fires, only whether attempt >=
-    # _ESCALATE_AT_ATTEMPT is allowed through.
-    acked = bool(_ACK_PREFIX.match(raw_command))
-    command = _ACK_PREFIX.sub("", raw_command, count=1) if acked else raw_command
+    # T-3375: reads the ack ONLY from the command string (per segment,
+    # T-3851), never the process environment -- an inline `VAR=1 cmd`
+    # prefix applies to the spawned command, not this separately-spawned
+    # hook. `_handle_edit` is the environment-read path instead.
+    command, blanked = _strip_and_blank(raw_command, _ACK_PREFIX)
 
     hit = _match(command, root)
     if hit is None:
         return
     name, suggestion = hit
+    # Acked when the trigger disappears once every acked segment is
+    # blanked -- i.e. every segment that made the rule fire was itself
+    # acked. An UNRELATED segment's ack (T-3851's must-fire fixture)
+    # still fires here: blanking it leaves the real trigger intact.
+    acked = _match(blanked, root) is None
     _escalate(
         command,
         name,
@@ -756,6 +766,7 @@ def _handle_bash(payload: dict, root: Path) -> None:
 
 
 # frob:doc docs/guides/claude-hooks.md#frob-suggestpy
+# frob:tests tests/test_hook_frob_suggest.py kind="integration"
 def main() -> None:
     try:
         payload = json.load(sys.stdin)

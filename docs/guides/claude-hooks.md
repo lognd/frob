@@ -18,7 +18,18 @@ command-position regex (line start, after a shell connector, or after
 docstring names -- command-position anchoring and quoted-text exclusion --
 are built from. `strip_quoted` blanks quoted spans and heredoc bodies so a
 rule only ever matches what the shell would actually execute, never prose
-a command merely carries (commit messages, echoed strings). Covered by
+a command merely carries (commit messages, echoed strings). `segment_spans`
+splits a command into `(start, end)` spans on its own top-level `;`, `&&`,
+`||`, `|` and newline separators, skipping ones inside quoted/heredoc text
+-- the one place that decides where one shell command ends and the next
+begins. `strip_and_blank_prefixed_segments` builds on it (T-3851): given a
+prefix regex, it returns a `(stripped, blanked)` pair of the command with
+a matching leading token dropped from carrying segments, and with a
+carrying segment's REST of its content additionally spaced out in
+`blanked` -- `frob-suggest.py`'s `FROB_SUGGEST_ACK=1` acknowledgement uses
+this to decide per segment whether it covers a trigger, agreeing in scope
+with the trigger scan itself rather than anchoring only to the whole
+command's first token. Covered by
 `tests/test_hook_dispatch_telemetry.py`'s and
 `tests/test_hook_diagnosis_nudge.py`'s own subprocess-level exercises of
 `frob-timeout-guard.py`'s import of it (T-1838's COV001/TEST001 fallout

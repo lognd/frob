@@ -1,0 +1,192 @@
+## Done report
+
+T-3851: frob-suggest ack is line-anchored while its trigger scan is not
+
+WHAT changed
+------------
+.claude/hooks/_shellscan.py
+  - Added `segment_spans(command)`: splits a command into (start, end)
+    spans on its own top-level `;`, `&&`, `||`, `|` and newline
+    separators, skipping any that sit inside quoted spans/heredoc
+    bodies (reuses the module's existing `_QUOTED` regex). This is the
+    one place that now decides where one shell command ends and the
+    next begins.
+  - Added `strip_and_blank_prefixed_segments(command, prefix)`: generic
+    helper built on `segment_spans`. Given a prefix regex, returns
+    `(stripped, blanked)`:
+      * `stripped` drops a leading `prefix` match from any segment whose
+        own quote-stripped, left-anchored text carries it, keeping the
+        rest of that segment's content and every original connector
+        character exactly where it was.
+      * `blanked` additionally spaces out the REST of a carrying
+        segment's content (so `_POS` command-position anchors elsewhere
+        in the command stay stable).
+  - Added file-level `frob:tests tests/test_hook_frob_suggest.py
+    kind="integration"` and per-symbol `frob:tests` directives for the
+    two new public symbols (LANDPARITY001/TEST003).
+  - Reworded a comment that named `frob check ... | grep` in prose
+    (was misread by WIRE003 as an unresolved frob verb).
+
+.claude/hooks/frob-suggest.py
+  - `_handle_bash` now computes `command, blanked =
+    _strip_and_blank(raw_command, _ACK_PREFIX)` instead of only
+    stripping `_ACK_PREFIX` from the START of the whole raw string.
+    `acked` is now `_match(blanked, root) is None` -- true only when
+    the trigger disappears once every acknowledged segment's content is
+    removed, i.e. every segment that made a rule fire was itself acked.
+    An ack on an unrelated segment leaves the real trigger intact in
+    `blanked` and the command still blocks.
+  - Added `# frob:ticket T-3851` above `_handle_bash` and file-level
+    `frob:tests tests/test_hook_frob_suggest.py kind="integration"`
+    above `main` (COV002/TEST003).
+  - Net effect: file dropped from 842 back to 790 lines (under
+    LARGE001's 800 threshold) by moving the segment-editing mechanics
+    into `_shellscan.py` instead of duplicating them here.
+
+docs/guides/claude-hooks.md
+  - Documented `segment_spans` and `strip_and_blank_prefixed_segments`
+    under the existing `_shellscan.py` section (AFFECT001).
+
+tests/test_hook_frob_suggest.py
+  - New `TestAckSegmentation` class, 6 fixtures:
+    - test_bare_unacked_trigger_is_still_blocked (MUST-FIRE)
+    - test_unrelated_segment_ack_does_not_disarm_the_real_trigger
+      (MUST-FIRE; confirmed failing pre-fix -- the pre-fix whole-string
+      `^` anchor matched an ack that was the first token of the whole
+      line while the real, un-acked trigger sat in later segments, and
+      silently let it through)
+    - test_quoted_ack_mention_does_not_disarm_a_real_trigger (MUST-FIRE)
+    - test_ack_as_first_token_of_whole_line_still_disarms
+      (MUST-STAY-QUIET, no regression)
+    - test_ack_leading_its_own_segment_after_cd_disarms
+      (MUST-STAY-QUIET; the reporter's measured case -- confirmed
+      failing pre-fix)
+    - test_ack_on_each_triggering_segment_of_multi_segment_command_disarms
+      (MUST-STAY-QUIET)
+  - "ack present in the real process environment" (the 4th
+    MUST-STAY-QUIET fixture from the ticket) is already covered by the
+    pre-existing `test_frob_suggest_ack_env_var_bypasses_it` in
+    `TestHandRenameEditMultifile` -- `_handle_edit`'s env-var path is
+    untouched by this change (T-3375: the Bash-command path
+    deliberately never reads the ambient environment, only its own
+    command string, so this is not a regression risk to re-test here).
+
+WHY
+---
+`_ACK_PREFIX` was matched with `^` against the WHOLE raw command
+string, so `FROB_SUGGEST_ACK=1` only disarmed a command when it was the
+very first token of the entire line. The trigger scan (`_match`, and
+`_RULES`' `_POS`-anchored patterns) has no such whole-string anchor --
+it fires at ANY command position (line start, after a connector, or
+after `uv run`), and `handrolled-fleet-probe` searches the whole string
+with no anchor at all. A compound command whose flagged segment carried
+its own ack, but whose first token was something else (`cd d &&
+FROB_SUGGEST_ACK=1 ruff check`), was treated as un-acked and blocked
+anyway.
+
+DECISION: kept BOTH ack mechanisms per the ticket's explicit
+instruction (the real env var for `_handle_edit`, the inline
+command-string prefix for `_handle_bash`, since an inline `VAR=1 cmd`
+prefix never reaches this separately-spawned hook process). Chose the
+segment-aware fix (not the "rewrite the message" alternative) --
+segmentation was already available for reuse (`_shellscan.py`'s
+`_QUOTED`), and the fixture set demanded real per-segment scoping
+(an unrelated segment's ack must not disarm a real trigger), which the
+message-only alternative could not satisfy.
+
+Evidence (test node ids, bound via `frob ticket evidence`)
+------------------------------------------------------------
+tests/test_hook_frob_suggest.py::TestAckSegmentation::test_bare_unacked_trigger_is_still_blocked
+tests/test_hook_frob_suggest.py::TestAckSegmentation::test_unrelated_segment_ack_does_not_disarm_the_real_trigger
+tests/test_hook_frob_suggest.py::TestAckSegmentation::test_quoted_ack_mention_does_not_disarm_a_real_trigger
+tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_as_first_token_of_whole_line_still_disarms
+tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_leading_its_own_segment_after_cd_disarms
+tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_on_each_triggering_segment_of_multi_segment_command_disarms
+tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it
+
+Full suite: `PYTHONPATH=$(pwd)/src .../python -m pytest
+tests/test_hook_frob_suggest.py` -> 57 passed, 0 failed.
+
+Lint: `ruff check`/`ruff format --diff` clean on all 4 touched files.
+
+Confirmed regression coverage: applied the fix's diff as a patch,
+reverted it, re-ran `TestAckSegmentation` -- 5/6 passed, 1 failed
+(`test_unrelated_segment_ack_does_not_disarm_the_real_trigger`,
+exactly reproducing the reported bug); reapplied the fix, all 6 pass.
+
+RELATED (not folded in, per ticket instruction)
+------------------------------------------------
+T-3831 (F-026, same hook blocking `ruff check` while iterating on a
+single file) is unaffected by this change: this fix only changes WHICH
+segments an ack covers, never which patterns trigger a block.
+
+Commits
+-------
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3851 (branch t-3851)
+HEAD: 5b52756496b85aefa7d5272941878a52cbb38678
+  "chore(hooks): waive WIRE001 resolver gap for cross-file hook import"
+  (on top of 5d0c624ed "fix(hooks): scope frob-suggest's ack detection
+  to match its trigger scan")
+
+Gates
+-----
+`frob check --only gates --ticket T-3851 --files
+".claude/hooks/frob-suggest.py,.claude/hooks/_shellscan.py,tests/test_hook_frob_suggest.py,docs/guides/claude-hooks.md"
+--base dev` run multiple times as findings were fixed; final run
+(gatecheck-3851-v3.log) clean of diff-local findings for all four
+touched files (checked gate:COV/AFFECT/LANDPARITY explicitly --no
+hits). Confirmed pre-existing/repo-wide and left untouched (per
+--ticket's own scope-note: only gate:SCOPE/PREWORK and the diff-driven
+parts of gate:COV/FMT/AFFECT are scoped to this ticket, every other
+gate family's count is repo-wide): gate:LANG/TICK/REF/TODO/DSL/DRIFT
+findings unrelated to any touched file; `claude-config-drift` (the
+repo copy is now intentionally ahead of the materialized ~/.claude
+copy until this ticket lands and `frob claude sync` runs -- editing
+the materialized copy directly would violate the ticket's own
+instruction and risk a sibling agent's stale sync reverting it, T-3408).
+
+Diff-local findings fixed along the way:
+  - COV002 (3x, missing frob:ticket edge) -> added
+  - LANDPARITY001 (2x, new public symbols missing frob:tests) -> added
+  - TEST003 (2x, file missing an integration-test edge) -> added
+  - AFFECT001 (2x, changed symbols' affects-doc untouched) -> docs
+    updated
+  - LARGE001 (frob-suggest.py over 800 lines) -> resolved by moving
+    the segment-editing mechanics into _shellscan.py (842 -> 790 lines)
+  - WIRE003 (false-positive "frob verb 'grep'" from prose) -> reworded
+  - WIRE001 (`strip_and_blank_prefixed_segments` reported as having no
+    caller outside tests, though `frob-suggest.py::_handle_bash` calls
+    it in this same diff) -> genuine resolver blind spot for
+    `.claude/hooks/**`'s dynamic `sys.path.insert` + bare-module-name
+    import (this package's other cross-file symbols, `POS`/
+    `strip_quoted`, are never checked by WIRE001 since they are never
+    NEW in a diff, so this gap was never exercised before). Waived with
+    `follow_up="T-4574"`.
+  - (An earlier draft's unused `split_segments` was deleted rather than
+    kept and waived, once `segment_spans` + `strip_and_blank_prefixed_
+    segments` covered every real caller.)
+
+Filed: T-4574 "WIRE001 cannot resolve cross-file callers through
+.claude/hooks/ sys.path imports" (bug, scope src/frob/gates/_wire.py) --
+found while working T-3851, tracks fixing or documenting the WIRE001
+resolver gap itself; out of this ticket's own scope.
+
+### Changed
+```
+ .claude/hooks/_shellscan.py     |   95 ++
+ .claude/hooks/frob-suggest.py   |   31 +-
+ docs/guides/claude-hooks.md     |   13 +-
+ tests/test_hook_frob_suggest.py |  104 ++
+ tickets/T-3851/done-report.md   | 2324 +++++++++++++++++++++++++++++++++++++++
+ tickets/T-3851/ticket.md        |   10 +-
+ 6 files changed, 2565 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it` (pytest node id, verified passing when recorded)
+- `tests/test_hook_frob_suggest.py::TestAckSegmentation::test_bare_unacked_trigger_is_still_blocked` (pytest node id, verified passing when recorded)
+- `tests/test_hook_frob_suggest.py::TestAckSegmentation::test_unrelated_segment_ack_does_not_disarm_the_real_trigger` (pytest node id, verified passing when recorded)
+- `tests/test_hook_frob_suggest.py::TestAckSegmentation::test_quoted_ack_mention_does_not_disarm_a_real_trigger` (pytest node id, verified passing when recorded)
+- `tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_as_first_token_of_whole_line_still_disarms` (pytest node id, verified passing when recorded)
+- `tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_leading_its_own_segment_after_cd_disarms` (pytest node id, verified passing when recorded)
+- `tests/test_hook_frob_suggest.py::TestAckSegmentation::test_ack_on_each_triggering_segment_of_multi_segment_command_disarms` (pytest node id, verified passing when recorded)
