@@ -1,7 +1,7 @@
 ---
 id: T-3861
 title: 'exhaustive-handling family (EXHAUST002/003/004) burn-down: 323 unwaived findings'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-05'
@@ -26,7 +26,6 @@ scope_changes:
   actor: logan
   at: '2026-09-20'
 evidence:
-- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases::test_reads_lease_records
 - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
 - tests/gates_suite/test_exhaust_burndown_t3861.py::TestExhaustBurndownFleetStatus::test_fleet_status_exhaust003_004_findings_are_all_waived
 designated_repro_test: null
@@ -37,10 +36,18 @@ evidence_changes:
     to its own unleased test module instead
   actor: logan
   at: '2026-09-20'
+- old_node: tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases::test_reads_lease_records
+  new_node: ''
+  reason: 'T-4665 BUG002: confirmatory-only, passes at parent dev, not related to
+    this ticket''s scripts/fleet_status.py diff'
+  actor: logan
+  at: '2026-09-21'
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3861
+branch: t-3861
 ---
 T-3844 burn-down: this rule/cluster (EXHAUST002,EXHAUST003,EXHAUST004) carried 323 unwaived warning-level findings on the 2026-09-05 full unscoped 'frob check --no-cache' baseline measured for T-3844 (see that ticket's body for the full histogram). It is intentionally NOT promoted to error by T-3844 -- promoting a rule that still fires reds the build for everyone. This ticket's job: drive the live unwaived finding count for EXHAUST002,EXHAUST003,EXHAUST004 to zero (real fixes and/or reasoned frob:waive entries), then promote EXHAUST002,EXHAUST003,EXHAUST004 from warn to error in frob.toml's [gates.severity] T-1002 managed zone as a follow-up to this same campaign.
