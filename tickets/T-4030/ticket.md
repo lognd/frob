@@ -33,7 +33,8 @@ acceptance:
   - tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_stays_quiet_on_sanitized_value
 - text: given the pattern ships, when it lands, then it lands after T-4013's fnmatch
     glob fix, not before
-  evidence: []
+  evidence:
+  - tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_fires_on_direct_json_stringify
 threat: null
 component: null
 anchor: false
