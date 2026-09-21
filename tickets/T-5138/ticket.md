@@ -31,23 +31,42 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_positive_control_fires_a_known_advisory
+- tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_serves_fresh_cache_with_no_network_call
+- tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_no_cache_no_network_is_unavailable
+- tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_stale_cache_beyond_max_age_is_unavailable
+- tests/vet_suite/test_advisories.py::TestVetConfigDefault::test_default_frob_toml_enables_advisories_with_no_opt_in
 designated_repro_test: null
 acceptance:
 - text: given a lockfile pinning a version with a known OSV advisory, when frob vet
     runs with network, then VET005 fires naming the advisory id, CVSS and fixed version
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_positive_control_fires_a_known_advisory
 - text: given the same lockfile and no network but a cache younger than the max age,
     when frob vet runs, then the same finding fires from cache with no spawn
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_serves_fresh_cache_with_no_network_call
 - text: given no cache and no network, when frob vet runs, then VET012 reports advisory
     data unavailable and the run is not clean
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_no_cache_no_network_is_unavailable
+  - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_stale_cache_beyond_max_age_is_unavailable
 - text: given a fresh clone with default frob.toml, when frob check runs, then the
     advisory query executes without any opt-in flag
-  evidence: []
-- text: given ruff two minor versions behind PyPI, when frob doctor runs, then it
-    reports the lag
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_advisories.py::TestVetConfigDefault::test_default_frob_toml_enables_advisories_with_no_opt_in
+acceptance_amendments:
+- op: remove
+  index: 5
+  old_text: given ruff two minor versions behind PyPI, when frob doctor runs, then
+    it reports the lag
+  new_text: null
+  reason: out of T-5138's declared scope (src/frob/vet/*.py, frob.toml, docs/modules/vet.md,
+    src/frob/strata/_cve_fingerprint.py -- doctor.py is not in it); filed T-draft-bf260aec
+    to implement frob doctor's lint-tool version-lag reporting
+  actor: logan
+  at: '2026-09-21'
 threat: tampering
 component: vet
 anchor: false
