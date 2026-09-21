@@ -55,7 +55,7 @@ def _init_repo(root: Path) -> None:
 _BASE_ENV_NO_ACK = {k: v for k, v in os.environ.items() if k != "FROB_SUGGEST_ACK"}
 
 
-def _run_hook(command: str, *, home: Path, cwd: Path):
+def _run_hook(command: str, *, home: Path, cwd: Path, session_id: str | None = None):
     """Invoke the hook's real PreToolUse stdin/stdout contract for a Bash
     `command`, with `home` isolating the O_EXCL marker state dir per test
     (`HOME` AND `USERPROFILE` both set: the hook locates its state dir via
@@ -66,8 +66,12 @@ def _run_hook(command: str, *, home: Path, cwd: Path):
     (T-3375): the Bash-command path only ever reads the ack from the
     command string's own `FROB_SUGGEST_ACK=1 ` prefix, so a caller wanting
     the ack passes it as part of `command`, not via the runner's own
-    environment."""
+    environment. `session_id` (T-5124) is threaded into the
+    payload the same way Claude Code supplies it, for tests exercising
+    the per-session attempt-counter keying."""
     payload = {"tool_input": {"command": command}, "cwd": str(cwd)}
+    if session_id is not None:
+        payload["session_id"] = session_id
     return subprocess.run(
         [sys.executable, str(_HOOK)],
         input=json.dumps(payload),
@@ -274,6 +278,48 @@ def test_fourth_attempt_needs_the_ack_again(tmp_path: Path):
     _run_hook(f"FROB_SUGGEST_ACK=1 {command}", home=home, cwd=root)
     fourth = _run_hook(command, home=home, cwd=root)
     assert _denial_reason(fourth) is not None
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_different_sessions_do_not_share_the_attempt_counter(tmp_path: Path):
+    """T-5124: HOOK-AUDIT.md section 0b measured the attempt
+    marker keyed on the command string ALONE as machine-global across
+    every agent/session/repo. Two DIFFERENT sessions hitting the
+    identical command shape must each get their own fresh count -- the
+    second session's first attempt is blocked (attempt 1), not silently
+    treated as this shape's second-or-third attempt."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    first = _run_hook(command, home=home, cwd=root, session_id="session-a")
+    assert _denial_reason(first) is not None
+    other_session_first = _run_hook(
+        command, home=home, cwd=root, session_id="session-b"
+    )
+    assert _denial_reason(other_session_first) is not None
+    reason = _denial_reason(other_session_first)
+    assert reason is not None
+    assert "repeat #" not in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_same_session_still_escalates_on_third_identical_attempt(tmp_path: Path):
+    """The per-session keying (T-5124) must not break T-2164's
+    own escalation for a SINGLE session repeating the same command three
+    times -- the same session_id across three calls still counts up."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    first = _run_hook(command, home=home, cwd=root, session_id="session-a")
+    assert _denial_reason(first) is not None
+    second = _run_hook(command, home=home, cwd=root, session_id="session-a")
+    assert second.stdout.strip() == ""
+    third = _run_hook(command, home=home, cwd=root, session_id="session-a")
+    reason = _denial_reason(third)
+    assert reason is not None
+    assert "repeat #" in reason
 
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"

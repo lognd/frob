@@ -81,13 +81,17 @@ reaching into "private" script internals.
 """
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
 
 _REPO = Path(__file__).resolve().parents[2]
 _HOME_CLAUDE = Path.home() / ".claude"
+_PROJECT_SETTINGS = _REPO / ".claude" / "settings.json"
+_USER_SETTINGS = _HOME_CLAUDE / "settings.json"
 
 #: How long a single `git` probe (`_git_show`/`_git_merge_base`, T-3408) is
 #: allowed to run before this script gives up on it and treats that ONE
@@ -254,6 +258,143 @@ def stale_managed_sources(
     return stale
 
 
+# frob:ticket T-5124
+def _hook_command_basenames(groups: object) -> set[str]:
+    """Every hook command's basename found in one event's `groups` list
+    (a settings.json hook-event value) -- best-effort, skipping a
+    malformed group/entry rather than raising. Split out of
+    `_hook_basenames_by_event` so that function stays within this
+    module's nesting-depth budget."""
+    names: set[str] = set()
+    if not isinstance(groups, list):
+        return names
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        hooks = cast("dict[str, object]", group).get("hooks")
+        if not isinstance(hooks, list):
+            continue
+        for hook in hooks:
+            if not isinstance(hook, dict):
+                continue
+            command = cast("dict[str, object]", hook).get("command")
+            tokens = command.split() if isinstance(command, str) else []
+            if tokens:
+                names.add(Path(tokens[-1]).name)
+    return names
+
+
+def _hook_basenames_by_event(settings: dict) -> dict[str, set[str]]:
+    """{event: {hook command basenames}} read from a Claude Code
+    settings.json's ``hooks`` mapping -- best-effort: a malformed or
+    missing ``hooks``/group/entry is skipped rather than raising, matching
+    this module's fail-open posture for optional structure elsewhere."""
+    return {
+        event: _hook_command_basenames(groups)
+        for event, groups in (settings.get("hooks") or {}).items()
+    }
+
+
+# frob:ticket T-5124
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
+# frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_duplicate_basename_same_event_is_removed  # noqa: E501
+# frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_distinct_basenames_are_kept  # noqa: E501
+# frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_empty_group_after_removal_is_dropped  # noqa: E501
+def dedupe_hook_registrations(
+    project_settings: dict, user_settings: dict
+) -> tuple[dict, list[str]]:
+    """`(new_user_settings, removed)`: a copy of `user_settings` with any
+    hook entry stripped whose (event, command basename) already appears
+    in `project_settings` -- HOOK-AUDIT.md section 0b's HIGH finding.
+    `frob-suggest.py` registered in BOTH the project `.claude/
+    settings.json` and the materialized `~/.claude/settings.json` runs
+    `_record_attempt` TWICE per Bash call inside THIS repo, since the
+    project registration alone already covers it; the user-level copy
+    only ever adds a duplicate here, never new coverage. Matched by
+    basename, not full path -- the materialized copy lives under a
+    different absolute path (`~/.claude/hooks/...`) than the project
+    original. `removed` lists `"<event>/<basename>"` for each entry
+    dropped, for `main()` to report. A hook GROUP left with zero
+    surviving entries after removal is dropped entirely (an empty
+    `hooks` list is dead weight, not a no-op group Claude Code needs).
+    Pure function -- no I/O -- so it is directly unit-testable; `main()`
+    wires this to the real project/user settings.json files."""
+    wanted = _hook_basenames_by_event(project_settings)
+    removed: list[str] = []
+    new_hooks: dict = {}
+    for event, groups in (user_settings.get("hooks") or {}).items():
+        if not isinstance(groups, list):
+            new_hooks[event] = groups
+            continue
+        wanted_names = wanted.get(event, set())
+        kept_groups = []
+        for group in groups:
+            if not isinstance(group, dict):
+                kept_groups.append(group)
+                continue
+            hooks = cast("dict[str, object]", group).get("hooks")
+            kept_hooks = []
+            for hook in hooks if isinstance(hooks, list) else []:
+                command = (
+                    cast("dict[str, object]", hook).get("command")
+                    if isinstance(hook, dict)
+                    else None
+                )
+                tokens = command.split() if isinstance(command, str) else []
+                basename = Path(tokens[-1]).name if tokens else ""
+                if basename and basename in wanted_names:
+                    removed.append(f"{event}/{basename}")
+                    continue
+                kept_hooks.append(hook)
+            if kept_hooks:
+                merged = dict(group)
+                merged["hooks"] = kept_hooks
+                kept_groups.append(merged)
+        new_hooks[event] = kept_groups
+    result = dict(user_settings)
+    result["hooks"] = new_hooks
+    return result, removed
+
+
+# frob:ticket T-5124
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
+# frob:tests tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations.test_writes_deduped_user_settings  # noqa: E501
+# frob:tests tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations.test_dry_run_does_not_write  # noqa: E501
+def sync_dedupe_hook_registrations(
+    project_settings_path: Path = _PROJECT_SETTINGS,
+    user_settings_path: Path = _USER_SETTINGS,
+    *,
+    dry_run: bool = False,
+) -> list[str]:
+    """Read both real settings.json files, strip duplicate hook
+    registrations from the user one via `dedupe_hook_registrations`, and
+    write it back only if something changed AND `dry_run` is false (the
+    `--check` path passes `dry_run=True` to report without touching the
+    file, same posture as `plan()`/`_report_check` for the rest of this
+    module's drift). Returns what would be (or was) removed (or `[]` on
+    any read/parse failure, or when nothing needs the change) --
+    best-effort, matching this module's posture for every other
+    optional-file read: a missing or malformed settings.json is not this
+    function's problem to raise about."""
+    if not project_settings_path.exists() or not user_settings_path.exists():
+        return []
+    try:
+        project_settings = json.loads(
+            project_settings_path.read_text(encoding="utf-8")
+        )
+        user_settings = json.loads(user_settings_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if not isinstance(project_settings, dict) or not isinstance(user_settings, dict):
+        return []
+    new_settings, removed = dedupe_hook_registrations(project_settings, user_settings)
+    if removed and not dry_run:
+        user_settings_path.write_text(
+            json.dumps(new_settings, indent=2) + "\n", encoding="utf-8"
+        )
+    return removed
+
+
 _BANNER = (
     "# GENERATED COPY -- DO NOT EDIT.\n"
     "# Canonical source: {source} in the frob repo.\n"
@@ -393,20 +534,11 @@ def _report_check(actions: list[tuple[str, Path, str]], missing: list[str]) -> i
 # over actions, which would be two loops over the same list instead of fewer \
 # decisions; same posture src/frob/app/app.py's own ARCH103 waiver already takes for \
 # an identical CLI-entrypoint shape"
-def main(argv: list[str] | None = None) -> int:
-    """Entry point for both the bare `python3 sync-claude-config.py [--check]`
-    CLI and `frob claude sync [--check]` (T-1808, `frob.app.claude_runner`,
-    which calls this with an explicit `argv` list instead of the ambient
-    `sys.argv` a bare CLI invocation reads).
-
-    T-3408: the WRITE path (not `--check`, which never writes and already
-    reports its own drift) refuses to sync a managed file whose source is
-    behind `main` per `stale_managed_sources` -- see this module's own
-    docstring ("STALE-SOURCE GUARD") for the measured incident and the
-    reasoning behind choosing this policy over the alternatives. `--allow-
-    stale` overrides the refusal explicitly; other, non-stale files in the
-    same run are unaffected either way (MUST-STAY-QUIET) -- staleness is
-    decided and refused per file, never for the whole batch."""
+# frob:ticket T-5124
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """The `main`/`--check`/`--allow-stale` argument parser -- split out
+    of `main` purely to keep it within this module's function-length
+    budget (T-5124); no behaviour change."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check",
@@ -422,15 +554,35 @@ def main(argv: list[str] | None = None) -> int:
             "explicit override -- see the module docstring)"
         ),
     )
-    args = parser.parse_args(argv)
+    return parser
 
-    actions, missing = plan()
-    for source_rel in missing:
-        print(f"MISSING canonical source: {source_rel}", file=sys.stderr)
-    if args.check:
-        return _report_check(actions, missing)
 
-    stale = set() if args.allow_stale else set(stale_managed_sources())
+# frob:ticket T-5124
+def _run_check(actions: list[tuple[str, Path, str]], missing: list[str]) -> int:
+    """The `--check` path's full verdict: `_report_check`'s managed-file
+    drift PLUS a dry-run duplicate-hook-registration report
+    (`sync_dedupe_hook_registrations(dry_run=True)`, T-5124) --
+    split out of `main` purely to keep it within this module's function-
+    length budget; no behaviour change."""
+    rc = _report_check(actions, missing)
+    dupes = sync_dedupe_hook_registrations(dry_run=True)
+    for name in dupes:
+        print(
+            "DRIFT: ~/.claude/settings.json duplicate hook registration "
+            f"{name} (already registered by this repo's project "
+            ".claude/settings.json -- HOOK-AUDIT.md section 0b)",
+            file=sys.stderr,
+        )
+    return 1 if (rc or dupes) else 0
+
+
+# frob:ticket T-5124
+def _sync_actions(actions: list[tuple[str, Path, str]], *, allow_stale: bool) -> bool:
+    """Materialize every non-stale `actions` entry (T-3408's stale-skip
+    still applies unless `allow_stale`) and return whether anything was
+    skipped as stale -- split out of `main` purely to keep it within this
+    module's function-length budget; no behaviour change."""
+    stale = set() if allow_stale else set(stale_managed_sources())
     dest_to_source = {dest_rel: source_rel for source_rel, dest_rel in MANAGED}
     any_stale_skipped = False
     for entry, dest, want in actions:
@@ -453,6 +605,45 @@ def main(argv: list[str] | None = None) -> int:
         print(f"synced ~/.claude/{entry.split(' (')[0]}")
     if not actions:
         print(f"sync-claude-config: {len(MANAGED)} file(s) already in sync")
+    return any_stale_skipped
+
+
+def _report_dedupe(removed: list[str]) -> None:
+    """Print one line per entry `removed` from `~/.claude/settings.json`
+    by `sync_dedupe_hook_registrations` -- split out of `main` purely to
+    keep it within this module's function-length budget."""
+    for name in removed:
+        print(
+            "deduped duplicate hook registration: ~/.claude/settings.json "
+            f"{name} (already registered by this repo's project "
+            ".claude/settings.json -- HOOK-AUDIT.md section 0b)"
+        )
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Entry point for both the bare `python3 sync-claude-config.py [--check]`
+    CLI and `frob claude sync [--check]` (T-1808, `frob.app.claude_runner`,
+    which calls this with an explicit `argv` list instead of the ambient
+    `sys.argv` a bare CLI invocation reads).
+
+    T-3408: the WRITE path (not `--check`, which never writes and already
+    reports its own drift) refuses to sync a managed file whose source is
+    behind `main` per `stale_managed_sources` -- see this module's own
+    docstring ("STALE-SOURCE GUARD") for the measured incident and the
+    reasoning behind choosing this policy over the alternatives. `--allow-
+    stale` overrides the refusal explicitly; other, non-stale files in the
+    same run are unaffected either way (MUST-STAY-QUIET) -- staleness is
+    decided and refused per file, never for the whole batch."""
+    args = _build_arg_parser().parse_args(argv)
+
+    actions, missing = plan()
+    for source_rel in missing:
+        print(f"MISSING canonical source: {source_rel}", file=sys.stderr)
+    if args.check:
+        return _run_check(actions, missing)
+
+    any_stale_skipped = _sync_actions(actions, allow_stale=args.allow_stale)
+    _report_dedupe(sync_dedupe_hook_registrations())
     return 1 if (missing or any_stale_skipped) else 0
 
 

@@ -28,14 +28,12 @@ single legitimate raw command into a hard, unconditional block.
 The marker is created with O_EXCL, so exactly one denial is emitted even
 when this script is registered in BOTH project and user settings (both
 instances run for the same tool call; whichever creates the marker denies,
-the other allows, and a deny wins). A single registration behaves
-identically -- the design does not depend on how many copies fire. The
-repeat COUNT recorded in the marker (see `_claim`/`_record_attempt`) is a
-best-effort tally, not a linearizable counter -- two sibling registrations
-racing the same tool call can each read-then-write once, undercounting by
-at most one per call. That is acceptable here: the count only gates a
-nudge, never a hard policy, and undercounting by one merely delays the
-escalation by a single extra call.
+the other allows, and a deny wins). The repeat COUNT (`_record_attempt`)
+is best-effort -- two sibling registrations racing one tool call can each
+OVERCOUNT by up to one (measured live, HOOK-AUDIT.md section 0b: broke the
+documented re-run-and-it-passes path). See `sync-claude-config.py`'s
+`dedupe_hook_registrations` (T-5124, the real registration fix)
+and `_session_key` below (per-agent/session keying).
 
 Anchoring follows frob-timeout-guard.py's hard-won lesson: match only at
 COMMAND POSITION (line start, after a shell connector, or after `uv run`)
@@ -462,27 +460,39 @@ _ACK_PREFIX = re.compile(r"^\s*FROB_SUGGEST_ACK=1\s+")
 _ESCALATE_AT_ATTEMPT = 3
 
 
-def _marker_path(command: str) -> Path:
-    """The O_EXCL marker path for `command` (ack prefix stripped first, so
-    an acked and an un-acked run of the same underlying command share one
-    counter -- T-2164)."""
-    digest = hashlib.sha256(command.encode("utf-8", "replace")).hexdigest()[:32]
+# frob:ticket T-5124
+def _session_key(payload: dict) -> str:
+    """Per-agent-session marker discriminator (T-5124):
+    `payload["session_id"]`, else `FROB_AGENT`, else this process's
+    parent pid -- HOOK-AUDIT.md section 0b measured the command-string-
+    alone key as machine-global across every agent/session/repo. Best-
+    effort: an absent session_id falls through to the next one."""
+    session_id = payload.get("session_id")
+    if isinstance(session_id, str) and session_id:
+        return session_id
+    return os.environ.get("FROB_AGENT") or f"ppid:{os.getppid()}"
+
+
+# frob:ticket T-5124
+def _marker_path(session_key: str, command: str) -> Path:
+    """O_EXCL marker path for `command` within `session_key` (ack prefix
+    stripped first, so acked/un-acked runs share one counter -- T-2164);
+    `session_key` (T-5124) stops unrelated agents/sessions/repos
+    sharing -- and inflating -- one another's counter."""
+    digest = hashlib.sha256(
+        f"{session_key}\x00{command}".encode("utf-8", "replace")
+    ).hexdigest()[:32]
     return _STATE_DIR / f"{digest}.marker"
 
 
-def _record_attempt(command: str) -> int:
-    """Atomically record one more attempt at `command` and return the
-    resulting total attempt count (T-2164, generalizing the old boolean
-    `_claim` this replaces).
-
-    O_CREAT|O_EXCL is still the mechanism for the FIRST attempt: exactly one
-    of any racing sibling registrations creates the marker and gets count=1,
-    the other reads count=2 -- the same "exactly one of us wins the first
-    denial" guarantee the old `_claim` provided. Every attempt after the
-    first increments a small JSON payload in place; a corrupt/unreadable
-    marker is treated as attempt 1 of a fresh count (best-effort, never
-    fatal -- see the module docstring's note on undercounting)."""
-    marker = _marker_path(command)
+# frob:ticket T-5124
+def _record_attempt(session_key: str, command: str) -> int:
+    """Atomically record one more attempt at `command` within
+    `session_key` (T-2164's counting, T-5124's per-session key
+    added). O_CREAT|O_EXCL is the FIRST-attempt mechanism: one racing
+    sibling gets count=1, the other count=2. A corrupt/unreadable marker
+    reads as attempt 1 (best-effort)."""
+    marker = _marker_path(session_key, command)
     try:
         _STATE_DIR.mkdir(parents=True, exist_ok=True)
         fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -638,18 +648,24 @@ def _deny(reason: str) -> None:
     )
 
 
+# frob:ticket T-5124
 def _escalate(
-    key: str, name: str, suggestion: str, acked: bool, first_hint: str, repeat_hint: str
+    session_key: str,
+    key: str,
+    name: str,
+    suggestion: str,
+    acked: bool,
+    first_hint: str,
+    repeat_hint: str,
 ) -> None:
     """Shared block-once-then-escalate flow (T-2164) for BOTH the Bash-
     command rules and the Edit-based rename rule (T-3069) -- `key` is
-    whatever the caller wants counted as "the same thing recurring" (the
-    raw command text for a Bash rule, `edit-rename:<module>` for the Edit
-    rule); `first_hint`/`repeat_hint` are the escape-hatch wording, which
-    differs between the two (a Bash re-run vs. an ambient env var) even
-    though the counting logic underneath is identical."""
+    whatever counts as "the same thing recurring" (raw command text, or
+    `edit-rename:<module>`); `session_key` (T-5124) scopes that
+    to one agent/session; `first_hint`/`repeat_hint` differ between the
+    two escape hatches even though the counting logic is identical."""
     _prune(time.time())
-    attempt = _record_attempt(key)
+    attempt = _record_attempt(session_key, key)
 
     if attempt == 1:
         # T-3071: the ack is checked on EVERY path, first block included --
@@ -678,11 +694,11 @@ def _escalate(
     _deny(reason)
 
 
-def _handle_edit(payload: dict) -> None:
-    """T-3069's Edit-tool branch: the cross-file same-module import-rewrite
-    signal (`_edit_rename_hit`) is the only Edit-based rule so far -- kept
-    separate from the Bash `_match` path because it needs the OLD string,
-    not a shell command, and its own cross-file (not cross-command) state."""
+# frob:ticket T-5124
+def _handle_edit(payload: dict, session_key: str) -> None:
+    """T-3069's Edit-tool branch (cross-file import-rewrite signal,
+    `_edit_rename_hit`) -- separate from the Bash `_match` path since it
+    needs the OLD string, not a shell command."""
     tool_input = payload.get("tool_input") or {}
     file_path = tool_input.get("file_path") or ""
     old_string = tool_input.get("old_string") or ""
@@ -701,6 +717,7 @@ def _handle_edit(payload: dict) -> None:
     # not a secret"
     acked = os.environ.get("FROB_SUGGEST_ACK") == "1"
     _escalate(
+        session_key,
         key,
         name,
         suggestion,
@@ -719,11 +736,14 @@ def _handle_edit(payload: dict) -> None:
     )
 
 
+# frob:ticket T-5124
 # frob:ticket T-3851
-def _handle_bash(payload: dict, root: Path) -> None:
-    """The pre-existing Bash-command branch -- T-3851 replaced its
-    whole-string ack anchor with a per-segment one so the acknowledgement
-    agrees in scope with `_match`'s own command-position trigger scan."""
+def _handle_bash(payload: dict, root: Path, session_key: str) -> None:
+    """The pre-existing Bash-command branch, split out of `main` so
+    T-3069's Edit branch has a sibling at the same level; T-3851 replaced
+    its whole-string ack anchor with a per-segment one so the
+    acknowledgement agrees in scope with `_match`'s own command-position
+    trigger scan."""
     raw_command = (payload.get("tool_input") or {}).get("command") or ""
     if not raw_command.strip():
         return
@@ -744,6 +764,7 @@ def _handle_bash(payload: dict, root: Path) -> None:
     # still fires here: blanking it leaves the real trigger intact.
     acked = _match(blanked, root) is None
     _escalate(
+        session_key,
         command,
         name,
         suggestion,
@@ -766,6 +787,7 @@ def _handle_bash(payload: dict, root: Path) -> None:
 
 
 # frob:doc docs/guides/claude-hooks.md#frob-suggestpy
+# frob:ticket T-5124
 # frob:tests tests/test_hook_frob_suggest.py kind="integration"
 def main() -> None:
     try:
@@ -780,10 +802,11 @@ def main() -> None:
     # (.claude/settings.json's "Bash|Edit" matcher) -- an absent
     # `tool_name` means an older payload shape and is treated as Bash,
     # matching this hook's behaviour before T-3069 introduced the branch.
+    session_key = _session_key(payload)
     if payload.get("tool_name") == "Edit":
-        _handle_edit(payload)
+        _handle_edit(payload, session_key)
         return
-    _handle_bash(payload, root)
+    _handle_bash(payload, root, session_key)
 
 
 if __name__ == "__main__":

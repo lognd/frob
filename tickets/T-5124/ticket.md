@@ -1,14 +1,14 @@
 ---
 id: T-5124
 title: 'frob-suggest: dedupe dual hook registration and make attempt counter per-agent-session'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
 priority: high
-parent: T-5101
+parent: T-draft-8c7e665d
 tier: ticket
-sprint: v0.533.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -45,31 +45,45 @@ scope_changes:
   reason: files touched for registration dedupe + per-session counter
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.533.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_duplicate_basename_same_event_is_removed
+- tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_distinct_basenames_are_kept
+- tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_empty_group_after_removal_is_dropped
+- tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_different_event_is_not_deduped
+- tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations::test_writes_deduped_user_settings
+- tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations::test_dry_run_does_not_write
+- tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations::test_missing_files_return_empty
+- tests/test_hook_frob_suggest.py::test_different_sessions_do_not_share_the_attempt_counter
+- tests/test_hook_frob_suggest.py::test_same_session_still_escalates_on_third_identical_attempt
+- tests/test_hook_frob_suggest.py::test_third_identical_command_is_blocked_again
 designated_repro_test: null
 acceptance:
 - text: sync-claude-config.py does not materialize a second registration of a hook
     the project settings.json already registers for the same repo, deduped by hook
     basename+event
-  evidence: []
+  evidence:
+  - tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_duplicate_basename_same_event_is_removed
+  - tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_distinct_basenames_are_kept
+  - tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_empty_group_after_removal_is_dropped
+  - tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations::test_different_event_is_not_deduped
+  - tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations::test_writes_deduped_user_settings
+  - tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations::test_dry_run_does_not_write
+  - tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations::test_missing_files_return_empty
 - text: attempt counter is keyed per FROB_AGENT/session id (falling back to parent
     pid), not per command-shape machine-global
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_suggest.py::test_different_sessions_do_not_share_the_attempt_counter
 - text: a single Bash call increments the attempt count exactly once, proven by a
     test
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_suggest.py::test_same_session_still_escalates_on_third_identical_attempt
 - text: O_EXCL denial dedupe is preserved
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_suggest.py::test_third_identical_command_is_blocked_again
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Leaf 1 of T-5101. See scratchpad/HOOK-AUDIT.md section 0b.
+Leaf 1 of T-draft-8c7e665d. See scratchpad/HOOK-AUDIT.md section 0b.

@@ -77,6 +77,17 @@ before rule matching so the prefix itself never changes which rule fires).
 The acknowledgement is checked every time, not consumed once -- a fourth
 un-acked repeat is blocked again even if the third was acked through.
 
+T-5124: the attempt marker is now keyed by `_session_key`
+(`payload["session_id"]`, else `FROB_AGENT`, else this hook process's own
+parent pid) IN ADDITION to the command text, not by the command alone --
+HOOK-AUDIT.md's live measurement found the command-alone key "per-
+command-shape, machine-global, across every agent, session and repo",
+so an unrelated agent (or a sibling repo) hitting the identical raw
+command shape inflated -- and falsely escalated -- a count that had
+nothing to do with it. See `sync-claude-config.py` below for the other
+half of that same audit finding (the double hook REGISTRATION that made
+one Bash call increment the (pre-fix) shared counter twice).
+
 ## `frob-timeout-guard.py`
 
 A PreToolUse hook that refuses a long-running frob verb (`ticket land`,
@@ -379,6 +390,19 @@ implementation of the sync/drift logic, never two that can desync.
 automatically on every `frob` invocation (stderr, next to
 `stale_install_warning`/`stale_binary_warning`); the WRITE stays this
 script's/the verb's explicit call, never automatic.
+
+T-5124: `dedupe_hook_registrations`/`sync_dedupe_hook_
+registrations` fix HOOK-AUDIT.md section 0b's HIGH finding -- `frob-
+suggest.py` registered in BOTH the project `.claude/settings.json` and
+the materialized `~/.claude/settings.json` ran `_record_attempt` TWICE
+per Bash call inside this repo, which broke the documented "re-run it
+exactly and it is allowed" path (both counted increments landed past
+`_ESCALATE_AT_ATTEMPT` on the very first re-run). A real sync now also
+strips any `~/.claude/settings.json` hook entry whose `(event, command
+basename)` the project's own `.claude/settings.json` already registers
+-- matched by basename, not full path, since the materialized copy lives
+under a different absolute path than the project original. `--check`
+reports the same duplicates (as `DRIFT:`, exit 1) without writing.
 
 T-3626: `MANAGED` now also lists `.claude/hooks/_root_write_guard_lib.py`
 -> `hooks/_root_write_guard_lib.py`, the importable helper module
