@@ -256,6 +256,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1925
 # frob:ticket T-1927
 # frob:ticket T-3906
+# frob:ticket T-4578
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -275,6 +276,10 @@ class AppConfig(BaseModel):
     # onto the T-0738 `frob.scaffold._pool` API.
     scaffold_pool_command: str | None = None
     scaffold_pool_n: int = 4
+    # scaffold unity-project (T-4578): wires T-4503's render_unity_project
+    # (root-only signature, no name/output_dir) as its own CLI leaf.
+    scaffold_unity_root: Path | None = None
+    scaffold_unity_force: bool = False
 
     # cycle
     cycle_path: Path | None = None

@@ -129,8 +129,7 @@ def _write_unity_fragments(
 # frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_force_true_overwrites  # noqa: E501
 # frob:tests tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject.test_plain_directory_is_not_a_unity_project  # noqa: E501
 # frob:tests tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject.test_no_bogus_config_written  # noqa: E501
-# frob:waive WIRE001 reason="root-only signature does not fit render_project's CLI \
-# dispatch; wiring a CLI form is out of scope" follow_up="T-4578"
+# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
 def render_unity_project(
     root: Path, *, force: bool = False
 ) -> Result[list[Path], ScaffoldError]:

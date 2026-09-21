@@ -235,6 +235,8 @@ _STRING_FIELDS = (
 
 _PATH_FIELDS = (
     "scaffold_output",
+    # frob:ticket T-4578
+    "scaffold_unity_root",
     "cycle_path",
     "outline_file",
     "map_path",
@@ -413,6 +415,8 @@ _BOOL_FLAGS = (
     # frob:ticket T-2740
     "waive_audit_check_liveness",
     "scaffold_force",
+    # frob:ticket T-4578
+    "scaffold_unity_force",
     "cycle_suggest",
     "outline_json",
     "outline_all",

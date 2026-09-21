@@ -75,6 +75,27 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
         help="overwrite existing files",
     )
 
+    # frob:ticket T-4578
+    # T-4503's render_unity_project(root, *, force=False) scaffolds ONTO
+    # an existing Unity project directory -- no name/output_dir, unlike
+    # `new` above -- so it gets its own CLI leaf instead of overloading
+    # `new`'s type+name+output contract (WIRE001 waiver on render_unity_
+    # project named this ticket as the wiring follow-up).
+    scaffold_unity_p = scaffold_sub.add_parser(
+        "unity-project", help="scaffold onto an existing Unity project (T-4503)"
+    )
+    scaffold_unity_p.add_argument(
+        "scaffold_unity_root",
+        metavar="dir",
+        help="existing Unity project directory (has Assets/ or Packages/)",
+    )
+    scaffold_unity_p.add_argument(
+        "--force",
+        dest="scaffold_unity_force",
+        action="store_true",
+        help="overwrite existing files",
+    )
+
     # T-0877: `frob scaffold pool warm/lease/status`, wired onto the
     # T-0738 `frob.scaffold._pool` API -- replaces the Makefile's
     # inline-python `pool-warm`/`pool-lease`/`pool-status` shims.

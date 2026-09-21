@@ -7,6 +7,7 @@ from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.scaffold._managed import apply_managed_blocks
 from frob.scaffold._pool import lease_worktree, pool_status, warm_pool
+from frob.scaffold._unity_project import render_unity_project
 from frob.scaffold.project import list_project_types, render_project
 
 _log = get_logger(__name__)
@@ -57,12 +58,41 @@ def _run_pool(cfg: AppConfig) -> None:
     sys.exit(1)
 
 
+# frob:ticket T-4578
+# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
+# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_output_exists_refusal  # noqa: E501
+# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_not_a_unity_project  # noqa: E501
+def _run_unity_project(cfg: AppConfig) -> None:
+    """`frob scaffold unity-project <dir> [--force]` (T-4578): thin CLI
+    wrapper over T-4503's `render_unity_project`, whose root-only
+    signature does not fit `render_project`'s uniform type+name+output
+    dispatch (see `render_unity_project`'s own docstring) -- routes each
+    `ScaffoldError` to a clean logged message and a non-zero exit rather
+    than letting one escape as a raw exception."""
+    root = cfg.scaffold_unity_root
+    if root is None:
+        _log.error("frob scaffold unity-project requires <dir>")
+        sys.exit(1)
+
+    force = cfg.scaffold_unity_force
+    result = render_unity_project(Path(root), force=force)
+
+    if result.is_err:
+        _log.error("scaffold unity-project failed: %s", result.danger_err.value)
+        sys.exit(1)
+
+    for p in result.danger_ok:
+        _log.info("created %s", p)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/guides/worktree-pool.md#cli-frob-scaffold-pool-t-0877
 # frob:doc docs/modules/land-profiles.md#land-profiles-rapid-vs-standard-t-4416
 # frob:ticket T-0736
+# frob:ticket T-4578
 # frob:ticket T-4416
 # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldApplyCli.test_apply_reports_changes  # noqa: E501
+# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
 # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
 # frob:waive AFFECT001 reason="see T-4416's Done report / ticket body for why \
 # app.md#runners and worktree-pool.md need no edit"
@@ -84,6 +114,10 @@ def run(cfg: AppConfig) -> None:
 
     if cmd == "pool":
         _run_pool(cfg)
+        return
+
+    if cmd == "unity-project":
+        _run_unity_project(cfg)
         return
 
     proj_type = cfg.scaffold_type

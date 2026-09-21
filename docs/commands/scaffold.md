@@ -51,6 +51,19 @@ frob scaffold new python-tool demo --output /path/to/parent/  # -> /path/to/pare
 frob scaffold new pyo3-library demo --force  # overwrite existing files
 ```
 
+<!-- frob:describes src/frob/app/scaffold_runner.py::_run_unity_project -->
+`frob scaffold unity-project <dir> [--force]` (T-4578): wires T-4503's
+`render_unity_project` -- see Project types below for what it writes and
+Public API for the underlying function -- as its own CLI leaf rather than
+overloading `new`'s type+name+output contract, since `render_unity_project`
+takes only a root directory (no separate name):
+
+<!-- frob:waive DOC004 reason="the unity-project subcommand is added by this same land (src/frob/_cli_parsers/_core.py); the pre-land DOC004 sweep resolves console commands against the running parser, not the staged tree" -->
+```bash
+frob scaffold unity-project /path/to/MyUnityProject          # frob.toml + design/*.strata
+frob scaffold unity-project /path/to/MyUnityProject --force  # overwrite existing files
+```
+
 <!-- frob:describes src/frob/app/scaffold_runner.py::_run_pool -->
 `frob scaffold pool` (T-0877): a warm pool of pre-built worktrees, backed
 by `frob.scaffold._pool` (`warm_pool`/`lease_worktree`/`pool_status`, see
