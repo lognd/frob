@@ -1,0 +1,4299 @@
+---
+id: T-draft-bed4019a
+title: 'post-land sweep regression from T-5123, T-4626, T-4761: 862 new (rule, file)
+  identit(ies) (LANDFMT001, SUPPRESS001, invalid-argument-type, invalid-assignment)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-09-20'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- 'Would reformat: tests/test_tickets_triage_dates.py'
+- scripts/branch_stranded_work_analysis.py
+- scripts/verify_release_ci_status.py
+- src/frob/app/_daemon_proxy.py
+- src/frob/app/_verify_rapid_debt.py
+- src/frob/app/config.py
+- src/frob/app/fleet_runner.py
+- src/frob/app/perf_runner.py
+- src/frob/app/registry_runner.py
+- src/frob/app/status_runner.py
+- src/frob/app/telemetry/_footguns.py
+- src/frob/app/telemetry/_usage.py
+- src/frob/app/test_runner.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_query.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/ticket_runner/_waive_audit.py
+- src/frob/app/verify_runner.py
+- src/frob/arch/__init__.py
+- src/frob/arch/_abstraction.py
+- src/frob/arch/_async_hazards.py
+- src/frob/arch/_concurrency.py
+- src/frob/arch/_concurrency_model.py
+- src/frob/arch/_cpp.py
+- src/frob/arch/_cpp_mayraise.py
+- src/frob/arch/_ffi.py
+- src/frob/arch/_kotlin.py
+- src/frob/arch/_layering.py
+- src/frob/arch/_lock_ordering.py
+- src/frob/arch/_mayraise.py
+- src/frob/arch/_models.py
+- src/frob/arch/_normalized.py
+- src/frob/arch/_ocp.py
+- src/frob/arch/_patterns.py
+- src/frob/arch/_protocol_excuse.py
+- src/frob/arch/_python.py
+- src/frob/arch/_rust.py
+- src/frob/arch/_shared_state_race.py
+- src/frob/arch/_typescript.py
+- src/frob/check/__init__.py
+- src/frob/ci_report.py
+- src/frob/ci_validity.py
+- src/frob/clean/_core.py
+- src/frob/clean/_models.py
+- src/frob/cve/_models.py
+- src/frob/cve/_parser.py
+- src/frob/deploy/_audit.py
+- src/frob/deploy/_conform.py
+- src/frob/deploy/_drift.py
+- src/frob/deploy/_generate_common.py
+- src/frob/deploy/_vm_runner.py
+- src/frob/derived_state.py
+- src/frob/docs/__init__.py
+- src/frob/doctor.py
+- src/frob/dup/_cache.py
+- src/frob/dup/_exhaustiveness.py
+- src/frob/dup/_legacy.py
+- src/frob/dup/_legacy_cpp.py
+- src/frob/dup/_legacy_cs.py
+- src/frob/dup/_legacy_py.py
+- src/frob/dup/_models.py
+- src/frob/dup/_pipeline/_fingerprint.py
+- src/frob/dup/_pipeline/_probe.py
+- src/frob/dup/_pipeline/_smt.py
+- src/frob/excludes.py
+- src/frob/exports/__init__.py
+- src/frob/findings.py
+- src/frob/fleet/__init__.py
+- src/frob/fuzz/_arbitrary.py
+- src/frob/fuzz/_models.py
+- src/frob/fuzz/_run.py
+- src/frob/fuzz/_stamp.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_baseline.py
+- src/frob/gates/_bug_repro.py
+- src/frob/gates/_coverage.py
+- src/frob/gates/_debt_deprecated.py
+- src/frob/gates/_deprecated_baseline.py
+- src/frob/gates/_doclink_docanchor.py
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_scope.py
+- src/frob/gates/_fix_engine_shared.py
+- src/frob/gates/_fix_engine_tier_b.py
+- src/frob/gates/_fix_engine_tier_c.py
+- src/frob/gates/_fmt_directives.py
+- src/frob/gates/_lock_producer.py
+- src/frob/gates/_milestone.py
+- src/frob/gates/_models.py
+- src/frob/gates/_mutation_evidence.py
+- src/frob/gates/_pii_structural/__init__.py
+- src/frob/gates/_pii_structural/_crosslang.py
+- src/frob/gates/_pii_structural/_signatures.py
+- src/frob/gates/_prework.py
+- src/frob/gates/_ratchet.py
+- src/frob/gates/_suppress.py
+- src/frob/gates/_sys.py
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_vmodel.py
+- src/frob/gates/_waive.py
+- src/frob/gates/_waive_audit_watermark.py
+- src/frob/gates/_waive_lease.py
+- src/frob/gates/decisions.py
+- src/frob/gates/invariants.py
+- src/frob/ghio.py
+- src/frob/gitio.py
+- src/frob/gitlog/__init__.py
+- src/frob/graph/__init__.py
+- src/frob/graph/_core.py
+- src/frob/graph/_models.py
+- src/frob/graph/_resolve.py
+- src/frob/graph/affects.py
+- src/frob/graph/callgraph.py
+- src/frob/graph/imports.py
+- src/frob/graph/lock.py
+- src/frob/graph/reach.py
+- src/frob/graph/summary.py
+- src/frob/lang/__init__.py
+- src/frob/lang/_common.py
+- src/frob/lang/_extract.py
+- src/frob/lang/_models.py
+- src/frob/lang/_nodes.py
+- src/frob/lang/_project_detect.py
+- src/frob/lang/_support.py
+- src/frob/lang/_walk_bash.py
+- src/frob/lang/_walk_c.py
+- src/frob/lang/_walk_csharp.py
+- src/frob/lang/_walk_cuda.py
+- src/frob/lang/_walk_java.py
+- src/frob/lang/_walk_kotlin.py
+- src/frob/lang/_walk_python.py
+- src/frob/lang/_walk_rust.py
+- src/frob/lang/_walk_strata.py
+- src/frob/lang/_walk_typescript.py
+- src/frob/lang/_walk_zig.py
+- src/frob/map/__init__.py
+- src/frob/mutate/__init__.py
+- src/frob/mutate/_journal.py
+- src/frob/narrative/_cli.py
+- src/frob/narrative/_migrate.py
+- src/frob/natives/_build.py
+- src/frob/outline/__init__.py
+- src/frob/perf/_collectors.py
+- src/frob/perf/_dup_spawn.py
+- src/frob/perf/_effect_summaries.py
+- src/frob/perf/_hotgraph.py
+- src/frob/perf/_hotpath_smells.py
+- src/frob/perf/_loop_effects.py
+- src/frob/perf/_models.py
+- src/frob/perf/_profile.py
+- src/frob/perf/_ratchet.py
+- src/frob/perf/_rules.py
+- src/frob/perf/_sampler.py
+- src/frob/perf/_sketch_store.py
+- src/frob/policy/__init__.py
+- src/frob/policy/_models.py
+- src/frob/process/_guard.py
+- src/frob/process/_project_tool.py
+- src/frob/process/_pytest_spawn.py
+- src/frob/process/parsers/common.py
+- src/frob/refactor/_apply.py
+- src/frob/refactor/_commit.py
+- src/frob/refactor/_gitops.py
+- src/frob/refactor/_models.py
+- src/frob/refactor/_module_resolve.py
+- src/frob/refactor/_module_transaction.py
+- src/frob/refactor/_operands.py
+- src/frob/refactor/_resolve.py
+- src/frob/refactor/_split.py
+- src/frob/refactor/_transaction.py
+- src/frob/refactor/_verify_exec.py
+- src/frob/registry/_corpus.py
+- src/frob/registry/_models.py
+- src/frob/registry/_staleness.py
+- src/frob/release/__init__.py
+- src/frob/release/_fragments.py
+- src/frob/release/_publish.py
+- src/frob/render/_elements.py
+- src/frob/render/_errors.py
+- src/frob/render/_renderer.py
+- src/frob/scaffold/_managed.py
+- src/frob/scaffold/_pool.py
+- src/frob/scaffold/_skills_sync.py
+- src/frob/scaffold/_unity_project.py
+- src/frob/scaffold/project.py
+- src/frob/serve/_daemon.py
+- src/frob/serve/_events.py
+- src/frob/serve/_socketd.py
+- src/frob/serve/_tools.py
+- src/frob/serve/_warm.py
+- src/frob/serve/server.py
+- src/frob/stats/__init__.py
+- src/frob/stats/_agentic.py
+- src/frob/stats/_agentic_dispatch.py
+- src/frob/stats/_sketch.py
+- src/frob/strata/_access.py
+- src/frob/strata/_ast.py
+- src/frob/strata/_atomic.py
+- src/frob/strata/_audit.py
+- src/frob/strata/_backpressure.py
+- src/frob/strata/_bootstrap.py
+- src/frob/strata/_breach.py
+- src/frob/strata/_capacity.py
+- src/frob/strata/_circuit_breaker.py
+- src/frob/strata/_claims.py
+- src/frob/strata/_clock_ordering.py
+- src/frob/strata/_code_binding.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_contention.py
+- src/frob/strata/_crash.py
+- src/frob/strata/_cve_fingerprint.py
+- src/frob/strata/_delivery_semantics.py
+- src/frob/strata/_deploy.py
+- src/frob/strata/_design_load.py
+- src/frob/strata/_distributed_txn.py
+- src/frob/strata/_effects.py
+- src/frob/strata/_elaborate.py
+- src/frob/strata/_errors.py
+- src/frob/strata/_export.py
+- src/frob/strata/_facts.py
+- src/frob/strata/_fallback.py
+- src/frob/strata/_host.py
+- src/frob/strata/_host_isolation.py
+- src/frob/strata/_host_isolation_lateral.py
+- src/frob/strata/_host_isolation_shared.py
+- src/frob/strata/_host_isolation_vertical.py
+- src/frob/strata/_infra.py
+- src/frob/strata/_interactive_cost.py
+- src/frob/strata/_krb.py
+- src/frob/strata/_krb_movement.py
+- src/frob/strata/_lint.py
+- src/frob/strata/_message_schema.py
+- src/frob/strata/_mode_conformance.py
+- src/frob/strata/_models.py
+- src/frob/strata/_multifile.py
+- src/frob/strata/_mutation_audit.py
+- src/frob/strata/_native_test.py
+- src/frob/strata/_observability.py
+- src/frob/strata/_packs.py
+- src/frob/strata/_parse.py
+- src/frob/strata/_pii.py
+- src/frob/strata/_plan.py
+- src/frob/strata/_policy.py
+- src/frob/strata/_process_bounds.py
+- src/frob/strata/_reliability.py
+- src/frob/strata/_retry.py
+- src/frob/strata/_scenarios.py
+- src/frob/strata/_scope_config.py
+- src/frob/strata/_secrets.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_selfconform_kinds.py
+- src/frob/strata/_selfconform_models.py
+- src/frob/strata/_shared_state.py
+- src/frob/strata/_shrink.py
+- src/frob/strata/_slo.py
+- src/frob/strata/_spof.py
+- src/frob/strata/_ssot.py
+- src/frob/strata/_starvation.py
+- src/frob/strata/_supply_chain_boot.py
+- src/frob/strata/_sync_depth.py
+- src/frob/strata/_sysdoc.py
+- src/frob/strata/_threat.py
+- src/frob/strata/_threat_discharge.py
+- src/frob/strata/_threat_models.py
+- src/frob/strata/_txn.py
+- src/frob/strata/_unity_asmdef.py
+- src/frob/strata/_waive.py
+- src/frob/testing/_collect.py
+- src/frob/testing/_collect_cpp.py
+- src/frob/testing/_collect_csharp.py
+- src/frob/testing/_collect_kotlin.py
+- src/frob/testing/_collect_rust.py
+- src/frob/testing/_collect_ts.py
+- src/frob/testing/_coverage_refresh.py
+- src/frob/testing/_coverage_wait.py
+- src/frob/testing/_dotnet_runner.py
+- src/frob/testing/_models.py
+- src/frob/testing/_runners.py
+- src/frob/testing/_stability.py
+- src/frob/testing/_unity_batchmode.py
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_accept.py
+- src/frob/tickets/_archive.py
+- src/frob/tickets/_brief.py
+- src/frob/tickets/_draft_finalize.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_force_override.py
+- src/frob/tickets/_journal.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_compose.py
+- src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_land_ledger_merge.py
+- src/frob/tickets/_land_merge.py
+- src/frob/tickets/_land_merge_zones.py
+- src/frob/tickets/_land_queue.py
+- src/frob/tickets/_land_release.py
+- src/frob/tickets/_land_splice.py
+- src/frob/tickets/_land_squash.py
+- src/frob/tickets/_land_verify.py
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/_mutation_evidence.py
+- src/frob/tickets/_mutation_sweep_queue.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_profile.py
+- src/frob/tickets/_reconcile.py
+- src/frob/tickets/_renumber_v2.py
+- src/frob/tickets/_reporting.py
+- src/frob/tickets/_reporting_attachments.py
+- src/frob/tickets/_scope.py
+- src/frob/tickets/_setters.py
+- src/frob/tickets/_store.py
+- src/frob/tickets/_store_migrate.py
+- src/frob/tickets/_unlanded.py
+- src/frob/tickets/_worktree_guard.py
+- src/frob/tickets/_worktree_sweep.py
+- src/frob/tickets/clipboard.py
+- src/frob/verify/_attribution.py
+- src/frob/verify/_backpressure.py
+- src/frob/verify/_bisect.py
+- src/frob/verify/_drain.py
+- src/frob/verify/_quarantine.py
+- src/frob/verify/_selection.py
+- src/frob/verify/_watermark.py
+- src/frob/verify/_worker.py
+- src/frob/vet/_capability_core.py
+- src/frob/vet/_capability_modes.py
+- src/frob/vet/_capability_registry/_matrix.py
+- src/frob/vet/_capability_registry/_schemas.py
+- src/frob/vet/_capability_scan.py
+- src/frob/vet/_containment.py
+- src/frob/vet/_cve.py
+- src/frob/vet/_lockfile.py
+- src/frob/vet/_models.py
+- src/frob/vet/_nvd.py
+- src/frob/vet/_registry.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_supplychain.py
+- src/frob/xref/__init__.py
+- src/frob/yamlio.py
+- tests/_write_unchecked.py
+- tests/conftest.py
+- tests/gates/test_env_absent_bug002_repro.py
+- tests/gates/test_mutation_evidence_err_branches.py
+- tests/gates/test_tdd_order.py
+- tests/gates_suite/test_coverage.py
+- tests/gates_suite/test_debt.py
+- tests/gates_suite/test_fix_engine.py
+- tests/gates_suite/test_invariant.py
+- tests/gates_suite/test_prework.py
+- tests/gates_suite/test_protocol.py
+- tests/gates_suite/test_run.py
+- tests/gates_suite/test_sys.py
+- tests/gates_suite/test_test_gate.py
+- tests/gates_suite/test_tick.py
+- tests/gates_suite/test_waive.py
+- tests/helpers/bash.py
+- tests/integration/test_deploy_malmberg_pilot.py
+- tests/integration/test_gitlog.py
+- tests/integration/test_integration.py
+- tests/integration/test_interfaces.py
+- tests/system/test_artifact_smoke.py
+- tests/system/test_ci_hang_guard_positive_control.py
+- tests/system/test_cli_check.py
+- tests/system/test_cli_cycle.py
+- tests/system/test_cli_doctor.py
+- tests/system/test_cli_map.py
+- tests/system/test_cli_outline.py
+- tests/system/test_cli_sys_export.py
+- tests/system/test_cli_sys_plan.py
+- tests/system/test_cli_vet.py
+- tests/system/test_cli_xref.py
+- tests/system/test_coverage_sigterm.py
+- tests/system/test_fleet_status_ground_truth.py
+- tests/system/test_fleet_status_ticket_readiness_arch001.py
+- tests/system/test_frob_self_model.py
+- tests/system/test_natives_build_integration.py
+- tests/system/test_packaging_py_typed.py
+- tests/system/test_public_api_from_wheel.py
+- tests/system/test_run_helper_env_leak.py
+- tests/system/test_scaffold_dx.py
+- tests/system/test_scaffold_pool.py
+- tests/system/test_spawn_budget.py
+- tests/system/test_system.py
+- tests/test_ack_worktree_lease.py
+- tests/test_app.py
+- tests/test_app_config.py
+- tests/test_app_daemon_proxy.py
+- tests/test_arch_near_duplicate_native.py
+- tests/test_bug002_no_behavior_change.py
+- tests/test_cache_gate.py
+- tests/test_capability_registry.py
+- tests/test_check_runner.py
+- tests/test_ci_report.py
+- tests/test_ci_validity.py
+- tests/test_ci_workflow_actions_pinned.py
+- tests/test_ci_workflow_job_summary.py
+- tests/test_ci_workflow_matrix.py
+- tests/test_ci_workflow_timeout.py
+- tests/test_ci_workflow_toolchain_pins.py
+- tests/test_clean.py
+- tests/test_clipboard.py
+- tests/test_coverage.py
+- tests/test_coverage_wait_shared.py
+- tests/test_debt_runner.py
+- tests/test_deprecated_runner.py
+- tests/test_docptr_gate.py
+- tests/test_doctor.py
+- tests/test_dup.py
+- tests/test_dup_cross_lang.py
+- tests/test_dup_exhaustiveness.py
+- tests/test_dup_inline.py
+- tests/test_dup_native_rungs.py
+- tests/test_dup_prefilter.py
+- tests/test_dup_r5_multilang.py
+- tests/test_dup_region.py
+- tests/test_dup_rungs.py
+- tests/test_dup_smart.py
+- tests/test_fuzz.py
+- tests/test_gate_cache.py
+- tests/test_gates_drift_ack.py
+- tests/test_gates_fix_engine.py
+- tests/test_gates_fmt_directives.py
+- tests/test_gates_mutation_evidence.py
+- tests/test_gates_suppress.py
+- tests/test_gates_tick006_sibling_worktree.py
+- tests/test_gates_vmodel.py
+- tests/test_gates_worktree_lease.py
+- tests/test_ghio.py
+- tests/test_gitio.py
+- tests/test_graph.py
+- tests/test_graph_affects_runner.py
+- tests/test_land_verify_claims_outcome.py
+- tests/test_lang.py
+- tests/test_lang_conformance_gate.py
+- tests/test_measure_evidence_reach.py
+- tests/test_mutate.py
+- tests/test_mutate_journal.py
+- tests/test_natives.py
+- tests/test_pii_structural_gate.py
+- tests/test_pool_runner.py
+- tests/test_prework_parity.py
+- tests/test_refactor.py
+- tests/test_registry_reconciliation_evasion.py
+- tests/test_registry_reconciliation_supply_chain.py
+- tests/test_registry_staleness.py
+- tests/test_release.py
+- tests/test_release_worktree_lease.py
+- tests/test_scaffold_worktree_lease_hook.py
+- tests/test_secrets_gate.py
+- tests/test_serve.py
+- tests/test_serve_daemon.py
+- tests/test_serve_events.py
+- tests/test_serve_leases.py
+- tests/test_serve_socket.py
+- tests/test_serve_tools_daemon_bypass.py
+- tests/test_telemetry.py
+- tests/test_testing.py
+- tests/test_testing_collect.py
+- tests/test_ticket_evidence.py
+- tests/test_ticket_journal.py
+- tests/test_ticket_land.py
+- tests/test_ticket_land_dry_run.py
+- tests/test_ticket_land_lint_diff_attribution.py
+- tests/test_ticket_land_proof_claims.py
+- tests/test_ticket_land_ty_diff_attribution.py
+- tests/test_ticket_leases.py
+- tests/test_ticket_leases_cross_worktree.py
+- tests/test_ticket_lifecycle.py
+- tests/test_ticket_merge_driver.py
+- tests/test_ticket_ownership_guard.py
+- tests/test_ticket_reconcile.py
+- tests/test_ticket_reverify.py
+- tests/test_ticket_runner_archive_force.py
+- tests/test_ticket_runner_pytest_env.py
+- tests/test_ticket_work_and_land_finish.py
+- tests/test_tickets.py
+- tests/test_tickets_acceptance.py
+- tests/test_tickets_body.py
+- tests/test_tickets_brief.py
+- tests/test_tickets_cmd_evidence.py
+- tests/test_tickets_collision.py
+- tests/test_tickets_evidence_cli.py
+- tests/test_tickets_evidence_removal.py
+- tests/test_tickets_evidence_replace_cmd_t4143.py
+- tests/test_tickets_lease.py
+- tests/test_tickets_leases.py
+- tests/test_tickets_ledger_concurrency.py
+- tests/test_tickets_migration.py
+- tests/test_tickets_mutation_evidence.py
+- tests/test_tickets_no_scope.py
+- tests/test_tickets_organization.py
+- tests/test_tickets_parent.py
+- tests/test_tickets_priority.py
+- tests/test_tickets_review.py
+- tests/test_tickets_scope_mutation.py
+- tests/test_tickets_velocity.py
+- tests/test_vet.py
+- tests/test_vet_containment.py
+- tests/test_waive_gate.py
+- tests/test_worktree_guard.py
+- tests/test_worktree_lease_env_ambient.py
+- tests/test_worktree_pythonpath.py
+- tests/ticket_land_suite/conftest.py
+- tests/ticket_land_suite/test_archive.py
+- tests/ticket_land_suite/test_claim_close.py
+- tests/ticket_land_suite/test_dirt_ownership.py
+- tests/ticket_land_suite/test_draft.py
+- tests/ticket_land_suite/test_land_core.py
+- tests/ticket_land_suite/test_land_lock.py
+- tests/ticket_land_suite/test_land_plan.py
+- tests/ticket_land_suite/test_land_reaps_worktree.py
+- tests/ticket_land_suite/test_land_target_branch.py
+- tests/ticket_land_suite/test_ledger_splice.py
+- tests/ticket_land_suite/test_push.py
+- tests/ticket_land_suite/test_release.py
+- tests/ticket_land_suite/test_verify_intent.py
+- tests/ticket_land_suite/test_verify_reset.py
+- tests/ticket_land_suite/test_waive_deletion.py
+- tests/ticket_land_suite/test_wip.py
+- tests/unit/arch_suite/test_abstraction.py
+- tests/unit/arch_suite/test_complexity.py
+- tests/unit/arch_suite/test_concurrency.py
+- tests/unit/arch_suite/test_dispatch.py
+- tests/unit/arch_suite/test_guards.py
+- tests/unit/arch_suite/test_lang_adapters.py
+- tests/unit/arch_suite/test_logging.py
+- tests/unit/arch_suite/test_lsp.py
+- tests/unit/arch_suite/test_misc.py
+- tests/unit/arch_suite/test_smells.py
+- tests/unit/arch_suite/test_type_design.py
+- tests/unit/coordinator_suite/test_check_summary.py
+- tests/unit/coordinator_suite/test_fleet_host_load.py
+- tests/unit/coordinator_suite/test_fleet_land.py
+- tests/unit/coordinator_suite/test_fleet_report.py
+- tests/unit/coordinator_suite/test_fleet_worktrees.py
+- tests/unit/coordinator_suite/test_verify_lands.py
+- tests/unit/coordinator_suite/test_wait_for_land_slot.py
+- tests/unit/deploy/test_deploy_runner.py
+- tests/unit/deploy/test_vm_runner.py
+- tests/unit/dup/test_type_name_only_regression_t1957.py
+- tests/unit/fleet/test_route.py
+- tests/unit/fleet/test_status.py
+- tests/unit/gates/test_deprecated_baseline.py
+- tests/unit/gates/test_examined_sites.py
+- tests/unit/gates/test_lexical_selfcheck.py
+- tests/unit/gates/test_lock_producer.py
+- tests/unit/gates/test_rel001_deferred_bump.py
+- tests/unit/graph/test_dsl_invariant_property.py
+- tests/unit/perf/test_collectors.py
+- tests/unit/perf/test_hot_query.py
+- tests/unit/perf/test_hotgraph.py
+- tests/unit/perf/test_persist_run_cli.py
+- tests/unit/perf/test_serial_pools.py
+- tests/unit/perf/test_serial_pools_import_failure.py
+- tests/unit/perf/test_sketch_store.py
+- tests/unit/rapid_sweep_suite/conftest.py
+- tests/unit/rapid_sweep_suite/test_attribution.py
+- tests/unit/rapid_sweep_suite/test_baseline.py
+- tests/unit/rapid_sweep_suite/test_commit.py
+- tests/unit/rapid_sweep_suite/test_dispose.py
+- tests/unit/rapid_sweep_suite/test_filing.py
+- tests/unit/rapid_sweep_suite/test_sweep_run.py
+- tests/unit/rapid_sweep_suite/test_window.py
+- tests/unit/rapid_sweep_suite/test_worktrees.py
+- tests/unit/strata/test_atomic.py
+- tests/unit/strata/test_audit.py
+- tests/unit/strata/test_backpressure.py
+- tests/unit/strata/test_breach.py
+- tests/unit/strata/test_capacity.py
+- tests/unit/strata/test_circuit_breaker.py
+- tests/unit/strata/test_clock_ordering.py
+- tests/unit/strata/test_compliance.py
+- tests/unit/strata/test_cve_fingerprint.py
+- tests/unit/strata/test_delivery_semantics.py
+- tests/unit/strata/test_deploy.py
+- tests/unit/strata/test_design_load.py
+- tests/unit/strata/test_distributed_txn.py
+- tests/unit/strata/test_export.py
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_fallback.py
+- tests/unit/strata/test_fragments.py
+- tests/unit/strata/test_host.py
+- tests/unit/strata/test_host_isolation.py
+- tests/unit/strata/test_kernel_properties.py
+- tests/unit/strata/test_litmus_cwe.py
+- tests/unit/strata/test_models.py
+- tests/unit/strata/test_native_staleness.py
+- tests/unit/strata/test_native_test.py
+- tests/unit/strata/test_parse.py
+- tests/unit/strata/test_pii.py
+- tests/unit/strata/test_registry_cross_corpus_totality.py
+- tests/unit/strata/test_registry_cross_refs.py
+- tests/unit/strata/test_retry.py
+- tests/unit/strata/test_selfconform.py
+- tests/unit/strata/test_strata_core_gil.py
+- tests/unit/strata/test_strata_scan_cache.py
+- tests/unit/strata/test_sys107_via_scope_advisory.py
+- tests/unit/strata/test_threat.py
+- tests/unit/strata/test_vmodel_authoring.py
+- tests/unit/strata/test_vmodel_check.py
+- tests/unit/test_ack_runner.py
+- tests/unit/test_app_clean_runner_branches_t1400.py
+- tests/unit/test_app_config_meta_branches_t1400.py
+- tests/unit/test_app_lazy_dispatch.py
+- tests/unit/test_app_runners.py
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/test_app_runners_batch6.py
+- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_app_runners_doable_stale_lease.py
+- tests/unit/test_app_runners_json_guard_t2492.py
+- tests/unit/test_app_runners_process.py
+- tests/unit/test_app_runners_t0714_doable_summary.py
+- tests/unit/test_app_runners_t0875_leaf_collision.py
+- tests/unit/test_app_runners_t0976_mutation_evidence.py
+- tests/unit/test_app_runners_t1738_wave.py
+- tests/unit/test_app_runners_t1822_already_landed.py
+- tests/unit/test_app_sys_capacity.py
+- tests/unit/test_app_sys_threats.py
+- tests/unit/test_app_sys_trace.py
+- tests/unit/test_app_telemetry_branches_t1400.py
+- tests/unit/test_arch.py
+- tests/unit/test_arch_ocp.py
+- tests/unit/test_arch_python_native.py
+- tests/unit/test_artifact_smoke_script.py
+- tests/unit/test_branch_stranded_work_analysis.py
+- tests/unit/test_capability_native.py
+- tests/unit/test_check.py
+- tests/unit/test_check_admission.py
+- tests/unit/test_check_budget.py
+- tests/unit/test_check_native_cargo_runners.py
+- tests/unit/test_check_scoped_files.py
+- tests/unit/test_check_skip_flag.py
+- tests/unit/test_check_stop_before.py
+- tests/unit/test_check_tool_unavailable.py
+- tests/unit/test_check_ts_runners.py
+- tests/unit/test_ci_self_gate_unscoped.py
+- tests/unit/test_claims_and_store_batch6.py
+- tests/unit/test_claude_runner.py
+- tests/unit/test_cli_group_parity.py
+- tests/unit/test_close_promote_drafts.py
+- tests/unit/test_close_rel001_bump.py
+- tests/unit/test_config.py
+- tests/unit/test_conftest_console_ctrl_guard.py
+- tests/unit/test_conftest_hard_exit_guard.py
+- tests/unit/test_conftest_midrun_watchdog.py
+- tests/unit/test_conftest_sigbreak_faulthandler.py
+- tests/unit/test_conftest_stackdump.py
+- tests/unit/test_conftest_suite_result_status.py
+- tests/unit/test_coverage_runner.py
+- tests/unit/test_cycle_runner_root_resolution.py
+- tests/unit/test_daemon_proxy_error_paths_t1457.py
+- tests/unit/test_daemon_proxy_lease_t1276.py
+- tests/unit/test_dependency_pins.py
+- tests/unit/test_dev_branch_workflow.py
+- tests/unit/test_doctor.py
+- tests/unit/test_doctor_runner_t1276.py
+- tests/unit/test_done_report_check_scope.py
+- tests/unit/test_dotnet_runner.py
+- tests/unit/test_dup.py
+- tests/unit/test_dup_cache.py
+- tests/unit/test_dup_core.py
+- tests/unit/test_dup_legacy_py.py
+- tests/unit/test_dup_smt.py
+- tests/unit/test_dup_template.py
+- tests/unit/test_executable.py
+- tests/unit/test_extending_guides_complete.py
+- tests/unit/test_extract_native.py
+- tests/unit/test_fix_engine_journal.py
+- tests/unit/test_flag_coverage_gate.py
+- tests/unit/test_fleet_runner.py
+- tests/unit/test_frob_core_gil.py
+- tests/unit/test_gitattributes_merge.py
+- tests/unit/test_gitlog.py
+- tests/unit/test_graph_build_lock.py
+- tests/unit/test_graph_cache.py
+- tests/unit/test_graph_get_snapshot.py
+- tests/unit/test_graph_lock_holder_naming.py
+- tests/unit/test_graph_stat_trust_margin.py
+- tests/unit/test_helpers_bash.py
+- tests/unit/test_land_already_landed.py
+- tests/unit/test_land_cas_ledger_retry.py
+- tests/unit/test_land_cmd_backpressure.py
+- tests/unit/test_land_cmd_drain_wiring.py
+- tests/unit/test_land_compose.py
+- tests/unit/test_land_cross_ticket_leakage.py
+- tests/unit/test_land_default_queue.py
+- tests/unit/test_land_duplicate_ticket_id.py
+- tests/unit/test_land_finish_guard.py
+- tests/unit/test_land_finish_idempotent.py
+- tests/unit/test_land_format_gate.py
+- tests/unit/test_land_in_progress_window.py
+- tests/unit/test_land_leaked_tickets_lease_hoist.py
+- tests/unit/test_land_lock_liveness.py
+- tests/unit/test_land_machinery_owned_leakage.py
+- tests/unit/test_land_merge_conflict_drop.py
+- tests/unit/test_land_orphaned_evidence.py
+- tests/unit/test_land_parity_gate.py
+- tests/unit/test_land_queue.py
+- tests/unit/test_land_record_commit.py
+- tests/unit/test_land_release_coherence.py
+- tests/unit/test_land_release_out_of_tree.py
+- tests/unit/test_land_root_resolution.py
+- tests/unit/test_land_sibling_regression.py
+- tests/unit/test_land_splice_test_then_impl.py
+- tests/unit/test_land_squash_residue_reclaim.py
+- tests/unit/test_land_squash_stage.py
+- tests/unit/test_land_stackdump.py
+- tests/unit/test_land_stage_flip.py
+- tests/unit/test_land_step_ordering.py
+- tests/unit/test_land_stranding_t4312.py
+- tests/unit/test_lang_kotlin.py
+- tests/unit/test_lang_parse_guard.py
+- tests/unit/test_lang_strata.py
+- tests/unit/test_lang_strata_entity_arch.py
+- tests/unit/test_lease_lifecycle.py
+- tests/unit/test_leases_staleness_perf.py
+- tests/unit/test_lifecycle_work_base.py
+- tests/unit/test_main_entry.py
+- tests/unit/test_makefile_coverage.py
+- tests/unit/test_map.py
+- tests/unit/test_mutation_sweep_queue.py
+- tests/unit/test_natives_build.py
+- tests/unit/test_new_ticket_body_similarity_warning.py
+- tests/unit/test_new_ticket_over_broad_scope_warning.py
+- tests/unit/test_new_ticket_scope_breadth_ack_flag.py
+- tests/unit/test_new_ticket_scope_overlap_warning.py
+- tests/unit/test_outline.py
+- tests/unit/test_parse_runner_direct.py
+- tests/unit/test_perf_runner_t1400.py
+- tests/unit/test_policy_weakening_gate.py
+- tests/unit/test_process_guard.py
+- tests/unit/test_process_lock.py
+- tests/unit/test_process_pid_liveness.py
+- tests/unit/test_process_reap.py
+- tests/unit/test_process_tty.py
+- tests/unit/test_profile_runner.py
+- tests/unit/test_project_tool.py
+- tests/unit/test_pyfmt_runner.py
+- tests/unit/test_pyproject_data_memoization.py
+- tests/unit/test_pytest_spawn_env_wiring.py
+- tests/unit/test_rapid_debt.py
+- tests/unit/test_reconcile_auto_commit_t1936.py
+- tests/unit/test_release_stamp_guard.py
+- tests/unit/test_release_workflow_gate.py
+- tests/unit/test_render.py
+- tests/unit/test_require_python.py
+- tests/unit/test_scaffold_project.py
+- tests/unit/test_scaffold_unity_project.py
+- tests/unit/test_scope_closure_declared_scope_only.py
+- tests/unit/test_scope_closure_warning_collapse_t1556.py
+- tests/unit/test_stackdump.py
+- tests/unit/test_store_batch7.py
+- tests/unit/test_store_mode_memoization.py
+- tests/unit/test_strata_tmlanguage.py
+- tests/unit/test_support_csharp.py
+- tests/unit/test_suppress_worktree_path.py
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py
+- tests/unit/test_t2450_scope_repair.py
+- tests/unit/test_telemetry_verb_recording.py
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py
+- tests/unit/test_ticket_anchor_cli.py
+- tests/unit/test_ticket_cli_surface.py
+- tests/unit/test_ticket_close_bug002_t1427.py
+- tests/unit/test_ticket_close_bug002_t1438.py
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
+- tests/unit/test_ticket_close_gate_claims_t1410.py
+- tests/unit/test_ticket_close_own_obligations_t1387.py
+- tests/unit/test_ticket_file_flags.py
+- tests/unit/test_ticket_land_bug003_t2215.py
+- tests/unit/test_ticket_list_summary.py
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py
+- tests/unit/test_ticket_new_readback_guard_t4339.py
+- tests/unit/test_ticket_new_related.py
+- tests/unit/test_ticket_new_scope_plausibility.py
+- tests/unit/test_ticket_new_scope_plausibility_t2192.py
+- tests/unit/test_ticket_restore.py
+- tests/unit/test_ticket_runner_bare_root_guard.py
+- tests/unit/test_ticket_runner_designate_repro.py
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/unit/test_ticket_runner_land_cmd_flags.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
+- tests/unit/test_ticket_runner_repro_merge_base.py
+- tests/unit/test_ticket_runner_venv_sync_t3320.py
+- tests/unit/test_ticket_store.py
+- tests/unit/test_ticket_sweep_terminal_state.py
+- tests/unit/test_unity_batchmode.py
+- tests/unit/test_unlanded_branch_work.py
+- tests/unit/test_verify_language_buckets.py
+- tests/unit/test_verify_release_ci_status.py
+- tests/unit/test_version_guard.py
+- tests/unit/test_waive004_perf_guard.py
+- tests/unit/test_waive_audit_runner.py
+- tests/unit/test_xref.py
+- tests/unit/testing/test_stability.py
+- tests/unit/verify/test_attribution.py
+- tests/unit/verify/test_backpressure.py
+- tests/unit/verify/test_bisect.py
+- tests/unit/verify/test_drain.py
+- tests/unit/verify/test_quarantine.py
+- tests/unit/verify/test_selection.py
+- tests/unit/verify/test_verify_runner.py
+- tests/unit/verify/test_worker.py
+- tests/vet_suite/test_advisories.py
+- tests/vet_suite/test_lockfile.py
+- tests/vet_suite/test_opaque_indirection.py
+- tests/vet_suite/test_scan_tree.py
+findings:
+- - LANDFMT001
+  - 'Would reformat: tests/test_tickets_triage_dates.py'
+- - SUPPRESS001
+  - src/frob/fuzz/_arbitrary.py
+- - SUPPRESS001
+  - src/frob/graph/_core.py
+- - SUPPRESS001
+  - tests/conftest.py
+- - SUPPRESS001
+  - tests/gates_suite/test_test_gate.py
+- - SUPPRESS001
+  - tests/test_lang.py
+- - SUPPRESS001
+  - tests/test_tickets.py
+- - SUPPRESS001
+  - tests/test_tickets_acceptance.py
+- - SUPPRESS001
+  - tests/test_tickets_brief.py
+- - invalid-argument-type
+  - src/frob/gates/__init__.py
+- - invalid-argument-type
+  - src/frob/release/_publish.py
+- - invalid-argument-type
+  - src/frob/strata/_design_load.py
+- - invalid-argument-type
+  - tests/gates_suite/test_sys.py
+- - invalid-assignment
+  - src/frob/app/fleet_runner.py
+- - invalid-assignment
+  - src/frob/app/registry_runner.py
+- - invalid-assignment
+  - src/frob/strata/_multifile.py
+- - invalid-assignment
+  - src/frob/testing/_coverage_refresh.py
+- - invalid-assignment
+  - src/frob/verify/_worker.py
+- - invalid-assignment
+  - tests/unit/verify/test_worker.py
+- - invalid-return-type
+  - src/frob/app/_daemon_proxy.py
+- - invalid-return-type
+  - src/frob/app/ticket_runner/_waive_audit.py
+- - invalid-return-type
+  - src/frob/ghio.py
+- - invalid-return-type
+  - src/frob/lang/__init__.py
+- - invalid-return-type
+  - src/frob/refactor/_transaction.py
+- - invalid-return-type
+  - src/frob/strata/_scenarios.py
+- - invalid-return-type
+  - src/frob/strata/_selfconform.py
+- - invalid-return-type
+  - src/frob/strata/_waive.py
+- - invalid-return-type
+  - src/frob/tickets/_evidence.py
+- - invalid-return-type
+  - src/frob/tickets/_land_git_ops.py
+- - invalid-return-type
+  - src/frob/tickets/_land_squash.py
+- - invalid-return-type
+  - src/frob/tickets/_setters.py
+- - invalid-return-type
+  - src/frob/verify/_quarantine.py
+- - no-matching-overload
+  - tests/system/test_scaffold_dx.py
+- - unresolved-attribute
+  - src/frob/serve/_socketd.py
+- - unresolved-attribute
+  - src/frob/tickets/_land.py
+- - unresolved-attribute
+  - src/frob/verify/_worker.py
+- - unresolved-attribute
+  - tests/test_app_daemon_proxy.py
+- - unresolved-attribute
+  - tests/test_coverage_wait_shared.py
+- - unresolved-attribute
+  - tests/test_serve_leases.py
+- - unresolved-attribute
+  - tests/test_serve_socket.py
+- - unresolved-attribute
+  - tests/test_ticket_leases.py
+- - unresolved-attribute
+  - tests/test_ticket_reconcile.py
+- - unresolved-attribute
+  - tests/test_tickets_parent.py
+- - unresolved-attribute
+  - tests/test_tickets_priority.py
+- - unresolved-attribute
+  - tests/ticket_land_suite/test_land_lock.py
+- - unresolved-attribute
+  - tests/ticket_land_suite/test_verify_reset.py
+- - unresolved-attribute
+  - tests/unit/coordinator_suite/test_fleet_host_load.py
+- - unresolved-attribute
+  - tests/unit/coordinator_suite/test_fleet_land.py
+- - unresolved-attribute
+  - tests/unit/rapid_sweep_suite/test_baseline.py
+- - unresolved-attribute
+  - tests/unit/test_check.py
+- - unresolved-attribute
+  - tests/unit/test_conftest_stackdump.py
+- - unresolved-attribute
+  - tests/unit/test_land_lock_liveness.py
+- - unresolved-attribute
+  - tests/unit/test_land_queue.py
+- - unresolved-attribute
+  - tests/unit/test_process_lock.py
+- - unresolved-attribute
+  - tests/unit/test_process_reap.py
+- - unresolved-attribute
+  - tests/unit/test_stackdump.py
+- - unresolved-attribute
+  - tests/unit/test_ticket_store.py
+- - unresolved-import
+  - scripts/branch_stranded_work_analysis.py
+- - unresolved-import
+  - scripts/verify_release_ci_status.py
+- - unresolved-import
+  - src/frob/app/_daemon_proxy.py
+- - unresolved-import
+  - src/frob/app/_verify_rapid_debt.py
+- - unresolved-import
+  - src/frob/app/config.py
+- - unresolved-import
+  - src/frob/app/perf_runner.py
+- - unresolved-import
+  - src/frob/app/status_runner.py
+- - unresolved-import
+  - src/frob/app/telemetry/_footguns.py
+- - unresolved-import
+  - src/frob/app/telemetry/_usage.py
+- - unresolved-import
+  - src/frob/app/test_runner.py
+- - unresolved-import
+  - src/frob/app/ticket_runner/_land_cmd.py
+- - unresolved-import
+  - src/frob/app/ticket_runner/_query.py
+- - unresolved-import
+  - src/frob/app/ticket_runner/_rapid_sweep.py
+- - unresolved-import
+  - src/frob/app/ticket_runner/_verify.py
+- - unresolved-import
+  - src/frob/app/ticket_runner/_waive_audit.py
+- - unresolved-import
+  - src/frob/app/verify_runner.py
+- - unresolved-import
+  - src/frob/arch/__init__.py
+- - unresolved-import
+  - src/frob/arch/_abstraction.py
+- - unresolved-import
+  - src/frob/arch/_async_hazards.py
+- - unresolved-import
+  - src/frob/arch/_concurrency.py
+- - unresolved-import
+  - src/frob/arch/_concurrency_model.py
+- - unresolved-import
+  - src/frob/arch/_cpp.py
+- - unresolved-import
+  - src/frob/arch/_cpp_mayraise.py
+- - unresolved-import
+  - src/frob/arch/_ffi.py
+- - unresolved-import
+  - src/frob/arch/_kotlin.py
+- - unresolved-import
+  - src/frob/arch/_layering.py
+- - unresolved-import
+  - src/frob/arch/_lock_ordering.py
+- - unresolved-import
+  - src/frob/arch/_mayraise.py
+- - unresolved-import
+  - src/frob/arch/_models.py
+- - unresolved-import
+  - src/frob/arch/_normalized.py
+- - unresolved-import
+  - src/frob/arch/_ocp.py
+- - unresolved-import
+  - src/frob/arch/_patterns.py
+- - unresolved-import
+  - src/frob/arch/_protocol_excuse.py
+- - unresolved-import
+  - src/frob/arch/_python.py
+- - unresolved-import
+  - src/frob/arch/_rust.py
+- - unresolved-import
+  - src/frob/arch/_shared_state_race.py
+- - unresolved-import
+  - src/frob/arch/_typescript.py
+- - unresolved-import
+  - src/frob/check/__init__.py
+- - unresolved-import
+  - src/frob/ci_report.py
+- - unresolved-import
+  - src/frob/ci_validity.py
+- - unresolved-import
+  - src/frob/clean/_core.py
+- - unresolved-import
+  - src/frob/clean/_models.py
+- - unresolved-import
+  - src/frob/cve/_models.py
+- - unresolved-import
+  - src/frob/cve/_parser.py
+- - unresolved-import
+  - src/frob/deploy/_audit.py
+- - unresolved-import
+  - src/frob/deploy/_conform.py
+- - unresolved-import
+  - src/frob/deploy/_drift.py
+- - unresolved-import
+  - src/frob/deploy/_generate_common.py
+- - unresolved-import
+  - src/frob/deploy/_vm_runner.py
+- - unresolved-import
+  - src/frob/derived_state.py
+- - unresolved-import
+  - src/frob/docs/__init__.py
+- - unresolved-import
+  - src/frob/doctor.py
+- - unresolved-import
+  - src/frob/dup/_cache.py
+- - unresolved-import
+  - src/frob/dup/_exhaustiveness.py
+- - unresolved-import
+  - src/frob/dup/_legacy.py
+- - unresolved-import
+  - src/frob/dup/_legacy_cpp.py
+- - unresolved-import
+  - src/frob/dup/_legacy_cs.py
+- - unresolved-import
+  - src/frob/dup/_legacy_py.py
+- - unresolved-import
+  - src/frob/dup/_models.py
+- - unresolved-import
+  - src/frob/dup/_pipeline/_fingerprint.py
+- - unresolved-import
+  - src/frob/dup/_pipeline/_probe.py
+- - unresolved-import
+  - src/frob/dup/_pipeline/_smt.py
+- - unresolved-import
+  - src/frob/excludes.py
+- - unresolved-import
+  - src/frob/exports/__init__.py
+- - unresolved-import
+  - src/frob/findings.py
+- - unresolved-import
+  - src/frob/fleet/__init__.py
+- - unresolved-import
+  - src/frob/fuzz/_arbitrary.py
+- - unresolved-import
+  - src/frob/fuzz/_models.py
+- - unresolved-import
+  - src/frob/fuzz/_run.py
+- - unresolved-import
+  - src/frob/fuzz/_stamp.py
+- - unresolved-import
+  - src/frob/gates/__init__.py
+- - unresolved-import
+  - src/frob/gates/_baseline.py
+- - unresolved-import
+  - src/frob/gates/_bug_repro.py
+- - unresolved-import
+  - src/frob/gates/_coverage.py
+- - unresolved-import
+  - src/frob/gates/_debt_deprecated.py
+- - unresolved-import
+  - src/frob/gates/_deprecated_baseline.py
+- - unresolved-import
+  - src/frob/gates/_doclink_docanchor.py
+- - unresolved-import
+  - src/frob/gates/_fix_engine.py
+- - unresolved-import
+  - src/frob/gates/_fix_engine_scope.py
+- - unresolved-import
+  - src/frob/gates/_fix_engine_shared.py
+- - unresolved-import
+  - src/frob/gates/_fix_engine_tier_b.py
+- - unresolved-import
+  - src/frob/gates/_fix_engine_tier_c.py
+- - unresolved-import
+  - src/frob/gates/_fmt_directives.py
+- - unresolved-import
+  - src/frob/gates/_lock_producer.py
+- - unresolved-import
+  - src/frob/gates/_milestone.py
+- - unresolved-import
+  - src/frob/gates/_models.py
+- - unresolved-import
+  - src/frob/gates/_mutation_evidence.py
+- - unresolved-import
+  - src/frob/gates/_pii_structural/__init__.py
+- - unresolved-import
+  - src/frob/gates/_pii_structural/_crosslang.py
+- - unresolved-import
+  - src/frob/gates/_pii_structural/_signatures.py
+- - unresolved-import
+  - src/frob/gates/_prework.py
+- - unresolved-import
+  - src/frob/gates/_ratchet.py
+- - unresolved-import
+  - src/frob/gates/_suppress.py
+- - unresolved-import
+  - src/frob/gates/_sys.py
+- - unresolved-import
+  - src/frob/gates/_tickets_gate.py
+- - unresolved-import
+  - src/frob/gates/_vmodel.py
+- - unresolved-import
+  - src/frob/gates/_waive.py
+- - unresolved-import
+  - src/frob/gates/_waive_audit_watermark.py
+- - unresolved-import
+  - src/frob/gates/_waive_lease.py
+- - unresolved-import
+  - src/frob/gates/decisions.py
+- - unresolved-import
+  - src/frob/gates/invariants.py
+- - unresolved-import
+  - src/frob/ghio.py
+- - unresolved-import
+  - src/frob/gitio.py
+- - unresolved-import
+  - src/frob/gitlog/__init__.py
+- - unresolved-import
+  - src/frob/graph/__init__.py
+- - unresolved-import
+  - src/frob/graph/_core.py
+- - unresolved-import
+  - src/frob/graph/_models.py
+- - unresolved-import
+  - src/frob/graph/_resolve.py
+- - unresolved-import
+  - src/frob/graph/affects.py
+- - unresolved-import
+  - src/frob/graph/callgraph.py
+- - unresolved-import
+  - src/frob/graph/imports.py
+- - unresolved-import
+  - src/frob/graph/lock.py
+- - unresolved-import
+  - src/frob/graph/reach.py
+- - unresolved-import
+  - src/frob/graph/summary.py
+- - unresolved-import
+  - src/frob/lang/__init__.py
+- - unresolved-import
+  - src/frob/lang/_common.py
+- - unresolved-import
+  - src/frob/lang/_extract.py
+- - unresolved-import
+  - src/frob/lang/_models.py
+- - unresolved-import
+  - src/frob/lang/_nodes.py
+- - unresolved-import
+  - src/frob/lang/_project_detect.py
+- - unresolved-import
+  - src/frob/lang/_support.py
+- - unresolved-import
+  - src/frob/lang/_walk_bash.py
+- - unresolved-import
+  - src/frob/lang/_walk_c.py
+- - unresolved-import
+  - src/frob/lang/_walk_csharp.py
+- - unresolved-import
+  - src/frob/lang/_walk_cuda.py
+- - unresolved-import
+  - src/frob/lang/_walk_java.py
+- - unresolved-import
+  - src/frob/lang/_walk_kotlin.py
+- - unresolved-import
+  - src/frob/lang/_walk_python.py
+- - unresolved-import
+  - src/frob/lang/_walk_rust.py
+- - unresolved-import
+  - src/frob/lang/_walk_strata.py
+- - unresolved-import
+  - src/frob/lang/_walk_typescript.py
+- - unresolved-import
+  - src/frob/lang/_walk_zig.py
+- - unresolved-import
+  - src/frob/map/__init__.py
+- - unresolved-import
+  - src/frob/mutate/__init__.py
+- - unresolved-import
+  - src/frob/mutate/_journal.py
+- - unresolved-import
+  - src/frob/narrative/_cli.py
+- - unresolved-import
+  - src/frob/narrative/_migrate.py
+- - unresolved-import
+  - src/frob/natives/_build.py
+- - unresolved-import
+  - src/frob/outline/__init__.py
+- - unresolved-import
+  - src/frob/perf/_collectors.py
+- - unresolved-import
+  - src/frob/perf/_dup_spawn.py
+- - unresolved-import
+  - src/frob/perf/_effect_summaries.py
+- - unresolved-import
+  - src/frob/perf/_hotgraph.py
+- - unresolved-import
+  - src/frob/perf/_hotpath_smells.py
+- - unresolved-import
+  - src/frob/perf/_loop_effects.py
+- - unresolved-import
+  - src/frob/perf/_models.py
+- - unresolved-import
+  - src/frob/perf/_profile.py
+- - unresolved-import
+  - src/frob/perf/_ratchet.py
+- - unresolved-import
+  - src/frob/perf/_rules.py
+- - unresolved-import
+  - src/frob/perf/_sampler.py
+- - unresolved-import
+  - src/frob/perf/_sketch_store.py
+- - unresolved-import
+  - src/frob/policy/__init__.py
+- - unresolved-import
+  - src/frob/policy/_models.py
+- - unresolved-import
+  - src/frob/process/_guard.py
+- - unresolved-import
+  - src/frob/process/_project_tool.py
+- - unresolved-import
+  - src/frob/process/_pytest_spawn.py
+- - unresolved-import
+  - src/frob/process/parsers/common.py
+- - unresolved-import
+  - src/frob/refactor/_apply.py
+- - unresolved-import
+  - src/frob/refactor/_commit.py
+- - unresolved-import
+  - src/frob/refactor/_gitops.py
+- - unresolved-import
+  - src/frob/refactor/_models.py
+- - unresolved-import
+  - src/frob/refactor/_module_resolve.py
+- - unresolved-import
+  - src/frob/refactor/_module_transaction.py
+- - unresolved-import
+  - src/frob/refactor/_operands.py
+- - unresolved-import
+  - src/frob/refactor/_resolve.py
+- - unresolved-import
+  - src/frob/refactor/_split.py
+- - unresolved-import
+  - src/frob/refactor/_transaction.py
+- - unresolved-import
+  - src/frob/refactor/_verify_exec.py
+- - unresolved-import
+  - src/frob/registry/_corpus.py
+- - unresolved-import
+  - src/frob/registry/_models.py
+- - unresolved-import
+  - src/frob/registry/_staleness.py
+- - unresolved-import
+  - src/frob/release/__init__.py
+- - unresolved-import
+  - src/frob/release/_fragments.py
+- - unresolved-import
+  - src/frob/release/_publish.py
+- - unresolved-import
+  - src/frob/render/_elements.py
+- - unresolved-import
+  - src/frob/render/_errors.py
+- - unresolved-import
+  - src/frob/render/_renderer.py
+- - unresolved-import
+  - src/frob/scaffold/_managed.py
+- - unresolved-import
+  - src/frob/scaffold/_pool.py
+- - unresolved-import
+  - src/frob/scaffold/_skills_sync.py
+- - unresolved-import
+  - src/frob/scaffold/_unity_project.py
+- - unresolved-import
+  - src/frob/scaffold/project.py
+- - unresolved-import
+  - src/frob/serve/_daemon.py
+- - unresolved-import
+  - src/frob/serve/_events.py
+- - unresolved-import
+  - src/frob/serve/_socketd.py
+- - unresolved-import
+  - src/frob/serve/_tools.py
+- - unresolved-import
+  - src/frob/serve/_warm.py
+- - unresolved-import
+  - src/frob/serve/server.py
+- - unresolved-import
+  - src/frob/stats/__init__.py
+- - unresolved-import
+  - src/frob/stats/_agentic.py
+- - unresolved-import
+  - src/frob/stats/_agentic_dispatch.py
+- - unresolved-import
+  - src/frob/stats/_sketch.py
+- - unresolved-import
+  - src/frob/strata/_access.py
+- - unresolved-import
+  - src/frob/strata/_ast.py
+- - unresolved-import
+  - src/frob/strata/_atomic.py
+- - unresolved-import
+  - src/frob/strata/_audit.py
+- - unresolved-import
+  - src/frob/strata/_backpressure.py
+- - unresolved-import
+  - src/frob/strata/_bootstrap.py
+- - unresolved-import
+  - src/frob/strata/_breach.py
+- - unresolved-import
+  - src/frob/strata/_capacity.py
+- - unresolved-import
+  - src/frob/strata/_circuit_breaker.py
+- - unresolved-import
+  - src/frob/strata/_claims.py
+- - unresolved-import
+  - src/frob/strata/_clock_ordering.py
+- - unresolved-import
+  - src/frob/strata/_code_binding.py
+- - unresolved-import
+  - src/frob/strata/_compliance.py
+- - unresolved-import
+  - src/frob/strata/_contention.py
+- - unresolved-import
+  - src/frob/strata/_crash.py
+- - unresolved-import
+  - src/frob/strata/_cve_fingerprint.py
+- - unresolved-import
+  - src/frob/strata/_delivery_semantics.py
+- - unresolved-import
+  - src/frob/strata/_deploy.py
+- - unresolved-import
+  - src/frob/strata/_distributed_txn.py
+- - unresolved-import
+  - src/frob/strata/_effects.py
+- - unresolved-import
+  - src/frob/strata/_elaborate.py
+- - unresolved-import
+  - src/frob/strata/_errors.py
+- - unresolved-import
+  - src/frob/strata/_export.py
+- - unresolved-import
+  - src/frob/strata/_facts.py
+- - unresolved-import
+  - src/frob/strata/_fallback.py
+- - unresolved-import
+  - src/frob/strata/_host.py
+- - unresolved-import
+  - src/frob/strata/_host_isolation.py
+- - unresolved-import
+  - src/frob/strata/_host_isolation_lateral.py
+- - unresolved-import
+  - src/frob/strata/_host_isolation_shared.py
+- - unresolved-import
+  - src/frob/strata/_host_isolation_vertical.py
+- - unresolved-import
+  - src/frob/strata/_infra.py
+- - unresolved-import
+  - src/frob/strata/_interactive_cost.py
+- - unresolved-import
+  - src/frob/strata/_krb.py
+- - unresolved-import
+  - src/frob/strata/_krb_movement.py
+- - unresolved-import
+  - src/frob/strata/_lint.py
+- - unresolved-import
+  - src/frob/strata/_message_schema.py
+- - unresolved-import
+  - src/frob/strata/_mode_conformance.py
+- - unresolved-import
+  - src/frob/strata/_models.py
+- - unresolved-import
+  - src/frob/strata/_multifile.py
+- - unresolved-import
+  - src/frob/strata/_mutation_audit.py
+- - unresolved-import
+  - src/frob/strata/_native_test.py
+- - unresolved-import
+  - src/frob/strata/_observability.py
+- - unresolved-import
+  - src/frob/strata/_packs.py
+- - unresolved-import
+  - src/frob/strata/_parse.py
+- - unresolved-import
+  - src/frob/strata/_pii.py
+- - unresolved-import
+  - src/frob/strata/_plan.py
+- - unresolved-import
+  - src/frob/strata/_policy.py
+- - unresolved-import
+  - src/frob/strata/_process_bounds.py
+- - unresolved-import
+  - src/frob/strata/_reliability.py
+- - unresolved-import
+  - src/frob/strata/_retry.py
+- - unresolved-import
+  - src/frob/strata/_scenarios.py
+- - unresolved-import
+  - src/frob/strata/_scope_config.py
+- - unresolved-import
+  - src/frob/strata/_secrets.py
+- - unresolved-import
+  - src/frob/strata/_selfconform.py
+- - unresolved-import
+  - src/frob/strata/_selfconform_kinds.py
+- - unresolved-import
+  - src/frob/strata/_selfconform_models.py
+- - unresolved-import
+  - src/frob/strata/_shared_state.py
+- - unresolved-import
+  - src/frob/strata/_shrink.py
+- - unresolved-import
+  - src/frob/strata/_slo.py
+- - unresolved-import
+  - src/frob/strata/_spof.py
+- - unresolved-import
+  - src/frob/strata/_ssot.py
+- - unresolved-import
+  - src/frob/strata/_starvation.py
+- - unresolved-import
+  - src/frob/strata/_supply_chain_boot.py
+- - unresolved-import
+  - src/frob/strata/_sync_depth.py
+- - unresolved-import
+  - src/frob/strata/_sysdoc.py
+- - unresolved-import
+  - src/frob/strata/_threat.py
+- - unresolved-import
+  - src/frob/strata/_threat_discharge.py
+- - unresolved-import
+  - src/frob/strata/_threat_models.py
+- - unresolved-import
+  - src/frob/strata/_txn.py
+- - unresolved-import
+  - src/frob/strata/_unity_asmdef.py
+- - unresolved-import
+  - src/frob/strata/_waive.py
+- - unresolved-import
+  - src/frob/testing/_collect.py
+- - unresolved-import
+  - src/frob/testing/_collect_cpp.py
+- - unresolved-import
+  - src/frob/testing/_collect_csharp.py
+- - unresolved-import
+  - src/frob/testing/_collect_kotlin.py
+- - unresolved-import
+  - src/frob/testing/_collect_rust.py
+- - unresolved-import
+  - src/frob/testing/_collect_ts.py
+- - unresolved-import
+  - src/frob/testing/_coverage_refresh.py
+- - unresolved-import
+  - src/frob/testing/_coverage_wait.py
+- - unresolved-import
+  - src/frob/testing/_dotnet_runner.py
+- - unresolved-import
+  - src/frob/testing/_models.py
+- - unresolved-import
+  - src/frob/testing/_runners.py
+- - unresolved-import
+  - src/frob/testing/_stability.py
+- - unresolved-import
+  - src/frob/testing/_unity_batchmode.py
+- - unresolved-import
+  - src/frob/tickets/__init__.py
+- - unresolved-import
+  - src/frob/tickets/_accept.py
+- - unresolved-import
+  - src/frob/tickets/_archive.py
+- - unresolved-import
+  - src/frob/tickets/_brief.py
+- - unresolved-import
+  - src/frob/tickets/_draft_finalize.py
+- - unresolved-import
+  - src/frob/tickets/_evidence.py
+- - unresolved-import
+  - src/frob/tickets/_force_override.py
+- - unresolved-import
+  - src/frob/tickets/_journal.py
+- - unresolved-import
+  - src/frob/tickets/_land.py
+- - unresolved-import
+  - src/frob/tickets/_land_compose.py
+- - unresolved-import
+  - src/frob/tickets/_land_finalize.py
+- - unresolved-import
+  - src/frob/tickets/_land_git_ops.py
+- - unresolved-import
+  - src/frob/tickets/_land_ledger_merge.py
+- - unresolved-import
+  - src/frob/tickets/_land_merge.py
+- - unresolved-import
+  - src/frob/tickets/_land_merge_zones.py
+- - unresolved-import
+  - src/frob/tickets/_land_queue.py
+- - unresolved-import
+  - src/frob/tickets/_land_release.py
+- - unresolved-import
+  - src/frob/tickets/_land_splice.py
+- - unresolved-import
+  - src/frob/tickets/_land_squash.py
+- - unresolved-import
+  - src/frob/tickets/_land_verify.py
+- - unresolved-import
+  - src/frob/tickets/_leases.py
+- - unresolved-import
+  - src/frob/tickets/_models.py
+- - unresolved-import
+  - src/frob/tickets/_mutation_evidence.py
+- - unresolved-import
+  - src/frob/tickets/_mutation_sweep_queue.py
+- - unresolved-import
+  - src/frob/tickets/_new_renumber.py
+- - unresolved-import
+  - src/frob/tickets/_profile.py
+- - unresolved-import
+  - src/frob/tickets/_reconcile.py
+- - unresolved-import
+  - src/frob/tickets/_renumber_v2.py
+- - unresolved-import
+  - src/frob/tickets/_reporting.py
+- - unresolved-import
+  - src/frob/tickets/_reporting_attachments.py
+- - unresolved-import
+  - src/frob/tickets/_scope.py
+- - unresolved-import
+  - src/frob/tickets/_setters.py
+- - unresolved-import
+  - src/frob/tickets/_store.py
+- - unresolved-import
+  - src/frob/tickets/_store_migrate.py
+- - unresolved-import
+  - src/frob/tickets/_unlanded.py
+- - unresolved-import
+  - src/frob/tickets/_worktree_guard.py
+- - unresolved-import
+  - src/frob/tickets/_worktree_sweep.py
+- - unresolved-import
+  - src/frob/tickets/clipboard.py
+- - unresolved-import
+  - src/frob/verify/_attribution.py
+- - unresolved-import
+  - src/frob/verify/_backpressure.py
+- - unresolved-import
+  - src/frob/verify/_bisect.py
+- - unresolved-import
+  - src/frob/verify/_drain.py
+- - unresolved-import
+  - src/frob/verify/_quarantine.py
+- - unresolved-import
+  - src/frob/verify/_selection.py
+- - unresolved-import
+  - src/frob/verify/_watermark.py
+- - unresolved-import
+  - src/frob/verify/_worker.py
+- - unresolved-import
+  - src/frob/vet/_capability_core.py
+- - unresolved-import
+  - src/frob/vet/_capability_modes.py
+- - unresolved-import
+  - src/frob/vet/_capability_registry/_matrix.py
+- - unresolved-import
+  - src/frob/vet/_capability_registry/_schemas.py
+- - unresolved-import
+  - src/frob/vet/_capability_scan.py
+- - unresolved-import
+  - src/frob/vet/_containment.py
+- - unresolved-import
+  - src/frob/vet/_cve.py
+- - unresolved-import
+  - src/frob/vet/_lockfile.py
+- - unresolved-import
+  - src/frob/vet/_models.py
+- - unresolved-import
+  - src/frob/vet/_nvd.py
+- - unresolved-import
+  - src/frob/vet/_registry.py
+- - unresolved-import
+  - src/frob/vet/_scan.py
+- - unresolved-import
+  - src/frob/vet/_supplychain.py
+- - unresolved-import
+  - src/frob/xref/__init__.py
+- - unresolved-import
+  - src/frob/yamlio.py
+- - unresolved-import
+  - tests/_write_unchecked.py
+- - unresolved-import
+  - tests/conftest.py
+- - unresolved-import
+  - tests/gates/test_env_absent_bug002_repro.py
+- - unresolved-import
+  - tests/gates/test_mutation_evidence_err_branches.py
+- - unresolved-import
+  - tests/gates/test_tdd_order.py
+- - unresolved-import
+  - tests/gates_suite/test_coverage.py
+- - unresolved-import
+  - tests/gates_suite/test_debt.py
+- - unresolved-import
+  - tests/gates_suite/test_fix_engine.py
+- - unresolved-import
+  - tests/gates_suite/test_invariant.py
+- - unresolved-import
+  - tests/gates_suite/test_prework.py
+- - unresolved-import
+  - tests/gates_suite/test_protocol.py
+- - unresolved-import
+  - tests/gates_suite/test_run.py
+- - unresolved-import
+  - tests/gates_suite/test_sys.py
+- - unresolved-import
+  - tests/gates_suite/test_test_gate.py
+- - unresolved-import
+  - tests/gates_suite/test_tick.py
+- - unresolved-import
+  - tests/gates_suite/test_waive.py
+- - unresolved-import
+  - tests/helpers/bash.py
+- - unresolved-import
+  - tests/integration/test_deploy_malmberg_pilot.py
+- - unresolved-import
+  - tests/integration/test_gitlog.py
+- - unresolved-import
+  - tests/integration/test_integration.py
+- - unresolved-import
+  - tests/integration/test_interfaces.py
+- - unresolved-import
+  - tests/system/test_artifact_smoke.py
+- - unresolved-import
+  - tests/system/test_ci_hang_guard_positive_control.py
+- - unresolved-import
+  - tests/system/test_cli_check.py
+- - unresolved-import
+  - tests/system/test_cli_cycle.py
+- - unresolved-import
+  - tests/system/test_cli_doctor.py
+- - unresolved-import
+  - tests/system/test_cli_map.py
+- - unresolved-import
+  - tests/system/test_cli_outline.py
+- - unresolved-import
+  - tests/system/test_cli_sys_export.py
+- - unresolved-import
+  - tests/system/test_cli_sys_plan.py
+- - unresolved-import
+  - tests/system/test_cli_vet.py
+- - unresolved-import
+  - tests/system/test_cli_xref.py
+- - unresolved-import
+  - tests/system/test_coverage_sigterm.py
+- - unresolved-import
+  - tests/system/test_fleet_status_ground_truth.py
+- - unresolved-import
+  - tests/system/test_fleet_status_ticket_readiness_arch001.py
+- - unresolved-import
+  - tests/system/test_frob_self_model.py
+- - unresolved-import
+  - tests/system/test_natives_build_integration.py
+- - unresolved-import
+  - tests/system/test_packaging_py_typed.py
+- - unresolved-import
+  - tests/system/test_public_api_from_wheel.py
+- - unresolved-import
+  - tests/system/test_run_helper_env_leak.py
+- - unresolved-import
+  - tests/system/test_scaffold_dx.py
+- - unresolved-import
+  - tests/system/test_scaffold_pool.py
+- - unresolved-import
+  - tests/system/test_spawn_budget.py
+- - unresolved-import
+  - tests/system/test_system.py
+- - unresolved-import
+  - tests/test_ack_worktree_lease.py
+- - unresolved-import
+  - tests/test_app.py
+- - unresolved-import
+  - tests/test_app_config.py
+- - unresolved-import
+  - tests/test_app_daemon_proxy.py
+- - unresolved-import
+  - tests/test_arch_near_duplicate_native.py
+- - unresolved-import
+  - tests/test_bug002_no_behavior_change.py
+- - unresolved-import
+  - tests/test_cache_gate.py
+- - unresolved-import
+  - tests/test_capability_registry.py
+- - unresolved-import
+  - tests/test_check_runner.py
+- - unresolved-import
+  - tests/test_ci_report.py
+- - unresolved-import
+  - tests/test_ci_validity.py
+- - unresolved-import
+  - tests/test_ci_workflow_actions_pinned.py
+- - unresolved-import
+  - tests/test_ci_workflow_job_summary.py
+- - unresolved-import
+  - tests/test_ci_workflow_matrix.py
+- - unresolved-import
+  - tests/test_ci_workflow_timeout.py
+- - unresolved-import
+  - tests/test_ci_workflow_toolchain_pins.py
+- - unresolved-import
+  - tests/test_clean.py
+- - unresolved-import
+  - tests/test_clipboard.py
+- - unresolved-import
+  - tests/test_coverage.py
+- - unresolved-import
+  - tests/test_coverage_wait_shared.py
+- - unresolved-import
+  - tests/test_debt_runner.py
+- - unresolved-import
+  - tests/test_deprecated_runner.py
+- - unresolved-import
+  - tests/test_docptr_gate.py
+- - unresolved-import
+  - tests/test_doctor.py
+- - unresolved-import
+  - tests/test_dup.py
+- - unresolved-import
+  - tests/test_dup_cross_lang.py
+- - unresolved-import
+  - tests/test_dup_exhaustiveness.py
+- - unresolved-import
+  - tests/test_dup_inline.py
+- - unresolved-import
+  - tests/test_dup_native_rungs.py
+- - unresolved-import
+  - tests/test_dup_prefilter.py
+- - unresolved-import
+  - tests/test_dup_r5_multilang.py
+- - unresolved-import
+  - tests/test_dup_region.py
+- - unresolved-import
+  - tests/test_dup_rungs.py
+- - unresolved-import
+  - tests/test_dup_smart.py
+- - unresolved-import
+  - tests/test_fuzz.py
+- - unresolved-import
+  - tests/test_gate_cache.py
+- - unresolved-import
+  - tests/test_gates_drift_ack.py
+- - unresolved-import
+  - tests/test_gates_fix_engine.py
+- - unresolved-import
+  - tests/test_gates_fmt_directives.py
+- - unresolved-import
+  - tests/test_gates_mutation_evidence.py
+- - unresolved-import
+  - tests/test_gates_suppress.py
+- - unresolved-import
+  - tests/test_gates_tick006_sibling_worktree.py
+- - unresolved-import
+  - tests/test_gates_vmodel.py
+- - unresolved-import
+  - tests/test_gates_worktree_lease.py
+- - unresolved-import
+  - tests/test_ghio.py
+- - unresolved-import
+  - tests/test_gitio.py
+- - unresolved-import
+  - tests/test_graph.py
+- - unresolved-import
+  - tests/test_graph_affects_runner.py
+- - unresolved-import
+  - tests/test_land_verify_claims_outcome.py
+- - unresolved-import
+  - tests/test_lang.py
+- - unresolved-import
+  - tests/test_lang_conformance_gate.py
+- - unresolved-import
+  - tests/test_measure_evidence_reach.py
+- - unresolved-import
+  - tests/test_mutate.py
+- - unresolved-import
+  - tests/test_mutate_journal.py
+- - unresolved-import
+  - tests/test_natives.py
+- - unresolved-import
+  - tests/test_pii_structural_gate.py
+- - unresolved-import
+  - tests/test_pool_runner.py
+- - unresolved-import
+  - tests/test_prework_parity.py
+- - unresolved-import
+  - tests/test_refactor.py
+- - unresolved-import
+  - tests/test_registry_reconciliation_evasion.py
+- - unresolved-import
+  - tests/test_registry_reconciliation_supply_chain.py
+- - unresolved-import
+  - tests/test_registry_staleness.py
+- - unresolved-import
+  - tests/test_release.py
+- - unresolved-import
+  - tests/test_release_worktree_lease.py
+- - unresolved-import
+  - tests/test_scaffold_worktree_lease_hook.py
+- - unresolved-import
+  - tests/test_secrets_gate.py
+- - unresolved-import
+  - tests/test_serve.py
+- - unresolved-import
+  - tests/test_serve_daemon.py
+- - unresolved-import
+  - tests/test_serve_events.py
+- - unresolved-import
+  - tests/test_serve_leases.py
+- - unresolved-import
+  - tests/test_serve_socket.py
+- - unresolved-import
+  - tests/test_serve_tools_daemon_bypass.py
+- - unresolved-import
+  - tests/test_telemetry.py
+- - unresolved-import
+  - tests/test_testing.py
+- - unresolved-import
+  - tests/test_testing_collect.py
+- - unresolved-import
+  - tests/test_ticket_evidence.py
+- - unresolved-import
+  - tests/test_ticket_journal.py
+- - unresolved-import
+  - tests/test_ticket_land.py
+- - unresolved-import
+  - tests/test_ticket_land_dry_run.py
+- - unresolved-import
+  - tests/test_ticket_land_lint_diff_attribution.py
+- - unresolved-import
+  - tests/test_ticket_land_proof_claims.py
+- - unresolved-import
+  - tests/test_ticket_land_ty_diff_attribution.py
+- - unresolved-import
+  - tests/test_ticket_leases.py
+- - unresolved-import
+  - tests/test_ticket_leases_cross_worktree.py
+- - unresolved-import
+  - tests/test_ticket_lifecycle.py
+- - unresolved-import
+  - tests/test_ticket_merge_driver.py
+- - unresolved-import
+  - tests/test_ticket_ownership_guard.py
+- - unresolved-import
+  - tests/test_ticket_reconcile.py
+- - unresolved-import
+  - tests/test_ticket_reverify.py
+- - unresolved-import
+  - tests/test_ticket_runner_archive_force.py
+- - unresolved-import
+  - tests/test_ticket_runner_pytest_env.py
+- - unresolved-import
+  - tests/test_ticket_work_and_land_finish.py
+- - unresolved-import
+  - tests/test_tickets.py
+- - unresolved-import
+  - tests/test_tickets_acceptance.py
+- - unresolved-import
+  - tests/test_tickets_body.py
+- - unresolved-import
+  - tests/test_tickets_brief.py
+- - unresolved-import
+  - tests/test_tickets_cmd_evidence.py
+- - unresolved-import
+  - tests/test_tickets_collision.py
+- - unresolved-import
+  - tests/test_tickets_evidence_cli.py
+- - unresolved-import
+  - tests/test_tickets_evidence_removal.py
+- - unresolved-import
+  - tests/test_tickets_evidence_replace_cmd_t4143.py
+- - unresolved-import
+  - tests/test_tickets_lease.py
+- - unresolved-import
+  - tests/test_tickets_leases.py
+- - unresolved-import
+  - tests/test_tickets_ledger_concurrency.py
+- - unresolved-import
+  - tests/test_tickets_migration.py
+- - unresolved-import
+  - tests/test_tickets_mutation_evidence.py
+- - unresolved-import
+  - tests/test_tickets_no_scope.py
+- - unresolved-import
+  - tests/test_tickets_organization.py
+- - unresolved-import
+  - tests/test_tickets_parent.py
+- - unresolved-import
+  - tests/test_tickets_priority.py
+- - unresolved-import
+  - tests/test_tickets_review.py
+- - unresolved-import
+  - tests/test_tickets_scope_mutation.py
+- - unresolved-import
+  - tests/test_tickets_velocity.py
+- - unresolved-import
+  - tests/test_vet.py
+- - unresolved-import
+  - tests/test_vet_containment.py
+- - unresolved-import
+  - tests/test_waive_gate.py
+- - unresolved-import
+  - tests/test_worktree_guard.py
+- - unresolved-import
+  - tests/test_worktree_lease_env_ambient.py
+- - unresolved-import
+  - tests/test_worktree_pythonpath.py
+- - unresolved-import
+  - tests/ticket_land_suite/conftest.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_archive.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_claim_close.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_dirt_ownership.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_draft.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_land_core.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_land_lock.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_land_plan.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_land_reaps_worktree.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_land_target_branch.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_ledger_splice.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_push.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_release.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_verify_intent.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_verify_reset.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_waive_deletion.py
+- - unresolved-import
+  - tests/ticket_land_suite/test_wip.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_abstraction.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_complexity.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_concurrency.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_dispatch.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_guards.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_lang_adapters.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_logging.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_lsp.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_misc.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_smells.py
+- - unresolved-import
+  - tests/unit/arch_suite/test_type_design.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_check_summary.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_fleet_host_load.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_fleet_land.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_fleet_report.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_fleet_worktrees.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_verify_lands.py
+- - unresolved-import
+  - tests/unit/coordinator_suite/test_wait_for_land_slot.py
+- - unresolved-import
+  - tests/unit/deploy/test_deploy_runner.py
+- - unresolved-import
+  - tests/unit/deploy/test_vm_runner.py
+- - unresolved-import
+  - tests/unit/dup/test_type_name_only_regression_t1957.py
+- - unresolved-import
+  - tests/unit/fleet/test_route.py
+- - unresolved-import
+  - tests/unit/fleet/test_status.py
+- - unresolved-import
+  - tests/unit/gates/test_deprecated_baseline.py
+- - unresolved-import
+  - tests/unit/gates/test_examined_sites.py
+- - unresolved-import
+  - tests/unit/gates/test_lexical_selfcheck.py
+- - unresolved-import
+  - tests/unit/gates/test_lock_producer.py
+- - unresolved-import
+  - tests/unit/gates/test_rel001_deferred_bump.py
+- - unresolved-import
+  - tests/unit/graph/test_dsl_invariant_property.py
+- - unresolved-import
+  - tests/unit/perf/test_collectors.py
+- - unresolved-import
+  - tests/unit/perf/test_hot_query.py
+- - unresolved-import
+  - tests/unit/perf/test_hotgraph.py
+- - unresolved-import
+  - tests/unit/perf/test_persist_run_cli.py
+- - unresolved-import
+  - tests/unit/perf/test_serial_pools.py
+- - unresolved-import
+  - tests/unit/perf/test_serial_pools_import_failure.py
+- - unresolved-import
+  - tests/unit/perf/test_sketch_store.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/conftest.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_attribution.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_baseline.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_commit.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_dispose.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_filing.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_sweep_run.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_window.py
+- - unresolved-import
+  - tests/unit/rapid_sweep_suite/test_worktrees.py
+- - unresolved-import
+  - tests/unit/strata/test_atomic.py
+- - unresolved-import
+  - tests/unit/strata/test_audit.py
+- - unresolved-import
+  - tests/unit/strata/test_backpressure.py
+- - unresolved-import
+  - tests/unit/strata/test_breach.py
+- - unresolved-import
+  - tests/unit/strata/test_capacity.py
+- - unresolved-import
+  - tests/unit/strata/test_circuit_breaker.py
+- - unresolved-import
+  - tests/unit/strata/test_clock_ordering.py
+- - unresolved-import
+  - tests/unit/strata/test_compliance.py
+- - unresolved-import
+  - tests/unit/strata/test_cve_fingerprint.py
+- - unresolved-import
+  - tests/unit/strata/test_delivery_semantics.py
+- - unresolved-import
+  - tests/unit/strata/test_deploy.py
+- - unresolved-import
+  - tests/unit/strata/test_design_load.py
+- - unresolved-import
+  - tests/unit/strata/test_distributed_txn.py
+- - unresolved-import
+  - tests/unit/strata/test_export.py
+- - unresolved-import
+  - tests/unit/strata/test_facts.py
+- - unresolved-import
+  - tests/unit/strata/test_fallback.py
+- - unresolved-import
+  - tests/unit/strata/test_fragments.py
+- - unresolved-import
+  - tests/unit/strata/test_host.py
+- - unresolved-import
+  - tests/unit/strata/test_host_isolation.py
+- - unresolved-import
+  - tests/unit/strata/test_kernel_properties.py
+- - unresolved-import
+  - tests/unit/strata/test_litmus_cwe.py
+- - unresolved-import
+  - tests/unit/strata/test_models.py
+- - unresolved-import
+  - tests/unit/strata/test_native_staleness.py
+- - unresolved-import
+  - tests/unit/strata/test_native_test.py
+- - unresolved-import
+  - tests/unit/strata/test_parse.py
+- - unresolved-import
+  - tests/unit/strata/test_pii.py
+- - unresolved-import
+  - tests/unit/strata/test_registry_cross_corpus_totality.py
+- - unresolved-import
+  - tests/unit/strata/test_registry_cross_refs.py
+- - unresolved-import
+  - tests/unit/strata/test_retry.py
+- - unresolved-import
+  - tests/unit/strata/test_selfconform.py
+- - unresolved-import
+  - tests/unit/strata/test_strata_core_gil.py
+- - unresolved-import
+  - tests/unit/strata/test_strata_scan_cache.py
+- - unresolved-import
+  - tests/unit/strata/test_sys107_via_scope_advisory.py
+- - unresolved-import
+  - tests/unit/strata/test_threat.py
+- - unresolved-import
+  - tests/unit/strata/test_vmodel_authoring.py
+- - unresolved-import
+  - tests/unit/strata/test_vmodel_check.py
+- - unresolved-import
+  - tests/unit/test_ack_runner.py
+- - unresolved-import
+  - tests/unit/test_app_clean_runner_branches_t1400.py
+- - unresolved-import
+  - tests/unit/test_app_config_meta_branches_t1400.py
+- - unresolved-import
+  - tests/unit/test_app_lazy_dispatch.py
+- - unresolved-import
+  - tests/unit/test_app_runners.py
+- - unresolved-import
+  - tests/unit/test_app_runners_batch5.py
+- - unresolved-import
+  - tests/unit/test_app_runners_batch6.py
+- - unresolved-import
+  - tests/unit/test_app_runners_batch7.py
+- - unresolved-import
+  - tests/unit/test_app_runners_doable_stale_lease.py
+- - unresolved-import
+  - tests/unit/test_app_runners_json_guard_t2492.py
+- - unresolved-import
+  - tests/unit/test_app_runners_process.py
+- - unresolved-import
+  - tests/unit/test_app_runners_t0714_doable_summary.py
+- - unresolved-import
+  - tests/unit/test_app_runners_t0875_leaf_collision.py
+- - unresolved-import
+  - tests/unit/test_app_runners_t0976_mutation_evidence.py
+- - unresolved-import
+  - tests/unit/test_app_runners_t1738_wave.py
+- - unresolved-import
+  - tests/unit/test_app_runners_t1822_already_landed.py
+- - unresolved-import
+  - tests/unit/test_app_sys_capacity.py
+- - unresolved-import
+  - tests/unit/test_app_sys_threats.py
+- - unresolved-import
+  - tests/unit/test_app_sys_trace.py
+- - unresolved-import
+  - tests/unit/test_app_telemetry_branches_t1400.py
+- - unresolved-import
+  - tests/unit/test_arch.py
+- - unresolved-import
+  - tests/unit/test_arch_ocp.py
+- - unresolved-import
+  - tests/unit/test_arch_python_native.py
+- - unresolved-import
+  - tests/unit/test_artifact_smoke_script.py
+- - unresolved-import
+  - tests/unit/test_branch_stranded_work_analysis.py
+- - unresolved-import
+  - tests/unit/test_capability_native.py
+- - unresolved-import
+  - tests/unit/test_check.py
+- - unresolved-import
+  - tests/unit/test_check_admission.py
+- - unresolved-import
+  - tests/unit/test_check_budget.py
+- - unresolved-import
+  - tests/unit/test_check_native_cargo_runners.py
+- - unresolved-import
+  - tests/unit/test_check_scoped_files.py
+- - unresolved-import
+  - tests/unit/test_check_skip_flag.py
+- - unresolved-import
+  - tests/unit/test_check_stop_before.py
+- - unresolved-import
+  - tests/unit/test_check_tool_unavailable.py
+- - unresolved-import
+  - tests/unit/test_check_ts_runners.py
+- - unresolved-import
+  - tests/unit/test_ci_self_gate_unscoped.py
+- - unresolved-import
+  - tests/unit/test_claims_and_store_batch6.py
+- - unresolved-import
+  - tests/unit/test_claude_runner.py
+- - unresolved-import
+  - tests/unit/test_cli_group_parity.py
+- - unresolved-import
+  - tests/unit/test_close_promote_drafts.py
+- - unresolved-import
+  - tests/unit/test_close_rel001_bump.py
+- - unresolved-import
+  - tests/unit/test_config.py
+- - unresolved-import
+  - tests/unit/test_conftest_console_ctrl_guard.py
+- - unresolved-import
+  - tests/unit/test_conftest_hard_exit_guard.py
+- - unresolved-import
+  - tests/unit/test_conftest_midrun_watchdog.py
+- - unresolved-import
+  - tests/unit/test_conftest_sigbreak_faulthandler.py
+- - unresolved-import
+  - tests/unit/test_conftest_stackdump.py
+- - unresolved-import
+  - tests/unit/test_conftest_suite_result_status.py
+- - unresolved-import
+  - tests/unit/test_coverage_runner.py
+- - unresolved-import
+  - tests/unit/test_cycle_runner_root_resolution.py
+- - unresolved-import
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py
+- - unresolved-import
+  - tests/unit/test_daemon_proxy_lease_t1276.py
+- - unresolved-import
+  - tests/unit/test_dependency_pins.py
+- - unresolved-import
+  - tests/unit/test_dev_branch_workflow.py
+- - unresolved-import
+  - tests/unit/test_doctor.py
+- - unresolved-import
+  - tests/unit/test_doctor_runner_t1276.py
+- - unresolved-import
+  - tests/unit/test_done_report_check_scope.py
+- - unresolved-import
+  - tests/unit/test_dotnet_runner.py
+- - unresolved-import
+  - tests/unit/test_dup.py
+- - unresolved-import
+  - tests/unit/test_dup_cache.py
+- - unresolved-import
+  - tests/unit/test_dup_core.py
+- - unresolved-import
+  - tests/unit/test_dup_legacy_py.py
+- - unresolved-import
+  - tests/unit/test_dup_smt.py
+- - unresolved-import
+  - tests/unit/test_dup_template.py
+- - unresolved-import
+  - tests/unit/test_executable.py
+- - unresolved-import
+  - tests/unit/test_extending_guides_complete.py
+- - unresolved-import
+  - tests/unit/test_extract_native.py
+- - unresolved-import
+  - tests/unit/test_fix_engine_journal.py
+- - unresolved-import
+  - tests/unit/test_flag_coverage_gate.py
+- - unresolved-import
+  - tests/unit/test_fleet_runner.py
+- - unresolved-import
+  - tests/unit/test_frob_core_gil.py
+- - unresolved-import
+  - tests/unit/test_gitattributes_merge.py
+- - unresolved-import
+  - tests/unit/test_gitlog.py
+- - unresolved-import
+  - tests/unit/test_graph_build_lock.py
+- - unresolved-import
+  - tests/unit/test_graph_cache.py
+- - unresolved-import
+  - tests/unit/test_graph_get_snapshot.py
+- - unresolved-import
+  - tests/unit/test_graph_lock_holder_naming.py
+- - unresolved-import
+  - tests/unit/test_graph_stat_trust_margin.py
+- - unresolved-import
+  - tests/unit/test_helpers_bash.py
+- - unresolved-import
+  - tests/unit/test_land_already_landed.py
+- - unresolved-import
+  - tests/unit/test_land_cas_ledger_retry.py
+- - unresolved-import
+  - tests/unit/test_land_cmd_backpressure.py
+- - unresolved-import
+  - tests/unit/test_land_cmd_drain_wiring.py
+- - unresolved-import
+  - tests/unit/test_land_compose.py
+- - unresolved-import
+  - tests/unit/test_land_cross_ticket_leakage.py
+- - unresolved-import
+  - tests/unit/test_land_default_queue.py
+- - unresolved-import
+  - tests/unit/test_land_duplicate_ticket_id.py
+- - unresolved-import
+  - tests/unit/test_land_finish_guard.py
+- - unresolved-import
+  - tests/unit/test_land_finish_idempotent.py
+- - unresolved-import
+  - tests/unit/test_land_format_gate.py
+- - unresolved-import
+  - tests/unit/test_land_in_progress_window.py
+- - unresolved-import
+  - tests/unit/test_land_leaked_tickets_lease_hoist.py
+- - unresolved-import
+  - tests/unit/test_land_lock_liveness.py
+- - unresolved-import
+  - tests/unit/test_land_machinery_owned_leakage.py
+- - unresolved-import
+  - tests/unit/test_land_merge_conflict_drop.py
+- - unresolved-import
+  - tests/unit/test_land_orphaned_evidence.py
+- - unresolved-import
+  - tests/unit/test_land_parity_gate.py
+- - unresolved-import
+  - tests/unit/test_land_queue.py
+- - unresolved-import
+  - tests/unit/test_land_record_commit.py
+- - unresolved-import
+  - tests/unit/test_land_release_coherence.py
+- - unresolved-import
+  - tests/unit/test_land_release_out_of_tree.py
+- - unresolved-import
+  - tests/unit/test_land_root_resolution.py
+- - unresolved-import
+  - tests/unit/test_land_sibling_regression.py
+- - unresolved-import
+  - tests/unit/test_land_splice_test_then_impl.py
+- - unresolved-import
+  - tests/unit/test_land_squash_residue_reclaim.py
+- - unresolved-import
+  - tests/unit/test_land_squash_stage.py
+- - unresolved-import
+  - tests/unit/test_land_stackdump.py
+- - unresolved-import
+  - tests/unit/test_land_stage_flip.py
+- - unresolved-import
+  - tests/unit/test_land_step_ordering.py
+- - unresolved-import
+  - tests/unit/test_land_stranding_t4312.py
+- - unresolved-import
+  - tests/unit/test_lang_kotlin.py
+- - unresolved-import
+  - tests/unit/test_lang_parse_guard.py
+- - unresolved-import
+  - tests/unit/test_lang_strata.py
+- - unresolved-import
+  - tests/unit/test_lang_strata_entity_arch.py
+- - unresolved-import
+  - tests/unit/test_lease_lifecycle.py
+- - unresolved-import
+  - tests/unit/test_leases_staleness_perf.py
+- - unresolved-import
+  - tests/unit/test_lifecycle_work_base.py
+- - unresolved-import
+  - tests/unit/test_main_entry.py
+- - unresolved-import
+  - tests/unit/test_makefile_coverage.py
+- - unresolved-import
+  - tests/unit/test_map.py
+- - unresolved-import
+  - tests/unit/test_mutation_sweep_queue.py
+- - unresolved-import
+  - tests/unit/test_natives_build.py
+- - unresolved-import
+  - tests/unit/test_new_ticket_body_similarity_warning.py
+- - unresolved-import
+  - tests/unit/test_new_ticket_over_broad_scope_warning.py
+- - unresolved-import
+  - tests/unit/test_new_ticket_scope_breadth_ack_flag.py
+- - unresolved-import
+  - tests/unit/test_new_ticket_scope_overlap_warning.py
+- - unresolved-import
+  - tests/unit/test_outline.py
+- - unresolved-import
+  - tests/unit/test_parse_runner_direct.py
+- - unresolved-import
+  - tests/unit/test_perf_runner_t1400.py
+- - unresolved-import
+  - tests/unit/test_policy_weakening_gate.py
+- - unresolved-import
+  - tests/unit/test_process_guard.py
+- - unresolved-import
+  - tests/unit/test_process_lock.py
+- - unresolved-import
+  - tests/unit/test_process_pid_liveness.py
+- - unresolved-import
+  - tests/unit/test_process_reap.py
+- - unresolved-import
+  - tests/unit/test_process_tty.py
+- - unresolved-import
+  - tests/unit/test_profile_runner.py
+- - unresolved-import
+  - tests/unit/test_project_tool.py
+- - unresolved-import
+  - tests/unit/test_pyfmt_runner.py
+- - unresolved-import
+  - tests/unit/test_pyproject_data_memoization.py
+- - unresolved-import
+  - tests/unit/test_pytest_spawn_env_wiring.py
+- - unresolved-import
+  - tests/unit/test_rapid_debt.py
+- - unresolved-import
+  - tests/unit/test_reconcile_auto_commit_t1936.py
+- - unresolved-import
+  - tests/unit/test_release_stamp_guard.py
+- - unresolved-import
+  - tests/unit/test_release_workflow_gate.py
+- - unresolved-import
+  - tests/unit/test_render.py
+- - unresolved-import
+  - tests/unit/test_require_python.py
+- - unresolved-import
+  - tests/unit/test_scaffold_project.py
+- - unresolved-import
+  - tests/unit/test_scaffold_unity_project.py
+- - unresolved-import
+  - tests/unit/test_scope_closure_declared_scope_only.py
+- - unresolved-import
+  - tests/unit/test_scope_closure_warning_collapse_t1556.py
+- - unresolved-import
+  - tests/unit/test_stackdump.py
+- - unresolved-import
+  - tests/unit/test_store_batch7.py
+- - unresolved-import
+  - tests/unit/test_store_mode_memoization.py
+- - unresolved-import
+  - tests/unit/test_strata_tmlanguage.py
+- - unresolved-import
+  - tests/unit/test_support_csharp.py
+- - unresolved-import
+  - tests/unit/test_suppress_worktree_path.py
+- - unresolved-import
+  - tests/unit/test_sync_claude_config_stale_guard_t3408.py
+- - unresolved-import
+  - tests/unit/test_t2450_scope_repair.py
+- - unresolved-import
+  - tests/unit/test_telemetry_verb_recording.py
+- - unresolved-import
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py
+- - unresolved-import
+  - tests/unit/test_ticket_anchor_cli.py
+- - unresolved-import
+  - tests/unit/test_ticket_cli_surface.py
+- - unresolved-import
+  - tests/unit/test_ticket_close_bug002_t1427.py
+- - unresolved-import
+  - tests/unit/test_ticket_close_bug002_t1438.py
+- - unresolved-import
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
+- - unresolved-import
+  - tests/unit/test_ticket_close_gate_claims_t1410.py
+- - unresolved-import
+  - tests/unit/test_ticket_close_own_obligations_t1387.py
+- - unresolved-import
+  - tests/unit/test_ticket_file_flags.py
+- - unresolved-import
+  - tests/unit/test_ticket_land_bug003_t2215.py
+- - unresolved-import
+  - tests/unit/test_ticket_list_summary.py
+- - unresolved-import
+  - tests/unit/test_ticket_new_body_file_pipe_t2021.py
+- - unresolved-import
+  - tests/unit/test_ticket_new_readback_guard_t4339.py
+- - unresolved-import
+  - tests/unit/test_ticket_new_related.py
+- - unresolved-import
+  - tests/unit/test_ticket_new_scope_plausibility.py
+- - unresolved-import
+  - tests/unit/test_ticket_new_scope_plausibility_t2192.py
+- - unresolved-import
+  - tests/unit/test_ticket_restore.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_bare_root_guard.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_designate_repro.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_gate_findings.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_land_cmd_flags.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_land_release.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_ledger_mirror.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_repro_merge_base.py
+- - unresolved-import
+  - tests/unit/test_ticket_runner_venv_sync_t3320.py
+- - unresolved-import
+  - tests/unit/test_ticket_store.py
+- - unresolved-import
+  - tests/unit/test_ticket_sweep_terminal_state.py
+- - unresolved-import
+  - tests/unit/test_unity_batchmode.py
+- - unresolved-import
+  - tests/unit/test_unlanded_branch_work.py
+- - unresolved-import
+  - tests/unit/test_verify_language_buckets.py
+- - unresolved-import
+  - tests/unit/test_verify_release_ci_status.py
+- - unresolved-import
+  - tests/unit/test_version_guard.py
+- - unresolved-import
+  - tests/unit/test_waive004_perf_guard.py
+- - unresolved-import
+  - tests/unit/test_waive_audit_runner.py
+- - unresolved-import
+  - tests/unit/test_xref.py
+- - unresolved-import
+  - tests/unit/testing/test_stability.py
+- - unresolved-import
+  - tests/unit/verify/test_attribution.py
+- - unresolved-import
+  - tests/unit/verify/test_backpressure.py
+- - unresolved-import
+  - tests/unit/verify/test_bisect.py
+- - unresolved-import
+  - tests/unit/verify/test_drain.py
+- - unresolved-import
+  - tests/unit/verify/test_quarantine.py
+- - unresolved-import
+  - tests/unit/verify/test_selection.py
+- - unresolved-import
+  - tests/unit/verify/test_verify_runner.py
+- - unresolved-import
+  - tests/unit/verify/test_worker.py
+- - unresolved-import
+  - tests/vet_suite/test_advisories.py
+- - unresolved-import
+  - tests/vet_suite/test_lockfile.py
+- - unresolved-import
+  - tests/vet_suite/test_opaque_indirection.py
+- - unresolved-import
+  - tests/vet_suite/test_scan_tree.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+The deferred post-land unscoped sweep (T-1684) for T-5123, T-4626, T-4761 at commit 02948352347d6839e3ba7506f71d980abcf3b495 found 862 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). The true per-finding count could not be independently re-measured this run (spawn refused/timeout/unparsable) -- re-run `frob check` unscoped against the file(s) below for the exact count before treating this identity count as a completeness claim.
+
+New (rule, file) identit(ies) filed here:
+
+- LANDFMT001  Would reformat: tests/test_tickets_triage_dates.py
+- SUPPRESS001  src/frob/fuzz/_arbitrary.py
+- SUPPRESS001  src/frob/graph/_core.py
+- SUPPRESS001  tests/conftest.py
+- SUPPRESS001  tests/gates_suite/test_test_gate.py
+- SUPPRESS001  tests/test_lang.py
+- SUPPRESS001  tests/test_tickets.py
+- SUPPRESS001  tests/test_tickets_acceptance.py
+- SUPPRESS001  tests/test_tickets_brief.py
+- invalid-argument-type  src/frob/gates/__init__.py
+- invalid-argument-type  src/frob/release/_publish.py
+- invalid-argument-type  src/frob/strata/_design_load.py
+- invalid-argument-type  tests/gates_suite/test_sys.py
+- invalid-assignment  src/frob/app/fleet_runner.py
+- invalid-assignment  src/frob/app/registry_runner.py
+- invalid-assignment  src/frob/strata/_multifile.py
+- invalid-assignment  src/frob/testing/_coverage_refresh.py
+- invalid-assignment  src/frob/verify/_worker.py
+- invalid-assignment  tests/unit/verify/test_worker.py
+- invalid-return-type  src/frob/app/_daemon_proxy.py
+- invalid-return-type  src/frob/app/ticket_runner/_waive_audit.py
+- invalid-return-type  src/frob/ghio.py
+- invalid-return-type  src/frob/lang/__init__.py
+- invalid-return-type  src/frob/refactor/_transaction.py
+- invalid-return-type  src/frob/strata/_scenarios.py
+- invalid-return-type  src/frob/strata/_selfconform.py
+- invalid-return-type  src/frob/strata/_waive.py
+- invalid-return-type  src/frob/tickets/_evidence.py
+- invalid-return-type  src/frob/tickets/_land_git_ops.py
+- invalid-return-type  src/frob/tickets/_land_squash.py
+- invalid-return-type  src/frob/tickets/_setters.py
+- invalid-return-type  src/frob/verify/_quarantine.py
+- no-matching-overload  tests/system/test_scaffold_dx.py
+- unresolved-attribute  src/frob/serve/_socketd.py
+- unresolved-attribute  src/frob/tickets/_land.py
+- unresolved-attribute  src/frob/verify/_worker.py
+- unresolved-attribute  tests/test_app_daemon_proxy.py
+- unresolved-attribute  tests/test_coverage_wait_shared.py
+- unresolved-attribute  tests/test_serve_leases.py
+- unresolved-attribute  tests/test_serve_socket.py
+- unresolved-attribute  tests/test_ticket_leases.py
+- unresolved-attribute  tests/test_ticket_reconcile.py
+- unresolved-attribute  tests/test_tickets_parent.py
+- unresolved-attribute  tests/test_tickets_priority.py
+- unresolved-attribute  tests/ticket_land_suite/test_land_lock.py
+- unresolved-attribute  tests/ticket_land_suite/test_verify_reset.py
+- unresolved-attribute  tests/unit/coordinator_suite/test_fleet_host_load.py
+- unresolved-attribute  tests/unit/coordinator_suite/test_fleet_land.py
+- unresolved-attribute  tests/unit/rapid_sweep_suite/test_baseline.py
+- unresolved-attribute  tests/unit/test_check.py
+- unresolved-attribute  tests/unit/test_conftest_stackdump.py
+- unresolved-attribute  tests/unit/test_land_lock_liveness.py
+- unresolved-attribute  tests/unit/test_land_queue.py
+- unresolved-attribute  tests/unit/test_process_lock.py
+- unresolved-attribute  tests/unit/test_process_reap.py
+- unresolved-attribute  tests/unit/test_stackdump.py
+- unresolved-attribute  tests/unit/test_ticket_store.py
+- unresolved-import  scripts/branch_stranded_work_analysis.py
+- unresolved-import  scripts/verify_release_ci_status.py
+- unresolved-import  src/frob/app/_daemon_proxy.py
+- unresolved-import  src/frob/app/_verify_rapid_debt.py
+- unresolved-import  src/frob/app/config.py
+- unresolved-import  src/frob/app/perf_runner.py
+- unresolved-import  src/frob/app/status_runner.py
+- unresolved-import  src/frob/app/telemetry/_footguns.py
+- unresolved-import  src/frob/app/telemetry/_usage.py
+- unresolved-import  src/frob/app/test_runner.py
+- unresolved-import  src/frob/app/ticket_runner/_land_cmd.py
+- unresolved-import  src/frob/app/ticket_runner/_query.py
+- unresolved-import  src/frob/app/ticket_runner/_rapid_sweep.py
+- unresolved-import  src/frob/app/ticket_runner/_verify.py
+- unresolved-import  src/frob/app/ticket_runner/_waive_audit.py
+- unresolved-import  src/frob/app/verify_runner.py
+- unresolved-import  src/frob/arch/__init__.py
+- unresolved-import  src/frob/arch/_abstraction.py
+- unresolved-import  src/frob/arch/_async_hazards.py
+- unresolved-import  src/frob/arch/_concurrency.py
+- unresolved-import  src/frob/arch/_concurrency_model.py
+- unresolved-import  src/frob/arch/_cpp.py
+- unresolved-import  src/frob/arch/_cpp_mayraise.py
+- unresolved-import  src/frob/arch/_ffi.py
+- unresolved-import  src/frob/arch/_kotlin.py
+- unresolved-import  src/frob/arch/_layering.py
+- unresolved-import  src/frob/arch/_lock_ordering.py
+- unresolved-import  src/frob/arch/_mayraise.py
+- unresolved-import  src/frob/arch/_models.py
+- unresolved-import  src/frob/arch/_normalized.py
+- unresolved-import  src/frob/arch/_ocp.py
+- unresolved-import  src/frob/arch/_patterns.py
+- unresolved-import  src/frob/arch/_protocol_excuse.py
+- unresolved-import  src/frob/arch/_python.py
+- unresolved-import  src/frob/arch/_rust.py
+- unresolved-import  src/frob/arch/_shared_state_race.py
+- unresolved-import  src/frob/arch/_typescript.py
+- unresolved-import  src/frob/check/__init__.py
+- unresolved-import  src/frob/ci_report.py
+- unresolved-import  src/frob/ci_validity.py
+- unresolved-import  src/frob/clean/_core.py
+- unresolved-import  src/frob/clean/_models.py
+- unresolved-import  src/frob/cve/_models.py
+- unresolved-import  src/frob/cve/_parser.py
+- unresolved-import  src/frob/deploy/_audit.py
+- unresolved-import  src/frob/deploy/_conform.py
+- unresolved-import  src/frob/deploy/_drift.py
+- unresolved-import  src/frob/deploy/_generate_common.py
+- unresolved-import  src/frob/deploy/_vm_runner.py
+- unresolved-import  src/frob/derived_state.py
+- unresolved-import  src/frob/docs/__init__.py
+- unresolved-import  src/frob/doctor.py
+- unresolved-import  src/frob/dup/_cache.py
+- unresolved-import  src/frob/dup/_exhaustiveness.py
+- unresolved-import  src/frob/dup/_legacy.py
+- unresolved-import  src/frob/dup/_legacy_cpp.py
+- unresolved-import  src/frob/dup/_legacy_cs.py
+- unresolved-import  src/frob/dup/_legacy_py.py
+- unresolved-import  src/frob/dup/_models.py
+- unresolved-import  src/frob/dup/_pipeline/_fingerprint.py
+- unresolved-import  src/frob/dup/_pipeline/_probe.py
+- unresolved-import  src/frob/dup/_pipeline/_smt.py
+- unresolved-import  src/frob/excludes.py
+- unresolved-import  src/frob/exports/__init__.py
+- unresolved-import  src/frob/findings.py
+- unresolved-import  src/frob/fleet/__init__.py
+- unresolved-import  src/frob/fuzz/_arbitrary.py
+- unresolved-import  src/frob/fuzz/_models.py
+- unresolved-import  src/frob/fuzz/_run.py
+- unresolved-import  src/frob/fuzz/_stamp.py
+- unresolved-import  src/frob/gates/__init__.py
+- unresolved-import  src/frob/gates/_baseline.py
+- unresolved-import  src/frob/gates/_bug_repro.py
+- unresolved-import  src/frob/gates/_coverage.py
+- unresolved-import  src/frob/gates/_debt_deprecated.py
+- unresolved-import  src/frob/gates/_deprecated_baseline.py
+- unresolved-import  src/frob/gates/_doclink_docanchor.py
+- unresolved-import  src/frob/gates/_fix_engine.py
+- unresolved-import  src/frob/gates/_fix_engine_scope.py
+- unresolved-import  src/frob/gates/_fix_engine_shared.py
+- unresolved-import  src/frob/gates/_fix_engine_tier_b.py
+- unresolved-import  src/frob/gates/_fix_engine_tier_c.py
+- unresolved-import  src/frob/gates/_fmt_directives.py
+- unresolved-import  src/frob/gates/_lock_producer.py
+- unresolved-import  src/frob/gates/_milestone.py
+- unresolved-import  src/frob/gates/_models.py
+- unresolved-import  src/frob/gates/_mutation_evidence.py
+- unresolved-import  src/frob/gates/_pii_structural/__init__.py
+- unresolved-import  src/frob/gates/_pii_structural/_crosslang.py
+- unresolved-import  src/frob/gates/_pii_structural/_signatures.py
+- unresolved-import  src/frob/gates/_prework.py
+- unresolved-import  src/frob/gates/_ratchet.py
+- unresolved-import  src/frob/gates/_suppress.py
+- unresolved-import  src/frob/gates/_sys.py
+- unresolved-import  src/frob/gates/_tickets_gate.py
+- unresolved-import  src/frob/gates/_vmodel.py
+- unresolved-import  src/frob/gates/_waive.py
+- unresolved-import  src/frob/gates/_waive_audit_watermark.py
+- unresolved-import  src/frob/gates/_waive_lease.py
+- unresolved-import  src/frob/gates/decisions.py
+- unresolved-import  src/frob/gates/invariants.py
+- unresolved-import  src/frob/ghio.py
+- unresolved-import  src/frob/gitio.py
+- unresolved-import  src/frob/gitlog/__init__.py
+- unresolved-import  src/frob/graph/__init__.py
+- unresolved-import  src/frob/graph/_core.py
+- unresolved-import  src/frob/graph/_models.py
+- unresolved-import  src/frob/graph/_resolve.py
+- unresolved-import  src/frob/graph/affects.py
+- unresolved-import  src/frob/graph/callgraph.py
+- unresolved-import  src/frob/graph/imports.py
+- unresolved-import  src/frob/graph/lock.py
+- unresolved-import  src/frob/graph/reach.py
+- unresolved-import  src/frob/graph/summary.py
+- unresolved-import  src/frob/lang/__init__.py
+- unresolved-import  src/frob/lang/_common.py
+- unresolved-import  src/frob/lang/_extract.py
+- unresolved-import  src/frob/lang/_models.py
+- unresolved-import  src/frob/lang/_nodes.py
+- unresolved-import  src/frob/lang/_project_detect.py
+- unresolved-import  src/frob/lang/_support.py
+- unresolved-import  src/frob/lang/_walk_bash.py
+- unresolved-import  src/frob/lang/_walk_c.py
+- unresolved-import  src/frob/lang/_walk_csharp.py
+- unresolved-import  src/frob/lang/_walk_cuda.py
+- unresolved-import  src/frob/lang/_walk_java.py
+- unresolved-import  src/frob/lang/_walk_kotlin.py
+- unresolved-import  src/frob/lang/_walk_python.py
+- unresolved-import  src/frob/lang/_walk_rust.py
+- unresolved-import  src/frob/lang/_walk_strata.py
+- unresolved-import  src/frob/lang/_walk_typescript.py
+- unresolved-import  src/frob/lang/_walk_zig.py
+- unresolved-import  src/frob/map/__init__.py
+- unresolved-import  src/frob/mutate/__init__.py
+- unresolved-import  src/frob/mutate/_journal.py
+- unresolved-import  src/frob/narrative/_cli.py
+- unresolved-import  src/frob/narrative/_migrate.py
+- unresolved-import  src/frob/natives/_build.py
+- unresolved-import  src/frob/outline/__init__.py
+- unresolved-import  src/frob/perf/_collectors.py
+- unresolved-import  src/frob/perf/_dup_spawn.py
+- unresolved-import  src/frob/perf/_effect_summaries.py
+- unresolved-import  src/frob/perf/_hotgraph.py
+- unresolved-import  src/frob/perf/_hotpath_smells.py
+- unresolved-import  src/frob/perf/_loop_effects.py
+- unresolved-import  src/frob/perf/_models.py
+- unresolved-import  src/frob/perf/_profile.py
+- unresolved-import  src/frob/perf/_ratchet.py
+- unresolved-import  src/frob/perf/_rules.py
+- unresolved-import  src/frob/perf/_sampler.py
+- unresolved-import  src/frob/perf/_sketch_store.py
+- unresolved-import  src/frob/policy/__init__.py
+- unresolved-import  src/frob/policy/_models.py
+- unresolved-import  src/frob/process/_guard.py
+- unresolved-import  src/frob/process/_project_tool.py
+- unresolved-import  src/frob/process/_pytest_spawn.py
+- unresolved-import  src/frob/process/parsers/common.py
+- unresolved-import  src/frob/refactor/_apply.py
+- unresolved-import  src/frob/refactor/_commit.py
+- unresolved-import  src/frob/refactor/_gitops.py
+- unresolved-import  src/frob/refactor/_models.py
+- unresolved-import  src/frob/refactor/_module_resolve.py
+- unresolved-import  src/frob/refactor/_module_transaction.py
+- unresolved-import  src/frob/refactor/_operands.py
+- unresolved-import  src/frob/refactor/_resolve.py
+- unresolved-import  src/frob/refactor/_split.py
+- unresolved-import  src/frob/refactor/_transaction.py
+- unresolved-import  src/frob/refactor/_verify_exec.py
+- unresolved-import  src/frob/registry/_corpus.py
+- unresolved-import  src/frob/registry/_models.py
+- unresolved-import  src/frob/registry/_staleness.py
+- unresolved-import  src/frob/release/__init__.py
+- unresolved-import  src/frob/release/_fragments.py
+- unresolved-import  src/frob/release/_publish.py
+- unresolved-import  src/frob/render/_elements.py
+- unresolved-import  src/frob/render/_errors.py
+- unresolved-import  src/frob/render/_renderer.py
+- unresolved-import  src/frob/scaffold/_managed.py
+- unresolved-import  src/frob/scaffold/_pool.py
+- unresolved-import  src/frob/scaffold/_skills_sync.py
+- unresolved-import  src/frob/scaffold/_unity_project.py
+- unresolved-import  src/frob/scaffold/project.py
+- unresolved-import  src/frob/serve/_daemon.py
+- unresolved-import  src/frob/serve/_events.py
+- unresolved-import  src/frob/serve/_socketd.py
+- unresolved-import  src/frob/serve/_tools.py
+- unresolved-import  src/frob/serve/_warm.py
+- unresolved-import  src/frob/serve/server.py
+- unresolved-import  src/frob/stats/__init__.py
+- unresolved-import  src/frob/stats/_agentic.py
+- unresolved-import  src/frob/stats/_agentic_dispatch.py
+- unresolved-import  src/frob/stats/_sketch.py
+- unresolved-import  src/frob/strata/_access.py
+- unresolved-import  src/frob/strata/_ast.py
+- unresolved-import  src/frob/strata/_atomic.py
+- unresolved-import  src/frob/strata/_audit.py
+- unresolved-import  src/frob/strata/_backpressure.py
+- unresolved-import  src/frob/strata/_bootstrap.py
+- unresolved-import  src/frob/strata/_breach.py
+- unresolved-import  src/frob/strata/_capacity.py
+- unresolved-import  src/frob/strata/_circuit_breaker.py
+- unresolved-import  src/frob/strata/_claims.py
+- unresolved-import  src/frob/strata/_clock_ordering.py
+- unresolved-import  src/frob/strata/_code_binding.py
+- unresolved-import  src/frob/strata/_compliance.py
+- unresolved-import  src/frob/strata/_contention.py
+- unresolved-import  src/frob/strata/_crash.py
+- unresolved-import  src/frob/strata/_cve_fingerprint.py
+- unresolved-import  src/frob/strata/_delivery_semantics.py
+- unresolved-import  src/frob/strata/_deploy.py
+- unresolved-import  src/frob/strata/_distributed_txn.py
+- unresolved-import  src/frob/strata/_effects.py
+- unresolved-import  src/frob/strata/_elaborate.py
+- unresolved-import  src/frob/strata/_errors.py
+- unresolved-import  src/frob/strata/_export.py
+- unresolved-import  src/frob/strata/_facts.py
+- unresolved-import  src/frob/strata/_fallback.py
+- unresolved-import  src/frob/strata/_host.py
+- unresolved-import  src/frob/strata/_host_isolation.py
+- unresolved-import  src/frob/strata/_host_isolation_lateral.py
+- unresolved-import  src/frob/strata/_host_isolation_shared.py
+- unresolved-import  src/frob/strata/_host_isolation_vertical.py
+- unresolved-import  src/frob/strata/_infra.py
+- unresolved-import  src/frob/strata/_interactive_cost.py
+- unresolved-import  src/frob/strata/_krb.py
+- unresolved-import  src/frob/strata/_krb_movement.py
+- unresolved-import  src/frob/strata/_lint.py
+- unresolved-import  src/frob/strata/_message_schema.py
+- unresolved-import  src/frob/strata/_mode_conformance.py
+- unresolved-import  src/frob/strata/_models.py
+- unresolved-import  src/frob/strata/_multifile.py
+- unresolved-import  src/frob/strata/_mutation_audit.py
+- unresolved-import  src/frob/strata/_native_test.py
+- unresolved-import  src/frob/strata/_observability.py
+- unresolved-import  src/frob/strata/_packs.py
+- unresolved-import  src/frob/strata/_parse.py
+- unresolved-import  src/frob/strata/_pii.py
+- unresolved-import  src/frob/strata/_plan.py
+- unresolved-import  src/frob/strata/_policy.py
+- unresolved-import  src/frob/strata/_process_bounds.py
+- unresolved-import  src/frob/strata/_reliability.py
+- unresolved-import  src/frob/strata/_retry.py
+- unresolved-import  src/frob/strata/_scenarios.py
+- unresolved-import  src/frob/strata/_scope_config.py
+- unresolved-import  src/frob/strata/_secrets.py
+- unresolved-import  src/frob/strata/_selfconform.py
+- unresolved-import  src/frob/strata/_selfconform_kinds.py
+- unresolved-import  src/frob/strata/_selfconform_models.py
+- unresolved-import  src/frob/strata/_shared_state.py
+- unresolved-import  src/frob/strata/_shrink.py
+- unresolved-import  src/frob/strata/_slo.py
+- unresolved-import  src/frob/strata/_spof.py
+- unresolved-import  src/frob/strata/_ssot.py
+- unresolved-import  src/frob/strata/_starvation.py
+- unresolved-import  src/frob/strata/_supply_chain_boot.py
+- unresolved-import  src/frob/strata/_sync_depth.py
+- unresolved-import  src/frob/strata/_sysdoc.py
+- unresolved-import  src/frob/strata/_threat.py
+- unresolved-import  src/frob/strata/_threat_discharge.py
+- unresolved-import  src/frob/strata/_threat_models.py
+- unresolved-import  src/frob/strata/_txn.py
+- unresolved-import  src/frob/strata/_unity_asmdef.py
+- unresolved-import  src/frob/strata/_waive.py
+- unresolved-import  src/frob/testing/_collect.py
+- unresolved-import  src/frob/testing/_collect_cpp.py
+- unresolved-import  src/frob/testing/_collect_csharp.py
+- unresolved-import  src/frob/testing/_collect_kotlin.py
+- unresolved-import  src/frob/testing/_collect_rust.py
+- unresolved-import  src/frob/testing/_collect_ts.py
+- unresolved-import  src/frob/testing/_coverage_refresh.py
+- unresolved-import  src/frob/testing/_coverage_wait.py
+- unresolved-import  src/frob/testing/_dotnet_runner.py
+- unresolved-import  src/frob/testing/_models.py
+- unresolved-import  src/frob/testing/_runners.py
+- unresolved-import  src/frob/testing/_stability.py
+- unresolved-import  src/frob/testing/_unity_batchmode.py
+- unresolved-import  src/frob/tickets/__init__.py
+- unresolved-import  src/frob/tickets/_accept.py
+- unresolved-import  src/frob/tickets/_archive.py
+- unresolved-import  src/frob/tickets/_brief.py
+- unresolved-import  src/frob/tickets/_draft_finalize.py
+- unresolved-import  src/frob/tickets/_evidence.py
+- unresolved-import  src/frob/tickets/_force_override.py
+- unresolved-import  src/frob/tickets/_journal.py
+- unresolved-import  src/frob/tickets/_land.py
+- unresolved-import  src/frob/tickets/_land_compose.py
+- unresolved-import  src/frob/tickets/_land_finalize.py
+- unresolved-import  src/frob/tickets/_land_git_ops.py
+- unresolved-import  src/frob/tickets/_land_ledger_merge.py
+- unresolved-import  src/frob/tickets/_land_merge.py
+- unresolved-import  src/frob/tickets/_land_merge_zones.py
+- unresolved-import  src/frob/tickets/_land_queue.py
+- unresolved-import  src/frob/tickets/_land_release.py
+- unresolved-import  src/frob/tickets/_land_splice.py
+- unresolved-import  src/frob/tickets/_land_squash.py
+- unresolved-import  src/frob/tickets/_land_verify.py
+- unresolved-import  src/frob/tickets/_leases.py
+- unresolved-import  src/frob/tickets/_models.py
+- unresolved-import  src/frob/tickets/_mutation_evidence.py
+- unresolved-import  src/frob/tickets/_mutation_sweep_queue.py
+- unresolved-import  src/frob/tickets/_new_renumber.py
+- unresolved-import  src/frob/tickets/_profile.py
+- unresolved-import  src/frob/tickets/_reconcile.py
+- unresolved-import  src/frob/tickets/_renumber_v2.py
+- unresolved-import  src/frob/tickets/_reporting.py
+- unresolved-import  src/frob/tickets/_reporting_attachments.py
+- unresolved-import  src/frob/tickets/_scope.py
+- unresolved-import  src/frob/tickets/_setters.py
+- unresolved-import  src/frob/tickets/_store.py
+- unresolved-import  src/frob/tickets/_store_migrate.py
+- unresolved-import  src/frob/tickets/_unlanded.py
+- unresolved-import  src/frob/tickets/_worktree_guard.py
+- unresolved-import  src/frob/tickets/_worktree_sweep.py
+- unresolved-import  src/frob/tickets/clipboard.py
+- unresolved-import  src/frob/verify/_attribution.py
+- unresolved-import  src/frob/verify/_backpressure.py
+- unresolved-import  src/frob/verify/_bisect.py
+- unresolved-import  src/frob/verify/_drain.py
+- unresolved-import  src/frob/verify/_quarantine.py
+- unresolved-import  src/frob/verify/_selection.py
+- unresolved-import  src/frob/verify/_watermark.py
+- unresolved-import  src/frob/verify/_worker.py
+- unresolved-import  src/frob/vet/_capability_core.py
+- unresolved-import  src/frob/vet/_capability_modes.py
+- unresolved-import  src/frob/vet/_capability_registry/_matrix.py
+- unresolved-import  src/frob/vet/_capability_registry/_schemas.py
+- unresolved-import  src/frob/vet/_capability_scan.py
+- unresolved-import  src/frob/vet/_containment.py
+- unresolved-import  src/frob/vet/_cve.py
+- unresolved-import  src/frob/vet/_lockfile.py
+- unresolved-import  src/frob/vet/_models.py
+- unresolved-import  src/frob/vet/_nvd.py
+- unresolved-import  src/frob/vet/_registry.py
+- unresolved-import  src/frob/vet/_scan.py
+- unresolved-import  src/frob/vet/_supplychain.py
+- unresolved-import  src/frob/xref/__init__.py
+- unresolved-import  src/frob/yamlio.py
+- unresolved-import  tests/_write_unchecked.py
+- unresolved-import  tests/conftest.py
+- unresolved-import  tests/gates/test_env_absent_bug002_repro.py
+- unresolved-import  tests/gates/test_mutation_evidence_err_branches.py
+- unresolved-import  tests/gates/test_tdd_order.py
+- unresolved-import  tests/gates_suite/test_coverage.py
+- unresolved-import  tests/gates_suite/test_debt.py
+- unresolved-import  tests/gates_suite/test_fix_engine.py
+- unresolved-import  tests/gates_suite/test_invariant.py
+- unresolved-import  tests/gates_suite/test_prework.py
+- unresolved-import  tests/gates_suite/test_protocol.py
+- unresolved-import  tests/gates_suite/test_run.py
+- unresolved-import  tests/gates_suite/test_sys.py
+- unresolved-import  tests/gates_suite/test_test_gate.py
+- unresolved-import  tests/gates_suite/test_tick.py
+- unresolved-import  tests/gates_suite/test_waive.py
+- unresolved-import  tests/helpers/bash.py
+- unresolved-import  tests/integration/test_deploy_malmberg_pilot.py
+- unresolved-import  tests/integration/test_gitlog.py
+- unresolved-import  tests/integration/test_integration.py
+- unresolved-import  tests/integration/test_interfaces.py
+- unresolved-import  tests/system/test_artifact_smoke.py
+- unresolved-import  tests/system/test_ci_hang_guard_positive_control.py
+- unresolved-import  tests/system/test_cli_check.py
+- unresolved-import  tests/system/test_cli_cycle.py
+- unresolved-import  tests/system/test_cli_doctor.py
+- unresolved-import  tests/system/test_cli_map.py
+- unresolved-import  tests/system/test_cli_outline.py
+- unresolved-import  tests/system/test_cli_sys_export.py
+- unresolved-import  tests/system/test_cli_sys_plan.py
+- unresolved-import  tests/system/test_cli_vet.py
+- unresolved-import  tests/system/test_cli_xref.py
+- unresolved-import  tests/system/test_coverage_sigterm.py
+- unresolved-import  tests/system/test_fleet_status_ground_truth.py
+- unresolved-import  tests/system/test_fleet_status_ticket_readiness_arch001.py
+- unresolved-import  tests/system/test_frob_self_model.py
+- unresolved-import  tests/system/test_natives_build_integration.py
+- unresolved-import  tests/system/test_packaging_py_typed.py
+- unresolved-import  tests/system/test_public_api_from_wheel.py
+- unresolved-import  tests/system/test_run_helper_env_leak.py
+- unresolved-import  tests/system/test_scaffold_dx.py
+- unresolved-import  tests/system/test_scaffold_pool.py
+- unresolved-import  tests/system/test_spawn_budget.py
+- unresolved-import  tests/system/test_system.py
+- unresolved-import  tests/test_ack_worktree_lease.py
+- unresolved-import  tests/test_app.py
+- unresolved-import  tests/test_app_config.py
+- unresolved-import  tests/test_app_daemon_proxy.py
+- unresolved-import  tests/test_arch_near_duplicate_native.py
+- unresolved-import  tests/test_bug002_no_behavior_change.py
+- unresolved-import  tests/test_cache_gate.py
+- unresolved-import  tests/test_capability_registry.py
+- unresolved-import  tests/test_check_runner.py
+- unresolved-import  tests/test_ci_report.py
+- unresolved-import  tests/test_ci_validity.py
+- unresolved-import  tests/test_ci_workflow_actions_pinned.py
+- unresolved-import  tests/test_ci_workflow_job_summary.py
+- unresolved-import  tests/test_ci_workflow_matrix.py
+- unresolved-import  tests/test_ci_workflow_timeout.py
+- unresolved-import  tests/test_ci_workflow_toolchain_pins.py
+- unresolved-import  tests/test_clean.py
+- unresolved-import  tests/test_clipboard.py
+- unresolved-import  tests/test_coverage.py
+- unresolved-import  tests/test_coverage_wait_shared.py
+- unresolved-import  tests/test_debt_runner.py
+- unresolved-import  tests/test_deprecated_runner.py
+- unresolved-import  tests/test_docptr_gate.py
+- unresolved-import  tests/test_doctor.py
+- unresolved-import  tests/test_dup.py
+- unresolved-import  tests/test_dup_cross_lang.py
+- unresolved-import  tests/test_dup_exhaustiveness.py
+- unresolved-import  tests/test_dup_inline.py
+- unresolved-import  tests/test_dup_native_rungs.py
+- unresolved-import  tests/test_dup_prefilter.py
+- unresolved-import  tests/test_dup_r5_multilang.py
+- unresolved-import  tests/test_dup_region.py
+- unresolved-import  tests/test_dup_rungs.py
+- unresolved-import  tests/test_dup_smart.py
+- unresolved-import  tests/test_fuzz.py
+- unresolved-import  tests/test_gate_cache.py
+- unresolved-import  tests/test_gates_drift_ack.py
+- unresolved-import  tests/test_gates_fix_engine.py
+- unresolved-import  tests/test_gates_fmt_directives.py
+- unresolved-import  tests/test_gates_mutation_evidence.py
+- unresolved-import  tests/test_gates_suppress.py
+- unresolved-import  tests/test_gates_tick006_sibling_worktree.py
+- unresolved-import  tests/test_gates_vmodel.py
+- unresolved-import  tests/test_gates_worktree_lease.py
+- unresolved-import  tests/test_ghio.py
+- unresolved-import  tests/test_gitio.py
+- unresolved-import  tests/test_graph.py
+- unresolved-import  tests/test_graph_affects_runner.py
+- unresolved-import  tests/test_land_verify_claims_outcome.py
+- unresolved-import  tests/test_lang.py
+- unresolved-import  tests/test_lang_conformance_gate.py
+- unresolved-import  tests/test_measure_evidence_reach.py
+- unresolved-import  tests/test_mutate.py
+- unresolved-import  tests/test_mutate_journal.py
+- unresolved-import  tests/test_natives.py
+- unresolved-import  tests/test_pii_structural_gate.py
+- unresolved-import  tests/test_pool_runner.py
+- unresolved-import  tests/test_prework_parity.py
+- unresolved-import  tests/test_refactor.py
+- unresolved-import  tests/test_registry_reconciliation_evasion.py
+- unresolved-import  tests/test_registry_reconciliation_supply_chain.py
+- unresolved-import  tests/test_registry_staleness.py
+- unresolved-import  tests/test_release.py
+- unresolved-import  tests/test_release_worktree_lease.py
+- unresolved-import  tests/test_scaffold_worktree_lease_hook.py
+- unresolved-import  tests/test_secrets_gate.py
+- unresolved-import  tests/test_serve.py
+- unresolved-import  tests/test_serve_daemon.py
+- unresolved-import  tests/test_serve_events.py
+- unresolved-import  tests/test_serve_leases.py
+- unresolved-import  tests/test_serve_socket.py
+- unresolved-import  tests/test_serve_tools_daemon_bypass.py
+- unresolved-import  tests/test_telemetry.py
+- unresolved-import  tests/test_testing.py
+- unresolved-import  tests/test_testing_collect.py
+- unresolved-import  tests/test_ticket_evidence.py
+- unresolved-import  tests/test_ticket_journal.py
+- unresolved-import  tests/test_ticket_land.py
+- unresolved-import  tests/test_ticket_land_dry_run.py
+- unresolved-import  tests/test_ticket_land_lint_diff_attribution.py
+- unresolved-import  tests/test_ticket_land_proof_claims.py
+- unresolved-import  tests/test_ticket_land_ty_diff_attribution.py
+- unresolved-import  tests/test_ticket_leases.py
+- unresolved-import  tests/test_ticket_leases_cross_worktree.py
+- unresolved-import  tests/test_ticket_lifecycle.py
+- unresolved-import  tests/test_ticket_merge_driver.py
+- unresolved-import  tests/test_ticket_ownership_guard.py
+- unresolved-import  tests/test_ticket_reconcile.py
+- unresolved-import  tests/test_ticket_reverify.py
+- unresolved-import  tests/test_ticket_runner_archive_force.py
+- unresolved-import  tests/test_ticket_runner_pytest_env.py
+- unresolved-import  tests/test_ticket_work_and_land_finish.py
+- unresolved-import  tests/test_tickets.py
+- unresolved-import  tests/test_tickets_acceptance.py
+- unresolved-import  tests/test_tickets_body.py
+- unresolved-import  tests/test_tickets_brief.py
+- unresolved-import  tests/test_tickets_cmd_evidence.py
+- unresolved-import  tests/test_tickets_collision.py
+- unresolved-import  tests/test_tickets_evidence_cli.py
+- unresolved-import  tests/test_tickets_evidence_removal.py
+- unresolved-import  tests/test_tickets_evidence_replace_cmd_t4143.py
+- unresolved-import  tests/test_tickets_lease.py
+- unresolved-import  tests/test_tickets_leases.py
+- unresolved-import  tests/test_tickets_ledger_concurrency.py
+- unresolved-import  tests/test_tickets_migration.py
+- unresolved-import  tests/test_tickets_mutation_evidence.py
+- unresolved-import  tests/test_tickets_no_scope.py
+- unresolved-import  tests/test_tickets_organization.py
+- unresolved-import  tests/test_tickets_parent.py
+- unresolved-import  tests/test_tickets_priority.py
+- unresolved-import  tests/test_tickets_review.py
+- unresolved-import  tests/test_tickets_scope_mutation.py
+- unresolved-import  tests/test_tickets_velocity.py
+- unresolved-import  tests/test_vet.py
+- unresolved-import  tests/test_vet_containment.py
+- unresolved-import  tests/test_waive_gate.py
+- unresolved-import  tests/test_worktree_guard.py
+- unresolved-import  tests/test_worktree_lease_env_ambient.py
+- unresolved-import  tests/test_worktree_pythonpath.py
+- unresolved-import  tests/ticket_land_suite/conftest.py
+- unresolved-import  tests/ticket_land_suite/test_archive.py
+- unresolved-import  tests/ticket_land_suite/test_claim_close.py
+- unresolved-import  tests/ticket_land_suite/test_dirt_ownership.py
+- unresolved-import  tests/ticket_land_suite/test_draft.py
+- unresolved-import  tests/ticket_land_suite/test_land_core.py
+- unresolved-import  tests/ticket_land_suite/test_land_lock.py
+- unresolved-import  tests/ticket_land_suite/test_land_plan.py
+- unresolved-import  tests/ticket_land_suite/test_land_reaps_worktree.py
+- unresolved-import  tests/ticket_land_suite/test_land_target_branch.py
+- unresolved-import  tests/ticket_land_suite/test_ledger_splice.py
+- unresolved-import  tests/ticket_land_suite/test_push.py
+- unresolved-import  tests/ticket_land_suite/test_release.py
+- unresolved-import  tests/ticket_land_suite/test_verify_intent.py
+- unresolved-import  tests/ticket_land_suite/test_verify_reset.py
+- unresolved-import  tests/ticket_land_suite/test_waive_deletion.py
+- unresolved-import  tests/ticket_land_suite/test_wip.py
+- unresolved-import  tests/unit/arch_suite/test_abstraction.py
+- unresolved-import  tests/unit/arch_suite/test_complexity.py
+- unresolved-import  tests/unit/arch_suite/test_concurrency.py
+- unresolved-import  tests/unit/arch_suite/test_dispatch.py
+- unresolved-import  tests/unit/arch_suite/test_guards.py
+- unresolved-import  tests/unit/arch_suite/test_lang_adapters.py
+- unresolved-import  tests/unit/arch_suite/test_logging.py
+- unresolved-import  tests/unit/arch_suite/test_lsp.py
+- unresolved-import  tests/unit/arch_suite/test_misc.py
+- unresolved-import  tests/unit/arch_suite/test_smells.py
+- unresolved-import  tests/unit/arch_suite/test_type_design.py
+- unresolved-import  tests/unit/coordinator_suite/test_check_summary.py
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_host_load.py
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_land.py
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_report.py
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_worktrees.py
+- unresolved-import  tests/unit/coordinator_suite/test_verify_lands.py
+- unresolved-import  tests/unit/coordinator_suite/test_wait_for_land_slot.py
+- unresolved-import  tests/unit/deploy/test_deploy_runner.py
+- unresolved-import  tests/unit/deploy/test_vm_runner.py
+- unresolved-import  tests/unit/dup/test_type_name_only_regression_t1957.py
+- unresolved-import  tests/unit/fleet/test_route.py
+- unresolved-import  tests/unit/fleet/test_status.py
+- unresolved-import  tests/unit/gates/test_deprecated_baseline.py
+- unresolved-import  tests/unit/gates/test_examined_sites.py
+- unresolved-import  tests/unit/gates/test_lexical_selfcheck.py
+- unresolved-import  tests/unit/gates/test_lock_producer.py
+- unresolved-import  tests/unit/gates/test_rel001_deferred_bump.py
+- unresolved-import  tests/unit/graph/test_dsl_invariant_property.py
+- unresolved-import  tests/unit/perf/test_collectors.py
+- unresolved-import  tests/unit/perf/test_hot_query.py
+- unresolved-import  tests/unit/perf/test_hotgraph.py
+- unresolved-import  tests/unit/perf/test_persist_run_cli.py
+- unresolved-import  tests/unit/perf/test_serial_pools.py
+- unresolved-import  tests/unit/perf/test_serial_pools_import_failure.py
+- unresolved-import  tests/unit/perf/test_sketch_store.py
+- unresolved-import  tests/unit/rapid_sweep_suite/conftest.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_attribution.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_baseline.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_commit.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_dispose.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_filing.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_sweep_run.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_window.py
+- unresolved-import  tests/unit/rapid_sweep_suite/test_worktrees.py
+- unresolved-import  tests/unit/strata/test_atomic.py
+- unresolved-import  tests/unit/strata/test_audit.py
+- unresolved-import  tests/unit/strata/test_backpressure.py
+- unresolved-import  tests/unit/strata/test_breach.py
+- unresolved-import  tests/unit/strata/test_capacity.py
+- unresolved-import  tests/unit/strata/test_circuit_breaker.py
+- unresolved-import  tests/unit/strata/test_clock_ordering.py
+- unresolved-import  tests/unit/strata/test_compliance.py
+- unresolved-import  tests/unit/strata/test_cve_fingerprint.py
+- unresolved-import  tests/unit/strata/test_delivery_semantics.py
+- unresolved-import  tests/unit/strata/test_deploy.py
+- unresolved-import  tests/unit/strata/test_design_load.py
+- unresolved-import  tests/unit/strata/test_distributed_txn.py
+- unresolved-import  tests/unit/strata/test_export.py
+- unresolved-import  tests/unit/strata/test_facts.py
+- unresolved-import  tests/unit/strata/test_fallback.py
+- unresolved-import  tests/unit/strata/test_fragments.py
+- unresolved-import  tests/unit/strata/test_host.py
+- unresolved-import  tests/unit/strata/test_host_isolation.py
+- unresolved-import  tests/unit/strata/test_kernel_properties.py
+- unresolved-import  tests/unit/strata/test_litmus_cwe.py
+- unresolved-import  tests/unit/strata/test_models.py
+- unresolved-import  tests/unit/strata/test_native_staleness.py
+- unresolved-import  tests/unit/strata/test_native_test.py
+- unresolved-import  tests/unit/strata/test_parse.py
+- unresolved-import  tests/unit/strata/test_pii.py
+- unresolved-import  tests/unit/strata/test_registry_cross_corpus_totality.py
+- unresolved-import  tests/unit/strata/test_registry_cross_refs.py
+- unresolved-import  tests/unit/strata/test_retry.py
+- unresolved-import  tests/unit/strata/test_selfconform.py
+- unresolved-import  tests/unit/strata/test_strata_core_gil.py
+- unresolved-import  tests/unit/strata/test_strata_scan_cache.py
+- unresolved-import  tests/unit/strata/test_sys107_via_scope_advisory.py
+- unresolved-import  tests/unit/strata/test_threat.py
+- unresolved-import  tests/unit/strata/test_vmodel_authoring.py
+- unresolved-import  tests/unit/strata/test_vmodel_check.py
+- unresolved-import  tests/unit/test_ack_runner.py
+- unresolved-import  tests/unit/test_app_clean_runner_branches_t1400.py
+- unresolved-import  tests/unit/test_app_config_meta_branches_t1400.py
+- unresolved-import  tests/unit/test_app_lazy_dispatch.py
+- unresolved-import  tests/unit/test_app_runners.py
+- unresolved-import  tests/unit/test_app_runners_batch5.py
+- unresolved-import  tests/unit/test_app_runners_batch6.py
+- unresolved-import  tests/unit/test_app_runners_batch7.py
+- unresolved-import  tests/unit/test_app_runners_doable_stale_lease.py
+- unresolved-import  tests/unit/test_app_runners_json_guard_t2492.py
+- unresolved-import  tests/unit/test_app_runners_process.py
+- unresolved-import  tests/unit/test_app_runners_t0714_doable_summary.py
+- unresolved-import  tests/unit/test_app_runners_t0875_leaf_collision.py
+- unresolved-import  tests/unit/test_app_runners_t0976_mutation_evidence.py
+- unresolved-import  tests/unit/test_app_runners_t1738_wave.py
+- unresolved-import  tests/unit/test_app_runners_t1822_already_landed.py
+- unresolved-import  tests/unit/test_app_sys_capacity.py
+- unresolved-import  tests/unit/test_app_sys_threats.py
+- unresolved-import  tests/unit/test_app_sys_trace.py
+- unresolved-import  tests/unit/test_app_telemetry_branches_t1400.py
+- unresolved-import  tests/unit/test_arch.py
+- unresolved-import  tests/unit/test_arch_ocp.py
+- unresolved-import  tests/unit/test_arch_python_native.py
+- unresolved-import  tests/unit/test_artifact_smoke_script.py
+- unresolved-import  tests/unit/test_branch_stranded_work_analysis.py
+- unresolved-import  tests/unit/test_capability_native.py
+- unresolved-import  tests/unit/test_check.py
+- unresolved-import  tests/unit/test_check_admission.py
+- unresolved-import  tests/unit/test_check_budget.py
+- unresolved-import  tests/unit/test_check_native_cargo_runners.py
+- unresolved-import  tests/unit/test_check_scoped_files.py
+- unresolved-import  tests/unit/test_check_skip_flag.py
+- unresolved-import  tests/unit/test_check_stop_before.py
+- unresolved-import  tests/unit/test_check_tool_unavailable.py
+- unresolved-import  tests/unit/test_check_ts_runners.py
+- unresolved-import  tests/unit/test_ci_self_gate_unscoped.py
+- unresolved-import  tests/unit/test_claims_and_store_batch6.py
+- unresolved-import  tests/unit/test_claude_runner.py
+- unresolved-import  tests/unit/test_cli_group_parity.py
+- unresolved-import  tests/unit/test_close_promote_drafts.py
+- unresolved-import  tests/unit/test_close_rel001_bump.py
+- unresolved-import  tests/unit/test_config.py
+- unresolved-import  tests/unit/test_conftest_console_ctrl_guard.py
+- unresolved-import  tests/unit/test_conftest_hard_exit_guard.py
+- unresolved-import  tests/unit/test_conftest_midrun_watchdog.py
+- unresolved-import  tests/unit/test_conftest_sigbreak_faulthandler.py
+- unresolved-import  tests/unit/test_conftest_stackdump.py
+- unresolved-import  tests/unit/test_conftest_suite_result_status.py
+- unresolved-import  tests/unit/test_coverage_runner.py
+- unresolved-import  tests/unit/test_cycle_runner_root_resolution.py
+- unresolved-import  tests/unit/test_daemon_proxy_error_paths_t1457.py
+- unresolved-import  tests/unit/test_daemon_proxy_lease_t1276.py
+- unresolved-import  tests/unit/test_dependency_pins.py
+- unresolved-import  tests/unit/test_dev_branch_workflow.py
+- unresolved-import  tests/unit/test_doctor.py
+- unresolved-import  tests/unit/test_doctor_runner_t1276.py
+- unresolved-import  tests/unit/test_done_report_check_scope.py
+- unresolved-import  tests/unit/test_dotnet_runner.py
+- unresolved-import  tests/unit/test_dup.py
+- unresolved-import  tests/unit/test_dup_cache.py
+- unresolved-import  tests/unit/test_dup_core.py
+- unresolved-import  tests/unit/test_dup_legacy_py.py
+- unresolved-import  tests/unit/test_dup_smt.py
+- unresolved-import  tests/unit/test_dup_template.py
+- unresolved-import  tests/unit/test_executable.py
+- unresolved-import  tests/unit/test_extending_guides_complete.py
+- unresolved-import  tests/unit/test_extract_native.py
+- unresolved-import  tests/unit/test_fix_engine_journal.py
+- unresolved-import  tests/unit/test_flag_coverage_gate.py
+- unresolved-import  tests/unit/test_fleet_runner.py
+- unresolved-import  tests/unit/test_frob_core_gil.py
+- unresolved-import  tests/unit/test_gitattributes_merge.py
+- unresolved-import  tests/unit/test_gitlog.py
+- unresolved-import  tests/unit/test_graph_build_lock.py
+- unresolved-import  tests/unit/test_graph_cache.py
+- unresolved-import  tests/unit/test_graph_get_snapshot.py
+- unresolved-import  tests/unit/test_graph_lock_holder_naming.py
+- unresolved-import  tests/unit/test_graph_stat_trust_margin.py
+- unresolved-import  tests/unit/test_helpers_bash.py
+- unresolved-import  tests/unit/test_land_already_landed.py
+- unresolved-import  tests/unit/test_land_cas_ledger_retry.py
+- unresolved-import  tests/unit/test_land_cmd_backpressure.py
+- unresolved-import  tests/unit/test_land_cmd_drain_wiring.py
+- unresolved-import  tests/unit/test_land_compose.py
+- unresolved-import  tests/unit/test_land_cross_ticket_leakage.py
+- unresolved-import  tests/unit/test_land_default_queue.py
+- unresolved-import  tests/unit/test_land_duplicate_ticket_id.py
+- unresolved-import  tests/unit/test_land_finish_guard.py
+- unresolved-import  tests/unit/test_land_finish_idempotent.py
+- unresolved-import  tests/unit/test_land_format_gate.py
+- unresolved-import  tests/unit/test_land_in_progress_window.py
+- unresolved-import  tests/unit/test_land_leaked_tickets_lease_hoist.py
+- unresolved-import  tests/unit/test_land_lock_liveness.py
+- unresolved-import  tests/unit/test_land_machinery_owned_leakage.py
+- unresolved-import  tests/unit/test_land_merge_conflict_drop.py
+- unresolved-import  tests/unit/test_land_orphaned_evidence.py
+- unresolved-import  tests/unit/test_land_parity_gate.py
+- unresolved-import  tests/unit/test_land_queue.py
+- unresolved-import  tests/unit/test_land_record_commit.py
+- unresolved-import  tests/unit/test_land_release_coherence.py
+- unresolved-import  tests/unit/test_land_release_out_of_tree.py
+- unresolved-import  tests/unit/test_land_root_resolution.py
+- unresolved-import  tests/unit/test_land_sibling_regression.py
+- unresolved-import  tests/unit/test_land_splice_test_then_impl.py
+- unresolved-import  tests/unit/test_land_squash_residue_reclaim.py
+- unresolved-import  tests/unit/test_land_squash_stage.py
+- unresolved-import  tests/unit/test_land_stackdump.py
+- unresolved-import  tests/unit/test_land_stage_flip.py
+- unresolved-import  tests/unit/test_land_step_ordering.py
+- unresolved-import  tests/unit/test_land_stranding_t4312.py
+- unresolved-import  tests/unit/test_lang_kotlin.py
+- unresolved-import  tests/unit/test_lang_parse_guard.py
+- unresolved-import  tests/unit/test_lang_strata.py
+- unresolved-import  tests/unit/test_lang_strata_entity_arch.py
+- unresolved-import  tests/unit/test_lease_lifecycle.py
+- unresolved-import  tests/unit/test_leases_staleness_perf.py
+- unresolved-import  tests/unit/test_lifecycle_work_base.py
+- unresolved-import  tests/unit/test_main_entry.py
+- unresolved-import  tests/unit/test_makefile_coverage.py
+- unresolved-import  tests/unit/test_map.py
+- unresolved-import  tests/unit/test_mutation_sweep_queue.py
+- unresolved-import  tests/unit/test_natives_build.py
+- unresolved-import  tests/unit/test_new_ticket_body_similarity_warning.py
+- unresolved-import  tests/unit/test_new_ticket_over_broad_scope_warning.py
+- unresolved-import  tests/unit/test_new_ticket_scope_breadth_ack_flag.py
+- unresolved-import  tests/unit/test_new_ticket_scope_overlap_warning.py
+- unresolved-import  tests/unit/test_outline.py
+- unresolved-import  tests/unit/test_parse_runner_direct.py
+- unresolved-import  tests/unit/test_perf_runner_t1400.py
+- unresolved-import  tests/unit/test_policy_weakening_gate.py
+- unresolved-import  tests/unit/test_process_guard.py
+- unresolved-import  tests/unit/test_process_lock.py
+- unresolved-import  tests/unit/test_process_pid_liveness.py
+- unresolved-import  tests/unit/test_process_reap.py
+- unresolved-import  tests/unit/test_process_tty.py
+- unresolved-import  tests/unit/test_profile_runner.py
+- unresolved-import  tests/unit/test_project_tool.py
+- unresolved-import  tests/unit/test_pyfmt_runner.py
+- unresolved-import  tests/unit/test_pyproject_data_memoization.py
+- unresolved-import  tests/unit/test_pytest_spawn_env_wiring.py
+- unresolved-import  tests/unit/test_rapid_debt.py
+- unresolved-import  tests/unit/test_reconcile_auto_commit_t1936.py
+- unresolved-import  tests/unit/test_release_stamp_guard.py
+- unresolved-import  tests/unit/test_release_workflow_gate.py
+- unresolved-import  tests/unit/test_render.py
+- unresolved-import  tests/unit/test_require_python.py
+- unresolved-import  tests/unit/test_scaffold_project.py
+- unresolved-import  tests/unit/test_scaffold_unity_project.py
+- unresolved-import  tests/unit/test_scope_closure_declared_scope_only.py
+- unresolved-import  tests/unit/test_scope_closure_warning_collapse_t1556.py
+- unresolved-import  tests/unit/test_stackdump.py
+- unresolved-import  tests/unit/test_store_batch7.py
+- unresolved-import  tests/unit/test_store_mode_memoization.py
+- unresolved-import  tests/unit/test_strata_tmlanguage.py
+- unresolved-import  tests/unit/test_support_csharp.py
+- unresolved-import  tests/unit/test_suppress_worktree_path.py
+- unresolved-import  tests/unit/test_sync_claude_config_stale_guard_t3408.py
+- unresolved-import  tests/unit/test_t2450_scope_repair.py
+- unresolved-import  tests/unit/test_telemetry_verb_recording.py
+- unresolved-import  tests/unit/test_ticket_accept_evidence_hint_t4106.py
+- unresolved-import  tests/unit/test_ticket_anchor_cli.py
+- unresolved-import  tests/unit/test_ticket_cli_surface.py
+- unresolved-import  tests/unit/test_ticket_close_bug002_t1427.py
+- unresolved-import  tests/unit/test_ticket_close_bug002_t1438.py
+- unresolved-import  tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
+- unresolved-import  tests/unit/test_ticket_close_gate_claims_t1410.py
+- unresolved-import  tests/unit/test_ticket_close_own_obligations_t1387.py
+- unresolved-import  tests/unit/test_ticket_file_flags.py
+- unresolved-import  tests/unit/test_ticket_land_bug003_t2215.py
+- unresolved-import  tests/unit/test_ticket_list_summary.py
+- unresolved-import  tests/unit/test_ticket_new_body_file_pipe_t2021.py
+- unresolved-import  tests/unit/test_ticket_new_readback_guard_t4339.py
+- unresolved-import  tests/unit/test_ticket_new_related.py
+- unresolved-import  tests/unit/test_ticket_new_scope_plausibility.py
+- unresolved-import  tests/unit/test_ticket_new_scope_plausibility_t2192.py
+- unresolved-import  tests/unit/test_ticket_restore.py
+- unresolved-import  tests/unit/test_ticket_runner_bare_root_guard.py
+- unresolved-import  tests/unit/test_ticket_runner_designate_repro.py
+- unresolved-import  tests/unit/test_ticket_runner_gate_findings.py
+- unresolved-import  tests/unit/test_ticket_runner_land_cmd_flags.py
+- unresolved-import  tests/unit/test_ticket_runner_land_release.py
+- unresolved-import  tests/unit/test_ticket_runner_ledger_mirror.py
+- unresolved-import  tests/unit/test_ticket_runner_repro_merge_base.py
+- unresolved-import  tests/unit/test_ticket_runner_venv_sync_t3320.py
+- unresolved-import  tests/unit/test_ticket_store.py
+- unresolved-import  tests/unit/test_ticket_sweep_terminal_state.py
+- unresolved-import  tests/unit/test_unity_batchmode.py
+- unresolved-import  tests/unit/test_unlanded_branch_work.py
+- unresolved-import  tests/unit/test_verify_language_buckets.py
+- unresolved-import  tests/unit/test_verify_release_ci_status.py
+- unresolved-import  tests/unit/test_version_guard.py
+- unresolved-import  tests/unit/test_waive004_perf_guard.py
+- unresolved-import  tests/unit/test_waive_audit_runner.py
+- unresolved-import  tests/unit/test_xref.py
+- unresolved-import  tests/unit/testing/test_stability.py
+- unresolved-import  tests/unit/verify/test_attribution.py
+- unresolved-import  tests/unit/verify/test_backpressure.py
+- unresolved-import  tests/unit/verify/test_bisect.py
+- unresolved-import  tests/unit/verify/test_drain.py
+- unresolved-import  tests/unit/verify/test_quarantine.py
+- unresolved-import  tests/unit/verify/test_selection.py
+- unresolved-import  tests/unit/verify/test_verify_runner.py
+- unresolved-import  tests/unit/verify/test_worker.py
+- unresolved-import  tests/vet_suite/test_advisories.py
+- unresolved-import  tests/vet_suite/test_lockfile.py
+- unresolved-import  tests/vet_suite/test_opaque_indirection.py
+- unresolved-import  tests/vet_suite/test_scan_tree.py
+
+T-2009: 3 lands (T-5123, T-4626, T-4761) landed between the previous sweep's baseline and the commit THIS sweep actually measured (the sweep is deliberately detached, off the land critical path -- T-1684 -- so other agents' lands can land in the window before it runs). Which specific land introduced which finding below could not be determined without re-measuring at each intermediate commit; this ticket is filed against all of them rather than falsely pinned on T-5123, T-4626, T-4761 alone (the one that happened to spawn this sweep process).
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- LANDFMT001  Would reformat: tests/test_tickets_triage_dates.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  src/frob/fuzz/_arbitrary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  src/frob/graph/_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  tests/conftest.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_closed_ticket_attribution_still_raises -> tests/conftest.py::_seed_ticket
+- SUPPRESS001  tests/gates_suite/test_test_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  tests/test_lang.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  tests/test_tickets.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  tests/test_tickets_acceptance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SUPPRESS001  tests/test_tickets_brief.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-argument-type  src/frob/gates/__init__.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_prepare -> src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes -> src/frob/app/ticket_runner/_land_cmd.py::_tier_a_pre_land_step -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_natives_verifiably_healthy -> src/frob/gates/__init__.py::_maybe_autorebuild_natives
+- invalid-argument-type  src/frob/release/_publish.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-argument-type  src/frob/strata/_design_load.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-argument-type  tests/gates_suite/test_sys.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-assignment  src/frob/app/fleet_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-assignment  src/frob/app/registry_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-assignment  src/frob/strata/_multifile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-assignment  src/frob/testing/_coverage_refresh.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-assignment  src/frob/verify/_worker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-assignment  tests/unit/verify/test_worker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/app/_daemon_proxy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/app/ticket_runner/_waive_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/ghio.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/lang/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/refactor/_transaction.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/strata/_scenarios.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/strata/_selfconform.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/strata/_waive.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/tickets/_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/tickets/_land_git_ops.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main -> src/frob/app/ticket_runner/_land_cmd.py::_attempt_auto_sync_merge -> src/frob/tickets/_land_git_ops.py::_land_internal_git_env
+- invalid-return-type  src/frob/tickets/_land_squash.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/tickets/_setters.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- invalid-return-type  src/frob/verify/_quarantine.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- no-matching-overload  tests/system/test_scaffold_dx.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  src/frob/serve/_socketd.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  src/frob/tickets/_land.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_finish_post_land -> src/frob/tickets/_land.py::_write_post_land_verify_marker
+- unresolved-attribute  src/frob/verify/_worker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_app_daemon_proxy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_coverage_wait_shared.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_serve_leases.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_serve_socket.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_ticket_leases.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable.test_dispatch_table_verbs_are_all_accounted_for -> src/frob/app/ticket_runner/__init__.py::_ticket_dispatch_table -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-attribute  tests/test_ticket_reconcile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_tickets_parent.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/test_tickets_priority.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/ticket_land_suite/test_land_lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/ticket_land_suite/test_verify_reset.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared -> src/frob/app/ticket_runner/_land_cmd.py::_report_stale_post_land_verify_markers -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-attribute  tests/unit/coordinator_suite/test_fleet_host_load.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/coordinator_suite/test_fleet_land.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/rapid_sweep_suite/test_baseline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_check.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_conftest_stackdump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_land_lock_liveness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_land_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_process_lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_process_reap.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_stackdump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-attribute  tests/unit/test_ticket_store.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  scripts/branch_stranded_work_analysis.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  scripts/verify_release_ci_status.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/_daemon_proxy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/_verify_rapid_debt.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/config.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/perf_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/status_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/telemetry/_footguns.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/telemetry/_usage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/test_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/ticket_runner/_land_cmd.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_resolve_main_branch
+- unresolved-import  src/frob/app/ticket_runner/_query.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/ticket_runner/_rapid_sweep.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_leaves_quarantine_raised_when_other_findings_remain_undisposed -> src/frob/app/ticket_runner/_rapid_sweep.py::_auto_dispose_filed_findings
+- unresolved-import  src/frob/app/ticket_runner/_verify.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['2280e103a1b041c5344e256148096b5f835efd82', 'c4aa40aed0d12c3ff8a4db121fa711a277ed20e9']
+- unresolved-import  src/frob/app/ticket_runner/_waive_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/app/verify_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_abstraction.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_async_hazards.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_concurrency.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_concurrency_model.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_cpp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_cpp_mayraise.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_ffi.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_kotlin.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_layering.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_lock_ordering.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_mayraise.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_normalized.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_ocp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_patterns.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_protocol_excuse.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_python.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_prepare -> src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_worsen_long_functions_pre_land -> src/frob/gates/_land_parity.py::_new_or_worsened_long_functions_in_diff -> src/frob/gates/_land_parity.py::_new_or_worsened_long_functions_in_file -> src/frob/gates/_land_parity.py::_long_function_symrefs_over_threshold -> src/frob/arch/_python.py::_check_long_functions -> src/frob/arch/_python.py::_normalized_is_complex -> src/frob/arch/_python.py::_LONG_FUNCTION_NESTING_THRESHOLD
+- unresolved-import  src/frob/arch/_rust.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_shared_state_race.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/arch/_typescript.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/check/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/ci_report.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/ci_validity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/clean/_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/clean/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/cve/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/cve/_parser.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/deploy/_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/deploy/_conform.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/deploy/_drift.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/deploy/_generate_common.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/deploy/_vm_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/derived_state.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/docs/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/doctor.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_exhaustiveness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_legacy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_legacy_cpp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_legacy_cs.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_legacy_py.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_pipeline/_fingerprint.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_pipeline/_probe.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/dup/_pipeline/_smt.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/excludes.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/exports/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/findings.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/fleet/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/fuzz/_arbitrary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/fuzz/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/fuzz/_run.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/fuzz/_stamp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/__init__.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_prepare -> src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes -> src/frob/app/ticket_runner/_land_cmd.py::_tier_a_pre_land_step -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_natives_verifiably_healthy -> src/frob/gates/__init__.py::_maybe_autorebuild_natives
+- unresolved-import  src/frob/gates/_baseline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_bug_repro.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_debt_deprecated.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_deprecated_baseline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_doclink_docanchor.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_fix_engine.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_fix_engine_scope.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_fix_engine_shared.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_fix_engine_tier_b.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_fix_engine_tier_c.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_fmt_directives.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_lock_producer.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_milestone.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_mutation_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_pii_structural/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_pii_structural/_crosslang.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_pii_structural/_signatures.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_prework.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_invoke -> src/frob/app/ticket_runner/_land_cmd.py::_land_bump_version_fn -> src/frob/app/ticket_runner/_land_cmd.py::_apply_release_bump_for_land -> src/frob/app/ticket_runner/_land_cmd.py::_required_release_bump -> src/frob/app/ticket_runner/__init__.py::_graph_snapshot -> src/frob/app/ticket_runner/_close_cmd.py::_CACHE_REL -> src/frob/gates/__init__.py::_CACHE_REL -> src/frob/gates/_prework.py::_CACHE_REL
+- unresolved-import  src/frob/gates/_ratchet.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_suppress.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_sys.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_tickets_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_vmodel.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_waive.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_waive_audit_watermark.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/_waive_lease.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/decisions.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gates/invariants.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/ghio.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/gitio.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping -> src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket -> src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time -> src/frob/app/ticket_runner/_verify.py::_evidence -> src/frob/app/ticket_runner/_verify.py::_evidence_check_repro -> src/frob/gitio.py::_merge_base -> src/frob/gitio.py::_run_git
+- unresolved-import  src/frob/gitlog/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/_resolve.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/affects.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/callgraph.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/imports.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/reach.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/graph/summary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_common.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_extract.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_nodes.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_project_detect.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_support.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_bash.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_c.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_csharp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_cuda.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_java.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_kotlin.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_python.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_rust.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_strata.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_typescript.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/lang/_walk_zig.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/map/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/mutate/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/mutate/_journal.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/narrative/_cli.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/narrative/_migrate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/natives/_build.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/outline/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_collectors.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_dup_spawn.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_effect_summaries.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_hotgraph.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_hotpath_smells.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_loop_effects.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_profile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_ratchet.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_rules.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_sampler.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/perf/_sketch_store.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/policy/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/policy/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/process/_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/process/_project_tool.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/process/_pytest_spawn.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/process/parsers/common.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_apply.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_commit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_gitops.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_module_resolve.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_module_transaction.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_operands.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_resolve.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_split.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_transaction.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/refactor/_verify_exec.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/registry/_corpus.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/registry/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/registry/_staleness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/release/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/release/_fragments.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/release/_publish.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/render/_elements.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/render/_errors.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/render/_renderer.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/scaffold/_managed.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/scaffold/_pool.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/scaffold/_skills_sync.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/scaffold/_unity_project.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/scaffold/project.py  -> attributed to T-4761 (commit 02948352347d, already closed/dropped -- filed below) via src/frob/scaffold/project.py::_MANIFESTS -> src/frob/scaffold/project.py::_ManifestEntry
+- unresolved-import  src/frob/serve/_daemon.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/serve/_events.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/serve/_socketd.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/serve/_tools.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/serve/_warm.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/serve/server.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/stats/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/stats/_agentic.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/stats/_agentic_dispatch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/stats/_sketch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_access.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_ast.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_atomic.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_backpressure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_bootstrap.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_breach.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_capacity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_circuit_breaker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_claims.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_clock_ordering.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_code_binding.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_compliance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_contention.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_crash.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_cve_fingerprint.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_delivery_semantics.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_deploy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_distributed_txn.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_effects.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_elaborate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_errors.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_export.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_facts.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_fallback.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_host.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_host_isolation.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_host_isolation_lateral.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_host_isolation_shared.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_host_isolation_vertical.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_infra.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_interactive_cost.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_krb.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_krb_movement.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_lint.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_message_schema.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_mode_conformance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_multifile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_mutation_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_native_test.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_observability.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_packs.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_parse.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_pii.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_plan.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_policy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_process_bounds.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_reliability.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_retry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_scenarios.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_scope_config.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_secrets.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_selfconform.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_selfconform_kinds.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_selfconform_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_shared_state.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_shrink.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_slo.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_spof.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_ssot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_starvation.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_supply_chain_boot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_sync_depth.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_sysdoc.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_threat.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_threat_discharge.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_threat_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_txn.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_unity_asmdef.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/strata/_waive.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_collect.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_collect_cpp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_collect_csharp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_collect_kotlin.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_collect_rust.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_collect_ts.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_coverage_refresh.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_coverage_wait.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_dotnet_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_runners.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_stability.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/testing/_unity_batchmode.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/__init__.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main -> src/frob/tickets/_land.py::_load_ticket_for_land -> src/frob/tickets/__init__.py::_load_one
+- unresolved-import  src/frob/tickets/_accept.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_archive.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_brief.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_draft_finalize.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_force_override.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_journal.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_finish_post_land -> src/frob/tickets/_land.py::_write_post_land_verify_marker
+- unresolved-import  src/frob/tickets/_land_compose.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_finalize.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_git_ops.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main -> src/frob/app/ticket_runner/_land_cmd.py::_attempt_auto_sync_merge -> src/frob/tickets/_land_git_ops.py::_land_internal_git_env
+- unresolved-import  src/frob/tickets/_land_ledger_merge.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main -> src/frob/tickets/_land.py::_load_ticket_for_land -> src/frob/tickets/_land_merge.py::_validate_closeable -> src/frob/tickets/_land_ledger_merge.py::_has_done_report
+- unresolved-import  src/frob/tickets/_land_merge.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main -> src/frob/tickets/_land.py::_load_ticket_for_land -> src/frob/tickets/_land_merge.py::_validate_closeable
+- unresolved-import  src/frob/tickets/_land_merge_zones.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_release.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_splice.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_squash.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_land_verify.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/tickets/_land_verify.py::_LAST_CLAIMS_INFRA_REASON
+- unresolved-import  src/frob/tickets/_leases.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_force_finish_requires_reason -> src/frob/app/ticket_runner/_archive.py::_archive -> src/frob/app/ticket_runner/_archive.py::_require_reason_for_archive_force -> src/frob/app/ticket_runner/_archive.py::_record_or_refuse_archive_force -> src/frob/tickets/_leases.py::_LeaseRecord
+- unresolved-import  src/frob/tickets/_models.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main -> src/frob/tickets/_land.py::_load_ticket_for_land -> src/frob/tickets/_land_merge.py::_validate_closeable -> src/frob/tickets/_land_ledger_merge.py::_has_done_report -> src/frob/tickets/_store.py::_has_done_report -> src/frob/tickets/_models.py::_find_done_report_heading -> src/frob/tickets/_models.py::_is_real_done_report_heading
+- unresolved-import  src/frob/tickets/_mutation_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_mutation_sweep_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_new_renumber.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping -> src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket -> src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none -> src/frob/tickets/_new_renumber.py::_find_finding_duplicate
+- unresolved-import  src/frob/tickets/_profile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_reconcile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_renumber_v2.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_reporting.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_reporting_attachments.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_scope.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_setters.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_store.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['2280e103a1b041c5344e256148096b5f835efd82', 'c4aa40aed0d12c3ff8a4db121fa711a277ed20e9']
+- unresolved-import  src/frob/tickets/_store_migrate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_unlanded.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_worktree_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/_worktree_sweep.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/tickets/clipboard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_attribution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_backpressure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_bisect.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_drain.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_quarantine.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_selection.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_watermark.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/verify/_worker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_capability_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_capability_modes.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_capability_registry/_matrix.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_capability_registry/_schemas.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_capability_scan.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_containment.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_cve.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_lockfile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_nvd.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_registry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_scan.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/vet/_supplychain.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/xref/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  src/frob/yamlio.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/_write_unchecked.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/conftest.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_closed_ticket_attribution_still_raises -> tests/conftest.py::_seed_ticket
+- unresolved-import  tests/gates/test_env_absent_bug002_repro.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates/test_mutation_evidence_err_branches.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates/test_tdd_order.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_debt.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_fix_engine.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_invariant.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_prework.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_protocol.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_run.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_sys.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_test_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_tick.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/gates_suite/test_waive.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/helpers/bash.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/integration/test_deploy_malmberg_pilot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/integration/test_gitlog.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/integration/test_integration.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/integration/test_interfaces.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_artifact_smoke.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_ci_hang_guard_positive_control.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_check.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_cycle.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_doctor.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_map.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_outline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_sys_export.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_sys_plan.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_vet.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_cli_xref.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_coverage_sigterm.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_fleet_status_ground_truth.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_fleet_status_ticket_readiness_arch001.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_frob_self_model.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_natives_build_integration.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_packaging_py_typed.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_public_api_from_wheel.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_run_helper_env_leak.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_scaffold_dx.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_scaffold_pool.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_spawn_budget.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/system/test_system.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ack_worktree_lease.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_app.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_app_config.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_app_daemon_proxy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_arch_near_duplicate_native.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_bug002_no_behavior_change.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_cache_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_capability_registry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_check_runner.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_check_runner.py::TestApplyTierAAndReverify.test_tierbdemo_marker_is_committed_via_tier_b_and_reported_fixed -> src/frob/app/check_runner.py::_apply_tier_a_and_reverify -> src/frob/app/check_runner.py::_check_default_base -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_ci_report.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ci_validity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ci_workflow_actions_pinned.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ci_workflow_job_summary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ci_workflow_matrix.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ci_workflow_timeout.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ci_workflow_toolchain_pins.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_clean.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_clipboard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_coverage_wait_shared.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_debt_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_deprecated_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_docptr_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_doctor.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_cross_lang.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_exhaustiveness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_inline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_native_rungs.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_prefilter.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_r5_multilang.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_region.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_rungs.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_dup_smart.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_fuzz.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gate_cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_drift_ack.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_fix_engine.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_fmt_directives.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_mutation_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_suppress.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_tick006_sibling_worktree.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_vmodel.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gates_worktree_lease.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ghio.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_gitio.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_graph.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_graph_affects_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_land_verify_claims_outcome.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_lang.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_lang_conformance_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_measure_evidence_reach.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_mutate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_mutate_journal.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_natives.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_pii_structural_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_pool_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_prework_parity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_refactor.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_registry_reconciliation_evasion.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_registry_reconciliation_supply_chain.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_registry_staleness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_release.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_release_worktree_lease.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_scaffold_worktree_lease_hook.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_secrets_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_serve.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_serve_daemon.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_serve_events.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_serve_leases.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_serve_socket.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_serve_tools_daemon_bypass.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_telemetry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_testing.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_testing_collect.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_journal.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_land.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_land_dry_run.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_ticket_land_dry_run.py::TestRestoreAbsorbedPathsOnRefusal.test_pre_land_refusal_restores_the_absorbed_rewrite -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_prepare -> src/frob/app/ticket_runner/_land_cmd.py::_resolve_land_root -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_ticket_land_lint_diff_attribution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_land_proof_claims.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome.test_ran_healthy_path_is_printed -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_ticket_land_ty_diff_attribution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_leases.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable.test_dispatch_table_verbs_are_all_accounted_for -> src/frob/app/ticket_runner/__init__.py::_ticket_dispatch_table -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_ticket_leases_cross_worktree.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_lifecycle.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_merge_driver.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_ownership_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_reconcile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_reverify.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_ticket_reverify.py::TestReverifyCli._seed_done_ticket -> src/frob/app/ticket_runner/_verify.py::_done_report -> src/frob/app/ticket_runner/_verify.py::_warn_if_done_report_not_visible_on_primary -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_ticket_runner_archive_force.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_runner_pytest_env.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_ticket_work_and_land_finish.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_pre_existing_stale_row_merely_touched_does_not_refuse -> src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land -> src/frob/app/ticket_runner/_land_cmd.py::_unwaived_file_local_error_findings -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_tickets.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_acceptance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_body.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_brief.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_cmd_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_collision.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_evidence_cli.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_missing_why_exits_nonzero -> src/frob/app/ticket_runner/_verify.py::_done_report -> src/frob/app/ticket_runner/_verify.py::_warn_if_done_report_not_visible_on_primary -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/test_tickets_evidence_removal.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_evidence_replace_cmd_t4143.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_lease.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_leases.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_ledger_concurrency.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_migration.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_mutation_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_no_scope.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_organization.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_parent.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_priority.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_review.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_scope_mutation.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_tickets_velocity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_vet.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_vet_containment.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_waive_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_worktree_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_worktree_lease_env_ambient.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/test_worktree_pythonpath.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/conftest.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_archive.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_claim_close.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_dirt_ownership.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_draft.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_land_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_land_lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_land_plan.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_unwinds_the_merge -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/ticket_land_suite/test_land_reaps_worktree.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree.test_reaps_a_worktree_with_no_further_live_lease -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/ticket_land_suite/test_land_target_branch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_ledger_splice.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_push.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_release.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_verify_intent.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred.test_no_deferral_reports_none_not_absent -> src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/ticket_land_suite/test_verify_reset.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared -> src/frob/app/ticket_runner/_land_cmd.py::_report_stale_post_land_verify_markers -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/ticket_land_suite/test_waive_deletion.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/ticket_land_suite/test_wip.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_abstraction.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_complexity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_concurrency.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_dispatch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_guards.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_lang_adapters.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_logging.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_lsp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_misc.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_smells.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/arch_suite/test_type_design.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_check_summary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_host_load.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_land.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_report.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_fleet_worktrees.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_verify_lands.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/coordinator_suite/test_wait_for_land_slot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/deploy/test_deploy_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/deploy/test_vm_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/dup/test_type_name_only_regression_t1957.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/fleet/test_route.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/fleet/test_status.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/gates/test_deprecated_baseline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/gates/test_examined_sites.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/gates/test_lexical_selfcheck.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/gates/test_lock_producer.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/gates/test_rel001_deferred_bump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/graph/test_dsl_invariant_property.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_collectors.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_hot_query.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_hotgraph.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_persist_run_cli.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_serial_pools.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_serial_pools_import_failure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/perf/test_sketch_store.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/conftest.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/test_attribution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/test_baseline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/test_commit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/test_dispose.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings
+- unresolved-import  tests/unit/rapid_sweep_suite/test_filing.py  -> attributed to T-4626 (commit c4aa40aed0d1, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket
+- unresolved-import  tests/unit/rapid_sweep_suite/test_sweep_run.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/test_window.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/rapid_sweep_suite/test_worktrees.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_atomic.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_backpressure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_breach.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_capacity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_circuit_breaker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_clock_ordering.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_compliance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_cve_fingerprint.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_delivery_semantics.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_deploy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_design_load.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_distributed_txn.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_export.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_facts.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_fallback.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_fragments.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_host.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_host_isolation.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_kernel_properties.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_litmus_cwe.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_native_staleness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_native_test.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_parse.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_pii.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_registry_cross_corpus_totality.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_registry_cross_refs.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_retry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_selfconform.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_strata_core_gil.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_strata_scan_cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_sys107_via_scope_advisory.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_threat.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_vmodel_authoring.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/strata/test_vmodel_check.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ack_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_clean_runner_branches_t1400.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_config_meta_branches_t1400.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_lazy_dispatch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_batch5.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_batch6.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_batch7.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_doable_stale_lease.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_json_guard_t2492.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_process.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_t0714_doable_summary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_t0875_leaf_collision.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_t0976_mutation_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_t1738_wave.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_runners_t1822_already_landed.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_sys_capacity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_sys_threats.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_sys_trace.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_app_telemetry_branches_t1400.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_arch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_arch_ocp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_arch_python_native.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_artifact_smoke_script.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_branch_stranded_work_analysis.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_capability_native.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_admission.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_budget.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_json_reports_universe_skip_despite_narrow_resume -> src/frob/app/check_runner.py::_run_all_stages -> src/frob/app/check_runner.py::_run_auto_detected_stages -> src/frob/app/check_runner.py::_run_all_detected -> src/frob/app/check_runner.py::_check_default_base -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/unit/test_check_native_cargo_runners.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_scoped_files.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_skip_flag.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_stop_before.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_tool_unavailable.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_check_ts_runners.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ci_self_gate_unscoped.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_claims_and_store_batch6.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_claude_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_cli_group_parity.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_close_promote_drafts.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_close_rel001_bump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_config.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_conftest_console_ctrl_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_conftest_hard_exit_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_conftest_midrun_watchdog.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_conftest_sigbreak_faulthandler.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_conftest_stackdump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_conftest_suite_result_status.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_coverage_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_cycle_runner_root_resolution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_daemon_proxy_error_paths_t1457.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_daemon_proxy_lease_t1276.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dependency_pins.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dev_branch_workflow.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_doctor.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_doctor_runner_t1276.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_done_report_check_scope.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dotnet_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dup.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dup_cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dup_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dup_legacy_py.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dup_smt.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_dup_template.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_executable.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_extending_guides_complete.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_extract_native.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_fix_engine_journal.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_flag_coverage_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_fleet_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_frob_core_gil.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_gitattributes_merge.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_gitlog.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_graph_build_lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_graph_cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_graph_get_snapshot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_graph_lock_holder_naming.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_graph_stat_trust_margin.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_helpers_bash.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_already_landed.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_cas_ledger_retry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_cmd_backpressure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_cmd_drain_wiring.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/unit/test_land_cmd_drain_wiring.py::TestRapidLandDrainWiring.test_dry_run_spawns_neither -> src/frob/app/ticket_runner/_land_cmd.py::_land_core_finish_post_land -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/unit/test_land_compose.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_cross_ticket_leakage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_default_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_duplicate_ticket_id.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_finish_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_finish_idempotent.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded.test_done_on_main_but_content_not_confirmed_runs_the_normal_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed -> src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/unit/test_land_format_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_in_progress_window.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_leaked_tickets_lease_hoist.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_lock_liveness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_machinery_owned_leakage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_merge_conflict_drop.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_orphaned_evidence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_parity_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_record_commit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_release_coherence.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_release_out_of_tree.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_root_resolution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_sibling_regression.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_splice_test_then_impl.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_squash_residue_reclaim.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_squash_stage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_stackdump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_stage_flip.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_step_ordering.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_land_stranding_t4312.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_lang_kotlin.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_lang_parse_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_lang_strata.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_lang_strata_entity_arch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_lease_lifecycle.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_leases_staleness_perf.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_lifecycle_work_base.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_main_entry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_makefile_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_map.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_mutation_sweep_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_natives_build.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_new_ticket_body_similarity_warning.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_new_ticket_over_broad_scope_warning.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_new_ticket_scope_breadth_ack_flag.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_new_ticket_scope_overlap_warning.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_outline.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_parse_runner_direct.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_perf_runner_t1400.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_policy_weakening_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_process_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_process_lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_process_pid_liveness.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_process_reap.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_process_tty.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_profile_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_project_tool.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_pyfmt_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_pyproject_data_memoization.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_pytest_spawn_env_wiring.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_rapid_debt.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_reconcile_auto_commit_t1936.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_release_stamp_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_release_workflow_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_render.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_require_python.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_scaffold_project.py  -> attributed to T-4761 (commit 02948352347d, already closed/dropped -- filed below) via tests/unit/test_scaffold_project.py::test_render_project_propagates_resolve_failure -> src/frob/scaffold/project.py::_MANIFESTS
+- unresolved-import  tests/unit/test_scaffold_unity_project.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_scope_closure_declared_scope_only.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_scope_closure_warning_collapse_t1556.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_stackdump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_store_batch7.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_store_mode_memoization.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_strata_tmlanguage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_support_csharp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_suppress_worktree_path.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_sync_claude_config_stale_guard_t3408.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_t2450_scope_repair.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_telemetry_verb_recording.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_accept_evidence_hint_t4106.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_anchor_cli.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_cli_surface.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_close_bug002_t1427.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_close_bug002_t1438.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_close_gate_claims_t1410.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_close_own_obligations_t1387.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_file_flags.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_land_bug003_t2215.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_list_summary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_new_body_file_pipe_t2021.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_new_readback_guard_t4339.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_new_related.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_new_scope_plausibility.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_new_scope_plausibility_t2192.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_restore.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_runner_bare_root_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_runner_designate_repro.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_runner_gate_findings.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_runner_land_cmd_flags.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain.test_queue_flag_calls_land_enqueue_not_land_core -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/unit/test_ticket_runner_land_release.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_runner_ledger_mirror.py  -> attributed to T-5123 (commit 2280e103a1b0, already closed/dropped -- filed below) via tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_all_classified -> src/frob/app/ticket_runner/__init__.py::_ticket_dispatch_table -> src/frob/app/ticket_runner/_land_cmd.py::_land -> src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success -> src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree -> src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
+- unresolved-import  tests/unit/test_ticket_runner_repro_merge_base.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_runner_venv_sync_t3320.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_store.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_ticket_sweep_terminal_state.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_unity_batchmode.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_unlanded_branch_work.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_verify_language_buckets.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_verify_release_ci_status.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_version_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_waive004_perf_guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_waive_audit_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/test_xref.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/testing/test_stability.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_attribution.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_backpressure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_bisect.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_drain.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_quarantine.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_selection.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_verify_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/unit/verify/test_worker.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/vet_suite/test_advisories.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/vet_suite/test_lockfile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/vet_suite/test_opaque_indirection.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- unresolved-import  tests/vet_suite/test_scan_tree.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
