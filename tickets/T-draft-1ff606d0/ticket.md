@@ -1,0 +1,1711 @@
+---
+id: T-draft-1ff606d0
+title: 'post-land sweep regression from an unattributed source (sweep spawned by T-5131):
+  344 new (rule, file) identit(ies) (AFFECT001, ARCH102, COV001, COV002)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-09-20'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- .claude/hooks/_root_write_guard_lib.py
+- .claude/hooks/frob-timeout-guard.py
+- .claude/hooks/tool-call-telemetry.py
+- .git/frob-leases/T-3032.json
+- .git/frob-leases/T-3899.json
+- .git/frob-leases/T-3936.json
+- .git/frob-leases/T-3962.json
+- .git/frob-leases/T-3964.json
+- .git/frob-leases/T-3986.json
+- .git/frob-leases/T-3995.json
+- .git/frob-leases/T-3997.json
+- .git/frob-leases/T-4030.json
+- .git/frob-leases/T-4073.json
+- .git/frob-leases/T-4112.json
+- .git/frob-leases/T-4113.json
+- .git/frob-leases/T-4114.json
+- .git/frob-leases/T-4115.json
+- .git/frob-leases/T-4254.json
+- .git/frob-leases/T-4420.json
+- .git/frob-leases/T-4509.json
+- .git/frob-leases/T-4612.json
+- .git/frob-leases/T-4657.json
+- .git/frob-leases/T-4658.json
+- .git/frob-leases/T-4661.json
+- .git/frob-leases/T-4693.json
+- .git/frob-leases/T-4760.json
+- .git/frob-leases/T-4761.json
+- .git/frob-leases/T-4763.json
+- .git/frob-leases/T-4951.json
+- .git/frob-leases/T-4991.json
+- .git/frob-leases/T-4993.json
+- .git/frob-leases/T-5124.json
+- .git/frob-leases/T-5125.json
+- .git/frob-leases/T-5126.json
+- docs/commands/
+- docs/design/registry/check-coverage.yaml
+- docs/guides/extending/failure-injection-acceptance-criteria.md
+- docs/modules/gate-sys111-ratchet-auto-accept.md
+- docs/modules/gate-time-stable-invariant.md
+- docs/modules/gates.md
+- docs/modules/tickets-lifecycle.md
+- docs/modules/tickets.md
+- github/dependabot.yml
+- scripts/fleet_status.py
+- scripts/verify_lands.py
+- src/frob/__main__.py
+- src/frob/_cli_parsers/_check.py
+- src/frob/_cli_parsers/_explore.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/_cli_parsers/_ops.py
+- src/frob/_cli_parsers/_quality.py
+- src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/app/app.py
+- src/frob/app/check_runner.py
+- src/frob/app/config.py
+- src/frob/app/coverage_runner.py
+- src/frob/app/doctor_runner.py
+- src/frob/app/scaffold_runner.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/app/ticket_runner/_new.py
+- src/frob/app/verify_runner.py
+- src/frob/arch/_models.py
+- src/frob/docs/__init__.py
+- src/frob/doctor.py
+- src/frob/findings.py
+- src/frob/gates/_bug_repro.py
+- src/frob/gates/_claim_lint.py
+- src/frob/gates/_coverage.py
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fmt_directives.py
+- src/frob/gates/_guard_closure.py
+- src/frob/gates/_inv.py
+- src/frob/gates/_lang_conformance.py
+- src/frob/gates/_models.py
+- src/frob/gates/_narrative_blocks.py
+- src/frob/gates/_prework.py
+- src/frob/gates/_ratchet.py
+- src/frob/gates/_suppress.py
+- src/frob/gates/_sys_branch.py
+- src/frob/gates/_wire.py
+- src/frob/gitio.py
+- src/frob/graph/__init__.py
+- src/frob/graph/affects.py
+- src/frob/lang/_nodes.py
+- src/frob/logging/logger.py
+- src/frob/refactor/_transaction.py
+- src/frob/refactor/_verify.py
+- src/frob/scaffold/_unity_project.py
+- src/frob/scaffold/project.py
+- src/frob/security/_redact.py
+- src/frob/strata/_backpressure.py
+- src/frob/strata/_claims.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_design_load.py
+- src/frob/strata/_elaborate.py
+- src/frob/strata/_mutation_audit.py
+- src/frob/strata/_packs.py
+- src/frob/strata/_threat_catalog_benign.py
+- src/frob/strata/_threat_catalog_cwe.py
+- src/frob/strata/_threat_catalog_quality.py
+- src/frob/strata/_unity_asmdef.py
+- src/frob/testing/_dotnet_runner.py
+- src/frob/testing/_runners.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_land_compose.py
+- src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_land_squash.py
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_registry_files.py
+- src/frob/tickets/_setters.py
+- src/frob/tickets/_store.py
+- src/frob/verify/_quarantine.py
+- src/frob/vet/_capability_registry/_kinds.py
+- src/frob/xref/__init__.py
+- tests/system/conftest.py
+- tests/system/test_artifact_smoke.py
+- tests/system/test_cli_check.py
+- tests/system/test_cli_doctor.py
+- tests/system/test_cli_scaffold_apply.py
+- tests/system/test_cli_sys_audit.py
+- tests/system/test_cli_ticket.py
+- tests/system/test_fleet_status_ground_truth.py
+- tests/system/test_run_helper_env_leak.py
+- tests/test_arch_gate.py
+- tests/test_cache_gate.py
+- tests/test_check_gate_base.py
+- tests/test_check_runner.py
+- tests/test_ci_workflow_matrix.py
+- tests/test_coverage.py
+- tests/test_docenum_gate.py
+- tests/test_docptr_gate.py
+- tests/test_evidence_integrity.py
+- tests/test_excludes.py
+- tests/test_gate_cache.py
+- tests/test_gates_fmt_directives.py
+- tests/test_gates_ratchet.py
+- tests/test_gates_suppress.py
+- tests/test_gitio.py
+- tests/test_graph_affects.py
+- tests/test_hook_frob_suggest.py
+- tests/test_hook_frob_timeout_guard.py
+- tests/test_hook_root_write_guard.py
+- tests/test_land_verify_claims_outcome.py
+- tests/test_lang.py
+- tests/test_lang_conformance_gate.py
+- tests/test_lang_support.py
+- tests/test_narrative_blocks.py
+- tests/test_perf.py
+- tests/test_refactor.py
+- tests/test_refs_gate.py
+- tests/test_release.py
+- tests/test_scaffold_worktree_lease_hook.py
+- tests/test_serve_daemon.py
+- tests/test_testing.py
+- tests/test_ticket_land_proof_claims.py
+- tests/test_ticket_leases_cross_worktree.py
+- tests/test_ticket_reconcile.py
+- tests/test_ticket_store_stale_snapshot.py
+- tests/test_ticket_work_and_land_finish.py
+- tests/test_tickets_acceptance.py
+- tests/test_tickets_cmd_evidence.py
+- tests/test_tickets_collision.py
+- tests/test_tickets_evidence_cli.py
+- tests/test_tickets_lease.py
+- tests/test_tickets_leases.py
+- tests/test_tickets_live_tracker.py
+- tests/test_tickets_migration.py
+- tests/test_tickets_organization.py
+- tests/test_tickets_registry_files.py
+- tests/test_tickets_triage_dates.py
+- tests/test_waive_gate.py
+- tests/test_worktree_guard.py
+- tests/ticket_land_suite/test_verify_intent.py
+- tests/unit/arch_suite/test_concurrency.py
+- tests/unit/arch_suite/test_dispatch.py
+- tests/unit/arch_suite/test_lang_adapters.py
+- tests/unit/coordinator_suite/test_fleet_host_load.py
+- tests/unit/coordinator_suite/test_fleet_land.py
+- tests/unit/coordinator_suite/test_fleet_report.py
+- tests/unit/coordinator_suite/test_fleet_worktrees.py
+- tests/unit/gates/test_cov002_strata_declarations.py
+- tests/unit/gates/test_deprecated_baseline.py
+- tests/unit/gates/test_detector_scope.py
+- tests/unit/gates/test_examined_sites.py
+- tests/unit/gates/test_exhaustive_handling_path_shape.py
+- tests/unit/gates/test_ffi_boundary_path_shape.py
+- tests/unit/gates/test_lexical_selfcheck.py
+- tests/unit/gates/test_wire001_cli_dest_semantic.py
+- tests/unit/graph/test_dsl.py
+- tests/unit/graph/test_dsl_invariant_property.py
+- tests/unit/graph/test_dsl_markdown_waive.py
+- tests/unit/lang/test_csharp_directives.py
+- tests/unit/perf/test_hotpath_smells.py
+- tests/unit/rapid_sweep_suite/test_attribution.py
+- tests/unit/rapid_sweep_suite/test_baseline.py
+- tests/unit/rapid_sweep_suite/test_commit.py
+- tests/unit/rapid_sweep_suite/test_sweep_run.py
+- tests/unit/strata/test_admit_phase_wiring.py
+- tests/unit/strata/test_claims_overdue.py
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_strata_scan_cache.py
+- tests/unit/strata/test_threat.py
+- tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/test_app_runners_batch6.py
+- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_app_runners_json_guard_t2492.py
+- tests/unit/test_arch_srp.py
+- tests/unit/test_artifact_smoke_script.py
+- tests/unit/test_check.py
+- tests/unit/test_check_budget.py
+- tests/unit/test_check_skip_flag.py
+- tests/unit/test_claims_and_store_batch6.py
+- tests/unit/test_cli_lang_choices_drift.py
+- tests/unit/test_conftest_sigbreak_faulthandler.py
+- tests/unit/test_conftest_stackdump.py
+- tests/unit/test_cycle_runner_doc_waiver_t2598.py
+- tests/unit/test_cycle_waiver.py
+- tests/unit/test_dev_branch_workflow.py
+- tests/unit/test_docs_module.py
+- tests/unit/test_doctor_runner_t1276.py
+- tests/unit/test_done_report_check_scope.py
+- tests/unit/test_dotnet_runner.py
+- tests/unit/test_dup_cache.py
+- tests/unit/test_dup_legacy_cpp.py
+- tests/unit/test_findings_severity_pinned.py
+- tests/unit/test_frob_core_gil.py
+- tests/unit/test_gitattributes_crlf_normalization.py
+- tests/unit/test_gitattributes_merge.py
+- tests/unit/test_graph_get_snapshot.py
+- tests/unit/test_graph_ingest_batching.py
+- tests/unit/test_graph_stat_trust_margin.py
+- tests/unit/test_land_cas_ledger_retry.py
+- tests/unit/test_land_compose.py
+- tests/unit/test_land_default_queue.py
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
+- tests/unit/test_land_leaked_tickets_lease_hoist.py
+- tests/unit/test_land_queue.py
+- tests/unit/test_land_sibling_regression.py
+- tests/unit/test_land_squash_residue_reclaim.py
+- tests/unit/test_land_stackdump.py
+- tests/unit/test_land_stage_flip.py
+- tests/unit/test_land_verify_claim_divergence_sentinel.py
+- tests/unit/test_lang_parse_guard.py
+- tests/unit/test_lang_project_detect.py
+- tests/unit/test_lang_strata.py
+- tests/unit/test_lease_lifecycle.py
+- tests/unit/test_leases_staleness_perf.py
+- tests/unit/test_lifecycle_work_base.py
+- tests/unit/test_logging_quiet.py
+- tests/unit/test_makefile_coverage.py
+- tests/unit/test_memo.py
+- tests/unit/test_new_ticket_scope_overlap_warning.py
+- tests/unit/test_policy_weakening_gate.py
+- tests/unit/test_post_publish_lock_window.py
+- tests/unit/test_process_lock.py
+- tests/unit/test_process_pid_liveness.py
+- tests/unit/test_process_reap.py
+- tests/unit/test_pyproject_data_memoization.py
+- tests/unit/test_rel002_dev_suffix.py
+- tests/unit/test_release_workflow_gate.py
+- tests/unit/test_run_commands.py
+- tests/unit/test_scaffold_natives_shim.py
+- tests/unit/test_scaffold_project.py
+- tests/unit/test_scaffold_unity_project.py
+- tests/unit/test_scope_closure_declared_scope_only.py
+- tests/unit/test_skills_sync.py
+- tests/unit/test_store_mode_memoization.py
+- tests/unit/test_support_csharp.py
+- tests/unit/test_suppress_worktree_path.py
+- tests/unit/test_telemetry_verb_recording.py
+- tests/unit/test_ticket_cli_surface.py
+- tests/unit/test_ticket_new_related.py
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/unit/test_ticket_runner_land_cmd_flags.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
+- tests/unit/test_ticket_store.py
+- tests/unit/test_unity_batchmode.py
+- tests/unit/test_unlanded_branch_work.py
+- tests/unit/test_waive_audit_watermark.py
+- tests/unit/test_xref.py
+- tests/unit/verify/test_backpressure.py
+- tests/unit/verify/test_quarantine.py
+- tests/unit/verify/test_verify_runner.py
+- tests/unit/verify/test_worker.py
+- tests/vet_suite/test_capability_registry_unity.py
+- tests/vet_suite/test_capability_scan_csharp.py
+- tests/vet_suite/test_capability_scan_dotnet_bcl.py
+- tests/vet_suite/test_scan_tree.py
+- tickets.md
+- tmp/verify_ac3.sh
+findings:
+- - AFFECT001
+  - scripts/fleet_status.py
+- - AFFECT001
+  - scripts/verify_lands.py
+- - AFFECT001
+  - src/frob/_cli_parsers/_check.py
+- - AFFECT001
+  - src/frob/app/coverage_runner.py
+- - AFFECT001
+  - src/frob/arch/_models.py
+- - AFFECT001
+  - src/frob/refactor/_transaction.py
+- - AFFECT001
+  - src/frob/strata/_claims.py
+- - AFFECT001
+  - src/frob/strata/_compliance.py
+- - AFFECT001
+  - src/frob/strata/_design_load.py
+- - AFFECT001
+  - src/frob/strata/_elaborate.py
+- - AFFECT001
+  - src/frob/strata/_packs.py
+- - AFFECT001
+  - src/frob/strata/_threat_catalog_benign.py
+- - AFFECT001
+  - src/frob/strata/_threat_catalog_cwe.py
+- - AFFECT001
+  - src/frob/strata/_threat_catalog_quality.py
+- - AFFECT001
+  - src/frob/vet/_capability_registry/_kinds.py
+- - ARCH102
+  - src/frob/lang/_nodes.py
+- - ARCH102
+  - src/frob/tickets/_land_compose.py
+- - COV001
+  - src/frob/_cli_parsers/_check.py
+- - COV001
+  - src/frob/tickets/_land_compose.py
+- - COV002
+  - .claude/hooks/_root_write_guard_lib.py
+- - COV002
+  - .claude/hooks/frob-timeout-guard.py
+- - COV002
+  - .claude/hooks/tool-call-telemetry.py
+- - COV002
+  - scripts/fleet_status.py
+- - COV002
+  - scripts/verify_lands.py
+- - COV002
+  - src/frob/_cli_parsers/_check.py
+- - COV002
+  - src/frob/_cli_parsers/_explore.py
+- - COV002
+  - src/frob/_cli_parsers/_misc.py
+- - COV002
+  - src/frob/_cli_parsers/_ops.py
+- - COV002
+  - src/frob/_cli_parsers/_quality.py
+- - COV002
+  - src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+- - COV002
+  - src/frob/_cli_parsers/_ticket/_metadata.py
+- - COV002
+  - src/frob/app/config.py
+- - COV002
+  - src/frob/app/doctor_runner.py
+- - COV002
+  - src/frob/app/scaffold_runner.py
+- - COV002
+  - src/frob/app/ticket_runner/__init__.py
+- - COV002
+  - src/frob/app/ticket_runner/_close_cmd.py
+- - COV002
+  - src/frob/app/ticket_runner/_mutate.py
+- - COV002
+  - src/frob/app/ticket_runner/_new.py
+- - COV002
+  - src/frob/app/verify_runner.py
+- - COV002
+  - src/frob/docs/__init__.py
+- - COV002
+  - src/frob/findings.py
+- - COV002
+  - src/frob/gates/_bug_repro.py
+- - COV002
+  - src/frob/gates/_claim_lint.py
+- - COV002
+  - src/frob/gates/_coverage.py
+- - COV002
+  - src/frob/gates/_fix_engine.py
+- - COV002
+  - src/frob/gates/_fmt_directives.py
+- - COV002
+  - src/frob/gates/_guard_closure.py
+- - COV002
+  - src/frob/gates/_inv.py
+- - COV002
+  - src/frob/gates/_lang_conformance.py
+- - COV002
+  - src/frob/gates/_models.py
+- - COV002
+  - src/frob/gates/_narrative_blocks.py
+- - COV002
+  - src/frob/gates/_suppress.py
+- - COV002
+  - src/frob/gates/_sys_branch.py
+- - COV002
+  - src/frob/gates/_wire.py
+- - COV002
+  - src/frob/gitio.py
+- - COV002
+  - src/frob/graph/__init__.py
+- - COV002
+  - src/frob/logging/logger.py
+- - COV002
+  - src/frob/refactor/_transaction.py
+- - COV002
+  - src/frob/refactor/_verify.py
+- - COV002
+  - src/frob/scaffold/_unity_project.py
+- - COV002
+  - src/frob/scaffold/project.py
+- - COV002
+  - src/frob/security/_redact.py
+- - COV002
+  - src/frob/strata/_backpressure.py
+- - COV002
+  - src/frob/strata/_claims.py
+- - COV002
+  - src/frob/strata/_compliance.py
+- - COV002
+  - src/frob/strata/_mutation_audit.py
+- - COV002
+  - src/frob/strata/_packs.py
+- - COV002
+  - src/frob/strata/_threat_catalog_benign.py
+- - COV002
+  - src/frob/strata/_threat_catalog_cwe.py
+- - COV002
+  - src/frob/strata/_threat_catalog_quality.py
+- - COV002
+  - src/frob/strata/_unity_asmdef.py
+- - COV002
+  - src/frob/testing/_runners.py
+- - COV002
+  - src/frob/tickets/_evidence.py
+- - COV002
+  - src/frob/tickets/_land_compose.py
+- - COV002
+  - src/frob/tickets/_land_finalize.py
+- - COV002
+  - src/frob/tickets/_registry_files.py
+- - COV002
+  - src/frob/tickets/_setters.py
+- - COV002
+  - src/frob/tickets/_store.py
+- - COV002
+  - src/frob/xref/__init__.py
+- - COV002
+  - tests/system/conftest.py
+- - COV002
+  - tests/system/test_artifact_smoke.py
+- - COV002
+  - tests/system/test_cli_check.py
+- - COV002
+  - tests/system/test_cli_doctor.py
+- - COV002
+  - tests/system/test_cli_scaffold_apply.py
+- - COV002
+  - tests/system/test_cli_sys_audit.py
+- - COV002
+  - tests/system/test_cli_ticket.py
+- - COV002
+  - tests/system/test_fleet_status_ground_truth.py
+- - COV002
+  - tests/system/test_run_helper_env_leak.py
+- - COV002
+  - tests/test_arch_gate.py
+- - COV002
+  - tests/test_cache_gate.py
+- - COV002
+  - tests/test_check_gate_base.py
+- - COV002
+  - tests/test_ci_workflow_matrix.py
+- - COV002
+  - tests/test_coverage.py
+- - COV002
+  - tests/test_docenum_gate.py
+- - COV002
+  - tests/test_docptr_gate.py
+- - COV002
+  - tests/test_evidence_integrity.py
+- - COV002
+  - tests/test_excludes.py
+- - COV002
+  - tests/test_gate_cache.py
+- - COV002
+  - tests/test_gates_fmt_directives.py
+- - COV002
+  - tests/test_gates_ratchet.py
+- - COV002
+  - tests/test_gates_suppress.py
+- - COV002
+  - tests/test_gitio.py
+- - COV002
+  - tests/test_graph_affects.py
+- - COV002
+  - tests/test_hook_frob_suggest.py
+- - COV002
+  - tests/test_hook_frob_timeout_guard.py
+- - COV002
+  - tests/test_hook_root_write_guard.py
+- - COV002
+  - tests/test_land_verify_claims_outcome.py
+- - COV002
+  - tests/test_lang_conformance_gate.py
+- - COV002
+  - tests/test_lang_support.py
+- - COV002
+  - tests/test_narrative_blocks.py
+- - COV002
+  - tests/test_perf.py
+- - COV002
+  - tests/test_refactor.py
+- - COV002
+  - tests/test_refs_gate.py
+- - COV002
+  - tests/test_release.py
+- - COV002
+  - tests/test_scaffold_worktree_lease_hook.py
+- - COV002
+  - tests/test_serve_daemon.py
+- - COV002
+  - tests/test_testing.py
+- - COV002
+  - tests/test_ticket_land_proof_claims.py
+- - COV002
+  - tests/test_ticket_leases_cross_worktree.py
+- - COV002
+  - tests/test_ticket_reconcile.py
+- - COV002
+  - tests/test_ticket_store_stale_snapshot.py
+- - COV002
+  - tests/test_ticket_work_and_land_finish.py
+- - COV002
+  - tests/test_tickets_acceptance.py
+- - COV002
+  - tests/test_tickets_cmd_evidence.py
+- - COV002
+  - tests/test_tickets_collision.py
+- - COV002
+  - tests/test_tickets_evidence_cli.py
+- - COV002
+  - tests/test_tickets_lease.py
+- - COV002
+  - tests/test_tickets_leases.py
+- - COV002
+  - tests/test_tickets_live_tracker.py
+- - COV002
+  - tests/test_tickets_migration.py
+- - COV002
+  - tests/test_tickets_organization.py
+- - COV002
+  - tests/test_tickets_registry_files.py
+- - COV002
+  - tests/test_tickets_triage_dates.py
+- - COV002
+  - tests/test_waive_gate.py
+- - COV002
+  - tests/test_worktree_guard.py
+- - COV002
+  - tests/ticket_land_suite/test_verify_intent.py
+- - COV002
+  - tests/unit/arch_suite/test_concurrency.py
+- - COV002
+  - tests/unit/arch_suite/test_dispatch.py
+- - COV002
+  - tests/unit/arch_suite/test_lang_adapters.py
+- - COV002
+  - tests/unit/coordinator_suite/test_fleet_host_load.py
+- - COV002
+  - tests/unit/coordinator_suite/test_fleet_land.py
+- - COV002
+  - tests/unit/coordinator_suite/test_fleet_report.py
+- - COV002
+  - tests/unit/coordinator_suite/test_fleet_worktrees.py
+- - COV002
+  - tests/unit/gates/test_deprecated_baseline.py
+- - COV002
+  - tests/unit/gates/test_detector_scope.py
+- - COV002
+  - tests/unit/gates/test_examined_sites.py
+- - COV002
+  - tests/unit/gates/test_exhaustive_handling_path_shape.py
+- - COV002
+  - tests/unit/gates/test_ffi_boundary_path_shape.py
+- - COV002
+  - tests/unit/gates/test_lexical_selfcheck.py
+- - COV002
+  - tests/unit/gates/test_wire001_cli_dest_semantic.py
+- - COV002
+  - tests/unit/graph/test_dsl.py
+- - COV002
+  - tests/unit/graph/test_dsl_invariant_property.py
+- - COV002
+  - tests/unit/graph/test_dsl_markdown_waive.py
+- - COV002
+  - tests/unit/lang/test_csharp_directives.py
+- - COV002
+  - tests/unit/perf/test_hotpath_smells.py
+- - COV002
+  - tests/unit/rapid_sweep_suite/test_attribution.py
+- - COV002
+  - tests/unit/rapid_sweep_suite/test_baseline.py
+- - COV002
+  - tests/unit/rapid_sweep_suite/test_commit.py
+- - COV002
+  - tests/unit/rapid_sweep_suite/test_sweep_run.py
+- - COV002
+  - tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+- - COV002
+  - tests/unit/test_app_runners_batch5.py
+- - COV002
+  - tests/unit/test_app_runners_batch6.py
+- - COV002
+  - tests/unit/test_app_runners_batch7.py
+- - COV002
+  - tests/unit/test_app_runners_json_guard_t2492.py
+- - COV002
+  - tests/unit/test_arch_srp.py
+- - COV002
+  - tests/unit/test_artifact_smoke_script.py
+- - COV002
+  - tests/unit/test_check.py
+- - COV002
+  - tests/unit/test_check_budget.py
+- - COV002
+  - tests/unit/test_check_skip_flag.py
+- - COV002
+  - tests/unit/test_claims_and_store_batch6.py
+- - COV002
+  - tests/unit/test_cli_lang_choices_drift.py
+- - COV002
+  - tests/unit/test_conftest_sigbreak_faulthandler.py
+- - COV002
+  - tests/unit/test_conftest_stackdump.py
+- - COV002
+  - tests/unit/test_cycle_runner_doc_waiver_t2598.py
+- - COV002
+  - tests/unit/test_cycle_waiver.py
+- - COV002
+  - tests/unit/test_dev_branch_workflow.py
+- - COV002
+  - tests/unit/test_docs_module.py
+- - COV002
+  - tests/unit/test_doctor_runner_t1276.py
+- - COV002
+  - tests/unit/test_done_report_check_scope.py
+- - COV002
+  - tests/unit/test_dotnet_runner.py
+- - COV002
+  - tests/unit/test_dup_cache.py
+- - COV002
+  - tests/unit/test_dup_legacy_cpp.py
+- - COV002
+  - tests/unit/test_findings_severity_pinned.py
+- - COV002
+  - tests/unit/test_frob_core_gil.py
+- - COV002
+  - tests/unit/test_gitattributes_crlf_normalization.py
+- - COV002
+  - tests/unit/test_gitattributes_merge.py
+- - COV002
+  - tests/unit/test_graph_get_snapshot.py
+- - COV002
+  - tests/unit/test_graph_ingest_batching.py
+- - COV002
+  - tests/unit/test_graph_stat_trust_margin.py
+- - COV002
+  - tests/unit/test_land_cas_ledger_retry.py
+- - COV002
+  - tests/unit/test_land_compose.py
+- - COV002
+  - tests/unit/test_land_default_queue.py
+- - COV002
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
+- - COV002
+  - tests/unit/test_land_leaked_tickets_lease_hoist.py
+- - COV002
+  - tests/unit/test_land_queue.py
+- - COV002
+  - tests/unit/test_land_sibling_regression.py
+- - COV002
+  - tests/unit/test_land_squash_residue_reclaim.py
+- - COV002
+  - tests/unit/test_land_stackdump.py
+- - COV002
+  - tests/unit/test_land_stage_flip.py
+- - COV002
+  - tests/unit/test_land_verify_claim_divergence_sentinel.py
+- - COV002
+  - tests/unit/test_lang_parse_guard.py
+- - COV002
+  - tests/unit/test_lang_project_detect.py
+- - COV002
+  - tests/unit/test_lang_strata.py
+- - COV002
+  - tests/unit/test_lease_lifecycle.py
+- - COV002
+  - tests/unit/test_leases_staleness_perf.py
+- - COV002
+  - tests/unit/test_lifecycle_work_base.py
+- - COV002
+  - tests/unit/test_logging_quiet.py
+- - COV002
+  - tests/unit/test_makefile_coverage.py
+- - COV002
+  - tests/unit/test_memo.py
+- - COV002
+  - tests/unit/test_new_ticket_scope_overlap_warning.py
+- - COV002
+  - tests/unit/test_policy_weakening_gate.py
+- - COV002
+  - tests/unit/test_post_publish_lock_window.py
+- - COV002
+  - tests/unit/test_process_lock.py
+- - COV002
+  - tests/unit/test_process_pid_liveness.py
+- - COV002
+  - tests/unit/test_process_reap.py
+- - COV002
+  - tests/unit/test_pyproject_data_memoization.py
+- - COV002
+  - tests/unit/test_rel002_dev_suffix.py
+- - COV002
+  - tests/unit/test_release_workflow_gate.py
+- - COV002
+  - tests/unit/test_scaffold_natives_shim.py
+- - COV002
+  - tests/unit/test_scaffold_project.py
+- - COV002
+  - tests/unit/test_scaffold_unity_project.py
+- - COV002
+  - tests/unit/test_scope_closure_declared_scope_only.py
+- - COV002
+  - tests/unit/test_skills_sync.py
+- - COV002
+  - tests/unit/test_store_mode_memoization.py
+- - COV002
+  - tests/unit/test_support_csharp.py
+- - COV002
+  - tests/unit/test_suppress_worktree_path.py
+- - COV002
+  - tests/unit/test_telemetry_verb_recording.py
+- - COV002
+  - tests/unit/test_ticket_cli_surface.py
+- - COV002
+  - tests/unit/test_ticket_new_related.py
+- - COV002
+  - tests/unit/test_ticket_runner_gate_findings.py
+- - COV002
+  - tests/unit/test_ticket_runner_land_cmd_flags.py
+- - COV002
+  - tests/unit/test_ticket_runner_land_release.py
+- - COV002
+  - tests/unit/test_ticket_runner_ledger_mirror.py
+- - COV002
+  - tests/unit/test_ticket_store.py
+- - COV002
+  - tests/unit/test_unity_batchmode.py
+- - COV002
+  - tests/unit/test_unlanded_branch_work.py
+- - COV002
+  - tests/unit/test_waive_audit_watermark.py
+- - COV002
+  - tests/unit/test_xref.py
+- - COV002
+  - tests/unit/verify/test_backpressure.py
+- - COV002
+  - tests/unit/verify/test_quarantine.py
+- - COV002
+  - tests/unit/verify/test_verify_runner.py
+- - COV002
+  - tests/unit/verify/test_worker.py
+- - COV002
+  - tests/vet_suite/test_capability_registry_unity.py
+- - COV002
+  - tests/vet_suite/test_capability_scan_csharp.py
+- - COV002
+  - tests/vet_suite/test_capability_scan_dotnet_bcl.py
+- - COV002
+  - tests/vet_suite/test_scan_tree.py
+- - COV003
+  - github/dependabot.yml
+- - COV003
+  - tests/unit/test_run_commands.py
+- - COV003
+  - tmp/verify_ac3.sh
+- - COV007
+  - src/frob/testing/_dotnet_runner.py
+- - COV007
+  - src/frob/tickets/_evidence.py
+- - DOC001
+  - docs/guides/extending/failure-injection-acceptance-criteria.md
+- - DOC011
+  - docs/modules/tickets-lifecycle.md
+- - DOC011
+  - docs/modules/tickets.md
+- - DOC012
+  - docs/commands/
+- - DOCENUM001
+  - docs/modules/gates.md
+- - DRIFT001
+  - src/frob/doctor.py
+- - DRIFT001
+  - src/frob/gates/_prework.py
+- - DRIFT001
+  - src/frob/tickets/_land_squash.py
+- - DRIFT001
+  - src/frob/verify/_quarantine.py
+- - DUP001
+  - src/frob/_cli_parsers/_check.py
+- - DUP001
+  - src/frob/app/check_runner.py
+- - DUP001
+  - src/frob/graph/affects.py
+- - DUP001
+  - tests/test_lang.py
+- - DUP001
+  - tests/test_perf.py
+- - DUP001
+  - tests/unit/arch_suite/test_concurrency.py
+- - DUP001
+  - tests/unit/gates/test_cov002_strata_declarations.py
+- - DUP001
+  - tests/unit/perf/test_hotpath_smells.py
+- - DUP001
+  - tests/unit/strata/test_admit_phase_wiring.py
+- - DUP001
+  - tests/unit/strata/test_facts.py
+- - DUP001
+  - tests/unit/strata/test_threat.py
+- - DUP001
+  - tests/unit/test_check_skip_flag.py
+- - DUP001
+  - tests/unit/test_dup_legacy_cpp.py
+- - DUP001
+  - tests/unit/test_store_mode_memoization.py
+- - DUP001
+  - tests/unit/test_telemetry_verb_recording.py
+- - DUP002
+  - src/frob/__main__.py
+- - DUP002
+  - src/frob/_cli_parsers/_check.py
+- - DUP002
+  - tests/test_ci_workflow_matrix.py
+- - DUP002
+  - tests/test_ticket_leases_cross_worktree.py
+- - DUP002
+  - tests/unit/graph/test_dsl_invariant_property.py
+- - INV003
+  - docs/modules/gate-sys111-ratchet-auto-accept.md
+- - INV003
+  - docs/modules/gate-time-stable-invariant.md
+- - LARGE001
+  - src/frob/gates/_inv.py
+- - LARGE001
+  - src/frob/strata/_claims.py
+- - MILE002
+  - tickets.md
+- - OPAQUE001
+  - src/frob/_cli_parsers/_check.py
+- - OPAQUE001
+  - src/frob/app/app.py
+- - OPAQUE001
+  - src/frob/app/check_runner.py
+- - PERF004
+  - src/frob/_cli_parsers/_check.py
+- - PERF006
+  - src/frob/gates/_guard_closure.py
+- - REF002
+  - docs/modules/gate-sys111-ratchet-auto-accept.md
+- - REF002
+  - docs/modules/gate-time-stable-invariant.md
+- - REG002
+  - docs/design/registry/check-coverage.yaml
+- - SEC110
+  - src/frob/gates/_inv.py
+- - TEST001
+  - src/frob/_cli_parsers/_check.py
+- - TEST001
+  - src/frob/tickets/_land_compose.py
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3032.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3899.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3936.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3962.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3964.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3986.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3995.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-3997.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4030.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4073.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4112.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4113.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4114.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4115.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4254.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4420.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4509.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4612.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4657.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4658.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4661.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4693.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4760.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4761.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4763.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4951.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4991.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-4993.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-5124.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-5125.json
+- - TICK010
+  - /home/logan/projects/frob/.git/frob-leases/T-5126.json
+- - TODO001
+  - src/frob/gates/_wire.py
+- - TODO001
+  - tests/test_check_runner.py
+- - TODO002
+  - src/frob/gates/_coverage.py
+- - TODO002
+  - src/frob/gates/_ratchet.py
+- - TODO003
+  - src/frob/tickets/_leases.py
+- - WIRE001
+  - src/frob/_cli_parsers/_check.py
+- - WIRE001
+  - src/frob/gates/_claim_lint.py
+- - WIRE001
+  - src/frob/gates/_coverage.py
+- - WIRE001
+  - src/frob/gates/_guard_closure.py
+- - WIRE001
+  - src/frob/gates/_inv.py
+- - WIRE001
+  - src/frob/gates/_ratchet.py
+- - WIRE001
+  - src/frob/gates/_sys_branch.py
+- - WIRE001
+  - src/frob/gitio.py
+- - WIRE001
+  - src/frob/tickets/_registry_files.py
+- - WIRE001
+  - tests/unit/strata/test_claims_overdue.py
+- - WIRE001
+  - tests/unit/strata/test_strata_scan_cache.py
+- - WIRE001
+  - tests/unit/test_scope_closure_declared_scope_only.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-5131) at commit 7d3eb233eb96f70e19b0087821dcc3175de3c636 found 344 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). The true per-finding count could not be independently re-measured this run (spawn refused/timeout/unparsable) -- re-run `frob check` unscoped against the file(s) below for the exact count before treating this identity count as a completeness claim.
+
+New (rule, file) identit(ies) filed here:
+
+- AFFECT001  scripts/fleet_status.py
+- AFFECT001  scripts/verify_lands.py
+- AFFECT001  src/frob/_cli_parsers/_check.py
+- AFFECT001  src/frob/app/coverage_runner.py
+- AFFECT001  src/frob/arch/_models.py
+- AFFECT001  src/frob/refactor/_transaction.py
+- AFFECT001  src/frob/strata/_claims.py
+- AFFECT001  src/frob/strata/_compliance.py
+- AFFECT001  src/frob/strata/_design_load.py
+- AFFECT001  src/frob/strata/_elaborate.py
+- AFFECT001  src/frob/strata/_packs.py
+- AFFECT001  src/frob/strata/_threat_catalog_benign.py
+- AFFECT001  src/frob/strata/_threat_catalog_cwe.py
+- AFFECT001  src/frob/strata/_threat_catalog_quality.py
+- AFFECT001  src/frob/vet/_capability_registry/_kinds.py
+- ARCH102  src/frob/lang/_nodes.py
+- ARCH102  src/frob/tickets/_land_compose.py
+- COV001  src/frob/_cli_parsers/_check.py
+- COV001  src/frob/tickets/_land_compose.py
+- COV002  .claude/hooks/_root_write_guard_lib.py
+- COV002  .claude/hooks/frob-timeout-guard.py
+- COV002  .claude/hooks/tool-call-telemetry.py
+- COV002  scripts/fleet_status.py
+- COV002  scripts/verify_lands.py
+- COV002  src/frob/_cli_parsers/_check.py
+- COV002  src/frob/_cli_parsers/_explore.py
+- COV002  src/frob/_cli_parsers/_misc.py
+- COV002  src/frob/_cli_parsers/_ops.py
+- COV002  src/frob/_cli_parsers/_quality.py
+- COV002  src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+- COV002  src/frob/_cli_parsers/_ticket/_metadata.py
+- COV002  src/frob/app/config.py
+- COV002  src/frob/app/doctor_runner.py
+- COV002  src/frob/app/scaffold_runner.py
+- COV002  src/frob/app/ticket_runner/__init__.py
+- COV002  src/frob/app/ticket_runner/_close_cmd.py
+- COV002  src/frob/app/ticket_runner/_mutate.py
+- COV002  src/frob/app/ticket_runner/_new.py
+- COV002  src/frob/app/verify_runner.py
+- COV002  src/frob/docs/__init__.py
+- COV002  src/frob/findings.py
+- COV002  src/frob/gates/_bug_repro.py
+- COV002  src/frob/gates/_claim_lint.py
+- COV002  src/frob/gates/_coverage.py
+- COV002  src/frob/gates/_fix_engine.py
+- COV002  src/frob/gates/_fmt_directives.py
+- COV002  src/frob/gates/_guard_closure.py
+- COV002  src/frob/gates/_inv.py
+- COV002  src/frob/gates/_lang_conformance.py
+- COV002  src/frob/gates/_models.py
+- COV002  src/frob/gates/_narrative_blocks.py
+- COV002  src/frob/gates/_suppress.py
+- COV002  src/frob/gates/_sys_branch.py
+- COV002  src/frob/gates/_wire.py
+- COV002  src/frob/gitio.py
+- COV002  src/frob/graph/__init__.py
+- COV002  src/frob/logging/logger.py
+- COV002  src/frob/refactor/_transaction.py
+- COV002  src/frob/refactor/_verify.py
+- COV002  src/frob/scaffold/_unity_project.py
+- COV002  src/frob/scaffold/project.py
+- COV002  src/frob/security/_redact.py
+- COV002  src/frob/strata/_backpressure.py
+- COV002  src/frob/strata/_claims.py
+- COV002  src/frob/strata/_compliance.py
+- COV002  src/frob/strata/_mutation_audit.py
+- COV002  src/frob/strata/_packs.py
+- COV002  src/frob/strata/_threat_catalog_benign.py
+- COV002  src/frob/strata/_threat_catalog_cwe.py
+- COV002  src/frob/strata/_threat_catalog_quality.py
+- COV002  src/frob/strata/_unity_asmdef.py
+- COV002  src/frob/testing/_runners.py
+- COV002  src/frob/tickets/_evidence.py
+- COV002  src/frob/tickets/_land_compose.py
+- COV002  src/frob/tickets/_land_finalize.py
+- COV002  src/frob/tickets/_registry_files.py
+- COV002  src/frob/tickets/_setters.py
+- COV002  src/frob/tickets/_store.py
+- COV002  src/frob/xref/__init__.py
+- COV002  tests/system/conftest.py
+- COV002  tests/system/test_artifact_smoke.py
+- COV002  tests/system/test_cli_check.py
+- COV002  tests/system/test_cli_doctor.py
+- COV002  tests/system/test_cli_scaffold_apply.py
+- COV002  tests/system/test_cli_sys_audit.py
+- COV002  tests/system/test_cli_ticket.py
+- COV002  tests/system/test_fleet_status_ground_truth.py
+- COV002  tests/system/test_run_helper_env_leak.py
+- COV002  tests/test_arch_gate.py
+- COV002  tests/test_cache_gate.py
+- COV002  tests/test_check_gate_base.py
+- COV002  tests/test_ci_workflow_matrix.py
+- COV002  tests/test_coverage.py
+- COV002  tests/test_docenum_gate.py
+- COV002  tests/test_docptr_gate.py
+- COV002  tests/test_evidence_integrity.py
+- COV002  tests/test_excludes.py
+- COV002  tests/test_gate_cache.py
+- COV002  tests/test_gates_fmt_directives.py
+- COV002  tests/test_gates_ratchet.py
+- COV002  tests/test_gates_suppress.py
+- COV002  tests/test_gitio.py
+- COV002  tests/test_graph_affects.py
+- COV002  tests/test_hook_frob_suggest.py
+- COV002  tests/test_hook_frob_timeout_guard.py
+- COV002  tests/test_hook_root_write_guard.py
+- COV002  tests/test_land_verify_claims_outcome.py
+- COV002  tests/test_lang_conformance_gate.py
+- COV002  tests/test_lang_support.py
+- COV002  tests/test_narrative_blocks.py
+- COV002  tests/test_perf.py
+- COV002  tests/test_refactor.py
+- COV002  tests/test_refs_gate.py
+- COV002  tests/test_release.py
+- COV002  tests/test_scaffold_worktree_lease_hook.py
+- COV002  tests/test_serve_daemon.py
+- COV002  tests/test_testing.py
+- COV002  tests/test_ticket_land_proof_claims.py
+- COV002  tests/test_ticket_leases_cross_worktree.py
+- COV002  tests/test_ticket_reconcile.py
+- COV002  tests/test_ticket_store_stale_snapshot.py
+- COV002  tests/test_ticket_work_and_land_finish.py
+- COV002  tests/test_tickets_acceptance.py
+- COV002  tests/test_tickets_cmd_evidence.py
+- COV002  tests/test_tickets_collision.py
+- COV002  tests/test_tickets_evidence_cli.py
+- COV002  tests/test_tickets_lease.py
+- COV002  tests/test_tickets_leases.py
+- COV002  tests/test_tickets_live_tracker.py
+- COV002  tests/test_tickets_migration.py
+- COV002  tests/test_tickets_organization.py
+- COV002  tests/test_tickets_registry_files.py
+- COV002  tests/test_tickets_triage_dates.py
+- COV002  tests/test_waive_gate.py
+- COV002  tests/test_worktree_guard.py
+- COV002  tests/ticket_land_suite/test_verify_intent.py
+- COV002  tests/unit/arch_suite/test_concurrency.py
+- COV002  tests/unit/arch_suite/test_dispatch.py
+- COV002  tests/unit/arch_suite/test_lang_adapters.py
+- COV002  tests/unit/coordinator_suite/test_fleet_host_load.py
+- COV002  tests/unit/coordinator_suite/test_fleet_land.py
+- COV002  tests/unit/coordinator_suite/test_fleet_report.py
+- COV002  tests/unit/coordinator_suite/test_fleet_worktrees.py
+- COV002  tests/unit/gates/test_deprecated_baseline.py
+- COV002  tests/unit/gates/test_detector_scope.py
+- COV002  tests/unit/gates/test_examined_sites.py
+- COV002  tests/unit/gates/test_exhaustive_handling_path_shape.py
+- COV002  tests/unit/gates/test_ffi_boundary_path_shape.py
+- COV002  tests/unit/gates/test_lexical_selfcheck.py
+- COV002  tests/unit/gates/test_wire001_cli_dest_semantic.py
+- COV002  tests/unit/graph/test_dsl.py
+- COV002  tests/unit/graph/test_dsl_invariant_property.py
+- COV002  tests/unit/graph/test_dsl_markdown_waive.py
+- COV002  tests/unit/lang/test_csharp_directives.py
+- COV002  tests/unit/perf/test_hotpath_smells.py
+- COV002  tests/unit/rapid_sweep_suite/test_attribution.py
+- COV002  tests/unit/rapid_sweep_suite/test_baseline.py
+- COV002  tests/unit/rapid_sweep_suite/test_commit.py
+- COV002  tests/unit/rapid_sweep_suite/test_sweep_run.py
+- COV002  tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py
+- COV002  tests/unit/test_app_runners_batch5.py
+- COV002  tests/unit/test_app_runners_batch6.py
+- COV002  tests/unit/test_app_runners_batch7.py
+- COV002  tests/unit/test_app_runners_json_guard_t2492.py
+- COV002  tests/unit/test_arch_srp.py
+- COV002  tests/unit/test_artifact_smoke_script.py
+- COV002  tests/unit/test_check.py
+- COV002  tests/unit/test_check_budget.py
+- COV002  tests/unit/test_check_skip_flag.py
+- COV002  tests/unit/test_claims_and_store_batch6.py
+- COV002  tests/unit/test_cli_lang_choices_drift.py
+- COV002  tests/unit/test_conftest_sigbreak_faulthandler.py
+- COV002  tests/unit/test_conftest_stackdump.py
+- COV002  tests/unit/test_cycle_runner_doc_waiver_t2598.py
+- COV002  tests/unit/test_cycle_waiver.py
+- COV002  tests/unit/test_dev_branch_workflow.py
+- COV002  tests/unit/test_docs_module.py
+- COV002  tests/unit/test_doctor_runner_t1276.py
+- COV002  tests/unit/test_done_report_check_scope.py
+- COV002  tests/unit/test_dotnet_runner.py
+- COV002  tests/unit/test_dup_cache.py
+- COV002  tests/unit/test_dup_legacy_cpp.py
+- COV002  tests/unit/test_findings_severity_pinned.py
+- COV002  tests/unit/test_frob_core_gil.py
+- COV002  tests/unit/test_gitattributes_crlf_normalization.py
+- COV002  tests/unit/test_gitattributes_merge.py
+- COV002  tests/unit/test_graph_get_snapshot.py
+- COV002  tests/unit/test_graph_ingest_batching.py
+- COV002  tests/unit/test_graph_stat_trust_margin.py
+- COV002  tests/unit/test_land_cas_ledger_retry.py
+- COV002  tests/unit/test_land_compose.py
+- COV002  tests/unit/test_land_default_queue.py
+- COV002  tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
+- COV002  tests/unit/test_land_leaked_tickets_lease_hoist.py
+- COV002  tests/unit/test_land_queue.py
+- COV002  tests/unit/test_land_sibling_regression.py
+- COV002  tests/unit/test_land_squash_residue_reclaim.py
+- COV002  tests/unit/test_land_stackdump.py
+- COV002  tests/unit/test_land_stage_flip.py
+- COV002  tests/unit/test_land_verify_claim_divergence_sentinel.py
+- COV002  tests/unit/test_lang_parse_guard.py
+- COV002  tests/unit/test_lang_project_detect.py
+- COV002  tests/unit/test_lang_strata.py
+- COV002  tests/unit/test_lease_lifecycle.py
+- COV002  tests/unit/test_leases_staleness_perf.py
+- COV002  tests/unit/test_lifecycle_work_base.py
+- COV002  tests/unit/test_logging_quiet.py
+- COV002  tests/unit/test_makefile_coverage.py
+- COV002  tests/unit/test_memo.py
+- COV002  tests/unit/test_new_ticket_scope_overlap_warning.py
+- COV002  tests/unit/test_policy_weakening_gate.py
+- COV002  tests/unit/test_post_publish_lock_window.py
+- COV002  tests/unit/test_process_lock.py
+- COV002  tests/unit/test_process_pid_liveness.py
+- COV002  tests/unit/test_process_reap.py
+- COV002  tests/unit/test_pyproject_data_memoization.py
+- COV002  tests/unit/test_rel002_dev_suffix.py
+- COV002  tests/unit/test_release_workflow_gate.py
+- COV002  tests/unit/test_scaffold_natives_shim.py
+- COV002  tests/unit/test_scaffold_project.py
+- COV002  tests/unit/test_scaffold_unity_project.py
+- COV002  tests/unit/test_scope_closure_declared_scope_only.py
+- COV002  tests/unit/test_skills_sync.py
+- COV002  tests/unit/test_store_mode_memoization.py
+- COV002  tests/unit/test_support_csharp.py
+- COV002  tests/unit/test_suppress_worktree_path.py
+- COV002  tests/unit/test_telemetry_verb_recording.py
+- COV002  tests/unit/test_ticket_cli_surface.py
+- COV002  tests/unit/test_ticket_new_related.py
+- COV002  tests/unit/test_ticket_runner_gate_findings.py
+- COV002  tests/unit/test_ticket_runner_land_cmd_flags.py
+- COV002  tests/unit/test_ticket_runner_land_release.py
+- COV002  tests/unit/test_ticket_runner_ledger_mirror.py
+- COV002  tests/unit/test_ticket_store.py
+- COV002  tests/unit/test_unity_batchmode.py
+- COV002  tests/unit/test_unlanded_branch_work.py
+- COV002  tests/unit/test_waive_audit_watermark.py
+- COV002  tests/unit/test_xref.py
+- COV002  tests/unit/verify/test_backpressure.py
+- COV002  tests/unit/verify/test_quarantine.py
+- COV002  tests/unit/verify/test_verify_runner.py
+- COV002  tests/unit/verify/test_worker.py
+- COV002  tests/vet_suite/test_capability_registry_unity.py
+- COV002  tests/vet_suite/test_capability_scan_csharp.py
+- COV002  tests/vet_suite/test_capability_scan_dotnet_bcl.py
+- COV002  tests/vet_suite/test_scan_tree.py
+- COV003  github/dependabot.yml
+- COV003  tests/unit/test_run_commands.py
+- COV003  tmp/verify_ac3.sh
+- COV007  src/frob/testing/_dotnet_runner.py
+- COV007  src/frob/tickets/_evidence.py
+- DOC001  docs/guides/extending/failure-injection-acceptance-criteria.md
+- DOC011  docs/modules/tickets-lifecycle.md
+- DOC011  docs/modules/tickets.md
+- DOC012  docs/commands/
+- DOCENUM001  docs/modules/gates.md
+- DRIFT001  src/frob/doctor.py
+- DRIFT001  src/frob/gates/_prework.py
+- DRIFT001  src/frob/tickets/_land_squash.py
+- DRIFT001  src/frob/verify/_quarantine.py
+- DUP001  src/frob/_cli_parsers/_check.py
+- DUP001  src/frob/app/check_runner.py
+- DUP001  src/frob/graph/affects.py
+- DUP001  tests/test_lang.py
+- DUP001  tests/test_perf.py
+- DUP001  tests/unit/arch_suite/test_concurrency.py
+- DUP001  tests/unit/gates/test_cov002_strata_declarations.py
+- DUP001  tests/unit/perf/test_hotpath_smells.py
+- DUP001  tests/unit/strata/test_admit_phase_wiring.py
+- DUP001  tests/unit/strata/test_facts.py
+- DUP001  tests/unit/strata/test_threat.py
+- DUP001  tests/unit/test_check_skip_flag.py
+- DUP001  tests/unit/test_dup_legacy_cpp.py
+- DUP001  tests/unit/test_store_mode_memoization.py
+- DUP001  tests/unit/test_telemetry_verb_recording.py
+- DUP002  src/frob/__main__.py
+- DUP002  src/frob/_cli_parsers/_check.py
+- DUP002  tests/test_ci_workflow_matrix.py
+- DUP002  tests/test_ticket_leases_cross_worktree.py
+- DUP002  tests/unit/graph/test_dsl_invariant_property.py
+- INV003  docs/modules/gate-sys111-ratchet-auto-accept.md
+- INV003  docs/modules/gate-time-stable-invariant.md
+- LARGE001  src/frob/gates/_inv.py
+- LARGE001  src/frob/strata/_claims.py
+- MILE002  tickets.md
+- OPAQUE001  src/frob/_cli_parsers/_check.py
+- OPAQUE001  src/frob/app/app.py
+- OPAQUE001  src/frob/app/check_runner.py
+- PERF004  src/frob/_cli_parsers/_check.py
+- PERF006  src/frob/gates/_guard_closure.py
+- REF002  docs/modules/gate-sys111-ratchet-auto-accept.md
+- REF002  docs/modules/gate-time-stable-invariant.md
+- REG002  docs/design/registry/check-coverage.yaml
+- SEC110  src/frob/gates/_inv.py
+- TEST001  src/frob/_cli_parsers/_check.py
+- TEST001  src/frob/tickets/_land_compose.py
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3032.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3899.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3936.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3962.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3964.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3986.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3995.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3997.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4030.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4073.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4112.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4113.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4114.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4115.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4254.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4420.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4509.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4612.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4657.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4658.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4661.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4693.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4760.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4761.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4763.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4951.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4991.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4993.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-5124.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-5125.json
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-5126.json
+- TODO001  src/frob/gates/_wire.py
+- TODO001  tests/test_check_runner.py
+- TODO002  src/frob/gates/_coverage.py
+- TODO002  src/frob/gates/_ratchet.py
+- TODO003  src/frob/tickets/_leases.py
+- WIRE001  src/frob/_cli_parsers/_check.py
+- WIRE001  src/frob/gates/_claim_lint.py
+- WIRE001  src/frob/gates/_coverage.py
+- WIRE001  src/frob/gates/_guard_closure.py
+- WIRE001  src/frob/gates/_inv.py
+- WIRE001  src/frob/gates/_ratchet.py
+- WIRE001  src/frob/gates/_sys_branch.py
+- WIRE001  src/frob/gitio.py
+- WIRE001  src/frob/tickets/_registry_files.py
+- WIRE001  tests/unit/strata/test_claims_overdue.py
+- WIRE001  tests/unit/strata/test_strata_scan_cache.py
+- WIRE001  tests/unit/test_scope_closure_declared_scope_only.py
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- AFFECT001  scripts/fleet_status.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via scripts/fleet_status.py::_FORKSERVER_RSS_WARNING_FLOOR_KB
+- AFFECT001  scripts/verify_lands.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via scripts/verify_lands.py::_git
+- AFFECT001  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- AFFECT001  src/frob/app/coverage_runner.py  -> attributed to T-4688 (commit c3f8d3d3c027, already closed/dropped -- filed below) via src/frob/app/coverage_runner.py::run -> src/frob/app/coverage_runner.py::_fail_if_suite_degraded
+- AFFECT001  src/frob/arch/_models.py  -> attributed to T-4723 (commit 4f9079496c17, already closed/dropped -- filed below) via src/frob/arch/_models.py::ArchResult
+- AFFECT001  src/frob/refactor/_transaction.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['48a59f1b8586c311fd6ac3f0c858320439ae8786', '5837024acaff03e0cb3315830d47a8acc2b2a25e']
+- AFFECT001  src/frob/strata/_claims.py  -> attributed to T-4675 (commit 9814c54782dd, already closed/dropped -- filed below) via src/frob/strata/_claims.py::_cascade_detail
+- AFFECT001  src/frob/strata/_compliance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- AFFECT001  src/frob/strata/_design_load.py  -> attributed to T-4669 (commit 83d26d47eba1, already closed/dropped -- filed below) via src/frob/strata/_design_load.py::load_design_ids -> src/frob/strata/_design_load.py::_load_all_design_files -> src/frob/strata/_design_load.py::_resolve_cross_file_architectures
+- AFFECT001  src/frob/strata/_elaborate.py  -> attributed to T-4911 (commit 8ab661e37c2c, already closed/dropped -- filed below) via src/frob/strata/_elaborate.py::_elaborate_expanded_model -> src/frob/strata/_elaborate.py::_expand_model_secrets
+- AFFECT001  src/frob/strata/_packs.py  -> attributed to T-4673 (commit cae88acd7930, already closed/dropped -- filed below) via src/frob/strata/_packs.py::ANALYZABLE_POLICY_ID
+- AFFECT001  src/frob/strata/_threat_catalog_benign.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_threat_catalog_benign.py::DEFAULT_BENIGN_CAPABILITIES
+- AFFECT001  src/frob/strata/_threat_catalog_cwe.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG
+- AFFECT001  src/frob/strata/_threat_catalog_quality.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_threat_catalog_quality.py::QUALITY_CATALOG
+- AFFECT001  src/frob/vet/_capability_registry/_kinds.py  -> attributed to T-4718 (commit cd2535e4b1ca, already closed/dropped -- filed below) via src/frob/vet/_capability_registry/_kinds.py::CAPABILITY_KINDS
+- ARCH102  src/frob/lang/_nodes.py  -> attributed to T-4646 (commit dd155a7863c0, already closed/dropped -- filed below) via src/frob/lang/_nodes.py::_declared_python_source_roots -> src/frob/lang/_nodes.py::_dict_or_empty
+- ARCH102  src/frob/tickets/_land_compose.py  -> UNATTRIBUTED (4 batch commits' touched symbols all reach this finding); candidate commits: ['deffcc7fb6537ea5cbfe4fc454f51212c4761741', '5ea9051886540b20766311b1e7063ded0677dbc6', 'e943dce4485dec8813981d69b051f788d545dd34', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV001  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- COV001  src/frob/tickets/_land_compose.py  -> UNATTRIBUTED (4 batch commits' touched symbols all reach this finding); candidate commits: ['deffcc7fb6537ea5cbfe4fc454f51212c4761741', '5ea9051886540b20766311b1e7063ded0677dbc6', 'e943dce4485dec8813981d69b051f788d545dd34', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  .claude/hooks/_root_write_guard_lib.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  .claude/hooks/frob-timeout-guard.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  .claude/hooks/tool-call-telemetry.py  -> attributed to T-4689 (commit 35acaaf4fc88, already closed/dropped -- filed below) via .claude/hooks/tool-call-telemetry.py::_CHAIN_WORD_RE
+- COV002  scripts/fleet_status.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via scripts/fleet_status.py::_FORKSERVER_RSS_WARNING_FLOOR_KB
+- COV002  scripts/verify_lands.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via scripts/verify_lands.py::_git
+- COV002  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- COV002  src/frob/_cli_parsers/_explore.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', 'd4f365cad7373029e84e8d12d3e0c26edc66fe79']
+- COV002  src/frob/_cli_parsers/_misc.py  -> UNATTRIBUTED (3 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', 'd4f365cad7373029e84e8d12d3e0c26edc66fe79', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- COV002  src/frob/_cli_parsers/_ops.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', 'd4f365cad7373029e84e8d12d3e0c26edc66fe79']
+- COV002  src/frob/_cli_parsers/_quality.py  -> attributed to T-4953 (commit 2908847a4798, already closed/dropped -- filed below) via src/frob/_cli_parsers/_quality.py::_add_quality_parser
+- COV002  src/frob/_cli_parsers/_ticket/_closeout_evidence.py  -> attributed to T-4723 (commit 4f9079496c17, already closed/dropped -- filed below) via src/frob/_cli_parsers/_ticket/__init__.py::_add_ticket_parser -> src/frob/_cli_parsers/_ticket/__init__.py::_add_ticket_lifecycle_parsers -> src/frob/_cli_parsers/_ticket/__init__.py::_add_ticket_closeout_parsers -> src/frob/_cli_parsers/_ticket/_closeout_evidence.py::_add_ticket_waive_audit_parser
+- COV002  src/frob/_cli_parsers/_ticket/_metadata.py  -> attributed to T-4723 (commit 4f9079496c17, already closed/dropped -- filed below) via src/frob/_cli_parsers/_ticket/__init__.py::_add_ticket_parser -> src/frob/_cli_parsers/_ticket/__init__.py::_add_ticket_lifecycle_parsers -> src/frob/_cli_parsers/_ticket/__init__.py::_add_ticket_closeout_parsers -> src/frob/_cli_parsers/_ticket/_metadata.py::_add_ticket_accept_parser
+- COV002  src/frob/app/config.py  -> attributed to T-4546 (commit d4f365cad737, already closed/dropped -- filed below) via src/frob/__main__.py::_dispatch_default -> src/frob/app/config.py::_pyproject_file_for_args
+- COV002  src/frob/app/doctor_runner.py  -> attributed to T-4416 (commit ce01cdfeadff, already closed/dropped -- filed below) via src/frob/app/doctor_runner.py::_print_scaffold_disclosure
+- COV002  src/frob/app/scaffold_runner.py  -> attributed to T-4416 (commit ce01cdfeadff, already closed/dropped -- filed below) via src/frob/app/scaffold_runner.py::run -> src/frob/app/scaffold_runner.py::_print_profile_recommendation
+- COV002  src/frob/app/ticket_runner/__init__.py  -> UNATTRIBUTED (9 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', 'deffcc7fb6537ea5cbfe4fc454f51212c4761741', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', '3cb8e868631ba53f600913f04efe870cb50cdbe3', '48a59f1b8586c311fd6ac3f0c858320439ae8786', '112ae084f5161c410d2673933282797b702b3008', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  src/frob/app/ticket_runner/_close_cmd.py  -> UNATTRIBUTED (9 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', 'deffcc7fb6537ea5cbfe4fc454f51212c4761741', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', '60c852bb1fe60485471a3d2c223d2e352572d49e', '48a59f1b8586c311fd6ac3f0c858320439ae8786', '112ae084f5161c410d2673933282797b702b3008', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  src/frob/app/ticket_runner/_mutate.py  -> attributed to T-4805 (commit 112ae084f516, already closed/dropped -- filed below) via src/frob/app/ticket_runner/_mutate.py::_resolve_accept_criteria -> src/frob/app/ticket_runner/_new.py::_new -> src/frob/app/ticket_runner/_new.py::_emit_new_ticket_side_effects -> src/frob/app/ticket_runner/_new.py::_emit_body_similarity_warnings
+- COV002  src/frob/app/ticket_runner/_new.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['48a59f1b8586c311fd6ac3f0c858320439ae8786', '112ae084f5161c410d2673933282797b702b3008']
+- COV002  src/frob/app/verify_runner.py  -> attributed to T-3082 (commit 44f54253019d, already closed/dropped -- filed below) via src/frob/app/verify_runner.py::VerifyStatus
+- COV002  src/frob/docs/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/findings.py  -> attributed to T-4723 (commit 4f9079496c17, already closed/dropped -- filed below) via src/frob/findings.py::Violation
+- COV002  src/frob/gates/_bug_repro.py  -> attributed to T-4709 (commit 5519e7310f60, already closed/dropped -- filed below) via src/frob/gates/_bug_repro.py::_BUG002_WAIVER_RE
+- COV002  src/frob/gates/_claim_lint.py  -> attributed to T-4116 (commit 672617f7642a, already closed/dropped -- filed below) via src/frob/gates/_claim_lint.py::_CLAIMABLE_KINDS
+- COV002  src/frob/gates/_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/gates/_fix_engine.py  -> attributed to T-4642 (commit 58b638e5228c, already closed/dropped -- filed below) via src/frob/gates/_fix_engine.py::_noqa_e501_guard
+- COV002  src/frob/gates/_fmt_directives.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['58b638e5228c1e67595c152afc50aec20547b7ab', '5519e7310f6029e16d9ca0cb94ea9270c4ae0bd8']
+- COV002  src/frob/gates/_guard_closure.py  -> attributed to T-4111 (commit 6a06d7e52b0f, already closed/dropped -- filed below) via src/frob/gates/_guard_closure.py::GuardClosurePair
+- COV002  src/frob/gates/_inv.py  -> attributed to T-4221 (commit f27804db4311, already closed/dropped -- filed below) via src/frob/gates/_inv.py::TIME_STABLE_OFFSET_ENV
+- COV002  src/frob/gates/_lang_conformance.py  -> attributed to T-4709 (commit 5519e7310f60, already closed/dropped -- filed below) via src/frob/gates/_lang_conformance.py::_CAPABILITY_FIXTURE_SOURCES
+- COV002  src/frob/gates/_models.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/gates/_narrative_blocks.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/gates/_suppress.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['48a59f1b8586c311fd6ac3f0c858320439ae8786', '5519e7310f6029e16d9ca0cb94ea9270c4ae0bd8']
+- COV002  src/frob/gates/_sys_branch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/gates/_wire.py  -> UNATTRIBUTED (3 batch commits' touched symbols all reach this finding); candidate commits: ['55067239c8c09aaf384a5b1426fdf26b77cab7f0', '64af5bdec5b81cf019a4165e1a09a401373e423d', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd']
+- COV002  src/frob/gitio.py  -> UNATTRIBUTED (10 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', '39466ab5d7951a04b3a5cd6d688e9f776861a5f0', '0b0a12b01c321877bbab6d9c9b6f2a88cb8d0916', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', '55067239c8c09aaf384a5b1426fdf26b77cab7f0', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', '48a59f1b8586c311fd6ac3f0c858320439ae8786', 'b5f51063b79b9b33fc9fa433a7da073f1af9b801', 'cd2535e4b1ca1d6f662e0eaaaea2f38df6d7b37a', 'c1514b9ad48372ab842a7a69c1b1933cfa831609']
+- COV002  src/frob/graph/__init__.py  -> UNATTRIBUTED (3 batch commits' touched symbols all reach this finding); candidate commits: ['1274217dc7509d46880c0de55cea68341e27137a', 'c3f8d3d3c0273f7959737de1316607b107112de3', '3cb8e868631ba53f600913f04efe870cb50cdbe3']
+- COV002  src/frob/logging/logger.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/refactor/_transaction.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['48a59f1b8586c311fd6ac3f0c858320439ae8786', '5837024acaff03e0cb3315830d47a8acc2b2a25e']
+- COV002  src/frob/refactor/_verify.py  -> attributed to T-4715 (commit 5837024acaff, already closed/dropped -- filed below) via src/frob/refactor/_verify.py::_parse_touched_python_files
+- COV002  src/frob/scaffold/_unity_project.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/scaffold/project.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning -> src/frob/scaffold/project.py::_hooks_dir
+- COV002  src/frob/security/_redact.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['5837024acaff03e0cb3315830d47a8acc2b2a25e', '64af5bdec5b81cf019a4165e1a09a401373e423d']
+- COV002  src/frob/strata/_backpressure.py  -> attributed to T-4911 (commit 8ab661e37c2c, already closed/dropped -- filed below) via src/frob/strata/_backpressure.py::REL_MISSING_BOUNDED_INTAKE
+- COV002  src/frob/strata/_claims.py  -> attributed to T-4675 (commit 9814c54782dd, already closed/dropped -- filed below) via src/frob/strata/_claims.py::_cascade_detail
+- COV002  src/frob/strata/_compliance.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/strata/_mutation_audit.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_mutation_audit.py::MutationFinding
+- COV002  src/frob/strata/_packs.py  -> attributed to T-4673 (commit cae88acd7930, already closed/dropped -- filed below) via src/frob/strata/_packs.py::ANALYZABLE_POLICY_ID
+- COV002  src/frob/strata/_threat_catalog_benign.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_threat_catalog_benign.py::DEFAULT_BENIGN_CAPABILITIES
+- COV002  src/frob/strata/_threat_catalog_cwe.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG
+- COV002  src/frob/strata/_threat_catalog_quality.py  -> attributed to T-4719 (commit b0ac80030059, already closed/dropped -- filed below) via src/frob/strata/_threat_catalog_quality.py::QUALITY_CATALOG
+- COV002  src/frob/strata/_unity_asmdef.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  src/frob/testing/_runners.py  -> attributed to T-4508 (commit 39466ab5d795, already closed/dropped -- filed below) via src/frob/testing/_runners.py::TestingError
+- COV002  src/frob/tickets/_evidence.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['60c852bb1fe60485471a3d2c223d2e352572d49e', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd']
+- COV002  src/frob/tickets/_land_compose.py  -> UNATTRIBUTED (4 batch commits' touched symbols all reach this finding); candidate commits: ['deffcc7fb6537ea5cbfe4fc454f51212c4761741', '5ea9051886540b20766311b1e7063ded0677dbc6', 'e943dce4485dec8813981d69b051f788d545dd34', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  src/frob/tickets/_land_finalize.py  -> UNATTRIBUTED (3 batch commits' touched symbols all reach this finding); candidate commits: ['deffcc7fb6537ea5cbfe4fc454f51212c4761741', 'e943dce4485dec8813981d69b051f788d545dd34', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  src/frob/tickets/_registry_files.py  -> attributed to T-4650 (commit c8f56ef103c0, already closed/dropped -- filed below) via src/frob/tickets/_registry_files.py::DEFAULT_REGISTRY_FILES
+- COV002  src/frob/tickets/_setters.py  -> attributed to T-4649 (commit 45eb65074c96, already closed/dropped -- filed below) via src/frob/tickets/_setters.py::_write_parent_change -> src/frob/tickets/_setters.py::_ticket_currently_archived -> src/frob/tickets/_store.py::_store_mode
+- COV002  src/frob/tickets/_store.py  -> UNATTRIBUTED (21 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '45eb65074c9686fd7b7afc7f90e30f7c967ca3b3', 'c8f56ef103c05dd5178c543cc5307341a7aee7cd', 'deffcc7fb6537ea5cbfe4fc454f51212c4761741', '5ea9051886540b20766311b1e7063ded0677dbc6', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', '1274217dc7509d46880c0de55cea68341e27137a', 'c24466ce3e4eead74516d87838c4bf4692bf8f9a', '3cb8e868631ba53f600913f04efe870cb50cdbe3', '60c852bb1fe60485471a3d2c223d2e352572d49e', 'f900d942eb072b1dfb6840117f8aba6223e088d3', '48a59f1b8586c311fd6ac3f0c858320439ae8786', 'e943dce4485dec8813981d69b051f788d545dd34', 'b5f51063b79b9b33fc9fa433a7da073f1af9b801', 'c1514b9ad48372ab842a7a69c1b1933cfa831609', '5c51f374bd402b6d71b23f5019a9d43863634b9b', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd', 'eb86564b528c73a4e2b6641293b75764c774f528', '7d3eb233eb96f70e19b0087821dcc3175de3c636']
+- COV002  src/frob/xref/__init__.py  -> attributed to T-4519 (commit fac1d3833fa4, already closed/dropped -- filed below) via src/frob/xref/__init__.py::_DEFINITION_KINDS
+- COV002  tests/system/conftest.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/conftest.py::git
+- COV002  tests/system/test_artifact_smoke.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet
+- COV002  tests/system/test_cli_check.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_cli_check.py::TestCheckAgentRefusal
+- COV002  tests/system/test_cli_doctor.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess
+- COV002  tests/system/test_cli_scaffold_apply.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/system/test_cli_sys_audit.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_cli_sys_audit.py::TestSysAuditCli
+- COV002  tests/system/test_cli_ticket.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved
+- COV002  tests/system/test_fleet_status_ground_truth.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_fleet_status_ground_truth.py::TestWorktreeLeaseLeakClaim
+- COV002  tests/system/test_run_helper_env_leak.py  -> attributed to T-4421 (commit ee200b714582, already closed/dropped -- filed below) via tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout
+- COV002  tests/test_arch_gate.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_arch_gate.py::TestArchGateCppThrow
+- COV002  tests/test_cache_gate.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_cache_gate.py::TestCache001Symref
+- COV002  tests/test_check_gate_base.py  -> attributed to T-3943 (commit 0d624adacd41, already closed/dropped -- filed below) via tests/test_check_gate_base.py::TestCheckDefaultBase
+- COV002  tests/test_ci_workflow_matrix.py  -> attributed to T-4627 (commit 60c852bb1fe6, already closed/dropped -- filed below) via tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake
+- COV002  tests/test_coverage.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_coverage.py::TestComputeWorkerCount
+- COV002  tests/test_docenum_gate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/test_docptr_gate.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_docptr_gate.py::TestDoc006Cli
+- COV002  tests/test_evidence_integrity.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_evidence_integrity.py::TestD01PassVerification
+- COV002  tests/test_excludes.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile
+- COV002  tests/test_gate_cache.py  -> attributed to T-4627 (commit 60c852bb1fe6, already closed/dropped -- filed below) via tests/test_gate_cache.py::TestGateBuildFingerprint
+- COV002  tests/test_gates_fmt_directives.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987
+- COV002  tests/test_gates_ratchet.py  -> attributed to T-4240 (commit 6a5333c02988, already closed/dropped -- filed below) via tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional
+- COV002  tests/test_gates_suppress.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_gates_suppress.py::TestMypyOracleCacheDir
+- COV002  tests/test_gitio.py  -> attributed to T-5036 (commit 0b0a12b01c32, already closed/dropped -- filed below) via tests/test_gitio.py::TestRepoRoot
+- COV002  tests/test_graph_affects.py  -> attributed to T-3412 (commit 7b1796397292, already closed/dropped -- filed below) via tests/test_graph_affects.py::TestScopeTestGaps
+- COV002  tests/test_hook_frob_suggest.py  -> attributed to T-4625 (commit 3cb8e868631b, already closed/dropped -- filed below) via tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile
+- COV002  tests/test_hook_frob_timeout_guard.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_hook_frob_timeout_guard.py::test_ticket_new_under_min_timeout_is_blocked -> tests/test_hook_frob_timeout_guard.py::_denial_reason
+- COV002  tests/test_hook_root_write_guard.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_hook_root_write_guard.py::test_bash_heredoc_body_containing_delimiter_substring_is_allowed -> tests/test_hook_root_write_guard.py::_env
+- COV002  tests/test_land_verify_claims_outcome.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_land_verify_claims_outcome.py::TestInfraUnmeasuredDistinctFromDeliberateSkip
+- COV002  tests/test_lang_conformance_gate.py  -> attributed to T-4709 (commit 5519e7310f60, already closed/dropped -- filed below) via tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance.test_csharp_no_symbols_fixture_is_caught_not_rubber_stamped -> src/frob/gates/_lang_conformance.py::_CAPABILITY_FIXTURE_SOURCES
+- COV002  tests/test_lang_support.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_lang_support.py::TestDeriveLanguageRegistry
+- COV002  tests/test_narrative_blocks.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/test_perf.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_perf.py::test_perf004_does_not_fire_on_sort_after_loop_same_indent -> tests/test_perf.py::_snapshot
+- COV002  tests/test_refactor.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_refactor.py::TestAliasPolicy
+- COV002  tests/test_refs_gate.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_refs_gate.py::TestBacktickTokenizer
+- COV002  tests/test_release.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_release.py::TestAddReleaseStatusParser
+- COV002  tests/test_scaffold_worktree_lease_hook.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware
+- COV002  tests/test_serve_daemon.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_serve_daemon.py::TestIdleSelfTermination
+- COV002  tests/test_testing.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/test_ticket_land_proof_claims.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_ticket_land_proof_claims.py::TestLandProofInfraUnmeasured
+- COV002  tests/test_ticket_leases_cross_worktree.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['c1514b9ad48372ab842a7a69c1b1933cfa831609', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd']
+- COV002  tests/test_ticket_reconcile.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard
+- COV002  tests/test_ticket_store_stale_snapshot.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_ticket_store_stale_snapshot.py::TestRenumberV2StaleSnapshotGuard
+- COV002  tests/test_ticket_work_and_land_finish.py  -> attributed to T-4627 (commit 60c852bb1fe6, already closed/dropped -- filed below) via tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges
+- COV002  tests/test_tickets_acceptance.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_tickets_acceptance.py::TestAcceptsOneBasedMisBinding
+- COV002  tests/test_tickets_cmd_evidence.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_cmd_evidence.py::TestCov003CmdEvidence
+- COV002  tests/test_tickets_collision.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns
+- COV002  tests/test_tickets_evidence_cli.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding
+- COV002  tests/test_tickets_lease.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_lease.py::TestBreadthPerf
+- COV002  tests/test_tickets_leases.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_leases.py::TestLeaseShapeValidation
+- COV002  tests/test_tickets_live_tracker.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_live_tracker.py::TestAnchorMarker
+- COV002  tests/test_tickets_migration.py  -> attributed to T-4649 (commit 45eb65074c96, already closed/dropped -- filed below) via tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_is_silent -> src/frob/tickets/_store.py::_store_mode
+- COV002  tests/test_tickets_organization.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees
+- COV002  tests/test_tickets_registry_files.py  -> attributed to T-4650 (commit c8f56ef103c0, already closed/dropped -- filed below) via tests/test_tickets_registry_files.py::TestIsAdditiveDiffText
+- COV002  tests/test_tickets_triage_dates.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange
+- COV002  tests/test_waive_gate.py  -> attributed to T-4623 (commit f900d942eb07, already closed/dropped -- filed below) via tests/test_waive_gate.py::TestWaive007RealRepo
+- COV002  tests/test_worktree_guard.py  -> attributed to T-4546 (commit d4f365cad737, already closed/dropped -- filed below) via tests/test_worktree_guard.py::TestAgentEnvExports
+- COV002  tests/ticket_land_suite/test_verify_intent.py  -> attributed to T-4634 (commit deffcc7fb653, already closed/dropped -- filed below) via tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred
+- COV002  tests/unit/arch_suite/test_concurrency.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards
+- COV002  tests/unit/arch_suite/test_dispatch.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/arch_suite/test_dispatch.py::TestCollectDispatchRefs
+- COV002  tests/unit/arch_suite/test_lang_adapters.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence
+- COV002  tests/unit/coordinator_suite/test_fleet_host_load.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount
+- COV002  tests/unit/coordinator_suite/test_fleet_land.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/coordinator_suite/test_fleet_land.py::TestFlockHoldersMatchingWin32Guard
+- COV002  tests/unit/coordinator_suite/test_fleet_report.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusLarge001WaiverParses
+- COV002  tests/unit/coordinator_suite/test_fleet_worktrees.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases
+- COV002  tests/unit/gates/test_deprecated_baseline.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth
+- COV002  tests/unit/gates/test_detector_scope.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/gates/test_detector_scope.py::TestDetectorScope
+- COV002  tests/unit/gates/test_examined_sites.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites
+- COV002  tests/unit/gates/test_exhaustive_handling_path_shape.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/gates/test_exhaustive_handling_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production -> tests/unit/gates/test_exhaustive_handling_path_shape.py::_BOUNDARY_SRC
+- COV002  tests/unit/gates/test_ffi_boundary_path_shape.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/gates/test_ffi_boundary_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production -> tests/unit/gates/test_ffi_boundary_path_shape.py::_CTYPES_SRC
+- COV002  tests/unit/gates/test_lexical_selfcheck.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001
+- COV002  tests/unit/gates/test_wire001_cli_dest_semantic.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/gates/test_wire001_cli_dest_semantic.py::TestConfigExternalForwardedDestNames
+- COV002  tests/unit/graph/test_dsl.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/graph/test_dsl.py::TestTodoDirectiveInsideDocstring
+- COV002  tests/unit/graph/test_dsl_invariant_property.py  -> attributed to T-4221 (commit f27804db4311, already closed/dropped -- filed below) via tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs
+- COV002  tests/unit/graph/test_dsl_markdown_waive.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/graph/test_dsl_markdown_waive.py::TestBrokenDirectEdgeVerbIsLoud
+- COV002  tests/unit/lang/test_csharp_directives.py  -> attributed to T-4507 (commit c4ea195c734e, already closed/dropped -- filed below) via tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity
+- COV002  tests/unit/perf/test_hotpath_smells.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader
+- COV002  tests/unit/rapid_sweep_suite/test_attribution.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing
+- COV002  tests/unit/rapid_sweep_suite/test_baseline.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_baseline.py::TestPhantomDeletedPathNotFiledAsRegression
+- COV002  tests/unit/rapid_sweep_suite/test_commit.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt
+- COV002  tests/unit/rapid_sweep_suite/test_sweep_run.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun
+- COV002  tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_app_runners_batch5.py  -> attributed to T-4688 (commit c3f8d3d3c027, already closed/dropped -- filed below) via tests/unit/test_app_runners_batch5.py::TestDupRunner
+- COV002  tests/unit/test_app_runners_batch6.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_app_runners_batch6.py::TestCheckRunner
+- COV002  tests/unit/test_app_runners_batch7.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/test_app_runners_batch7.py::TestTicketLand
+- COV002  tests/unit/test_app_runners_json_guard_t2492.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_app_runners_json_guard_t2492.py::TestGraphQueryRunnerJsonGuard
+- COV002  tests/unit/test_arch_srp.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective
+- COV002  tests/unit/test_artifact_smoke_script.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels
+- COV002  tests/unit/test_check.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/test_check.py::TestCollectResultsProgressCallback
+- COV002  tests/unit/test_check_budget.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget
+- COV002  tests/unit/test_check_skip_flag.py  -> attributed to T-4524 (commit ade7d9db33cc, already closed/dropped -- filed below) via tests/unit/test_check_skip_flag.py::TestLegacyFlagsDeprecated
+- COV002  tests/unit/test_claims_and_store_batch6.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['1274217dc7509d46880c0de55cea68341e27137a', '9814c54782dd8faed15fc6300058fbc94e588606']
+- COV002  tests/unit/test_cli_lang_choices_drift.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_conftest_sigbreak_faulthandler.py  -> attributed to T-4419 (commit c4e0c9ea5aba, already closed/dropped -- filed below) via tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety
+- COV002  tests/unit/test_conftest_stackdump.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/test_conftest_stackdump.py::TestCachedSelfScan
+- COV002  tests/unit/test_cycle_runner_doc_waiver_t2598.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_cycle_runner_doc_waiver_t2598.py::TestCycleRunnerDocWaiver
+- COV002  tests/unit/test_cycle_waiver.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline
+- COV002  tests/unit/test_dev_branch_workflow.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_docs_module.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['fac1d3833fa4d555b1c9ecdccb7405540a4db44d', '1274217dc7509d46880c0de55cea68341e27137a']
+- COV002  tests/unit/test_doctor_runner_t1276.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['1274217dc7509d46880c0de55cea68341e27137a', 'ce01cdfeadff7dcbf28a8e0ab9b213351fd16cb7']
+- COV002  tests/unit/test_done_report_check_scope.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_done_report_check_scope.py::TestSharedCheckSpawnFnTimeout
+- COV002  tests/unit/test_dotnet_runner.py  -> attributed to T-4508 (commit 39466ab5d795, already closed/dropped -- filed below) via tests/unit/test_dotnet_runner.py::TestCsharpFqn
+- COV002  tests/unit/test_dup_cache.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_dup_cache.py::TestWriteLockGranularity
+- COV002  tests/unit/test_dup_legacy_cpp.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings -> tests/unit/test_dup_legacy_cpp.py::_parse
+- COV002  tests/unit/test_findings_severity_pinned.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_findings_severity_pinned.py::test_platform_skip_violation_is_pinned
+- COV002  tests/unit/test_frob_core_gil.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_frob_core_gil.py::TestResultsUnchanged
+- COV002  tests/unit/test_gitattributes_crlf_normalization.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization
+- COV002  tests/unit/test_gitattributes_merge.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression
+- COV002  tests/unit/test_graph_get_snapshot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_graph_ingest_batching.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_graph_ingest_batching.py::test_build_graph_commits_in_batches_not_one_final_transaction
+- COV002  tests/unit/test_graph_stat_trust_margin.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy
+- COV002  tests/unit/test_land_cas_ledger_retry.py  -> attributed to T-4572 (commit 5ea905188654, already closed/dropped -- filed below) via tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_ledger_only_cas_miss_rebases_and_retries_without_regates -> src/frob/tickets/_land_squash.py::_fold_publish_and_resync
+- COV002  tests/unit/test_land_compose.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_land_compose.py::TestDisposableSquashWorktree
+- COV002  tests/unit/test_land_default_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift
+- COV002  tests/unit/test_land_leaked_tickets_lease_hoist.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_land_queue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_land_sibling_regression.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape
+- COV002  tests/unit/test_land_squash_residue_reclaim.py  -> attributed to T-4631 (commit 1274217dc750, already closed/dropped -- filed below) via tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue
+- COV002  tests/unit/test_land_stackdump.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_land_stage_flip.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_land_stage_flip.py::TestDisposableStageFlip
+- COV002  tests/unit/test_land_verify_claim_divergence_sentinel.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded
+- COV002  tests/unit/test_lang_parse_guard.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_lang_parse_guard.py::TestParseGuardIsWired
+- COV002  tests/unit/test_lang_project_detect.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_lang_strata.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbolsCorpusWide
+- COV002  tests/unit/test_lease_lifecycle.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_leases_staleness_perf.py  -> attributed to T-4649 (commit 45eb65074c96, already closed/dropped -- filed below) via tests/unit/test_leases_staleness_perf.py::TestTicketLedgerStalenessShapeArchiveFastPath.test_archived_ticket_id_is_terminal_without_parsing_the_archive -> src/frob/tickets/_leases.py::_ticket_ledger_staleness_shape -> src/frob/tickets/_store.py::_store_mode
+- COV002  tests/unit/test_lifecycle_work_base.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['c1514b9ad48372ab842a7a69c1b1933cfa831609', '5c51f374bd402b6d71b23f5019a9d43863634b9b']
+- COV002  tests/unit/test_logging_quiet.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_logging_quiet.py::TestQuietQueryStdout
+- COV002  tests/unit/test_makefile_coverage.py  -> attributed to T-4419 (commit c4e0c9ea5aba, already closed/dropped -- filed below) via tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull
+- COV002  tests/unit/test_memo.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
+- COV002  tests/unit/test_new_ticket_scope_overlap_warning.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash
+- COV002  tests/unit/test_policy_weakening_gate.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGateFileIdentity
+- COV002  tests/unit/test_post_publish_lock_window.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_process_lock.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/test_process_lock.py::TestPortableFlock
+- COV002  tests/unit/test_process_pid_liveness.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_process_pid_liveness.py::TestKernel32PlatformGuard
+- COV002  tests/unit/test_process_reap.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_process_reap.py::TestInstallSigtermReaper
+- COV002  tests/unit/test_pyproject_data_memoization.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_rel002_dev_suffix.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_rel002_dev_suffix.py::test_dev_version_ahead_of_stamp_does_not_fire_rel002 -> tests/unit/test_rel002_dev_suffix.py::_write_module
+- COV002  tests/unit/test_release_workflow_gate.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_release_workflow_gate.py::TestArtifactSmokeAarch64UsesNativeArmRunner
+- COV002  tests/unit/test_scaffold_natives_shim.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_scaffold_natives_shim.py::TestMakefileCoreShimTemplate
+- COV002  tests/unit/test_scaffold_project.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_scaffold_project.py::test_ci_template_frob_check_gate_fails_loudly_not_silently
+- COV002  tests/unit/test_scaffold_unity_project.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_scope_closure_declared_scope_only.py  -> attributed to T-4805 (commit 112ae084f516, already closed/dropped -- filed below) via tests/unit/test_scope_closure_declared_scope_only.py::TestEmptyScopeIsZeroWarnings.test_empty_scope_short_circuits_before_loading_the_graph -> src/frob/app/ticket_runner/_new.py::_scope_closure_warnings
+- COV002  tests/unit/test_skills_sync.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_skills_sync.py::TestMakefileRecipeDelegates
+- COV002  tests/unit/test_store_mode_memoization.py  -> attributed to T-4649 (commit 45eb65074c96, already closed/dropped -- filed below) via tests/unit/test_store_mode_memoization.py::TestStoreModeMemo
+- COV002  tests/unit/test_support_csharp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_suppress_worktree_path.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_telemetry_verb_recording.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/unit/test_ticket_cli_surface.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['4f9079496c17dfd7df3d9d22e1461dab3fe290d5', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  tests/unit/test_ticket_new_related.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsRetargeted
+- COV002  tests/unit/test_ticket_runner_gate_findings.py  -> attributed to T-4419 (commit c4e0c9ea5aba, already closed/dropped -- filed below) via tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout
+- COV002  tests/unit/test_ticket_runner_land_cmd_flags.py  -> UNATTRIBUTED (4 batch commits' touched symbols all reach this finding); candidate commits: ['09b429dd9e4108179a35441e59a0d5a349b16d70', '4f9079496c17dfd7df3d9d22e1461dab3fe290d5', '5519e7310f6029e16d9ca0cb94ea9270c4ae0bd8', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- COV002  tests/unit/test_ticket_runner_land_release.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand
+- COV002  tests/unit/test_ticket_runner_ledger_mirror.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror
+- COV002  tests/unit/test_ticket_store.py  -> attributed to T-4632 (commit 35ce99476fb7, already closed/dropped -- filed below) via tests/unit/test_ticket_store.py::TestV2WriteTicket
+- COV002  tests/unit/test_unity_batchmode.py  -> attributed to T-4508 (commit 39466ab5d795, already closed/dropped -- filed below) via tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml
+- COV002  tests/unit/test_unlanded_branch_work.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation
+- COV002  tests/unit/test_waive_audit_watermark.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/test_waive_audit_watermark.py::TestSaveWatermark
+- COV002  tests/unit/test_xref.py  -> attributed to T-4519 (commit fac1d3833fa4, already closed/dropped -- filed below) via tests/unit/test_xref.py::csharp_nested_file
+- COV002  tests/unit/verify/test_backpressure.py  -> attributed to T-4629 (commit c24466ce3e4e, already closed/dropped -- filed below) via tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard
+- COV002  tests/unit/verify/test_quarantine.py  -> attributed to T-3082 (commit 44f54253019d, already closed/dropped -- filed below) via tests/unit/verify/test_quarantine.py::TestRaiseQuarantine
+- COV002  tests/unit/verify/test_verify_runner.py  -> attributed to T-3082 (commit 44f54253019d, already closed/dropped -- filed below) via tests/unit/verify/test_verify_runner.py::TestBuildStatus
+- COV002  tests/unit/verify/test_worker.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/verify/test_worker.py::TestRunCoalescedVerification
+- COV002  tests/vet_suite/test_capability_registry_unity.py  -> attributed to T-4718 (commit cd2535e4b1ca, already closed/dropped -- filed below) via tests/vet_suite/test_capability_registry_unity.py::TestUnityApiRegistry.test_unity_web_request_maps_to_net -> tests/vet_suite/test_capability_registry_unity.py::_kinds_for -> src/frob/vet/_capability_registry/_unity_api.py::_UNITY_OPERATIONS
+- COV002  tests/vet_suite/test_capability_scan_csharp.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/vet_suite/test_capability_scan_dotnet_bcl.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV002  tests/vet_suite/test_scan_tree.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/vet_suite/test_scan_tree.py::TestScanTreeMultipleLockfiles
+- COV003  github/dependabot.yml  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tests/unit/test_run_commands.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tmp/verify_ac3.sh  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV007  src/frob/testing/_dotnet_runner.py  -> attributed to T-4508 (commit 39466ab5d795, already closed/dropped -- filed below) via src/frob/testing/_dotnet_runner.py::_DOTNET_PASSED_OUTCOMES
+- COV007  src/frob/tickets/_evidence.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['60c852bb1fe60485471a3d2c223d2e352572d49e', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd']
+- DOC001  docs/guides/extending/failure-injection-acceptance-criteria.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC011  docs/modules/tickets-lifecycle.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC011  docs/modules/tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC012  docs/commands/  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOCENUM001  docs/modules/gates.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT001  src/frob/doctor.py  -> UNATTRIBUTED (3 batch commits' touched symbols all reach this finding); candidate commits: ['39466ab5d7951a04b3a5cd6d688e9f776861a5f0', '8f386b5301a89cbc43fa87c68ef14ae17bf03d44', 'ce01cdfeadff7dcbf28a8e0ab9b213351fd16cb7']
+- DRIFT001  src/frob/gates/_prework.py  -> UNATTRIBUTED (7 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'deffcc7fb6537ea5cbfe4fc454f51212c4761741', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', 'c3f8d3d3c0273f7959737de1316607b107112de3', '48a59f1b8586c311fd6ac3f0c858320439ae8786', '112ae084f5161c410d2673933282797b702b3008', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- DRIFT001  src/frob/tickets/_land_squash.py  -> UNATTRIBUTED (5 batch commits' touched symbols all reach this finding); candidate commits: ['eea033926c38acb1baca4aafdd6bab78a3006ac7', 'deffcc7fb6537ea5cbfe4fc454f51212c4761741', '5ea9051886540b20766311b1e7063ded0677dbc6', 'e943dce4485dec8813981d69b051f788d545dd34', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- DRIFT001  src/frob/verify/_quarantine.py  -> attributed to T-3082 (commit 44f54253019d, already closed/dropped -- filed below) via src/frob/app/verify_runner.py::_run_dispose -> src/frob/app/verify_runner.py::_collect_dispositions -> src/frob/app/verify_runner.py::_parse_dispose_entry -> src/frob/verify/_quarantine.py::_normalize_finding_path
+- DUP001  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- DUP001  src/frob/app/check_runner.py  -> UNATTRIBUTED (7 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', '55067239c8c09aaf384a5b1426fdf26b77cab7f0', '1274217dc7509d46880c0de55cea68341e27137a', '48a59f1b8586c311fd6ac3f0c858320439ae8786', 'cd2535e4b1ca1d6f662e0eaaaea2f38df6d7b37a']
+- DUP001  src/frob/graph/affects.py  -> attributed to T-3412 (commit 7b1796397292, already closed/dropped -- filed below) via src/frob/graph/affects.py::scope_doc_code_gaps -> src/frob/graph/affects.py::_ref_file
+- DUP001  tests/test_lang.py  -> attributed to T-4627 (commit 60c852bb1fe6, already closed/dropped -- filed below) via tests/test_lang.py::TestFormattingInsensitivity
+- DUP001  tests/test_perf.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_perf.py::test_perf004_does_not_fire_on_sort_after_loop_same_indent -> tests/test_perf.py::_snapshot
+- DUP001  tests/unit/arch_suite/test_concurrency.py  -> attributed to T-4628 (commit e5bbbcf79c03, already closed/dropped -- filed below) via tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards
+- DUP001  tests/unit/gates/test_cov002_strata_declarations.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DUP001  tests/unit/perf/test_hotpath_smells.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader
+- DUP001  tests/unit/strata/test_admit_phase_wiring.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DUP001  tests/unit/strata/test_facts.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/strata/test_facts.py::TestBuildFactsNativeExtensionUnavailable
+- DUP001  tests/unit/strata/test_threat.py  -> attributed to T-4419 (commit c4e0c9ea5aba, already closed/dropped -- filed below) via tests/unit/strata/test_threat.py::TestCapabilityCompleteness
+- DUP001  tests/unit/test_check_skip_flag.py  -> attributed to T-4524 (commit ade7d9db33cc, already closed/dropped -- filed below) via tests/unit/test_check_skip_flag.py::TestLegacyFlagsDeprecated
+- DUP001  tests/unit/test_dup_legacy_cpp.py  -> attributed to T-4630 (commit 55067239c8c0, already closed/dropped -- filed below) via tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings -> tests/unit/test_dup_legacy_cpp.py::_parse
+- DUP001  tests/unit/test_store_mode_memoization.py  -> attributed to T-4649 (commit 45eb65074c96, already closed/dropped -- filed below) via tests/unit/test_store_mode_memoization.py::TestStoreModeMemo
+- DUP001  tests/unit/test_telemetry_verb_recording.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DUP002  src/frob/__main__.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['e5bbbcf79c039349109ff1cbadafa2da6f29fde4', 'd4f365cad7373029e84e8d12d3e0c26edc66fe79']
+- DUP002  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- DUP002  tests/test_ci_workflow_matrix.py  -> attributed to T-4627 (commit 60c852bb1fe6, already closed/dropped -- filed below) via tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake
+- DUP002  tests/test_ticket_leases_cross_worktree.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['c1514b9ad48372ab842a7a69c1b1933cfa831609', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd']
+- DUP002  tests/unit/graph/test_dsl_invariant_property.py  -> attributed to T-4221 (commit f27804db4311, already closed/dropped -- filed below) via tests/unit/graph/test_dsl_invariant_property.py::TestTimeStableAttrs
+- INV003  docs/modules/gate-sys111-ratchet-auto-accept.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV003  docs/modules/gate-time-stable-invariant.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- LARGE001  src/frob/gates/_inv.py  -> attributed to T-4221 (commit f27804db4311, already closed/dropped -- filed below) via src/frob/gates/_inv.py::TIME_STABLE_OFFSET_ENV
+- LARGE001  src/frob/strata/_claims.py  -> attributed to T-4675 (commit 9814c54782dd, already closed/dropped -- filed below) via src/frob/strata/_claims.py::_cascade_detail
+- MILE002  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- OPAQUE001  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- OPAQUE001  src/frob/app/app.py  -> attributed to T-4689 (commit 35acaaf4fc88, already closed/dropped -- filed below) via src/frob/app/app.py::App
+- OPAQUE001  src/frob/app/check_runner.py  -> UNATTRIBUTED (7 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', '55067239c8c09aaf384a5b1426fdf26b77cab7f0', '1274217dc7509d46880c0de55cea68341e27137a', '48a59f1b8586c311fd6ac3f0c858320439ae8786', 'cd2535e4b1ca1d6f662e0eaaaea2f38df6d7b37a']
+- PERF004  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- PERF006  src/frob/gates/_guard_closure.py  -> attributed to T-4111 (commit 6a06d7e52b0f, already closed/dropped -- filed below) via src/frob/gates/_guard_closure.py::GuardClosurePair
+- REF002  docs/modules/gate-sys111-ratchet-auto-accept.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/modules/gate-time-stable-invariant.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REG002  docs/design/registry/check-coverage.yaml  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SEC110  src/frob/gates/_inv.py  -> attributed to T-4221 (commit f27804db4311, already closed/dropped -- filed below) via src/frob/gates/_inv.py::TIME_STABLE_OFFSET_ENV
+- TEST001  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- TEST001  src/frob/tickets/_land_compose.py  -> UNATTRIBUTED (4 batch commits' touched symbols all reach this finding); candidate commits: ['deffcc7fb6537ea5cbfe4fc454f51212c4761741', '5ea9051886540b20766311b1e7063ded0677dbc6', 'e943dce4485dec8813981d69b051f788d545dd34', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3032.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3899.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3936.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3962.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3964.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3986.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3995.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-3997.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4030.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4073.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4112.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4113.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4114.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4115.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4254.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4420.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4509.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4612.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4657.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4658.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4661.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4693.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4760.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4761.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4763.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4951.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4991.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-4993.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-5124.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-5125.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TICK010  /home/logan/projects/frob/.git/frob-leases/T-5126.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TODO001  src/frob/gates/_wire.py  -> UNATTRIBUTED (3 batch commits' touched symbols all reach this finding); candidate commits: ['55067239c8c09aaf384a5b1426fdf26b77cab7f0', '64af5bdec5b81cf019a4165e1a09a401373e423d', 'e40c2f55380304b70cf01f44eaf34f8df153a3fd']
+- TODO001  tests/test_check_runner.py  -> attributed to T-4624 (commit 48a59f1b8586, already closed/dropped -- filed below) via tests/test_check_runner.py::TestApplyTierAAndReverify
+- TODO002  src/frob/gates/_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TODO002  src/frob/gates/_ratchet.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TODO003  src/frob/tickets/_leases.py  -> UNATTRIBUTED (13 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', 'ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', 'deffcc7fb6537ea5cbfe4fc454f51212c4761741', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', '3cb8e868631ba53f600913f04efe870cb50cdbe3', '60c852bb1fe60485471a3d2c223d2e352572d49e', 'f900d942eb072b1dfb6840117f8aba6223e088d3', '48a59f1b8586c311fd6ac3f0c858320439ae8786', 'd4f365cad7373029e84e8d12d3e0c26edc66fe79', 'c1514b9ad48372ab842a7a69c1b1933cfa831609', '5c51f374bd402b6d71b23f5019a9d43863634b9b', 'eb86564b528c73a4e2b6641293b75764c774f528']
+- WIRE001  src/frob/_cli_parsers/_check.py  -> UNATTRIBUTED (2 batch commits' touched symbols all reach this finding); candidate commits: ['ade7d9db33ccaf43ddb66c92fab7296e291c8ea6', '2908847a479863ed3eeccc59466df542a89e6d7a']
+- WIRE001  src/frob/gates/_claim_lint.py  -> attributed to T-4116 (commit 672617f7642a, already closed/dropped -- filed below) via src/frob/gates/_claim_lint.py::_CLAIMABLE_KINDS
+- WIRE001  src/frob/gates/_coverage.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- WIRE001  src/frob/gates/_guard_closure.py  -> attributed to T-4111 (commit 6a06d7e52b0f, already closed/dropped -- filed below) via src/frob/gates/_guard_closure.py::GuardClosurePair
+- WIRE001  src/frob/gates/_inv.py  -> attributed to T-4221 (commit f27804db4311, already closed/dropped -- filed below) via src/frob/gates/_inv.py::TIME_STABLE_OFFSET_ENV
+- WIRE001  src/frob/gates/_ratchet.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- WIRE001  src/frob/gates/_sys_branch.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- WIRE001  src/frob/gitio.py  -> UNATTRIBUTED (10 batch commits' touched symbols all reach this finding); candidate commits: ['0d624adacd41ed646087b6ffc201c55b188a52b0', '39466ab5d7951a04b3a5cd6d688e9f776861a5f0', '0b0a12b01c321877bbab6d9c9b6f2a88cb8d0916', '35ce99476fb77ad8800ecfae0eff5ef829b0ac1f', '55067239c8c09aaf384a5b1426fdf26b77cab7f0', 'e5bbbcf79c039349109ff1cbadafa2da6f29fde4', '48a59f1b8586c311fd6ac3f0c858320439ae8786', 'b5f51063b79b9b33fc9fa433a7da073f1af9b801', 'cd2535e4b1ca1d6f662e0eaaaea2f38df6d7b37a', 'c1514b9ad48372ab842a7a69c1b1933cfa831609']
+- WIRE001  src/frob/tickets/_registry_files.py  -> attributed to T-4650 (commit c8f56ef103c0, already closed/dropped -- filed below) via src/frob/tickets/_registry_files.py::DEFAULT_REGISTRY_FILES
+- WIRE001  tests/unit/strata/test_claims_overdue.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- WIRE001  tests/unit/strata/test_strata_scan_cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- WIRE001  tests/unit/test_scope_closure_declared_scope_only.py  -> attributed to T-4805 (commit 112ae084f516, already closed/dropped -- filed below) via tests/unit/test_scope_closure_declared_scope_only.py::TestEmptyScopeIsZeroWarnings.test_empty_scope_short_circuits_before_loading_the_graph -> src/frob/app/ticket_runner/_new.py::_scope_closure_warnings
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
