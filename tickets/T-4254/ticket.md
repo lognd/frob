@@ -9,7 +9,7 @@ created: '2026-09-07'
 priority: high
 parent: T-4182
 tier: ticket
-sprint: v1.1.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -20,28 +20,26 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.538.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
-- field: sprint
-  old_value: v0.538.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping::test_two_symbols_same_anchor_form_a_group
+- tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping::test_lone_anchor_participant_is_not_a_group
+- tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview::test_touching_one_sibling_flags_the_other
+- tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview::test_touching_both_siblings_flags_neither
+- tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview::test_untouched_group_is_silent
 designated_repro_test: null
 acceptance:
 - text: frob:doc edges sharing the same anchor are grouped into one contract (_shared_doc_anchor_groups),
     ignoring anchors with only one participant symbol
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping::test_two_symbols_same_anchor_form_a_group
+  - tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping::test_lone_anchor_participant_is_not_a_group
 - text: cov009_violations warns on every untouched sibling in a group once the diff
     touches at least one other sibling's own line span, and stays silent when the
     diff touches none or all of them
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview::test_touching_one_sibling_flags_the_other
+  - tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview::test_touching_both_siblings_flags_neither
+  - tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview::test_untouched_group_is_silent
 threat: null
 component: null
 anchor: false
