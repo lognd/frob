@@ -1,5 +1,5 @@
 ---
-id: T-draft-ee0c666b
+id: T-5217
 title: 'LEXCHECK001 new backlog item: _docarch_structural.py::scan_citation_shape
   decides from re.search without a symref'
 state: queued
