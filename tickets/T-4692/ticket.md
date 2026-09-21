@@ -32,6 +32,7 @@ scope:
 - tests/unit/test_check_only_stages.py
 - tests/fixtures/check_stages/**
 - src/frob/app/scaffold_runner.py
+- src/frob/check/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -63,6 +64,13 @@ scope_changes:
   reason: 'ticket body''s own amendment: parse belongs to T-4698''s verdict table,
     debt/deprecated belong to T-4695''s explore fold; scaffold_runner.py needed for
     the exports generate-half move (owner decision 2026-09-19)'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: narrative needs a --only alias (narrative -> the narrative_blocks gate name)
+    and mutate needs a decision recorded in _TOOL_ONLY_STAGE_GROUPS-adjacent code;
+    this is the single place --only's stage vocabulary is declared
   actor: logan
   at: '2026-09-21'
 triage_changes:
