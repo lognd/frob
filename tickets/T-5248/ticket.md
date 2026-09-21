@@ -1,5 +1,5 @@
 ---
-id: T-draft-226a5f7f
+id: T-5248
 title: 'Quarantine residue from earlier lands never stalls the queue: prepare auto-files
   one residue ticket and disposes the findings against it'
 state: queued
