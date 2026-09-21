@@ -44,6 +44,7 @@ CI run cannot reproduce.
 from __future__ import annotations
 
 import ast
+import builtins
 import json
 import os
 import posixpath
@@ -1537,6 +1538,300 @@ def entrypoint_coverage_violations(
     return violations
 
 
+# T-3997 (F-207, T-3984 item 12): stdlib call targets that are never the
+# "real, non-mocked collaborator" TESTMOCK001 cares about -- excluding
+# them keeps the collaborator set to names a test COULD plausibly patch
+# out, rather than every `len()`/`str()` a function happens to touch
+# (which would make near-EVERY symbol's collaborator set impossible to
+# fully mock, silently disabling the rule the opposite way).
+# frob:ticket T-3997
+_TESTMOCK001_BUILTIN_NAMES = frozenset(dir(builtins))
+# frob:ticket T-3997
+_TESTMOCK001_SELF_NAMES = frozenset({"self", "cls"})
+
+
+# frob:ticket T-3997
+def _testmock001_find_node(tree: ast.Module, qualname: str) -> ast.AST | None:
+    """Walk `tree`'s top-level scope, then each dotted `qualname` segment's
+    own body, to find the `ClassDef`/`FunctionDef` a `path::qualname`
+    symref (or a `frob:tests` pytest node id's `Class.method` half, T-3997)
+    names -- `None` if any segment along the way is missing."""
+    scope: list[ast.stmt] = list(tree.body)
+    node: ast.AST | None = None
+    for part in qualname.split("."):
+        node = next(
+            (
+                n
+                for n in scope
+                if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+                and n.name == part
+            ),
+            None,
+        )
+        if node is None:
+            return None
+        scope = list(node.body)
+    return node
+
+
+# frob:ticket T-3997
+def _testmock001_call_target_name(call: ast.Call) -> str | None:
+    """The single identifier a call's `func` resolves to -- `Attribute.attr`
+    for `obj.name(...)`, `Name.id` for a bare `name(...)`, or the base
+    name of a dynamic-dispatch `TABLE[key](...)` call (T-3933's own
+    `LANGUAGE_COLLECTORS[lang](root)` shape) -- so both a directly-called
+    collaborator and one reached through a lookup table resolve to the
+    same collaborator identity a `frob:tests`-bound test could patch."""
+    target: ast.expr = call.func
+    if isinstance(target, ast.Subscript):
+        target = target.value
+    if isinstance(target, ast.Attribute):
+        if (
+            isinstance(target.value, ast.Name)
+            and target.value.id in _TESTMOCK001_SELF_NAMES
+        ):
+            return None
+        if target.attr.startswith("__"):
+            return None
+        return target.attr
+    if isinstance(target, ast.Name):
+        if target.id in _TESTMOCK001_BUILTIN_NAMES:
+            return None
+        return target.id
+    return None
+
+
+# frob:ticket T-3997
+def _testmock001_collaborators(func_node: ast.AST) -> set[str]:
+    """Every collaborator identifier `func_node`'s body calls (T-3997): a
+    `frob:tests`-bound symbol's own real, non-builtin, non-`self`/`cls`
+    call targets -- the set a test would need to mock EVERY member of for
+    TESTMOCK001 to have anything to fire about."""
+    names: set[str] = set()
+    for node in ast.walk(func_node):
+        if isinstance(node, ast.Call):
+            name = _testmock001_call_target_name(node)
+            if name is not None:
+                names.add(name)
+    return names
+
+
+# frob:ticket T-3997
+def _testmock001_patch_target_name(call: ast.Call) -> str | None:
+    """The collaborator name a `mock.patch(...)`/`patch.object(...)` call
+    (bare or as a decorator) mocks out -- the dotted string's last segment
+    for `patch("a.b.c")`, or the literal attribute-name argument for
+    `patch.object(obj, "c")` -- matching `_testmock001_call_target_name`'s
+    same single-identifier granularity."""
+    func = call.func
+    is_patch = isinstance(func, ast.Name) and func.id == "patch"
+    is_patch_object = False
+    if isinstance(func, ast.Attribute) and func.attr in ("patch", "object"):
+        if func.attr == "patch":
+            is_patch = True
+        elif isinstance(func.value, (ast.Name, ast.Attribute)):
+            inner = func.value
+            inner_name = inner.id if isinstance(inner, ast.Name) else inner.attr
+            if inner_name == "patch":
+                is_patch_object = True
+    if is_patch and call.args:
+        first = call.args[0]
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            return first.value.rsplit(".", 1)[-1]
+    if is_patch_object and len(call.args) >= 2:
+        second = call.args[1]
+        if isinstance(second, ast.Constant) and isinstance(second.value, str):
+            return second.value
+    return None
+
+
+# frob:ticket T-3997
+def _testmock001_monkeypatch_target_name(call: ast.Call) -> str | None:
+    """The collaborator name a `monkeypatch.setattr(...)`/`.setitem(...)`
+    call mocks out: `setattr`'s target is its string attribute-name
+    argument (matching an `Attribute.attr` collaborator); `setitem`'s
+    target is the CONTAINER expression's own name (matching a dynamic-
+    dispatch-table collaborator, T-3933's `monkeypatch.setitem(
+    testing_mod.LANGUAGE_COLLECTORS, "ts", ...)` shape -- the mocked
+    collaborator there is `LANGUAGE_COLLECTORS`, not the `"ts"` key)."""
+    func = call.func
+    if not isinstance(func, ast.Attribute) or func.attr not in ("setattr", "setitem"):
+        return None
+    base = func.value
+    base_name = base.id if isinstance(base, ast.Name) else None
+    if base_name is None or (
+        "monkeypatch" not in base_name.lower() and base_name != "mp"
+    ):
+        return None
+    if func.attr == "setattr":
+        if len(call.args) >= 2:
+            name_arg = call.args[1]
+            if isinstance(name_arg, ast.Constant) and isinstance(name_arg.value, str):
+                return name_arg.value
+        if call.args:
+            dotted_arg = call.args[0]
+            if isinstance(dotted_arg, ast.Constant) and isinstance(
+                dotted_arg.value, str
+            ):
+                return dotted_arg.value.rsplit(".", 1)[-1]
+        return None
+    if call.args:
+        container = call.args[0]
+        if isinstance(container, ast.Attribute):
+            return container.attr
+        if isinstance(container, ast.Name):
+            return container.id
+    return None
+
+
+# frob:ticket T-3997
+def _testmock001_mocked_names(test_node: ast.AST) -> set[str]:
+    """Every collaborator name `test_node` (a bound test function) mocks
+    out, across its decorators (`@patch(...)`) and its whole body
+    (`mock.patch(...)`, `monkeypatch.setattr`/`.setitem(...)`), T-3997."""
+    names: set[str] = set()
+    decorators: list[ast.expr] = []
+    if isinstance(test_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        decorators = list(test_node.decorator_list)
+    for deco in decorators:
+        if isinstance(deco, ast.Call):
+            name = _testmock001_patch_target_name(deco)
+            if name is not None:
+                names.add(name)
+    for node in ast.walk(test_node):
+        if isinstance(node, ast.Call):
+            for extractor in (
+                _testmock001_patch_target_name,
+                _testmock001_monkeypatch_target_name,
+            ):
+                name = extractor(node)
+                if name is not None:
+                    names.add(name)
+    return names
+
+
+# frob:ticket T-3997
+def _testmock001_tree_loader(root: Path):
+    """A memoising `rel_path -> ast.Module | None` loader for TESTMOCK001's
+    walk (one parse per file across every subject/test it visits);
+    unparseable or unreadable files resolve to `None` and are logged."""
+    ast_cache: dict[str, ast.Module | None] = {}
+
+    def _tree_for(rel_path: str) -> ast.Module | None:
+        if rel_path in ast_cache:
+            return ast_cache[rel_path]
+        tree: ast.Module | None
+        try:
+            source = (root / rel_path).read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=rel_path)
+        except (OSError, SyntaxError, UnicodeDecodeError) as exc:
+            _log.debug("TESTMOCK001: cannot parse %s: %s", rel_path, exc)
+            tree = None
+        ast_cache[rel_path] = tree
+        return tree
+
+    return _tree_for
+
+
+# frob:ticket T-3997
+def _testmock001_fully_mocked(
+    test_targets: list[str], collaborators: set[str], tree_for
+) -> bool:
+    """Whether EVERY binding test that resolves to a real test function
+    mocks EVERY collaborator -- `False` as soon as one resolved test leaves
+    a collaborator real, and `False` too when no test resolves at all (an
+    honest "measured nothing", never a finding). Split out of
+    `testmock001_violations` for ARCH001."""
+    resolved_any = False
+    for test_target in test_targets:
+        test_path, test_sep, test_qualname = test_target.partition("::")
+        if not test_sep or not test_path.endswith(".py"):
+            continue
+        test_tree = tree_for(test_path)
+        if test_tree is None:
+            continue
+        test_node = _testmock001_find_node(test_tree, test_qualname.replace("::", "."))
+        if test_node is None or not isinstance(
+            test_node, (ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            continue
+        resolved_any = True
+        if collaborators - _testmock001_mocked_names(test_node):
+            _log.debug("TESTMOCK001: %s leaves a collaborator real", test_target)
+            return False
+    return resolved_any
+
+
+# frob:doc \
+# docs/modules/gate-testmock001.md#testmock001-fully-mocked-subjects-need-a-non-mocked-companion-t-3997  # noqa: E501
+# frob:ticket T-3997
+# frob:enforces CHK-GATE-TESTMOCK001
+# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_fires_when_the_only_binding_test_mocks_every_collaborator  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_satisfied_by_a_companion_test_leaving_one_collaborator_real  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_t3933_shaped_dynamic_dispatch_table_scenario_fires  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_the_symbol_has_no_collaborators  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_no_test_resolves_at_all  # noqa: E501
+def testmock001_violations(root: Path, snapshot: GraphSnapshot) -> list[Violation]:
+    """TESTMOCK001 (T-3997, F-207/T-3984 item 12): a `frob:tests`-bound
+    Python symbol whose EVERY resolvable binding test mocks/patches EVERY
+    one of that symbol's own collaborator calls has proven only that the
+    test's node-id BINDS to the symbol -- never that the symbol's real,
+    non-mocked code path (the one that actually runs in production) was
+    ever exercised (T-3933's `LANGUAGE_COLLECTORS["ts"]` synthetic
+    stand-in, which sat invisible until F-171 surfaced the gap externally).
+    Fires `Severity.ERROR` unless at least one resolvable binding test
+    leaves at least one real collaborator call un-mocked; silent when the
+    symbol has no collaborators to mock (nothing to protect against) or
+    when none of its binding tests could be resolved to a real AST node
+    (an honest "measured nothing" rather than a false claim either way)."""
+    subjects: dict[str, list[str]] = {}
+    for edge in snapshot.edges:
+        if edge.kind is EdgeKind.TESTS:
+            subjects.setdefault(edge.src, []).append(edge.target)
+
+    _tree_for = _testmock001_tree_loader(root)
+
+    violations: list[Violation] = []
+    for subject_symref, test_targets in sorted(subjects.items()):
+        subject_path, sep, qualname = subject_symref.partition("::")
+        if not sep or not subject_path.endswith(".py"):
+            continue
+        subject_tree = _tree_for(subject_path)
+        if subject_tree is None:
+            continue
+        subject_node = _testmock001_find_node(subject_tree, qualname.replace("::", "."))
+        if subject_node is None or not isinstance(
+            subject_node, (ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            continue
+        collaborators = _testmock001_collaborators(subject_node)
+        if not collaborators:
+            continue
+
+        if _testmock001_fully_mocked(test_targets, collaborators, _tree_for):
+            record = snapshot.symbols.get(subject_symref)
+            line = record.span[0] if record is not None else 0
+            violations.append(
+                Violation(
+                    rule="TESTMOCK001",
+                    severity=Severity.ERROR,
+                    file=subject_path,
+                    line=line,
+                    symref=subject_symref,
+                    message=(
+                        f"TESTMOCK001: {subject_symref} is bound to "
+                        f"{len(test_targets)} frob:tests target(s), and every one "
+                        f"that resolved to a real test mocks EVERY collaborator "
+                        f"this symbol calls ({', '.join(sorted(collaborators))}) -- "
+                        f"real execution of {subject_symref} is unproven (T-3933's "
+                        f"shape). Add a companion frob:tests binding whose test "
+                        f"leaves at least one of these collaborators un-mocked."
+                    ),
+                )
+            )
+    return violations
+
+
 __all__ = [
     "coverage_lock_diff",
     "entrypoint_coverage_violations",
@@ -1547,5 +1842,6 @@ __all__ = [
     "load_lock_audit_log",
     "load_stamp",
     "stamp_coverage",
+    "testmock001_violations",
     "write_coverage_lock",
 ]

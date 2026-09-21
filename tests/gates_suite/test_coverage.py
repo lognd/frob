@@ -3946,3 +3946,171 @@ class TestEntrypointCoverage:
         )
         violations = entrypoint_coverage_violations(tmp_path, snap)
         assert [v for v in violations if v.rule == "COV010"] == []
+
+
+class TestTestmock001:
+    """TESTMOCK001 (T-3997, F-207/T-3984 item 12): a `frob:tests`-bound
+    symbol whose only binding test(s) mock every collaborator it calls has
+    proven binding, never real execution -- T-3933's own
+    `LANGUAGE_COLLECTORS["ts"]` synthetic stand-in is the motivating,
+    already-shipped instance this rule exists to catch."""
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_fires_when_the_only_binding_test_mocks_every_collaborator  # noqa: E501
+    def test_fires_when_the_only_binding_test_mocks_every_collaborator(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._coverage import testmock001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/tool.py",
+            "from frob.pkg.dep import helper\n"
+            "\n"
+            "\n"
+            "# frob:tests tests/test_tool.py::test_subject_mocked_only\n"
+            "def subject():\n"
+            "    return helper()\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_tool.py",
+            "from unittest import mock\n"
+            "\n"
+            "from frob.pkg.tool import subject\n"
+            "\n"
+            "\n"
+            "def test_subject_mocked_only():\n"
+            '    with mock.patch("frob.pkg.dep.helper", return_value=1):\n'
+            "        assert subject() == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = testmock001_violations(tmp_path, snap)
+        fires = [v for v in violations if v.rule == "TESTMOCK001"]
+        assert len(fires) == 1
+        assert fires[0].file == "src/frob/pkg/tool.py"
+        assert fires[0].symref == "src/frob/pkg/tool.py::subject"
+        assert "helper" in fires[0].message
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_satisfied_by_a_companion_test_leaving_one_collaborator_real  # noqa: E501
+    def test_satisfied_by_a_companion_test_leaving_one_collaborator_real(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._coverage import testmock001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/tool.py",
+            "from frob.pkg.dep import helper\n"
+            "\n"
+            "\n"
+            "# frob:tests tests/test_tool.py::test_subject_mocked_only\n"
+            "# frob:tests tests/test_tool.py::test_subject_real_call\n"
+            "def subject():\n"
+            "    return helper()\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_tool.py",
+            "from unittest import mock\n"
+            "\n"
+            "from frob.pkg.tool import subject\n"
+            "\n"
+            "\n"
+            "def test_subject_mocked_only():\n"
+            '    with mock.patch("frob.pkg.dep.helper", return_value=1):\n'
+            "        assert subject() == 1\n"
+            "\n"
+            "\n"
+            "def test_subject_real_call():\n"
+            "    subject()\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = testmock001_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "TESTMOCK001"] == []
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_t3933_shaped_dynamic_dispatch_table_scenario_fires  # noqa: E501
+    def test_t3933_shaped_dynamic_dispatch_table_scenario_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3933's own shape: a symbol dispatches through a module-level
+        table (`LANGUAGE_COLLECTORS[lang](root)`), and the one binding
+        test only ever `monkeypatch.setitem`s the table itself -- the
+        real, non-mocked entries stay permanently unexercised."""
+        from frob.gates._coverage import testmock001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/tool.py",
+            "COLLECTORS = {}\n"
+            "\n"
+            "\n"
+            "# frob:tests tests/test_tool.py::test_resolve_mocked_only\n"
+            "def resolve(lang, root):\n"
+            "    return COLLECTORS[lang](root)\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_tool.py",
+            "import frob.pkg.tool as tool_mod\n"
+            "\n"
+            "\n"
+            "def test_resolve_mocked_only(monkeypatch):\n"
+            '    monkeypatch.setitem(tool_mod.COLLECTORS, "ts", lambda root: 1)\n'
+            "    assert tool_mod.resolve('ts', None) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = testmock001_violations(tmp_path, snap)
+        fires = [v for v in violations if v.rule == "TESTMOCK001"]
+        assert len(fires) == 1
+        assert "COLLECTORS" in fires[0].message
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_the_symbol_has_no_collaborators  # noqa: E501
+    def test_silent_when_the_symbol_has_no_collaborators(self, tmp_path: Path) -> None:
+        from frob.gates._coverage import testmock001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/tool.py",
+            "# frob:tests tests/test_tool.py::test_subject\n"
+            "def subject(a, b):\n"
+            "    return a + b\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_tool.py",
+            "from frob.pkg.tool import subject\n"
+            "\n"
+            "\n"
+            "def test_subject():\n"
+            "    assert subject(1, 2) == 3\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = testmock001_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "TESTMOCK001"] == []
+
+    # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_no_test_resolves_at_all  # noqa: E501
+    def test_silent_when_no_test_resolves_at_all(self, tmp_path: Path) -> None:
+        """A `frob:tests` target naming a test function that does not
+        actually exist resolves to nothing -- TESTMOCK001 reports an
+        honest "measured nothing" rather than treating an unresolvable
+        binding as a fully-mocked one."""
+        from frob.gates._coverage import testmock001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/tool.py",
+            "from frob.pkg.dep import helper\n"
+            "\n"
+            "\n"
+            "# frob:tests tests/test_tool.py::test_does_not_exist\n"
+            "def subject():\n"
+            "    return helper()\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_tool.py",
+            "def test_something_else():\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = testmock001_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "TESTMOCK001"] == []

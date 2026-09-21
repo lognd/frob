@@ -1,7 +1,7 @@
 ---
 id: T-3997
 title: 'TESTMOCK001: fully-mocked subjects need a non-mocked companion'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -10,7 +10,7 @@ blocked_by:
 - T-3985
 parent: T-3984
 tier: ticket
-sprint: v0.533.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -25,24 +25,19 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/gate-testmock001.md
-  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-4650
+  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-draft-a62505d4
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.533.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 evidence:
 - tests/gates_suite/test_coverage.py::TestTestmock001::test_satisfied_by_a_companion_test_leaving_one_collaborator_real
 - tests/gates_suite/test_coverage.py::TestTestmock001::test_t3933_shaped_dynamic_dispatch_table_scenario_fires
+- tests/gates_suite/test_coverage.py::TestTestmock001::test_fires_when_the_only_binding_test_mocks_every_collaborator
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests-bound symbol whose only binding test mocks every collaborator,
     when frob check runs, then TESTMOCK001 fires
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_coverage.py::TestTestmock001::test_fires_when_the_only_binding_test_mocks_every_collaborator
 - text: given a second test for the same symbol with at least one non-mocked binding,
     when frob check runs, then the rule is satisfied
   evidence:
