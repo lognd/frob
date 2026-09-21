@@ -67,8 +67,8 @@ acceptance_amendments:
     (implemented here, satisfies criterion 1) OR persist mined transitions in a head-sha-keyed
     cache for the warm/incremental case (criterion 2). This ticket implements only
     the batched-walk alternative; the warm-cache/incremental-mining criterion is split
-    out to T-5154 (filed while working T-5131) rather than blocking this
-    ticket''s real, measured 10+min -> 9.7s fix on unrelated follow-on work.'
+    out to T-5154 (filed while working T-5131) rather than blocking this ticket''s
+    real, measured 10+min -> 9.7s fix on unrelated follow-on work.'
   actor: logan
   at: '2026-09-20'
 threat: null

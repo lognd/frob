@@ -2,14 +2,14 @@
 id: T-4951
 title: 'WIRE forbid call / forbid import: parsed and declared by the built-in analyzable
   pack, enforced by no gate, while its auto-injection warns on every design load'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-19'
 priority: high
 parent: T-4665
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -37,13 +37,11 @@ scope_changes:
     controls
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: v0.536.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_forbid_rules.py::TestForbidRulesGateLitmus::test_litmus_planted_violation_fires
+- tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_mention_in_comment_does_not_fire
+- tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_no_bound_code_is_uncheckable_not_clean
+- tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_forbidden_call_under_analyzable_fires
 designated_repro_test: null
 acceptance:
 - text: 'Given forbid call / forbid import are parsed at grammar_policy.rs:129-140
@@ -52,17 +50,21 @@ acceptance:
     excludes them and no other gate reads them -- when this lands, then a litmus case
     whose bound source calls eval() under std.policy.analyzable produces a finding:
     a planted positive control that fails at HEAD c8f56ef10.'
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_forbid_rules.py::TestForbidRulesGateLitmus::test_litmus_planted_violation_fires
 - text: Given a guard fails by crying wolf, when source merely mentions a forbidden
     ident in a comment or string literal, then a test asserts no finding is produced.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_mention_in_comment_does_not_fire
 - text: Given a guard fails by failing open, when a node has no source bound to it,
     then that outcome is reported distinguishably and is not counted as a clean pass.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_no_bound_code_is_uncheckable_not_clean
 - text: Given _effects.py already scans the tree and T-4669 is making that scan cached,
     when this gate evaluates forbid rules, then it joins the existing capability scan
     rather than adding a second full-tree walk.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_forbidden_call_under_analyzable_fires
 threat: null
 component: gates
 anchor: false

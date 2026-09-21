@@ -2,14 +2,14 @@
 id: T-4759
 title: 'frob.toml [commands] table plus a run verb: one declared home for every project
   command, sequences included'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
 parent: T-4757
 tier: ticket
-sprint: null
+sprint: v1.1.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -35,32 +35,34 @@ scope_changes:
   reason: avoid the T-4546/T-4690 lease
   actor: logan
   at: '2026-09-19'
-evidence:
-- tests/unit/test_run_commands.py::TestRun::test_middle_step_failure_names_index
-- tests/unit/test_run_commands.py::TestLoadCommands::test_self_reference_refused_with_path
-- tests/unit/test_run_commands.py::TestRun::test_native_default_used_when_undeclared
-- tests/unit/test_run_commands.py::TestRun::test_dry_run_prints_without_spawning
-- tests/unit/test_run_commands.py::TestLoadCommands::test_three_step_sequence_composes
+triage_changes:
+- field: sprint
+  old_value: null
+  new_value: v0.537.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
+- field: sprint
+  old_value: v0.537.0
+  new_value: v1.1.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: Given a [commands] entry that is an array of three steps, when it is run and
     the middle step exits non-zero, then execution stops there and the error names
     the failing step by index and command
-  evidence:
-  - tests/unit/test_run_commands.py::TestRun::test_middle_step_failure_names_index
-  - tests/unit/test_run_commands.py::TestLoadCommands::test_three_step_sequence_composes
+  evidence: []
 - text: Given an entry that references itself directly or transitively, when config
     is loaded, then it is refused with the full reference path printed
-  evidence:
-  - tests/unit/test_run_commands.py::TestLoadCommands::test_self_reference_refused_with_path
+  evidence: []
 - text: Given a project that declares no [commands] table, when test/lint/format/check
     are run, then they resolve to frob native verbs with no declaration
-  evidence:
-  - tests/unit/test_run_commands.py::TestRun::test_native_default_used_when_undeclared
+  evidence: []
 - text: Given the dry-run form, when it is invoked, then the resolved sequence is
     printed and no subprocess is spawned
-  evidence:
-  - tests/unit/test_run_commands.py::TestRun::test_dry_run_prints_without_spawning
+  evidence: []
 threat: null
 component: null
 anchor: false
@@ -102,7 +104,7 @@ like a task list.
 
 Scope note: the closed top-level frob.toml schema and the
 conventional-files-referenced-by-default change are NOT in this leaf -- they
-are already filed as T-draft-538a0625, which this story blocks the scaffold
+are already filed as T-5090, which this story blocks the scaffold
 frob.toml leaf on.
 
 Positive controls (each an assert, not a smoke test):

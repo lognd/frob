@@ -12,7 +12,7 @@ blocked_by:
 - T-5102
 parent: T-5081
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -32,12 +32,6 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: v0.536.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 designated_repro_test: null
 acceptance:
 - text: Given modules a, b, c where a imports b, b imports c and c imports a, when

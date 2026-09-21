@@ -11,7 +11,7 @@ blocked_by:
 - T-5082
 parent: T-5081
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -27,12 +27,6 @@ triage_changes:
 - field: sprint
   old_value: null
   new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
-- field: sprint
-  old_value: v0.536.0
-  new_value: v1.1.0
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'

@@ -1,0 +1,36 @@
+// forbid_rules.strata -- T-4951 WIRE-leaf litmus for the forbid-rules gate
+// (docs/strata/policy.md#the-five-forms).
+//
+// `forbid call`/`forbid import` are parsed (strata-core/src/parse/
+// grammar_policy.rs:129-140) and constructed by the built-in
+// `std.policy.analyzable` base pack, auto-injected onto every `trusted`
+// node, but at HEAD-c8f56ef10 nothing ever checked either rule against
+// real source (src/frob/gates/_forbid_rules_gate.py, T-4951's own Done
+// report). This module is the planted positive control: `worker`'s bound
+// code (fixtures/forbid_rules/violation.py) calls `eval(` for real, so
+// `forbid_rules_gate` must produce a FORBID001 finding once this lands.
+// `clean_worker` is the converse/negative control: its bound code
+// (fixtures/forbid_rules/clean.py) only MENTIONS `eval` in a comment and
+// a string literal, so the gate must NOT fire on it (the crying-wolf
+// guard, memory/guard-design-lessons.md).
+//
+// tested end to end (parse -> elaborate -> bind_code -> forbid_rules_gate)
+// by tests/gates_suite/test_forbid_rules.py; this file and its two
+// fixtures are permanent CI goldens.
+
+module forbid_rules
+
+node worker : trusted {
+    clearance Internal;
+    code "design/litmus/fixtures/forbid_rules/violation.py";
+}
+
+node clean_worker : trusted {
+    clearance Internal;
+    code "design/litmus/fixtures/forbid_rules/clean.py";
+}
+
+policy NoDynamicEval on trust >= trusted {
+    forbid call eval, exec;
+    rationale "extraction_soundness requires a closed, statically-visible call graph (docs/strata/evidence.md#the-enables-cascade)";
+}

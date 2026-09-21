@@ -108,8 +108,8 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 61,
-      "reason": "branch-own via addition auto-accept (T-4115)"
+      "accepted_count": 62,
+      "reason": "branch-own via addition auto-accept (T-4951)"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -253,7 +253,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 558,
+      "accepted_count": 559,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

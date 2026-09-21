@@ -1,0 +1,248 @@
+## Done report
+
+-- T-4951
+
+WHAT changed
+
+- src/frob/gates/_forbid_rules_gate.py (new)
+  - `_forbid_rules_gate(root)`: the T-4951 gate entrypoint. Opt-in behind a
+    `design/` (or `[strata].design_dir`) directory existing (same posture
+    as `_policy_weakening_gate.py`). Each `.strata` file under it is
+    parsed and elaborated ON ITS OWN (not the merged multi-file model
+    `load_design_ids` builds), so a forbid rule's `ScopeSpec` resolves
+    against its own file's node namespace.
+  - `_forbid_rule_violations(module, model, binding, root)`: the join.
+    Re-normalizes `module` with `require_analyzable` (elaborate() does
+    this internally but returns only the `KernelModel`, never the amended
+    `Module`, so a caller must redo it -- idempotent, safe), compiles
+    `ForbidCall`/`ForbidImport` policy rules via `compile_policies`, then
+    for every `(node, policy)` pair: `FORBID003`/`Severity.UNRESOLVED` if
+    the node owns no bound code at all (fail-open guard), else scans its
+    bound files for a real forbidden call/import site (`FORBID001`/
+    `FORBID002`/`Severity.ERROR`).
+  - `_sites_in_file`: the actual text scan -- Python-only (`language_for`),
+    skips comment/docstring lines (`frob.vet._capability.
+    non_executable_line_numbers`) and same-line string-literal mentions
+    (`frob.vet._capability._byte_offset_inside_string_literal`) -- the
+    crying-wolf guard.
+  - Split into small helpers (`_rule_idents`, `_uncheckable_violation`,
+    `_site_violation`, `_node_forbid_violations`) after the first
+    `frob check --only arch` pass flagged the original single function as
+    a 108-line long-function warning (not an ARCH001 error, but fixed
+    anyway for cleanliness).
+  - Everything is PRIVATE (leading underscore), including the two rule-id
+    constants and the entrypoint itself: `frob check --only coverage`
+    flagged COV001 (public symbol needs a `frob:doc` anchor) on all 6
+    top-level symbols, and the natural anchor target,
+    `docs/modules/gates.md`, is leased by T-4693 at the time of this
+    change (cannot touch it per BRIEF's narrow-and-note rule). Making
+    everything private is the documented fallback ("or make the symbol
+    private") and clears COV001 cleanly.
+
+- design/litmus/forbid_rules.strata (new) + design/litmus/fixtures/
+  forbid_rules/{violation.py,clean.py} (new, added to ticket scope via
+  `frob ticket scope T-4951 --add`)
+  - `worker` node's bound code (`violation.py`) calls `eval(` for real --
+    the planted positive control (memory/positive-control-or-it-proves-
+    nothing.md). `clean_worker`'s bound code (`clean.py`) only MENTIONS
+    `eval` in a comment and a string literal -- the negative/crying-wolf
+    control.
+  - Both fixture files' functions/constants were originally public
+    (`run_untrusted`, `describe_policy`, `WARNING_TEXT`) but the land
+    dry-run's T-2114 edge-rule gate (frob:doc/frob:tests on every new
+    public symbol, "not relaxed by the rapid profile") fired on them too
+    -- fixed by making them private (`_run_untrusted`, `_describe_policy`,
+    `_WARNING_TEXT`); they exist only to be scanned, never called, so
+    private naming is the correct fix, not a doc anchor on throwaway
+    fixture code.
+  - IMPORTANT DISCOVERY: `bind_code` against THIS repo's own root binds 0
+    files for anything under `design/litmus/**`, because `frob.toml`'s
+    `[graph] exclude` already excludes that whole subtree from the live
+    obligation surface (by design -- litmus fixtures are not maintained
+    product surface). So `tests/gates_suite/test_forbid_rules.py` copies
+    the real litmus module + fixtures into an isolated `tmp_path` (no
+    `frob.toml` there, so no exclude) to run them end to end -- the same
+    "tested end to end by a dedicated test file" convention every other
+    `design/litmus/*.strata` file already documents in its own header.
+
+- tests/gates_suite/test_forbid_rules.py (new)
+  - `TestForbidRuleViolationsDirect`: direct `KernelModel`/`CodeBinding`
+    fixtures (mirrors `test_backpressure.py`'s `tmp_path` convention).
+  - `TestForbidRulesGateLitmus`: the real litmus module copied into
+    `tmp_path` and run through `_forbid_rules_gate` end to end.
+
+WHY: `forbid call`/`forbid import` (`_ast.py::ForbidCall`/`ForbidImport`)
+are parsed and constructed by the built-in `std.policy.analyzable` base
+pack (auto-injected onto every `trusted` node with a WARNING on every
+design load) but were enforced by nothing -- `_policy_weakening_gate.py`
+deliberately excludes both rule kinds from WEAKENING detection (correctly:
+they are purely additive under refinement), and no other gate ever ran
+them against real source. `_forbid_rules_gate` is that missing TIER-2
+execution, joined against the existing `bind_code`/`owner_index`
+capability-scan plumbing (`_obligation_proof.py`) rather than a second
+full-tree walk (acceptance 4).
+
+Acceptance criteria proof (test node ids, all under
+tests/gates_suite/test_forbid_rules.py):
+  1. TestForbidRulesGateLitmus::test_litmus_planted_violation_fires --
+     the real litmus module's planted `eval(` call produces a finding.
+  2. TestForbidRuleViolationsDirect::test_mention_in_comment_does_not_fire
+     -- crying-wolf guard: a comment/string mention never fires.
+  3. TestForbidRuleViolationsDirect::test_no_bound_code_is_uncheckable_not_clean
+     -- fail-open guard: no bound code -> FORBID003/UNRESOLVED, never a
+     silent clean pass.
+  4. TestForbidRuleViolationsDirect::test_forbidden_call_under_analyzable_fires
+     -- exercises `_forbid_rule_violations` against a caller-supplied
+     `CodeBinding` (the join contract acceptance 4 requires).
+  (Additional coverage not separately bound: test_forbidden_import_fires,
+  test_litmus_clean_worker_produces_no_finding, test_no_design_dir_is_a_noop.)
+
+Registration status (T-4951 deliberately does NOT touch these, all
+leased by other in-progress tickets at time of writing -- narrow and note
+per BRIEF, not silently dropped):
+  - `_forbid_rules_gate` is NOT yet registered in `frob.gates._ALL_GATES`
+    (src/frob/gates/__init__.py, leased by T-3962). Appended a note to
+    T-4910's body (already blocked on the same T-3962 lease for its own
+    wrapper-drift gate) asking whoever registers T-4910's gate to
+    register `_forbid_rules_gate` alongside it in the same pass.
+  - FORBID001/002/003 are NOT yet registered in `_KNOWN_GATE_RULES`
+    (src/frob/gates/_waive.py, leased by T-4212) -- `frob check --only
+    sys` reports GATERULE001 x3 for this.
+  - The gate's own two real `fs.read` effects (`_sites_in_file`'s
+    `path.read_bytes()`, `_forbid_rules_gate`'s `path.read_text()`) are
+    NOT yet declared on the `gates` node in `design/frob.strata` (leased
+    by T-4112/T-4113), nor is `docs/design/registry/capability-via-
+    ratchet.lock.json`'s matching accepted_count bump (same two leases)
+    -- `frob check --only sys` reports SELFAUDIT001/SYS100 x2 for this.
+  - Both of the above are recorded in T-4951's own ticket body (appended
+    via `frob ticket body T-4951 --append`) so a follow-up ticket can
+    bundle all four registration/declaration steps once the T-3962/
+    T-4212/T-4112/T-4113/T-4693 leases clear.
+
+Filed: none new -- both known gaps above are recorded as body notes on
+T-4951 (mine) and T-4910 (the sibling wrapper-drift-gate ticket already
+blocked on the same T-3962 lease), not as separate tickets, since they
+are all facets of the same "these shared registries are all leased right
+now" landing-wave problem T-4910 already tracks.
+
+Commits (worktree /home/logan/projects/frob/.claude/worktrees/t-4951,
+branch t-4951):
+  efb0925a3 feat(gates): enforce forbid call / forbid import policy rules
+  096730f06 refactor(gates): split _forbid_rule_violations into smaller helpers
+  877f1e192 fix(litmus): make forbid_rules fixture symbols private
+  (chore(tickets) commits interleaved for scope --add and evidence binds)
+
+Evidence was bound (and pytest re-verified green) against HEAD
+877f1e192, the last code commit; the evidence-record commits show as
+predating it in `git log` only because the node-id SET was already
+identical after that commit (idempotent rebind, no ticket.md content
+changed, so no new commit was made) -- the tests were re-run and
+confirmed passing at 877f1e192 before and after that rebind attempt.
+
+## Pre-READY checks
+
+`frob check --only sys --files src/frob/gates/_forbid_rules_gate.py --files design/litmus/forbid_rules.strata --files tests/gates_suite/test_forbid_rules.py --base dev`:
+  FAIL overall, but only two error classes attributable to this ticket's files, BOTH
+  already recorded above and in T-4951's/T-4910's ticket bodies as lease-blocked
+  follow-ups: GATERULE001 x3 (FORBID001/002/003 not yet in _KNOWN_GATE_RULES,
+  src/frob/gates/_waive.py, leased by T-4212) and SELFAUDIT001/SYS100 x2 (two real
+  fs.read effects not yet declared on design/frob.strata's gates node, leased by
+  T-4112/T-4113). Every other error in the run (DRIFT/DSL/TODO, ~10 lines) is
+  pre-existing baseline noise in unrelated files, confirmed by grep.
+
+`frob check --only arch --files src/frob/gates/_forbid_rules_gate.py --files tests/gates_suite/test_forbid_rules.py --base dev`
+  (re-run after the helper-split refactor): pass frob-arch, 21 warnings (36 waived),
+  0 hits for _forbid_rules_gate.py or test_forbid_rules.py among them -- the original
+  108-line long-function warning is gone.
+
+`frob check --only coverage --files src/frob/gates/_forbid_rules_gate.py --files design/litmus/forbid_rules.strata --files tests/gates_suite/test_forbid_rules.py --base dev`
+  (re-run after making every top-level symbol private): 0 hits for these three files
+  among the 10 remaining COV errors (all pre-existing, in src/frob/vet/**, etc.).
+  COV001/COV002 clean for this ticket's files.
+
+`ruff check src/frob/gates/_forbid_rules_gate.py tests/gates_suite/test_forbid_rules.py design/litmus/fixtures/forbid_rules/violation.py design/litmus/fixtures/forbid_rules/clean.py`:
+  All checks passed! (ruff format applied once each to the gate module and the test
+  file, then re-verified clean).
+
+`ty check src/frob/gates/_forbid_rules_gate.py tests/gates_suite/test_forbid_rules.py`:
+  All checks passed!
+
+`cd /home/logan/projects/frob/.claude/worktrees/t-4951 && nice -n 10 /home/logan/projects/frob/.venv/bin/frob ticket land T-4951 --dry-run --worktree /home/logan/projects/frob/.claude/worktrees/t-4951`:
+  Only two ERROR lines in the whole run, both the same NotCloseable check:
+    ERROR: land: T-4951 cannot land -- missing evidence or a Done report; ...
+    ERROR: ticket land failed: NotCloseable: ticket is missing evidence or a Done report
+  This is the EXPECTED shape at the finisher stage under this repo's close-dance split
+  (BRIEF.md: finisher does steps 1-2 -- commit + bind evidence -- coordinator does
+  steps 3-4 -- write the Done report into tickets.md and close). Evidence is bound
+  (4/4 acceptance criteria, verified in tickets/T-4951/ticket.md). The FIRST dry-run
+  attempt (before this fix) surfaced a real, fixable T-2114 finding -- two public
+  symbols in the litmus fixture .py files with no frob:doc/frob:tests edge -- which
+  was fixed (privatized) and committed (877f1e192), then the dry-run was re-run clean
+  of every ERROR except the expected NotCloseable. No RENDER001/profile/land.lock-wait
+  line above it is an ERROR (all WARNING/INFO).
+
+### Changed
+```
+ design/litmus/fixtures/forbid_rules/clean.py     |   15 +
+ design/litmus/fixtures/forbid_rules/violation.py |   15 +
+ design/litmus/forbid_rules.strata                |   36 +
+ src/frob/gates/_forbid_rules_gate.py             |  420 ++++
+ tests/gates_suite/test_forbid_rules.py           |  198 ++
+ tickets/T-4759/ticket.md                         |   40 +-
+ tickets/T-4811/ticket.md                         |    8 +-
+ tickets/T-4912/ticket.md                         |   20 +-
+ tickets/T-4951/done-report.md                    | 2646 ++++++++++++++++++++++
+ tickets/T-4951/ticket.md                         |   28 +-
+ tickets/T-4993/ticket.md                         |    9 +-
+ tickets/T-4994/ticket.md                         |    9 +-
+ tickets/T-4995/ticket.md                         |    9 +-
+ tickets/T-4996/ticket.md                         |    9 +-
+ tickets/T-4997/ticket.md                         |    9 +-
+ tickets/T-5033/ticket.md                         |    9 +-
+ tickets/T-5037/ticket.md                         |    9 +-
+ tickets/T-5074/ticket.md                         |    9 +-
+ tickets/T-5076/ticket.md                         |    9 +-
+ tickets/T-5077/ticket.md                         |    9 +-
+ tickets/T-5078/ticket.md                         |    9 +-
+ tickets/T-5079/ticket.md                         |    9 +-
+ tickets/T-5080/ticket.md                         |    9 +-
+ tickets/T-5081/ticket.md                         |    8 +-
+ tickets/T-5086/ticket.md                         |    8 +-
+ tickets/T-5087/ticket.md                         |    8 +-
+ tickets/T-5091/ticket.md                         |    8 +-
+ tickets/T-5093/ticket.md                         |    8 +-
+ tickets/T-5094/ticket.md                         |    8 +-
+ tickets/T-5097/ticket.md                         |    8 +-
+ tickets/T-5102/ticket.md                         |    8 +-
+ tickets/T-5103/ticket.md                         |    8 +-
+ tickets/T-5104/ticket.md                         |    8 +-
+ tickets/T-5105/ticket.md                         |    8 +-
+ tickets/T-5109/ticket.md                         |    8 +-
+ tickets/T-5110/ticket.md                         |    8 +-
+ tickets/T-5111/ticket.md                         |    8 +-
+ tickets/T-5112/ticket.md                         |    8 +-
+ tickets/T-5113/ticket.md                         |    8 +-
+ tickets/T-5114/ticket.md                         |    8 +-
+ tickets/T-5115/ticket.md                         |    8 +-
+ tickets/T-5116/ticket.md                         |    8 +-
+ tickets/T-5122/ticket.md                         |   32 +-
+ tickets/T-5125/ticket.md                         |    8 +-
+ tickets/T-5131/ticket.md                         |   39 +-
+ tickets/T-5140/ticket.md                         |    8 +-
+ tickets/T-5141/ticket.md                         |    9 +-
+ tickets/T-5142/ticket.md                         |    9 +-
+ tickets/T-5143/ticket.md                         |    9 +-
+ tickets/T-5144/ticket.md                         |    9 +-
+ tickets/T-5145/ticket.md                         |    9 +-
+ tickets/T-5146/ticket.md                         |    9 +-
+ tickets/T-5147/ticket.md                         |    9 +-
+ tickets/T-5148/ticket.md                         |    9 +-
+ tickets/T-draft-fd279281/ticket.md               |   31 -
+ 55 files changed, 3425 insertions(+), 460 deletions(-)
+```
+
+### Evidence
+- `tests/gates_suite/test_forbid_rules.py::TestForbidRulesGateLitmus::test_litmus_planted_violation_fires` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_mention_in_comment_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_no_bound_code_is_uncheckable_not_clean` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_forbid_rules.py::TestForbidRuleViolationsDirect::test_forbidden_call_under_analyzable_fires` (pytest node id, verified passing when recorded)

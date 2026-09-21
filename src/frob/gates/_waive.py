@@ -1392,6 +1392,11 @@ _KNOWN_GATE_RULES = frozenset(
         # instead of the old `exit_code=0` "gates skipped: ..." soft
         # skip -- a stage that never ran must never report pass.
         "GATES001",
+        # T-4951: strata `forbid call` / `forbid import` wired into the
+        # built-in analyzable check (FORBID001-003).
+        "FORBID001",
+        "FORBID002",
+        "FORBID003",
         # T-3986: an enforcing policy.pattern whose query matched zero
         # nodes across its whole declared glob set (frob.policy).
         "POL000",
