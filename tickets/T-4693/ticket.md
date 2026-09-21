@@ -20,6 +20,7 @@ scope:
 - docs/modules/gates.md
 - frob.toml
 - frob-ratchet.lock.json
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,30 +31,54 @@ scope_changes:
   reason: T-4693 DOCARCH002 ratchet baseline snapshot
   actor: logan
   at: '2026-09-19'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: register DOCARCH002 (UnregisteredGateRuleConstructed on the real land);
+    append-shared registry
+  actor: logan
+  at: '2026-09-20'
+evidence:
+- tests/gates/test_docarch_structural.py::TestScanCommentLength::test_flags_long_pure_algorithm_run
+- tests/gates/test_docarch_structural.py::TestScanCommentLength::test_directive_run_is_exempt
+- tests/gates/test_docarch_structural.py::TestScanCommentLength::test_leading_license_header_is_exempt
+- tests/gates/test_docarch_structural.py::TestScanCommentLength::test_long_docstring_flagged_short_is_quiet
+- tests/gates/test_docarch_structural.py::TestScanCommentLength::test_config_override_silences_default_fixture
+- tests/gates/test_docarch_structural.py::TestScanCitationShape::test_directive_and_pointer_are_quiet
+- tests/gates/test_docarch_structural.py::TestScanCitationShape::test_bare_citation_with_prose_is_flagged
+- tests/gates/test_docarch_structural.py::TestDocarch002RatchetSeverity::test_baselined_finding_stays_warn_new_one_errors
 designated_repro_test: null
 acceptance:
 - text: given a 20-line comment run of pure algorithm explanation citing no ticket,
     when DOCARCH002 check 1 runs, then it is flagged (content-blind)
-  evidence: []
+  evidence:
+  - tests/gates/test_docarch_structural.py::TestScanCommentLength::test_flags_long_pure_algorithm_run
 - text: 'given a 5-line comment run, a 20-line frob: directive block, and a 20-line
     module license header, when DOCARCH002 check 1 runs, then none of the three is
     flagged (exempt by syntax, not by wording)'
-  evidence: []
+  evidence:
+  - tests/gates/test_docarch_structural.py::TestScanCommentLength::test_directive_run_is_exempt
+  - tests/gates/test_docarch_structural.py::TestScanCommentLength::test_leading_license_header_is_exempt
 - text: given a 25-line docstring and a 15-line docstring, when DOCARCH002 check 1
     runs with default docstring_max=20, then the 25-line one is flagged and the 15-line
     one is not
-  evidence: []
-- text: given the frob.toml gates.docs table comment_run_max = 30, when DOCARCH002 runs over the 20-line fixture,
-    then it is quiet -- proving the config path, not just the default
-  evidence: []
+  evidence:
+  - tests/gates/test_docarch_structural.py::TestScanCommentLength::test_long_docstring_flagged_short_is_quiet
+- text: given frob.toml [gates.docs] comment_run_max = 30, when DOCARCH002 runs over
+    the 20-line fixture, then it is quiet -- proving the config path, not just the
+    default
+  evidence:
+  - tests/gates/test_docarch_structural.py::TestScanCommentLength::test_config_override_silences_default_fixture
 - text: given a frob:ticket T-1234 directive, a single-line '# see T-1234' pointer,
     and a '# T-1234:' line followed by 3 prose lines, when DOCARCH002 check 2 runs,
     then only the third is flagged and its remedy names frob narrative move
-  evidence: []
+  evidence:
+  - tests/gates/test_docarch_structural.py::TestScanCitationShape::test_directive_and_pointer_are_quiet
+  - tests/gates/test_docarch_structural.py::TestScanCitationShape::test_bare_citation_with_prose_is_flagged
 - text: given DOCARCH002 ships WARN with today's counts baselined into frob pool,
     when one new over-cap comment run is added, then frob check fails on the increase
     immediately
-  evidence: []
+  evidence:
+  - tests/gates/test_docarch_structural.py::TestDocarch002RatchetSeverity::test_baselined_finding_stays_warn_new_one_errors
 threat: null
 component: null
 anchor: false
@@ -84,8 +109,8 @@ THREE CHECKS, ONE RULE FAMILY (DOCARCH002):
 
 (1) LENGTH CAP, CONTENT-BLIND.
     Any run of consecutive `#` comment lines longer than N (frob.toml
-    <!-- frob:waive DOC006 reason="illustrative future frob.toml section this ticket proposes -- does not exist until the DOCARCH002 leaf lands" -->[gates.docs] comment_run_max, default 12) is a finding. Any docstring longer
-    than M lines (<!-- frob:waive DOC006 reason="illustrative future frob.toml section this ticket proposes -- does not exist until the DOCARCH002 leaf lands" -->[gates.docs] docstring_max, default 20) is a finding.
+    [gates.docs] comment_run_max, default 12) is a finding. Any docstring longer
+    than M lines ([gates.docs] docstring_max, default 20) is a finding.
     No wording test anywhere in this check.
     EXEMPT BY SYNTAX, NOT BY WORDING: a shebang/coding line, a license header
     block (the leading comment run before the first token of the module), and a
