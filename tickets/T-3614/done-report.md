@@ -1,0 +1,72 @@
+## Done report
+
+# Why (T-3614)
+
+Write verbs that hit `LandInProgress` or a held lock failed instantly
+(0.6s), forcing every caller (agents, coordinator, humans) to hand-roll
+sleep loops that miss brief open windows. This ticket had been blocked
+twice over (T-4548 held `config.py`, T-4550 held `_closeout_evidence.py`)
+-- both are now `done`, releasing both files.
+
+## Fix
+
+`refuse_if_land_in_progress` (`frob.tickets._leases`) already had a fully
+built poll-with-backoff wait loop (T-1961/T-2023) behind a `wait_
+timeout_s` parameter -- no CLI path ever supplied a value. This ticket:
+
+- Adds `AppConfig.ticket_wait_s: float | None = None` (`src/frob/app/
+  config.py`).
+- Adds a shared `_add_ticket_wait_arg` argparse helper (`src/frob/_cli_
+  parsers/_ticket/_new.py`, the one CLI-parser submodule with zero
+  internal imports, avoiding any import cycle) registering `--wait
+  [SECONDS]`: bare `--wait` uses a 60s default budget
+  (`_TICKET_WAIT_DEFAULT_S`), `--wait N` uses `N` seconds, omitted
+  leaves `ticket_wait_s=None` (today's unchanged instant-refusal
+  behavior).
+- Wires that flag onto all six named verbs: `new` (`_new.py`), `drop`/
+  `fail` (`_closeout_evidence.py`), `body`/`scope` (`_metadata.py`),
+  `reconcile` (`_progress.py`).
+- Threads `cfg.ticket_wait_s` through `_refuse_if_land_in_progress_for_
+  dispatch` (`src/frob/app/ticket_runner/__init__.py`) to `refuse_if_
+  land_in_progress`'s existing `wait_timeout_s` parameter.
+
+The holder's identity (pid + ticket) at budget exhaustion is already
+computed by `_refuse_for_held_land_lock` and rendered into the refusal
+message -- reused unchanged, per this ticket's own instruction.
+
+## Scope widened
+
+`frob ticket scope --add` for `src/frob/app/config.py` (T-4548's former
+lease, now free) and `src/frob/_cli_parsers/_ticket/_closeout_
+evidence.py` (T-4550's former lease, now free) -- both are exactly what
+this ticket's own Failure log named as blocking it.
+
+## Verification
+
+- `ruff check`/`ruff format --check` on every touched file: clean.
+- `nice -n 10 uv run pytest tests/unit/test_ticket_verbs_wait.py`: 5/5
+  passed -- `TestAddWaitArg` (flag absent/bare/explicit) and
+  `TestDispatchWait` (window opens mid-wait -> success; budget exhausted
+  -> holder named in the error, this ticket's own two acceptance
+  fixtures).
+- Regression: `tests/test_ticket_leases.py::TestDispatchLandGuard` (5/5),
+  `tests/unit/test_ticket_cli_surface.py` +
+  `tests/test_tickets_evidence_cli.py` (52/52): all passed.
+- `frob check --files <every touched file> --only ruff --only ty`: PASS,
+  0 errors, 0 warnings.
+
+### Changed
+```
+ .../_cli_parsers/_ticket/_closeout_evidence.py     |   3 +
+ src/frob/_cli_parsers/_ticket/_metadata.py         |   4 +
+ src/frob/_cli_parsers/_ticket/_new.py              |  44 +++++
+ src/frob/_cli_parsers/_ticket/_progress.py         |   3 +
+ src/frob/app/config.py                             |  12 ++
+ src/frob/app/ticket_runner/__init__.py             |  20 ++-
+ tests/unit/test_ticket_verbs_wait.py               | 188 +++++++++++++++++++++
+ tickets/T-3614/ticket.md                           |  19 ++-
+ 8 files changed, 288 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_verbs_wait.py::TestDispatchWait::test_window_opens_mid_wait_then_succeeds` (pytest node id, verified passing when recorded)

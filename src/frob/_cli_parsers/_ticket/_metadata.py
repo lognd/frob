@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import argparse
 
+from frob._cli_parsers._ticket._new import _add_ticket_wait_arg
+
 
 # frob:ticket T-3404
 class _RefuseRepeatedOption(argparse.Action):
@@ -240,6 +242,7 @@ def _add_ticket_scope_parser(ticket_sub):
         "once (T-3404).",
     )
     _add_no_commit_flag(ticket_scope_p)  # frob:ticket T-1615
+    _add_ticket_wait_arg(ticket_scope_p)  # frob:ticket T-3614
     return ticket_scope_p
 
 
@@ -681,6 +684,7 @@ def _add_ticket_body_parser(ticket_sub):
         "the shell (T-0737); mutually exclusive with --reason",
     )
     _add_no_commit_flag(ticket_body_p)  # frob:ticket T-1615
+    _add_ticket_wait_arg(ticket_body_p)  # frob:ticket T-3614
     return ticket_body_p
 
 

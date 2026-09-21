@@ -22,6 +22,7 @@ from frob._cli_parsers._ticket._closeout import (
     _RefuseRepeatedEvidenceCmd,
 )
 from frob._cli_parsers._ticket._metadata import _CrossVerbFlagHint
+from frob._cli_parsers._ticket._new import _add_ticket_wait_arg
 
 
 # frob:ticket T-0579
@@ -41,6 +42,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="skip T-1130's auto-commit of the fail-log/requeue ledger "
         "change (parity with `start`'s T-1054 auto-commit)",
     )
+    _add_ticket_wait_arg(ticket_fail_p)
 
     ticket_evidence_p = ticket_sub.add_parser(
         "evidence",
@@ -294,6 +296,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="skip T-1130's auto-commit of the drop ledger change (parity "
         "with `start`'s T-1054 auto-commit)",
     )
+    _add_ticket_wait_arg(ticket_drop_p)
 
     # frob:ticket T-3087
     ticket_reopen_p = ticket_sub.add_parser(

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob._cli_parsers._ticket._new import _add_ticket_wait_arg
+
 
 def _suppress_subparser_alias(ticket_sub, name: str) -> None:
     """Hide subcommand `name` from `frob ticket --help`'s listing while
@@ -249,6 +251,7 @@ def _add_ticket_reconcile_parser(ticket_sub):
         "that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
     )
+    _add_ticket_wait_arg(ticket_reconcile_p)  # frob:ticket T-3614
     return ticket_reconcile_p
 
 

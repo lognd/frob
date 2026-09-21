@@ -7,6 +7,49 @@ threshold -- no behavior change, same argparse tree.
 
 from __future__ import annotations
 
+# frob:ticket T-3614
+# T-3614: `--wait`'s sensible default budget when passed bare (no
+# SECONDS given) -- distinct from `frob.tickets._leases._LAND_WAIT_
+# TIMEOUT_S` (330.0, that module's own internal default when NO wait
+# was requested at all): a caller that explicitly asked to wait wants a
+# shorter, CLI-scale budget by default, not this repo's full land-
+# duration ceiling.
+_TICKET_WAIT_DEFAULT_S = 60.0
+
+
+# frob:ticket T-3614
+# frob:tests tests/unit/test_ticket_verbs_wait.py::TestAddWaitArg.test_bare_flag_uses_default_budget  # noqa: E501
+# frob:tests tests/unit/test_ticket_verbs_wait.py::TestAddWaitArg.test_flag_absent_leaves_wait_none  # noqa: E501
+# frob:tests tests/unit/test_ticket_verbs_wait.py::TestAddWaitArg.test_explicit_seconds_is_used_verbatim  # noqa: E501
+def _add_ticket_wait_arg(parser) -> None:  # noqa: ANN001
+    """Register `--wait [SECONDS]` on `parser` (T-3614): a write verb that
+    hits a held `LandInProgress`/`tickets.lock` window used to fail
+    instantly, forcing every caller to hand-roll a sleep loop around the
+    retry. `--wait` (bare) blocks up to `_TICKET_WAIT_DEFAULT_S`; `--wait
+    N` blocks up to `N` seconds; omitted entirely (`ticket_wait_s` stays
+    `None`) is today's unchanged instant-refusal behavior. Threaded by
+    `frob.app.ticket_runner._refuse_if_land_in_progress_for_dispatch` to
+    `frob.tickets._leases.refuse_if_land_in_progress`'s existing `wait_
+    timeout_s` parameter, which already implements the poll-with-backoff
+    wait loop (T-1961/T-2023) -- this flag is the only piece that was
+    missing to reach it from the CLI. Shared by every one of the six
+    ticket-write verbs this ticket names (`new`, `drop`, `body`, `scope`,
+    `fail`, `reconcile`) rather than each re-declaring an identical
+    flag."""
+    parser.add_argument(
+        "--wait",
+        dest="ticket_wait_s",
+        nargs="?",
+        const=_TICKET_WAIT_DEFAULT_S,
+        type=float,
+        default=None,
+        metavar="SECONDS",
+        help="block on a held LandInProgress/tickets.lock window instead "
+        "of refusing instantly (T-3614); bare --wait uses a "
+        f"{_TICKET_WAIT_DEFAULT_S:.0f}s default budget, --wait N uses N "
+        "seconds, omitted is today's unchanged instant-refusal behavior",
+    )
+
 
 def _add_ticket_new_identity_args(ticket_new_p) -> None:
     """Register `frob ticket new`'s title/kind/acceptance/threat classification args."""
@@ -121,10 +164,7 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
 # frob:waive AFFECT001 reason="T-2302 added \
 # --scope-breadth-ack/--scope-breadth-ack-reason flags to this same \
 # parser-registration function; the two affects()-closure docs \
-# (docs/guides/agentic-workflow.md#implement-strictly-within-scope-add-frobticket--frob\
-# tests-directives, #the-humanai-split) describe general scope/frob:ticket discipline \
-# and the human/AI split, unaffected by adding two more argparse flags here -- content \
-# stays true, already re-acked via frob ack (T-2302)"
+# (docs/guides/agentic-workflow.md#implement-strictly-within-scope-add-frobticket--frobtests-directives, #the-humanai-split) describe general scope/frob:ticket discipline and the human/AI split, unaffected by adding two more argparse flags here -- content stays true, already re-acked via frob ack (T-2302)"  # noqa: E501
 def _add_ticket_new_parser(ticket_sub) -> None:
     """Register `frob ticket new` and its (many) creation flags."""
     ticket_new_p = ticket_sub.add_parser("new", help="create a new ticket")
@@ -177,6 +217,7 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "when the check actually surfaces a candidate; a genuinely novel "
         "title needs no flag",
     )
+    _add_ticket_wait_arg(ticket_new_p)
     # frob:ticket T-2302
     ticket_new_p.add_argument(
         "--scope-breadth-ack",

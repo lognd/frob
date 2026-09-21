@@ -603,6 +603,18 @@ class AppConfig(BaseModel):
     # commit). Default False: the commit happens unless explicitly opted
     # out, matching `start`'s own always-on precedent.
     ticket_no_commit: bool = False
+    # frob:ticket T-3614
+    # `frob ticket new/drop/body/scope/fail/reconcile --wait [SECONDS]` --
+    # block on a held LandInProgress/tickets.lock window instead of
+    # refusing instantly (T-3614): `None` (the default, flag absent) is
+    # today's unchanged instant-refusal behavior; a bare `--wait` sets
+    # this to `_TICKET_WAIT_DEFAULT_S` (argparse `const=`); `--wait N`
+    # sets it to `N` explicitly. Threaded to `_refuse_if_land_in_progress_
+    # for_dispatch` -> `refuse_if_land_in_progress`'s existing `wait_
+    # timeout_s` parameter, which already implements the poll-with-
+    # backoff loop (T-1961/T-2023) -- this field is the only piece that
+    # was missing to reach it from the CLI.
+    ticket_wait_s: float | None = None
     # frob:ticket T-1995
     # `frob ticket new --ack-related` -- acknowledges the related-ticket
     # surfacing check (T-1995) and lets creation proceed even when a

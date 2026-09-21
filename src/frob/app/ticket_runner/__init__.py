@@ -579,7 +579,9 @@ _LAND_WHOLE_LAND_VERBS = frozenset({"renumber", "promote", "archive", "migrate"}
 # tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_renumber_refused_while_only_land_lock_held  # noqa: E501
 # frob:tests \
 # tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_splice_only_verb_allowed_while_only_land_lock_held  # noqa: E501
-def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) -> None:
+def _refuse_if_land_in_progress_for_dispatch(
+    root: Path, command: str | None, *, wait_timeout_s: float | None = None
+) -> None:
     """`run()`'s pre-dispatch closing of T-1779's gap 1: the EXISTING
     `refuse_if_land_in_progress` guard (T-1619) only ran inside
     `_add_and_commit_tickets_md`, the COMMIT half of a ledger write --
@@ -619,7 +621,13 @@ def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) ->
     lock`'s short splice window, correct for every verb that commits
     through that lock, but wrong for these four, which own their own
     multi-file transaction with no such commit step. See
-    `_LAND_WHOLE_LAND_VERBS`' own comment for the full rationale."""
+    `_LAND_WHOLE_LAND_VERBS`' own comment for the full rationale.
+
+    T-3614: `wait_timeout_s` (from `cfg.ticket_wait_s`, set by `--wait
+    [SECONDS]` on `new`/`drop`/`body`/`scope`/`fail`/`reconcile`) is
+    threaded straight through to `refuse_if_land_in_progress`'s own
+    parameter of the same name -- `None` (the default, flag absent)
+    leaves that function's own default-budget resolution unchanged."""
     if command in _LAND_SAFE_READ_ONLY_VERBS or command in _LAND_LOCK_EXEMPT_VERBS:
         return
     from frob.tickets._land_git_ops import reclaim_orphaned_squash_residue
@@ -636,7 +644,9 @@ def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) ->
         )
 
     refused = refuse_if_land_in_progress(
-        root, whole_land=command in _LAND_WHOLE_LAND_VERBS
+        root,
+        whole_land=command in _LAND_WHOLE_LAND_VERBS,
+        wait_timeout_s=wait_timeout_s,
     )
     if refused.is_err:
         _log.error(
@@ -910,7 +920,9 @@ def run(cfg: AppConfig) -> None:
             "deprecated> ..."
         )
         sys.exit(1)
-    _refuse_if_land_in_progress_for_dispatch(root, cfg.ticket_command)
+    _refuse_if_land_in_progress_for_dispatch(
+        root, cfg.ticket_command, wait_timeout_s=cfg.ticket_wait_s
+    )
     with _diagnostic_log_ctx(cfg):
         # frob:ticket T-1674
         if cfg.ticket_command not in _LAND_SAFE_READ_ONLY_VERBS:

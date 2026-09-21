@@ -1,7 +1,7 @@
 ---
 id: T-3614
 title: add --wait mode to ticket write verbs
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-08-31'
@@ -114,6 +114,8 @@ body_changes:
   at: '2026-09-16'
   old_length: 674
   new_length: 3132
+evidence:
+- tests/unit/test_ticket_verbs_wait.py::TestDispatchWait::test_window_opens_mid_wait_then_succeeds
 designated_repro_test: null
 threat: null
 component: null
