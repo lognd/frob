@@ -122,9 +122,12 @@ acceptance:
     frob dup reported before the fold (golden comparison, not a no-crash assertion)
   evidence: []
 - text: Given frob check --list-stages, when it runs, then it prints exactly the folded
-    stages (dup arch cycle bind perf mutate coverage narrative exports) and every
-    printed name is accepted by frob check --only; pool, profile, debt, deprecated
-    and parse are absent from that list because none of them is a check stage
+    stages (dup arch cycle bind perf coverage narrative exports) and every printed
+    name is accepted by frob check --only; pool, profile, debt, deprecated and parse
+    are absent from that list because none of them is a check stage; mutate is ALSO
+    absent -- it requires a mandatory single-file argument (mutate one file, report
+    which mutants survived) that no other --only stage takes, so it stays a top-level
+    frob mutate <file> verb, undeprecated, not folded
   evidence: []
 - text: Given the exports verb is split, when this ticket closes, then its CHECK half
     runs as frob check --only exports and its GENERATE half (generate __init__.py
@@ -165,6 +168,26 @@ acceptance_amendments:
     half under scaffold'
   actor: logan
   at: '2026-09-19'
+- op: replace
+  index: 2
+  old_text: Given frob check --list-stages, when it runs, then it prints exactly the
+    folded stages (dup arch cycle bind perf mutate coverage narrative exports) and
+    every printed name is accepted by frob check --only; pool, profile, debt, deprecated
+    and parse are absent from that list because none of them is a check stage
+  new_text: Given frob check --list-stages, when it runs, then it prints exactly the
+    folded stages (dup arch cycle bind perf coverage narrative exports) and every
+    printed name is accepted by frob check --only; pool, profile, debt, deprecated
+    and parse are absent from that list because none of them is a check stage; mutate
+    is ALSO absent -- it requires a mandatory single-file argument (mutate one file,
+    report which mutants survived) that no other --only stage takes, so it stays a
+    top-level frob mutate <file> verb, undeprecated, not folded
+  reason: 'measured 2026-09-21 while implementing T-4692: frob mutate''s own signature
+    (cfg.mutate_file, required) is incompatible with --only''s zero-arg whole-tree
+    stage shape every other folded name shares; the ticket''s own pool/profile carve-out
+    (''your call with a reason'') is the closest precedent and is applied here by
+    the same logic'
+  actor: logan
+  at: '2026-09-21'
 threat: null
 component: cli
 labels:
