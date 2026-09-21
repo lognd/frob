@@ -1,14 +1,14 @@
 ---
 id: T-4509
 title: Unity fixture project + e2e proof + docs/guides/unity.md
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
 priority: medium
 parent: T-4513
 tier: story
-sprint: v0.534.0
+sprint: v0.533.0
 runs_last: false
 milestone: v0.533.0
 runs_last_parallel_safe: false
@@ -21,13 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: v0.533.0
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/system/test_unity_e2e.py::TestUnityScaffoldAndAsmdefNodes::test_scaffold_succeeds_and_nodes_match_the_two_asmdefs
+- tests/system/test_unity_e2e.py::TestMonoBehaviourAndCoroutineAreNotDeadCode::test_dead_symbols_gate_reports_zero_findings
+- tests/system/test_unity_e2e.py::TestExpectedCapabilityFindings::test_runtime_script_finds_net_fs_write_and_exec
+- tests/system/test_unity_e2e.py::TestExpectedCapabilityFindings::test_editor_script_finds_eval_and_fs_write_tagged_editor_only
+- tests/system/test_unity_e2e.py::TestExpectedCapabilityFindings::test_frob_vet_cli_runs_cleanly_against_the_fixture
+- tests/system/test_unity_e2e.py::TestNUnitAndUnityTestCollection::test_both_test_attribute_families_collected
 designated_repro_test: null
 threat: null
 component: null

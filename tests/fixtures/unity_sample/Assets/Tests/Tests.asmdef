@@ -1,0 +1,6 @@
+{
+  "name": "Game.Tests",
+  "references": ["Game.Runtime"],
+  "includePlatforms": [],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}
