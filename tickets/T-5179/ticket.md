@@ -1,5 +1,5 @@
 ---
-id: T-draft-1770325f
+id: T-5179
 title: 'REG002: 18 check-coverage.yaml dispositions name gate rules absent from the
   live rule registry (RACE001, TESTMOCK001, CONFIGPATH001, ROUTE001, INV010/011, WRAP001-003,
   COV010, ...)'
