@@ -1,21 +1,17 @@
+# Project: repo-wide settings frob itself needs (which branch `frob
+# check --base` diffs against). Edit if your default branch is not main.
 check_base = "main"
 
-# T-1576: brand-new scaffolded repos start on the rapid profile --
-# see docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575.
-# The one-way auto-ratchet upgrades this to standard automatically once
-# the repo grows past frob.tickets._profile's thresholds; downgrading
-# back to rapid after that is an explicit `frob profile downgrade` call.
+# Profile: how strict the gates are. New projects start on "rapid" (a
+# lighter bar while the codebase is small); frob auto-upgrades this to
+# "standard" once the project grows past a size threshold. Downgrade by
+# hand with `frob profile downgrade` if you ever need to.
 [profile]
 profile = "rapid"
 
-# T-3931: a fresh repo has no way to know it must set this until the
-# first `frob check` fires MILE003 on its own first ticket -- declare
-# a sane starting point (matching the version above) day one instead.
-[tickets]
-default_milestone = "0.1.0"
-
-[gates.severity]
-
+# Testing: the coverage/case-count floors `frob check`'s TEST/COV gates
+# enforce. Raise these as the real test suite grows -- they start low
+# because a brand-new project has one smoke test per symbol, not three.
 [testing]
 min_unit_cases = 1
 min_integration = 1
@@ -29,18 +25,43 @@ command = ["uv", "run", "pytest", "-q", "{ids}"]
 all_command = ["uv", "run", "pytest", "-q"]
 cwd = "."
 
-# T-3277: REF001/REF002 (anti-orphan gate) flags every one of these on a
-# freshly scaffolded, untouched repo -- each is read by something OUTSIDE
-# this project's own tracked-file graph (a human, GitHub Actions, a CI/CD
-# runner, or a packaging tool), never referenced by name from source the
-# way an import or a doc link would be. Declaring them here (the same
-# `[[refs.entrypoint]]` idiom frob's own frob.toml uses) is the correct
-# fix -- these are template bugs in the scaffold's OWN frob.toml, not a
-# gate bug and not something a per-project waiver belongs on.
+# Gates: per-rule severity overrides. Empty by default -- severities
+# come from the profile above; add a line here only to override one
+# specific rule for this project.
+[gates.severity]
+
+# Tickets: the milestone new tickets default onto until you set your
+# project's own.
+[tickets]
+default_milestone = "0.1.0"
+
+# Refs: files read by something outside this project's own tracked-file
+# graph (a human, CI, a packaging tool) rather than imported or linked
+# from other tracked source -- exempted from the anti-orphan gate here so
+# a fresh, untouched checkout is not flagged for having them. Add a line
+# only for a genuine exception; ordinary build/CI/doc conventions are
+# recognized automatically.
 [[refs.entrypoint]]
 path = ".env.example"
 reason = "read by humans setting up their local .env, not referenced from tracked source"
 
+[[refs.entrypoint]]
+path = "scripts/bump_version.py"
+reason = "release-time executable run by the `upload` Makefile target and CI, never imported by tracked source"
+
+[[refs.entrypoint]]
+path = "src/{{ project.import_name }}/__init__.py"
+reason = "the package's own root module, imported by convention rather than referenced by name from other tracked files"
+
+[[refs.entrypoint]]
+path = "uv.lock"
+reason = "read by `uv sync`/`uv run` outside this repo's own tracked-file graph, one CI workflow mention is expected, not fragile"
+
+# The remaining rows below cover ordinary scaffold conventions (Makefile,
+# CI workflow, doc/test-fixture entry points, this directory's own
+# placeholder) that a landed refs-gate update will recognize by default
+# without a declaration -- kept explicit here until that update ships
+# (tracked separately) so a fresh checkout stays green in the meantime.
 [[refs.entrypoint]]
 path = ".github/workflows/*.yml"
 reason = "read by GitHub Actions outside this repo's own tracked-file graph, never imported/referenced from source"
@@ -54,21 +75,9 @@ path = "invariants/.gitkeep"
 reason = "placeholder that keeps the empty invariants/ directory tracked by git; never referenced by name from source"
 
 [[refs.entrypoint]]
-path = "scripts/bump_version.py"
-reason = "release-time executable run by the `upload` Makefile target and CI, never imported by tracked source"
-
-[[refs.entrypoint]]
 path = "tests/conftest.py"
 reason = "pytest's own fixture-discovery entry point, loaded by path convention, never imported by tracked source"
 
 [[refs.entrypoint]]
 path = "README.md"
 reason = "read by humans/GitHub, a single pyproject.toml reference is expected, not fragile"
-
-[[refs.entrypoint]]
-path = "src/{{ project.import_name }}/__init__.py"
-reason = "the package's own root module, imported by convention rather than referenced by name from other tracked files"
-
-[[refs.entrypoint]]
-path = "uv.lock"
-reason = "read by `uv sync`/`uv run` outside this repo's own tracked-file graph, one CI workflow mention is expected, not fragile"

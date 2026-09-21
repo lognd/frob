@@ -36,6 +36,7 @@ class _ManifestEntry:
     output: str
 
 
+# frob:ticket T-4761
 _MANIFESTS: dict[str, list[_ManifestEntry]] = {
     "python-library": [
         _ManifestEntry("shared/python/README.md.j2", "README.md"),
@@ -87,6 +88,10 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         ),
         _ManifestEntry(
             "shared/python/tests/system/test_build.py.j2", "tests/system/test_build.py"
+        ),
+        _ManifestEntry(
+            "shared/python/tests/integration/test_logging_integration.py.j2",
+            "tests/integration/test_logging_integration.py",
         ),
         _ManifestEntry("shared/python/github/ci.yml.j2", ".github/workflows/ci.yml"),
         _ManifestEntry(
@@ -167,6 +172,10 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "types/python-tool/tests/system/test_build.py.j2",
             "tests/system/test_build.py",
+        ),
+        _ManifestEntry(
+            "shared/python/tests/integration/test_logging_integration.py.j2",
+            "tests/integration/test_logging_integration.py",
         ),
         _ManifestEntry("shared/python/github/ci.yml.j2", ".github/workflows/ci.yml"),
         _ManifestEntry(

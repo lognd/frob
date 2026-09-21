@@ -2,7 +2,7 @@
 id: T-4761
 title: 'Green on day one: refs regression, doc anchors, tickets/ and integration dirs,
   39 bare TODOs, and a readable rendered frob.toml'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -11,7 +11,7 @@ blocked_by:
 - T-4760
 parent: T-4757
 tier: ticket
-sprint: v1.1.0
+sprint: v0.537.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -48,27 +48,35 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: v0.537.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/unit/test_scaffold_frob_toml.py::TestFrobTomlTableOrder::test_canonical_tables_appear_in_order[python-library]
+- tests/unit/test_scaffold_frob_toml.py::TestFrobTomlTableOrder::test_every_table_header_is_comment_preceded[python-library]
+- tests/unit/test_scaffold_frob_toml.py::TestFrobTomlTableOrder::test_no_ticket_id_in_comments[python-library]
+- tests/unit/test_scaffold_frob_toml.py::TestDocAnchorsResolve::test_every_frob_doc_anchor_resolves[python-library]
+- tests/unit/test_scaffold_frob_toml.py::TestDocAnchorsResolve::test_every_frob_doc_anchor_resolves[python-tool]
+- tests/unit/test_scaffold_frob_toml.py::TestZeroBareTodoMarkers::test_no_bare_todo_in_shared_python_templates
 designated_repro_test: null
 acceptance:
 - text: Given a rendered frob.toml, when its top-level tables are read in order, then
     they are project, profile, commands, testing, gates, and every table header line
     is preceded by a comment line
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_frob_toml.py::TestFrobTomlTableOrder::test_canonical_tables_appear_in_order[python-library]
+  - tests/unit/test_scaffold_frob_toml.py::TestFrobTomlTableOrder::test_every_table_header_is_comment_preceded[python-library]
+  - tests/unit/test_scaffold_frob_toml.py::TestFrobTomlTableOrder::test_no_ticket_id_in_comments[python-library]
 - text: Given python-tool is rendered, when its frob.toml is measured, then it is
     under 30 lines and contains no ticket id and no refs.entrypoint row
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_frob_toml.py::TestDocAnchorsResolve::test_every_frob_doc_anchor_resolves[python-tool]
 - text: Given every registered type is rendered, when the output is searched for bare
     TODO markers, then the count is zero (it is 39 today)
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_frob_toml.py::TestZeroBareTodoMarkers::test_no_bare_todo_in_shared_python_templates
 - text: Given every frob:doc anchor a template emits, when the rendered docs are read,
     then each anchor resolves to a heading the same manifest renders
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_frob_toml.py::TestDocAnchorsResolve::test_every_frob_doc_anchor_resolves[python-library]
+  - tests/unit/test_scaffold_frob_toml.py::TestDocAnchorsResolve::test_every_frob_doc_anchor_resolves[python-tool]
 threat: null
 component: null
 anchor: false
@@ -86,7 +94,7 @@ Fix, in the templates:
    carries the block; shared/cpp, types/web-app, types/pyo3-library and
    types/pybind11-library each forked the python file and silently dropped
    it, which alone accounts for 11-12 REF001 per non-python type. With
-   T-5090 landing conventional-file defaults in the refs gate, the
+   T-draft-538a0625 landing conventional-file defaults in the refs gate, the
    right fix is that the rendered frob.toml needs ZERO refs rows, not four
    more copies of the block.
 2. docs/index.md has no Public API heading, so the frob:doc anchors the

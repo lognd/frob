@@ -1,0 +1,35 @@
+"""Integration test for {{ project.name }}: the logging subsystem wired
+end to end (config file -> dictConfig -> filter/formatter/handler ->
+a real emitted record), not a single module in isolation.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from {{ project.import_name }}.logging import get_logger
+
+
+def test_get_logger_end_to_end_emits_a_configured_record(capsys):
+    """`get_logger` must load `config.toml` via `logging.config.dictConfig`
+    and produce a logger that actually emits through the configured
+    handler/formatter chain -- not just construct without raising."""
+    logger = get_logger("{{ project.import_name }}.integration_smoke")
+
+    logger.info("integration smoke: %s", "hello")
+
+    captured = capsys.readouterr()
+    assert "integration smoke: hello" in captured.err + captured.out
+
+
+def test_get_logger_is_idempotent_across_modules():
+    """Two different call sites resolving `get_logger` with different
+    names must both come from the standard library's logger registry and
+    share the same one-time `dictConfig` initialization -- calling it
+    twice must not raise or reconfigure logging a second time."""
+    first = get_logger("{{ project.import_name }}.a")
+    second = get_logger("{{ project.import_name }}.b")
+
+    assert isinstance(first, logging.Logger)
+    assert isinstance(second, logging.Logger)
+    assert first.name != second.name

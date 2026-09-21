@@ -1,5 +1,5 @@
 ---
-id: T-draft-e1869f7d
+id: T-5162
 title: pre-commit land-owned guard diffs CHANGELOG.md and changelog.d against literal
   main, so every dev merge inside a worktree is refused while main is frozen
 state: queued
