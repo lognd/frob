@@ -1,5 +1,5 @@
 ---
-id: T-draft-d4509c7c
+id: T-5254
 title: MCP tools frob_land_enqueue, frob_land_status, frob_land_queue over the socket
   daemon; agents enqueue through the tool
 state: queued
