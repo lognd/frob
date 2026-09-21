@@ -18,15 +18,15 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-from frob.findings import Violation
+from frob.findings import Severity, Violation
 from frob.gates._docblocks_shared import (
     _doc004_violation,
     _ProjectNamespaces,
     _read_toml,
     resolve_dotted_symbol,
 )
-from frob.gitio import run_argv
-from frob.graph._models import GraphSnapshot
+from frob.gitio import Diff, run_argv, working_diff
+from frob.graph._models import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -1119,3 +1119,152 @@ def _java_import_violations(
             )
         )
     return violations
+
+
+# ---------------------------------------------------------------------------
+# COV009: symbols sharing one frob:doc anchor are one shared contract
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-4254
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:tests \
+# tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping.test_two_symbols_same_anchor_form_a_group  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping.test_lone_anchor_participant_is_not_a_group  # noqa: E501
+def _shared_doc_anchor_groups(snapshot: GraphSnapshot) -> dict[str, tuple[str, ...]]:
+    """T-4254: group every `EdgeKind.DOC` edge's source symbol by the
+    anchor it points at -- two or more symbols pointing at the SAME
+    `frob:doc` anchor are one shared contract (Consumer F-386 item 4's
+    finding: a shared contract's fix and its miss landed in two different
+    tickets' scopes because frob had no notion these call sites implement
+    one thing). Only anchors with more than one distinct participant
+    symbol are returned -- a lone symbol citing its own doc anchor is not
+    a "group" anything else needs to review."""
+    groups: dict[str, list[str]] = {}
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DOC:
+            continue
+        groups.setdefault(edge.target, []).append(edge.src)
+    return {
+        anchor: tuple(sorted(set(srcs)))
+        for anchor, srcs in groups.items()
+        if len(set(srcs)) > 1
+    }
+
+
+def _symbol_touched_by_diff(symref: str, span: tuple[int, int], diff: Diff) -> bool:
+    """Whether `diff` touches any line of `span` (a `SymbolRecord.span`)
+    in the file `symref` (a `path::qualname` symref) is defined in."""
+    file = symref.split("::", 1)[0]
+    start, end = span
+    for hunk in diff.hunks:
+        if hunk.file != file:
+            continue
+        hstart, hend = hunk.span
+        if hstart <= end and start <= hend:
+            return True
+    return False
+
+
+def _cov009_violation(
+    *, file: str, line: int, site: str, anchor: str, touched: tuple[str, ...]
+) -> Violation:
+    """The single COV009 `Violation` for one untouched sibling of a
+    shared `frob:doc` anchor whose OTHER participant(s) this diff did
+    touch."""
+    _log.warning(
+        "COV009: %s shares frob:doc anchor %s with touched sibling(s) %s",
+        site,
+        anchor,
+        touched,
+    )
+    return Violation(
+        rule="COV009",
+        severity=Severity.WARN,
+        file=file,
+        line=line,
+        message=(
+            f"COV009: {site} shares frob:doc anchor {anchor!r} with "
+            f"touched sibling symbol(s) {', '.join(touched)} -- symbols "
+            f"bound to the same frob:doc anchor are one shared contract "
+            f"(T-4254); this diff touched a sibling but not {site}, "
+            f"re-review it too before landing"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-COV009
+# frob:ticket T-4254
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:tests \
+# tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_touching_one_sibling_flags_the_other  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_touching_both_siblings_flags_neither  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_untouched_group_is_silent  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_lone_anchor_participant_is_not_a_group  # noqa: E501
+def cov009_violations(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
+    """COV009 (T-4254): for every group of symbols sharing one `frob:doc`
+    anchor (`_shared_doc_anchor_groups`), if `diff` touches at least one
+    participant's own line span but not another's, warn on every
+    UNTOUCHED participant naming which touched sibling(s) triggered the
+    review -- a shared contract fixed at one call site and missed at
+    another (Consumer F-386 item 4) should never land silently again.
+    A group with zero touched participants (this diff does not concern
+    it at all) stays completely silent."""
+    out: list[Violation] = []
+    for anchor, symrefs in _shared_doc_anchor_groups(snapshot).items():
+        touched: list[str] = []
+        untouched: list[str] = []
+        for symref in symrefs:
+            record = snapshot.symbols.get(symref)
+            if record is None:
+                continue
+            if _symbol_touched_by_diff(symref, record.span, diff):
+                touched.append(symref)
+            else:
+                untouched.append(symref)
+        if not touched:
+            continue
+        for symref in untouched:
+            record = snapshot.symbols[symref]
+            file = symref.split("::", 1)[0]
+            out.append(
+                _cov009_violation(
+                    file=file,
+                    line=record.span[0],
+                    site=symref,
+                    anchor=anchor,
+                    touched=tuple(touched),
+                )
+            )
+    return tuple(out)
+
+
+# frob:doc docs/modules/gates.md#cov009-t-4254
+# frob:enforces CHK-GATE-COV009
+# frob:ticket T-4254
+# frob:tests tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_touching_one_sibling_flags_the_other  # noqa: E501
+def cov009_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """COV009's `run_gates`-ready entrypoint: computes its own
+    `working_diff(root, "main")` exactly the way `_land_format.
+    land_format_gate` does (T-4298 precedent), so no extra state from
+    `run_gates`'s own assembled `_GateInputs` is needed here. NOT YET
+    wired into `frob.gates.__init__._assemble_gate_report`/`run_gates`'s
+    dispatch table -- `src/frob/gates/__init__.py` carried a live
+    T-4540 lease at the time this ticket was scoped, so the wiring is a
+    disclosed follow-up (see this ticket's Done report) rather than an
+    edit to a file this ticket cannot touch. Fails OPEN (`()`, not an
+    error) when the diff cannot be computed at all, matching every
+    other diff-scoped land-time check's posture in this package."""
+    diff_result = working_diff(root, "main")
+    if diff_result.is_err:
+        _log.debug(
+            "cov009: could not compute the working diff (%s) -- "
+            "skipping (unmeasured, not zero)",
+            diff_result.danger_err,
+        )
+        return ()
+    return cov009_violations(snapshot, diff_result.danger_ok)

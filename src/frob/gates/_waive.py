@@ -226,6 +226,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-2688: a diff about to delete/rename a test file some ticket's
         # evidence (open or done) still cites AND that no longer resolves.
         "COV008",
+        # T-4254: symbols sharing one frob:doc anchor are one contract; a
+        # diff touching one participant but not another warns on the rest.
+        "COV009",
         # T-0504: class-directive placement lint (a `frob:` directive that
         # class-falls-back but plausibly missed a nearby real symbol).
         "PLACE001",
