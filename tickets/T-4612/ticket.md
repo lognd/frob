@@ -2,7 +2,7 @@
 id: T-4612
 title: 'implement T-3961 provenance/trust-as-identity: derived_from and trust_identity
   node attrs with SYS10x consumer'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-19'

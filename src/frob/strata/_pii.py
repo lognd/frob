@@ -52,6 +52,19 @@ else is a JOIN:
   contain -- the model's own `carries` fact contradicts the flow's `label`,
   caught the same way `_check_minimization` catches a flow whose own
   attrs contradict its downstream fate.
+- PII005 (derived_from contradiction, T-3961): two `derived_from:<tag>=
+  <helper>` attrs naming the SAME tag with DIFFERENT helper symrefs on
+  the same node -- "which one actually produces it" cannot both be true,
+  the same deny-by-default posture PII001 takes on a malformed
+  declaration. Consumed downstream (not in this module) by
+  `frob.gates._sys_provenance`'s SYS116/SYS117, T-3961's accepted
+  design (see that design note for the full derived_from/trust_identity
+  provenance shape; this module owns only the attr-desugar/parse/
+  contradiction-detection half, per T-3961's own conclusion that the
+  eventual implementation surface is `frob.strata._pii`, not
+  `_models.py` -- both new constructs reuse the existing `Node.attrs`
+  field, the SAME attr-desugar convention `pii=`/`code=`/T-4073's
+  `no_pii` already use, zero grammar/kernel change).
 """
 
 from __future__ import annotations
@@ -86,6 +99,20 @@ PII_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
+#: Node attr prefix a `derived_from:<pii-tag>=<helper-symref>` provenance
+#: statement uses (T-3961's accepted design): names the SOLE legitimate
+#: symref allowed to produce values assigned to the given `carries` tag,
+#: the same attr-desugar convention `_PII_PREFIX` uses.
+# frob:doc docs/strata/provenance-trust-identity.md#derived_fromtaghelper
+_DERIVED_FROM_PREFIX = "derived_from:"
+
+#: Node attr prefix a `trust_identity:<pii-tag>` statement uses (T-3961's
+#: accepted design): declares this node authorized to treat a value
+#: under the named `carries` tag as a trusted identity fact, distinct
+#: from mere capability to receive/hold it (`may`).
+# frob:doc docs/strata/provenance-trust-identity.md#trust_identitytag
+_TRUST_IDENTITY_PREFIX = "trust_identity:"
+
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 # frob:doc docs/guides/extending/pii-categories.md#pii-categories
@@ -98,6 +125,7 @@ class PiiViolation(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     rule: str  # PII001 catalog | PII002 boundary | PII003 retention | PII004 lint
+    # | PII005 derived_from contradiction (T-3961)
     target: str | None = None
     detail: str = ""
 
@@ -127,6 +155,46 @@ def node_carries_pii(node: Node) -> bool:
     `_compliance.py`'s retention/erasure checks extend on (module
     docstring, PII003)."""
     return bool(node_pii_tags(node))
+
+
+# frob:doc docs/strata/provenance-trust-identity.md#derived_fromtaghelper
+# frob:tests \
+#   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_undeclared_helper_fires_sys116  # noqa: E501
+# frob:tests \
+#   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_declared_helper_does_not_fire_sys116  # noqa: E501
+def node_derived_from(node: Node) -> tuple[tuple[str, str], ...]:
+    """Every `(tag, helper)` pair `node` declares via
+    `derived_from:<tag>=<helper>` attrs (`_DERIVED_FROM_PREFIX`
+    convention, T-3961). A malformed attr (no `=`) is silently skipped
+    here -- `check_pii_derived_from_contradiction` and
+    `frob.gates._sys_provenance` are where shape validation happens, one
+    home per charter law (no duplication)."""
+    pairs: list[tuple[str, str]] = []
+    for attr in node.attrs:
+        if not attr.startswith(_DERIVED_FROM_PREFIX):
+            continue
+        rest = attr[len(_DERIVED_FROM_PREFIX) :]
+        tag, sep, helper = rest.partition("=")
+        if sep and tag and helper:
+            pairs.append((tag, helper))
+    return tuple(pairs)
+
+
+# frob:doc docs/strata/provenance-trust-identity.md#trust_identitytag
+# frob:tests \
+#   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_without_carries_fires_sys117  # noqa: E501
+# frob:tests \
+#   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_with_matching_carries_does_not_fire  # noqa: E501
+def node_trust_identity_tags(node: Node) -> tuple[str, ...]:
+    """Every `<pii-tag>` `node` declares via `trust_identity:<tag>` attrs
+    (`_TRUST_IDENTITY_PREFIX` convention, T-3961): tags this node is
+    authorized to treat as a trusted identity fact, distinct from merely
+    carrying or receiving them."""
+    return tuple(
+        attr[len(_TRUST_IDENTITY_PREFIX) :]
+        for attr in node.attrs
+        if attr.startswith(_TRUST_IDENTITY_PREFIX)
+    )
 
 
 def _pii_category(tag: str) -> str | None:
@@ -333,6 +401,47 @@ def check_pii_undeclared_flow(model: KernelModel) -> tuple[PiiViolation, ...]:
     return tuple(violations)
 
 
+# frob:doc docs/strata/provenance-trust-identity.md#pii005-derived_from-contradiction
+# frob:enforces CHK-GATE-PII005
+# frob:tests \
+#   tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction.test_conflicting_helpers_on_same_tag_fires_pii005  # noqa: E501
+# frob:tests \
+#   tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction.test_single_helper_does_not_fire_pii005  # noqa: E501
+def check_pii_derived_from_contradiction(
+    model: KernelModel,
+) -> tuple[PiiViolation, ...]:
+    """PII005 (T-3961): two `derived_from:<tag>=<helper>` attrs naming the
+    SAME tag with DIFFERENT helper symrefs on the same node -- "which one
+    actually produces it" cannot both be true, deny-by-default the same
+    shape PII001 takes on a malformed declaration (module docstring)."""
+    violations: list[PiiViolation] = []
+    # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
+    for node in sorted(model.nodes, key=lambda n: n.id):
+        helpers_by_tag: dict[str, set[str]] = {}
+        for tag, helper in node_derived_from(node):
+            helpers_by_tag.setdefault(tag, set()).add(helper)
+        for tag in sorted(helpers_by_tag):
+            helpers = helpers_by_tag[tag]
+            if len(helpers) <= 1:
+                continue
+            _log.warning(
+                "pii: PII005 node %s derives tag %r from conflicting helpers %s",
+                node.id,
+                tag,
+                sorted(helpers),
+            )
+            violations.append(
+                PiiViolation(
+                    rule="PII005",
+                    target=node.id,
+                    detail=f"node {node.id} declares derived_from:{tag}= with "
+                    f"conflicting helpers {sorted(helpers)} -- exactly one "
+                    "helper may be named per tag",
+                )
+            )
+    return tuple(violations)
+
+
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def evaluate_pii(model: KernelModel) -> Result[PiiReport, StrataError]:
     """The strata-level PII-audit entrypoint: PII001-004 over `model`
@@ -344,6 +453,7 @@ def evaluate_pii(model: KernelModel) -> Result[PiiReport, StrataError]:
         *check_pii_boundary_protection(model),
         *check_pii_retention_erasure(model),
         *check_pii_undeclared_flow(model),
+        *check_pii_derived_from_contradiction(model),
     )
     _log.info(
         "pii: evaluated %d node(s)/%d flow(s) -> %d violation(s)",
@@ -360,9 +470,12 @@ __all__ = [
     "PiiViolation",
     "check_pii_boundary_protection",
     "check_pii_catalog",
+    "check_pii_derived_from_contradiction",
     "check_pii_retention_erasure",
     "check_pii_undeclared_flow",
     "evaluate_pii",
     "node_carries_pii",
+    "node_derived_from",
     "node_pii_tags",
+    "node_trust_identity_tags",
 ]
