@@ -57,13 +57,16 @@ designated_repro_test: null
 acceptance:
 - text: given the pre-fix _flow.py, _unlanded.py and gates/__init__.py, when frob
     check runs, then PERF016 fires on each per-ticket git spawn
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_loop_variant.py::TestPerf016::test_git_spawn_with_loop_variable_pathspec_is_flagged
 - text: given the pre-fix _rapid_sweep._reproducing_identities_cached, when frob check
     runs, then PERF017 fires naming the success-only cache write
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_cache_effects.py::TestPerf017::test_success_only_cache_write_is_flagged
 - text: given the pre-fix _land._sibling_branch_ref chain, when frob check runs, then
     PERF018 fires naming the discarded leases hoist
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_cache_effects.py::TestPerf018::test_hoisted_value_recomputed_in_loop_is_flagged
 acceptance_amendments:
 - op: remove
   index: 4
@@ -72,7 +75,7 @@ acceptance_amendments:
   new_text: null
   reason: criterion 4 (PERF007 fires once [[perf.heavy]] is populated) requires editing
     frob.toml, which carried a live cross-worktree lease (T-5138) when T-5136 started
-    and was removed from scope; filed as T-5202
+    and was removed from scope; filed as T-draft-a4b2ce94
   actor: logan
   at: '2026-09-21'
 threat: null
