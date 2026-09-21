@@ -3,14 +3,14 @@ id: T-4993
 title: 'Liveness fixtures for every registered SYS/SELFAUDIT rule: 79 defined rule
   ids, zero telemetry fires, no rule may stay registered without a fixture that makes
   it fire'
-state: queued
+state: done
 kind: invariant
 origin: agent
 created: '2026-09-19'
 priority: high
 parent: T-4804
 tier: ticket
-sprint: v1.1.0
+sprint: v0.536.0
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -22,29 +22,31 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: v0.536.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_sys_rule_liveness.py::test_every_registered_rule_has_a_liveness_fixture
+- tests/gates_suite/test_sys_rule_liveness.py::test_every_mapped_fixture_node_id_actually_exists_and_passes
+- tests/gates_suite/test_sys_rule_liveness.py::test_sys_liveness_litmus_design_proves_sys204_end_to_end
+- tests/gates_suite/test_sys_rule_liveness.py::test_liveness_mapping_has_no_stale_entries
 designated_repro_test: null
 acceptance:
 - text: Given 79 rule ids of the SYS/SELFAUDIT/REL/PII/THREAT/VMOD/CLAIM families
     are defined while telemetry records 614,294 fires across 82 rule ids with ZERO
     starting with SYS, when this lands, then each registered rule has a fixture that
     PLANTS its violation and asserts the rule reports it.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_rule_liveness.py::test_every_mapped_fixture_node_id_actually_exists_and_passes
+  - tests/gates_suite/test_sys_rule_liveness.py::test_sys_liveness_litmus_design_proves_sys204_end_to_end
 - text: Given a rule may be registered later with no fixture, when the meta-test enumerates
     registered rule ids from the registration surface (never a grep), then it FAILS
     for any rule with no liveness fixture -- the positive control, which fails at
     HEAD c8f56ef10 with 79 rules and zero fixtures.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_rule_liveness.py::test_every_registered_rule_has_a_liveness_fixture
 - text: Given no rule is retired under T-4804's decision, when a rule cannot be made
     to fire at all, then that is recorded as a finding on T-4804 and the rule stays
     registered -- it is never deleted.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_rule_liveness.py::test_liveness_mapping_has_no_stale_entries
 threat: null
 component: gates
 anchor: false

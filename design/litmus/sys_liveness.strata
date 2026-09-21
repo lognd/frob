@@ -1,0 +1,33 @@
+// sys_liveness.strata -- SYS200-204 contention-family liveness litmus
+// (T-4993, SF-01's "79 rule ids, zero telemetry fires" measurement).
+//
+// A minimal, real design that plants the SYS204 unarbitrated resource-
+// mode-conflict violation end to end through the real surface grammar
+// (parse_module -> elaborate -> resource_contention_violations), used by
+// tests/gates_suite/test_sys_rule_liveness.py as the one design-level
+// positive control alongside the per-rule Python-model fixtures the rest
+// of that suite's registry-to-fixture mapping points at. Two nodes access
+// the SAME named resource in conflicting modes (`write`/`write`) with no
+// `resource { arbitrated_by ... }`/`lock` declared anywhere in this
+// module, so `resource_contention_violations` must report SYS204 for the
+// pair -- exactly the T-0700 acceptance criterion
+// `tests/unit/strata/test_access.py::TestResourceContentionViolations::
+// test_two_writers_no_arbiter_fires` already proves at the KernelModel
+// level; this file proves the SAME obligation survives real surface
+// syntax (parse -> elaborate), not just a hand-built model.
+//
+// tested end to end (parse -> elaborate -> resource_contention_violations)
+// by tests/gates_suite/test_sys_rule_liveness.py; a permanent CI golden
+// for this ticket's registry-driven liveness sweep.
+
+module sys_liveness
+
+node ledger_writer_a : trusted {
+    clearance Internal;
+    access "ledger_db" mode write;
+}
+
+node ledger_writer_b : trusted {
+    clearance Internal;
+    access "ledger_db" mode write;
+}
