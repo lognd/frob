@@ -16,12 +16,17 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'narrowing per coordinator directive: register 15/17 ids directly instead
+    of waiting on T-4113'
+  actor: logan
+  at: '2026-09-21'
 designated_repro_test: null
 threat: null
 component: null
