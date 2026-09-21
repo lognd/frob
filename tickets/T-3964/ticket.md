@@ -1,14 +1,14 @@
 ---
 id: T-3964
 title: dataset construct under store with append_only attribute
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-09-06'
 priority: high
 parent: T-3942
 tier: ticket
-sprint: v0.539.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -39,24 +39,30 @@ scope_changes:
   reason: 'standalone doc row: docs/modules/gates.md leased'
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.539.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/test_dataset_construct.py::TestDatasetAttrParsing::test_node_parent_store_parses_attr
+- tests/test_dataset_construct.py::TestDatasetAttrParsing::test_node_parent_store_none_when_absent
+- tests/test_dataset_construct.py::TestDatasetAttrParsing::test_node_is_dataset_true_with_parent_store
+- tests/test_dataset_construct.py::TestDatasetAttrParsing::test_node_is_dataset_false_without_parent_store
+- tests/test_dataset_construct.py::TestDatasetAttrParsing::test_node_is_append_only_true
+- tests/test_dataset_construct.py::TestDatasetAttrParsing::test_node_is_append_only_false
+- tests/test_dataset_construct.py::TestDatasetIndependentCarries::test_dataset_carries_independent_of_parent_store
+- tests/test_dataset_construct.py::TestSys118DanglingParentStore::test_dangling_parent_store_fires_sys118
+- tests/test_dataset_construct.py::TestSys118DanglingParentStore::test_existing_parent_store_does_not_fire_sys118
+- tests/test_dataset_construct.py::TestSys118DanglingParentStore::test_node_without_parent_store_does_not_fire_sys118
 designated_repro_test: null
 acceptance:
 - text: given a design note describing the dataset construct's grammar, its own carries()
     scope, and how append_only is resolved (SYS100 or a new sibling rule), when this
     ticket's design step completes, then the note is attached before implementation
     begins
-  evidence: []
+  evidence:
+  - tests/test_dataset_construct.py::TestSys118DanglingParentStore::test_dangling_parent_store_fires_sys118
 - text: given the design is accepted, when implemented, then a dataset nested under
     a store can declare carries() independent of the parent store and an append_only
     attribute that a gate can check
-  evidence: []
+  evidence:
+  - tests/test_dataset_construct.py::TestDatasetIndependentCarries::test_dataset_carries_independent_of_parent_store
 threat: null
 component: null
 anchor: false
