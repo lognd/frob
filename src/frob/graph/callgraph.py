@@ -56,6 +56,7 @@ __all__ = [
     "capability_gap_disclosure",
     "closure",
     "is_symref",
+    "references_name",
     "scope_private_helper_gaps",
 ]
 
@@ -1295,12 +1296,14 @@ def _one_caller_edges(
 
 
 # frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-3962
 def closure(
     graph: CallGraph,
     start: str,
     *,
     max_depth: int = _DEFAULT_MAX_DEPTH,
     max_nodes: int = _DEFAULT_MAX_NODES,
+    exclude: frozenset[str] = frozenset(),
 ) -> tuple[str, ...]:
     """Bounded BFS closure of `start`'s private-callee reachable set.
 
@@ -1311,6 +1314,17 @@ def closure(
     in `graph.calls` at all (see `build_call_graph`), so the walk stops at
     the public-API boundary automatically. Returns callees in BFS
     (breadth-first, shallow-first) order, `start` itself excluded.
+
+    T-3962: `exclude` (default empty, fully backward compatible) names
+    nodes the walk must never ENQUEUE for further expansion -- an
+    excluded node can still appear as the last hop reached (it is added
+    to `order` before the exclude check stops it from being explored
+    past), but the walk never continues through it. This is the one
+    primitive `frob.gates._design_invariants.inv011_violations` needs to
+    ask "is there a call-graph path from an entrypoint to a sink that
+    never passes through a guard-referencing node" without a second BFS
+    implementation: exclude the guard-referencing nodes and see whether
+    the sink is still in the resulting closure.
     """
     visited: set[str] = {start}
     order: list[str] = []
@@ -1326,8 +1340,34 @@ def closure(
             order.append(callee)
             if len(order) >= max_nodes:
                 break
+            if callee in exclude:
+                continue
             queue.append((callee, depth + 1))
     return tuple(order[:max_nodes])
+
+
+# frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-3962
+# frob:tests tests/unit/test_design_invariants.py::TestInv011.test_guarded_path_clears
+def references_name(root: Path, symref: str, name: str) -> bool:
+    """Whether the symbol at `symref` (`path::qualname`) mentions the bare
+    identifier `name` anywhere in its own signature or body tokens --
+    `_referenced_names`'s broad recall (dispatch-table entries, decorator
+    targets, defaults, not just `name(...)` call sites), the same
+    extractor DEAD001 already uses, reused here (T-3962) rather than a
+    second body-scanning pass so `frob.gates._design_invariants.
+    inv011_violations` can ask "does this call-graph node consult the
+    guarding frozenset" with the one substrate this module already
+    builds. Returns `False` for a `symref` this parse cannot find (file
+    fails to parse, or no symbol with that exact qualname) -- fail-closed
+    the same direction every other best-effort lookup in this module
+    takes."""
+    path, _, qualname = symref.partition("::")
+    parsed = _parse_package(root, (path,))
+    for sym in parsed.get(path, ()):
+        if sym.qualname == qualname:
+            return name in _referenced_names(sym, path)
+    return False
 
 
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
@@ -1369,8 +1409,7 @@ def _short_name_of_symref(symref: str) -> str:
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_same_name_self_match_is_silent  # noqa: E501
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_genuine_cross_file_helper_still_fires  # noqa: E501
 # frob:tests \
-# tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_imported_helper_shared_\
-# name_only_flags_the_real_import
+# tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_imported_helper_shared_name_only_flags_the_real_import  # noqa: E501
 def scope_private_helper_gaps(
     root: Path, scope: tuple[str, ...] | list[str], files: Sequence[str]
 ) -> tuple[PrivateHelperGap, ...]:

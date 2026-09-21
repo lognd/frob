@@ -1,0 +1,200 @@
+## Done report
+
+T-3962: invariant obligation: forbidden-constant reachability (INV011)
+
+WHAT changed:
+
+- src/frob/gates/_design_invariants.py
+  New `frob:invariant INV-### guards="*_FORBIDDEN/*_EXCLUDED/*_ALLOWED"
+  entrypoints="path::qual[,...]"` obligation form, anchored on the
+  guarded sink symbol. New symbols:
+    _GUARD_NAME_RE                      -- FORBIDDEN/EXCLUDED/ALLOWED
+                                            naming convention (prefix or
+                                            suffix component)
+    _guard_name(edge)                   -- validated guards= value
+    _entrypoints(edge)                  -- parsed entrypoints= list
+    _guard_reaching_files(...)          -- files to scope build_call_graph to
+    _anchor_file_from_symref(symref)
+    _guarded_nodes(...)                 -- nodes in the graph that
+                                            reference the guard
+    _inv011_entrypoint_violation(...)   -- per-entrypoint check
+    _inv011_edge_violations(root, edge) -- per-edge substrate + loop
+    inv011_violations(root, snapshot)   -- public gate entry point (INV011)
+  Algorithm: for each entrypoint, if the entrypoint or the sink itself
+  references the guard, that path is inherently satisfied. Otherwise
+  build_call_graph is scoped to the sink's + entrypoints' own files,
+  the set of guard-referencing nodes in that graph is computed, and
+  closure(graph, entrypoint, exclude=guarded_nodes) asks whether the
+  sink is still reachable once those nodes are excluded from further
+  expansion -- if so, that is a live path that never consulted the
+  guard, and INV011 fires an ERROR naming the entrypoint.
+
+- src/frob/graph/callgraph.py
+  closure() gains an optional `exclude: frozenset[str] = frozenset()`
+  parameter (fully backward compatible, default empty) -- nodes in
+  `exclude` can still appear as the last reached hop but are never
+  enqueued for further expansion. This is the literal reuse of
+  COV006's own BFS substrate the ticket's acceptance criterion 2 asks
+  for, not a second traversal engine.
+  New references_name(root, symref, name) -- thin wrapper over the
+  existing private `_referenced_names` broad-recall identifier
+  extractor (the same one DEAD001 already uses), exposed publicly so
+  `_design_invariants` can ask "does this call-graph node consult the
+  guarding frozenset" without a new body-scanning pass.
+
+- src/frob/gates/__init__.py
+  Wired inv011_violations into `_build_thread_jobs`'s "invariant"
+  thread job, next to inv007_violations/inv008_violations. Added
+  inv011_violations to the module's public re-export __all__. Added a
+  `frob:ticket T-3962` line to `_build_thread_jobs`'s existing
+  directive stack (T-1049/T-1340) since this ticket changed that
+  function's body.
+
+- tests/unit/test_design_invariants.py
+  New TestInv011 class: 6 tests, including a genuine positive control
+  (test_unguarded_path_fires: an entrypoint that reaches the sink
+  without ever consulting the guard) and a negative control on the
+  SAME module/graph (test_guarded_path_clears: an entrypoint that
+  checks the guard before calling the sink) -- the fixture module is
+  shared between both so the only variable is which entrypoint is
+  declared, matching the "same fixture, guarded vs unguarded path"
+  shape the ticket's acceptance criterion describes. Also covers mixed
+  entrypoints (only the unguarded one fires), the FORBIDDEN/EXCLUDED/
+  ALLOWED naming-convention gate (a misnamed constant is silently not
+  recognized, not a malformed directive), and the no-guards=-attr
+  no-op case.
+
+- docs/modules/gate-inv011-forbidden-constant-reachability.md (new)
+  INV011's own docs page, standalone rather than folded into
+  docs/modules/gates.md, because docs/modules/gates.md was leased by
+  T-4111 for this ticket's entire duration (see SCOPE REFUSALS below).
+
+WHY:
+
+F-175 (T-3942 item 1): EXCLUDED_TABLES/FORBIDDEN_COLUMNS was checked on
+three write paths and skipped on the fourth (revert_change) -- a bug
+class only a reviewer's own memory caught before this gate existed.
+INV011 makes "every declared entrypoint's path to a guarded sink
+consults the guard" a static, code-anchored, ERROR-severity gate
+finding, the same posture INV007/INV008 (T-0757) already established
+for their own two design-invariant shapes.
+
+Acceptance criteria proof:
+
+[1] "a call-graph path from a declared entrypoint to that sink never
+    references the frozenset -> the new invariant obligation fires
+    naming the unguarded path"
+    -> tests/unit/test_design_invariants.py::TestInv011::
+       test_unguarded_path_fires (positive control: fires, names the
+       entrypoint and the sink in the violation message)
+    -> tests/unit/test_design_invariants.py::TestInv011::
+       test_guarded_path_clears (negative control on the identical
+       fixture module/graph: no finding when the entrypoint's own path
+       consults the guard)
+    -> tests/unit/test_design_invariants.py::TestInv011::
+       test_mixed_entrypoints_fires_only_for_unguarded_one (both
+       shapes declared on one obligation: only the genuinely unguarded
+       entrypoint produces a finding)
+
+[2] "reuses the existing COV006 BFS reachability code in callgraph.py
+    rather than adding a second call-graph traversal"
+    -> src/frob/graph/callgraph.py::closure gained the `exclude`
+       parameter (backward-compatible default) instead of a new
+       traversal function; inv011_violations calls build_call_graph +
+       closure directly, the same two callgraph.py primitives COV006's
+       own `_cov006_third_file_reachable` (src/frob/gates/__init__.py)
+       already uses.
+    -> tests/unit/test_design_invariants.py::TestInv011::
+       test_guarded_path_clears is the behavioral proof that
+       closure(..., exclude=guarded_nodes) is doing the real exclusion
+       work (the unguarded-path test above proves it doesn't
+       over-exclude).
+    -> tests/test_graph.py's existing closure() test suite (148 tests,
+       all green) confirms the exclude parameter's default is fully
+       backward compatible -- no existing closure() caller's behavior
+       changed.
+
+Test node ids (evidence bound):
+  tests/unit/test_design_invariants.py::TestInv011::test_unguarded_path_fires  (accepts 1)
+  tests/unit/test_design_invariants.py::TestInv011::test_guarded_path_clears   (accepts 2)
+
+Full local runs (all green, base-ref dev):
+  PYTHONPATH=.../src python -m pytest tests/unit/test_design_invariants.py tests/test_graph.py -q
+    -> SUITE-RESULT: exitstatus=0 collected=162 failed=0
+  ruff check / ruff format --check: clean on all 4 touched .py files
+  ty check: clean on all 4 touched .py files
+  frob check --only arch --files <touched .py>: no ARCH001/LARGE001
+    finding attributable to this diff (inv011_violations split into
+    _inv011_edge_violations/_inv011_entrypoint_violation/_guarded_nodes
+    to stay under the 60-line threshold; verified with a scoped re-run)
+  frob check --only coverage --files <touched .py>: no COV001/COV002/
+    COV007 finding attributable to this diff (frob:doc/frob:ticket
+    directives added to inv011_violations/closure/references_name/
+    _build_thread_jobs; the misplaced frob:doc that had landed on the
+    private _guarded_nodes helper was removed)
+  frob check --only sys --files <touched>: no SELFAUDIT/SYS finding
+    attributable to this diff (no new file/env/subprocess I/O
+    introduced -- reuses build_call_graph/parse_file, already-declared
+    readers)
+
+Commits (this worktree, branch t-3962):
+  86c451623 feat(gates): add INV011 forbidden-constant reachability invariant
+  eceaddaa5 chore(tickets): record evidence for T-3962
+  d3625fa33 chore(tickets): record evidence for T-3962
+
+Filed: none (no new out-of-scope work found; two lease conflicts were
+handled via the fold-in mechanism described below, not filed as new
+tickets, per the brief's explicit standalone-doc-file instruction).
+
+SCOPE REFUSALS / lease conflicts (per brief's fold-in instructions):
+
+- docs/modules/gates.md: leased by T-4111 for this ticket's entire
+  duration. INV011's docs section shipped as a standalone file
+  (docs/modules/gate-inv011-forbidden-constant-reachability.md)
+  instead, with frob:doc directives pointing at it. Fold-in recorded
+  on T-draft-9a4eb7be's body (append committed this session): fold the
+  standalone page into docs/modules/gates.md next to the existing
+  "INV007 and INV008 (T-0757)" section, add the INV011 rule-table row
+  + frob:enumerates entry, retarget the frob:doc anchors, delete the
+  standalone page.
+
+- src/frob/gates/_waive.py: leased by T-4212. INV011 is NOT yet
+  registered in _KNOWN_GATE_RULES -- this means a real land attempt
+  will hit the same UnregisteredGateRuleConstructed refusal T-2388/
+  T-2441 hit for PORT001/GATESSCHEMA001/etc until _waive.py is free.
+  Recorded on T-draft-9a4eb7be's body: add "INV011" to
+  _KNOWN_GATE_RULES (same courtesy-registration pattern T-2441 used)
+  once free.
+
+- docs/design/registry/check-coverage.yaml: leased by T-4112.
+  inv011_violations carries `frob:enforces CHK-GATE-INV011` expecting
+  a matching registry row that does not exist yet. Recorded on
+  T-draft-9a4eb7be's body: add the CHK-GATE-INV011 row once free.
+
+Both lease conflicts mean this ticket cannot fully LAND clean on its
+own yet (the _waive.py registration in particular will refuse a real
+land) -- the coordinator should either sequence T-3962's land after
+T-4212/T-4112 free up and their fold-in tickets close, or land with
+whatever override the fleet uses for this exact "registration
+courtesy tracked on a draft ticket" pattern (T-2441's own precedent).
+
+Gates: frob check --only sys/arch/coverage --files <touched>, all
+clean for this diff specifically (pre-existing repo-wide findings
+unrelated to this diff were left as-is, not touched, not waived).
+No frob:waive added by this ticket.
+
+### Changed
+```
+ .../gate-inv011-forbidden-constant-reachability.md |   45 +
+ src/frob/gates/__init__.py                         |   11 +-
+ src/frob/gates/_design_invariants.py               |  186 +-
+ src/frob/graph/callgraph.py                        |   40 +
+ tests/unit/test_design_invariants.py               |  133 +-
+ tickets/T-3962/done-report.md                      | 2344 ++++++++++++++++++++
+ tickets/T-3962/ticket.md                           |   20 +-
+ 7 files changed, 2765 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_design_invariants.py::TestInv011::test_unguarded_path_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/test_design_invariants.py::TestInv011::test_guarded_path_clears` (pytest node id, verified passing when recorded)

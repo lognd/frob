@@ -94,7 +94,11 @@ from frob.gates._debt_deprecated import (
     list_deprecated,
 )
 from frob.gates._decisions_compliance import compliance_gate, decisions_gate
-from frob.gates._design_invariants import inv007_violations, inv008_violations
+from frob.gates._design_invariants import (
+    inv007_violations,
+    inv008_violations,
+    inv011_violations,
+)
 from frob.gates._docblocks import doc004_gate, doc005_gate, doc012_gate
 from frob.gates._docblocks_schema import docblocks_schema_gate
 from frob.gates._docenum import docenum001_gate
@@ -7680,6 +7684,7 @@ def _build_jobs(
 
 # frob:ticket T-1049
 # frob:ticket T-1340
+# frob:ticket T-3962
 def _build_thread_jobs(
     st: _GateInputs,
 ) -> dict[str, Callable[[], tuple[Violation, ...]]]:
@@ -7714,6 +7719,9 @@ def _build_thread_jobs(
             # `frob.gates._design_invariants`.
             *inv007_violations(st.repo_root, st.snapshot),
             *inv008_violations(st.snapshot),
+            # T-3962: forbidden-constant reachability (F-175) -- see
+            # `frob.gates._design_invariants.inv011_violations`.
+            *inv011_violations(st.repo_root, st.snapshot),
             # T-1843: INV-051 refinement-monotonicity, run for real over
             # design/ -- see `frob.gates._policy_weakening_gate`.
             *policy_weakening_gate(st.repo_root),
@@ -9553,6 +9561,7 @@ __all__ = [
     "invalidate_gate_cache",
     "inv007_violations",
     "inv008_violations",
+    "inv011_violations",
     "policy_weakening_gate",
     "land_parity_doc_test_gate",
     "land_parity_long_function_gate",

@@ -1,14 +1,14 @@
 ---
 id: T-3962
 title: 'invariant obligation: forbidden-constant reachability'
-state: in-progress
+state: done
 kind: invariant
 origin: agent
 created: '2026-09-06'
 priority: high
 parent: T-3942
 tier: ticket
-sprint: v0.539.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -39,24 +39,22 @@ scope_changes:
   reason: standalone INV011 doc page (docs/modules/gates.md leased by T-4111)
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.539.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/unit/test_design_invariants.py::TestInv011::test_unguarded_path_fires
+- tests/unit/test_design_invariants.py::TestInv011::test_guarded_path_clears
 designated_repro_test: null
 acceptance:
 - text: given a module-level frozenset named matching *_FORBIDDEN/*_EXCLUDED/*_ALLOWED
     and a declared sink it must guard, when a call-graph path from a declared entrypoint
     to that sink never references the frozenset, then the new invariant obligation
     fires naming the unguarded path
-  evidence: []
+  evidence:
+  - tests/unit/test_design_invariants.py::TestInv011::test_unguarded_path_fires
 - text: given the existing COV006 BFS reachability code in callgraph.py, when this
     obligation is implemented, then it reuses that machinery rather than adding a
     second call-graph traversal
-  evidence: []
+  evidence:
+  - tests/unit/test_design_invariants.py::TestInv011::test_guarded_path_clears
 threat: null
 component: null
 anchor: false

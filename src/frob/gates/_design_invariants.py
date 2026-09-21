@@ -39,6 +39,7 @@ with neither attribute, unaffected by this module.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
@@ -47,6 +48,15 @@ from frob.lang import extract_imports
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+# T-3962: the naming convention a `frob:invariant ... guards="..."`
+# obligation's frozenset must match -- FORBIDDEN/EXCLUDED/ALLOWED as
+# either a prefix (F-175's own `EXCLUDED_TABLES`/`FORBIDDEN_COLUMNS`) or
+# a suffix component (`_`-delimited on both sides), so INV011 only fires
+# for a constant this pattern recognizes as a guard (a misnamed constant
+# is simply not INV011's business; see `inv011_violations`'s docstring
+# for the F-175 incident this generalizes).
+_GUARD_NAME_RE = re.compile(r"(^|_)(FORBIDDEN|EXCLUDED|ALLOWED)(_|$)")
 
 
 def _anchor_file(edge: Edge) -> str:
@@ -215,4 +225,178 @@ def inv008_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-__all__ = ["inv007_violations", "inv008_violations"]
+def _guard_name(edge: Edge) -> str | None:
+    """The `guards="..."` frozenset name on `edge`, or `None` when absent
+    or when it does not match `_GUARD_NAME_RE` (INV011 only recognizes a
+    `*_FORBIDDEN`/`*_EXCLUDED`/`*_ALLOWED`-named guard, matching the
+    F-175 incident's own vocabulary -- a differently-named constant is
+    simply out of this obligation form's declared scope, not a malformed
+    directive; `frob.graph.dsl` is not in this ticket's scope to add a
+    stricter parse-time check)."""
+    raw = edge.attrs.get("guards")
+    if not raw or not _GUARD_NAME_RE.search(raw):
+        return None
+    return raw
+
+
+def _entrypoints(edge: Edge) -> tuple[str, ...]:
+    """The comma-separated `entrypoints="path::qual,path::qual2"` list on
+    a `guards=` invariant edge -- the declared call-graph roots INV011
+    walks from toward the guarded sink (`edge.src`)."""
+    raw = edge.attrs.get("entrypoints")
+    if not raw:
+        return ()
+    return tuple(e.strip() for e in raw.split(",") if e.strip())
+
+
+def _guard_reaching_files(sink: str, entrypoints: tuple[str, ...]) -> tuple[str, ...]:
+    """The distinct repo-relative files `sink` and `entrypoints` live in,
+    sorted -- the `paths` INV011 scopes its own `build_call_graph` call
+    to, mirroring `_cov006_third_file_reachable`'s pattern of scoping the
+    shared call-graph builder to just the files one obligation check
+    actually needs rather than the whole repo."""
+    files = {_anchor_file_from_symref(sink)}
+    files.update(_anchor_file_from_symref(e) for e in entrypoints)
+    return tuple(sorted(files))
+
+
+def _anchor_file_from_symref(symref: str) -> str:
+    """The file half of a `path::qualname` symref -- shared by
+    `_guard_reaching_files`'s sink/entrypoint file collection."""
+    return symref.split("::", 1)[0]
+
+
+# frob:ticket T-3962
+def _guarded_nodes(
+    root: Path, sink: str, graph, guard: str, references_name
+) -> frozenset[str]:  # noqa: ANN001
+    """Every node in `graph` (besides `sink` itself) that references
+    `guard` -- the set INV011 excludes `closure` from expanding through,
+    since a path passing through one of these has already consulted the
+    guard."""
+    return frozenset(
+        node
+        for node in {
+            sink,
+            *graph.calls.keys(),
+            *(c for cs in graph.calls.values() for c in cs),
+        }
+        if node != sink and references_name(root, node, guard)
+    )
+
+
+def _inv011_entrypoint_violation(
+    *,
+    root: Path,
+    edge: Edge,
+    sink: str,
+    ep: str,
+    guard: str,
+    graph,  # noqa: ANN001
+    guarded_nodes: frozenset[str],
+    references_name,  # noqa: ANN001
+    closure,  # noqa: ANN001
+) -> Violation | None:
+    """One entrypoint's own check against a `guards=`/`entrypoints=`
+    obligation: `None` when `ep`'s own path to `sink` is guarded (either
+    `ep` itself references `guard`, or every call-graph path from `ep`
+    to `sink` passes through a guard-referencing node), else the ERROR
+    `Violation` naming the unguarded path."""
+    if ep == sink or references_name(root, ep, guard):
+        return None
+    reachable = closure(graph, ep, exclude=guarded_nodes)
+    if sink not in reachable:
+        return None
+    _log.warning(
+        "INV011: %s reaches guarded sink %s without ever referencing %s",
+        ep,
+        sink,
+        guard,
+    )
+    return Violation(
+        rule="INV011",
+        severity=Severity.ERROR,
+        file=_anchor_file_from_symref(ep),
+        line=0,
+        message=(
+            f"INV011: {ep} reaches guarded sink {sink} via a "
+            f"call-graph path that never references the "
+            f"{guard!r} frozenset, violating {edge.target}'s "
+            f"frob:invariant guards={guard!r} obligation"
+        ),
+    )
+
+
+def _inv011_edge_violations(root: Path, edge: Edge) -> tuple[Violation, ...]:
+    """One `frob:invariant ... guards=/entrypoints=` obligation edge's own
+    findings -- the per-edge substrate build (call graph scoped to
+    `sink`/`entrypoints`' own files, guarded-node set) plus the
+    per-entrypoint walk `_inv011_entrypoint_violation` does, split out of
+    `inv011_violations` purely to keep that function's own body a plain
+    edge-filtering loop."""
+    from frob.graph.callgraph import build_call_graph, closure, references_name
+
+    guard = _guard_name(edge)
+    if guard is None:
+        return ()
+    sink = edge.src
+    entrypoints = _entrypoints(edge)
+    if not entrypoints:
+        return ()
+    if references_name(root, sink, guard):
+        # The sink guards itself at the point of use -- every path
+        # reaching it is inherently guarded; nothing to walk.
+        return ()
+    files = _guard_reaching_files(sink, entrypoints)
+    graph = build_call_graph(root, files)
+    guarded_nodes = _guarded_nodes(root, sink, graph, guard, references_name)
+    violations: list[Violation] = []
+    for ep in entrypoints:
+        violation = _inv011_entrypoint_violation(
+            root=root,
+            edge=edge,
+            sink=sink,
+            ep=ep,
+            guard=guard,
+            graph=graph,
+            guarded_nodes=guarded_nodes,
+            references_name=references_name,
+            closure=closure,
+        )
+        if violation is not None:
+            violations.append(violation)
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gate-inv011-forbidden-constant-reachability.md#inv011-forbidden-constant-reachability-t-3962  # noqa: E501
+# frob:ticket T-3962
+# frob:tests tests/unit/test_design_invariants.py::TestInv011.test_unguarded_path_fires  # noqa: E501
+# frob:tests tests/unit/test_design_invariants.py::TestInv011.test_guarded_path_clears  # noqa: E501
+# frob:enforces CHK-GATE-INV011
+def inv011_violations(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """INV011: forbidden-constant reachability (F-175, T-3962).
+
+    A `frob:invariant INV-### guards="*_FORBIDDEN/*_EXCLUDED/*_ALLOWED"
+    entrypoints="path::qual[,path::qual2,...]"` anchor (`edge.src` is the
+    guarded SINK symref) declares that every call-graph path from each
+    declared entrypoint to the sink must pass through at least one node
+    that references the named frozenset. INV011 fires once per
+    entrypoint whose path to the sink can dodge the guard entirely --
+    naming that unguarded path -- reusing `frob.graph.callgraph`'s
+    existing BFS substrate (`build_call_graph` + `closure`'s `exclude`
+    param, T-3962) rather than a second call-graph traversal engine, same
+    posture as `_cov006_third_file_reachable`. F-175's own incident this
+    generalizes: `EXCLUDED_TABLES`/`FORBIDDEN_COLUMNS` was checked on
+    three write paths and skipped on the fourth (`revert_change`) -- a
+    reviewer-memory-only bug class this makes a static ERROR finding.
+    Per-edge/per-entrypoint work lives in `_inv011_edge_violations`/
+    `_inv011_entrypoint_violation`; this is a plain edge-filtering loop.
+    """
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind == EdgeKind.INVARIANT:
+            violations.extend(_inv011_edge_violations(root, edge))
+    return tuple(violations)
+
+
+__all__ = ["inv007_violations", "inv008_violations", "inv011_violations"]

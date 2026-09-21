@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.gates._design_invariants import inv007_violations, inv008_violations
+from frob.gates._design_invariants import (
+    inv007_violations,
+    inv008_violations,
+    inv011_violations,
+)
 from frob.graph import Edge, EdgeKind, GraphSnapshot
 
 
@@ -161,3 +165,130 @@ class TestInv008:
         )
         snapshot = _snapshot(tmp_path, (edge,))
         assert inv008_violations(snapshot) == ()
+
+
+class TestInv011:
+    """`frob:invariant ... guards="..." entrypoints="..."` (forbidden-
+    constant reachability, F-175/T-3962)."""
+
+    _MODULE_SRC = """
+_EXCLUDED_TABLES = frozenset({"users"})
+
+
+def _sink(table):
+    return table
+
+
+def _guarded_entry(table):
+    if table in _EXCLUDED_TABLES:
+        return None
+    return _sink(table)
+
+
+def _unguarded_entry(table):
+    return _sink(table)
+"""
+
+    def _write_module(self, tmp_path: Path) -> Path:
+        mod = tmp_path / "writer.py"
+        mod.write_text(self._MODULE_SRC)
+        return mod
+
+    # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_unguarded_path_fires  # noqa: E501
+    def test_unguarded_path_fires(self, tmp_path: Path) -> None:
+        """Positive control: `_unguarded_entry` reaches `_sink` without
+        ever consulting `_EXCLUDED_TABLES` -- INV011 must fire, naming
+        the entrypoint."""
+        self._write_module(tmp_path)
+        edge = Edge(
+            src="writer.py::_sink",
+            kind=EdgeKind.INVARIANT,
+            target="INV-100",
+            origin="writer.py:5",
+            attrs={
+                "guards": "_EXCLUDED_TABLES",
+                "entrypoints": "writer.py::_unguarded_entry",
+            },
+        )
+        snapshot = _snapshot(tmp_path, (edge,))
+        violations = inv011_violations(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].rule == "INV011"
+        assert "writer.py::_unguarded_entry" in violations[0].message
+        assert "_sink" in violations[0].message
+
+    # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_guarded_path_clears  # noqa: E501
+    def test_guarded_path_clears(self, tmp_path: Path) -> None:
+        """Negative control (same module/graph): `_guarded_entry`
+        references `_EXCLUDED_TABLES` before ever reaching `_sink` -- no
+        finding for that entrypoint."""
+        self._write_module(tmp_path)
+        edge = Edge(
+            src="writer.py::_sink",
+            kind=EdgeKind.INVARIANT,
+            target="INV-100",
+            origin="writer.py:5",
+            attrs={
+                "guards": "_EXCLUDED_TABLES",
+                "entrypoints": "writer.py::_guarded_entry",
+            },
+        )
+        snapshot = _snapshot(tmp_path, (edge,))
+        assert inv011_violations(tmp_path, snapshot) == ()
+
+    # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_mixed_entrypoints_fires_only_for_unguarded_one  # noqa: E501
+    def test_mixed_entrypoints_fires_only_for_unguarded_one(
+        self, tmp_path: Path
+    ) -> None:
+        """Both entrypoints declared on the same obligation: only the
+        genuinely unguarded one produces a finding."""
+        self._write_module(tmp_path)
+        edge = Edge(
+            src="writer.py::_sink",
+            kind=EdgeKind.INVARIANT,
+            target="INV-100",
+            origin="writer.py:5",
+            attrs={
+                "guards": "_EXCLUDED_TABLES",
+                "entrypoints": (
+                    "writer.py::_guarded_entry,writer.py::_unguarded_entry"
+                ),
+            },
+        )
+        snapshot = _snapshot(tmp_path, (edge,))
+        violations = inv011_violations(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].file == "writer.py"
+        assert "_unguarded_entry" in violations[0].message
+
+    # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_misnamed_constant_is_not_recognized  # noqa: E501
+    def test_misnamed_constant_is_not_recognized(self, tmp_path: Path) -> None:
+        """`guards=` naming must match `*_FORBIDDEN`/`*_EXCLUDED`/
+        `*_ALLOWED` -- a differently-named attr value is simply not an
+        INV011 obligation, not a malformed one."""
+        self._write_module(tmp_path)
+        edge = Edge(
+            src="writer.py::_sink",
+            kind=EdgeKind.INVARIANT,
+            target="INV-100",
+            origin="writer.py:5",
+            attrs={
+                "guards": "_TABLE_DENYLIST",
+                "entrypoints": "writer.py::_unguarded_entry",
+            },
+        )
+        snapshot = _snapshot(tmp_path, (edge,))
+        assert inv011_violations(tmp_path, snapshot) == ()
+
+    # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_no_guards_attr_is_unaffected  # noqa: E501
+    def test_no_guards_attr_is_unaffected(self, tmp_path: Path) -> None:
+        self._write_module(tmp_path)
+        edge = Edge(
+            src="writer.py::_sink",
+            kind=EdgeKind.INVARIANT,
+            target="INV-001",
+            origin="writer.py:5",
+            attrs={},
+        )
+        snapshot = _snapshot(tmp_path, (edge,))
+        assert inv011_violations(tmp_path, snapshot) == ()
