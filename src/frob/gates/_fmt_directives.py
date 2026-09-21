@@ -248,9 +248,6 @@ def _find_nearest_config(
         root_resolved = root.resolve()
     except OSError:
         return None
-    # frob:waive PERF003 reason="a directory-ancestor walk (bounded by filesystem \
-    # depth) over a fixed, short filenames tuple (<=6 entries) per level -- not a \
-    # scale-sensitive cross join over two growing-with-input collections"
     while True:
         for name in filenames:
             candidate = current / name

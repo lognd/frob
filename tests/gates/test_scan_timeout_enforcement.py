@@ -405,10 +405,6 @@ class TestFindScanTimeoutViolations:
         target.write_text(textwrap.dedent(content), encoding="utf-8")
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_fire_on_unmarked_whole_repo_scan_call  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_fire_on_unmarked_whole_repo_scan_call(self, tmp_path: Path) -> None:
         """MUST-FIRE: a test that calls `build_graph` with no timeout
         override is flagged."""
@@ -429,10 +425,6 @@ class TestFindScanTimeoutViolations:
         assert [v.qualname for v in violations] == ["test_scans_everything"]
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_stay_quiet_on_synthetic_tmp_path_target  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_stay_quiet_on_synthetic_tmp_path_target(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: `build_graph` called against a `tmp_path`
         fixture (no module-level `__file__`-derived assignment to resolve
@@ -452,10 +444,6 @@ class TestFindScanTimeoutViolations:
         assert find_scan_timeout_violations(tmp_path / "tests") == ()
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_stay_quiet_on_run_call_with_explicit_path_argument  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_stay_quiet_on_run_call_with_explicit_path_argument(
         self, tmp_path: Path
     ) -> None:
@@ -478,10 +466,6 @@ class TestFindScanTimeoutViolations:
         assert find_scan_timeout_violations(tmp_path / "tests") == ()
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_stay_quiet_on_ordinary_fast_test  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_stay_quiet_on_ordinary_fast_test(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: an ordinary test with no whole-repo-scan call
         is never flagged."""
@@ -496,10 +480,6 @@ class TestFindScanTimeoutViolations:
         assert find_scan_timeout_violations(tmp_path / "tests") == ()
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_stay_quiet_when_method_level_override_present  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_stay_quiet_when_method_level_override_present(
         self, tmp_path: Path
     ) -> None:
@@ -523,10 +503,6 @@ class TestFindScanTimeoutViolations:
         assert find_scan_timeout_violations(tmp_path / "tests") == ()
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_stay_quiet_when_class_level_pytestmark_present  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_stay_quiet_when_class_level_pytestmark_present(
         self, tmp_path: Path
     ) -> None:
@@ -552,10 +528,6 @@ class TestFindScanTimeoutViolations:
         assert find_scan_timeout_violations(tmp_path / "tests") == ()
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations.test_must_stay_quiet_on_synthetic_repo_fixture_test  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_must_stay_quiet_on_synthetic_repo_fixture_test(
         self, tmp_path: Path
     ) -> None:
@@ -586,10 +558,6 @@ class TestRepoIsScanTimeoutClean:
     tests and closing the class, per the ticket."""
 
     # frob:tests tests/gates/test_scan_timeout_enforcement.py::TestRepoIsScanTimeoutClean.test_no_unmarked_whole_repo_scan_tests_in_repo  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     def test_no_unmarked_whole_repo_scan_tests_in_repo(self) -> None:
         """Zero `ScanTimeoutViolation`s over this repo's real `tests/`
         tree -- fails loudly, naming file/line/qualname, the moment a new

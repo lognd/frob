@@ -22,9 +22,9 @@ naming no rule id and no glob behaves exactly as it did before)."""
 # held 'tests/**' in-progress, a real disclosed concurrent lease named in T-1399's own \
 # dispatch brief), so `frob ticket scope T-1399 --add` refused with \
 # ScopeLeaseConflict. T-1399 is done; the historical scope binding this waiver \
-# explains is fixed by git history and will never change -- there is no pending lease \
-# and nothing left to do, only an immutable record of why this file's scope citation \
-# looks the way it does. The file is committed under T-1399's own commits and is real, \
+# explains is fixed by git history and will never change -- no lease remains open and \
+# nothing left to do, only an immutable record of why this file's scope citation looks \
+# the way it does. The file is committed under T-1399's own commits and is real, \
 # evidence-bound test content, not an unaccounted-for touch (reviewed 2026-08-03, \
 # drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a scope/lease-dependent \
 # rule, not a stale finding a full unscoped run can prove dead)"

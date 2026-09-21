@@ -213,10 +213,6 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
 # frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_first_ack_records_none_old_digest  # noqa: E501
 # frob:ticket T-1317
 # frob:ticket T-0972
-# frob:waive OPAQUE001 reason="T-1038: facet ranges only over _facets_for_ref's own \
-# closed 'sig'/'body' vocabulary (a Digests model with exactly those two fields) -- \
-# not attacker- or externally-controlled input; a deliberate generic accessor over a \
-# fixed two-facet shape"
 def acknowledge(
     lock: LockFile,
     snapshot: GraphSnapshot,
@@ -270,11 +266,6 @@ def acknowledge(
 
 
 # frob:ticket T-1317
-# frob:waive PERF004 reason="_facets_for_ref(ref, snapshot) is this loop's own per-ref distinct set, not a shared re-sort"  # noqa: E501
-# frob:waive COV005 reason="T-1317: the ARCH001 line-count split moved this OPAQUE001 \
-# waiver from acknowledge (public) onto _ack_one_ref (private) DELIBERATELY -- the \
-# getattr call it covers moved with it verbatim, not a silent extraction-above-a-def \
-# displacement COV005 is designed to catch"
 # frob:waive OPAQUE001 reason="T-1038/T-1317: facet ranges only over _facets_for_ref's \
 # own closed 'sig'/'body' vocabulary (a Digests model with exactly those two fields) \
 # -- not attacker- or externally-controlled input; a deliberate generic accessor over \

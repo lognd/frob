@@ -174,8 +174,8 @@ def _perf_examined_sites(root: Path) -> frozenset[str]:
 
 # frob:ticket T-1943
 # frob:waive WIRE001 reason="STRATA reporter, same substrate-only posture as its three \
-# siblings in this module -- no production caller wired here, deliberately, until \
-# T-2011 (open) does the wiring the way T-1942 already did for archgate" \
+# siblings in this module -- no production caller wired here, deliberately: T-2011 \
+# (open) tracks doing the wiring the way T-1942 already did for archgate" \
 # follow_up="T-3504"
 def _strata_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's STRATA-family

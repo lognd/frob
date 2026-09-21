@@ -42,7 +42,6 @@ class TestPkg001DeclaredLongDescription:
     def test_relative_markdown_image_in_declared_readme_fires_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_relative_markdown_image_in_declared_readme_fires_error  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)
@@ -57,7 +56,6 @@ class TestPkg001DeclaredLongDescription:
     def test_relative_html_img_src_in_declared_readme_fires_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_relative_html_img_src_in_declared_readme_fires_error  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)
@@ -76,7 +74,6 @@ class TestPkg001DeclaredLongDescription:
     # test_image_inside_code_span_does_not_fire -- distinct MUST-STAY-QUIET fixtures \
     # sharing one arrange/act/assert shape, T-4219"
     def test_absolute_image_source_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_absolute_image_source_does_not_fire  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)
@@ -90,7 +87,6 @@ class TestPkg001DeclaredLongDescription:
     def test_relative_link_target_in_declared_readme_does_not_fire(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_relative_link_target_in_declared_readme_does_not_fire  # noqa: E501
         """MUST-STAY-QUIET (T-4219): a relative LINK target -- not an
         embedded resource -- in the declared long description reports
@@ -106,7 +102,6 @@ class TestPkg001DeclaredLongDescription:
         assert violations == ()
 
     def test_image_inside_code_span_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_image_inside_code_span_does_not_fire  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)
@@ -125,7 +120,6 @@ class TestPkg002NonDeclaredMarkdown:
     def test_relative_image_in_other_markdown_warns_not_errors(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown.test_relative_image_in_other_markdown_warns_not_errors  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)
@@ -143,7 +137,6 @@ class TestPkg002NonDeclaredMarkdown:
     def test_declared_readme_is_not_double_reported_as_pkg002(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown.test_declared_readme_is_not_double_reported_as_pkg002  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)
@@ -161,7 +154,6 @@ class TestPkg003NoDeclaredLongDescription:
     def test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription.test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root, readme=None)
@@ -174,7 +166,6 @@ class TestPkg003NoDeclaredLongDescription:
         assert "PKG001" not in _rules(violations)
 
     def test_missing_pyproject_reports_unresolved(self, tmp_path: Path) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription.test_missing_pyproject_reports_unresolved  # noqa: E501
         root = tmp_path / "repo"
         root.mkdir()
@@ -190,7 +181,6 @@ class TestPkg001RemedyMessage:
     def test_remedy_derives_raw_url_from_declared_repository(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001RemedyMessage.test_remedy_derives_raw_url_from_declared_repository  # noqa: E501
         root = tmp_path / "repo"
         _write(
@@ -211,7 +201,6 @@ class TestPkg001RemedyMessage:
     def test_remedy_states_shape_only_with_no_declared_repository(
         self, tmp_path: Path
     ) -> None:
-        # frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
         # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001RemedyMessage.test_remedy_states_shape_only_with_no_declared_repository  # noqa: E501
         root = tmp_path / "repo"
         _write_pyproject(root)

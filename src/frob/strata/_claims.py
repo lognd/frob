@@ -57,8 +57,6 @@ _GROWTH_HORIZON_MONTHS = 24
 # (the demoted case). T-1062: leaked Unknown traces to node.attrs/node.id attribute \
 # access on an untyped `node` param (no static type to bound); the one real raise path \
 # (float() on a malformed skew value) is caught below"
-# frob:waive EXHAUST002 reason="T-1062: same untyped-attribute-access resolver \
-# artifact as EXHAUST001 above"
 def _node_skew(node) -> float | None:
     """A node's zipf skew exponent: its `skew=<alpha>` attr, or None."""
     # frob:doc docs/strata/kernel.md#capacity-semantics
@@ -94,8 +92,6 @@ def _zipf_hottest_share(alpha: float, shards: int) -> float:
 # (the demoted case). T-1062: leaked Unknown traces to flow.attrs attribute access on \
 # an untyped `flow` param (no static type to bound); the one real raise path (float() \
 # on a malformed growth value) is caught below"
-# frob:waive EXHAUST002 reason="T-1062: same untyped-attribute-access resolver \
-# artifact as EXHAUST001 above"
 def _flow_growth(flow) -> float | None:
     """A flow's declared monthly growth percent: its `growth=<pct>` attr, or None."""
     # frob:doc docs/strata/kernel.md#capacity-semantics

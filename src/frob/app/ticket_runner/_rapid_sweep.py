@@ -3510,10 +3510,6 @@ def _maybe_drop_resolved_ticket(
     # never droppable to begin with.
     if not _is_transition_legal(ticket.state, TicketState.DROPPED):
         return None
-    # frob:waive PERF004 reason="this function itself runs once per candidate ticket \
-    # from _close_resolved_sweep_tickets' loop, but `identities` is a DIFFERENT set \
-    # per ticket (this ticket's own recorded findings) -- there is nothing to hoist, \
-    # the sort is not loop-invariant"
     reason = (
         "T-1983: auto-dropped by the deferred post-land sweep -- every "
         f"(rule, file) identity this ticket named "
@@ -3843,16 +3839,8 @@ def _resolve_regression_attribution(
 # frob:ticket T-2929
 # frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 # frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 def _refuse_filing_for_stale_verification_queue(
     root: Path,
     final_id: str,
@@ -4534,16 +4522,8 @@ def _persist_baseline(
 # frob:ticket T-2929
 # frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 # frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 # frob:ticket T-2938
 # frob:ticket T-4335
 # frob:tests \

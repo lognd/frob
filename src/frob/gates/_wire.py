@@ -117,9 +117,6 @@ def _hunks_by_file(diff: Diff) -> dict[str, list[tuple[int, int]]]:
 # Path.read_text/str.splitlines and dict.setdefault, plain pathlib/str/dict operations \
 # the resolver cannot statically bound; the one real raise path (a deleted/unreadable \
 # file) is caught below"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# every dict access below is dict.setdefault (never raises KeyError by construction), \
-# not a bare subscript; a false positive from the gate's syntactic scan"
 def _added_lines(
     root: Path, hunks_by_file: dict[str, list[tuple[int, int]]]
 ) -> dict[str, list[tuple[int, str]]]:
@@ -512,14 +509,6 @@ def _wire_reach_patterns(
     return call_pattern, wrapper_pattern, member_access_pattern, property_access_pattern
 
 
-# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to re.compile/ \
-# Path.read_text/str.splitlines, stdlib/pathlib calls the resolver cannot statically \
-# bound; a malformed short-name cannot reach re.compile since it is always \
-# re.escape()'d first, and file-read failure is caught below"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# snapshot.file_hashes iteration and enumerate(lines, 1) are plain iteration, not \
-# dict/list subscripting that can raise KeyError; a false positive from the gate's \
-# syntactic scan"
 # frob:ticket T-1558
 # frob:ticket T-1746
 def _wire_test_path_excluded(candidate_path: str, record_path: str) -> bool:
@@ -1163,9 +1152,6 @@ def _keyword_arg_pattern(name: str) -> re.Pattern[str]:
 # (a module-local cached-regex helper the resolver cannot see through) and \
 # Path.read_text/str.splitlines; the one real raise path (a deleted/ unreadable file) \
 # is caught below"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# _keyword_arg_pattern's own dict.get lookup on the module-level cache is never a bare \
-# subscript; no KeyError-raising call is reachable from this function's own source"
 def _keyword_passed_outside_def(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int], name: str
 ) -> bool:
@@ -1198,9 +1184,6 @@ def _keyword_passed_outside_def(
 # module-local helpers the resolver cannot see through, and run_argv, a cross-module \
 # Result-returning wrapper it likewise cannot see through; the one real raise path \
 # (Path.read_text on a deleted/unreadable file) is caught above"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# every operation below is a frozenset/set difference or plain iteration, not a bare \
-# subscript that can raise KeyError; a false positive from the gate's syntactic scan"
 def _wire001_new_kwonly_param_violations(
     root: Path,
     diff: Diff,

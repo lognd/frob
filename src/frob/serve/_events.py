@@ -130,10 +130,10 @@ class _EventBus:
 # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_matching_event kind="unit"  # noqa: E501
 # frob:waive ARCH103 reason="T-1096: connect, send one subscribe request, read frames \
-# until a match or timeout -- the entire, inherently sequential job of this client \
-# helper; splitting connect/send/read-loop into separate functions would not reduce \
-# real complexity, only relocate it behind an extra call boundary for a single caller, \
-# mirroring _socketd.send_request's existing ARCH103 waiver for the same shape"
+# in a loop up to a match or timeout -- the entire, inherently sequential job of this \
+# client helper; splitting connect/send/read-loop into separate functions would not \
+# reduce real complexity, only relocate it behind an extra call boundary for a single \
+# caller, mirroring _socketd.send_request's existing ARCH103 waiver for the same shape"
 # frob:waive ARCH001 reason="T-1096: 65 lines against a 60-line threshold, same \
 # single-caller connect/write/read-loop/error-mapping body the ARCH103 waiver above \
 # already justifies as one cohesive unit -- splitting the read-loop or the \

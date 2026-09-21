@@ -57,9 +57,6 @@ def _ruff_json_diagnostic(item: dict) -> Diagnostic:
 # frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestRuffAbsentToolIsUnmeasured.test_spawn_failure_is_unmeasured_not_error  # noqa: E501
 # frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestRuffEmptyOutputWithoutStderrEvidenceStaysAnError.test_no_stderr_argument_is_still_an_error  # noqa: E501
 # frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestRuffPresentButBrokenStaysAnError.test_truncated_json_is_still_malformed_even_with_stderr_set  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directives naming long test node \
-# ids -- already at frob fmt's own canonical form, same unwrappable shape as \
-# src/frob/app/pyfmt_runner.py's existing FMT001 waiver"
 # frob:waive AFFECT001 reason="T-4308 adds one new branch (empty-stdout detection) \
 # ahead of the existing malformed-JSON path -- docs/modules/process.md's own text \
 # already documents this function only at the 'unparsable output is loud' level of \
@@ -159,9 +156,6 @@ def parse_ruff_text(stdout: str, exit_code: int = 0) -> ToolResult:
 # frob:ticket T-4358
 # frob:doc docs/modules/process.md#public-api
 # frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestRuffAbsentToolIsUnmeasured.test_autodetect_wrapper_forwards_stderr  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form, same unwrappable shape as \
-# src/frob/app/pyfmt_runner.py's existing FMT001 waiver"
 # frob:waive AFFECT001 reason="T-4358 adds one new forwarded parameter (stderr) to an \
 # already-`# frob:doc`-anchored function whose contract is otherwise unchanged; see \
 # parse_ruff_json's own identical waiver for the shared closure-scope rationale"

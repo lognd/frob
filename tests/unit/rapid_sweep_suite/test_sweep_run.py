@@ -166,10 +166,6 @@ class TestDeferredSweepRun:
         records the refusal as a distinct, durable debt kind instead."""
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
-        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
-        # test node id -- already at frob fmt's own canonical form (verified: `frob \
-        # fmt` reports it unchanged), same unwrappable shape as \
-        # src/frob/app/_json_guard.py's existing FMT001 waivers"
         _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "old")
         fresh = frozenset({("COV003", "a.py"), ("DOC006", "tickets/T-0002/ticket.md")})
         monkeypatch.setattr(
@@ -226,10 +222,6 @@ class TestDeferredSweepRun:
         rebaseline`. See T-2929 for the design rationale."""
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
-        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
-        # test node id -- already at frob fmt's own canonical form (verified: `frob \
-        # fmt` reports it unchanged), same unwrappable shape as \
-        # src/frob/app/_json_guard.py's existing FMT001 waivers"
         _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "old")
         fresh = frozenset({("COV003", "a.py"), ("DOC011", "b.md")})
         monkeypatch.setattr(

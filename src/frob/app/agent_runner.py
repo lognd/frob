@@ -194,9 +194,6 @@ def _run_env(path: str) -> None:
             # frob:waive SEC110 reason="PYTHONPATH is a path-list env var, never a \
             # secret -- same posture as _worktree_guard.py's own FROB_WORKTREE_ENV \
             # reads"
-            # frob:waive SELFAUDIT001 reason="same PYTHONPATH env.read the SEC110 \
-            # waiver above already covers -- a path-list env var, not a capability \
-            # requiring SYS100 design-graph declaration"
             inherited = os.environ.get("PYTHONPATH", "")
             pythonpath = (
                 f"{worktree_src}:{inherited}" if inherited else str(worktree_src)

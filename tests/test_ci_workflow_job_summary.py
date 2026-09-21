@@ -27,11 +27,6 @@ def _load_ci_workflow() -> dict:
     """Parse .github/workflows/ci.yml (frob:tests target) into a dict."""
     text = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
-        # frob:waive SELFAUDIT001 reason="test-fixture read of this repo's own tracked \
-        # workflow file, same posture as every sibling test_ci_workflow_*.py's \
-        # identical read_text call in this file's own docstring-cited precedent \
-        # (tests/test_ci_workflow_matrix.py, tests/test_ci_workflow_timeout.py) -- \
-        # reads its own source tree, not an external/untracked path"
     ).read_text(encoding="utf-8")
     return yaml.safe_load(text)
 
@@ -186,9 +181,6 @@ class TestJobSummaryDocumented:
 
     # frob:tests docs/commands/check.md
     def test_check_docs_mention_the_job_summary(self) -> None:
-        # frob:waive SELFAUDIT001 reason="test-fixture read of this repo's own tracked \
-        # docs file, same posture as the _load_ci_workflow read_text call above in \
-        # this same file"
         text = (
             Path(__file__).resolve().parents[1] / "docs" / "commands" / "check.md"
         ).read_text(encoding="utf-8")

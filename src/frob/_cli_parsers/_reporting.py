@@ -30,10 +30,6 @@ def _add_gitlog_range_args(gitlog_p) -> None:
 
 
 # frob:ticket T-0030
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_gitlog_parser(sub) -> None:
     """Register the `frob gitlog` subcommand and its arguments."""
     # -- gitlog ---------------------------------------------------------------
@@ -73,10 +69,6 @@ def _populate_gitlog_args(gitlog_p) -> None:
 
 
 # frob:ticket T-0030
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_graph_parser(sub) -> None:
     """Register the `frob graph` subcommand and its arguments."""
     # -- graph -----------------------------------------------------------------
@@ -123,10 +115,6 @@ def _populate_graph_actions(graph_sub) -> None:
 
 
 # frob:ticket T-0030
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_ack_parser(sub) -> None:
     """Register the `frob ack` subcommand and its arguments.
 
@@ -168,10 +156,6 @@ def _add_ack_parser(sub) -> None:
 
 
 # frob:ticket T-0412
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_debt_parser(sub) -> None:
     """Register the `frob debt` subcommand: list outstanding `frob:debt` entries."""
     debt_p = sub.add_parser(
@@ -190,10 +174,6 @@ def _populate_debt_args(debt_p) -> None:
 
 
 # frob:ticket T-0638
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_deprecated_parser(sub) -> None:
     """Register the `frob deprecated` subcommand: list outstanding
     `frob:deprecated` entries (since/sunset/ticket/status)."""
@@ -217,10 +197,6 @@ def _populate_deprecated_args(deprecated_p) -> None:
 
 
 # frob:ticket T-0569
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_pool_parser(sub) -> None:
     """Register the `frob pool snapshot|clear` subcommand: ratchet-pool
     baseline management over `frob.gates._ratchet` (T-0569)."""
@@ -262,10 +238,6 @@ def _add_pool_parser(sub) -> None:
 
 
 # frob:ticket T-1584
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_profile_parser(sub) -> None:
     """Register the `frob profile` subcommand and its `show`/`downgrade`
     actions (T-1584) -- the CLI surface `frob.tickets._profile.
@@ -311,10 +283,6 @@ def _populate_profile_actions(profile_sub) -> None:
 
 # frob:ticket T-0407
 # frob:ticket T-0429
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_registry_parser(sub) -> None:
     """Register the `frob registry` subcommand and its `audit`/`add` actions."""
     registry_p = sub.add_parser(
@@ -363,10 +331,6 @@ def _populate_registry_actions(registry_sub) -> None:
     registry_add_p.add_argument("--path", dest="registry_path", metavar="DIR")
 
 
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_fleet_parser(sub) -> None:
     """Register the `frob fleet` subcommand and its `status`/`route` actions
     (T-0573, docs/modules/fleet.md)."""

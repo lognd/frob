@@ -1800,31 +1800,15 @@ def _harden_loadscope_scheduler() -> None:
 # frob:tests \
 # tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
 # essionfinish_labels_did_not_complete_runs
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 # frob:tests \
 # tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
 # essionfinish_marks_failing_set_incomplete_on_abort
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 # frob:tests \
 # tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
 # essionfinish_names_internalerror_cause
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 # frob:tests \
 # tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
 # essionfinish_completed_run_format_is_unchanged
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
-# waivers"
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Print an always-visible `SUITE-RESULT:` line at the end of every run
     (T-1596), independent of pytest's own verbosity-gated terminal summary,
@@ -2739,9 +2723,6 @@ def _v2_ticket_file_hunk(ticket_id: str) -> Hunk:
     return Hunk(file=f"tickets/{ticket_id}/ticket.md", span=(1, 1))
 
 
-# frob:waive DEAD001 reason="loaded dynamically via importlib.import_module by \
-# doc012_gate's shared _load_parser_factory (dotted-path config value), never a direct \
-# call-graph caller"
 _DOC012_FAKE_CONFIG = (
     '[[docblocks.commands]]\nprog = "acme"\n'
     'parser = "tests.conftest:_doc012_fake_parser_factory"\n'

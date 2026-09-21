@@ -202,8 +202,6 @@ def _docenum001_resync_edge(
     lines = file_lines[file]
     if not (1 <= line <= len(lines)):
         return None
-    # frob:waive PERF004 reason="actual is this edge's own target's member set, \
-    # different every iteration -- nothing to hoist across edges"
     new_members = ",".join(sorted(actual))
     new_line, n = re.subn(
         r'members="[^"]*"', f'members="{new_members}"', lines[line - 1], count=1
@@ -361,10 +359,6 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to marker_for, a \
 # cross-module helper the resolver cannot see through; the one real raise path (file \
 # read) is caught below"
-# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
-# unconditional _SUBSCRIPT_RAISE default for lines[-1], a list index guarded by an \
-# immediately-preceding 'if lines and ...' emptiness check, so the index is always \
-# valid by construction; the resolver's syntactic bracket scan cannot see the guard"
 def _insert_ticket_directive_above(
     root: Path, rel_file: str, line: int, ticket_id: str
 ) -> bool:

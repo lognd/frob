@@ -210,10 +210,6 @@ class TestOtherLanguageCollectedIds:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/app/ticket_runner/_verify.py::_other_language_collected_ids  # noqa: E501
-        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
-        # symref -- already at frob fmt's own canonical form (verified: `frob format \
-        # --directives` reports it unchanged), same unwrappable shape as this repo's \
-        # other pre-existing long frob:tests lines"
         import frob.testing as _testing_mod
 
         monkeypatch.setitem(
@@ -240,10 +236,6 @@ class TestOtherLanguageCollectedIds:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/app/ticket_runner/_verify.py::_other_language_collected_ids  # noqa: E501
-        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
-        # symref -- already at frob fmt's own canonical form (verified: `frob format \
-        # --directives` reports it unchanged), same unwrappable shape as this repo's \
-        # other pre-existing long frob:tests lines"
         import frob.testing as _testing_mod
 
         def _boom(root):  # noqa: ANN001, ANN202
@@ -265,10 +257,6 @@ class TestOtherLanguageCollectedIds:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/app/ticket_runner/_verify.py::_other_language_collected_ids  # noqa: E501
-        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
-        # symref -- already at frob fmt's own canonical form (verified: `frob format \
-        # --directives` reports it unchanged), same unwrappable shape as this repo's \
-        # other pre-existing long frob:tests lines"
         import frob.testing as _testing_mod
 
         monkeypatch.setitem(
@@ -290,20 +278,8 @@ class TestOtherLanguageCollectedIds:
 
 # frob:ticket T-3937
 # frob:tests tests/unit/test_verify_language_buckets.py::TestBindingResolvesRealNonPythonRustCollectors.test_must_fire_real_vitest_node_id_binds_via_apply_evidence  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
-# frob:tests lines"
 # frob:tests tests/unit/test_verify_language_buckets.py::TestBindingResolvesRealNonPythonRustCollectors.test_must_stay_quiet_nonexistent_ts_id_is_still_rejected  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
-# frob:tests lines"
 # frob:tests tests/unit/test_verify_language_buckets.py::TestBindingResolvesRealNonPythonRustCollectors.test_real_cpp_node_id_binds_via_apply_evidence  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
-# frob:tests lines"
 class TestBindingResolvesRealNonPythonRustCollectors:
     """T-3937 (F-172): `_other_language_collected_ids` (T-3925) fixed the
     BINDING path in code, but every existing test for it (see

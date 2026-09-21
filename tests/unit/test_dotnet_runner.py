@@ -139,10 +139,6 @@ class TestRunDotnetTests:
         bin_dir = tmp_path / "bin"
         bin_dir.mkdir()
         _write_fake_dotnet(bin_dir, "sample_results.trx")
-        # frob:waive SELFAUDIT001 reason="test-fixture PATH prepend to route a fake \
-        # dotnet binary into run_dotnet_tests -- restored automatically by pytest's \
-        # monkeypatch fixture teardown, same posture as every other \
-        # fake-binary-on-PATH test in this suite" permanent="true"
         monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
 
         result = run_dotnet_tests((_NODE_A, _NODE_B), tmp_path)
@@ -164,10 +160,6 @@ class TestRunDotnetTests:
         bin_dir = tmp_path / "bin"
         bin_dir.mkdir()
         _write_crashing_dotnet(bin_dir)
-        # frob:waive SELFAUDIT001 reason="test-fixture PATH prepend to route a fake \
-        # dotnet binary into run_dotnet_tests -- restored automatically by pytest's \
-        # monkeypatch fixture teardown, same posture as every other \
-        # fake-binary-on-PATH test in this suite" permanent="true"
         monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
 
         result = run_dotnet_tests((_NODE_A,), tmp_path)
@@ -182,10 +174,6 @@ class TestRunDotnetTests:
         bin_dir = tmp_path / "bin"
         bin_dir.mkdir()
         _write_fake_dotnet(bin_dir, "sample_results.trx")
-        # frob:waive SELFAUDIT001 reason="test-fixture PATH prepend to route a fake \
-        # dotnet binary into run_dotnet_tests -- restored automatically by pytest's \
-        # monkeypatch fixture teardown, same posture as every other \
-        # fake-binary-on-PATH test in this suite" permanent="true"
         monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
 
         unknown_node = "tests/SampleNunitTests.cs::Frob.Fixtures.Csharp.SampleNunitTests::NoSuchMethod"

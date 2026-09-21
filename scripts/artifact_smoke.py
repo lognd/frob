@@ -77,13 +77,6 @@ def _run(
 
 
 # frob:ticket T-3935
-# frob:waive COV001 reason="same doc-anchor scope-closure tension \
-# SCANNED_BASES/RETIRED_RULE_IDS (src/frob/gates/_rule_id_scan.py, T-1010/T-1937) \
-# already carry -- a frob:doc anchor here would live in docs/guides/release.md, whose \
-# own SCOPE002 closure (every OTHER symbol that shared doc describes across the repo, \
-# including scripts/verify_release_ci_status.py and src/frob/doctor.py) is out of \
-# proportion to pull into T-3935's narrow scope for one preflight helper; this \
-# module's own docstring is the authoritative description, see T-3935's Done report"
 _REQUIRED_CORE_WHEEL_GLOBS = {
     "frob-core": "frob_core-*.whl",
     "frob-strata": "frob_strata-*.whl",
@@ -143,8 +136,6 @@ def _wheel_matches_host_platform(wheel_path: Path) -> bool:
 
 
 # frob:ticket T-3935
-# frob:waive COV001 reason="same doc-anchor scope-closure tension as \
-# _REQUIRED_CORE_WHEEL_GLOBS above -- see that waiver's reason"
 # frob:tests \
 # tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absent_names_both  # noqa: E501
 # frob:tests \
@@ -211,13 +202,6 @@ def _read_core_pins(wheel_path: Path) -> dict[str, str]:
 
 # frob:ticket T-3935
 # frob:ticket T-4465
-# frob:waive COV001 reason="same doc-anchor scope-closure tension \
-# SCANNED_BASES/RETIRED_RULE_IDS (src/frob/gates/_rule_id_scan.py, T-1010/T-1937) \
-# already carry -- a frob:doc anchor here would live in docs/guides/release.md, whose \
-# own SCOPE002 closure (every OTHER symbol that shared doc describes across the repo, \
-# including scripts/verify_release_ci_status.py and src/frob/doctor.py) is out of \
-# proportion to pull into T-3935's narrow scope for one preflight helper; this \
-# module's own docstring is the authoritative description, see T-3935's Done report"
 # frob:tests \
 # tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absent_names_both  # noqa: E501
 # frob:tests \
@@ -285,13 +269,6 @@ def _classify_core_wheels(
 
 # frob:ticket T-3935
 # frob:ticket T-4465
-# frob:waive COV001 reason="same doc-anchor scope-closure tension \
-# SCANNED_BASES/RETIRED_RULE_IDS (src/frob/gates/_rule_id_scan.py, T-1010/T-1937) \
-# already carry -- a frob:doc anchor here would live in docs/guides/release.md, whose \
-# own SCOPE002 closure (every OTHER symbol that shared doc describes across the repo, \
-# including scripts/verify_release_ci_status.py and src/frob/doctor.py) is out of \
-# proportion to pull into T-3935's narrow scope for one preflight helper; this \
-# module's own docstring is the authoritative description, see T-3935's Done report"
 # frob:tests \
 # tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_both_cores_absent_names_both  # noqa: E501
 # frob:tests \
@@ -611,11 +588,6 @@ def _run_checks(checks: list[tuple[str, Callable[[Path], None]]]) -> int:
                 print(f"FAIL {name}: timed out ({exc})", file=sys.stderr)
                 failures += 1
             else:
-                # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, same \
-                # as scripts/branch_stranded_work_analysis.py's / \
-                # scripts/verify_release_ci_status.py's own identical bare-print \
-                # waivers -- this runs as a release.yml step, not through frob's own \
-                # gate-rendered output surface"
                 print(f"PASS {name}")
             finally:
                 shutil.rmtree(work_dir, ignore_errors=True)
@@ -680,10 +652,6 @@ def main(argv: list[str] | None = None) -> int:
         msg = f"artifact-smoke: {failures} of {len(checks)} check(s) FAILED"
         print(msg, file=sys.stderr)
         return 1
-    # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, same as \
-    # scripts/branch_stranded_work_analysis.py's/scripts/verify_release_ci_status.py's \
-    # own identical bare-print waivers -- this runs as a release.yml step, not through \
-    # frob's own gate-rendered output surface"
     print(f"artifact-smoke: all {len(checks)} check(s) passed")
     return 0
 

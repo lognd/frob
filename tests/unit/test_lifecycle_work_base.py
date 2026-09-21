@@ -31,12 +31,6 @@ from frob.tickets._store import atomic_write, ledger_path
 from frob.tickets._worktree_sweep import _branch_ahead_of_main_count
 
 
-# frob:waive SELFAUDIT001 reason="exec via subprocess.run -- same real-git-subprocess \
-# fixture shape every sibling test module in this family already declares (via \
-# design/frob.strata's testsuite node exec may-grant); not added there directly \
-# because design/frob.strata was T-draft-725f3c4c-leased for this ticket's whole work \
-# window, same precedent as src/frob/gates/_narrative_blocks.py's T-2989/T-3020 \
-# waiver" follow_up="T-4489"
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
     """Run a git plumbing command for this module's fixtures, raising on
     any non-zero exit -- same real-subprocess idiom every sibling test
@@ -107,11 +101,6 @@ def repo_on_dev(tmp_path: Path) -> Path:
     _git_init(main_repo, branch="main")
     atomic_write(ledger_path(main_repo), "# Tickets\n\n")
     (main_repo / "src").mkdir()
-    # frob:waive SELFAUDIT001 reason="fs.write -- real fixture-repo file setup, same \
-    # shape every sibling test module in this family already declares; not added to \
-    # design/frob.strata directly because it was T-draft-725f3c4c-leased for this \
-    # ticket's whole work window, same precedent as \
-    # src/frob/gates/_narrative_blocks.py's T-2989/T-3020 waiver" follow_up="T-4489"
     (main_repo / "src" / "feature.py").write_text("# landed feature\n")
     (main_repo / ".gitignore").write_text(".claude/\n.frob/\n")
     _commit_all(main_repo, "init")
@@ -164,9 +153,6 @@ class TestWorkBranchesFromRootsCurrentBranch:
         main_repo = tmp_path / "main"
         _git_init(main_repo, branch="main")
         atomic_write(ledger_path(main_repo), "# Tickets\n\n")
-        # frob:waive SELFAUDIT001 reason="fs.write -- see the identical SELFAUDIT001 \
-        # waiver on TestWorkBranchesFromRootsCurrentBranch's fixture setup above, same \
-        # T-draft-725f3c4c design/frob.strata lease conflict" follow_up="T-4489"
         (main_repo / ".gitignore").write_text(".claude/\n.frob/\n")
         _commit_all(main_repo, "init")
 
@@ -202,9 +188,6 @@ class TestWorktreeSweepCountsAgainstResolvedTarget:
         _commit_all(repo_on_dev, "advance dev")
         branch = "feature-branch"
         _run(["git", "checkout", "-q", "-b", branch], repo_on_dev)
-        # frob:waive SELFAUDIT001 reason="fs.write -- see the identical SELFAUDIT001 \
-        # waiver on TestWorkBranchesFromRootsCurrentBranch's fixture setup above, same \
-        # T-draft-725f3c4c design/frob.strata lease conflict" follow_up="T-4489"
         (repo_on_dev / "src" / "extra.py").write_text("# one commit on branch\n")
         _commit_all(repo_on_dev, "one commit on branch")
         _run(["git", "checkout", "-q", "dev"], repo_on_dev)

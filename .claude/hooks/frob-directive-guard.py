@@ -142,13 +142,6 @@ def main() -> None:
     targets = _violating_targets(text)
     if not targets:
         return
-    # frob:waive RENDER001 reason="standalone hook script (module docstring: run via \
-    # python3, never imported), same posture every other hook in this directory takes \
-    # -- it must emit the harness's PreToolUse stdin/stdout JSON contract with no \
-    # guarantee frob.render (or frob itself) is even importable in the invoking shell; \
-    # root-write- guard.py/frob-timeout-guard.py's own identical bare \
-    # print(json.dumps(...)) calls predate RENDER001 at their merge-base so this gate \
-    # never fires for them, but the underlying reason is the same"
     print(
         json.dumps(
             {

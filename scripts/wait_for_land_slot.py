@@ -424,9 +424,6 @@ def _print_tick(reading: int | None, elapsed: float) -> None:
     scripting against this tool's exit code and stdout output never has
     to filter tick noise out)."""
     shown = "UNMEASURED" if reading is None else str(reading)
-    # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, same as this \
-    # module's own main() waiver immediately below -- no frob.render wiring applies \
-    # here"
     print(f"[{elapsed:6.1f}s] LANDS IN FLIGHT={shown}", file=_sys.stderr)
 
 
@@ -464,11 +461,6 @@ def main(argv: list[str] | None = None) -> int:
         poll_interval_s=args.poll_interval,
         on_tick=_print_tick if args.verbose else None,
     )
-    # frob:waive RENDER001 reason="scripts/** is the same standalone-CLI, \
-    # no-frob.render-wiring posture check_summary.py/fleet_status.py/verify_lands.py \
-    # already carry (T-1863) -- this script has no frob import and is invoked directly \
-    # by a human/agent shell or another script's subprocess call, never through the \
-    # installed frob CLI's own Renderer plumbing"
     print(summary)
     return exit_code
 

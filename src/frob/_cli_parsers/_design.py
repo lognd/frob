@@ -41,10 +41,6 @@ from frob._cli_parsers._reporting import (
 
 
 # frob:ticket T-1568
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_design_parser(sub) -> None:
     """Register the `frob design` subcommand group and its five
     subcommands (`sys`, `registry`, `docs`, `graph`, `exports`), each

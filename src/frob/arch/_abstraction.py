@@ -562,10 +562,6 @@ def _abstraction_group_evidence(
     return _near_duplicate_cluster(members_with_body)
 
 
-# frob:waive PII012 reason="'token' here means a normalized body-fingerprint lexical \
-# token (_serialize_py_body's output), not a credential/auth token -- a name-signature \
-# false positive, same class as frob.outline's existing PII012 waiver for its own \
-# unrelated lexical-token vocabulary"
 # frob:ticket T-1195
 # see T-1182 for the history behind this
 _FORWARDER_BODY_TOKEN_LIMIT = 20

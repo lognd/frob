@@ -478,7 +478,6 @@ def _restore_any_stale_journals(root: Path) -> None:
 # call graph (ast NodeVisitor walks the resolver cannot enumerate), already wrapped as \
 # a typani Result and checked via .is_err below; the only locally-visible fallible \
 # step (bytes.decode) is caught above"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _prepare_mutants(
     original_bytes: bytes,
     file: Path,
@@ -502,11 +501,6 @@ def _prepare_mutants(
     return Ok(mutants)
 
 
-# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
-# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
-# (the demoted case). T-1062: leaked Unknown traces to guarded_subprocess_run, a \
-# cross-module Result-returning wrapper the resolver cannot see through; every one of \
-# its documented raise paths is caught in this function's per-mutation try block below"
 def _run_mutants(
     target: Path,
     mutants: tuple[_Mutation, ...],

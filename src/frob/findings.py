@@ -38,10 +38,6 @@ class Severity(StrEnum):
 
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-3086
-# frob:waive TEST001 reason="plain frozen data-shape model with no isolated   behavior \
-# of its own (attrs only, no methods) -- exercised transitively by   every gate that \
-# attaches a waiver to a Violation; moved unchanged from   frob.gates._models by \
-# T-3086, was never isolation-unit-tested there either"
 class WaiverRef(BaseModel):
     """The `frob:waive` edge that suppressed a violation, kept for the report."""
 
@@ -53,10 +49,6 @@ class WaiverRef(BaseModel):
 
 # frob:doc docs/modules/gates.md#debt-gate-t-0412
 # frob:ticket T-3086
-# frob:waive TEST001 reason="plain frozen data-shape model with no isolated   behavior \
-# of its own (attrs only, no methods) -- exercised transitively by   `frob debt`'s own \
-# tests; moved unchanged from frob.gates._models by   T-3086, was never \
-# isolation-unit-tested there either"
 class DebtEntry(BaseModel):
     """One outstanding `frob:debt` entry, as `frob debt` lists it (T-0412):
     the rule it suppresses, where it lives, the ticket that owns it, its
@@ -73,10 +65,6 @@ class DebtEntry(BaseModel):
 
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-3086
-# frob:waive TEST001 reason="plain frozen data-shape model with no isolated   behavior \
-# of its own (attrs only, no methods) -- exercised transitively by   every gate's own \
-# test suite (thousands of call sites construct/assert on   it); moved unchanged from \
-# frob.gates._models by T-3086, was never   isolation-unit-tested there either"
 class Violation(BaseModel):
     """One gate finding: rule, site, and a message that embeds its own remedy."""
 

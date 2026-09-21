@@ -39,10 +39,6 @@ from frob._cli_parsers._misc import (
 
 # frob:ticket T-1567
 # frob:ticket T-4953
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_quality_parser(sub) -> None:
     """Register the `frob quality` subcommand group and its eight
     subcommands (`check`, `test`, `dup`, `arch`, `bind`, `cycle`, `mutate`,

@@ -138,10 +138,6 @@ _TIERBDEMO_MARKER_PREFIX = "# frob:tierbdemo "
 # frob:waive EXHAUST003 reason="T-1262: leaked Unknown traces to \
 # path.relative_to/iter_files, cross-module calls the resolver cannot see through; the \
 # one documented raise path (OSError on read_text/write_text) is caught above"
-# frob:waive EXHAUST002 reason="T-1262: KeyError is the resolver's conservative \
-# over-approximation for plain list/index indexing (new_lines[idx]) inside this \
-# function's own loop -- idx is always a valid enumerate() index into the same list, \
-# never out of range"
 def fix_tierbdemo001_marker_rewrite(
     root: Path, snapshot: GraphSnapshot, queue: TicketQueue
 ) -> list[TierBFix]:

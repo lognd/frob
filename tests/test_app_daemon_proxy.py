@@ -98,8 +98,6 @@ class TestQuery:
         assert result.danger_err is ProxyReason.Disabled
 
     def test_no_daemon_no_socket_falls_back(self, root: Path, monkeypatch) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): query() refuses via "
@@ -751,8 +749,6 @@ class TestProbeDaemon:
 
     def test_missing_socket_is_nosocket(self, tmp_path):
         """Nothing there at all -- the spawn case."""
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): probe_daemon() refuses via "

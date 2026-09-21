@@ -198,10 +198,6 @@ class TestSuiteResultDidNotComplete:
     count (see T-3246)."""
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_labels_did_not_complete_runs  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3246
     def test_sessionfinish_labels_did_not_complete_runs(self) -> None:
         """MUST-FIRE: an ABORTED run (exitstatus=3, INTERNALERROR) produces
@@ -229,10 +225,6 @@ class TestSuiteResultDidNotComplete:
         assert "collected=12491" in line
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_completed_run_format_is_unchanged  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3246
     def test_sessionfinish_completed_run_format_is_unchanged(self) -> None:
         """MUST-STAY-QUIET: a normal completed run (exitstatus=0 or 1)
@@ -250,10 +242,6 @@ class TestSuiteResultDidNotComplete:
         assert reporter.lines == ["SUITE-RESULT: exitstatus=0 collected=50 failed=0"]
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_marks_failing_set_incomplete_on_abort  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3246
     def test_sessionfinish_marks_failing_set_incomplete_on_abort(self) -> None:
         """MUST-FIRE: on an aborted run, whatever `SUITE-RESULT-FAILED:`
@@ -280,10 +268,6 @@ class TestSuiteResultDidNotComplete:
         )
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_completed_run_never_marked_incomplete  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3246
     def test_sessionfinish_completed_run_never_marked_incomplete(self) -> None:
         """MUST-STAY-QUIET: a completed run with real failures never gets
@@ -301,10 +285,6 @@ class TestSuiteResultDidNotComplete:
         assert not any("failing set INCOMPLETE" in line for line in reporter.lines)
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_names_internalerror_cause  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3246
     def test_sessionfinish_names_internalerror_cause(self) -> None:
         """MUST-FIRE: when `pytest_internalerror` fired earlier in the same
@@ -328,10 +308,6 @@ class TestSuiteResultDidNotComplete:
         assert "cause=KeyError: <WorkerController gw6>" in line
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_configure_resets_stale_internal_error  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3246
     def test_sessionfinish_configure_resets_stale_internal_error(self) -> None:
         """MUST-STAY-QUIET: `pytest_configure` resets `_last_internal_error`
@@ -375,10 +351,6 @@ class TestSuiteResultFailureReprDump:
     existing pinned formats above exactly."""
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultFailureReprDump.test_repr_dump_absent_when_env_var_unset  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3793
     def test_repr_dump_absent_when_env_var_unset(self, monkeypatch) -> None:
         """MUST-STAY-QUIET: with `FROB_TEST_DUMP_FAILURE_REPR` unset (the
@@ -401,10 +373,6 @@ class TestSuiteResultFailureReprDump:
         assert "boom traceback" not in "\n".join(reporter.lines)
 
     # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultFailureReprDump.test_repr_dump_present_when_env_var_set  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
-    # existing FMT001 waivers"
     # frob:ticket T-3793
     def test_repr_dump_present_when_env_var_set(self, monkeypatch) -> None:
         """MUST-FIRE: with `FROB_TEST_DUMP_FAILURE_REPR` set, a failing

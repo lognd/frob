@@ -43,10 +43,6 @@ def _mirror_subparser(dest_sub, flat_sub, name: str) -> None:
 
 
 # frob:ticket T-1238
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_explore_parser(sub) -> None:
     """Register the `frob explore` subcommand group and its four
     subcommands (`map`, `outline`, `xref`, `docs-search`), each mirroring
@@ -64,10 +60,6 @@ def _add_explore_parser(sub) -> None:
 
 
 # frob:ticket T-4520
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_docs_search_parser(sub) -> None:
     """Register the flat top-level `frob docs-search` verb (T-4520): the
     standalone twin of `frob explore docs-search` -- it used to be the

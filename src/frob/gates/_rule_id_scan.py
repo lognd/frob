@@ -217,8 +217,6 @@ RETIRED_RULE_IDS: frozenset[str] = frozenset(
 )
 
 
-# frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
-# above -- see T-1010's Done report"
 # frob:tests \
 # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_\
 # id

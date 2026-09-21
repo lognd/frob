@@ -37,16 +37,6 @@ class _StderrRedirectStdout:
 
     # frob:doc docs/modules/app.md#runners
     # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard.test_planted_print_still_reaches_stderr kind="unit"  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as this line's original home in \
-    # check_runner.py before T-2492 promoted it here"
-    # frob:waive SELFAUDIT001 reason="T-2492: this fs.write capability already lived \
-    # at this line in src/frob/app/check_runner.py (declared in design/frob.strata \
-    # gates node's fs.write via-list) before this move; design/frob.strata is out of \
-    # this ticket's declared scope (src/frob/app/*.py only), so the via-list update to \
-    # add src/frob/app/_json_guard.py alongside check_runner.py lands as part of \
-    # T-2495's edit to this same gates node"
     def write(self, s: str) -> int:
         """Redirect the write to the captured real stderr instead of
         stdout -- the one behavior this whole class exists for."""
@@ -54,10 +44,6 @@ class _StderrRedirectStdout:
 
     # frob:doc docs/modules/app.md#runners
     # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard.test_planted_print_still_reaches_stderr kind="unit"  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
-    # reports it unchanged), same unwrappable shape as this line's original home in \
-    # check_runner.py before T-2492 promoted it here"
     def flush(self) -> None:
         """Flush the captured real stderr (the stream writes actually
         landed on), not the stdout this object is standing in for."""

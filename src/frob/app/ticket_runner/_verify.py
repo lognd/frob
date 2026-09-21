@@ -2435,15 +2435,7 @@ def _verify_ids_passing(
 
 # frob:ticket T-3847
 # frob:tests tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud.test_id_matching_no_collector_is_a_named_unmeasured_refusal  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
-# frob:tests lines"
 # frob:tests tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud.test_id_matching_a_registered_non_python_rust_collector_verifies  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
-# frob:tests lines"
 def _verify_unbucketed_ids(
     root: Path,
     node_ids: tuple[str, ...],

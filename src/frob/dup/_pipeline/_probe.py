@@ -194,7 +194,6 @@ def _probe_callables(
 # follow) and _probe_param_strategy's own dict/attribute access on sig.parameters, an \
 # inspect.Signature the caught inspect.signature() call already produced; every other \
 # locally-visible fallible step is Result-checked"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
     """Arbitrary generators for `fn_a`'s parameters, keyed by name.
 

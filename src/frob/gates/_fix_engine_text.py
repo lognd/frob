@@ -200,9 +200,6 @@ def _parse_suppress001_message(message: str) -> tuple[str, str] | None:
 # tokenize.generate_tokens/io.StringIO, stdlib calls the resolver cannot statically \
 # bound past the except (TokenError, IndentationError, SyntaxError, ValueError) below; \
 # every documented raise path tokenize.generate_tokens can produce is already caught"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# tokenize's internal dict-keyed dispatch is conservatively assumed to leak KeyError; \
-# no KeyError-raising call is reachable from this function's own source"
 def _find_comment_start(line: str) -> int | None:
     """The column of the FIRST genuine trailing comment token on `line`
     (a single physical source line, no newline), or `None` if it carries
@@ -385,11 +382,6 @@ def _run_ruff_format(path: Path) -> None:
 # _strip_known_pragma_comments/_render_suppression_line/_code_ignored_for_path, \
 # module-local helpers the resolver cannot see through; the one real raise path \
 # (path.read_text) is caught above"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# _merged_dialect_codes indexes into `dialects` by `reporting`, a dict lookup the \
-# resolver conservatively assumes can raise KeyError; `dialects` is always the full \
-# SuppressionDialect registry passed in by the caller, and `reporting` is always a key \
-# already validated against it upstream"
 def _apply_one_suppress001_fix(
     root: Path,
     rel_file: str,

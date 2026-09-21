@@ -920,10 +920,6 @@ def _parse_file_with_artifact_cache(
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to load_parsed_artifact, \
 # a cross-module sqlite-backed call the resolver cannot see through; the two \
 # documented raise paths (CacheLocked, sqlite3.OperationalError) are caught below"
-# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
-# unconditional _SUBSCRIPT_RAISE default for content_hash[:12], a str SLICE (never \
-# raises KeyError, or any exception, regardless of string length) that the resolver's \
-# syntactic bracket scan cannot distinguish from a dict lookup"
 def _load_cached_artifact_payload(
     conn: sqlite3.Connection, content_hash: str, fingerprint: str
 ) -> str | None:
@@ -960,10 +956,6 @@ def _load_cached_artifact_payload(
 # _parse_file_uncached/store_parsed_artifact/result.danger_ok.model_dump_json, \
 # cross-module calls the resolver cannot see through; the two documented raise paths \
 # (CacheLocked, sqlite3.OperationalError) are caught below"
-# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
-# unconditional _SUBSCRIPT_RAISE default for content_hash[:12], a str SLICE (never \
-# raises KeyError, or any exception, regardless of string length) that the resolver's \
-# syntactic bracket scan cannot distinguish from a dict lookup"
 def _parse_and_populate_artifact_cache(
     path: Path,
     conn: sqlite3.Connection,

@@ -145,13 +145,6 @@ def _home_config_state_hash() -> str:
     cannot be computed must never silently read as "unchanged")."""
     import hashlib
 
-    # frob:waive WALK001 reason="~/.claude is the user's home config dir, not the repo \
-    # tree -- no .git/.venv/node_modules/build/dist/target to prune, and \
-    # frob.excludes' repo-relative exclude globs do not apply outside a project \
-    # checkout (same rationale as the vet/_source.py WALK001 waivers for a \
-    # home-directory cache root); the runtime-state subdirs this function itself needs \
-    # to skip are pruned explicitly below via _HOME_CLAUDE_RUNTIME_STATE_DIRS, not via \
-    # frob.excludes"
     home_claude = Path.home() / ".claude"
     if not home_claude.is_dir():
         return "none"

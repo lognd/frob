@@ -87,12 +87,6 @@ _REPO_WIDE_STAGES: frozenset[str] = frozenset({"arch", "cycle", "dup", "exports"
 
 
 # frob:ticket T-0142
-# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
-# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
-# (the demoted case). T-1062: leaked Unknown traces to parse_ruff_json (a deferred \
-# cross-module import the resolver cannot follow) and _ruff_format_result's own call \
-# graph; every locally-visible fallible step here is the guarded subprocess call, \
-# already caught below"
 # frob:ticket T-2320
 # frob:ticket T-4359
 # frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_check_runs_only_format  # noqa: E501

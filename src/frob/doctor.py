@@ -436,9 +436,6 @@ class VenvShimDrift(BaseModel):
 # Path.resolve/bytes.decode, stdlib pathlib/bytes calls the resolver cannot statically \
 # bound; every locally-visible fallible step (the two entry-level OSError sites, the \
 # shebang-dir resolve) is already caught above"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \
-# the flagged KeyError trace has no locally-visible source; every fallible step here \
-# is already narrowly caught"
 def scan_venv_shims(root: Path) -> tuple[VenvShimDrift, ...]:
     """Every `.venv/bin/*` script under `root` whose `#!` shebang line
     resolves to a python interpreter OUTSIDE `root`'s own `.venv/bin/`
@@ -1030,11 +1027,6 @@ def _unity_hub_default_roots() -> tuple[Path, ...]:
     if system == "Windows":
         # frob:waive SEC110 reason="PROGRAMFILES is a well-known filesystem-location \
         # env var, not a secret"
-        # frob:waive SELFAUDIT001 reason="env.read on this Unity-toolchain lookup \
-        # could not be added to design/frob.strata's cli-node via-list because that \
-        # file was LIVE-leased by T-3613 for T-4501's whole work window; same \
-        # T-3020/T-3014 precedent as src/frob/gates/_narrative_blocks.py" \
-        # follow_up="T-4537"
         program_files = os.environ.get("PROGRAMFILES", r"C:\Program Files")
         return (Path(program_files) / "Unity" / "Hub" / "Editor",)
     if system == "Darwin":
@@ -1077,10 +1069,6 @@ def _locate_unity_editor() -> UnityEditorStatus:
     inside a Unity project (see `_collect_doctor_scans`)."""
     # frob:waive SEC110 reason="UNITY_PATH/UNITY_EDITOR are filesystem-path overrides \
     # for the editor binary location, not secrets"
-    # frob:waive SELFAUDIT001 reason="env.read on this Unity-toolchain lookup could \
-    # not be added to design/frob.strata's cli-node via-list because that file was \
-    # LIVE-leased by T-3613 for T-4501's whole work window; same T-3020/T-3014 \
-    # precedent as src/frob/gates/_narrative_blocks.py" follow_up="T-4537"
     for env_name in ("UNITY_PATH", "UNITY_EDITOR"):
         env_path = os.environ.get(env_name)
         if env_path and Path(env_path).is_file():

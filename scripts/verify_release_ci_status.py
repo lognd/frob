@@ -266,10 +266,6 @@ def main(argv: list[str] | None = None) -> int:
     exit_code, message = decide(
         result, override=override, override_reason=args.override_reason
     )
-    # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, same as \
-    # scripts/branch_stranded_work_analysis.py's own identical bare-print waivers -- \
-    # this runs as a release.yml step, not through frob's own gate-rendered output \
-    # surface"
     print(message)
     return exit_code
 

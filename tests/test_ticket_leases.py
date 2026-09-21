@@ -1810,8 +1810,6 @@ class TestRefuseIfLandInProgress:
     # frob:ticket T-3612
     def test_allows_after_a_killed_lands_lock_is_os_released(self, repo: Path) -> None:
         if sys.platform == "win32":
-            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
-            # not reproducible from a Linux parent-commit repro"
             pytest.skip(
                 "POSIX-only (T-3767): fcntl.flock and the kernel-releases-on-"
                 "SIGKILL guarantee this test relies on have no win32 equivalent"
@@ -2556,8 +2554,6 @@ class TestRemoveWorktree:
     # frob:ticket T-2833
     def test_keeps_a_live_process_worktree(self, sweep_repo: Path) -> None:
         if sys.platform == "win32":
-            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
-            # not reproducible from a Linux parent-commit repro"
             pytest.skip(
                 "POSIX-only (T-3767): relies on the /proc-based live-process "
                 "cwd scan (scan_for_live_worktree_process) and the sleep(1) "

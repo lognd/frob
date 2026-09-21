@@ -1,12 +1,3 @@
-# frob:waive REF002 reason="T-2826: this module has exactly one inbound reference by \
-# design -- _check_chunking.py re-exports _run_stamp_baseline (`from frob.app. \
-# _check_chunking_baseline import _run_stamp_baseline`) so every existing \
-# `frob.app._check_chunking.<name>` call site (check_runner.py and the test suite) \
-# keeps working unchanged after this split, exactly like T-2830/T-2829's sibling \
-# ticket_runner split modules re-export through their own package __init__ for the \
-# identical reason. A second direct consumer would defeat the point of the re-export \
-# -- external code is meant to go through _check_chunking.py, not import this module \
-# directly."
 """`frob check --stamp-baseline` chunked bookkeeping (extracted from
 `frob.app._check_chunking` by T-2826, LARGE001 split): gate-id batching
 and the `.frob/`-scratch accumulator file `_run_stamp_baseline` persists

@@ -58,9 +58,6 @@ class TestWindowStateIo:
     ) -> None:
         path = tmp_path / ".frob" / "rapid-sweep-window.json"
         path.parent.mkdir(parents=True)
-        # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture -- \
-        # a test-scratch fixture write, not a real fs.write capability surface; same \
-        # precedent as tests/unit/test_app_runners_json_guard_t2492.py"
         path.write_text("not json{{{", encoding="utf-8")
         assert _read_window_state(tmp_path) == _default_window_state()
 
@@ -196,9 +193,6 @@ class TestSweepWindowSeconds:
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_sweep_section_wins  # noqa: E501
     def test_frob_toml_sweep_section_wins(self, tmp_path: Path) -> None:
-        # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture -- \
-        # a test-scratch fixture write, not a real fs.write capability surface; same \
-        # precedent as tests/unit/test_app_runners_json_guard_t2492.py"
         (tmp_path / "frob.toml").write_text(
             "[sweep]\nwindow_seconds = 45\n", encoding="utf-8"
         )
@@ -206,9 +200,6 @@ class TestSweepWindowSeconds:
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_top_level_key_wins  # noqa: E501
     def test_frob_toml_top_level_key_wins(self, tmp_path: Path) -> None:
-        # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture -- \
-        # a test-scratch fixture write, not a real fs.write capability surface; same \
-        # precedent as tests/unit/test_app_runners_json_guard_t2492.py"
         (tmp_path / "frob.toml").write_text(
             "rapid_sweep_window_seconds = 30\n", encoding="utf-8"
         )
@@ -216,9 +207,6 @@ class TestSweepWindowSeconds:
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_pyproject_tool_frob_table_is_the_fallback  # noqa: E501
     def test_pyproject_tool_frob_table_is_the_fallback(self, tmp_path: Path) -> None:
-        # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture -- \
-        # a test-scratch fixture write, not a real fs.write capability surface; same \
-        # precedent as tests/unit/test_app_runners_json_guard_t2492.py"
         (tmp_path / "pyproject.toml").write_text(
             "[tool.frob]\nrapid_sweep_window_seconds = 60\n", encoding="utf-8"
         )
@@ -232,9 +220,6 @@ class TestSweepWindowSeconds:
             _DEFAULT_SWEEP_WINDOW_SECONDS,
         )
 
-        # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture -- \
-        # a test-scratch fixture write, not a real fs.write capability surface; same \
-        # precedent as tests/unit/test_app_runners_json_guard_t2492.py"
         (tmp_path / "frob.toml").write_text("not [ valid toml", encoding="utf-8")
         assert _sweep_window_seconds(tmp_path) == _DEFAULT_SWEEP_WINDOW_SECONDS
 

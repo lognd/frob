@@ -317,15 +317,6 @@ def _doc008_violation(doc_rel: str, line: int, message: str) -> Violation:
     )
 
 
-# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
-# _strip_code_spans/_line_index/_doc_anchor_slugs, module-local helpers the resolver \
-# cannot see through, and Option.or_else/.danger_some (typani), a generic-typed call \
-# it cannot bind; the one real raise path (file read) is caught below"
-# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
-# unconditional _SUBSCRIPT_RAISE default for slug_cache[resolved]/ slug_cache[doc_rel] \
-# -- both writes/reads are guarded by an immediately-preceding 'if resolved not in \
-# slug_cache'/'if doc_rel not in slug_cache' membership check, so the key is always \
-# present by construction; the resolver's syntactic bracket scan cannot see the guard"
 def _doc008_resolve_path_target(
     root: Path,
     doc_rel: str,

@@ -191,10 +191,6 @@ def _doc009_violation(doc_rel: str, message: str) -> Violation:
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
 # _STATUS_HEADER_RE.match, a compiled-regex match over an already-caught read_text() \
 # output; a compiled pattern match cannot raise"
-# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
-# unconditional _SUBSCRIPT_RAISE default for text.splitlines()[:N], a list SLICE \
-# (never raises KeyError, or any exception, regardless of N) that the resolver's \
-# syntactic bracket scan cannot distinguish from a dict lookup"
 # frob:ticket T-2843
 def _doc009_check_doc(root: Path, doc_rel: str) -> Violation | None:
     """The DOC009 `Violation` for `doc_rel`, or None when a dated status

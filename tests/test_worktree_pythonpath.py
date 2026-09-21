@@ -25,8 +25,6 @@ from frob.doctor import _import_source_status
 # frob:ticket T-4459
 def _git(*args: str, cwd: Path) -> None:
     """Run a `git` command in `cwd`, raising on any non-zero exit."""
-    # frob:waive SELFAUDIT001 reason="test-fixture git plumbing, same posture as every \
-    # other worktree-guard test's own _git helper"
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
@@ -42,9 +40,6 @@ def _init_repo(root: Path) -> None:
     _git("config", "user.name", "Test", cwd=root)
     pkg = root / "src" / "frob"
     pkg.mkdir(parents=True)
-    # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture root, \
-    # never a real repo path -- same posture as test_app_runners_batch7.py's identical \
-    # tmp_path-only waiver"
     (pkg / "__init__.py").write_text("MARKER = 'main'\n")
     (root / "tickets.md").write_text("# Tickets\n\n")
     _git("add", "-A", cwd=root)
@@ -104,9 +99,6 @@ class TestAgentEnvExportsWorktreePythonpath:
             exports[key] = value.strip("'\"")
         assert "PYTHONPATH" in exports
 
-        # frob:waive SELFAUDIT001 reason="the exact T-4459 acceptance measurement: \
-        # spawn a fresh interpreter under the exported PYTHONPATH and prove import \
-        # frob resolves under the worktree"
         proc = subprocess.run(
             ["python3", "-c", "import frob; print(frob.__file__)"],
             cwd=worktree,
@@ -145,8 +137,6 @@ class TestImportSourceStatus:
         worktree test run silently importing another checkout's `frob`."""
         other_src = tmp_path / "src" / "frob"
         other_src.mkdir(parents=True)
-        # frob:waive SELFAUDIT001 reason="writes into pytest's own tmp_path fixture \
-        # root, never a real repo path"
         (other_src / "__init__.py").write_text("")
         status = _import_source_status(tmp_path)
         assert status.mismatched is True

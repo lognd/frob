@@ -277,18 +277,8 @@ def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | Non
     literal "frob:ticket" occurrences in its own fixtures), which the
     bare regex cannot."""
     try:
-        # frob:waive SYS003 reason="one-off scripts_ops measurement script, same \
-        # exemption as scripts/measure_evidence_reach.py's frob.graph import: \
-        # design/frob.strata Flow declarations are out of this ticket's scope (T-3177 \
-        # scopes only this file), so a real Flow entry is not added here"
         from frob.graph import EdgeKind
-
-        # frob:waive SYS003 reason="same one-off measurement-script exemption as the \
-        # frob.graph import immediately above"
         from frob.graph.dsl import parse_directives
-
-        # frob:waive SYS003 reason="same one-off measurement-script exemption as the \
-        # frob.graph import immediately above"
         from frob.lang import parse_file
     except ImportError:
         return None
@@ -418,9 +408,6 @@ def classify_branch(branch: str, ref: str) -> BranchResult:
 # frob:tests \
 # tests/unit/test_branch_stranded_work_analysis.py::TestMain.test_reports_zero_branches\
 # _cleanly kind="unit"
-# frob:waive PERF003 reason="results list is bounded by this repo's own local-branch \
-# count (in the hundreds, a one-shot CLI report, not a hot path); by_class groups it \
-# once via setdefault, no compare-every-pair cross join over two large collections"
 def main() -> int:
     """CLI entry: classify every local branch and print/write the report."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -448,26 +435,17 @@ def main() -> int:
     for result in results:
         by_class.setdefault(result.class_, []).append(result)
 
-    # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, same as \
-    # scripts/check_summary.py's own identical bare-print waivers -- a one-shot report \
-    # script run directly by a human/agent, not part of frob's own gate-rendered \
-    # output surface"
     print(f"scanned {len(results)} branch(es) against {args.ref}")
     for class_ in ("merged", "ticket-done", "stranded", "error"):
-        # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, see above"
         print(f"  {class_}: {len(by_class.get(class_, []))}")
-    # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, see above"
     print()
-    # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, see above"
     print("stranded (class c) -- NEVER auto-delete, human review required:")
     for result in by_class.get("stranded", []):
-        # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, see above"
         print(f"  {result.branch}: {result.detail}")
 
     if args.json is not None:
         dump = json.dumps([r.model_dump() for r in results], indent=2) + "\n"
         args.json.write_text(dump, encoding="utf-8")
-        # frob:waive RENDER001 reason="scripts/** standalone-CLI posture, see above"
         print(f"\nwrote {args.json}")
 
     return 0

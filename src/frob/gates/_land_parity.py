@@ -213,10 +213,6 @@ def _new_public_symbols_in_file_missing_doc_or_test_edge(
     lines = source.splitlines()
     genuine_lines = _genuine_comment_lines(worktree, None, rel_path)
     findings: list[tuple[str, str, int, list[str]]] = []
-    # frob:waive PERF004 reason="new_defs is recomputed fresh from THIS file's own \
-    # source a few lines above (_public_top_level_defs(source)) on every call to this \
-    # function, one call per touched file -- there is no shared/invariant collection \
-    # to hoist the sort of; each call genuinely sorts different data (T-2321, T-2322)"
     for name, lineno in sorted(new_defs.items(), key=lambda kv: kv[1]):
         if name in old_names:
             continue

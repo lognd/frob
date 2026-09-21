@@ -1,5 +1,3 @@
-# frob:waive REF002 reason="single-anchor by design, wired only from run_gates's \
-# dispatch table -- see T-4219 for the full justification"
 """frob.gates._pkg_resources -- PKG001/PKG002/PKG003 (T-4219): a relative
 embedded-resource reference in markdown breaks on a renderer with no
 repository context.
@@ -281,11 +279,8 @@ def _pkg003_violation(root: Path) -> Violation:
 # frob:enforces CHK-GATE-PKG001
 # frob:enforces CHK-GATE-PKG002
 # frob:enforces CHK-GATE-PKG003
-# frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
 # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_relative_markdown_image_in_declared_readme_fires_error  # noqa: E501
-# frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
 # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown.test_relative_image_in_other_markdown_warns_not_errors  # noqa: E501
-# frob:waive FMT001 reason="single unwrappable frob:tests node id, T-4219"
 # frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription.test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass  # noqa: E501
 def pkg_resources_gate(root: Path) -> tuple[Violation, ...]:
     """PKG001/PKG002/PKG003 (T-4219): a relative embedded-image reference

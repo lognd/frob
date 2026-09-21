@@ -195,11 +195,6 @@ def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLive
 # bytes.split/bytes.decode and dict.get chained twice, plain str/bytes/dict operations \
 # the resolver cannot statically bound; the one real raise path (json.loads on \
 # malformed input) is caught below"
-# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
-# the chained payload.get(...).get(...) is defensive against a non-dict 'result' \
-# value, which raises AttributeError (already caught), not KeyError; dict.get never \
-# raises KeyError by construction, so this is a false positive from the gate's \
-# syntactic scan"
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_malformed_json_is_wedged  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_dict_result_is_wedged  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_str_version_is_wedged  # noqa: E501

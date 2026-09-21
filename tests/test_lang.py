@@ -1991,10 +1991,10 @@ class TestNativeIndependentParsing:
         }
         finder = self._BlockNatives()
         # frob:waive OPAQUE001 reason="T-3895 differential test: sys.meta_path is \
-        # temporarily replaced with a blocking finder to prove parse_file is \
-        # native-independent, restored in the finally block below; a deliberate, \
-        # scoped, test-only capability indirection, not a runtime resolution path any \
-        # production code follows"
+        # replaced for the duration of this call with a blocking finder to prove \
+        # parse_file is native-independent, restored in the finally block below; a \
+        # deliberate, scoped, test-only capability indirection, not a runtime \
+        # resolution path any production code follows"
         sys.meta_path.insert(0, finder)
         try:
             reset_parse_cache()

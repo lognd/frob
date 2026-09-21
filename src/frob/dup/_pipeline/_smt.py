@@ -198,7 +198,6 @@ def _smt_bind_params(
 # dependency's own call surface (_smt_parse_pair/_smt_solve, both taking the deferred \
 # `z3` module the resolver cannot follow) and snapshot.symbols.get, a dict method \
 # already None-checked; every locally-visible fallible step is Result-checked"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _probe_smt_equivalence(
     a: str, b: str, snapshot: GraphSnapshot
 ) -> Result[ProbeVerdict, DupError]:

@@ -411,7 +411,6 @@ def _arbiter_identity_for(resource: ResourceDecl | None) -> _ArbiterIdentity | N
 # (the demoted case). T-1062: leaked Unknown traces to _enclosing_with_ headers, a \
 # module-local generator walk over already-caught read_text() output the resolver \
 # cannot see through; the one real raise path (file read) is caught below"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _observation_guarded_by_arbiter(
     observation: ModeObservation, root: Path, arbiter: _ArbiterIdentity
 ) -> bool:
@@ -443,7 +442,6 @@ def _observation_guarded_by_arbiter(
 # (the demoted case). T-1062: leaked Unknown traces to _enclosing_with_ headers, a \
 # module-local generator walk over already-caught read_text() output the resolver \
 # cannot see through; the one real raise path (file read) is caught below"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _lock_reacquired(observation: ModeObservation, root: Path, lock_name: str) -> bool:
     """T-1060: whether `lock_name` appears MORE THAN ONCE in
     `observation`'s enclosing `with`-header ancestor chain -- a `with

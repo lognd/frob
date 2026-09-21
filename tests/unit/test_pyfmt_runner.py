@@ -251,9 +251,6 @@ class TestRunRuffCheckSelectImportsNoFix:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/app/pyfmt_runner.py::_run_ruff_check_select_imports_no_fix kind="unit"  # noqa: E501
-        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
-        # symref -- already at frob fmt's own canonical form, same unwrappable shape \
-        # as the sibling TestRunRuffCheckFixSelectImports directive above"
         def _raise(*a, **kw):
             raise FileNotFoundError("ruff not found")
 
@@ -322,9 +319,6 @@ class TestFormattedTreePassesCheckCleanly:
     established no-real-filesystem pattern."""
 
     # frob:tests tests/unit/test_pyfmt_runner.py::TestFormattedTreePassesCheckCleanly.test_clean_tree_check_exits_zero_for_both_halves  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form, same unwrappable shape as \
-    # the other MUST-FIRE/MUST-STAY-QUIET fixture directives in this class group"
     # frob:ticket T-3906
     def test_clean_tree_check_exits_zero_for_both_halves(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -354,9 +348,6 @@ class TestDeprecatedAliasStillWorks:
     boundary, same no-real-filesystem pattern as every other test here."""
 
     # frob:tests tests/unit/test_pyfmt_runner.py::TestDeprecatedAliasStillWorks.test_fmt_alias_still_formats_and_warns  # noqa: E501
-    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
-    # node id -- already at frob fmt's own canonical form, same unwrappable shape as \
-    # the other MUST-FIRE/MUST-STAY-QUIET fixture directives in this class group"
     # frob:ticket T-3906
     def test_fmt_alias_still_formats_and_warns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys

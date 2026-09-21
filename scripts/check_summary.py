@@ -136,10 +136,8 @@ def main() -> int:
             print(f"  {tool}:TEST006 | {message}")
     severities, errors = summarise(report)
     print(f"SEVERITY {dict(severities)}")
-    # frob:waive RENDER001 reason="pre-existing bare-print CLI output (T-1863), unmoved"
     print(f"ERRORS   {len(errors)}")
     for tool, code, path, line, message in errors:
-        # frob:waive RENDER001 reason="pre-existing bare print (T-1863), unmoved"
         print(f"  {tool}:{code} {path}:{line} | {message}")
     return 1 if errors else 0
 

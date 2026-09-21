@@ -216,10 +216,6 @@ def _run_ruff_check_fix_select_imports(root: Path) -> ToolResult:
 
 # frob:ticket T-3906
 # frob:tests tests/unit/test_pyfmt_runner.py::TestRunRuffCheckSelectImportsNoFix.test_missing_binary_yields_typed_result  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as the sibling directive lines above in this file \
-# (T-2251's TestRunRuffCheckFixSelectImports)"
 def _run_ruff_check_select_imports_no_fix(root: Path) -> ToolResult:
     """`ruff check --select I` (no `--fix`) against `root` -- the
     check-only counterpart of `_run_ruff_check_fix_select_imports`, closing
@@ -274,10 +270,6 @@ def _ruff_format_write_only(root: Path) -> list[ToolResult]:
 
 # frob:ticket T-3906
 # frob:tests tests/unit/test_pyfmt_runner.py::TestRuffFormatCheckOnly.test_missing_binary_yields_typed_result  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
-# unchanged), same unwrappable shape as the sibling directive lines above in this file \
-# (T-2251's TestRuffFormatWriteOnly)"
 def _ruff_format_check_only(root: Path) -> ToolResult:
     """The `ruff format --check` counterpart of `_ruff_format_write_only`,
     for the `--select-imports-only --check` path -- closes T-3906's

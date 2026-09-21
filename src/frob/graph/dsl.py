@@ -661,16 +661,7 @@ def _enclosing_src(comment: RawComment, path: str) -> str:
 
 
 # frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_nested_quote_in_quoted_target_is_a_named_refusal  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
-# frob:tests lines (e.g. the TestMarkdownAnchorsUntilAndClaimsAbsence block above \
-# markdown_anchors)"
 # frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_attribute_form_is_untouched  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
-# frob:tests lines"
 # frob:ticket T-4719
 def _parse_attrs(
     verb: str, attr_text: str, *, path: str, lineno: int
@@ -1074,25 +1065,9 @@ def _parse_attrs_verb_error(
 
 
 # frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_quoted_target_with_spaces_parses_as_one_value  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
-# frob:tests lines"
 # frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_unquoted_target_with_space_is_still_an_error  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
-# frob:tests lines"
 # frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_nested_quote_in_quoted_target_is_a_named_refusal  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
-# frob:tests lines"
 # frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_unterminated_quoted_target_is_a_named_refusal  # noqa: E501
-# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
-# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
-# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
-# frob:tests lines"
 def _parse_target(
     verb: str, rest: str, *, path: str, lineno: int
 ) -> tuple[str, dict[str, str]] | MalformedDirective:

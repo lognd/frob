@@ -55,8 +55,6 @@ class TestAskVersionOverSocket:
     covered by `tests/test_app_daemon_proxy.py::TestProbeDaemon`."""
 
     def test_connect_timeout_is_wedged(self, tmp_path: Path) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): _ask_version_over_socket() "
@@ -75,8 +73,6 @@ class TestAskVersionOverSocket:
         assert result is DaemonLiveness.Wedged
 
     def test_connect_oserror_is_wedged(self, tmp_path: Path) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): _ask_version_over_socket() "
@@ -95,8 +91,6 @@ class TestAskVersionOverSocket:
         assert result is DaemonLiveness.Wedged
 
     def test_hangup_before_newline_is_wedged(self, tmp_path: Path) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): _ask_version_over_socket() "
@@ -117,8 +111,6 @@ class TestAskVersionOverSocket:
         assert result is DaemonLiveness.Wedged
 
     def test_outer_timeout_during_send_or_recv_is_wedged(self, tmp_path: Path) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): _ask_version_over_socket() "
@@ -303,8 +295,6 @@ class TestTryDaemonLeaseErrorPaths:
     def test_call_oserror_closes_connection_and_returns_unreachable(
         self, root: Path
     ) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): try_daemon_lease() returns "
@@ -326,8 +316,6 @@ class TestTryDaemonLeaseErrorPaths:
         fake_conn.close.assert_called_once()
 
     def test_remote_error_response_closes_connection(self, root: Path) -> None:
-        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
-        # reproducible from a Linux parent-commit repro"
         if sys.platform == "win32":
             pytest.skip(
                 "POSIX-only (T-3766): try_daemon_lease() returns "

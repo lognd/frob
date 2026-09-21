@@ -79,7 +79,6 @@ _DIAGNOSIS_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
 )
 
 
-# frob:waive PII012 reason="T-1734: a software-defect finding, not a medical term"
 def _detect_diagnosis(text: str) -> str | None:
     """The first ~120-char excerpt around a matched finding-shaped
     sentence in `text`, or `None` if no pattern matched. An excerpt (not

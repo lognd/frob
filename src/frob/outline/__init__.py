@@ -179,7 +179,6 @@ def _parse_for_outline(
 # graph (parse_file/extract_imports, cross-module Result-returning calls) and \
 # _outline_symbols, a pure structural walk of already-parsed data; every \
 # locally-visible fallible step is Result-checked or caught"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
     ext = path.suffix.lower()
     if ext not in _OUTLINE_EXTS:
@@ -300,7 +299,6 @@ def _return_annotation(tail: tuple[str, ...]) -> str:
 # (the demoted case). T-1062: leaked Unknown traces to _find_matching_close_ \
 # paren/_spaced/_return_annotation, plain tuple/str token-walk helpers the resolver \
 # cannot see through; the one real raise path (tuple.index) is caught below"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _signature_from_tokens(name: str, sig_tokens: tuple[str, ...]) -> str:
     """Reconstruct `name(params) -> ret` from the leaf-token stream.
 

@@ -95,14 +95,14 @@ class TestClosePromotesPendingDrafts:
     # frob:ticket T-2878
     # frob:waive DUP001 reason="genuinely distinct guard from \
     # test_close_ignores_an_already_dropped_draft (an already-terminal draft is \
-    # skipped because it is not PENDING; this one is skipped because it is not \
-    # CLAIMED, the T-2872 incident's actual shape) -- the fixture-repo shape is \
-    # necessarily near-identical since both exercise the same 'draft left untouched' \
-    # assertion via the same helpers, T-2949's own class of near-duplicate test waiver"
+    # skipped because it is not in the queued-unclaimed state; this one is skipped \
+    # because it is not CLAIMED, the T-2872 incident's actual shape) -- the \
+    # fixture-repo shape is necessarily near-identical since both exercise the same \
+    # 'draft left untouched' assertion via the same helpers, T-2949's own class of \
+    # near-duplicate test waiver"
     def test_close_never_sweeps_a_draft_it_did_not_claim(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_\
-        # close_never_sweeps_a_draft_it_did_not_claim
+        # tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_never_sweeps_a_draft_it_did_not_claim  # noqa: E501
         """T-2872's own live incident: an UNRELATED ticket's pending
         draft must survive `T-0900`'s close untouched, even though it is
         `QUEUED` (pending) in the very same fleet-wide queue -- T-0900
