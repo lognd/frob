@@ -62,6 +62,7 @@ from typing import TYPE_CHECKING
 
 from typani.result import Err, Ok, Result
 
+from frob.graph._hierarchy import children_by_parent_id, descendant_ids
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
 from frob.tickets._done_report import (
@@ -416,31 +417,29 @@ def _is_rapid(root: Path) -> bool:
 
 
 # frob:ticket T-0715
+# frob:ticket T-3032
 def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str, ...]:
     """Ids of every descendant of `ticket` (via the `parent` chain, any
     depth) whose state is not done/dropped -- the T-0715 structural rule an
     EPIC/STORY's DONE transition enforces: it cannot close while any
     descendant is still open. Mirrors `epic_rollup`'s own parent-chain BFS
     (kept separate: that one builds a full rollup for display, this is a
-    cheap open/closed check for a single guard)."""
+    cheap open/closed check for a single guard).
+
+    T-3032: the adjacency build and the any-depth walk both now delegate
+    to `frob.graph._hierarchy` (shared with `frob.gates._milestone`'s
+    `_children_by_parent`/`_descendants_of`, the same walk shape this
+    docstring's previous revision already disclosed as duplicated) --
+    this function keeps only the open/closed state FILTER, which is
+    ticket-specific and stays here."""
     from frob.tickets import _OPEN_STATES
 
-    children_of: dict[str, list[Ticket]] = {}
-    for t in queue.values():
-        if t.parent is not None:
-            children_of.setdefault(t.parent, []).append(t)
-    open_ids: list[str] = []
-    frontier = [ticket.id]
-    seen = {ticket.id}
-    while frontier:
-        current = frontier.pop()
-        for child in children_of.get(current, ()):
-            if child.id in seen:
-                continue
-            seen.add(child.id)
-            if child.state in _OPEN_STATES:
-                open_ids.append(child.id)
-            frontier.append(child.id)
+    id_adjacency = children_by_parent_id((t.id, t.parent) for t in queue.values())
+    open_ids = [
+        child_id
+        for child_id in descendant_ids(ticket.id, id_adjacency)
+        if queue[child_id].state in _OPEN_STATES
+    ]
     return tuple(sorted(open_ids))
 
 

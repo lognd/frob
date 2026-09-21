@@ -360,6 +360,34 @@ in-scope-or-not caller also depends on it).
   posture never blocks a ticket that legitimately wants a narrower scope
   than its own doc/call graph suggests.
 
+## Hierarchy (T-3032)
+
+`frob.graph._hierarchy` is the ONE generic parent/child descendants-of-
+any-depth BFS walk in the repo (T-3032, kernel decoupling: shared graph
+concerns). Before this leaf, the identical adjacency-build-plus-BFS
+shape existed independently, hand-rolled, in `frob.gates._milestone`
+(MILE002's "OPEN descendant at any depth" check) and
+`frob.tickets._evidence._open_descendant_ids` (the T-0715 done-transition
+guard) -- both modules' own docstrings already disclosed the
+duplication before this extraction closed it.
+
+`children_by_parent_id(items)` builds `{parent_id: [child ids]}` from an
+iterable of `(own_id, parent_id)` pairs; `descendant_ids(root_id,
+children_of)` walks that adjacency map to every id reachable from
+`root_id`, any depth, each visited once, root excluded. Both are
+deliberately id-only (`Hashable`, not `Ticket`-typed) so a second,
+non-ticket consumer can reuse the walk without importing
+`frob.tickets.Ticket` -- see
+`docs/design/ticket-strata-shared-graph-inventory.md` for the full
+per-concern inventory this extraction is the first increment of.
+
+`frob.gates._milestone._children_by_parent`/`_descendants_of` and
+`frob.tickets._evidence._open_descendant_ids` now delegate to these two
+functions, translating between id-space and `Ticket`-space (or applying
+the ticket-specific open/closed state filter) at their own call sites --
+each keeps only the part of its old body that was genuinely
+domain-specific.
+
 ## Call graph
 
 <!-- frob:describes src/frob/graph/callgraph.py::CallGraph -->

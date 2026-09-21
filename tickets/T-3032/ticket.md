@@ -2,14 +2,14 @@
 id: T-3032
 title: Extract the graph concerns tickets shares with strata into the shared kernel,
   incrementally, one concern per land
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
 parent: T-4656
 tier: ticket
-sprint: v0.536.0
+sprint: v0.535.0
 runs_last: false
 milestone: 1.0.0
 runs_last_parallel_safe: false
@@ -95,12 +95,11 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
-- field: sprint
-  old_value: v0.535.0
-  new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/unit/test_graph_hierarchy.py::TestChildrenByParentId::test_builds_adjacency_from_parent_pairs
+- tests/unit/test_graph_hierarchy.py::TestDescendantIds::test_multi_depth_walk
+- tests/test_gates_milestone.py::TestMile002::test_grandchild_descendant_fires
+- tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_refused_with_open_descendant
 designated_repro_test: null
 threat: null
 component: null

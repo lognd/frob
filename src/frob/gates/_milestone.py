@@ -21,6 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
+from frob.graph._hierarchy import children_by_parent_id, descendant_ids
 from frob.logging import get_logger
 from frob.tickets import Ticket, TicketQueue, TicketState
 
@@ -130,8 +131,7 @@ def _milestone_is_later(candidate: str, baseline: str) -> bool:
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_ticket_never_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_unresolved_milestone_does_not_fire  # noqa: E501
 # frob:tests \
-# tests/test_gates_milestone.py::TestMile001.test_v_prefixed_and_bare_milestone_treated\
-# _equal
+# tests/test_gates_milestone.py::TestMile001.test_v_prefixed_and_bare_milestone_treated_equal  # noqa: E501
 def _mile001_blocked_by_later_milestone(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -191,41 +191,55 @@ def _mile001_blocked_by_later_milestone(
 
 
 # frob:ticket T-2580
+# frob:ticket T-3032
 def _children_by_parent(queue: TicketQueue) -> dict[str, list[Ticket]]:
     """`{parent_id: [direct children]}` over every ticket in `queue` --
     the adjacency map both `_mile002_descendant_later_milestone`'s BFS
     and any future hierarchy walk in this module can reuse, factored out
     so the caller stays under the module's line-count budget rather than
-    building it inline."""
-    children_of: dict[str, list[Ticket]] = {}
-    for t in queue.tickets.values():
-        if t.parent is not None:
-            children_of.setdefault(t.parent, []).append(t)
-    return children_of
+    building it inline.
+
+    T-3032: the adjacency BUILD is now `frob.graph._hierarchy.
+    children_by_parent_id` (shared with `frob.tickets._evidence.
+    _open_descendant_ids`) -- this wrapper only re-attaches the full
+    `Ticket` objects the milestone-comparison caller needs, since the
+    shared helper is deliberately id-only (see that module's docstring
+    for why: a second, non-ticket consumer of the walk cannot import
+    `frob.tickets.Ticket`)."""
+    by_id = {t.id: t for t in queue.tickets.values()}
+    id_adjacency = children_by_parent_id(
+        (t.id, t.parent) for t in queue.tickets.values()
+    )
+    return {
+        parent_id: [by_id[child_id] for child_id in child_ids]
+        for parent_id, child_ids in id_adjacency.items()
+    }
 
 
 # frob:ticket T-2580
+# frob:ticket T-3032
 def _descendants_of(
     ticket_id: str, children_of: dict[str, list[Ticket]]
 ) -> list[Ticket]:
     """Every descendant of `ticket_id` at any depth, via BFS over
     `children_of` (`_children_by_parent`'s output) -- same walk shape
     `_open_descendant_ids` (`frob.tickets._evidence`) uses for its own
-    open-descendant check, kept as a local helper rather than importing
-    that private one since this caller needs the full `Ticket` objects
-    for milestone comparison, not a bare open/closed id list."""
-    frontier = [ticket_id]
-    seen = {ticket_id}
-    descendants: list[Ticket] = []
-    while frontier:
-        current = frontier.pop()
-        for child in children_of.get(current, ()):
-            if child.id in seen:
-                continue
-            seen.add(child.id)
-            descendants.append(child)
-            frontier.append(child.id)
-    return descendants
+    open-descendant check.
+
+    T-3032: the walk itself now delegates to `frob.graph._hierarchy.
+    descendant_ids` (id-only); this wrapper translates `children_of`'s
+    `Ticket`-valued adjacency to an id-valued one, walks, then maps the
+    resulting ids back to `Ticket` objects via `children_of`'s own
+    values -- since this caller needs full `Ticket` objects for
+    milestone comparison, not a bare id list."""
+    by_id = {
+        child.id: child for child_list in children_of.values() for child in child_list
+    }
+    id_adjacency = {
+        parent_id: [child.id for child in child_list]
+        for parent_id, child_list in children_of.items()
+    }
+    return [by_id[child_id] for child_id in descendant_ids(ticket_id, id_adjacency)]
 
 
 # frob:enforces CHK-GATE-MILE002
@@ -236,8 +250,7 @@ def _descendants_of(
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_ancestor_never_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_grandchild_descendant_fires  # noqa: E501
 # frob:tests \
-# tests/test_gates_milestone.py::TestMile002.test_v_prefixed_and_bare_milestone_treated\
-# _equal
+# tests/test_gates_milestone.py::TestMile002.test_v_prefixed_and_bare_milestone_treated_equal  # noqa: E501
 def _mile002_descendant_later_milestone(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
