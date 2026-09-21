@@ -1,5 +1,5 @@
 ---
-id: T-draft-1db588ad
+id: T-5199
 title: 'ticket_runner _close_cmd/_lifecycle: batch repeated load_queue calls (M4/M5)'
 state: queued
 kind: bug
