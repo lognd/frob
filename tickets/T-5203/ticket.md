@@ -1,5 +1,5 @@
 ---
-id: T-draft-95dc595c
+id: T-5203
 title: register VET012 in _KNOWN_GATE_RULES and _osv.py's fetch_url edge in design/frob.strata
 state: queued
 kind: invariant
