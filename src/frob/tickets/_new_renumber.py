@@ -85,12 +85,43 @@ from frob.tickets._store import (
     write_ticket,
 )
 from frob.tickets._worktree_guard import enforce_worktree_lease
+from frob.tickets._worktree_sweep import _is_agent_worktree_path
 
 # T-1103: shared "frob.tickets" logger name kept explicit (not get_logger(__name__),
 # which would read "frob.tickets._new_renumber") -- several tests filter caplog
 # records by the package's own logger name, the same monkeypatch/logger-name hazard
 # T-1089's ticket_runner split report documented for this family of split.
 _log = get_logger("frob.tickets")
+
+
+# frob:ticket T-4658
+def _refuse_renumber_inside_worktree(root: Path) -> Result[None, TicketError]:
+    """Refuse a renumber attempted from a `.claude/worktrees/` agent
+    checkout, unconditionally -- kernel decoupling (T-4651/T-4652): an id
+    is allocated exactly once, at `frob ticket new` in the root checkout,
+    and renumbering/draft promotion is a root/ledger-only operation
+    performed by `frob ticket land`, never inside a dispatched worktree.
+
+    This is structurally stricter than `enforce_worktree_lease` (which
+    only refuses a MISMATCHED `FROB_WORKTREE` lease): a worktree correctly
+    leased to itself passed that check fine and could still renumber,
+    which is exactly the measured bug (draft ids renumbered inside
+    worktrees, and concurrent agents racing each other's renumbers --
+    T-4590/T-4596, T-4633, T-4636/T-4642). Reuses `TicketError.
+    WorktreeLeaseViolation` (no new enum variant needed for this leaf) --
+    the log message, not the enum tag, carries the specific diagnosis.
+    """
+    resolved = root.resolve()
+    if _is_agent_worktree_path(resolved):
+        _log.warning(
+            "tickets: renumber refused -- %s is a .claude/worktrees/ agent "
+            "checkout; ids are assigned once at `frob ticket new` in the "
+            "root checkout, renumbering/promotion is a root/ledger-only "
+            "operation performed by `frob ticket land` (T-4658)",
+            resolved,
+        )
+        return Err(TicketError.WorktreeLeaseViolation)
+    return Ok(None)
 
 
 # frob:ticket T-0162
@@ -853,6 +884,10 @@ def new_ticket(
     if written.is_err:
         return Err(written.danger_err)
     ticket = written.danger_ok
+    # frob:ticket T-4658
+    _log.info(
+        "tickets: allocated %s (cwd=%s, root=%s)", ticket.id, Path.cwd(), root.resolve()
+    )
     _commit_new_ticket(root, ticket, no_commit, warn_if_dirty=warn_if_dirty)
     # frob:ticket T-2123
     _warn_over_broad_scope_on_new(root, ticket)
@@ -864,11 +899,9 @@ def new_ticket(
 # frob:ticket T-2394
 # frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
 # frob:tests \
-# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_empty_scope_warns_at_fil\
-# ing_time
+# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_empty_scope_warns_at_filing_time  # noqa: E501
 # frob:tests \
-# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_declared_no_scope_is_sil\
-# ent
+# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_declared_no_scope_is_silent  # noqa: E501
 # frob:tests \
 # tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_nonempty_scope_is_silent
 def _warn_empty_scope_on_new(ticket: Ticket) -> None:
@@ -1321,6 +1354,35 @@ def _renumber_dry_run(root: Path) -> Result[int, TicketError]:
     return Ok(_log_bulk_renumber_preview(mapping, dry_run=True))
 
 
+# frob:ticket T-4657
+def _renumber_locked(root: Path) -> Result[int, TicketError]:
+    """The ledger-locked half of `renumber`: snapshot the mode-aware digest,
+    load, compute the contiguous mapping, preview, apply and write --
+    returns the count renumbered (0 when already contiguous). Split out
+    so `renumber` stays under ARCH001's length threshold while keeping
+    every step inside the caller's single `ledger_lock` span (T-0633)."""
+    digest: str | dict[str, str]
+    if _store_mode(root) == "v2":
+        digest = ledger_digest_map(root)
+    else:
+        digest = ledger_digest(ledger_path(root))
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ordered = sorted(loaded.danger_ok.values(), key=lambda t: t.id)
+    mapping = {t.id: f"T-{i + 1:04d}" for i, t in enumerate(ordered)}
+    if _is_contiguous(ordered, mapping):
+        _log.info("tickets: renumber -- already contiguous, nothing to do")
+        return Ok(0)
+    # T-1882 requirement 1: print the preview BEFORE the write happens.
+    _log_bulk_renumber_preview(mapping, dry_run=False)
+    new_map, renumbered, _prose_hits = _apply_renumber(ordered, mapping)
+    result = write_all(root, new_map, expected_digest=digest)
+    if result.is_err:
+        return Err(result.danger_err)
+    return Ok(renumbered)
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0633
 # frob:ticket T-0889
@@ -1369,6 +1431,10 @@ def renumber(root: Path, *, dry_run: bool = False) -> Result[int, TicketError]:
     T-0680 shape T-1588 closed for `write_all`/`write_archive`'s own
     primitive. `ledger_digest_map(root)` is the v2-shaped per-ticket digest
     snapshot `write_all` actually compares against in that mode."""
+    # frob:ticket T-4658
+    refused = _refuse_renumber_inside_worktree(root)
+    if refused.is_err:
+        return Err(refused.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -1383,25 +1449,12 @@ def renumber(root: Path, *, dry_run: bool = False) -> Result[int, TicketError]:
     if lease_conflict.is_err:
         return Err(lease_conflict.danger_err)
     with ledger_lock(root):
-        digest: str | dict[str, str]
-        if _store_mode(root) == "v2":
-            digest = ledger_digest_map(root)
-        else:
-            digest = ledger_digest(ledger_path(root))
-        loaded = load_all(root)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        ordered = sorted(loaded.danger_ok.values(), key=lambda t: t.id)
-        mapping = {t.id: f"T-{i + 1:04d}" for i, t in enumerate(ordered)}
-        if _is_contiguous(ordered, mapping):
-            _log.info("tickets: renumber -- already contiguous, nothing to do")
-            return Ok(0)
-        # T-1882 requirement 1: print the preview BEFORE the write happens.
-        _log_bulk_renumber_preview(mapping, dry_run=False)
-        new_map, renumbered, _prose_hits = _apply_renumber(ordered, mapping)
-        result = write_all(root, new_map, expected_digest=digest)
-        if result.is_err:
-            return Err(result.danger_err)
+        locked = _renumber_locked(root)
+    if locked.is_err:
+        return Err(locked.danger_err)
+    renumbered = locked.danger_ok
+    if renumbered == 0:
+        return Ok(0)
     _log.info("tickets: renumbered %d ticket(s)", renumbered)
     return Ok(renumbered)
 
@@ -1712,6 +1765,10 @@ def renumber_one(
     `finalize_draft`'s), and T-1669 never wired it in. See `renumber_one_
     v2`'s own docstring for the v2-mode half of this fix; `_allocate_and_
     write_new_ticket`'s docstring for the third leg (`new_ticket` itself)."""
+    # frob:ticket T-4658
+    refused = _refuse_renumber_inside_worktree(root)
+    if refused.is_err:
+        return Err(refused.danger_err)
     if _store_mode(root) == "v2":
         # Local import: `_renumber_v2` imports helpers back from this module
         # (`_rewrite_body_prose_references`, `_scan_code_references`,

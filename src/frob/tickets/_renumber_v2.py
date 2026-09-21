@@ -25,6 +25,7 @@ from frob.tickets._new_renumber import (
     _log_renumber_done,
     _log_renumber_dry_run,
     _refuse_if_other_worktree_holds_live_lease_for_id,
+    _refuse_renumber_inside_worktree,
     _rewrite_body_prose_references,
     _scan_code_references,
 )
@@ -384,7 +385,17 @@ def renumber_one_v2(
     persist), closing the TOCTOU outright: a concurrent `new_ticket`
     blocked on `allocator_lock` always sees this function's write land
     first (or vice versa), and whichever runs second re-validates against
-    the FRESH post-write state rather than a stale snapshot."""
+    the FRESH post-write state rather than a stale snapshot.
+
+    T-4658: also refused, unconditionally, from a `.claude/worktrees/`
+    agent checkout -- `renumber_one` already runs this same check before
+    dispatching here, but `renumber_one_v2` re-checks defensively since it
+    is itself a public v2-mode entry point some caller could reach
+    directly."""
+    # frob:ticket T-4658
+    refused = _refuse_renumber_inside_worktree(root)
+    if refused.is_err:
+        return Err(refused.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)

@@ -2,7 +2,7 @@
 id: T-4657
 title: 'Typed ledger store API: one module every frob module reads and writes tickets
   through'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -31,6 +31,10 @@ triage_changes:
   at: '2026-09-19'
 evidence:
 - tests/unit/test_ledger_store_api.py::test_no_module_opens_ticket_md_directly
+- tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
+- tests/unit/test_ledger_store_api.py::test_docs_name_store_api_as_the_entry_point
+- tests/unit/test_ledger_store_api.py::test_put_then_get_round_trips
+- tests/unit/test_ledger_store_api.py::test_archived_put_then_get_round_trips
 designated_repro_test: null
 acceptance:
 - text: Given src/frob/tickets/_store_api.py exists, when another frob module needs
@@ -42,14 +46,19 @@ acceptance:
     asserts that no src/frob module other than _store_api.py performs a read/write
     against a tickets/**/ticket.md path. This test FAILS on dev today (multiple such
     sites exist) and passes after this leaf.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ledger_store_api.py::test_no_module_opens_ticket_md_directly
 - text: Given a fallible store operation, when it fails, then it returns a typani
     Result error value rather than raising; tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
     proves it.
-  evidence: []
+  evidence:
+  - tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
+  - tests/unit/test_ledger_store_api.py::test_put_then_get_round_trips
+  - tests/unit/test_ledger_store_api.py::test_archived_put_then_get_round_trips
 - text: docs/modules/tickets-data-storage.md names _store_api as the single entry
     point and is updated in this same change.
-  evidence: []
+  evidence:
+  - tests/unit/test_ledger_store_api.py::test_docs_name_store_api_as_the_entry_point
 evidence_changes:
 - old_node: tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
   new_node: ''

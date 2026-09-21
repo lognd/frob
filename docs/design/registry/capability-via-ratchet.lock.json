@@ -259,7 +259,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 552,
+      "accepted_count": 553,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

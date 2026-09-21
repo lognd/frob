@@ -1948,3 +1948,44 @@ posture T-3195 already took for the 45 pre-existing hollow reports it
 found). This fix only prevents NEW stale-claims reports from reaching
 `done` on main going forward -- it does not, and is not intended to,
 correct the historical population.
+
+## Store API seam (T-4657)
+
+<!-- frob:describes src/frob/tickets/_store_api.py::get_ticket -->
+<!-- frob:describes src/frob/tickets/_store_api.py::list_tickets -->
+<!-- frob:describes src/frob/tickets/_store_api.py::put_ticket -->
+<!-- frob:describes src/frob/tickets/_store_api.py::get_archived_ticket -->
+<!-- frob:describes src/frob/tickets/_store_api.py::list_archived_tickets -->
+<!-- frob:describes src/frob/tickets/_store_api.py::put_archived_ticket -->
+
+Kernel decoupling epic T-4651 (LEDGER story T-4652) named the coupling
+problem directly: ticket data was reached a dozen different ways across
+`src/frob/tickets/*.py` and `src/frob/app/ticket_runner/*.py`, with no
+single seam, which is why the ledger, the leases and the land pipeline
+could not be pulled apart from each other. `src/frob/tickets/_store_api.py`
+is that seam and the single entry point going forward: a typed, logged,
+`Result`-returning wrapper around the mode-dispatched `_store.py`
+implementation above -- `get_ticket`,
+`list_tickets`, `put_ticket` for the live ledger, and
+`get_archived_ticket`/`list_archived_tickets`/`put_archived_ticket` for the
+archive. **New callers reach ticket data through `_store_api`, never by
+opening a `tickets/<id>/ticket.md` path themselves.**
+
+This is a rederivation, not a rewrite: `_store_api.py` does not change the
+on-disk ticket.md format, the CLI surface or the comment DSL, and it does
+not migrate the existing direct callers of `_store.py` (`frob/tickets/
+__init__.py` and the many gate/refactor/app modules listed in
+`tests/unit/test_ledger_store_api.py`'s grandfathered allowlist) -- that
+migration is deliberately left to follow-up tickets under T-4652/T-4656 (the
+layering leaf, T-4663, is what turns "should go through `_store_api`" into
+an enforced, checked rule). `tests/unit/test_ledger_store_api.py::
+test_no_module_opens_ticket_md_directly` is the positive control: it fails
+on dev before this leaf (the module does not exist) and, going forward, it
+fails again the moment any module OUTSIDE the grandfathered allowlist grows
+a new raw `ticket.md` open/read/write -- the allowlist can only shrink as
+follow-up tickets migrate callers onto `_store_api`, never silently grow.
+
+Every read and write through `_store_api` logs at DEBUG with the ticket id
+and operation name; every refusal (a missing id, a failed underlying load
+or write) logs at WARNING before the `Err` is returned, so a caller that
+swallows the `Result` still leaves a trace in the log.
