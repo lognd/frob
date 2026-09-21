@@ -4,7 +4,7 @@ title: land-status.json keeps phase=running entries for dead pids (T-4562 and T-
   today, 2-4 hours old) and LandInProgress then refuses ledger writes from ROOT while
   no land runs; prune entries whose pid is gone on every read and treat only live
   pids as in progress
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -18,6 +18,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/ticket_land_suite/test_land_lock.py
+- src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,22 @@ scope_changes:
   glob: tests/ticket_land_suite/test_land_lock.py
   reason: 'T-5084: TestLandStatus already covers _write_land_status/_read_land_status_entries
     in this file; the new dead-pid-pruned-on-read test belongs alongside it'
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-5084: _read_land_status_entries/_write_land_status/_resolved_land_status_started_at/_prune_dead_land_status_entries
+    (the land-status.json read/write/prune family) all live here; the fix prunes a
+    confirmed-dead pid''s phase=running entry on every read, not only opportunistically
+    at write time past the cap'
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-5084: _read_land_status_entries/_write_land_status/_resolved_land_status_started_at/_prune_dead_land_status_entries
+    (the land-status.json read/write/prune family) all live here; the fix prunes a
+    confirmed-dead pid''s phase=running entry on every read, not only opportunistically
+    at write time past the cap'
   actor: logan
   at: '2026-09-20'
 triage_changes:
