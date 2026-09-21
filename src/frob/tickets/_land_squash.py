@@ -2020,6 +2020,74 @@ def _seal_squash_apply(
     return Ok(False)
 
 
+# frob:ticket T-5126
+_TICKET_LEDGER_FILE_PREFIX = "tickets/"
+
+
+# frob:ticket T-5126
+# frob:tests tests/tickets/test_land_squash.py::test_dev_merged_ledger_file_excluded
+# frob:tests tests/tickets/test_land_squash.py::test_own_ledger_edit_after_merge_still_counted  # noqa: E501
+def _exclude_dev_merged_ledger_files(
+    worktree: Path, main_branch_name: str, touched_files: frozenset[str]
+) -> frozenset[str]:
+    """Narrow `touched_files` (the worktree's FULL changeset, T-3324) to
+    exclude ticket-ledger paths (`tickets/**`) that only appear in that
+    diff because `worktree` merged `main_branch_name` (dev) in and dev had
+    moved another, unrelated ticket's `ticket.md`/`done-report.md` -- NOT
+    because this land itself touched them. A file the merge rode in
+    unchanged has IDENTICAL content at `worktree`'s HEAD and at
+    `main_branch_name`'s current tip; a file this land's OWN commits
+    additionally edited after the merge does not, and must keep counting.
+    `git diff --name-only <main_branch_name> HEAD -- <candidates>` reports
+    exactly the subset that still differs from the current main tip, so
+    the excluded set is the ledger-shaped candidates NOT in that result.
+    Only `tickets/**` paths are ever candidates for exclusion -- every
+    other file family (source, tests, docs) is left exactly as `_worktree_
+    full_changeset` reported it; this is scoped to the T-3324 false-
+    refusal this ticket fixes, not a general merge-noise filter. A git
+    failure fails CLOSED (no exclusion applied) so this narrowing can only
+    ever shrink `touched_files` on a PROVEN identical-content match, never
+    silently over-exclude on an unreadable repo state."""
+    candidates = frozenset(
+        f for f in touched_files if f.startswith(_TICKET_LEDGER_FILE_PREFIX)
+    )
+    if not candidates:
+        return touched_files
+    diff = run_argv(
+        [
+            "git",
+            "-C",
+            str(worktree),
+            "diff",
+            "--name-only",
+            main_branch_name,
+            "HEAD",
+            "--",
+            *sorted(candidates),
+        ]
+    )
+    if diff.is_err or diff.danger_ok.returncode != 0:
+        _log.warning(
+            "land: dev-merged-ledger exclusion check failed for %s, "
+            "leaving %d ledger candidate(s) attributed unchanged",
+            worktree,
+            len(candidates),
+        )
+        return touched_files
+    still_differs = frozenset(
+        line.strip() for line in diff.danger_ok.stdout.splitlines() if line.strip()
+    )
+    excluded = candidates - still_differs
+    if excluded:
+        _log.info(
+            "land: excluding %d dev-merged ledger file(s) from this land's "
+            "own touched files (T-3324/T-5126): %s",
+            len(excluded),
+            sorted(excluded),
+        )
+    return touched_files - excluded
+
+
 # frob:ticket T-0907
 # frob:ticket T-3324
 # frob:ticket T-4596
@@ -2131,13 +2199,22 @@ def _land_squash_apply_finish(
         )
         return Ok(absorbed)
 
+    # frob:ticket T-5126
+    # The self-conformance attribution below must not blame this land for
+    # another ticket's ledger file that only appears in `worktree_
+    # changeset` because `worktree` merged `main_branch_name` in;
+    # `worktree_changeset` ITSELF stays the full changeset (already used
+    # above for completeness/rebuild checks that must see everything).
+    self_conformance_touched_files = _exclude_dev_merged_ledger_files(
+        worktree, main_branch_name, worktree_changeset
+    )
     pre_commit_checks = _run_pre_commit_checks(
         stage,
         ticket_id,
         final_id,
         pre_land_tip,
         pre_commit_sweep,
-        worktree_changeset,
+        self_conformance_touched_files,
         land_lock_root=root,
     )
     if pre_commit_checks.is_err:

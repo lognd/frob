@@ -178,67 +178,47 @@ _PROSE_KEY_RE = re.compile(r"^(\s*)(\w*reason|title|old_text|new_text):\s?(.*)$"
 
 
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion.test_scope_change_reason_no\
-# t_flagged
+# tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion.test_scope_change_reason_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion.test_open_ticket_body_still\
-# _flagged_alongside_reason
+# tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion.test_open_ticket_body_still_flagged_alongside_reason  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_non_frontmatter_text_unto\
-# uched
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_non_frontmatter_text_untouched  # noqa: E501
 # frob:tests \
 # tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_empty_text_untouched
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_unterminated_frontmatter_\
-# untouched
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_unterminated_frontmatter_untouched  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_value_blanked_key_\
-# kept
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_value_blanked_key_kept  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_continuation_indented_mor\
-# e_is_blanked
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_continuation_indented_more_is_blanked  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_blank_line_inside_continu\
-# ation_also_blanked
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_blank_line_inside_continuation_also_blanked  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_on_last_frontm\
-# atter_line_no_overrun
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_on_last_frontmatter_line_no_overrun  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_title_value_blanked_key_k\
-# ept
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_title_value_blanked_key_kept  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_wrapped_title_continuatio\
-# n_blanked_line_count_preserved
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_wrapped_title_continuation_blanked_line_count_preserved  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_blanking_not_r\
-# egressed_by_title_addition
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_blanking_not_regressed_by_title_addition  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_single_line_title_not_f\
-# lagged
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_single_line_title_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_wrapped_title_not_flagg\
-# ed
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_wrapped_title_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_open_ticket_body_still_\
-# flagged_alongside_title
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_open_ticket_body_still_flagged_alongside_title  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_body_violation_below_bl\
-# anked_title_reports_original_line
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_body_violation_below_blanked_title_reports_original_line  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_docs_prose_pointer_stil\
-# l_flagged
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_docs_prose_pointer_still_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_old_text_field\
-# _not_flagged
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_old_text_field_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_new_text_field\
-# _not_flagged
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_new_text_field_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_open_ticket_bo\
-# dy_still_flagged_alongside_old_text_and_new_text
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_open_ticket_body_still_flagged_alongside_old_text_and_new_text  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_amend_that_rem\
-# oves_a_doc006_violation_leaves_ticket_clean
+# tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion.test_amend_that_removes_a_doc006_violation_leaves_ticket_clean  # noqa: E501
 def _blank_ticket_reason_fields(text: str) -> str:
     """Blank the VALUE of every YAML frontmatter key ending in `reason`
     (`reason`, `scope_breadth_ack_reason`, `staleness_reason`, ...), or
@@ -1678,6 +1658,30 @@ def _is_archival_doc(doc_path: str) -> bool:
 # frob:ticket T-2505
 _TICKET_DOC_RE = re.compile(r"^tickets/(T-\d+)/(ticket\.md|done-report\.md)$")
 
+
+# frob:ticket T-5126
+# frob:tests tests/gates/test_docptr.py::TestDoc006TicketBodyCliPointerSkip.test_open_ticket_planned_cli_pointer_not_flagged  # noqa: E501
+# frob:tests tests/gates/test_docptr.py::TestDoc006TicketBodyCliPointerSkip.test_real_doc_cli_pointer_still_flagged  # noqa: E501
+def _is_ticket_body_doc(doc_path: str) -> bool:
+    """Whether `doc_path` is a ticket's own narrative body (`ticket.md` or
+    `done-report.md` under `tickets/<id>/`), REGARDLESS of the ticket's
+    state -- unlike `_is_historical_ticket_doc`, which only exempts an
+    OPEN ticket's `done-report.md` (always historical) and gates its
+    `ticket.md` on terminal state. A ticket body is narrative prose by
+    design: a plan or repro section legitimately backtick-quotes a
+    PLANNED or REJECTED CLI form (`frob sys split`, `frob doctor
+    --whereis`) that does not and may never resolve, and that is true
+    whether the ticket is open or closed. This predicate exists purely so
+    `doc006_gate` can skip CLI-pointer resolution (the one DOC006 kind
+    that a narrative backtick span routinely trips, T-5126)
+    over EVERY ticket body regardless of state, while leaving the other
+    DOC006 kinds (file/anchor/config/symbol) on the state-gated `_is_
+    historical_ticket_doc` check above -- a live pointer to a real file
+    or symbol in an OPEN ticket body is still a genuine, worth-fixing
+    finding; a live pointer to a not-yet-built CLI surface is not."""
+    return _TICKET_DOC_RE.match(doc_path) is not None
+
+
 # frob:ticket T-2534
 #: A ticket's `evidence/`/`attachments/` subdirectory holds the SAME
 #: historical-record class T-2505 already exempted for `ticket.md` --
@@ -1787,22 +1791,17 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # tests/test_docptr_gate.py::TestDoc006FilePath.test_dot_frob_runtime_path_not_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006Waive.test_waive_suppresses
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_double_separator_target_fl\
-# agged
+# tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_double_separator_target_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_single_separator_target_no\
-# t_flagged
+# tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_single_separator_target_not_flagged  # noqa: E501
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006Config.test_all_caps_citation_tag_not_flagged
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006Config.test_declared_but_unset_section_not_flagg\
-# ed
+# tests/test_docptr_gate.py::TestDoc006Config.test_declared_but_unset_section_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006Symbol.test_reexported_class_attribute_chain_not\
-# _flagged
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_reexported_class_attribute_chain_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006Symbol.test_dunder_init_mid_chain_resolves_to_mo\
-# dule
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_dunder_init_mid_chain_resolves_to_module  # noqa: E501
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006FileSymbol.test_py_missing_symbol_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006FileSymbol.test_py_real_symbol_passes
@@ -1813,15 +1812,13 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:tests tests/test_docptr_gate.py::TestDoc006FileSymbol.test_rust_real_fn_passes
 # frob:tests tests/test_docptr_gate.py::TestDoc006FileSymbol.test_missing_file_flagged
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_ambiguous_basename_shorthand_not\
-# _flagged
+# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_ambiguous_basename_shorthand_not_flagged  # noqa: E501
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006FileSymbol.test_rust_non_pub_trait_impl_fn_passes
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_unanchored_doc_not_checked
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_anchored_unresolved_without_\
-# twin_not_flagged
+# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_anchored_unresolved_without_twin_not_flagged  # noqa: E501
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_anchored_real_name_passes
 # frob:tests \
@@ -1831,35 +1828,25 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006WrappedSpan.test_wrapped_backtick_span_resolves
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_multi_anchor_doc_no\
-# t_checked
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_multi_anchor_doc_not_checked  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_spec_prose_doc_excl\
-# uded
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_spec_prose_doc_excluded  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_cross_file_real_sym\
-# bol_passes
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_cross_file_real_symbol_passes  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_absent_everywhere_w\
-# ithout_twin_not_flagged
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_absent_everywhere_without_twin_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_file_symbol_placehol\
-# der_not_flagged
+# tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_file_symbol_placeholder_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_bare_identifier_plac\
-# eholder_not_flagged
+# tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_bare_identifier_placeholder_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_done_ticket_body_\
-# not_flagged
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_done_ticket_body_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_dropped_ticket_bo\
-# dy_not_flagged
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_dropped_ticket_body_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_open_ticket_body_\
-# still_flagged
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_open_ticket_body_still_flagged  # noqa: E501
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_done_report_not_f\
-# lagged_even_if_state_lookup_fails
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_done_report_not_flagged_even_if_state_lookup_fails  # noqa: E501
 def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC006: doc-pointer resolution over a closed set of recognized,
     mechanically resolvable pointer shapes (see this module's docstring)
@@ -1899,16 +1886,23 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                 doc_path, doc_lines, tokens, tracked, anchor_cache, root
             )
         )
-        violations.extend(
-            _cli_violations(
-                doc_path,
-                doc_lines,
-                tokens,
-                console_sources,
-                console_trees,
-                console_parsers,
+        # frob:ticket T-5126
+        # A ticket's own body is narrative prose that legitimately
+        # backtick-quotes a planned/rejected CLI form; skip CLI-pointer
+        # resolution for it regardless of ticket state (see
+        # _is_ticket_body_doc), while every other DOC006 kind below still
+        # runs over it.
+        if not _is_ticket_body_doc(doc_path):
+            violations.extend(
+                _cli_violations(
+                    doc_path,
+                    doc_lines,
+                    tokens,
+                    console_sources,
+                    console_trees,
+                    console_parsers,
+                )
             )
-        )
         violations.extend(
             _config_violations(doc_path, doc_lines, text, frob_toml, other_manifests)
         )

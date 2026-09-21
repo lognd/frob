@@ -2,14 +2,14 @@
 id: T-5126
 title: 'DOC006 refuses unrelated lands over cli pointers inside ticket bodies merged
   in from dev: skip tickets/** in DOC006 and exclude ledger files from T-3324 attribution'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
 priority: critical
 parent: null
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -44,13 +44,6 @@ scope_changes:
   reason: positive control for T-3324 attribution exclusion
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
 body_changes:
 - mode: append
   reason: capture repro, plan, and scope-lease blocker found while filing per coordinator
@@ -59,7 +52,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 0
   new_length: 1967
-designated_repro_test: null
+evidence:
+- tests/gates/test_docptr.py::TestDoc006TicketBodyCliPointerSkip::test_open_ticket_planned_cli_pointer_not_flagged
+- tests/gates/test_docptr.py::TestDoc006TicketBodyCliPointerSkip::test_real_doc_cli_pointer_still_flagged
+- tests/tickets/test_land_squash.py::test_dev_merged_ledger_file_excluded
+- tests/tickets/test_land_squash.py::test_own_ledger_edit_after_merge_still_counted
+designated_repro_test: tests/gates/test_docptr.py::TestDoc006TicketBodyCliPointerSkip::test_open_ticket_planned_cli_pointer_not_flagged
 threat: null
 component: null
 anchor: false
