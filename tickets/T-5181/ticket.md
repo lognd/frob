@@ -1,5 +1,5 @@
 ---
-id: T-draft-76d48f0d
+id: T-5181
 title: 'frob-arch lock-order-cycle reported on declared_source_prefixes (T-5117):
   sequential with-blocks flagged as nested'
 state: queued
