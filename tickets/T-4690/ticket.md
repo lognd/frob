@@ -2,7 +2,7 @@
 id: T-4690
 title: 'Delete every CLI alias and duplicate name: the four group verbs, fmt, docs/docs-search,
   three spellings of status, whereis'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -34,6 +34,7 @@ scope:
 - src/frob/app/doctor_runner.py
 - tests/unit/test_cli_shims.py
 - tests/unit/test_main_entry.py
+- tests/unit/test_cli_group_parity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,13 @@ scope_changes:
   reason: T-5092 holds live lease on _ops.py; will re-add once it lands
   actor: logan
   at: '2026-09-19'
+- op: add
+  glob: tests/unit/test_cli_group_parity.py
+  reason: T-4690 deletes the flat docs-search mirror (never dispatchable) that this
+    parity test asserted exists; the test itself encodes the pre-T-4690 duplication
+    invariant and must be updated to match the ticket's own acceptance criteria
+  actor: logan
+  at: '2026-09-21'
 triage_changes:
 - field: sprint
   old_value: null
@@ -142,6 +150,8 @@ labels:
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4690
+branch: t-4690
 ---
 POINTS: 3. Parent story T-4687. blocked_by: none (runs in parallel with T-4689).
 This leaf also builds the shared deprecation-shim helper that T-4692, T-4695,
