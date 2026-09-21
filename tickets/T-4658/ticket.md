@@ -49,7 +49,8 @@ acceptance:
   - tests/unit/test_ids_assigned_once.py::test_concurrent_new_allocates_distinct_ids
 - text: draft promotion happens only at publish time on dev; the land never renumbers
     inside the worktree
-  evidence: []
+  evidence:
+  - tests/unit/test_ids_assigned_once.py::test_renumber_refused_inside_worktree
 threat: null
 component: null
 anchor: false
