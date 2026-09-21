@@ -1,5 +1,5 @@
 ---
-id: T-draft-6cb1577a
+id: T-5180
 title: 'INV003: seven new gate/strata docs make ''only'' claims with no frob:invariant
   marker'
 state: queued
