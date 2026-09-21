@@ -2,7 +2,7 @@
 id: T-4611
 title: land's own refusal-avoidance quarantine-raised log line does not name the undisposed
   findings forcing synchronous verification
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
