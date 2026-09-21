@@ -24,6 +24,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_metadata.py
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/app/config.py
+- src/frob/_cli_parsers/_ticket/_closeout_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,12 @@ scope_changes:
   reason: add the ticket_wait_s AppConfig field the shared LandInProgress dispatch
     check reads; documented as blocked on this exact edit in the tickets own failure
     log
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+  reason: drop and fail verbs are parsed here; this tickets own plan names them among
+    the six --wait verbs, and T-4550 (the prior lease holder) is now done
   actor: logan
   at: '2026-09-20'
 triage_changes:
