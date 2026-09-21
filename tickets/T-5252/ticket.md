@@ -8,7 +8,6 @@ origin: human
 created: '2026-09-21'
 priority: high
 blocked_by:
-- T-draft-5d1b6c22
 - T-5253
 - T-5255
 - T-5251
@@ -41,3 +40,6 @@ land_commit: null
 Leaf G of T-5106 (~2 pts). Capstone e2e and playbook. Blocked by A B C1 C2 C3 D E.
 - tests/ticket_land_suite e2e: a temp repo with three worktrees enqueued out of blocked_by order, one carrying an unpromoted draft, one behind the target branch with a CHANGELOG conflict, one with a planted post-finalize refusal, a raised quarantine from a prior sweep; assert dependency-ordered LAND-PROOFs, clean worktree after the refusal, one residue ticket, queue and status output.
 - docs/guides/agent-playbook.md and docs/modules/tickets-landing.md describe the default path in one paragraph each; the coordinator-scripts guide's runner recipe is deleted (T-5106's five scripts are the deleted denominator, count them in the done-report).
+
+## Unblock log
+- 2026-09-21: unblocked by T-draft-5d1b6c22 -- draft promoted to T-5249 mid-filing; edge re-pointed
