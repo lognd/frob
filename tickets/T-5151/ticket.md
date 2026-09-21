@@ -2,7 +2,7 @@
 id: T-5151
 title: 'frob ticket attach --remove PATH: first-class attachment removal with ledger
   record cleanup'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-09-20'
