@@ -12,6 +12,7 @@ blocked_by:
 - T-5253
 - T-5255
 - T-5251
+- T-5248
 parent: T-5106
 tier: ticket
 sprint: v0.535.0
