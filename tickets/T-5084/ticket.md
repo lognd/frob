@@ -4,7 +4,7 @@ title: land-status.json keeps phase=running entries for dead pids (T-4562 and T-
   today, 2-4 hours old) and LandInProgress then refuses ledger writes from ROOT while
   no land runs; prune entries whose pid is gone on every read and treat only live
   pids as in progress
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -53,6 +53,9 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_live_entries_drops_confirmed_dead_pids
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_live_entries_keeps_ambiguous_and_alive_pids
 designated_repro_test: null
 threat: null
 component: null

@@ -249,6 +249,42 @@ def _read_land_status_entries(root: Path) -> dict[str, dict]:
     }
 
 
+# frob:ticket T-5084
+# frob:tests tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_live_entries_drops_confirmed_dead_pids  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_live_entries_keeps_ambiguous_and_alive_pids  # noqa: E501
+def _live_land_status_entries(root: Path) -> dict[str, dict]:
+    """`_read_land_status_entries(root)`, pruned of any entry whose own
+    `pid` is CONFIRMED dead (`pid_alive_tristate(pid) is False`) --
+    T-5084's fix for the measured incident where a `phase="running"`
+    entry for a pid that had exited hours earlier (T-4562, T-4230: 2-4
+    hours old) stayed in the raw marker and read as "a land is still in
+    progress" to anything that only checked for the entry's PRESENCE, not
+    its actual liveness.
+
+    The raw, on-disk file (`_read_land_status_entries`, still called
+    by `_write_land_status` to preserve every OTHER pid's own last-
+    written phase/timestamp across a write) intentionally keeps a dead
+    entry until `_prune_dead_land_status_entries`'s own cap forces a
+    physical rewrite -- crash forensics a human has not read yet must
+    survive a routine write from an unrelated, live land. This function
+    is the separate, always-fresh READ-time view for any caller that
+    actually wants "is a land in progress" semantics (T-5084's own
+    acceptance criterion: "treat only live pids as in progress") rather
+    than "what does the file currently say", the same on-disk-forensics-
+    vs-live-view split `_prune_dead_land_status_entries` already draws
+    for the write side. An `entry` whose `pid` field is missing or not
+    an `int` is treated as unresolvable and kept (never claimed dead on
+    a check that could not actually run), matching `pid_alive_tristate`'s
+    own ambiguous-stays-live posture elsewhere in this module."""
+    entries = _read_land_status_entries(root)
+    live: dict[str, dict] = {}
+    for pid_key, entry in entries.items():
+        pid = entry.get("pid")
+        if not isinstance(pid, int) or pid_alive_tristate(pid) is not False:
+            live[pid_key] = entry
+    return live
+
+
 # frob:ticket T-4266
 def _resolved_land_status_started_at(
     entries: dict[str, dict], pid_key: str, pid: int, ticket_id: str, *, fallback: str
