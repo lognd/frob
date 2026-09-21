@@ -1046,6 +1046,15 @@ scope_changes:
     (T-3865); comment-only frob:waive deletions/rewords, no behavior change
   actor: logan
   at: '2026-09-20'
+body_changes:
+- mode: append
+  reason: T-3865 is a comment-only waiver-hygiene sweep; BUG002 correctly reports
+    its evidence as confirmatory-only since there is no behavior change for a mutation
+    test to kill
+  actor: logan
+  at: '2026-09-20'
+  old_length: 627
+  new_length: 948
 evidence:
 - tests/test_waive_gate.py::TestWaive010Violations::test_plain_permanent_reason_does_not_warn
 - tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_markdown_image_in_declared_readme_fires_error
@@ -1059,3 +1068,5 @@ anchor_reason: null
 land_commit: null
 ---
 T-3844 burn-down: this rule/cluster (WAIVE004,WAIVE010) carried 265 unwaived warning-level findings on the 2026-09-05 full unscoped 'frob check --no-cache' baseline measured for T-3844 (see that ticket's body for the full histogram). It is intentionally NOT promoted to error by T-3844 -- promoting a rule that still fires reds the build for everyone. This ticket's job: drive the live unwaived finding count for WAIVE004,WAIVE010 to zero (real fixes and/or reasoned frob:waive entries), then promote WAIVE004,WAIVE010 from warn to error in frob.toml's [gates.severity] T-1002 managed zone as a follow-up to this same campaign.
+
+frob:no-behavior-change reason="This ticket deletes/rewords frob:waive comments (WAIVE004 stale exemptions, WAIVE010 deferred-work-reading permanent exemptions) -- pure comment edits, no executable-code or behavior change; BUG002/mutation-kill evidence structurally cannot apply the way it does to a code-path bug fix."
