@@ -37,6 +37,12 @@ scope:
 - tests/unit/test_cli_group_parity.py
 - src/frob/app/app.py
 - src/frob/app/_config_external.py
+- docs/commands/outline.md
+- docs/commands/map.md
+- docs/commands/xref.md
+- docs/commands/scaffold.md
+- docs/commands/exports.md
+- changelog.d/T-4690.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,6 +81,48 @@ scope_changes:
     status) -- avoids duplicating the sunset check per-runner; _config_external.py's
     _BOOL_FLAGS allowlist had to gain doctor_whereis or the new frob doctor --whereis
     flag silently no-ops (found while implementing T-4690)
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/commands/outline.md
+  reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
+    verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
+    fragment for the deprecations this ticket introduces
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/commands/map.md
+  reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
+    verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
+    fragment for the deprecations this ticket introduces
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/commands/xref.md
+  reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
+    verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
+    fragment for the deprecations this ticket introduces
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
+    verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
+    fragment for the deprecations this ticket introduces
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/commands/exports.md
+  reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
+    verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
+    fragment for the deprecations this ticket introduces
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: changelog.d/T-4690.md
+  reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
+    verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
+    fragment for the deprecations this ticket introduces
   actor: logan
   at: '2026-09-21'
 triage_changes:
