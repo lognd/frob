@@ -1,5 +1,5 @@
 ---
-id: T-draft-d36eb770
+id: T-5182
 title: 'DOC011: docs/design/ticket-strata-shared-graph-inventory.md cites three draft
   ids (T-draft-5d5c1eb2, e7434c27, 452acd80) that were never filed'
 state: queued
