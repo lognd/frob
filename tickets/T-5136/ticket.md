@@ -19,13 +19,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/perf/*.py
 - docs/design/coding-performance-corpus.md
-- docs/modules/gates.md
 - frob.toml
 scope_breadth_ack: true
 scope_breadth_ack_reason: four sibling detectors in one package plus their corpus
   rows and gate docs
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md locked by live T-5121 lease; add PERF015-018 rows
+    in a follow-up once T-5121 releases it
+  actor: logan
+  at: '2026-09-21'
 triage_changes:
 - field: milestone
   old_value: null
