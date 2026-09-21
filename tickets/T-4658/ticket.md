@@ -1,7 +1,7 @@
 ---
 id: T-4658
 title: 'Ids are assigned once at new: renumbering inside a worktree is refused'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
