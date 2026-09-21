@@ -1,5 +1,5 @@
 ---
-id: T-draft-796f317b
+id: T-5253
 title: 'drain_next lands in blocked_by order: QueueEntry carries blocked_by, blocked
   entries wait, unsatisfiable blockers are rejected with a reason'
 state: queued
