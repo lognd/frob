@@ -1,5 +1,5 @@
 ---
-id: T-draft-066b204e
+id: T-5214
 title: design/frob.strata narrative node missing declarations for frob.narrative._bulk
   (SYS003+SELFAUDIT001 cascade)
 state: queued
