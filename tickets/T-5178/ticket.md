@@ -1,5 +1,5 @@
 ---
-id: T-draft-41d39673
+id: T-5178
 title: pre-land DOC004/DOC006 sweeps resolve console commands and options against
   the running parser, not the staged tree
 state: queued
