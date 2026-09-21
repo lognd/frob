@@ -1,7 +1,7 @@
 ---
 id: T-3614
 title: add --wait mode to ticket write verbs
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-31'
@@ -23,6 +23,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_new.py
 - src/frob/_cli_parsers/_ticket/_metadata.py
 - src/frob/app/ticket_runner/__init__.py
+- src/frob/app/config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,13 @@ scope_changes:
   reason: shared pre-dispatch LandInProgress choke point every write verb passes through
   actor: logan
   at: '2026-09-16'
+- op: add
+  glob: src/frob/app/config.py
+  reason: add the ticket_wait_s AppConfig field the shared LandInProgress dispatch
+    check reads; documented as blocked on this exact edit in the tickets own failure
+    log
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: priority
   old_value: high
