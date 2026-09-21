@@ -1,5 +1,5 @@
 ---
-id: T-draft-5d1b6c22
+id: T-5249
 title: Land queue default keyed on live-lease count, sync opt-out (--sync, ticket_land_default=sync),
   documented config key fixed
 state: queued
