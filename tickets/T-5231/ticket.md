@@ -1,5 +1,5 @@
 ---
-id: T-draft-55f73088
+id: T-5231
 title: 'land-lock-held guard trio stale after T-3612: reconcile/set-parent/set-priority
   apply while land.lock held instead of refusing'
 state: queued
