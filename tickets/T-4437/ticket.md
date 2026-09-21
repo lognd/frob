@@ -21,6 +21,7 @@ scope:
 - src/frob/_cli_parsers/_misc.py
 - src/frob/gates/_bug_repro.py
 - src/frob/tickets/_land_compose.py
+- docs/modules/clean.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
   reason: wire the --sweep-disposable-worktrees flag onto frob clean and stamp creator
     pid at the two disposable-worktree creation sites this tickets own acceptance
     criteria 1/2 name
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: docs/modules/clean.md
+  reason: document --sweep-disposable-worktrees and the new frob.worktrees public
+    symbols this tickets own land refused for missing frob:doc
   actor: logan
   at: '2026-09-20'
 triage_changes:
@@ -86,6 +93,8 @@ body_changes:
   at: '2026-09-12'
   old_length: 1054
   new_length: 1072
+evidence:
+- tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees::test_dead_stamped_worktree_is_removed
 designated_repro_test: null
 threat: null
 component: null
