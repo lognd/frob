@@ -57,7 +57,6 @@ scope:
 - src/frob/gates/_pkg_resources.py
 - src/frob/gates/_refs.py
 - src/frob/gates/_rule_id_scan.py
-- src/frob/gates/_waive.py
 - src/frob/gates/_wire.py
 - src/frob/graph/dsl.py
 - src/frob/graph/lock.py
@@ -1044,6 +1043,12 @@ scope_changes:
   glob: tests/unit/test_verify_language_buckets.py
   reason: WAIVE004/WAIVE010 waiver-hygiene fixes touched these 79 files this pass
     (T-3865); comment-only frob:waive deletions/rewords, no behavior change
+  actor: logan
+  at: '2026-09-20'
+- op: remove
+  glob: src/frob/gates/_waive.py
+  reason: T-4693 is actively touching this file; dropped from T-3865's scope to avoid
+    CrossTicketLeakage, reverted the reword too
   actor: logan
   at: '2026-09-20'
 body_changes:
