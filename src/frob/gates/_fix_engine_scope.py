@@ -57,6 +57,7 @@ in this same codebase.
 
 from __future__ import annotations
 
+import fnmatch
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -66,6 +67,8 @@ from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets import TicketQueue, scope_matches
 from frob.tickets._leases import is_effectively_in_progress, read_all_leases
+from frob.tickets._models import _scope_globs, _split_scope_entries
+from frob.tickets._registry_files import registry_files
 
 _log = get_logger(__name__)
 
@@ -102,6 +105,7 @@ class SkippedFix(BaseModel):
 
 # frob:ticket T-2284
 # frob:ticket T-2328
+# frob:ticket T-5242
 def _other_ticket_holding_live_lease(
     root: Path, queue: TicketQueue, ticket_id: str, path: str
 ) -> str | None:
@@ -124,7 +128,31 @@ def _other_ticket_holding_live_lease(
     root cause of T-2328's incident (T-2194's own in-scope
     `design/frob.strata` edit silently reverted because T-2303's ledger
     scope still named `design` after T-2303's lease had already
-    narrowed to `scope=[]`)."""
+    narrowed to `scope=[]`).
+
+    A registry file (`frob.tickets._registry_files.registry_files`,
+    T-4650's append-shared class) is only reported as held here when the
+    OTHER ticket's own effective scope GENUINELY names it (via
+    `_scope_globs`, the same directory-prefix expansion `scope_matches`
+    applies to a real declared/live entry) -- never purely because
+    `scope_matches` unconditionally appends the registry-file glob set
+    to EVERY ticket's effective scope regardless of what that ticket
+    actually declared (its own docstring: "this implicit-scope rule
+    always covers at least the documented default four"). Without this
+    distinction, EVERY registry file would read as held by ANY
+    in-progress ticket no matter its real scope, defeating this exact
+    function's "narrowed live lease wins" precedence for the one file
+    class it matters most for, and contradicting the append-shared
+    design `_land.py`'s own `CrossTicketLeakage` exemption already gives
+    these files (many tickets legitimately append one line each; no
+    single ticket exclusively owns the whole file). A genuine declared/
+    live scope entry that happens to also cover a registry file (e.g. a
+    ticket scoped to `design/**`, itself covering `design/frob.strata`)
+    still counts as holding it -- only the IMPLICIT, everyone-gets-it
+    addition is suppressed."""
+    path_is_registry_file = any(
+        fnmatch.fnmatch(path, glob) for glob in registry_files(root)
+    )
     leases_by_id = {lease.ticket_id: lease.scope for lease in read_all_leases(root)}
     for other_id, other in queue.tickets.items():
         if other_id == ticket_id:
@@ -133,6 +161,14 @@ def _other_ticket_holding_live_lease(
         if not scope_matches(
             path, effective_scope, kind=other.kind, ticket_id=other_id
         ):
+            continue
+        if path_is_registry_file and not any(
+            fnmatch.fnmatch(path, glob)
+            for glob in _scope_globs(_split_scope_entries(effective_scope))
+        ):
+            # The only reason `scope_matches` matched is its own
+            # unconditional registry-file addition -- `other_id` never
+            # actually declared/leased this path itself.
             continue
         if is_effectively_in_progress(root, other_id, other.state):
             return other_id

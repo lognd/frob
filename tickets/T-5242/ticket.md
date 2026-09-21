@@ -2,7 +2,7 @@
 id: T-5242
 title: test_narrowed_live_lease_wins_over_stale_declared_scope fails on current dev
   (CI run 35510697497 burn-down)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -29,11 +29,8 @@ scope_changes:
     not _fix_engine.py
   actor: logan
   at: '2026-09-21'
-lease_force_releases:
-- reason: promote before land (T-5166)
-  staleness_reason: null
-  actor: /home/logan/projects/frob
-  at: '2026-09-21'
+evidence:
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_narrowed_live_lease_wins_over_stale_declared_scope
 designated_repro_test: null
 threat: null
 component: null
