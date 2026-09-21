@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_reporting_attachments.py
 - src/frob/app/ticket_runner/_attach_backfill.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/app/config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,12 @@ scope_changes:
   at: '2026-09-21'
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: real file this feature must touch (declared scope named nonexistent placeholder
+    paths)
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/app/config.py
   reason: real file this feature must touch (declared scope named nonexistent placeholder
     paths)
   actor: logan
