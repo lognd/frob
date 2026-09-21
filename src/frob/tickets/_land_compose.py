@@ -33,6 +33,7 @@ from typani.result import Err, Ok, Result
 from frob.gitio import excerpt, run_argv
 from frob.logging import get_logger
 from frob.tickets._store import ledger_lock
+from frob.worktrees._disposable_sweep import stamp_owner_pid
 
 _log = get_logger(__name__)
 
@@ -398,6 +399,15 @@ def compose_squash_in_disposable_worktree(
         tempfile.TemporaryDirectory(prefix="frob-land-squash-") as (scratch),
     ):
         worktree = Path(scratch) / "wt"
+        # T-4437: stamp this process's own pid onto `scratch` before `git
+        # worktree add` runs -- `tempfile.TemporaryDirectory`'s own
+        # cleanup only fires on a normal exit from this `with` block; a
+        # killed land (SIGKILL) leaks `scratch` and its `git worktree add`
+        # registration with nothing left to clean either up, exactly the
+        # measured F-055 leak this ticket sweeps. The stamp is what lets
+        # `frob.worktrees._disposable_sweep` later tell that leak's
+        # creator is actually gone rather than just slow.
+        stamp_owner_pid(Path(scratch))
         added = run_argv(
             (
                 "git",

@@ -75,14 +75,12 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 41,
-      "reason": "T-4508: adds src/frob/testing/_dotnet_runner.py to core's fs.read via-list (the .NET test runner reads test-discovery output). Three new sites over the T-4517 ceiling.",
-      "ticket": "T-4508"
+      "accepted_count": 42,
+      "reason": "branch-own via addition auto-accept (T-4437)"
     },
     "core::fs.write": {
-      "accepted_count": 30,
-      "reason": "T-4508: adds src/frob/testing/_dotnet_runner.py to core's fs.write via-list (the .NET test runner writes its results/cache file). Two new sites, re-applied on top of dev's T-4503 baseline (which already added src/frob/scaffold/_unity_project.py, one new site, raising the T-4517 ceiling of 27 to 28) -- 28 + 2 = 30.",
-      "ticket": "T-4508"
+      "accepted_count": 31,
+      "reason": "branch-own via addition auto-accept (T-4437)"
     },
     "core::process-control": {
       "accepted_count": 1,
@@ -236,9 +234,8 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 312,
-      "reason": "T-4494: adds tests/unit/test_land_stackdump.py to the exec via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 311 -> 312, 1 new site(s).",
-      "ticket": "T-4494"
+      "accepted_count": 313,
+      "reason": "testsuite glob growth"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -256,7 +253,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 557,
+      "accepted_count": 558,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

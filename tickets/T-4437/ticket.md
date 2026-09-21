@@ -2,7 +2,7 @@
 id: T-4437
 title: Sweep leaked disposable worktrees (bug002 repro, land squash, stale .claude/worktrees
   entries)
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-09-12'

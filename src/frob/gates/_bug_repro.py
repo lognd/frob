@@ -58,6 +58,7 @@ from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError, exec_enabled, guarded_subprocess_run
 from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.tickets._models import Ticket
+from frob.worktrees._disposable_sweep import stamp_owner_pid
 
 _log = get_logger(__name__)
 
@@ -536,6 +537,13 @@ def _bug_repro_outcome_at_ref(
         return _BugReproOutcome.SAME_AS_HEAD
     scratch = Path(tempfile.mkdtemp(prefix="frob-bug002-"))
     worktree = scratch / "wt"
+    # T-4437: stamp this process's own pid onto `scratch` right away, before
+    # `git worktree add` even runs -- a `finally` block below already
+    # cleans this scratch dir up on any normal exit, but a SIGKILL mid-run
+    # (a killed check run) skips that entirely, leaking the scratch dir;
+    # the stamp is what lets `frob.worktrees._disposable_sweep` later tell
+    # that leak's creator is actually gone rather than just slow.
+    stamp_owner_pid(scratch)
     try:
         if not _checkout_bug_repro_worktree(root, worktree, base_ref, test_id):
             return _BugReproOutcome.NO_VERDICT

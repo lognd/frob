@@ -115,6 +115,39 @@ from `--all`/`--deep`, calls `clean(..., dry_run=not cfg.clean_yes)`, and
 renders the report through `frob.render.Renderer` (or a bare JSON dump for
 `--json`).
 
+## `frob clean --sweep-disposable-worktrees` (T-4437) <!-- frob:waive DOC006 reason="the flag is added to frob clean by this same land (src/frob/_cli_parsers/_misc.py); the pre-land docptr sweep resolves options from the running parser, not the staged tree" -->
+
+A DISTINCT sweep from the tiered artifact cleanup above: BUG002-repro
+(`frob.gates._bug_repro`) and land-squash (`frob.tickets._land_compose`)
+each cut a disposable `git worktree add` scratch dir under `/tmp` and
+clean it up on their own happy path -- but a SIGKILL mid-run (a killed
+land, a killed check run) skips that cleanup entirely, leaking the
+scratch dir and its `git worktree add` registration with nothing left to
+sweep it. `frob clean --sweep-disposable-worktrees [-y] [--json]` is that
+sweep, sharing `frob clean`'s own `-y`/`--yes` (dry-run preview vs.
+execute) and `--json` flags.
+
+<!-- frob:describes src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees -->
+```bash
+frob clean --sweep-disposable-worktrees        # preview only
+frob clean --sweep-disposable-worktrees -y     # execute
+```
+
+Liveness is decided by an owner-pid stamp (`frob.worktrees._disposable_
+sweep.stamp_owner_pid`), written by each creator right after `git
+worktree add` succeeds: a scratch dir with no stamp (a pre-T-4437 leak,
+or a creator that died before it could stamp) or a stamp naming a pid
+that is no longer running is dead and gets removed via `git worktree
+remove --force` + `git worktree prune`; a stamp naming a still-running
+pid is left alone.
+
+```python
+class DisposableWorktreeEntry(BaseModel): ...  # one scratch dir's verdict
+class DisposableSweepReport(BaseModel): ...     # removed + kept, one call
+def stamp_owner_pid(scratch: Path) -> None
+def sweep_disposable_worktrees(repo_root, *, execute, scan_root=None) -> DisposableSweepReport
+```
+
 ## Relates
 
 - T-0456 (`frob ticket reconcile`): removes abandoned WORKTREES specifically; a

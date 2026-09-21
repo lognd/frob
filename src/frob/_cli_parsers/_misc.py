@@ -463,6 +463,16 @@ def _populate_clean_args(clean_p) -> None:
         help="execute the removal (default is a dry-run preview)",
     )
     clean_p.add_argument("--json", dest="clean_json", action="store_true")
+    # frob:ticket T-4437
+    clean_p.add_argument(
+        "--sweep-disposable-worktrees",
+        dest="clean_sweep_worktrees",
+        action="store_true",
+        help="remove leaked BUG002-repro/land-squash `git worktree add` "
+        "scratch dirs whose creator process is dead (T-4437; a distinct "
+        "sweep from the tiered artifact cleanup above -- combine with "
+        "-y/--yes to execute, default is a dry-run preview)",
+    )
 
 
 # frob:ticket T-0441

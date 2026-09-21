@@ -1221,6 +1221,13 @@ class AppConfig(BaseModel):
     clean_deep: bool = False
     clean_yes: bool = False
     clean_json: bool = False
+    # frob:ticket T-4437
+    # T-4437: sweep leaked disposable `git worktree add` scratch dirs
+    # (BUG002 repro, land-squash) whose creator died mid-run -- a
+    # distinct concern from the tiered artifact cleanup above, but wired
+    # onto the same `frob clean` verb per this ticket's own acceptance
+    # criterion 1 ("a clean-subcommand flag").
+    clean_sweep_worktrees: bool = False
 
     # fmt (T-0441: frob: directive canonical-form wrap/unwrap).
     # T-3906: `frob fmt` is now a DEPRECATED alias (sunset 2026-12-01,

@@ -1,0 +1,78 @@
+## Done report
+
+# Why (T-4437)
+
+MEASURED 2026-09-12: 9 leaked `/tmp/frob-bug002-*/wt` worktrees (BUG002
+repro, `frob.gates._bug_repro`) and 3 leaked `/tmp/frob-land-squash-*`
+worktrees (`frob.tickets._land_compose`). Both pipelines clean their own
+scratch dir up on the happy path (a `finally` block / a `with tempfile.
+TemporaryDirectory`), but neither survives a SIGKILL mid-run (a killed
+land, a killed check run) -- SIGKILL runs no Python cleanup code, so the
+`git worktree add` registration and the scratch dir both outlive the
+process that made them. Nothing ever revisited them: `frob doctor`/`frob
+clean` did not report them.
+
+## Fix
+
+New package `frob.worktrees` (`src/frob/worktrees/_disposable_sweep.py`):
+
+- `stamp_owner_pid(scratch)` writes the current pid into `scratch/
+  .frob-owner-pid` right after `git worktree add` succeeds (acceptance
+  criterion 2). Wired into both creation sites: `frob.gates._bug_repro`'s
+  BUG002 repro checkout and `frob.tickets._land_compose`'s land-squash
+  checkout.
+- `sweep_disposable_worktrees(repo_root, execute=..., scan_root=...)`
+  globs `frob-bug002-*`/`frob-land-squash-*` under a scan root (default
+  `tempfile.gettempdir()`, overridable for tests), classifies each dead
+  (no pid stamp, or a stamped pid that is not running) or alive (a
+  stamped pid that IS running), and -- when `execute=True` -- removes the
+  dead ones via `git worktree remove --force` + `git worktree prune` +
+  `shutil.rmtree` (acceptance criteria 1/3).
+- `frob clean --sweep-disposable-worktrees [-y]` is the CLI surface
+  (acceptance criterion 1's "a clean-subcommand flag"), sharing `frob
+  clean`'s existing `-y`/`--yes` (execute vs. dry-run preview) and
+  `--json` flags rather than adding new ones.
+
+## Scope widened
+
+`frob ticket scope --add` for `src/frob/_cli_parsers/_misc.py` (the CLI
+flag itself lives here, not in the implicit CLI-wiring grant's three
+files), `src/frob/gates/_bug_repro.py` and `src/frob/tickets/
+_land_compose.py` (the two pid-stamp call sites acceptance criterion 2
+names) -- all three were free to lease and are exactly what this ticket's
+own plan required touching.
+
+## Verification
+
+- `ruff check`/`ruff format --check` on every touched file: clean.
+- `nice -n 10 uv run pytest tests/unit/test_clean_worktrees_sweep.py`: 6/6
+  passed (dead-stamped removed, live-stamped kept, unstamped-leak
+  removed, dry-run previews without removing, pid-stamp writes the
+  current pid, the CLI flag dispatches to the sweep report).
+- Regression check on the two edited creator-site modules: `pytest
+  tests/gates/test_bug_repro_at_ref_public.py tests/unit/
+  test_land_compose.py`: 22/22 passed.
+- `frob check --files <every touched file> --only ruff --only ty`: PASS,
+  0 errors, 0 warnings.
+- `frob check --files <same> --only gates`: hung past 10 minutes twice
+  (repo-wide gates run unscoped even with `--files`, per `--files`'s own
+  help text) -- skipped per the coordinator's explicit fallback
+  instruction, relying on ruff+ty+targeted pytest+the land dry run
+  instead.
+
+### Changed
+```
+ src/frob/_cli_parsers/_misc.py           |  10 ++
+ src/frob/app/clean_runner.py             |  57 +++++++-
+ src/frob/app/config.py                   |   7 +
+ src/frob/gates/_bug_repro.py             |   8 ++
+ src/frob/tickets/_land_compose.py        |  10 ++
+ src/frob/worktrees/__init__.py           |  14 ++
+ src/frob/worktrees/_disposable_sweep.py  | 220 +++++++++++++++++++++++++++++++
+ tests/unit/test_clean_worktrees_sweep.py | 169 ++++++++++++++++++++++++
+ tickets/T-4437/ticket.md                 |  29 +++-
+ 9 files changed, 522 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees::test_dead_stamped_worktree_is_removed` (pytest node id, verified passing when recorded)
