@@ -1,7 +1,7 @@
 ---
 id: T-4641
 title: TICK008 real-repo smoke test exceeds 120s on posix under fleet load
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -26,6 +26,9 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean
+- tests/gates_suite/test_tick.py::TestTick007UndispatchedStale::test_real_repo_scan_runs_end_to_end_without_crashing
 designated_repro_test: null
 threat: null
 component: null

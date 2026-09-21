@@ -25,8 +25,7 @@ class TestTick006PhantomFiling:
         return TicketQueue(tickets={t.id: t for t in tickets})
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon\
-    # _fires
+    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
     def test_phantom_filed_colon_fires(self, tmp_path: Path) -> None:
         """`Filed: T-draft-deadbeef` (a real T-0726/T-0577-class draft-loss
         shape) resolving to no block, active or archived, is TICK006."""
@@ -47,8 +46,7 @@ class TestTick006PhantomFiling:
         assert tick006[0].severity == Severity.ERROR
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_as_fi\
-    # res
+    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_as_fires  # noqa: E501
     def test_phantom_filed_as_fires(self, tmp_path: Path) -> None:
         """The T-0707 incident class: `filed as T-0999` where T-0999 was
         never actually filed anywhere -- an invented filing trail."""
@@ -88,8 +86,7 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_filed_colon_none_is\
-    # _silent
+    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_filed_colon_none_is_silent  # noqa: E501
     def test_filed_colon_none_is_silent(self, tmp_path: Path) -> None:
         """`Filed: none` -- the common "nothing to file" Done-report
         shape -- names no id at all and must never fire."""
@@ -233,8 +230,7 @@ class TestTick006PhantomFiling:
         assert "T-9998" in tick006[0].message
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_negation_not_filed_\
-    # is_silent
+    # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_negation_not_filed_is_silent  # noqa: E501
     def test_negation_not_filed_is_silent(self, tmp_path: Path) -> None:
         """ "not filed as a new ticket" (verbatim phrase used repeatedly in
         this repo's ledger) is an explicit negation and must never fire,
@@ -583,8 +579,7 @@ class TestTick011DisclosedCutWithoutTicket:
         assert not any(v.rule == "TICK011" for v in violations)
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_histori\
-    # cal_ticket_outside_active_window_is_silent_by_default
+    # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
     def test_historical_ticket_outside_active_window_is_silent_by_default(
         self, tmp_path: Path
     ) -> None:
@@ -611,8 +606,7 @@ class TestTick011DisclosedCutWithoutTicket:
         assert not any(v.rule == "TICK011" for v in violations)
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_recent_\
-    # ticket_outside_old_window_still_fires_exactly_as_today
+    # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
     def test_recent_ticket_outside_old_window_still_fires_exactly_as_today(
         self, tmp_path: Path
     ) -> None:
@@ -638,8 +632,7 @@ class TestTick011DisclosedCutWithoutTicket:
         assert "T-1400" in tick011[0].message
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_include\
-    # _history_env_opt_in_restores_the_historical_finding
+    # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
     def test_include_history_env_opt_in_restores_the_historical_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -715,8 +708,7 @@ class TestTick007UndispatchedStale:
 
     # frob:ticket T-0820
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_stale_critical_\
-    # fires
+    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
     def test_stale_critical_fires(self, tmp_path: Path) -> None:
         """A CRITICAL ticket filed long ago (far past the 4h default
         threshold), still queued and unblocked, is TICK007."""
@@ -733,8 +725,7 @@ class TestTick007UndispatchedStale:
 
     # frob:ticket T-0820
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_\
-    # is_silent
+    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
     def test_fresh_critical_is_silent(self, tmp_path: Path) -> None:
         """A CRITICAL ticket filed today has not crossed the 4h threshold
         yet (whole-day granularity means same-day is 0h elapsed) -- no
@@ -749,8 +740,7 @@ class TestTick007UndispatchedStale:
 
     # frob:ticket T-0820
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority\
-    # _never_fires
+    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
     def test_medium_priority_never_fires(self, tmp_path: Path) -> None:
         """MEDIUM/LOW carry no default threshold (T-0752: "a queue always
         has some") -- an ancient MEDIUM ticket never alarms TICK007."""
@@ -764,8 +754,7 @@ class TestTick007UndispatchedStale:
 
     # frob:ticket T-0820
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_\
-    # is_silent
+    # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
     def test_blocked_ticket_is_silent(self, tmp_path: Path) -> None:
         """A CRITICAL ticket blocked on an open blocker is not in the
         dispatchable set at all (`doable()` excludes it), so it never
@@ -798,13 +787,23 @@ class TestTick007UndispatchedStale:
         between sessions (a CRITICAL/HIGH ticket dispatched an hour before
         this test runs vs. one left sitting are both legitimate states);
         every violation, if any, must simply carry the TICK007 rule id and
-        a WARN severity."""
+        a WARN severity.
+
+        T-4641: calls `_tick007_undispatched_stale(root, queue)` directly
+        instead of the full `tickets_gate(root, queue)` this test used to
+        run -- same bounded-fixture reasoning as `TestTick008
+        UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean`'s own
+        T-4641 fix: this test's own intent is TICK007 alone, and the full
+        gate dispatch pulls in `empty_code_diff_violations`'s
+        `_FENCE_RE`-driven hang over this repo's real Done report bodies
+        (see that other test's docstring, and T-5160, filed
+        while working T-4641) for no reason this test cares about."""
+        from frob.gates._tickets_gate import _tick007_undispatched_stale
         from frob.tickets import load_queue
 
         root = Path(__file__).resolve().parents[2]
         queue = load_queue(root).danger_ok
-        violations = tickets_gate(root, queue)
-        tick007 = [v for v in violations if v.rule == "TICK007"]
+        tick007 = list(_tick007_undispatched_stale(root, queue))
         for v in tick007:
             assert v.severity == Severity.WARN
             assert v.rule == "TICK007"
@@ -849,8 +848,7 @@ class TestTick008UnknownLedgerFields:
         return Ticket.model_validate(data)
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unkn\
-    # own_field
+    # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
     def test_fires_on_unknown_field(self, tmp_path: Path) -> None:
         """A ticket with a genuinely unknown field fires TICK008, naming
         both the ticket id and the unknown field, at WARN (not ERROR --
@@ -876,8 +874,7 @@ class TestTick008UnknownLedgerFields:
         assert "did you mean 'priority'" in tick008[0].message
 
     # frob:tests \
-    # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_cle\
-    # an_ledger
+    # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
     def test_silent_on_clean_ledger(self, tmp_path: Path) -> None:
         """A ticket with only known fields carries no `__pydantic_extra__`
         and never fires TICK008."""
@@ -891,13 +888,29 @@ class TestTick008UnknownLedgerFields:
         live `tickets.md`/`tickets-archive.md` must produce ZERO TICK008
         findings today -- a nonzero result here means a genuinely stale
         known field somewhere in the live ledger, which this ticket's
-        Description says to STOP and report rather than calibrate around."""
+        Description says to STOP and report rather than calibrate around.
+
+        T-4641: calls `_tick008_unknown_ledger_fields(queue)` DIRECTLY
+        instead of the full `tickets_gate(root, queue)` this test used to
+        run -- a bounded fixture in the sense the ticket demands: TICK008
+        is a pure, in-memory, O(tickets) pass over already-loaded
+        `Ticket` objects (no filesystem/git access of its own), so
+        calling it alone bounds this smoke test to exactly what it
+        verifies. `tickets_gate`'s full dispatch pulls in every other
+        TICK/GATE family sharing this queue, including (measured directly
+        reproducing this ticket's stall, faulthandler thread dump)
+        `empty_code_diff_violations` -> `_changed_paths_from_done_report`
+        -> a catastrophically backtracking `_FENCE_RE.search` over this
+        repo's own (large, real) Done report bodies -- a genuine hang
+        unrelated to TICK008 or to this test's own intent, filed
+        separately (out of this ticket's `tests/gates_suite/test_tick.py`
+        -only scope) rather than fixed here."""
+        from frob.gates._tickets_gate import _tick008_unknown_ledger_fields
         from frob.tickets import load_queue
 
         root = Path(__file__).resolve().parents[2]
         queue = load_queue(root).danger_ok
-        violations = tickets_gate(root, queue)
-        tick008 = _by_rule(violations, "TICK008")
+        tick008 = _by_rule(_tick008_unknown_ledger_fields(queue), "TICK008")
         assert tick008 == []
 
     # frob:tests \
