@@ -38,6 +38,12 @@ body_changes:
   at: '2026-09-19'
   old_length: 3296
   new_length: 4354
+lease_force_releases:
+- reason: worktree t-4710 holds no implementation; T-4710 stays queued, reported SKIP
+    by land-repair
+  staleness_reason: null
+  actor: /home/logan/projects/frob
+  at: '2026-09-21'
 designated_repro_test: null
 threat: null
 component: null
