@@ -34,6 +34,7 @@ from pydantic import BaseModel
 from typani import Ok
 from typani.result import Result
 
+from frob.app.run_runner import _NATIVE_DEFAULTS, load_commands
 from frob.logging import get_logger
 from frob.scaffold.project import (
     _FORBID_LAND_OWNED_FILES_SCRIPT,
@@ -205,20 +206,34 @@ def _is_ours(body: str) -> bool:
 # version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
 # deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
 # no shared domain, independently evolving, spot-checked per T-2966"
-def _marker_begin(block_id: str) -> str:
+# frob:ticket T-4760
+def _marker_comment(target: str) -> str:
+    """The line-comment token for `target`'s language (T-4760): `::` for
+    a Windows batch file (`#` is not a comment there -- it is an unknown
+    command and aborts the script), `#` for everything else this module
+    manages (Makefile, .gitignore)."""
+    return "::" if target.endswith(".bat") else "#"
+
+
+# frob:ticket T-4760
+def _marker_begin(block_id: str, *, target: str = "") -> str:
     """The opening marker line for managed-block `block_id` -- content
     between this and `_marker_end(block_id)` is frob-owned and safe to
-    replace; content outside it is the repo's own and never touched."""
+    replace; content outside it is the repo's own and never touched.
+    `target` picks the comment token (T-4760: `.bat` needs `::`, not `#`)."""
+    comment = _marker_comment(target)
     return (
-        f"# frob:managed-block BEGIN {block_id} "
+        f"{comment} frob:managed-block BEGIN {block_id} "
         "(frob scaffold apply -- do not hand-edit within markers)"
     )
 
 
-def _marker_end(block_id: str) -> str:
+# frob:ticket T-4760
+def _marker_end(block_id: str, *, target: str = "") -> str:
     """The closing marker line for managed-block `block_id` (see
     `_marker_begin`)."""
-    return f"# frob:managed-block END {block_id}"
+    comment = _marker_comment(target)
+    return f"{comment} frob:managed-block END {block_id}"
 
 
 def _digest(content: str) -> str:
@@ -276,6 +291,80 @@ _LEGACY_CARGO_CACHE_MARKERS: tuple[str, ...] = (
     "CARGO_TARGET_DIR :=",
     "maturin develop --uv --release",
 )
+
+
+# frob:ticket T-4760
+def _defines_stamp(text: str) -> bool:
+    """Whether `text` (an existing Makefile's content) already assigns a
+    `STAMP` variable -- the core-shim's `core: $(STAMP)` prerequisite is
+    only meaningful when one is defined; applying it to a Makefile with
+    no `STAMP` (measured on cpp: no venv, no native build to gate) left
+    `$(STAMP)` expanding empty and `core:` running unconditionally."""
+    return any(
+        line.strip().startswith("STAMP") and ":=" in line for line in text.splitlines()
+    )
+
+
+# frob:ticket T-4760
+def _wrapper_entry_names(root: Path) -> tuple[str, ...]:
+    """Every `[commands]` entry `root`'s `frob.toml` declares, unioned
+    with the four always-invocable native-default names (test/lint/
+    format/check, see `frob.app.run_runner._NATIVE_DEFAULTS`) -- the full
+    set of one-line wrapper targets `frob scaffold apply` emits into the
+    Makefile and make.bat managed blocks (T-4760). Sorted for
+    deterministic, diff-stable output."""
+    names: set[str] = set(_NATIVE_DEFAULTS)
+    loaded = load_commands(root)
+    if loaded.is_ok:
+        names.update(loaded.danger_ok.entries.keys())
+    else:
+        _log.warning(
+            "scaffold apply: %s: [commands] failed to load (%s), falling back to "
+            "native defaults only for wrapper targets",
+            root,
+            loaded.danger_err,
+        )
+    return tuple(sorted(names))
+
+
+# frob:ticket T-4760
+_WRAPPER_BLOCK_PREAMBLE = (
+    "Every target/branch below is a one-line call to `frob run <name>` --"
+    " the named entry lives once, in this project's frob.toml [commands]"
+    " table (or a frob-native default when undeclared). Do not hand-edit"
+    " within this block: `frob scaffold apply` regenerates it from"
+    " [commands], and the wrapper-drift gate (T-4760) reports a target"
+    " that expands more than one command inline or names an entry"
+    " [commands] no longer declares."
+)
+
+
+# frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+# frob:ticket T-4760
+def _makefile_wrapper_block_content(root: Path) -> str:
+    """The Makefile `makefile-wrapper-targets` managed-block body: one
+    `<name>:` target per `_wrapper_entry_names(root)`, each recipe a
+    single line delegating to `frob run <name>` (T-4760)."""
+    lines = [f"# {_WRAPPER_BLOCK_PREAMBLE}"]
+    for name in _wrapper_entry_names(root):
+        lines.append(f"{name}:")
+        lines.append(f"\tfrob run {name}")
+    return "\n".join(lines) + "\n"
+
+
+# frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+# frob:ticket T-4760
+def _makebat_wrapper_block_content(root: Path) -> str:
+    """The `make.bat` `makebat-wrapper-targets` managed-block body: one
+    `if "%1"=="<name>"` branch per `_wrapper_entry_names(root)`, each a
+    single line delegating to `frob run <name>` -- the Windows counterpart
+    to `_makefile_wrapper_block_content` (T-4760), same name set so the
+    two wrapper files' target sets stay equal by construction."""
+    lines = [f":: {_WRAPPER_BLOCK_PREAMBLE}"]
+    for name in _wrapper_entry_names(root):
+        lines.append(f'if "%1"=="{name}" (frob run {name} & exit /b %errorlevel%)')
+    return "\n".join(lines) + "\n"
+
 
 #: The standard cross-language `.gitignore` entries every frob-managed
 #: repo should carry (build artifacts, Python caches, frob local state,
@@ -362,13 +451,17 @@ class ManagedBlockStatus(BaseModel):
 # the resolver can statically bound; the one real raise path (str.index) is caught \
 # below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
-def _extract_region(text: str, block_id: str) -> str | None:
+# frob:ticket T-4760
+def _extract_region(text: str, block_id: str, *, target: str = "") -> str | None:
     """The text strictly between `block_id`'s begin/end markers in `text`,
     or `None` if the marker pair is not present (malformed -- only one
     marker present -- is also treated as absent, safest default: `apply`
-    will append a fresh, well-formed block rather than guess at repair)."""
-    begin = _marker_begin(block_id)
-    end = _marker_end(block_id)
+    will append a fresh, well-formed block rather than guess at repair).
+    `target` (T-4760) picks the comment token the markers were written
+    with -- pass the file name (e.g. `"make.bat"`) when it is not a
+    plain `#`-comment file."""
+    begin = _marker_begin(block_id, target=target)
+    end = _marker_end(block_id, target=target)
     try:
         begin_idx = text.index(begin)
         end_idx = text.index(end, begin_idx)
@@ -392,6 +485,7 @@ def _has_legacy_core_cache_logic(text: str) -> bool:
     return any(marker in text for marker in _LEGACY_CARGO_CACHE_MARKERS)
 
 
+# frob:ticket T-4760
 def _text_block_status(root: Path, block: _ManagedTextBlock) -> ManagedBlockStatus:
     """`ManagedBlockStatus` for one `_ManagedTextBlock` under `root`: absent
     file or absent marker pair is `present=False`; a present region whose
@@ -416,7 +510,7 @@ def _text_block_status(root: Path, block: _ManagedTextBlock) -> ManagedBlockStat
             expected_digest=expected_digest,
         )
     text = path.read_text(encoding="utf-8")
-    region = _extract_region(text, block.block_id)
+    region = _extract_region(text, block.block_id, target=block.target)
     if region is None:
         if block.block_id == "makefile-core-shim" and _has_legacy_core_cache_logic(
             text
@@ -644,8 +738,31 @@ def _apply_text_block(root: Path, block: _ManagedTextBlock) -> str:
     (creating the file/parent dirs if needed). Returns a one-line
     description of what happened, for `apply`'s report."""
     path = root / block.target
-    begin = _marker_begin(block.block_id)
-    end = _marker_end(block.block_id)
+
+    # frob:ticket T-4760
+    # Only refuse the FIRST insertion of the core-shim
+    # into a Makefile that defines no STAMP -- once inserted, the shim's
+    # own `core: $(STAMP)` line legitimately mentions STAMP without
+    # itself assigning it, so re-checking "does the whole file assign
+    # STAMP" on every later apply would false-positive against the shim's
+    # own prior insertion (a fresh Makefile `apply` created from nothing,
+    # for instance, never gets a STAMP assignment from anywhere).
+    if block.block_id == "makefile-core-shim" and path.exists():
+        existing = path.read_text(encoding="utf-8")
+        already_inserted = (
+            _extract_region(existing, block.block_id, target=block.target) is not None
+        )
+        if not already_inserted and not _defines_stamp(existing):
+            _log.info(
+                "scaffold apply: skipping %s: %s defines no STAMP variable "
+                "(core: $(STAMP) would expand to an unconditional prerequisite)",
+                block.block_id,
+                path,
+            )
+            return f"{block.target}: block {block.block_id} skipped (no STAMP defined)"
+
+    begin = _marker_begin(block.block_id, target=block.target)
+    end = _marker_end(block.block_id, target=block.target)
     marked = f"{begin}\n{block.content.rstrip(chr(10))}\n{end}"
 
     if not path.exists():
@@ -655,7 +772,7 @@ def _apply_text_block(root: Path, block: _ManagedTextBlock) -> str:
         return f"{block.target}: created with block {block.block_id}"
 
     text = path.read_text(encoding="utf-8")
-    region = _extract_region(text, block.block_id)
+    region = _extract_region(text, block.block_id, target=block.target)
     if region is not None and _digest(region) == _digest(block.content.rstrip("\n")):
         return f"{block.target}: block {block.block_id} already current"
 
@@ -724,6 +841,24 @@ def apply_managed_blocks(root: Path) -> Result[tuple[str, ...], ScaffoldError]:
     `MANAGED_TEXT_BLOCKS` order followed by the hooks, for `frob scaffold
     apply`'s CLI output and the Done-report evidence trail."""
     changes: list[str] = [_apply_text_block(root, b) for b in MANAGED_TEXT_BLOCKS]
+    # frob:ticket T-4760
+    # The two wrapper-target blocks are computed from
+    # this project's own frob.toml [commands] table, so their content
+    # cannot be a fixed module constant like the blocks above -- built
+    # fresh each call, then applied through the same idempotent machinery.
+    dynamic_blocks = (
+        _ManagedTextBlock(
+            block_id="makefile-wrapper-targets",
+            target="Makefile",
+            content=_makefile_wrapper_block_content(root),
+        ),
+        _ManagedTextBlock(
+            block_id="makebat-wrapper-targets",
+            target="make.bat",
+            content=_makebat_wrapper_block_content(root),
+        ),
+    )
+    changes.extend(_apply_text_block(root, b) for b in dynamic_blocks)
     changes.extend(_apply_hooks(root))
     changes.append(_apply_stash_guard(root))
     return Ok(tuple(changes))

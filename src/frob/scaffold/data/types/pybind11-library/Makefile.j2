@@ -1,25 +1,35 @@
 BUILD_DIR := build
 NAME      := {{ project.name }}
 
-.PHONY: all build install develop test lint check clean
+.PHONY: all develop clean check format lint test
 
 all: develop
 
+# T-4760: `develop` (below) is the only hand-written bootstrap target --
+# `uv sync` builds and installs this project's own editable extension
+# (refs/python.md forbids a raw `pip install`; uv's own dependency
+# resolver handles the editable-with-native-extension case natively, no
+# pip invocation needed). format/lint/check/test are generated one-line
+# calls to `frob run <name>` (see the managed block); `frob scaffold
+# apply` regenerates it from this project's frob.toml [commands] table --
+# do not hand-edit within its markers. The old `build` target ran a
+# `pip build` subcommand that does not exist and could never have run;
+# it is removed rather than carried forward broken.
+
 develop:
-	pip install -e ".[dev]" --no-build-isolation
+	uv sync
 
-build:
-	pip build --no-build-isolation
-
-test:
-	pytest tests/ -q
-
+# frob:managed-block BEGIN makefile-wrapper-targets (frob scaffold apply -- do not hand-edit within markers)
+# Every target/branch below is a one-line call to `frob run <name>` -- the named entry lives once, in this project's frob.toml [commands] table (or a frob-native default when undeclared). Do not hand-edit within this block: `frob scaffold apply` regenerates it from [commands], and the wrapper-drift gate (T-4760) reports a target that expands more than one command inline or names an entry [commands] no longer declares.
+check:
+	frob run check
+format:
+	frob run format
 lint:
-	ruff check src/ tests/
-
-# ---------- the single gate: frob check ----------
-check: lint test
-	frob check
+	frob run lint
+test:
+	frob run test
+# frob:managed-block END makefile-wrapper-targets
 
 clean:
 	rm -rf $(BUILD_DIR) dist/ *.egg-info _skbuild

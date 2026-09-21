@@ -1,6 +1,6 @@
 STAMP := .venv/.install-stamp
 
-.PHONY: install develop format lint typecheck test coverage check clean build
+.PHONY: install develop clean build check format lint test
 
 $(STAMP): pyproject.toml Cargo.toml
 	uv sync
@@ -8,37 +8,32 @@ $(STAMP): pyproject.toml Cargo.toml
 
 install: $(STAMP)
 
+# T-4760: install/develop/build (above/below) are genuine bootstrap and
+# stay hand-written -- everything else is a generated one-line call to
+# `frob run <name>` (see the managed block); `frob scaffold apply`
+# regenerates it from this project's frob.toml [commands] table -- do
+# not hand-edit within its markers. The old `check` target ran
+# `frob check --stamp-coverage` then `frob check` back-to-back, exactly
+# the PRE001/SCOPE001 trap docs/commands/scaffold.md warns against; that
+# sequence now lives once, in [commands], not duplicated here.
+
 develop: $(STAMP)
 	uv run maturin develop --uv
 
-format: $(STAMP)
-	cargo fmt --all
-	uv run ruff check python/ tests/ --fix
-	uv run ruff format python/ tests/
-
-lint: $(STAMP) develop
-	cargo fmt --all --check
-	cargo clippy --workspace --all-targets -- -D warnings
-	uv run ruff check python/ tests/
-	uv run ruff format --check python/ tests/
-
-typecheck: $(STAMP) develop
-	uv run ty check python/{{ project.import_name }}
-
-test: $(STAMP) develop
-	cargo test --workspace
-	uv run pytest tests/
-
-coverage: $(STAMP) develop
-	uv run pytest tests/ --cov={{ project.import_name }} --cov-report=term-missing --cov-report=xml
-
-# ---------- the single gate: frob check ----------
-check: lint typecheck test
-	frob check --stamp-coverage
-	frob check
-
-build:
+build: $(STAMP)
 	uv run maturin build --release
+
+# frob:managed-block BEGIN makefile-wrapper-targets (frob scaffold apply -- do not hand-edit within markers)
+# Every target/branch below is a one-line call to `frob run <name>` -- the named entry lives once, in this project's frob.toml [commands] table (or a frob-native default when undeclared). Do not hand-edit within this block: `frob scaffold apply` regenerates it from [commands], and the wrapper-drift gate (T-4760) reports a target that expands more than one command inline or names an entry [commands] no longer declares.
+check:
+	frob run check
+format:
+	frob run format
+lint:
+	frob run lint
+test:
+	frob run test
+# frob:managed-block END makefile-wrapper-targets
 
 clean:
 	cargo clean

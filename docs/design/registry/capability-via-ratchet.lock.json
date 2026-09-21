@@ -110,9 +110,8 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 57,
-      "reason": "T-4111: dev's own gates fs.read via-list grew independently of this ticket's own bump (dev at 56 by the time this land re-checked); re-measured live via --only sys against the merged tree and setting the ceiling to the current observed count, 56 -> 57, which includes this ticket's own src/frob/gates/_guard_closure.py addition.",
-      "ticket": "T-4111"
+      "accepted_count": 58,
+      "reason": "branch-own via addition auto-accept (T-4760)"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -257,7 +256,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 554,
+      "accepted_count": 555,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

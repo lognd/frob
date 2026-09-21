@@ -2,7 +2,7 @@
 id: T-4760
 title: 'Derived wrappers: scaffold apply regenerates Makefile and make.bat as managed
   blocks of run calls, plus a drift gate'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'

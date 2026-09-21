@@ -1,6 +1,6 @@
 STAMP := node_modules/.install-stamp
 
-.PHONY: install format lint typecheck test coverage check clean build
+.PHONY: install clean build check format lint test
 
 $(STAMP): package.json
 	npm install
@@ -8,31 +8,28 @@ $(STAMP): package.json
 
 install: $(STAMP)
 
-format: $(STAMP)
-	npm run fmt
-
-lint: $(STAMP)
-	npm run lint
-
-typecheck: $(STAMP)
-	npm run typecheck
-
-test: $(STAMP)
-	npm run test
-
-coverage: $(STAMP)
-	npm run test:coverage
-
-# ---------- the single gate: frob check ----------
-check: $(STAMP)
-	npm run lint
-	npm run typecheck
-	npm run test:coverage
-	frob check --stamp-coverage
-	frob check
+# T-4760: install/build (above/below) are genuine bootstrap and stay
+# hand-written -- everything else is a generated one-line call to
+# `frob run <name>` (see the managed block); `frob scaffold apply`
+# regenerates it from this project's frob.toml [commands] table -- do
+# not hand-edit within its markers. The old `check` target ran lint,
+# typecheck, test:coverage, `frob check --stamp-coverage`, and `frob
+# check` all inline; that sequence now lives once, in [commands].
 
 build: $(STAMP)
 	npm run build
+
+# frob:managed-block BEGIN makefile-wrapper-targets (frob scaffold apply -- do not hand-edit within markers)
+# Every target/branch below is a one-line call to `frob run <name>` -- the named entry lives once, in this project's frob.toml [commands] table (or a frob-native default when undeclared). Do not hand-edit within this block: `frob scaffold apply` regenerates it from [commands], and the wrapper-drift gate (T-4760) reports a target that expands more than one command inline or names an entry [commands] no longer declares.
+check:
+	frob run check
+format:
+	frob run format
+lint:
+	frob run lint
+test:
+	frob run test
+# frob:managed-block END makefile-wrapper-targets
 
 clean:
 	rm -rf dist/ coverage/ node_modules/.install-stamp

@@ -21,6 +21,13 @@ TESTS     := tests
 # here: bootstrap cannot be a frob subcommand because it installs frob's
 # own prerequisites, and clean/upload carry real project-specific logic
 # frob has no equivalent for.
+#
+# T-4760: the derived-wrapper mechanism (frob run <name>, a managed
+# Makefile block, and the wrapper-drift gate) exists for the other
+# scaffold types, whose old Makefiles duplicated real command sequences
+# inline (cpp/pybind11/pyo3/web-app). This one predates that need -- it
+# already names frob's own verbs directly and ships no sequence to
+# drift, so `frob scaffold apply` leaves it exactly as authored here.
 
 # ---------- install (stamp-guarded bootstrap) ----------
 

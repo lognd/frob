@@ -242,6 +242,48 @@ Two kinds of managed block:
   - `gitignore-standard`: the cross-language `.gitignore` entries every
     frob-managed repo should carry (build artifacts, Python caches, frob
     local state, secrets).
+  - `makefile-wrapper-targets` / `makebat-wrapper-targets` (T-4760): the
+    derived-wrapper targets/branches in `Makefile`/`make.bat`. Content is
+    computed fresh each `apply`, not a fixed constant like the two blocks
+    above: one `<name>:` target (Makefile) or `if "%1"=="<name>"` branch
+    (make.bat) per entry this project's `frob.toml` `[commands]` table
+    declares, unioned with the four always-invocable native-default names
+    (`test`/`lint`/`format`/`check`, docs/commands/run.md#native-defaults)
+    -- each recipe is a single `frob run <name>` call, never an inlined
+    sequence. `make.bat` is new (T-4760): no scaffold type shipped a
+    Windows wrapper before this; `apply` creates it fresh the first time
+    it runs, the same "absent -> append/create" path text blocks already
+    take. The core-shim block above is skipped (reported, not applied)
+    on a Makefile that defines no `STAMP` variable -- applying it there
+    left `core: $(STAMP)` expanding to an unconditional prerequisite
+    (measured on a rendered cpp-library: no venv, nothing to gate a
+    native build behind).
+
+### The wrapper-drift gate (WRAP001/WRAP002/WRAP003, T-4760)
+
+<!-- frob:describes src/frob/gates/_wrapper_drift.py::wrapper_drift_gate -->
+`wrapper_drift_gate` catches a Makefile/make.bat that has drifted from
+what `frob scaffold apply` would (re)generate for its `makefile-wrapper-
+targets`/`makebat-wrapper-targets` managed blocks:
+
+- **WRAP001**: a wrapper target/branch expands more than one command
+  inline (a `&&`/`;`/`&`-joined recipe, or anything that is not a bare
+  `frob run <name>` call) -- the sequence has exactly one legitimate
+  home, the `[commands]` table itself
+  (docs/commands/run.md#relationship-to-derived-wrappers).
+- **WRAP002**: a wrapper target/branch names an entry that is neither
+  declared in `frob.toml`'s `[commands]` table nor a native default --
+  typically an entry `[commands]` used to declare and no longer does.
+- **WRAP003**: the Makefile and make.bat managed-block name sets are not
+  equal.
+
+The gate is a no-op (returns no violations) on a project that has never
+run `frob scaffold apply` at all -- it checks an existing generated
+artefact for staleness, it does not require one to exist. Wiring
+`wrapper_drift_gate` into the `frob check` `_ALL_GATES` pipeline itself
+(`src/frob/gates/__init__.py`) is tracked separately (T-4910): that file
+was leased by another in-progress ticket (T-3962) at the time T-4760
+landed.
 - **Hook blocks** (`MANAGED_HOOK_NAMES`) are the two T-0431/T-0577
   worktree-lease git hooks (`pre-commit`, `pre-merge-commit`) --
   `apply_managed_blocks` reuses `install_worktree_lease_hook` rather than
