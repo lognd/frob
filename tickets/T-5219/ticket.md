@@ -1,5 +1,5 @@
 ---
-id: T-draft-3dc8e202
+id: T-5219
 title: 'flag-coverage gate: 2 CLI flags (clean_sweep_worktrees, ticket_wait_s) parse
   but never reach AppConfig'
 state: queued
