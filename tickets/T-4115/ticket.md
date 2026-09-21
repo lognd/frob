@@ -2,7 +2,7 @@
 id: T-4115
 title: 'H3-7: a route returning a dict literal with no response model is invisible
   to every reference gate'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -48,6 +48,14 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_bare_dict_literal_return_fires
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_typed_constructor_return_is_silent
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_pure_unpack_of_typed_dump_is_silent
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_mixed_unpack_and_literal_key_fires
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_undecorated_function_is_ignored
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_file_scoped_waiver_covers_it
+- tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate::test_no_python_files_is_silent
 designated_repro_test: null
 threat: null
 component: null
