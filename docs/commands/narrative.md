@@ -35,6 +35,55 @@ The moved text is appended to the named ticket's body via
 the same move twice is a no-op rather than a duplicate append. See
 T-2678 for the history behind this.
 
+## Bulk mode (T-4697)
+
+The single-block form above is the precise escape hatch; it does not
+scale to T-4691's own measured 507 over-cap comment runs, each of which
+would otherwise need a hand-typed `file line` invocation and a manual
+search for the block's start line. Bulk mode (`frob.narrative._bulk`)
+sweeps a FILE or a DIRECTORY (recursive) in one pass:
+
+```
+frob narrative move PATH [--apply] --reason TEXT
+```
+
+- `PATH`: a file or a directory. A directory is walked recursively over
+  every `.py`/`.strata`/`.md` file (`discover_targets`).
+- Discovery reuses NARR001's own `# T-####:`-lead comment-run detector
+  (`frob.gates._narrative_blocks._iter_blocks`) for source files, and a
+  blank-line-delimited-paragraph scan for markdown (mirroring
+  `_migrate.paragraph_at`'s per-call shape, T-2995).
+- Omitting `--apply` (the default) prints the PLAN -- every block found
+  and the ticket id it resolves to -- and writes neither a source file
+  nor a ticket body.
+- `--apply` performs the moves: `frob.narrative._migrate.migrate_block`
+  plus `frob.tickets.set_body` (T-2678's archived-ticket-safe front
+  door, the identical engine the single-block path already uses) for
+  each block whose cited ticket actually exists (live OR archived).
+- CONDENSING IS THE AUTHOR'S JOB: bulk mode moves each block VERBATIM,
+  no `keep_lines` split -- the existing `file line` + `--keep-file` form
+  is still how a caller keeps a load-bearing sentence in place for one
+  block; bulk mode does not replace it, only the "find and invoke 507
+  times by hand" cost.
+- A block citing NO ticket, or a ticket id that resolves to nothing at
+  all, is SKIPPED and reported -- never deleted, never invented a
+  destination for.
+- IDEMPOTENT: a block's own one-line replacement (`# see T-####` /
+  "See T-#### for the history behind this.") is excluded from
+  re-detection, so a second `--apply` over the same tree is a no-op.
+
+Positive control (T-4697's own acceptance): a fixture directory of
+three files -- one citing a live ticket, one citing an archived ticket,
+one citing no ticket. `--apply` moves the first two into their ticket
+bodies (leaving pointers), skips and reports the third, `frob ticket
+list` exits 0 afterward, and a second `--apply` changes nothing.
+
+Registration note (T-4697): wiring `PATH`/`--apply` onto the `frob
+narrative move` argparse subcommand in `src/frob/narrative/_cli.py` is
+deferred -- that file is leased by T-4546. `src/frob/narrative/_bulk.py`
+is otherwise complete and independently tested; see T-4697's Done
+report for the exact CLI-wiring hunk.
+
 ## NARR001 (the detector)
 
 `src/frob/gates/_narrative_blocks.py::narrative_blocks_gate` flags any

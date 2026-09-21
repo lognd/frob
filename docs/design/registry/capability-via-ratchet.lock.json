@@ -146,14 +146,12 @@
       "ticket": "T-1628"
     },
     "narrative::fs.read": {
-      "accepted_count": 1,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 2,
+      "reason": "branch-own via addition auto-accept (T-4697)"
     },
     "narrative::fs.write": {
-      "accepted_count": 1,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 2,
+      "reason": "branch-own via addition auto-accept (T-4697)"
     },
     "refactor::env.read": {
       "accepted_count": 2,
@@ -261,7 +259,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 551,
+      "accepted_count": 552,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

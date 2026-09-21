@@ -2,14 +2,14 @@
 id: T-4697
 title: 'frob narrative: bulk mode over a file or directory with --apply (today it
   is one block per invocation; 507 measured runs need a sweep)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
 parent: T-4691
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -49,33 +49,36 @@ scope_changes:
     wiring deferred to Done report
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.534.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/narrative/test_bulk.py::TestApplyBulk::test_apply_moves_live_and_archived_skips_untargeted
+- tests/narrative/test_bulk.py::TestApplyBulk::test_second_apply_is_idempotent_noop
+- tests/test_narrative_migrate.py::TestNarrativeCli::test_dry_run_reports_without_writing
+- tests/narrative/test_bulk.py::TestApplyBulk::test_apply_false_writes_nothing
 designated_repro_test: null
 acceptance:
 - text: given a fixture directory of three files citing a live ticket, an archived
     ticket, and no ticket, when 'frob narrative move <dir> --apply' runs, then the
     first two blocks are in their ticket bodies with one-line pointers left behind
     and the third is SKIPPED and reported, never deleted
-  evidence: []
+  evidence:
+  - tests/narrative/test_bulk.py::TestApplyBulk::test_apply_moves_live_and_archived_skips_untargeted
 - text: given that sweep has run once, when --apply runs a second time, then nothing
     changes in any file or ticket body (idempotency, T-2994 constraint 4)
-  evidence: []
+  evidence:
+  - tests/narrative/test_bulk.py::TestApplyBulk::test_second_apply_is_idempotent_noop
 - text: given a block citing an ARCHIVED ticket, when --apply runs, then the append
     lands on the archived path and 'frob ticket list' exits 0 afterwards (T-2994 constraint
     3)
-  evidence: []
+  evidence:
+  - tests/narrative/test_bulk.py::TestApplyBulk::test_apply_moves_live_and_archived_skips_untargeted
 - text: given the existing 'file line' positional form, when this lands, then it still
     works unchanged as the per-block escape hatch
-  evidence: []
+  evidence:
+  - tests/test_narrative_migrate.py::TestNarrativeCli::test_dry_run_reports_without_writing
 - text: given --apply is omitted, when a directory is swept, then the plan is printed
     and neither source nor ledger is written
-  evidence: []
+  evidence:
+  - tests/narrative/test_bulk.py::TestApplyBulk::test_apply_false_writes_nothing
 threat: null
 component: null
 anchor: false

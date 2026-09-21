@@ -1070,8 +1070,9 @@ node narrative : trusted {
     ];
     clearance Internal;
     code "src/frob/narrative/**";
-    may "fs.read" via "src/frob/narrative/_cli.py";
-    may "fs.write" via "src/frob/narrative/_cli.py";
+    may "fs.read" via "src/frob/narrative/_cli.py", "src/frob/narrative/_bulk.py";
+    may "fs.write" via "src/frob/narrative/_cli.py", "src/frob/narrative/_bulk.py";
+    // T-4697: bulk migration walks tickets/** (rglob/read_text) and rewrites bodies (write_text).
 }
 
 // T-1329: `frob.refactor` -- the T-1197 reference-rewrite engine
