@@ -20,8 +20,10 @@ what actually records the lease the reconcile checks then judges live/dead.
 
 from __future__ import annotations
 
+import contextlib
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -63,6 +65,53 @@ def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
     return TicketSpec(
         title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT, scope=scope
     )
+
+
+@contextlib.contextmanager
+def _foreign_ledger_lock_holder(lock_path: Path, *, ticket_id: str = "T-8888"):
+    """T-5035: hold `lock_path` (`.frob/tickets.lock`, the ledger-splice
+    lock `refuse_if_land_in_progress`'s default -- non-`whole_land` --
+    probe actually reads, T-3612) from a REAL separate process, not this
+    test process's own pid. Two reasons a same-process `os.getpid()`-
+    stamped lock no longer proves the point this test needs: (1)
+    `frob.tickets._leases`'s land-lock probing (T-2406) excludes the
+    CALLING PROCESS's own pid as a foreign land holder by design where a
+    pid IS compared (the `land.lock`/`whole_land=True` path); (2) T-3612
+    moved the DEFAULT probe onto the bare advisory `tickets.lock`, which
+    carries no holder metadata at all -- a `land.lock` JSON marker
+    written by this test process, however stamped, is simply the wrong
+    file for the guard this test actually exercises.
+
+    Spawns a `python3 -c` child that flocks `lock_path` exclusively
+    (writing its own JSON `pid`/`ticket_id` too, so a caller checking
+    `LAND_LOCK_REL` for a correlated holder still sees one), touches a
+    sibling `.ready` marker once the flock is held, then sleeps. Yields
+    once that marker appears (polled, not a fixed sleep)."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    ready_path = lock_path.with_suffix(lock_path.suffix + ".ready")
+    ready_path.unlink(missing_ok=True)
+    script = (
+        "import fcntl, json, os, time\n"
+        f"path = {str(lock_path)!r}\n"
+        f"ready_path = {str(ready_path)!r}\n"
+        "fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o644)\n"
+        "fcntl.flock(fd, fcntl.LOCK_EX)\n"
+        f"os.write(fd, (json.dumps({{'pid': os.getpid(), 'ticket_id': {ticket_id!r}}}) + '\\n').encode())\n"
+        "os.fsync(fd)\n"
+        "open(ready_path, 'w').close()\n"
+        "time.sleep(30)\n"
+    )
+    holder = subprocess.Popen([sys.executable, "-c", script])
+    try:
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and not ready_path.exists():
+            time.sleep(0.02)
+        assert ready_path.exists(), "foreign lock holder never signaled ready"
+        yield holder.pid
+    finally:
+        holder.kill()
+        holder.wait(timeout=5)
+        ready_path.unlink(missing_ok=True)
 
 
 def _set_state_directly(root: Path, ticket_id: str, state: TicketState) -> None:
@@ -187,12 +236,8 @@ class TestReconcileApplyLandInProgressGuard:
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
-        import fcntl
-        import json
-        import os as _os
-
-        from frob.tickets._leases import LAND_LOCK_REL
         from frob.tickets._models import TicketError
+        from frob.tickets._store import TICKETS_LEDGER_LOCK_REL
 
         created = new_ticket(repo, _spec("Stale3", scope=("src/feature.py",)))
         assert created.is_ok
@@ -206,15 +251,13 @@ class TestReconcileApplyLandInProgressGuard:
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
         _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
 
-        lock_path = repo / LAND_LOCK_REL
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        holder_fd = _os.open(str(lock_path), _os.O_CREAT | _os.O_RDWR, 0o644)
-        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        _os.write(
-            holder_fd,
-            (json.dumps({"pid": _os.getpid(), "ticket_id": "T-8888"}) + "\n").encode(),
-        )
-        try:
+        lock_path = repo / TICKETS_LEDGER_LOCK_REL
+        # T-5035: a REAL foreign process holds the ledger-splice lock --
+        # this test process's own pid is excluded from land-in-progress
+        # judgement by design (T-2406), and T-3612 moved the default
+        # probe onto this bare `tickets.lock` anyway (see
+        # `_foreign_ledger_lock_holder`'s own docstring).
+        with _foreign_ledger_lock_holder(lock_path):
             status_before = _run(["git", "status", "--porcelain"], repo).stdout
             with caplog.at_level("WARNING"):
                 result = reconcile(repo, apply=True, wait_timeout_s=0)
@@ -229,9 +272,6 @@ class TestReconcileApplyLandInProgressGuard:
             assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
             status_after = _run(["git", "status", "--porcelain"], repo).stdout
             assert status_after == status_before
-        finally:
-            fcntl.flock(holder_fd, fcntl.LOCK_UN)
-            _os.close(holder_fd)
 
     def test_apply_still_requeues_when_no_land_in_progress(self, repo: Path) -> None:
         """Positive control: with no land lock held, `apply=True` still

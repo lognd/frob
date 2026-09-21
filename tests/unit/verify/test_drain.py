@@ -112,7 +112,12 @@ class TestRunDrainAsync:
         # below still refuses for every OTHER pid.
         seen_exclude_pids: list[int | None] = []
 
-        def _fake_probe(root, *, quiet, exclude_pid=None):  # noqa: ANN001, ANN201
+        # T-5035: `_probe_land_once` (frob.tickets._leases) now also
+        # passes `whole_land` through to every call -- a fake lacking
+        # that keyword-only parameter raises TypeError the moment the
+        # real caller forwards it, independent of this test's own
+        # exclude_pid assertions.
+        def _fake_probe(root, *, quiet, exclude_pid=None, whole_land=False):  # noqa: ANN001, ANN201
             seen_exclude_pids.append(exclude_pid)
             if exclude_pid == 424242:
                 return Ok(None)

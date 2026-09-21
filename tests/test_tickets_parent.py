@@ -8,7 +8,10 @@ tier-inversion, self-parent) `set_tier` deliberately does not need.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import subprocess
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -66,6 +69,45 @@ def _ticket(
         threat=None,
         body="",
     )
+
+
+@contextlib.contextmanager
+def _foreign_ledger_lock_holder(lock_path: Path, *, ticket_id: str = "T-9999"):
+    """T-5035: hold `lock_path` (`.frob/tickets.lock`, the default
+    non-`whole_land` probe `refuse_if_land_in_progress` actually reads,
+    T-3612) from a REAL separate process, not this test process's own
+    pid -- mirrors `tests/test_ticket_reconcile.py`'s own `_foreign_
+    ledger_lock_holder`, duplicated here (not imported) for the same
+    declared-scope-collision-avoidance reason that module's own helpers
+    stay file-local. See that module's docstring for the full two-part
+    rationale (T-2406 self-pid exclusion on the `land.lock`/`whole_land`
+    path, plus T-3612 moving the DEFAULT probe onto the bare, pid-less
+    `tickets.lock`)."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    ready_path = lock_path.with_suffix(lock_path.suffix + ".ready")
+    ready_path.unlink(missing_ok=True)
+    script = (
+        "import fcntl, json, os, time\n"
+        f"path = {str(lock_path)!r}\n"
+        f"ready_path = {str(ready_path)!r}\n"
+        "fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o644)\n"
+        "fcntl.flock(fd, fcntl.LOCK_EX)\n"
+        f"os.write(fd, (json.dumps({{'pid': os.getpid(), 'ticket_id': {ticket_id!r}}}) + '\\n').encode())\n"
+        "os.fsync(fd)\n"
+        "open(ready_path, 'w').close()\n"
+        "time.sleep(30)\n"
+    )
+    holder = subprocess.Popen([sys.executable, "-c", script])
+    try:
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and not ready_path.exists():
+            time.sleep(0.02)
+        assert ready_path.exists(), "foreign lock holder never signaled ready"
+        yield holder.pid
+    finally:
+        holder.kill()
+        holder.wait(timeout=5)
+        ready_path.unlink(missing_ok=True)
 
 
 class TestSetParent:
@@ -407,12 +449,9 @@ class TestSetParentLandInProgressGuard:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_tickets_parent.py::TestSetParentLandInProgressGuard.test_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
-        import fcntl
-        import json
-        import os as _os
-
         from frob.tickets import _setters as setters_mod
-        from frob.tickets._leases import LAND_LOCK_REL, LeaseError
+        from frob.tickets._leases import LeaseError
+        from frob.tickets._store import TICKETS_LEDGER_LOCK_REL
 
         epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
         leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET)
@@ -422,14 +461,7 @@ class TestSetParentLandInProgressGuard:
         ticket_path = v2_ticket_dir(tmp_path, "T-0001") / "ticket.md"
         before_bytes = ticket_path.read_bytes()
 
-        lock_path = tmp_path / LAND_LOCK_REL
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        holder_fd = _os.open(str(lock_path), _os.O_CREAT | _os.O_RDWR, 0o644)
-        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        _os.write(
-            holder_fd,
-            (json.dumps({"pid": _os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
-        )
+        lock_path = tmp_path / TICKETS_LEDGER_LOCK_REL
         original = setters_mod.refuse_if_land_in_progress
         # T-2785 test seam: force wait_timeout_s=0 so this test never
         # actually waits out `refuse_if_land_in_progress`'s real bounded
@@ -440,7 +472,9 @@ class TestSetParentLandInProgressGuard:
             "refuse_if_land_in_progress",
             lambda root, **_kw: original(root, wait_timeout_s=0),
         )
-        try:
+        # T-5035: a REAL foreign process holds the ledger-splice lock --
+        # see `_foreign_ledger_lock_holder`'s own docstring.
+        with _foreign_ledger_lock_holder(lock_path):
             result = set_parent(tmp_path, "T-0001", "T-0002", reason="test")
             assert result.is_err
             assert result.danger_err == LeaseError.LandInProgress
@@ -452,9 +486,6 @@ class TestSetParentLandInProgressGuard:
             loaded = load_all(tmp_path)
             assert loaded.is_ok
             assert loaded.danger_ok["T-0001"].parent is None
-        finally:
-            fcntl.flock(holder_fd, fcntl.LOCK_UN)
-            _os.close(holder_fd)
 
     def test_succeeds_normally_once_no_land_is_in_progress(
         self, tmp_path: Path
