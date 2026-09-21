@@ -43,6 +43,7 @@ module and a top-level import would be circular.
 
 from __future__ import annotations
 
+import ast
 import os
 import re
 from pathlib import Path
@@ -895,3 +896,298 @@ def time_stable_gate(
                 )
             )
     return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
+# RACE001 / RACE002 (T-3953, F-181/T-3942 item 7)
+# ---------------------------------------------------------------------------
+
+# T-3953: call/context-manager targets whose PRESENCE anywhere in a
+# function is treated as "this read-then-write is already guarded" --
+# a lock, a Lua/atomic script, an INCR-style single-op update, or a
+# conditional/transactional UPDATE. Heuristic and deliberately generous
+# (a false NEGATIVE here just means RACE001 stays silent, never a false
+# claim) -- T-3919/T-3942's own audit caveat warns this shape gets waived
+# into uselessness fast if it is not conservative about firing.
+# frob:ticket T-3953
+_RACE001_GUARD_RE = re.compile(
+    r"lock|acquire|incr|watch|multi|pipeline|eval|atomic|transaction|cas\b",
+    re.IGNORECASE,
+)
+
+# T-3953 (acceptance item 2): docstring vocabulary this repo's own audit
+# named as the "spec claims single-writer-safe behavior" trigger.
+# frob:ticket T-3953
+_RACE002_CLAIM_RE = re.compile(r"\b(cap|quota|single-use|idempotent)\b", re.IGNORECASE)
+# frob:ticket T-3953
+_RACE002_CONCURRENT_TEST_RE = re.compile(
+    r"concurrent|thread|race|parallel", re.IGNORECASE
+)
+
+
+# frob:ticket T-3953
+def _race001_guard_present(func_node: ast.AST) -> bool:
+    """True if `func_node`'s body mentions any lock/atomic-update-shaped
+    call or `with` target anywhere -- T-3953's generous "already guarded,
+    do not fire" signal (module-level docstring's own false-negative-
+    over-false-positive posture)."""
+    for node in ast.walk(func_node):
+        if isinstance(node, ast.Call):
+            target = node.func
+            name = None
+            if isinstance(target, ast.Attribute):
+                name = target.attr
+            elif isinstance(target, ast.Name):
+                name = target.id
+            if name and _RACE001_GUARD_RE.search(name):
+                return True
+        if isinstance(node, ast.withitem):
+            expr = node.context_expr
+            if isinstance(expr, ast.Call):
+                target = expr.func
+                name = target.attr if isinstance(target, ast.Attribute) else None
+                name = name or (target.id if isinstance(target, ast.Name) else None)
+                if name and _RACE001_GUARD_RE.search(name):
+                    return True
+            elif isinstance(expr, ast.Name) and _RACE001_GUARD_RE.search(expr.id):
+                return True
+    return False
+
+
+# frob:ticket T-3953
+def _race001_subscript_read(value: ast.expr) -> tuple[str, str] | None:
+    """`(base, key)` for a `BASE[KEY]` read or a `BASE.get(KEY, ...)`
+    call -- the two read shapes T-3953's read-then-write pattern starts
+    from -- or `None` if `value` is neither."""
+    if isinstance(value, ast.Subscript) and isinstance(value.value, ast.Name):
+        try:
+            key = ast.unparse(value.slice)
+        except (ValueError, TypeError):
+            return None
+        return value.value.id, key
+    if (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Attribute)
+        and value.func.attr == "get"
+        and isinstance(value.func.value, ast.Name)
+        and value.args
+    ):
+        try:
+            key = ast.unparse(value.args[0])
+        except (ValueError, TypeError):
+            return None
+        return value.func.value.id, key
+    return None
+
+
+# frob:ticket T-3953
+def _race001_subscript_write_targets(
+    stmt: ast.AST,
+) -> list[tuple[str, str, ast.expr]]:
+    """`[(base, key, rhs)]` for every `BASE[KEY] = rhs`/`BASE[KEY] += rhs`
+    assignment `stmt` makes at its top level (never nested -- callers
+    already `ast.walk` every statement)."""
+    targets: list[ast.expr] = []
+    rhs: ast.expr | None = None
+    if isinstance(stmt, ast.Assign):
+        targets = list(stmt.targets)
+        rhs = stmt.value
+    elif isinstance(stmt, ast.AugAssign):
+        targets = [stmt.target]
+        rhs = stmt.value
+    else:
+        return []
+    out: list[tuple[str, str, ast.expr]] = []
+    for target in targets:
+        if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name):
+            try:
+                key = ast.unparse(target.slice)
+            except (ValueError, TypeError):
+                continue
+            out.append((target.value.id, key, rhs))
+    return out
+
+
+# frob:ticket T-3953
+def _race001_function_violation(
+    subject_symref: str, subject_path: str, func_node: ast.AST
+) -> Violation | None:
+    """RACE001 for one function: an unlocked `BASE[KEY]` (or `BASE.get
+    (KEY, ...)`) read whose result feeds a LATER `BASE[KEY] = ...` write
+    to the SAME base/key, with no lock/atomic-update guard anywhere in
+    the function (T-3953's own generous guard check, `_race001_guard_
+    present`) -- the exact read-check-write shape F-181's delta audit
+    kept re-finding un-tracked."""
+    if not isinstance(func_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return None
+    if _race001_guard_present(func_node):
+        return None
+    reads: dict[str, str] = {}  # temp var name -> "base::key"
+    for node in ast.walk(func_node):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                read = _race001_subscript_read(node.value)
+                if read is not None:
+                    reads[target.id] = f"{read[0]}::{read[1]}"
+        write_targets = _race001_subscript_write_targets(node)
+        for base, key, rhs in write_targets:
+            write_key = f"{base}::{key}"
+            rhs_names = {n.id for n in ast.walk(rhs) if isinstance(n, ast.Name)}
+            for temp_name, read_key in reads.items():
+                if read_key == write_key and temp_name in rhs_names:
+                    line = getattr(node, "lineno", 0)
+                    return Violation(
+                        rule="RACE001",
+                        severity=Severity.WARN,
+                        file=subject_path,
+                        line=line,
+                        symref=subject_symref,
+                        message=(
+                            f"RACE001: {subject_symref} reads {base}[{key}] then "
+                            f"later writes {base}[{key}] derived from that read, "
+                            "with no lock/Lua/INCR/conditional-UPDATE guard "
+                            "anywhere in the function -- two concurrent callers "
+                            "can race the read-check-write and lose an update. "
+                            "Guard with a lock, an atomic single-op update "
+                            "(INCR-style), or a conditional UPDATE."
+                        ),
+                    )
+    return None
+
+
+# frob:ticket T-3953
+def _race002_binding_tests_are_concurrent(
+    snapshot: GraphSnapshot, root: Path, subject_symref: str
+) -> tuple[bool, bool]:
+    """`(has_binding_tests, has_concurrent_binding_test)` for
+    `subject_symref`'s `frob:tests` targets -- a target counts as
+    "concurrent" if its own pytest node id names threading/concurrency
+    (`_RACE002_CONCURRENT_TEST_RE` against the qualname), or, failing
+    that, if its resolved test source body does (T-3953: cheap name check
+    first, source scan only when the name alone does not already say
+    so)."""
+    targets = [
+        edge.target
+        for edge in snapshot.edges
+        if edge.kind is EdgeKind.TESTS and edge.src == subject_symref
+    ]
+    if not targets:
+        return False, False
+    for target in targets:
+        if _RACE002_CONCURRENT_TEST_RE.search(target):
+            return True, True
+    for target in targets:
+        test_path, sep, _qualname = target.partition("::")
+        if not sep or not test_path.endswith(".py"):
+            continue
+        try:
+            source = (root / test_path).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if _RACE002_CONCURRENT_TEST_RE.search(source):
+            return True, True
+    return True, False
+
+
+# frob:ticket T-3953
+def _race002_test_obligation_violation(
+    root: Path,
+    snapshot: GraphSnapshot,
+    subject_symref: str,
+    subject_path: str,
+    func_node: ast.AST,
+) -> Violation | None:
+    """RACE002 (T-3953 acceptance item 2): `func_node`'s own docstring
+    claims cap/quota/single-use/idempotent behavior, but none of its
+    `frob:tests` binding tests looks like a concurrent-callers test --
+    the spec claim has no evidence a second caller cannot break it."""
+    if not isinstance(func_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return None
+    doc = ast.get_docstring(func_node) or ""
+    if not _RACE002_CLAIM_RE.search(doc):
+        return None
+    has_tests, has_concurrent = _race002_binding_tests_are_concurrent(
+        snapshot, root, subject_symref
+    )
+    if not has_tests or has_concurrent:
+        return None
+    claim = _RACE002_CLAIM_RE.search(doc)
+    claim_word = claim.group(0) if claim else "cap/quota/single-use/idempotent"
+    return Violation(
+        rule="RACE002",
+        severity=Severity.WARN,
+        file=subject_path,
+        line=func_node.lineno,
+        symref=subject_symref,
+        message=(
+            f"RACE002: {subject_symref}'s docstring claims {claim_word!r} "
+            "behavior, but none of its frob:tests binding tests exercises "
+            "concurrent callers -- add a test that calls it from multiple "
+            "threads/processes (or otherwise names 'concurrent'/'race'/"
+            "'parallel'/'thread') to prove the claim holds under real "
+            "concurrency, not just single-caller correctness."
+        ),
+    )
+
+
+# frob:doc \
+# docs/modules/gate-race001.md#race001race002-concurrent-read-then-write-test-obligation-t-3953  # noqa: E501
+# frob:ticket T-3953
+# frob:enforces CHK-GATE-RACE001
+# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_fires_on_unlocked_read_then_write_same_key  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_a_lock_guards_the_read_then_write  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_read_and_write_target_different_keys  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_fires_with_no_concurrent_binding_test  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_satisfied_by_a_concurrent_binding_test  # noqa: E501
+def race001_violations(root: Path, snapshot: GraphSnapshot) -> list[Violation]:
+    """RACE001/RACE002 (T-3953, F-181/T-3942 item 7): every Python
+    function symbol in `snapshot` is checked for two independent, related
+    defects -- RACE001, an unlocked read-then-write of the same key
+    inside the function body (`_race001_function_violation`); and
+    RACE002, a docstring claiming cap/quota/single-use/idempotent
+    behavior with no concurrent-callers test among the symbol's own
+    `frob:tests` bindings (`_race002_test_obligation_violation`). Both are
+    `Severity.WARN` (T-3919/T-3942's own audit caveat: this is a
+    heuristic shape that gets waived into uselessness fast if pitched as
+    a hard-error gate) and both are deliberately biased toward silence
+    over false claims -- see each helper's own guard-detection doctrine."""
+    violations: list[Violation] = []
+    for symref in sorted(snapshot.symbols):
+        path, sep, qualname = symref.partition("::")
+        if not sep or not path.endswith(".py"):
+            continue
+        try:
+            source = (root / path).read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=path)
+        except (OSError, SyntaxError, UnicodeDecodeError) as exc:
+            _log.debug("RACE001: cannot parse %s: %s", path, exc)
+            continue
+        scope: list[ast.stmt] = list(tree.body)
+        func_node: ast.AST | None = None
+        for part in qualname.split("."):
+            func_node = next(
+                (
+                    n
+                    for n in scope
+                    if isinstance(
+                        n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+                    )
+                    and n.name == part
+                ),
+                None,
+            )
+            if func_node is None:
+                break
+            scope = list(func_node.body)
+        if func_node is None:
+            continue
+        race001 = _race001_function_violation(symref, path, func_node)
+        if race001 is not None:
+            violations.append(race001)
+        race002 = _race002_test_obligation_violation(
+            root, snapshot, symref, path, func_node
+        )
+        if race002 is not None:
+            violations.append(race002)
+    return violations

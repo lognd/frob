@@ -1,14 +1,14 @@
 ---
 id: T-3953
 title: 'RACE001: concurrent read-then-write test obligation'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-09-06'
 priority: high
 parent: T-3942
 tier: ticket
-sprint: v0.533.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -23,26 +23,24 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/gate-race001.md
-  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-4650
+  reason: standalone doc file since docs/modules/gates.md is leased by T-3259/T-draft-a62505d4
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.533.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_invariant.py::TestRace001Violations::test_fires_on_unlocked_read_then_write_same_key
+- tests/gates_suite/test_invariant.py::TestRace001Violations::test_test_obligation_fires_with_no_concurrent_binding_test
 designated_repro_test: null
 acceptance:
 - text: given a function with an unlocked read of a value followed by a write derived
     from it and no lock/Lua/INCR/conditional-UPDATE guard, when frob check runs, then
     RACE001 fires
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_invariant.py::TestRace001Violations::test_fires_on_unlocked_read_then_write_same_key
 - text: given a docstring/spec claiming cap, quota, single-use or idempotent behavior
     with no concurrent-callers test, when frob check runs, then a test obligation
     is reported
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_invariant.py::TestRace001Violations::test_test_obligation_fires_with_no_concurrent_binding_test
 threat: null
 component: null
 anchor: false

@@ -1215,3 +1215,135 @@ class TestTimeStableGate:
         inv = self._invariant("test_probe.py::test_probe")
         violations = time_stable_gate(tmp_path, (inv,), snap)
         assert violations == ()
+
+
+class TestRace001Violations:
+    """RACE001/RACE002 (T-3953, F-181/T-3942 item 7): an unlocked
+    read-then-write of the same key inside one function is the exact
+    shape T-3919/T-3942's delta audits kept re-finding un-tracked; a
+    docstring claiming cap/quota/single-use/idempotent behavior with no
+    concurrent-callers test among its `frob:tests` bindings is the same
+    defect one layer up (the shape was never even test-obligated)."""
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_fires_on_unlocked_read_then_write_same_key  # noqa: E501
+    def test_fires_on_unlocked_read_then_write_same_key(self, tmp_path: Path) -> None:
+        from frob.gates._inv import race001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/quota.py",
+            "STORE = {}\n"
+            "\n"
+            "\n"
+            "def bump(key):\n"
+            "    current = STORE.get(key, 0)\n"
+            "    STORE[key] = current + 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = race001_violations(tmp_path, snap)
+        fires = [v for v in violations if v.rule == "RACE001"]
+        assert len(fires) == 1
+        assert fires[0].file == "src/frob/pkg/quota.py"
+        assert fires[0].symref == "src/frob/pkg/quota.py::bump"
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_a_lock_guards_the_read_then_write  # noqa: E501
+    def test_silent_when_a_lock_guards_the_read_then_write(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._inv import race001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/quota.py",
+            "import threading\n"
+            "\n"
+            "STORE = {}\n"
+            "_LOCK = threading.Lock()\n"
+            "\n"
+            "\n"
+            "def bump(key):\n"
+            "    with _LOCK:\n"
+            "        current = STORE.get(key, 0)\n"
+            "        STORE[key] = current + 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = race001_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "RACE001"] == []
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_read_and_write_target_different_keys  # noqa: E501
+    def test_silent_when_read_and_write_target_different_keys(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._inv import race001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/quota.py",
+            "STORE = {}\n"
+            "\n"
+            "\n"
+            "def copy_value(src_key, dst_key):\n"
+            "    current = STORE.get(src_key, 0)\n"
+            "    STORE[dst_key] = current\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = race001_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "RACE001"] == []
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_fires_with_no_concurrent_binding_test  # noqa: E501
+    def test_test_obligation_fires_with_no_concurrent_binding_test(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._inv import race001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/quota.py",
+            "# frob:tests tests/test_quota.py::test_bump_once\n"
+            "def bump(key):\n"
+            '    """Enforces a per-key quota cap: each key may only be\n'
+            '    bumped once (single-use)."""\n'
+            "    return key\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_quota.py",
+            "from frob.pkg.quota import bump\n"
+            "\n"
+            "\n"
+            "def test_bump_once():\n"
+            "    assert bump('a') == 'a'\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = race001_violations(tmp_path, snap)
+        fires = [v for v in violations if v.rule == "RACE002"]
+        assert len(fires) == 1
+        assert fires[0].symref == "src/frob/pkg/quota.py::bump"
+
+    # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_satisfied_by_a_concurrent_binding_test  # noqa: E501
+    def test_test_obligation_satisfied_by_a_concurrent_binding_test(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._inv import race001_violations
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/quota.py",
+            "# frob:tests tests/test_quota.py::test_bump_concurrently\n"
+            "def bump(key):\n"
+            '    """Enforces a per-key quota cap: each key may only be\n'
+            '    bumped once (single-use)."""\n'
+            "    return key\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_quota.py",
+            "from frob.pkg.quota import bump\n"
+            "\n"
+            "\n"
+            "def test_bump_concurrently():\n"
+            "    assert bump('a') == 'a'\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = race001_violations(tmp_path, snap)
+        assert [v for v in violations if v.rule == "RACE002"] == []
