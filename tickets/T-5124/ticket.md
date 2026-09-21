@@ -1,7 +1,7 @@
 ---
 id: T-5124
 title: 'frob-suggest: dedupe dual hook registration and make attempt counter per-agent-session'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-19'
