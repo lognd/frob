@@ -71,6 +71,7 @@ class TestRelativizeRegressionScopeFile:
         assert outside in messages
 
     # frob:ticket T-2352
+    # frob:ticket T-4626
     # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_filed_ticket_scope_is_relative_end_to_end  # noqa: E501
     def test_filed_ticket_scope_is_relative_end_to_end(self, tmp_path: Path) -> None:
         """Asserts a ticket filed by `_file_regression_ticket` with an
@@ -237,6 +238,7 @@ class TestRaiseQuarantineForRedBatch:
         assert is_quarantined(tmp_path).danger_ok is False
 
     # frob:ticket T-2604
+    # frob:ticket T-4626
     def test_closed_ticket_attribution_still_raises(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -981,6 +983,7 @@ class TestFileRegressionTicket:
         )
 
     # frob:ticket T-3051
+    # frob:ticket T-4626
     def test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

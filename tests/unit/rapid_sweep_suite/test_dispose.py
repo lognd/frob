@@ -66,6 +66,7 @@ class TestAutoDisposeFiledFindings:
 
     # frob:ticket T-2208
     # frob:ticket T-2604
+    # frob:ticket T-4626
     def test_leaves_quarantine_raised_when_other_findings_remain_undisposed(
         self, tmp_path: Path
     ) -> None:
