@@ -1,5 +1,5 @@
 ---
-id: T-draft-f01a9c4a
+id: T-5256
 title: 'A refused land restores the worktree: ledger files, staged land-owned files
   and pre-land commits unwound, refusal text on the intent record'
 state: queued
