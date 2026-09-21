@@ -20,10 +20,25 @@ scope:
 - src/frob/gates/_tickets_gate.py
 - src/frob/tickets/_leases.py
 - tests/gates_suite/test_tick_dead_worktree.py
+- src/frob/gates/_waive.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: new TICK015 rule id needs registration in _KNOWN_GATE_RULES and its docs
+    table row
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: new TICK015 rule id needs registration in _KNOWN_GATE_RULES and its docs
+    table row
+  actor: logan
+  at: '2026-09-21'
 triage_changes:
 - field: sprint
   old_value: null
