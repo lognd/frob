@@ -379,3 +379,10 @@ dev_version_bump = true
 # commit and every ticket lands onto dev; dev is merged into main only at
 # a sprint's release cut (docs/guides/release.md#branch-flow-after-the-alpha).
 ticket_land_branch = "dev"
+# T-3613: a bare `frob ticket land <id> --worktree PATH` enqueues into
+# .frob/land-queue.json instead of landing synchronously; one drainer
+# (`frob ticket land --drain`) lands serially. Opt out per call with an
+# explicit mode flag; --dry-run is never promoted. Owner decision 2026-09-21.
+# NOTE: the key is the AppConfig field name (ticket_land_default); the
+# docstring's `land_default` spelling is not read (see T-5106).
+ticket_land_default = "queue"
