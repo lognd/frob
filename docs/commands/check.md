@@ -346,6 +346,15 @@ coverage` records `.frob/coverage-stamp` after `pytest --cov` runs; TEST006
 compares the stamp against the live graph snapshot on later `frob check`
 runs.
 
+T-3995: a bare (no `--only`) run also appends three opt-in tail checks --
+`deploy-drift`, `deploy-conformance` (both only when a `deploy/` dir
+exists), and `claude-config-drift` (only when `.claude/hooks/sync-claude-
+config.py` exists) -- unconditionally, with no `--only` name of their own.
+Any `--only` selection, of a known stage name or otherwise, now excludes
+all three: before this fix a KNOWN stage name (e.g. `--only ruff`) did not
+actually restrict a run's `ToolResult`s to that one stage, since these
+three kept showing up regardless.
+
 ### Stage groups (`--only <group>`, T-0627)
 
 A full `frob check` (or `--only gates`) on a repo of this size can exceed

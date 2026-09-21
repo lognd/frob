@@ -1533,16 +1533,28 @@ def _colorized_stderr_logs():  # noqa: ANN201
 
 
 # frob:ticket T-0419
+# frob:ticket T-3995
+# frob:tests \
+# tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_stage_total_excludes_tail_when_only_is_set  # noqa: E501
 def _stage_total(cfg: AppConfig, root: Path) -> int:
     """The live task-list's overall stage count: one per language stage
     that will actually run, plus one each for `deploy-drift`/
-    `deploy-conformance` when `deploy/` exists -- computed up front so
-    `Progress.update` can report a stable `current/total`, not a count
-    that grows mid-run."""
+    `deploy-conformance`/`claude-config-drift` when their own opt-in
+    condition holds -- computed up front so `Progress.update` can report a
+    stable `current/total`, not a count that grows mid-run.
+
+    T-3995: `cfg.check_only` restricts a run to specific stage names, and
+    none of the three unconditional-tail checks has a `--only` name of its
+    own (`frob.check._TOOL_STAGES` does not list them) -- so a `--only`
+    run never reaches them (see `_run_all_stages`) and they must not be
+    counted here either, or the live task list would report a `total`
+    higher than the stage count that actually runs."""
     if cfg.check_type is None:
         n_lang = len(_detected_types(root)) or 1
     else:
         n_lang = 1
+    if cfg.check_only:
+        return n_lang
     n_deploy = 2 if (root / "deploy").is_dir() else 0
     claude_hook = root / ".claude" / "hooks" / "sync-claude-config.py"
     n_claude = 1 if claude_hook.is_file() else 0
@@ -1550,11 +1562,27 @@ def _stage_total(cfg: AppConfig, root: Path) -> int:
 
 
 # frob:ticket T-0419
+# frob:ticket T-3995
+# frob:tests \
+# tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_only_known_stage_name_excludes_claude_config_drift  # noqa: E501
+# frob:tests \
+# tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_bare_run_still_includes_claude_config_drift  # noqa: E501
 def _run_all_stages(
     cfg: AppConfig, root: Path, *, progress: Progress | None = None
 ) -> CheckResult:
-    """Run the auto-detected or pinned project-type stage(s) plus the
-    opt-in deploy stages, under `run`'s stdout-logging context.
+    """Run the auto-detected or pinned project-type stage(s) plus, unless
+    `cfg.check_only` restricts the run to specific stages, the opt-in
+    deploy stages -- under `run`'s stdout-logging context.
+
+    T-3995: `deploy-drift`/`deploy-conformance`/`claude-config-drift` are
+    each an unconditional tail appended by `_append_deploy_stages`, with
+    no `--only` name of their own (`frob.check._TOOL_STAGES` does not list
+    them) -- so before this fix a KNOWN `--only` stage name (e.g. `ruff`)
+    did not actually restrict a run's `ToolResult`s to that stage: these
+    three kept showing up regardless, silently widening a scoped run's
+    output. `--only` now skips the deploy tail entirely, matching what a
+    caller scoping the run to one stage actually expects; see `--only`'s
+    own CLI help for this documented exclusion.
 
     `progress` (T-0419, a no-op off a TTY) is fed the running stage label
     and `current/total` count as each stage completes -- the TTY-only live
@@ -1569,7 +1597,7 @@ def _run_all_stages(
     with stack:
         cfg = _apply_frob_toml_defaults(cfg, root)
         total = _stage_total(cfg, root)
-        n_deploy = 2 if (root / "deploy").is_dir() else 0
+        n_deploy = 2 if (root / "deploy").is_dir() and not cfg.check_only else 0
         n_lang = total - n_deploy
         # frob:ticket T-0229
         if cfg.check_type is None:
@@ -1578,6 +1606,13 @@ def _run_all_stages(
             )
         else:
             result = _run_pinned_stage(cfg, root, progress=progress, total=total)
+        if cfg.check_only:
+            # T-3995: a scoped `--only` run never reaches the unconditional
+            # deploy/claude-config-drift tail -- see this function's
+            # docstring.
+            if progress is not None:
+                progress.update("check: done", total, total)
+            return result
         return _append_deploy_stages(
             root, result, progress=progress, base=n_lang, total=total
         )

@@ -1,14 +1,14 @@
 ---
 id: T-3995
 title: --only with a known stage name does not actually filter
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
 priority: high
 parent: T-3984
 tier: ticket
-sprint: v0.536.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -33,23 +33,24 @@ scope_changes:
   reason: check.md documents --only, and this fix changes what --only excludes
   actor: logan
   at: '2026-09-19'
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
-designated_repro_test: null
+evidence:
+- tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_only_known_stage_name_excludes_claude_config_drift
+- tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_bare_run_still_includes_claude_config_drift
+- tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_stage_total_excludes_tail_when_only_is_set
+designated_repro_test: tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_only_known_stage_name_excludes_claude_config_drift
 acceptance:
 - text: given frob check --only ruff run against this repo, when it completes, then
     no ToolResult with tool=claude-config-drift (or other unconditional-tail checks)
     is present unless explicitly not gated by design
-  evidence: []
+  evidence:
+  - tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_only_known_stage_name_excludes_claude_config_drift
+  - tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_bare_run_still_includes_claude_config_drift
+  - tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_stage_total_excludes_tail_when_only_is_set
 - text: given any check that is deliberately left unconditional regardless of --only,
     when this ticket lands, then that is documented explicitly in --only's own help
     text
-  evidence: []
+  evidence:
+  - tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail::test_only_known_stage_name_excludes_claude_config_drift
 threat: null
 component: null
 anchor: false

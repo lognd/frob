@@ -22,6 +22,8 @@ from frob.app.check_runner import (
     _claude_config_drift_result,
     _fix_report_text,
     _result_as_json_with_fix,
+    _run_all_stages,
+    _stage_total,
 )
 from frob.app.config import AppConfig
 from frob.check import CheckResult
@@ -522,3 +524,78 @@ class TestClaudeConfigDriftStage:
         root = tmp_path / "bare"
         root.mkdir()
         assert _claude_config_drift_result(root) is None
+
+
+# frob:ticket T-3995
+class TestOnlyExcludesUnconditionalTail:
+    """T-3995 repro + fix: `frob check --only <KNOWN stage>` did not
+    actually restrict a run's `ToolResult`s to that stage -- `_run_all_
+    stages` unconditionally appended the opt-in `deploy-drift`/`deploy-
+    conformance`/`claude-config-drift` tail (`_append_deploy_stages`) with
+    no check against `cfg.check_only` at all, so a `--only ruff` run on a
+    repo carrying a managed `.claude/hooks/sync-claude-config.py` still
+    got a `claude-config-drift` `ToolResult` back. Fixed: `_run_all_stages`
+    now skips the deploy tail entirely whenever `cfg.check_only` is set."""
+
+    def _repo(self, tmp_path: Path, monkeypatch) -> Path:  # noqa: ANN001
+        """A repo that is BOTH a minimal Python project (so the `ruff`
+        stage has something real to run) AND a `_claude_config_repo`
+        fixture (so the unconditional `claude-config-drift` tail's own
+        opt-in condition -- a `.claude/hooks/sync-claude-config.py`
+        source existing -- is genuinely met, not vacuously absent)."""
+        root = _claude_config_repo(tmp_path, monkeypatch)
+        (root / "pyproject.toml").write_text(
+            '[project]\nname = "t3995pkg"\nversion = "0.1.0"\n'
+            '[tool.ruff.lint]\nselect = ["E", "F", "W"]\n'
+        )
+        src_dir = root / "src" / "t3995pkg"
+        src_dir.mkdir(parents=True)
+        (src_dir / "__init__.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        return root
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_only_known_stage_name_excludes_claude_config_drift  # noqa: E501
+    def test_only_known_stage_name_excludes_claude_config_drift(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """THE REPRO: before the fix, `--only ruff` -- `ruff` being a
+        KNOWN, real `frob.check._TOOL_STAGES` entry -- still returned a
+        `claude-config-drift` `ToolResult` in the same run, because
+        `_append_deploy_stages` never consulted `cfg.check_only`."""
+        root = self._repo(tmp_path, monkeypatch)
+        cfg = AppConfig(check_path=root, check_only=["ruff"])
+        result = _run_all_stages(cfg, root)
+        tools = [r.tool for r in result.results]
+        assert "claude-config-drift" not in tools, tools
+        assert any(t.startswith("ruff") for t in tools), tools
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_bare_run_still_includes_claude_config_drift  # noqa: E501
+    def test_bare_run_still_includes_claude_config_drift(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Control: with NO `--only` at all the unconditional tail is
+        still supposed to run -- this fix only narrows the `--only` case,
+        it must not silently drop `claude-config-drift` from a full run
+        too."""
+        root = self._repo(tmp_path, monkeypatch)
+        cfg = AppConfig(check_path=root)
+        result = _run_all_stages(cfg, root)
+        tools = [r.tool for r in result.results]
+        assert "claude-config-drift" in tools, tools
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_stage_total_excludes_tail_when_only_is_set  # noqa: E501
+    def test_stage_total_excludes_tail_when_only_is_set(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """`_stage_total`'s live-task-list count must not count a stage
+        that `_run_all_stages` will never actually reach, or the TTY
+        progress bar reports a `total` higher than the real stage count."""
+        root = self._repo(tmp_path, monkeypatch)
+        bare_total = _stage_total(AppConfig(check_path=root), root)
+        only_total = _stage_total(AppConfig(check_path=root, check_only=["ruff"]), root)
+        assert only_total < bare_total
+        assert only_total == 1

@@ -314,6 +314,7 @@ def _add_check_scope_args(check_p) -> None:
     )
 
 
+# frob:ticket T-3995
 def _add_check_selection_args(check_p) -> None:
     """Register `frob check`'s ticket/base/only/stamp-coverage/baseline/delta args."""
     check_p.add_argument("--json", dest="check_json", action="store_true")
@@ -367,7 +368,13 @@ def _add_check_selection_args(check_p) -> None:
         metavar="STAGE",
         action="append",
         default=[],
-        help="run only these stages (repeatable); includes 'gates'",
+        help=(
+            "run only these stages (repeatable); includes 'gates'. T-3995: "
+            "also excludes the three opt-in tail checks that otherwise run "
+            "unconditionally on every full check -- deploy-drift, "
+            "deploy-conformance, claude-config-drift -- since none of them "
+            "has a --only name of its own"
+        ),
     )
     # frob:ticket T-4413
     check_p.add_argument(
