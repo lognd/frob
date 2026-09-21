@@ -1,0 +1,71 @@
+## Done report
+
+T-5123 fixes the measured incident where 183 worktrees and 1437 t-*
+branches had accumulated, including T-3797 (done since 2026-09-05) and
+T-4556 (done 2026-09-19), because neither `sweep_worktrees` nor
+`remove_worktree` (`frob.tickets._worktree_sweep`) ever sat anywhere on
+`frob ticket land`'s own path -- a worktree nobody explicitly
+`--finish`/`--retire-on-proof`'d was simply never reaped by anything.
+
+Investigation found the two OTHER causes the ticket's own Cause text
+named were already fixed by prior tickets, not still open:
+- T-4448 (done) already rewrote the "ahead of main" keep-verdict
+  (`_kept_ahead_of_main_verdict_if_present`) to key on each touched
+  ticket's STATE ON MAIN, not a raw `git rev-list --count main..branch`
+  -- a branch whose only ticket(s) are terminal on main is NOT kept by
+  this gate (confirmed by reading the current code and its own T-4448
+  docstring/incident history).
+- T-4172 (already landed) already made `read_all_leases`'s default call
+  (no `exclude_from_reconcile`) prune a lease whose ticket is terminal
+  on the ledger, opportunistically unlinking it -- a done ticket's own
+  lease does not block `_kept_lease_or_age_verdict` either.
+
+So the real remaining gap was purely "nothing ever calls the sweep for
+land's own worktree" -- exactly the ticket's own Cause text's last
+clause. Fix: `_reap_or_sync_worktree` (new, `_land_cmd.py`), called from
+the post-land tail instead of unconditionally auto-syncing
+(`_auto_sync_worktree_onto_main`, T-1720/T-2173) when `--finish`/
+`--retire-on-proof` was not given. It reuses `remove_worktree`'s own
+existing safety gates verbatim (live process, live lease for a
+DIFFERENT still-open ticket -- the ordinary multi-ticket-series reuse
+case, unlanded branch content, dirty tree) rather than re-deriving any
+of them: a `"removed"` verdict also deletes the branch (mirroring
+`--retire-on-proof`'s own two-step); any `"kept:*"` verdict falls back
+to the pre-existing auto-sync exactly as before. This also directly
+satisfies "never dev-sync a done ticket's worktree" -- a worktree whose
+only ticket is now terminal and that carries no other live work is
+reaped rather than synced at all; a worktree still failing one of
+`remove_worktree`'s gates is, by construction, not "a done ticket's
+worktree" in the sense the ticket means (something else is still using
+it), so syncing it remains correct.
+
+Scope was widened from the ticket's original four files (`_worktree_
+sweep.py`/`_unlanded.py`/`_land_finalize.py`/the new test) to
+`_land_cmd.py`, since that is where the T-1720/T-2173 auto-sync call
+site (the thing this ticket's own plan calls "the auto-sync step") and
+the `--retire-on-proof` branch-deletion helpers already live -- recorded
+via `frob ticket scope --add` before editing. No changes were needed in
+`_worktree_sweep.py`/`_unlanded.py`/`_land_finalize.py` themselves: the
+gates they already implement (T-4448/T-4172) are correct; this ticket's
+only remaining gap was the missing call site.
+
+`frob check --files ... --only gates` hung for the full 900s budget
+under fleet load (confirmed via `ps` and the coordinator's own
+observation) and is BLOCKED for that specific command; `ruff check`/
+`ruff format` and the touched-file + adjacent auto-sync/finish-guard test
+suites (`tests/ticket_land_suite/test_land_reaps_worktree.py`,
+`tests/unit/test_land_auto_rebase.py`, `tests/unit/test_land_finish_
+guard.py`) all pass clean (27 node ids, 0 failed), plus a clean
+`frob ticket land --dry-run`.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_land_cmd.py            | 64 ++++++++++++--
+ .../ticket_land_suite/test_land_reaps_worktree.py  | 97 ++++++++++++++++++++++
+ tickets/T-5123/ticket.md                           | 14 +++-
+ 3 files changed, 165 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree::test_reaps_a_worktree_with_no_further_live_lease` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree::test_falls_back_to_auto_sync_when_still_in_use` (pytest node id, verified passing when recorded)

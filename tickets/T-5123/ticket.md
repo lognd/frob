@@ -2,7 +2,7 @@
 id: T-5123
 title: landing must reap its own branch and worktree and never dev-sync a done ticket's
   worktree
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -39,6 +39,9 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree::test_reaps_a_worktree_with_no_further_live_lease
+- tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree::test_falls_back_to_auto_sync_when_still_in_use
 designated_repro_test: null
 threat: null
 component: null

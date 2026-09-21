@@ -3091,15 +3091,19 @@ def _finish_land_after_success(
         sys.exit(1)
     wants_finish = cfg.ticket_land_finish or cfg.ticket_land_retire_on_proof
     if not wants_finish:
-        # T-1720: auto-rebase the worktree's own branch onto the main tip
-        # this land just produced -- skipped when `wants_finish` is set,
-        # since `_finish_worktree` below is about to remove the checkout
-        # entirely and rebasing a worktree seconds before deleting it is
-        # pure wasted git work with the same (small) conflict-abort risk
-        # for no benefit. The common series-worktree case (no `--finish`,
-        # more tickets to land in the same worktree next) is exactly the
-        # case this closes.
-        _auto_sync_worktree_onto_main(root, worktree, cfg.ticket_id)
+        # T-5123: without an explicit --finish/--retire-on-proof, land
+        # used to ALWAYS auto-sync (below) and never even attempt to
+        # reap `worktree` -- so a worktree nobody ever explicitly retired
+        # accumulated forever (the measured incident: 183 worktrees/1437
+        # branches, done tickets T-3797/T-4556 among them still checked
+        # out). Try the reap first; it only ever succeeds when `frob.
+        # tickets._worktree_sweep.remove_worktree`'s own existing safety
+        # gates (live process, live lease for a DIFFERENT still-open
+        # ticket, unlanded branch content, dirty tree) already agree a
+        # manual `frob worktree remove` would too -- falls through to the
+        # T-1720/T-2173 auto-sync exactly as before whenever any of those
+        # says this worktree is still genuinely in use.
+        _reap_or_sync_worktree(root, worktree, cfg.ticket_id)
         return
     # T-1910: `verified` is always True by this point -- the unconditional
     # `sys.exit(1)` above already handled the False case for every caller,
@@ -3140,6 +3144,48 @@ def _finish_land_after_success(
             _delete_worktree_branch(root, branch, cfg.ticket_id)
     finally:
         _clear_land_finish_pending_marker(root, cfg.ticket_id)
+
+
+# frob:ticket T-5123
+# frob:tests tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree.test_reaps_a_worktree_with_no_further_live_lease  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_reaps_worktree.py::TestReapOrSyncWorktree.test_falls_back_to_auto_sync_when_still_in_use  # noqa: E501
+def _reap_or_sync_worktree(root: Path, worktree: Path, ticket_id: str) -> None:
+    """T-5123: after a normal (no `--finish`/`--retire-on-proof`) land,
+    attempt to REAP `worktree` (remove the checkout, delete its branch)
+    now that `ticket_id` just landed and is terminal on `root` -- the
+    fix for the measured incident where NEITHER `sweep_worktrees` nor
+    `remove_worktree` (`frob.tickets._worktree_sweep`) sat anywhere on
+    the land path's own tail, so a worktree nobody explicitly `--finish`ed
+    was never reaped by anything and accumulated forever (183 worktrees,
+    1437 branches; T-3797/T-4556, both done for days, still checked out).
+
+    Reuses `remove_worktree` verbatim rather than re-deriving any of its
+    safety gates: a worktree still holding a LIVE lease for a DIFFERENT,
+    still-open ticket (the ordinary multi-ticket-series case -- another
+    ticket already started here, meaning this worktree is not actually
+    idle), a live process cwd'd into it, unlanded branch content, or a
+    dirty tree all make `remove_worktree` return a `kept:*` verdict
+    exactly as `frob worktree remove` would -- this function falls back
+    to the pre-existing T-1720/T-2173 `_auto_sync_worktree_onto_main` in
+    every one of those cases, so a worktree genuinely still in use is
+    synced (kept fresh for its next ticket) exactly as before, never
+    reaped out from under an agent using it. Only a worktree
+    `remove_worktree` would ALREADY remove for a bare `frob worktree
+    remove` call is reaped here -- this is strictly a new, additional
+    place that safe removal now also runs, not a new removal criterion."""
+    from frob.tickets._worktree_sweep import remove_worktree
+
+    branch = _worktree_branch_name(root, worktree)
+    removed = remove_worktree(root, worktree)
+    if removed.is_ok and removed.danger_ok.verdict == "removed":
+        _log.info(
+            "ticket land: %s reaped its own now-terminal worktree %s (T-5123)",
+            ticket_id,
+            worktree,
+        )
+        _delete_worktree_branch(root, branch, ticket_id)
+        return
+    _auto_sync_worktree_onto_main(root, worktree, ticket_id)
 
 
 # frob:ticket T-1720
