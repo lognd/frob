@@ -16,11 +16,61 @@ docstring: `covers_scope`/`mutation_evidence`/etc are injected booleans,
 computed elsewhere, never computed in-package) -- so this check lives
 here, in `frob.gates`, as an ordinary queue-wide WARN finding
 (`tickets_gate`'s TICK014, alongside TICK001..TICK013) rather than a
-close-time hard block. It reads the SAME data `compose_done_report`
-already wrote (the `### Changed` fenced `git diff --stat` block,
-`frob.tickets._evidence.render_changed_block`) back out of the ticket's
-own body -- no separate diff computation, no new git call, and no risk
-of disagreeing with what the Done report itself already recorded.
+close-time hard block.
+
+T-3899 REFINEMENT (this module's original design read only the `###
+Changed` block `compose_done_report` wrote into the ticket body at
+`frob ticket done-report` time -- see `_changed_paths_from_done_report`
+below). That block is a `git diff --stat <base_ref>...HEAD` snapshot
+taken WHILE the ticket's branch was still separate from `base_ref`; by
+the time the ticket's own land later SQUASHES its branch (feat/fix
+commit(s) + a following `chore(tickets): close T-####` bookkeeping
+commit, the one-logical-change-per-commit convention this project
+mandates) into ONE `land_commit` on the target branch, that stored
+snapshot can be stale or -- for a ticket whose `done-report` was
+composed AFTER an earlier phase of a multi-step land already merged its
+code -- read as empty, even though real code landed. TICK014 flagged
+every such ticket: it inspected the wrong diff (a done-report-time
+snapshot, effectively "the close transition"), not the ticket's actual
+landed change.
+
+FIX: when the ticket carries a `land_commit` (`frob.tickets._models.
+Ticket.land_commit`, the exact sha `frob.tickets._land_squash.
+_record_land_commit` writes right after `frob ticket land` produces that
+ticket's single squashed commit), this module now reads THAT commit's
+own `git show --stat` diff instead of the stored Changed block --
+the real, mechanically-verified set of paths this ticket's actual land
+touched, spanning its whole branch range (start-of-branch through the
+close commit, all squashed into `land_commit` by construction) rather
+than a point-in-time snapshot. The stored Changed block remains the
+fallback for a ticket with no `land_commit` (never landed via `frob
+ticket land` at all -- e.g. a `frob ticket close` decision record) --
+see `_tick014_changed_paths`'s docstring for the exact precedence and
+the three edge cases this fix was required to decide explicitly:
+
+  1. Code landed, then reverted in a LATER, separate commit before
+     close: `land_commit`'s own diff still shows the original files
+     this ticket touched (a later revert is a different commit, outside
+     `land_commit`'s own tree). This check verifies "did this ticket's
+     land touch real files", not "does that code still exist right
+     now" -- detecting a post-land revert needs a different signal
+     (diffing current HEAD against the target branch), which is a
+     disclosed, deliberate non-goal here, not a silently-assumed-covered
+     gap.
+  2. The ticket's lifetime spans another ticket's commits (concurrent
+     work on the same branch before land): does not apply to
+     `land_commit` at all -- `frob ticket land <id>` squashes ONLY that
+     ticket's own branch commits into one commit scoped to that ticket,
+     so `land_commit`'s diff can never credit a different ticket's code.
+     (This is why `land_commit`, not a start-commit-to-close-commit
+     range, is the right anchor: a raw commit range on a shared branch
+     WOULD leak concurrent commits; a per-ticket squash commit cannot.)
+  3. Closed without ever landing (no `land_commit` at all, e.g. a
+     decision-record close via `frob ticket close` directly): falls
+     back to the pre-existing stored-Changed-block behavior unchanged,
+     so the ORIGINAL true-positive case this check exists for -- a
+     ticket marked done with genuinely no code anywhere in its
+     lifetime -- still fires exactly as before.
 
 Deliberately narrow (disclosed, not silently assumed complete): only the
 declared `tickets/`/`tickets.md`/`tickets-archive.md` prefixes count as
@@ -39,9 +89,10 @@ directly, never inferred from the diff shape."""
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from frob.gates._models import Severity, Violation
-from frob.tickets import TicketKind, TicketQueue, TicketState, TicketTier
+from frob.tickets import Ticket, TicketKind, TicketQueue, TicketState, TicketTier
 
 #: Path prefixes that count as "ticket bookkeeping, not code" for this
 #: check -- both ledger backends (`tickets/T-####/*` per-ticket dir mode,
@@ -124,11 +175,58 @@ def _is_ticket_bookkeeping(path: str) -> bool:
     return path.startswith(_TICKET_BOOKKEEPING_PREFIXES)
 
 
+def _changed_paths_from_land_commit(root: Path, sha: str) -> tuple[str, ...] | None:
+    """`git show --stat <sha>`'s changed paths (T-3899) -- the REAL,
+    mechanically-verified diff this ticket's land squashed onto the
+    target branch, spanning its whole branch range by construction
+    (`frob ticket land` squashes every commit from the ticket's start
+    through its close into this one commit). `None` if `sha` does not
+    resolve in this clone (a shallow clone, a pruned/rewritten history,
+    or a corrupt `land_commit` value) -- treated as "cannot tell" by the
+    caller, falling back to the stored done-report Changed block, never
+    silently read as an empty diff."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "show", "--stat", "--format=", sha])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    paths: list[str] = []
+    for line in spawned.danger_ok.stdout.splitlines():
+        match = _STAT_LINE_RE.match(line)
+        if match is None:
+            continue
+        raw = match.group(1).strip()
+        if " => " in raw:
+            raw = raw.rsplit(" => ", 1)[1].strip()
+        paths.append(raw)
+    return tuple(paths)
+
+
+def _tick014_changed_paths(root: Path, t: Ticket) -> tuple[str, ...] | None:
+    """The paths TICK014 judges `t`'s close by (T-3899): `t.land_commit`'s
+    own `git show --stat` diff when a land_commit is recorded (the fix --
+    see this module's docstring for the three decided edge cases), else
+    the pre-existing stored done-report `### Changed` block
+    (`_changed_paths_from_done_report`) for a ticket that never landed
+    via `frob ticket land` at all. `None` means "cannot tell" either way
+    (no parsable Changed block AND no resolvable land_commit) -- the
+    caller treats that as silence, never a false-positive empty diff."""
+    if t.land_commit:
+        from_land = _changed_paths_from_land_commit(root, t.land_commit)
+        if from_land is not None:
+            return from_land
+    return _changed_paths_from_done_report(t.body)
+
+
 # frob:doc \
 # docs/modules/tickets-data-storage.md#tick014----empty-code-diff-on-close-t-3092
+# frob:waive AFFECT001 reason="T-3899: docs/modules/tickets-data-storage.md is leased \
+# by another in-progress ticket (frob ticket scope refused --add on it); doc update \
+# filed as T-draft-79a4ea1d instead of skipped silently"
 # frob:enforces CHK-GATE-TICK014
 # frob:ticket T-3092
 # frob:ticket T-3283
+# frob:ticket T-3899
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_bug_warns
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_feature_warns
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_docs_kind_quiet
@@ -137,20 +235,26 @@ def _is_ticket_bookkeeping(path: str) -> bool:
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_real_diff_quiet
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_no_block_quiet
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_open_never_fires
-def empty_code_diff_violations(queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK014 (WARN, T-3092): one violation per DONE ticket whose `kind`
-    is `feature` or `bug` (`_APPLIES_TO_KINDS`), that is NOT exempted
-    (`tier == epic`, `no_scope_declared`, or -- structurally, since it is
-    filtered by `_APPLIES_TO_KINDS` -- `kind == docs`), and whose own
-    Done report `### Changed` block lists no path outside ticket-
-    bookkeeping (`_is_ticket_bookkeeping`).
+# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_land_commit_with_real_code_quiet  # noqa: E501
+# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_land_commit_bookkeeping_only_warns  # noqa: E501
+# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_land_commit_overrides_stale_empty_changed_block  # noqa: E501
+# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_unresolvable_land_commit_falls_back_to_changed_block  # noqa: E501
+def empty_code_diff_violations(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK014 (WARN, T-3092/T-3899): one violation per DONE ticket whose
+    `kind` is `feature` or `bug` (`_APPLIES_TO_KINDS`), that is NOT
+    exempted (`tier == epic`, `no_scope_declared`, or -- structurally,
+    since it is filtered by `_APPLIES_TO_KINDS` -- `kind == docs`), and
+    whose judged changed-paths (`_tick014_changed_paths`: `land_commit`'s
+    real diff when recorded, else the stored done-report `### Changed`
+    block) list no path outside ticket-bookkeeping
+    (`_is_ticket_bookkeeping`).
 
-    Deliberately silent (never a finding) when the Done report carries no
-    parsable `### Changed` block at all (`_changed_paths_from_done_report`
-    returns `None`) -- an older ledger row predating T-0458's auto-
-    composed section is a coverage gap this check discloses rather than
-    guesses at, not a live "empty diff" claim this module can actually
-    support with evidence.
+    Deliberately silent (never a finding) when `_tick014_changed_paths`
+    returns `None` -- neither a resolvable `land_commit` nor a parsable
+    Changed block exists, so this module has no evidence to judge by at
+    all. That is a disclosed coverage gap (an older ledger row predating
+    T-0458's auto-composed section, or a `land_commit` this clone cannot
+    resolve), never a live "empty diff" claim made without support.
 
     A non-DONE ticket (queued/in-progress/planned/dropped/blocked) never
     fires: `dropped` is not a completion at all (no code was ever
@@ -165,7 +269,7 @@ def empty_code_diff_violations(queue: TicketQueue) -> tuple[Violation, ...]:
             continue
         if t.no_scope_declared:
             continue
-        paths = _changed_paths_from_done_report(t.body)
+        paths = _tick014_changed_paths(root, t)
         if paths is None:
             continue
         if paths and not all(_is_ticket_bookkeeping(p) for p in paths):
@@ -180,14 +284,18 @@ def empty_code_diff_violations(queue: TicketQueue) -> tuple[Violation, ...]:
                     f"TICK014: {t.id} ({t.kind.value}) closed done with a "
                     f"diff touching only ticket bookkeeping "
                     f"(tickets/tickets.md/tickets-archive.md) -- no code, "
-                    f"test, or doc change; if this is a legitimate no-code "
+                    f"test, or doc change landed anywhere in its lifetime "
+                    f"(checked via its land_commit's own diff when "
+                    f"recorded, T-3899); if this IS a legitimate no-code "
                     f"close (a decision record, a dropped-in-practice "
-                    f"item, etc), declare it explicitly with `frob ticket "
-                    f"scope {t.id} --declare-no-scope --reason '...'` "
-                    f"before closing, or set kind=docs/tier=epic if that "
-                    f"is a better fit; otherwise this is likely a ticket "
-                    f"that was marked done without its described work "
-                    f"actually landing (T-3064's own incident)"
+                    f"item, etc), declare it retroactively with `frob "
+                    f"ticket scope {t.id} --declare-no-scope --reason "
+                    f"'...'` (this ticket has already closed, so "
+                    f"'--declare-no-scope' is applied after the fact, not "
+                    f"before), or re-file with kind=docs/tier=epic if "
+                    f"that is a better fit; otherwise this is likely a "
+                    f"ticket that was marked done without its described "
+                    f"work actually landing (T-3064's own incident)"
                 ),
             )
         )

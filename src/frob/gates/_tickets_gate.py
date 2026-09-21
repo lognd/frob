@@ -717,11 +717,9 @@ def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, TicketState] | Non
 # frob:ticket T-0537
 # frob:ticket T-4341
 # frob:tests \
-# tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_hand_resolved_confl\
-# ict_resurrecting_done_ticket_is_flagged_on_v2_ledger
+# tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger  # noqa: E501
 # frob:tests \
-# tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_forward_progress_ac\
-# ross_a_merge_is_clean_on_v2_ledger
+# tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_forward_progress_across_a_merge_is_clean_on_v2_ledger  # noqa: E501
 # frob:enforces CHK-GATE-TICK005
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
@@ -909,8 +907,7 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
 
 # frob:ticket T-0929
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon_fir\
-# es
+# tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
 # frob:enforces CHK-GATE-TICK006
 def _tick006_phantom_filing(
     queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
@@ -1226,14 +1223,11 @@ def _tick011_first_uncited_disclosure(
 # frob:tests \
 # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_stale_critical_fires
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_is_s\
-# ilent
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority_nev\
-# er_fires
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_is_s\
-# ilent
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
 # frob:tests tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
 def _tick007_undispatched_stale(
     root: Path, queue: TicketQueue
@@ -1275,14 +1269,11 @@ def _tick007_undispatched_stale(
 # frob:ticket T-0842
 # frob:enforces CHK-GATE-TICK008
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_\
-# field
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_nea\
-# r_miss_typo
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_clean_l\
-# edger
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
 # frob:tests tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_waivable
@@ -1449,8 +1440,7 @@ def _tick009_scope_breadth_nudges(
 # does not perform subclass reasoning against the caught tuple"
 # frob:ticket T-4319
 # frob:tests \
-# tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_dead_lea\
-# se_reports_as_error_with_remedy
+# tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_dead_lease_reports_as_error_with_remedy  # noqa: E501
 def _tick010_holder_dead_pass(
     root: Path, leases_root: Path, lease_paths: list[Path]
 ) -> list[Violation]:
@@ -1530,8 +1520,7 @@ def _tick010_holder_dead_pass(
 
 
 # frob:tests \
-# tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_holder_lea\
-# se_is_silent
+# tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_holder_lease_is_silent  # noqa: E501
 # frob:enforces CHK-GATE-TICK010
 def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
     """TICK010 (T-0714, widened by T-4319 -- see `_tick010_holder_dead_
@@ -1769,8 +1758,7 @@ _LEDGERV1_SUNSET = "2027-02-02"
 
 
 # frob:doc \
-# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
-# tion-7
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
@@ -1918,6 +1906,7 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         return _tickets_gate_inner(root, queue)
 
 
+# frob:ticket T-3899
 def _tickets_gate_inner(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """`tickets_gate`'s actual rule dispatch, split out only so `tickets_
     gate` itself can wrap the whole thing in one `load_queue_run_scope()`
@@ -1948,9 +1937,10 @@ def _tickets_gate_inner(root: Path, queue: TicketQueue) -> tuple[Violation, ...]
         + _tick013_empty_scope_without_declaration(queue)
         + stale_leases
         + _ledgerv1001_violations(root)
-        # T-3092: TICK014 (frob.gates._empty_diff_close) -- a FEATURE/BUG
-        # ticket closed done with a diff touching only ticket
-        # bookkeeping, likely marked done without its described work
-        # actually landing (the T-3064 incident this closes).
-        + empty_code_diff_violations(queue)
+        # T-3092/T-3899: TICK014 (frob.gates._empty_diff_close) -- a
+        # FEATURE/BUG ticket closed done with a diff (judged via its
+        # land_commit, T-3899) touching only ticket bookkeeping, likely
+        # marked done without its described work actually landing (the
+        # T-3064 incident this closes).
+        + empty_code_diff_violations(root, queue)
     )

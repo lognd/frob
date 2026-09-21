@@ -2,7 +2,7 @@
 id: T-3899
 title: TICK014 inspects only the close commit, so it flags every ticket following
   the one-logical-change-per-commit convention
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -44,7 +44,20 @@ scope_changes:
     normal feat-commit-then-chore-close-commit workflow'
   actor: logan
   at: '2026-09-19'
-designated_repro_test: null
+evidence:
+- tests/test_gates_empty_diff_close.py::TestTick014::test_bug_warns
+- tests/test_gates_empty_diff_close.py::TestTick014::test_feature_warns
+- tests/test_gates_empty_diff_close.py::TestTick014::test_docs_kind_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_epic_tier_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_no_scope_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_real_diff_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_no_block_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_open_never_fires
+- tests/test_gates_empty_diff_close.py::TestTick014LandCommit::test_land_commit_with_real_code_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014LandCommit::test_land_commit_bookkeeping_only_warns
+- tests/test_gates_empty_diff_close.py::TestTick014LandCommit::test_land_commit_overrides_stale_empty_changed_block
+- tests/test_gates_empty_diff_close.py::TestTick014LandCommit::test_unresolvable_land_commit_falls_back_to_changed_block
+designated_repro_test: tests/test_gates_empty_diff_close.py::TestTick014LandCommit::test_land_commit_with_real_code_quiet
 threat: null
 component: null
 anchor: false
