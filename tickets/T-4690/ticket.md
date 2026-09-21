@@ -35,6 +35,8 @@ scope:
 - tests/unit/test_cli_shims.py
 - tests/unit/test_main_entry.py
 - tests/unit/test_cli_group_parity.py
+- src/frob/app/app.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +57,24 @@ scope_changes:
   reason: T-4690 deletes the flat docs-search mirror (never dispatchable) that this
     parity test asserted exists; the test itself encodes the pre-T-4690 duplication
     invariant and must be updated to match the ticket's own acceptance criteria
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/app/app.py
+  reason: App.__call__ is the single correct interception point for the shared deprecation-shim
+    announcement (quality/design/ops groups, outline/map/xref mirrors, verify status/fleet
+    status) -- avoids duplicating the sunset check per-runner; _config_external.py's
+    _BOOL_FLAGS allowlist had to gain doctor_whereis or the new frob doctor --whereis
+    flag silently no-ops (found while implementing T-4690)
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: App.__call__ is the single correct interception point for the shared deprecation-shim
+    announcement (quality/design/ops groups, outline/map/xref mirrors, verify status/fleet
+    status) -- avoids duplicating the sunset check per-runner; _config_external.py's
+    _BOOL_FLAGS allowlist had to gain doctor_whereis or the new frob doctor --whereis
+    flag silently no-ops (found while implementing T-4690)
   actor: logan
   at: '2026-09-21'
 triage_changes:
