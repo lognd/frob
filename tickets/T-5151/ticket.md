@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reporting_attachments.py
+- src/frob/app/ticket_runner/_attach_backfill.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   at: '2026-09-21'
 - op: add
   glob: src/frob/tickets/_reporting_attachments.py
+  reason: real file this feature must touch (declared scope named nonexistent placeholder
+    paths)
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_attach_backfill.py
   reason: real file this feature must touch (declared scope named nonexistent placeholder
     paths)
   actor: logan
