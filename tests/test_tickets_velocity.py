@@ -363,6 +363,62 @@ class TestSprintVelocityV2Mode:
         assert v1t.from_state == v2t.from_state == "in-progress"
         assert v1t.to_state == v2t.to_state == "done"
 
+    # frob:ticket T-5131
+    def test_v2_mining_spawns_git_a_constant_number_of_times(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-5131's own repro: before the fix, `_mine_done_transitions_v2`
+        spawned `git log --follow -p` (plus a rename-lineage walk) ONCE
+        PER ticket id, so N ticket ids cost >= 2*N subprocess spawns --
+        the N+1 pattern this repo's 711-ticket, 11436-commit history
+        turned into a 10+ minute hang (`frob ticket flow`). After the fix
+        (two tree-wide batched walks, `_v2_all_path_transitions` +
+        `_v2_all_renames`), the spawn count is CONSTANT (<= 2) regardless
+        of how many ticket ids are requested. Fails at the pre-fix parent
+        commit (spawn count scales with N) and passes after (spawn count
+        pinned at 2)."""
+        import frob.tickets._flow as flow_mod
+
+        v2_root = tmp_path / "v2"
+        v2_root.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=v2_root, check=True)
+        subprocess.run(["git", "checkout", "-q", "-b", "main"], cwd=v2_root, check=True)
+        ticket_ids = [f"T-{n:04d}" for n in range(1, 6)]
+        for ticket_id in ticket_ids:
+            queued = _ticket(ticket_id=ticket_id, state=TicketState.QUEUED)
+            self._bootstrap_v2(v2_root, queued, f"queue {ticket_id}")
+            done = queued.model_copy(update={"state": TicketState.DONE})
+            write_ticket(v2_root, done)
+            self._commit(v2_root, f"close {ticket_id}")
+
+        from frob.gitio import run_argv as real_run_argv
+
+        spawn_count = 0
+
+        def _counting_run_argv(argv, **kwargs):  # noqa: ANN001, ANN003, ANN202
+            nonlocal spawn_count
+            spawn_count += 1
+            return real_run_argv(argv, **kwargs)
+
+        # Patch every name `run_argv` is bound under: `_flow.py`'s helpers
+        # import it locally per-call (picks up `frob.gitio`'s patched
+        # attribute), but `_store.py` (the pre-T-5131 per-ticket path)
+        # binds its own module-level name at import time, which the
+        # `frob.gitio` patch alone would not intercept.
+        monkeypatch.setattr("frob.gitio.run_argv", _counting_run_argv)
+        monkeypatch.setattr(
+            "frob.tickets._store.run_argv", _counting_run_argv, raising=False
+        )
+
+        transitions = flow_mod._mine_done_transitions_v2(v2_root, ticket_ids)
+
+        assert len(transitions) == len(ticket_ids)
+        assert spawn_count <= 2, (
+            f"expected a constant (<=2) number of git spawns for "
+            f"{len(ticket_ids)} ticket ids, got {spawn_count} -- the N+1 "
+            "per-ticket spawn pattern T-5131 fixed has regressed"
+        )
+
 
 # frob:ticket T-1528
 # frob:ticket T-1100

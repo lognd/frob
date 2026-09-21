@@ -37,7 +37,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketState,
 )
-from frob.tickets._store import _store_mode, load_archive, v2_state_transitions
+from frob.tickets._store import _store_mode, load_archive, tickets_dir
 
 _log = get_logger(__name__)
 
@@ -218,46 +218,221 @@ def _mine_done_transitions_v1(
     return tuple(transitions)
 
 
+# frob:ticket T-5131
+_V2_STATE_ADD_RE = re.compile(r"^\+state:\s*(\S+)\s*$")
+# frob:ticket T-5131
+_V2_DIFF_FILE_RE = re.compile(r"^diff --git a/\S+ b/(?P<new>\S+)$")
+# frob:ticket T-5131
+_V2_COMMIT_HEADER_RE = re.compile(r"^--frob-v2-commit-- ([0-9a-f]+)\x1f(\S+)$")
+# frob:ticket T-5131
+_V2_TICKET_PATH_RE = re.compile(r"(?:^|/)T-(?:draft-[0-9a-fA-F]+|[0-9]+)/ticket\.md$")
+
+
+# frob:ticket T-5131
+def _v2_tree_rel(root: Path) -> str:
+    """`tickets/`'s path relative to `root`, POSIX-slashed -- the single
+    pathspec every batched v2 git walk below scopes itself to, so a v2
+    mining pass costs one spawn over the whole ticket tree instead of one
+    spawn per ticket id (T-5131's fix, see `_mine_done_transitions_v2`'s
+    docstring for the N+1 cost this replaces)."""
+    return tickets_dir(root).relative_to(root).as_posix()
+
+
+# frob:ticket T-5131
+def _v2_path_transitions_raw_log(root: Path) -> str:
+    """The raw `git log --reverse -p -- tickets/` output `_v2_all_path_
+    transitions` parses (T-5131) -- split out so the spawn itself (empty
+    string on any git failure, matching this module's best-effort git
+    contract) and the pure line-by-line parse below each stay under
+    ARCH001's long-AND-complex threshold on their own."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--reverse",
+            "-p",
+            "--format=--frob-v2-commit-- %H%x1f%aI",
+            "--",
+            _v2_tree_rel(root),
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return ""
+    return spawned.danger_ok.stdout
+
+
+# frob:ticket T-5131
+# frob:tests \
+# tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v2_mode_mines_via_v2_state_transitions  # noqa: E501
+def _v2_all_path_transitions(root: Path) -> dict[str, list[tuple[str, str, str]]]:
+    """ONE `git log --reverse -p -- tickets/` walk over the WHOLE v2
+    ticket tree, parsed into `{path: [(sha, iso, state), ...]}` (T-5131).
+    Replaces the per-ticket `git log --follow -p` spawn
+    `_store.v2_state_transitions` used to run once per ticket id (~1400
+    full-history walks over 11436 commits, measured 10+ minutes on this
+    repo) with a single walk whose per-commit diff output already
+    partitions by path via `diff --git a/... b/...` headers -- the same
+    'last added +state: line this commit leaves the file holding' rule
+    `_store._mine_v2_path_transitions` used, now tracked per
+    currently-open path across one shared walk instead of per ticket.
+    Returns an empty dict (never raises) if `root` has no git history or
+    the tree has never existed, matching this module's existing
+    best-effort git contract."""
+    raw_log = _v2_path_transitions_raw_log(root)
+    by_path: dict[str, list[tuple[str, str, str]]] = {}
+    current_commit: tuple[str, str] | None = None
+    current_path: str | None = None
+    pending_state: str | None = None
+
+    def flush() -> None:
+        if (
+            current_commit is not None
+            and current_path is not None
+            and pending_state is not None
+            and _V2_TICKET_PATH_RE.search(current_path) is not None
+        ):
+            by_path.setdefault(current_path, []).append(
+                (current_commit[0], current_commit[1], pending_state)
+            )
+
+    for line in raw_log.splitlines():
+        commit_match = _V2_COMMIT_HEADER_RE.match(line)
+        if commit_match is not None:
+            flush()
+            current_commit = (commit_match.group(1), commit_match.group(2))
+            current_path = None
+            pending_state = None
+            continue
+        diff_match = _V2_DIFF_FILE_RE.match(line)
+        if diff_match is not None:
+            flush()
+            current_path = diff_match.group("new")
+            pending_state = None
+            continue
+        state_match = _V2_STATE_ADD_RE.match(line)
+        if state_match is not None:
+            pending_state = state_match.group(1)
+    flush()
+    return by_path
+
+
+# frob:ticket T-5131
+def _v2_all_renames(root: Path) -> dict[str, str]:
+    """ONE `git log --diff-filter=R -M100% --name-status -- tickets/`
+    walk over the WHOLE v2 ticket tree, mapping each `ticket.md` path to
+    its exact-content-similarity rename predecessor (T-5131's tree-wide
+    replacement for `_store._v2_rename_source`'s one-spawn-per-ticket
+    variant) -- `-M100%` keeps the same T-1543 exact-rename-only
+    semantics (a merely template-similar sibling ticket can never satisfy
+    it). An ambiguous target (more than one detected source in the whole
+    tree's history) is dropped, same 'never guess' contract as the
+    per-ticket original."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--diff-filter=R",
+            "-M100%",
+            "--name-status",
+            "--format=--frob-v2-rename-commit--",
+            "--",
+            _v2_tree_rel(root),
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return {}
+    sources: dict[str, set[str]] = {}
+    for line in spawned.danger_ok.stdout.splitlines():
+        if not line.startswith("R"):
+            continue
+        parts = line.split("\t")
+        if len(parts) != 3:
+            continue
+        _status, old_path, new_path = parts
+        sources.setdefault(new_path, set()).add(old_path)
+    return {new: next(iter(olds)) for new, olds in sources.items() if len(olds) == 1}
+
+
+# frob:ticket T-5131
+def _v2_lineage_from(rename_map: dict[str, str], rel_path: str) -> list[str]:
+    """Reconstruct `rel_path`'s full rename lineage, oldest-first, by
+    walking `rename_map` backward (T-5131's in-memory replacement for
+    `_store._v2_path_lineage`'s per-ticket `git log` recursion) -- same
+    bounded-depth-64 loop-guard against a pathological rename cycle."""
+    lineage = [rel_path]
+    seen = {rel_path}
+    current = rel_path
+    for _ in range(64):
+        prev = rename_map.get(current)
+        if prev is None or prev in seen:
+            break
+        lineage.insert(0, prev)
+        seen.add(prev)
+        current = prev
+    return lineage
+
+
 # frob:ticket T-1330
-# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to v2_state_transitions, \
-# a cross-module git-history walk the resolver cannot see through; the one real raise \
-# path (datetime.fromisoformat on a malformed timestamp) is caught below"
+# frob:ticket T-5131
+# frob:tests \
+# tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v2_mining_spawns_git_a_constant_number_of_times  # noqa: E501
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to the batched v2 \
+# git-history walks (T-5131), which the resolver cannot see through; the one real \
+# raise path (datetime.fromisoformat on a malformed timestamp) is caught below"
 def _mine_done_transitions_v2(
     root: Path, ticket_ids: Sequence[str]
 ) -> tuple[SprintTransition, ...]:
-    """v2 (file-per-ticket) done-transition mining (T-1330): for each id,
-    `v2_state_transitions` walks ONLY that ticket's own small `ticket.md`
-    file's git history (`git log --follow -p`, one subprocess call per
-    ticket) instead of re-reading the ENTIRE shared ledger's blob at
-    every commit in its history (`_mine_done_transitions_v1`'s cost, the
-    ~6-minute `frob ticket flow`/`list --stats` regression this ticket
-    fixes for v2-mode repos) -- fast because each ticket's own file
-    history is a small, disjoint slice of the repo's total commit count,
-    not the whole thing walked once per caller. Same `SprintTransition`
-    output shape as the v1 path, so every downstream reader
-    (`sprint_velocity`, `ticket_flow`) is unaffected by which mode ran."""
+    """v2 (file-per-ticket) done-transition mining (T-1330): TWO batched
+    git spawns total (`_v2_all_path_transitions`, `_v2_all_renames`) over
+    the whole `tickets/` tree, regardless of how many ids are requested,
+    replacing the one-`git log --follow -p`-subprocess-per-ticket cost
+    T-5131 measured at 10+ minutes on this repo's 11436-commit history
+    (~1400 full-history walks) -- see those two helpers' docstrings for
+    the batching. Same `SprintTransition` output shape and same 'last
+    added +state: line per commit, first observed transition into done
+    per ticket' semantics as the original per-ticket walk, so every
+    downstream reader (`sprint_velocity`, `ticket_flow`) is unaffected by
+    which mode ran or how it was mined."""
     if not ticket_ids:
         return ()
+    by_path = _v2_all_path_transitions(root)
+    rename_map = _v2_all_renames(root)
+    tree_rel = _v2_tree_rel(root)
     transitions: list[SprintTransition] = []
     for ticket_id in ticket_ids:
+        rel_path = f"{tree_rel}/{ticket_id}/ticket.md"
+        lineage = _v2_lineage_from(rename_map, rel_path)
+        seen_shas: set[str] = set()
         prev_state: str | None = None
-        for sha, iso, state in v2_state_transitions(root, ticket_id):
-            if state == TicketState.DONE.value and state != prev_state:
-                try:
-                    committed_at = datetime.fromisoformat(iso)
-                except ValueError:
-                    prev_state = state
+        for path in lineage:
+            for sha, iso, state in by_path.get(path, ()):
+                if sha in seen_shas:
                     continue
-                transitions.append(
-                    SprintTransition(
-                        ticket_id=ticket_id,
-                        sha=sha,
-                        committed_at=committed_at,
-                        from_state=prev_state,
-                        to_state=state,
+                seen_shas.add(sha)
+                if state == TicketState.DONE.value and state != prev_state:
+                    try:
+                        committed_at = datetime.fromisoformat(iso)
+                    except ValueError:
+                        prev_state = state
+                        continue
+                    transitions.append(
+                        SprintTransition(
+                            ticket_id=ticket_id,
+                            sha=sha,
+                            committed_at=committed_at,
+                            from_state=prev_state,
+                            to_state=state,
+                        )
                     )
-                )
-            prev_state = state
+                prev_state = state
     return tuple(transitions)
 
 

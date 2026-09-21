@@ -1,0 +1,97 @@
+## Done report
+
+# T-5131 done report rationale
+
+Root cause: `_mine_done_transitions_v2` (src/frob/tickets/_flow.py) called
+`frob.tickets._store.v2_state_transitions(root, ticket_id)` once per ticket id.
+That function itself spawns at least 2 `git log` subprocesses per call
+(`_v2_rename_source`'s `--diff-filter=R -M100%` walk, `_mine_v2_path_transitions`'s
+`--reverse -p` walk), each a FULL revision walk of the repo's history (git's
+pathspec restriction only limits the DIFF OUTPUT, not the commit walk itself).
+With 711 active tickets, that is >=1400 full-history git spawns over the
+11436-commit history touching tickets/ -- this is what `frob ticket flow`
+measured as "no output in 3 minutes, still running at 10+ minutes" before
+being killed.
+
+Fix: replace the per-ticket dispatch with exactly two batched git spawns,
+scoped to the whole `tickets/` tree once, regardless of how many ticket ids
+are requested:
+  - `_v2_all_path_transitions`: one `git log --reverse -p -- tickets/` walk,
+    parsed into `{path: [(sha, iso, state), ...]}` using the diff's own
+    `diff --git a/... b/...` file-boundary headers to track "which ticket.md
+    file is this +state: line for" across the single walk.
+  - `_v2_all_renames`: one `git log --diff-filter=R -M100% --name-status --
+    tickets/` walk, mapping each renamed path to its exact-content-similarity
+    predecessor (same T-1543 `-M100%` semantics as the per-ticket original,
+    tree-wide instead of per-ticket).
+`_mine_done_transitions_v2` then slices both in-memory maps per requested
+ticket id (following each id's rename lineage backward through the
+in-memory rename map, `_v2_lineage_from`), so the total git spawn count is
+CONSTANT (2) no matter how many ticket ids are mined.
+
+Measured on this repo (frob, dev, 0.531.0 base):
+  - BEFORE: `frob ticket flow` still running after a 60s SIGTERM kill (took
+    77s wall to unwind after the kill signal) -- matches the ticket's own
+    audit measurement of "no output in 3 minutes, still running at 10+
+    minutes".
+  - AFTER: `frob ticket flow` completes in 9.675s wall (real 0m9.675s,
+    user 0m7.655s, sys 0m1.881s) -- under acceptance criterion #1's 10s
+    cold-run bound.
+
+Acceptance criteria:
+  [1] MET -- measured above, 9.675s < 10s.
+  [2] NOT ADDRESSED by this ticket -- the warm-cache/one-new-commit <2s
+      criterion requires persisting mined transitions across invocations
+      (e.g. `.frob/cache.db` keyed by HEAD sha), the OTHER alternative the
+      ticket's own "Fix:" section offered ("one git log ... pass ... OR
+      persist the mined transitions ... and mine only new commits
+      incrementally"). This ticket implements the batched-walk alternative
+      only. Filed T-5154 (persist mined done-transitions in a
+      head-sha-keyed cache) as the follow-up for the warm-cache criterion,
+      scoped to src/frob/tickets/_flow.py, kind feature.
+  [3] PARTIALLY ADDRESSED -- "a PERF rule flags a git subprocess inside a
+      per-ticket loop" is the per-ticket loop this ticket's fix REMOVES, so
+      there is no longer a per-ticket git spawn in src/frob/tickets for such
+      a rule to flag going forward; the rule family itself (PERF015/016)
+      that would have caught this pattern is already filed and scoped
+      (T-5136, blocked on T-5135), confirmed via `frob ticket show T-5136`
+      before starting this ticket -- not duplicated here per the brief's
+      instruction to check T-5136 first.
+
+Repro test (BUG002 evidence): `tests/test_tickets_velocity.py::
+TestSprintVelocityV2Mode::test_v2_mining_spawns_git_a_constant_number_of_times`
+monkeypatches `run_argv` (both `frob.gitio.run_argv` and `frob.tickets.
+_store.run_argv`, since `_store.py` binds its own module-level name at
+import time) and asserts a constant (<=2) spawn count for 5 ticket ids.
+`frob ticket evidence --check-repro`'s default parent-commit resolution
+(the ticket's base_sha) cannot get a real verdict here because the fix
+commit (d728d408c3) was committed BEFORE the repro test's own commit in
+this branch's linear history -- no commit reachable from HEAD has the test
+without the fix already applied (TEST_ABSENT_AT_PARENT at the base_sha,
+PASSED_AT_PARENT at any later commit). Verified manually instead: `git
+worktree add --detach` at the ticket's pre-fix parent commit (a904b659f7,
+the "record T-5131 start transition" commit immediately before the fix),
+copied only the new test method into that scratch tree, ran it there
+against the still-unfixed `_mine_done_transitions_v2` -- FAILED (spawn
+count scaled with N, as expected pre-fix); the same test against the fixed
+code in this worktree PASSES (spawn count pinned at 2). Designated via
+`--designate-repro-force` with this reasoning recorded in the ticket's
+`designated_repro_changes` audit trail (BUG002's automated check logs
+TEST_ABSENT_AT_PARENT/PASSED_AT_PARENT as WARNING but cannot itself
+reach the genuine-failure verdict this manual check already confirmed).
+
+Filed: T-5154 (feature, scope src/frob/tickets/_flow.py) --
+warm-cache/incremental-mining follow-up for acceptance criterion #2.
+
+### Changed
+```
+ src/frob/tickets/_flow.py          | 220 ++++++++++++++++++++++++++++++++-----
+ tests/test_tickets_velocity.py     |  58 ++++++++++
+ tickets/T-5131/ticket.md           |  22 +++-
+ tickets/T-5154/ticket.md |  30 +++++
+ 4 files changed, 297 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mining_spawns_git_a_constant_number_of_times` (pytest node id, verified passing when recorded)

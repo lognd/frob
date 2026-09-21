@@ -2,7 +2,7 @@
 id: T-5131
 title: 'perf: frob ticket flow hangs 10+ minutes, one git log --follow -p subprocess
   per ticket over 11k commits'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -67,7 +67,7 @@ acceptance_amendments:
     (implemented here, satisfies criterion 1) OR persist mined transitions in a head-sha-keyed
     cache for the warm/incremental case (criterion 2). This ticket implements only
     the batched-walk alternative; the warm-cache/incremental-mining criterion is split
-    out to T-draft-dd1c2521 (filed while working T-5131) rather than blocking this
+    out to T-5154 (filed while working T-5131) rather than blocking this
     ticket''s real, measured 10+min -> 9.7s fix on unrelated follow-on work.'
   actor: logan
   at: '2026-09-20'
