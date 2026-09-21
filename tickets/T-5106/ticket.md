@@ -195,6 +195,13 @@ triage_changes:
     kernel (T-4654)'
   actor: logan
   at: '2026-09-21'
+- field: tier
+  old_value: story
+  new_value: story
+  reason: 'owner decision 2026-09-21: the land queue as default path is a story of
+    the land kernel (T-4654), not one ticket'
+  actor: logan
+  at: '2026-09-21'
 designated_repro_test: null
 threat: null
 component: null
