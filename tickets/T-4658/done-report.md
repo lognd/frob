@@ -3,7 +3,7 @@
 T-4658 -- Ids are assigned once at new: renumbering inside a worktree is
 refused
 
-## Changed
+**Changed**
 
 - src/frob/tickets/_new_renumber.py:
     New private helper `_refuse_renumber_inside_worktree(root)`: resolves
@@ -49,7 +49,7 @@ refused
       distinct ids; proves the allocator_lock property end to end rather
       than trusting the lock exists.
 
-## WHY
+**WHY**
 
 Kernel decoupling (T-4651/T-4652): ids must be allocated exactly once, at
 `frob ticket new` in the root checkout; renumbering and draft promotion
@@ -62,7 +62,7 @@ seam preventing a worktree from renumbering at all. `enforce_worktree_
 lease` alone does not catch this because it only refuses a MISMATCHED
 lease; a worktree correctly leased to itself sails through.
 
-## Acceptance criteria -> evidence
+**Acceptance criteria -> evidence**
 
 [1] Given a checkout under .claude/worktrees/, renumber is refused with a
     named, logged error, ledger unchanged
@@ -76,7 +76,7 @@ All three bound via `frob ticket evidence T-4658 <node> --accepts <n>
 --base-ref dev`, rebound after the LAST commit (fe0aad1de, shared with
 T-4657 in this same worktree/series) per the pre-READY checklist's item 8.
 
-## Named error reused (not new)
+**Named error reused (not new)**
 
 `TicketError.WorktreeLeaseViolation` is reused rather than adding a new
 enum variant -- the ticket's own scope excludes `_models.py`, and the
@@ -84,7 +84,7 @@ log message (not the enum tag) carries the specific "renumber refused,
 this is a .claude/worktrees/ agent checkout, ids are assigned once at
 `frob ticket new`" diagnosis. Documented in the helper's own docstring.
 
-## Regression check (existing renumber/lease test suites, unaffected)
+**Regression check (existing renumber/lease test suites, unaffected)**
 
 Ran (not just collected) after the change, all pass:
   tests/test_tickets.py, tests/test_tickets_collision.py,
@@ -97,10 +97,10 @@ This is a NEW, additive refusal that only fires for a root path shaped
 like `.claude/worktrees/**` -- every existing test's tmp_path root is
 outside that shape, so none needed updating.
 
-## Filed
+**Filed**
 none -- no out-of-scope work discovered.
 
-## Pre-READY checks
+**Pre-READY checks**
 
 `frob check --only arch --files src/frob/tickets/_new_renumber.py --files
 src/frob/tickets/_renumber_v2.py --files tests/unit/test_ids_assigned_once.py
