@@ -2,7 +2,7 @@
 
 -- T-4030
 
-### Changed
+**Changed**
 - tests/test_policy.py
   - `TestDangerousInnerHtmlJsonStringify`: 2 new tests plus a shared
     `_write_rule` fixture helper.
@@ -25,7 +25,7 @@
     captures, so a structural query with predicates over `JSON`/
     `stringify`/`dangerouslySetInnerHTML` needs no engine change.
 
-### WHY
+**WHY**
 Per the consumer's own framing (Item 3, "the most shippable item"): a
 JSX `dangerouslySetInnerHTML` attribute whose value is a direct
 `JSON.stringify(...)` call expression is unescaped HTML built from a
@@ -35,7 +35,7 @@ and purely structural (no taint/data-flow analysis needed). This ticket
 proves the query and ships it as a concrete, tested example against the
 real `tsx` grammar.
 
-### The query (`policy/queries/POL-danger-html-json-stringify.scm` in
+**The query (`policy/queries/POL-danger-html-json-stringify.scm` in**
 the test fixture)
 ```
 (jsx_attribute
@@ -55,7 +55,7 @@ the test fixture)
 T-3986's convention); `@_attr`/`@_json`/`@_stringify` are anchor-only
 captures used purely by the `#eq?` predicates.
 
-### Acceptance criteria proof
+**Acceptance criteria proof**
 - [1] (fires on a direct JSON.stringify value): proven by
   `tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_fires_on_direct_json_stringify`.
   The near-miss control
@@ -68,21 +68,21 @@ captures used purely by the `#eq?` predicates.
   a pytest node id; left UNBOUND (a sequencing constraint has no test
   evidence to bind).
 
-### Test node ids (all passing, `pytest tests/test_policy.py -q`: 19
+**Test node ids (all passing, `pytest tests/test_policy.py -q`: 19**
 passed, 0 failed)
 - tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_fires_on_direct_json_stringify
 - tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_stays_quiet_on_sanitized_value
 
-### Evidence bound
+**Evidence bound**
 - acceptance[1] <- both node ids above (`frob ticket evidence T-4030 ...
   --base-ref dev`, run after the final commit)
 
-### Commit
+**Commit**
 39bbc83ff test(policy): prove dangerouslySetInnerHTML+JSON.stringify pattern
 (worktree /home/logan/projects/frob/.claude/worktrees/t-3986-policy,
 branch t-3986, stacked on T-3986's own commit 11e917673)
 
-### Gates run
+**Gates run**
 - ruff check / ruff format --check: clean.
 - `frob check --only coverage --files src/frob/policy/__init__.py
   --files tests/test_policy.py --base dev`: grep over the full unscoped
@@ -92,11 +92,11 @@ branch t-3986, stacked on T-3986's own commit 11e917673)
   symbol; T-3986's own GATERULE001 finding, already reported in its own
   Done report, is the only cross-cutting item touching this file).
 
-### Filed
+**Filed**
 - None new for this ticket (T-3986's T-draft-58a07e89 already covers
   the one outstanding cross-cutting gap on this file).
 
-### Scope note
+**Scope note**
 - No production code change was needed or made; this ticket's
   deliverable is the proven query plus tests, per its own "writable
   today" framing. If a future consumer wants this shipped as a
