@@ -1,7 +1,7 @@
 ---
 id: T-4073
 title: 'H-1: node declares no-PII, client_storage write requires waiver'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -42,17 +42,31 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_fires_on_namespaced_session_storage_write
+- tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_stays_quiet_without_no_pii_declaration
+- tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_stays_quiet_on_unrelated_setitem_call
+- tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_no_scan_without_any_no_pii_node
+- tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_waived_call_site_is_accepted
+- tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_fires_on_local_storage_write
 designated_repro_test: null
 acceptance:
 - text: given a strata node with an explicit no-PII declaration, when a client_storage
     write occurs on that node with no per-call-site waiver, then it is flagged
-  evidence: []
+  evidence:
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_fires_on_namespaced_session_storage_write
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_stays_quiet_without_no_pii_declaration
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_stays_quiet_on_unrelated_setitem_call
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_no_scan_without_any_no_pii_node
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_fires_on_local_storage_write
 - text: given the same write with a reasoned per-call-site waiver present, when frob
     check runs, then it is accepted
-  evidence: []
+  evidence:
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_waived_call_site_is_accepted
 - text: given the cheaper first step, when this ticket is designed, then taint/dataflow
     analysis is explicitly deferred rather than blocking this ticket
-  evidence: []
+  evidence:
+  - tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_no_scan_without_any_no_pii_node
 threat: null
 component: null
 anchor: false

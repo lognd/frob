@@ -74,6 +74,18 @@ PCI-DSS Sensitive Authentication Data field-name shapes and CCPA's
 non-field-shaped categories -- both remain honest gaps for a follow-on
 ticket, not silently dropped.
 
+T-4073 (H-1, F-273) added PII013: a `.ts`/`.tsx` `localStorage`/
+`sessionStorage` `.setItem(...)` write on a file code-bound to a strata
+`Node` declaring `attr no_pii;` (the generic opaque-attribute
+convention, no new grammar) -- an explicit "this node carries NO
+personal data" declaration distinct from simply omitting `carries` tags,
+held to a STRICTER standard: any client-storage write on such a node is
+deny-by-default and demands a reasoned per-call-site `frob:waive PII013
+reason="..."`. Deliberately the cheap, purely structural step (a fixed
+call-expression shape); taint/dataflow from a `carries(...)` source to a
+foreign-node client-storage sink is out of scope here, disclosed as
+future work, not silently dropped.
+
 T-1076 split this module from a single 2177-line file into this package:
 `_signatures.py` (the `FIELD_SIGNATURES` registry + name/type-hit lookup),
 `_declared_surface.py` (T-0351 std.pii/std.secrets join), `_self_match.py`
@@ -92,13 +104,20 @@ the T-1072/T-0989 split discipline).
 from __future__ import annotations
 
 import ast
+import fnmatch
+from functools import lru_cache
 from pathlib import Path
+
+import tree_sitter
+from tree_sitter_language_pack import get_language, get_parser
 
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._parse_failures import local_parse001_violation
 from frob.logging import get_logger
+from frob.strata._code_binding import _node_code_globs
+from frob.strata._design_load import load_design_ids
 
-from .._models import Violation
+from .._models import Severity, Violation
 from ._crosslang import (
     _scan_cross_language_files,
     _scan_rust_env_access,
@@ -118,9 +137,167 @@ from ._python_fields import (
 )
 from ._self_match import _SELF_EXCLUDED_FILES, _is_pii_self_pattern_file
 from ._signatures import FIELD_SIGNATURES, _FieldSignature
-from ._tracked import _tracked_python_files
+from ._tracked import _tracked_files_by_pattern, _tracked_python_files
 
 _log = get_logger(__name__)
+
+
+#: T-4073 (H-1): the generic `attr <IDENT>;` node-attribute clause
+#: (`Node.attrs`, the SAME opaque-attribute convention `attr idempotent;`
+#: already uses -- no new strata grammar/kernel primitive needed) a node
+#: author writes to declare "this node carries NO personal data at all",
+#: an explicit absence distinct from simply omitting `carries` tags. A
+#: file code-bound to such a node is held to a STRICTER standard than an
+#: undeclared file: any client-storage write on it is PII013, deny-by-
+#: default, requiring a reasoned per-call-site `frob:waive PII013
+#: reason="..."` -- the cheap first step (module docstring's own framing,
+#: F-273/H-1): purely structural (a `localStorage`/`sessionStorage`
+#: `.setItem(...)` call site), no taint/dataflow analysis.
+# frob:ticket T-4073
+_NO_PII_ATTR = "no_pii"
+
+#: file extension -> tree-sitter-language-pack grammar name for the
+#: client-storage write scan (T-4073). Deliberately narrow to the two
+#: extensions `frob.vet`'s own `client_storage` capability registry
+#: already scopes TS/JS write sites to
+#: (`frob.vet._capability_registry._dangerous_ops_other`'s "typescript"
+#: rows) -- same population, not a wider guess.
+# frob:ticket T-4073
+_CLIENT_STORAGE_EXTENSIONS: dict[str, str] = {".ts": "typescript", ".tsx": "tsx"}
+
+#: T-4073: a `localStorage`/`sessionStorage` `.setItem(...)` call, direct
+#: (`localStorage.setItem(...)`) or via a namespaced access
+#: (`window.localStorage.setItem(...)`) -- `@danger` is the reported
+#: capture (the whole call expression); `@_obj`/`@_method` are anchor-only
+#: captures the `#eq?`/`#any-of?` predicates consume (T-3986's convention:
+#: an underscore-prefixed capture name never becomes a match in a
+#: `policy.pattern`-shaped scanner -- this scanner is a fixed built-in
+#: rule rather than a `policy.pattern` entry, so it always reports on
+#: `@danger` directly, but the same anchor-vs-reported naming convention
+#: is kept for readability).
+# frob:ticket T-4073
+_CLIENT_STORAGE_QUERY_TEXT = """
+(call_expression
+  function: (member_expression
+    object: [
+      (identifier) @_obj
+      (member_expression property: (property_identifier) @_obj)
+    ]
+    property: (property_identifier) @_method)
+  (#eq? @_method "setItem")
+  (#any-of? @_obj "localStorage" "sessionStorage")) @danger
+"""
+
+
+# frob:ticket T-4073
+@lru_cache(maxsize=None)
+def _client_storage_query(grammar: str) -> tree_sitter.Query:
+    """Compile `_CLIENT_STORAGE_QUERY_TEXT` against `grammar` (cached per
+    grammar name -- `.ts` and `.tsx` compile the SAME query text against
+    their own distinct tree-sitter grammars, T-4073)."""
+    return tree_sitter.Query(get_language(grammar), _CLIENT_STORAGE_QUERY_TEXT)  # type: ignore[arg-type]
+
+
+# frob:ticket T-4073
+def _load_no_pii_files(root: Path) -> frozenset[str]:
+    """Every tracked `.ts`/`.tsx` repo-relative path matched by a `Node`
+    declaring `attr no_pii;`'s own `code=<glob>` attrs (T-4073), loaded
+    via the SAME strata design loader `_load_declared_surface`/`sys_gate`
+    already use (`load_design_ids` -- no second design-loading path).
+
+    Deliberately NOT `frob.strata._code_binding.bind_code`: that tier-2
+    binder's own file population (`_sorted_py_files`) is `.py`-only
+    (measured directly -- a `.strata` node's `code=` glob naming a `.ts`/
+    `.tsx` file binds ZERO files through it), so this glob-matches the
+    SAME `code=<glob>` attrs (`_node_code_globs`, imported not
+    reimplemented) against the TS/TSX tracked-file population
+    `_client_storage_violations` already scans, with the SAME `fnmatch`
+    semantics `bind_code._bind_one` itself uses (consistency with the
+    rest of the strata code-binding surface, not a second glob dialect).
+    Degrades to the empty set on a missing/unloadable design, same
+    posture as `_load_declared_surface`."""
+    design_ids = load_design_ids(root)
+    no_pii_globs: list[str] = []
+    for model in design_ids.models:
+        for node in model.nodes:
+            if _NO_PII_ATTR in node.attrs:
+                no_pii_globs.extend(_node_code_globs(node))
+    no_pii_files: set[str] = set()
+    if no_pii_globs:
+        for ext in _CLIENT_STORAGE_EXTENSIONS:
+            for rel_path in _tracked_files_by_pattern(root, f"*{ext}"):
+                if any(fnmatch.fnmatch(rel_path, glob) for glob in no_pii_globs):
+                    no_pii_files.add(rel_path)
+    _log.info(
+        "_load_no_pii_files: %d file(s) matched by a no_pii-declared node's code= glob",
+        len(no_pii_files),
+    )
+    return frozenset(no_pii_files)
+
+
+# frob:ticket T-4073
+def _pii013_violation(rel_path: str, lineno: int) -> Violation:
+    """PII013 (T-4073, H-1): a client-storage write on a node that
+    declares `attr no_pii;` -- a contradiction with no taint analysis to
+    resolve it automatically, so it is deny-by-default and demands a
+    reasoned per-call-site waiver rather than staying silent."""
+    _log.warning(
+        "PII013: %s:%d client-storage write on a no_pii-declared node", rel_path, lineno
+    )
+    return Violation(
+        rule="PII013",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f"PII013: {rel_path}:{lineno} writes to client storage "
+            f"(localStorage/sessionStorage) on a node declared `attr "
+            f"no_pii;` -- this node claims to carry no personal data, so "
+            f"any client-storage write on it needs manual review; add "
+            f'`frob:waive PII013 reason="..."` once reviewed, or move the '
+            f"write behind a node that actually declares its PII surface"
+        ),
+    )
+
+
+# frob:ticket T-4073
+def _scan_client_storage_writes(root: Path, rel_path: str) -> list[Violation]:
+    """PII013 findings in one `.ts`/`.tsx` file already known to be
+    code-bound to a `no_pii`-declared node (T-4073)."""
+    grammar = _CLIENT_STORAGE_EXTENSIONS.get(Path(rel_path).suffix)
+    if grammar is None:
+        return []
+    try:
+        source = (root / rel_path).read_bytes()
+    except OSError as exc:
+        _log.warning("PII013: could not read %s: %s", rel_path, exc)
+        return []
+    parser = get_parser(grammar)  # type: ignore[arg-type]
+    tree = parser.parse(source)
+    cursor = tree_sitter.QueryCursor(_client_storage_query(grammar))
+    captures = cursor.captures(tree.root_node)
+    return [
+        _pii013_violation(rel_path, node.start_point[0] + 1)
+        for node in captures.get("danger", ())
+    ]
+
+
+# frob:ticket T-4073
+def _client_storage_violations(
+    root: Path, no_pii_files: frozenset[str]
+) -> list[Violation]:
+    """Every PII013 finding across every tracked `.ts`/`.tsx` file that is
+    code-bound to a `no_pii`-declared node (T-4073). A repo with no
+    `no_pii`-declared node (`no_pii_files` empty) never scans a single
+    file -- this check is opt-in per node, not a blanket TS/TSX sweep."""
+    if not no_pii_files:
+        return []
+    violations: list[Violation] = []
+    for ext in _CLIENT_STORAGE_EXTENSIONS:
+        for rel_path in _tracked_files_by_pattern(root, f"*{ext}"):
+            if rel_path in no_pii_files:
+                violations.extend(_scan_client_storage_writes(root, rel_path))
+    return violations
 
 
 # frob:ticket T-0897
@@ -214,10 +391,13 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     of the scan (T-0897), UNLESS the file matches a `[graph].exclude` glob
     (frob.toml) -- that config already carves the path out of frob's own
     obligation surface (e.g. `tests/fixtures/**`'s deliberately-broken
-    parser fixtures), so PARSE001 stays silent there too."""
+    parser fixtures), so PARSE001 stays silent there too. Also runs
+    PII013 (T-4073, H-1): a `localStorage`/`sessionStorage` write on a
+    `.ts`/`.tsx` file code-bound to a node declaring `attr no_pii;`."""
     root = Path(root)
     declared = _load_declared_surface(root)
     exclude_globs = load_exclude_globs(root)
+    no_pii_files = _load_no_pii_files(root)
     violations: list[Violation] = []
     scanned = 0
     for rel_path in _tracked_python_files(root):
@@ -237,6 +417,8 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     )
     violations.extend(cross_language_violations)
     scanned += cross_language_scanned
+
+    violations.extend(_client_storage_violations(root, no_pii_files))
 
     _log.info(
         "pii_structural_gate: scanned %d tracked file(s) (.py/.ts/.tsx/.rs), "
@@ -264,4 +446,7 @@ __all__ = [
     "_DeclaredSurface",
     "_is_data_structure",
     "_is_email_shaped",
+    "_load_no_pii_files",
+    "_scan_client_storage_writes",
+    "_client_storage_violations",
 ]

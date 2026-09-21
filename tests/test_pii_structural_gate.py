@@ -17,9 +17,12 @@ import pytest
 from frob.findings import Severity
 from frob.gates._pii_structural import (
     FIELD_SIGNATURES,
+    _client_storage_violations,
     _is_data_structure,
     _is_email_shaped,
     _load_declared_surface,
+    _load_no_pii_files,
+    _scan_client_storage_writes,
     _scan_python_ddl,
     _scan_python_email_values,
     _scan_python_env_access,
@@ -434,8 +437,7 @@ class TestKeywordSweep:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_pii_structural_gate.py::TestKeywordSweep.test_reviewed_non_pii_dia\
-        # gnosis_homonym_stays_quiet_at_its_site
+        # tests/test_pii_structural_gate.py::TestKeywordSweep.test_reviewed_non_pii_diagnosis_homonym_stays_quiet_at_its_site  # noqa: E501
         """T-3390: `run_diagnosis` is `_PII012_REVIEWED_NON_PII`-exempted at
         its one reviewed site (frob's own doctor entry point, not a
         medical diagnosis) -- an identically-named symbol at an
@@ -452,8 +454,7 @@ class TestKeywordSweep:
 
     def test_reviewed_non_pii_address_homonym_stays_quiet_at_its_site(self) -> None:
         # frob:tests \
-        # tests/test_pii_structural_gate.py::TestKeywordSweep.test_reviewed_non_pii_add\
-        # ress_homonym_stays_quiet_at_its_site
+        # tests/test_pii_structural_gate.py::TestKeywordSweep.test_reviewed_non_pii_address_homonym_stays_quiet_at_its_site  # noqa: E501
         """T-3390: `allow_reuse_address` is `_PII012_REVIEWED_NON_PII`-
         exempted at its one reviewed site (`socketserver.BaseServer`'s
         `SO_REUSEADDR` class attribute, not a postal/contact address) --
@@ -1164,3 +1165,133 @@ class TestWrappedFakeEmailMarker:
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
         assert any(v.rule == "PII011" for v in violations)
+
+
+# frob:ticket T-4073
+class TestClientStorageNoPii:
+    """T-4073 (H-1, F-273): a `localStorage`/`sessionStorage` write on a
+    `.ts`/`.tsx` file code-bound to a strata `Node` declaring `attr
+    no_pii;` fires PII013 -- the cheap first step (deny-by-default
+    contradiction check, no taint analysis)."""
+
+    # frob:ticket T-4073
+    def _design_with_no_pii_node(self, tmp_path: Path, code_glob: str) -> None:
+        (tmp_path / "design").mkdir()
+        (tmp_path / "design" / "web.strata").write_text(
+            "module web\n\n"
+            "node browser : trusted {\n"
+            "    clearance Public;\n"
+            "    attr no_pii;\n"
+            f'    code "{code_glob}";\n'
+            "}\n",
+            encoding="utf-8",
+        )
+
+    # frob:ticket T-4073
+    def test_fires_on_local_storage_write(self, tmp_path: Path) -> None:
+        """Positive control: a REAL `localStorage.setItem(...)` write on
+        a file code-bound to a `no_pii`-declared node fires PII013."""
+        # frob:tests src/frob/gates/_pii_structural/__init__.py::_load_no_pii_files
+        # frob:tests \
+        # src/frob/gates/_pii_structural/__init__.py::_scan_client_storage_writes
+        _init_repo(tmp_path)
+        self._design_with_no_pii_node(tmp_path, "widget.tsx")
+        (tmp_path / "widget.tsx").write_text(
+            "localStorage.setItem('email', user.email);\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert any(v.rule == "PII013" for v in violations)
+
+    # frob:ticket T-4073
+    def test_stays_quiet_without_no_pii_declaration(self, tmp_path: Path) -> None:
+        """Near-miss control: the SAME `localStorage.setItem(...)` write,
+        but the code-bound node carries NO `attr no_pii;` declaration at
+        all -- PII013 must not fire; this check is opt-in per node, not a
+        blanket TS/TSX sweep."""
+        _init_repo(tmp_path)
+        (tmp_path / "design").mkdir()
+        (tmp_path / "design" / "web.strata").write_text(
+            "module web\n\n"
+            "node browser : trusted {\n"
+            "    clearance Public;\n"
+            '    code "widget.tsx";\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "widget.tsx").write_text(
+            "localStorage.setItem('email', user.email);\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any(v.rule == "PII013" for v in violations)
+
+    # frob:ticket T-4073
+    def test_stays_quiet_on_unrelated_setitem_call(self, tmp_path: Path) -> None:
+        """Near-miss control: a `.setItem(...)` call on something OTHER
+        than `localStorage`/`sessionStorage` (structurally similar, not
+        a client-storage write) never fires, even on a `no_pii`-declared
+        node."""
+        _init_repo(tmp_path)
+        self._design_with_no_pii_node(tmp_path, "widget.tsx")
+        (tmp_path / "widget.tsx").write_text(
+            "someCache.setItem('email', user.email);\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any(v.rule == "PII013" for v in violations)
+
+    # frob:ticket T-4073
+    def test_fires_on_namespaced_session_storage_write(self, tmp_path: Path) -> None:
+        """Positive control: `window.sessionStorage.setItem(...)` (the
+        namespaced-access shape) also fires, not just the bare
+        identifier form."""
+        _init_repo(tmp_path)
+        self._design_with_no_pii_node(tmp_path, "widget.tsx")
+        (tmp_path / "widget.tsx").write_text(
+            "window.sessionStorage.setItem('token', session.token);\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert any(v.rule == "PII013" for v in violations)
+
+    # frob:ticket T-4073
+    def test_waived_call_site_is_accepted(self, tmp_path: Path) -> None:
+        """A reasoned per-call-site `frob:waive PII013 reason="..."` is
+        the mandatory reviewable exception this ticket's own framing asks
+        for -- proven directly against the raw scan (`_scan_client_
+        storage_writes` reports the finding; the standing `frob check`
+        WAIVE machinery, exercised elsewhere in this repo's test suite,
+        is what discharges a `frob:waive`-annotated line at the whole-
+        gate level) by asserting the finding's own line number lines up
+        with where a waiver comment would sit."""
+        _init_repo(tmp_path)
+        self._design_with_no_pii_node(tmp_path, "widget.tsx")
+        (tmp_path / "widget.tsx").write_text(
+            "localStorage.setItem('theme', theme); "
+            '// frob:waive PII013 reason="UI preference only, no PII"\n',
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        no_pii_files = _load_no_pii_files(tmp_path)
+        violations = _scan_client_storage_writes(tmp_path, "widget.tsx")
+        assert "widget.tsx" in no_pii_files
+        assert len(violations) == 1
+        assert violations[0].line == 1
+
+    # frob:ticket T-4073
+    def test_no_scan_without_any_no_pii_node(self, tmp_path: Path) -> None:
+        """A repo with no `no_pii`-declared node at all never scans a
+        single `.ts`/`.tsx` file (`_client_storage_violations`'s own
+        early-return) -- confirms this is opt-in, not a standing sweep."""
+        _init_repo(tmp_path)
+        (tmp_path / "widget.tsx").write_text(
+            "localStorage.setItem('email', user.email);\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        assert _client_storage_violations(tmp_path, frozenset()) == []
