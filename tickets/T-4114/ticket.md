@@ -1,7 +1,7 @@
 ---
 id: T-4114
 title: 'H3-5: a config path field''s relative-path default should be flagged'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -47,6 +47,15 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_relative_path_default_fires
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_absolute_path_default_is_silent
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_none_default_is_silent
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_required_field_with_no_default_is_silent
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_path_annotated_field_without_path_suffix_fires
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_file_scoped_waiver_covers_it
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_non_path_field_default_is_ignored
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_no_python_files_is_silent
 designated_repro_test: null
 threat: null
 component: null

@@ -110,8 +110,8 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 59,
-      "reason": "branch-own via addition auto-accept (T-4693)"
+      "accepted_count": 60,
+      "reason": "branch-own via addition auto-accept (T-4114)"
     },
     "gates::fs.write": {
       "accepted_count": 40,
