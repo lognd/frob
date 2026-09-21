@@ -2,7 +2,7 @@
 id: T-4692
 title: 'Gate stages are not verbs: fold dup arch cycle bind perf mutate coverage parse
   pool profile narrative debt deprecated into frob check --only'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -27,17 +27,44 @@ scope:
 - src/frob/app/perf_runner.py
 - src/frob/app/mutate_runner.py
 - src/frob/app/coverage_runner.py
-- src/frob/app/parse_runner.py
 - src/frob/app/pool_runner.py
 - src/frob/app/profile_runner.py
-- src/frob/app/debt_runner.py
-- src/frob/app/deprecated_runner.py
 - tests/unit/test_check_only_stages.py
 - tests/fixtures/check_stages/**
+- src/frob/app/scaffold_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/parse_runner.py
+  reason: 'ticket body''s own amendment: parse belongs to T-4698''s verdict table,
+    debt/deprecated belong to T-4695''s explore fold; scaffold_runner.py needed for
+    the exports generate-half move (owner decision 2026-09-19)'
+  actor: logan
+  at: '2026-09-21'
+- op: remove
+  glob: src/frob/app/debt_runner.py
+  reason: 'ticket body''s own amendment: parse belongs to T-4698''s verdict table,
+    debt/deprecated belong to T-4695''s explore fold; scaffold_runner.py needed for
+    the exports generate-half move (owner decision 2026-09-19)'
+  actor: logan
+  at: '2026-09-21'
+- op: remove
+  glob: src/frob/app/deprecated_runner.py
+  reason: 'ticket body''s own amendment: parse belongs to T-4698''s verdict table,
+    debt/deprecated belong to T-4695''s explore fold; scaffold_runner.py needed for
+    the exports generate-half move (owner decision 2026-09-19)'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/app/scaffold_runner.py
+  reason: 'ticket body''s own amendment: parse belongs to T-4698''s verdict table,
+    debt/deprecated belong to T-4695''s explore fold; scaffold_runner.py needed for
+    the exports generate-half move (owner decision 2026-09-19)'
+  actor: logan
+  at: '2026-09-21'
 triage_changes:
 - field: sprint
   old_value: null
@@ -138,6 +165,8 @@ labels:
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4692
+branch: t-4692
 ---
 POINTS: 3. Parent story T-4687. blocked_by T-4690 (needs the shim helper, and
 shares _core.py/_misc.py/_reporting.py/__main__.py with it).
