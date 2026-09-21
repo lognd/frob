@@ -122,3 +122,44 @@ class TestPyprojectDataMemo:
             for _lease in range(50):
                 over_broad_literal_globs(tmp_path)
         assert opens["n"] == 1
+
+    # frob:ticket T-5117
+    def test_declared_source_prefixes_resolve_calls_stay_o1_across_pairs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/lang/_nodes.py::declared_source_prefixes kind="unit"
+        """T-5117's own repro: T-4646 only memoized the two calls
+        `declared_source_prefixes` makes INTERNALLY (`declared_project_
+        package_name`'s underlying `_pyproject_data` read, and
+        `_declared_python_source_roots`'s own `lru_cache`) -- the
+        function's OWN body (a `Path.resolve()` pair per declared source
+        root) still ran fresh on every call before this ticket's fix, the
+        literal `over_broad_literal_globs(root) -> declared_source_
+        prefixes(root) -> Path.resolve()` bottleneck this ticket's audit
+        traced. Assert `Path.resolve()` call count stays O(1) across
+        `doable()`'s real (candidate, lease-holder) pair shape (200 x 50
+        = 10000 calls), not O(pairs) -- fails at the pre-fix parent
+        commit (resolve count scales with the loop), passes after
+        (pinned at a small constant)."""
+        _seed_pyproject(tmp_path, "widget")
+        _pyproject_data.__globals__["_pyproject_data_cache"].clear()
+        declared_source_prefixes.__globals__["_declared_source_prefixes_cache"].clear()
+        over_broad_literal_globs.__globals__["_over_broad_literal_globs_cache"].clear()
+
+        resolves = {"n": 0}
+        real_resolve = Path.resolve
+
+        def _counting_resolve(self: Path, strict: bool = False) -> Path:
+            resolves["n"] += 1
+            return real_resolve(self, strict=strict)
+
+        monkeypatch.setattr(Path, "resolve", _counting_resolve)
+        for _ in range(200):
+            for _lease in range(50):
+                over_broad_literal_globs(tmp_path)
+        assert resolves["n"] <= 4, (
+            f"expected a constant (small) number of Path.resolve() calls "
+            f"across 10000 (candidate, lease-holder) pairs, got "
+            f"{resolves['n']} -- the per-pair over_broad_literal_globs/"
+            "declared_source_prefixes cost T-5117 fixed has regressed"
+        )

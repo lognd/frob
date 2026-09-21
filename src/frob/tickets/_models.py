@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import fnmatch
 import re
+import threading
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime
 from enum import StrEnum
@@ -844,8 +845,34 @@ OVER_BROAD_LITERAL_GLOBS = frozenset(
 )
 
 
+# frob:ticket T-5117
+def _pyproject_mtime_signal(root: Path) -> float:
+    """`root/pyproject.toml`'s own mtime (-1.0 if missing/unreadable) --
+    the same cheap invalidation signal `frob.lang._nodes._pyproject_data`
+    uses for its own caches, re-read here (rather than imported) since a
+    private cross-module helper is not part of `frob.lang`'s public
+    surface (this module already imports the public `declared_source_
+    prefixes` function it wraps, below); the actual `stat()` call this
+    performs is cheap enough that a second copy costs nothing extra
+    beyond one filesystem stat per `over_broad_literal_globs` cache
+    check, same as `_store_mode`'s own signal read."""
+    pyproject = root / "pyproject.toml"
+    try:
+        return pyproject.stat().st_mtime
+    except OSError:
+        return -1.0
+
+
+# frob:ticket T-5117
+# per-root memoization cache for `over_broad_literal_globs`, keyed on
+# `_pyproject_mtime_signal` above.
+_over_broad_literal_globs_cache: dict[Path, tuple[float, frozenset[str]]] = {}
+_over_broad_literal_globs_cache_lock = threading.Lock()
+
+
 # frob:ticket T-2771
 # frob:ticket T-4646
+# frob:ticket T-5117
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
 # frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501
@@ -874,7 +901,23 @@ def over_broad_literal_globs(root: Path) -> frozenset[str]:
     `_leased_by_one_holder` called this once per (candidate ticket,
     in-progress lease-holder) pair, an O(tickets x leases) storm of fresh
     `tomllib.load()` calls, the same cost shape T-4649 fixed for
-    `_store_mode`."""
+    `_store_mode`.
+
+    T-5117: `declared_source_prefixes` ITSELF is now also memoized
+    per-root (T-4646 only cached the two calls it makes internally, not
+    its own `Path.resolve()` pair per declared source root -- the
+    literal bottleneck this ticket's audit traced: `over_broad_literal_
+    globs(root)` -> `declared_source_prefixes(root)` -> `Path.resolve()`,
+    still real syscalls run fresh on every one of `_leased_by_one_
+    holder`'s O(tickets x leases) calls). This function's OWN result is
+    now ALSO cached per-root here, on the identical `pyproject.toml`
+    mtime signal, so the frozenset-union/logging work below runs once
+    per root per pyproject.toml revision rather than once per pair too."""
+    signal = _pyproject_mtime_signal(root)
+    with _over_broad_literal_globs_cache_lock:
+        cached = _over_broad_literal_globs_cache.get(root)
+        if cached is not None and cached[0] == signal:
+            return cached[1]
     from frob.lang import declared_source_prefixes
 
     prefixes = declared_source_prefixes(root)
@@ -886,9 +929,13 @@ def over_broad_literal_globs(root: Path) -> frozenset[str]:
             "has none')",
             root,
         )
-        return OVER_BROAD_LITERAL_GLOBS
-    package_globs = {f"{prefix}**" for prefix in prefixes} | set(prefixes)
-    return OVER_BROAD_LITERAL_GLOBS | package_globs
+        result = OVER_BROAD_LITERAL_GLOBS
+    else:
+        package_globs = {f"{prefix}**" for prefix in prefixes} | set(prefixes)
+        result = OVER_BROAD_LITERAL_GLOBS | package_globs
+    with _over_broad_literal_globs_cache_lock:
+        _over_broad_literal_globs_cache[root] = (signal, result)
+    return result
 
 
 # frob:ticket T-0398

@@ -2,7 +2,7 @@
 id: T-5117
 title: over_broad_literal_globs/declared_source_prefixes uncached per ticket-holder
   pair (TICK008 third bottleneck)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -43,12 +43,14 @@ evidence:
 - tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_derives_package_prefix_for_a_differently_named_project
 - tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_this_repos_own_src_frob_globs_are_unchanged
 - tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo::test_scales_across_many_candidates_and_leases
-designated_repro_test: null
+- tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo::test_declared_source_prefixes_resolve_calls_stay_o1_across_pairs
+designated_repro_test: tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo::test_declared_source_prefixes_resolve_calls_stay_o1_across_pairs
 acceptance:
 - text: test_real_repo_ledger_is_tick008_clean completes well within its Windows CI
     timeout with T-5036 and T-5075 also applied
   evidence:
   - tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_derives_package_prefix_for_a_differently_named_project
+  - tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo::test_declared_source_prefixes_resolve_calls_stay_o1_across_pairs
 threat: null
 component: null
 anchor: false

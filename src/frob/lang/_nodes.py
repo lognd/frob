@@ -36,6 +36,20 @@ _pyproject_data_cache: dict[Path, tuple[float, dict[str, object]]] = {}
 _pyproject_data_cache_lock = threading.Lock()
 
 
+# frob:ticket T-5117
+def _pyproject_mtime_signal(root: Path) -> float:
+    """`root/pyproject.toml`'s own mtime (-1.0 if missing/unreadable) --
+    the one cheap invalidation signal `_pyproject_data` and (T-5117)
+    `declared_source_prefixes`'s own memoization both key their caches
+    on, split out so the two caches share exactly one `stat()` shape
+    instead of each hand-rolling its own copy (DUP001)."""
+    pyproject = root / "pyproject.toml"
+    try:
+        return pyproject.stat().st_mtime
+    except OSError:
+        return -1.0
+
+
 # frob:ticket T-4646
 # frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_memoized  # noqa: E501
 # frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_invalidates_on_mtime_change  # noqa: E501
@@ -46,11 +60,7 @@ def _pyproject_data(root: Path) -> dict[str, object]:
     `_declared_python_source_roots`, and (transitively)
     `declared_source_prefixes`/`over_broad_literal_globs` now all share,
     instead of each independently re-running `tomllib.load()`."""
-    pyproject = root / "pyproject.toml"
-    try:
-        signal = pyproject.stat().st_mtime
-    except OSError:
-        signal = -1.0
+    signal = _pyproject_mtime_signal(root)
     with _pyproject_data_cache_lock:
         cached = _pyproject_data_cache.get(root)
         if cached is not None and cached[0] == signal:
@@ -63,7 +73,7 @@ def _pyproject_data(root: Path) -> dict[str, object]:
         import tomllib
 
         try:
-            with pyproject.open("rb") as fh:
+            with (root / "pyproject.toml").open("rb") as fh:
                 loaded = tomllib.load(fh)
         except (OSError, tomllib.TOMLDecodeError):
             loaded = {}
@@ -192,6 +202,17 @@ def declared_project_package_name(root: Path) -> str | None:
 # frob:ticket T-2389
 # frob:tests tests/gates_suite/test_invariant.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
 # frob:tests tests/gates_suite/test_invariant.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
+# frob:ticket T-5117
+# per-root memoization cache for `declared_source_prefixes`, keyed on the
+# same `_pyproject_mtime_signal` invalidation `_pyproject_data` uses --
+# see that function's docstring and T-5117 below for why this exists.
+_declared_source_prefixes_cache: dict[Path, tuple[float, tuple[str, ...]]] = {}
+_declared_source_prefixes_cache_lock = threading.Lock()
+
+
+# frob:ticket T-5117
+# frob:tests \
+# tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
 def declared_source_prefixes(root: Path) -> tuple[str, ...]:
     """Every `root`-relative POSIX path prefix (`"src/frob/"`-shaped,
     always ending in `/`) this project's OWN tracked source files can
@@ -203,23 +224,47 @@ def declared_source_prefixes(root: Path) -> tuple[str, ...]:
     be resolved (UNRESOLVED at the caller, never a silent empty-prefix
     match-everything or match-nothing default). For THIS repo:
     `("src/frob/",)`; for a flat-layout project with no declared `src/`
-    root: `("frob/",)` (or whatever `[project].name` says)."""
+    root: `("frob/",)` (or whatever `[project].name` says).
+
+    T-5117: memoized per-root, invalidated by the same `pyproject.toml`
+    mtime signal `_pyproject_data` already uses -- `doable()`'s
+    `_leased_by_one_holder` calls `over_broad_literal_globs(root)` (and
+    so this function, transitively) once per (candidate ticket,
+    in-progress lease-holder) PAIR despite already receiving a
+    precomputed breadth tuple for that same call (the T-0453 pattern).
+    T-4646 already memoized the two calls this function makes
+    internally (`declared_project_package_name`'s underlying
+    `_pyproject_data` read, and `_declared_python_source_roots`'s
+    `lru_cache`), but this function's OWN body -- the `Path.resolve()`
+    pair per declared source root, run fresh every call -- was still
+    O(tickets x leases) real syscalls, the third bottleneck this
+    ticket's audit found (same failure shape as T-5036's `repo_root` and
+    T-5075's `read_all_leases`)."""
+    signal = _pyproject_mtime_signal(root)
+    with _declared_source_prefixes_cache_lock:
+        cached = _declared_source_prefixes_cache.get(root)
+        if cached is not None and cached[0] == signal:
+            return cached[1]
     pkg = declared_project_package_name(root)
     if pkg is None:
-        return ()
-    prefixes: list[str] = []
-    seen: set[str] = set()
-    for source_root in _declared_python_source_roots(root):
-        try:
-            rel = source_root.resolve().relative_to(root.resolve())
-            rel_str = rel.as_posix()
-        except ValueError:
-            rel_str = ""
-        prefix = f"{pkg}/" if rel_str in ("", ".") else f"{rel_str}/{pkg}/"
-        if prefix not in seen:
-            seen.add(prefix)
-            prefixes.append(prefix)
-    return tuple(prefixes)
+        result: tuple[str, ...] = ()
+    else:
+        prefixes: list[str] = []
+        seen: set[str] = set()
+        for source_root in _declared_python_source_roots(root):
+            try:
+                rel = source_root.resolve().relative_to(root.resolve())
+                rel_str = rel.as_posix()
+            except ValueError:
+                rel_str = ""
+            prefix = f"{pkg}/" if rel_str in ("", ".") else f"{rel_str}/{pkg}/"
+            if prefix not in seen:
+                seen.add(prefix)
+                prefixes.append(prefix)
+        result = tuple(prefixes)
+    with _declared_source_prefixes_cache_lock:
+        _declared_source_prefixes_cache[root] = (signal, result)
+    return result
 
 
 def _resolve_under(base_no_suffix: Path, root: Path) -> str | None:
