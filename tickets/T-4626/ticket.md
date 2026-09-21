@@ -2,7 +2,7 @@
 id: T-4626
 title: 'post-land residue (auto-filed by the coordinator dispose loop): COV002:tests/unit/rapid_sweep_suite/test_dispose.py
   COV002:tests/unit/rapid_sweep_suite/test_filing.py'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/unit/rapid_sweep_suite/test_dispose.py
+- tests/unit/rapid_sweep_suite/test_filing.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/rapid_sweep_suite/test_dispose.py
+  reason: COV002 residue named exactly these two test files in the auto-filed ticket
+    title
+  actor: logan
+  at: '2026-09-20'
+- op: add
+  glob: tests/unit/rapid_sweep_suite/test_filing.py
+  reason: COV002 residue named exactly these two test files in the auto-filed ticket
+    title
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: sprint
   old_value: null
@@ -25,6 +41,8 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
 designated_repro_test: null
 threat: null
 component: null
