@@ -13,11 +13,30 @@ runs_last: false
 milestone: v0.541.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- scripts/fleet_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/fleet_status.py
+  reason: EXHAUST burn-down
+  actor: logan
+  at: '2026-09-20'
+evidence:
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases::test_reads_lease_records
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
+- tests/gates_suite/test_exhaust_burndown_t3861.py::TestExhaustBurndownFleetStatus::test_fleet_status_exhaust003_004_findings_are_all_waived
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_fleet_status_exhaust003_004_findings_are_all_waived
+  new_node: tests/gates_suite/test_exhaust_burndown_t3861.py::TestExhaustBurndownFleetStatus::test_fleet_status_exhaust003_004_findings_are_all_waived
+  reason: T-4420 leases tests/gates_suite/test_compliance.py; moved this T-3861 repro
+    to its own unleased test module instead
+  actor: logan
+  at: '2026-09-20'
 threat: null
 component: null
 anchor: false
