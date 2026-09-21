@@ -17,6 +17,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_waive_gate.py::TestWaive010Violations::test_plain_permanent_reason_does_not_warn
+- tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription::test_relative_markdown_image_in_declared_readme_fires_error
+- tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_t1276_shaped_criterion_matches
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_never_sweeps_a_draft_it_did_not_claim
 designated_repro_test: null
 threat: null
 component: null
