@@ -1,5 +1,5 @@
 ---
-id: T-draft-5464244a
+id: T-5245
 title: 'test_land_in_progress_window fixture drift: _refuse_if_land_in_progress_for_dispatch
   gained wait_timeout_s, test stub did not'
 state: queued
@@ -21,6 +21,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+lease_force_releases:
+- reason: promote before land (T-5166)
+  staleness_reason: null
+  actor: /home/logan/projects/frob
+  at: '2026-09-21'
 designated_repro_test: null
 threat: null
 component: null
