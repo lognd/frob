@@ -2,7 +2,7 @@
 id: T-3993
 title: 'F-209: ledger verbs run for minutes in silence, so the harness backgrounds
   them and agents stall (F-138 recurrence, 3x in one ticket)'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-09-06'
@@ -39,6 +39,8 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress::test_fast_run_stays_quiet
 designated_repro_test: null
 threat: null
 component: null

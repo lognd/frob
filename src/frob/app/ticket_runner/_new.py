@@ -30,6 +30,7 @@ import fnmatch
 import os
 import re
 import sys
+import time
 from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -215,6 +216,54 @@ _SCOPE_PLAUSIBILITY_QUOTED_RE = re.compile(r"`([^`]+)`|'([^']+)'|\"([^\"]+)\"")
 # "signal is never drowned" acceptance criterion), which buries the FIRST
 # few (usually the most actionable) hints under a wall of repetition.
 _SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD = 8
+
+
+# frob:ticket T-3993
+# Below this many elapsed seconds since the command started, `_report_
+# phase_progress` stays silent -- the MUST-STAY-QUIET fixture (F-209): a
+# fast `ticket new`/`ticket scope --add` must not spam phase lines on the
+# common case. Once a run crosses this once, it keeps narrating for the
+# rest of that run (see `_report_phase_progress`'s docstring).
+_PHASE_PROGRESS_THRESHOLD_S = 2.0
+
+
+# frob:ticket T-3993
+# frob:tests tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress.test_fast_run_stays_quiet  # noqa: E501
+# frob:tests tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress.test_slow_run_names_the_phase  # noqa: E501
+# frob:tests tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress.test_no_clock_stays_quiet  # noqa: E501
+def _report_phase_progress(
+    cmd_name: str, start_time: float | None, phase_name: str
+) -> None:
+    """Log one INFO line naming `phase_name` iff `cmd_name` has already run
+    longer than `_PHASE_PROGRESS_THRESHOLD_S` since `start_time` (F-209,
+    T-3993, a recurrence of F-138: ledger verbs that write one file ran for
+    minutes in silence, so the harness backgrounded them and an agent
+    reported finished work as still "waiting" -- twice, in this repo, the
+    same day this ticket was filed).
+
+    Measured root cause (T-3993's own profile, not the consumer's guess):
+    `ticket new`'s scope-closure/scope-overlap checks each independently
+    reload and re-parse the FULL archived-ticket set (5 separate `load_
+    archive` calls, ~20k YAML parses, ~70s of a ~95s run on this repo's
+    size) -- the tickets-index-rebuild hypothesis was close but the actual
+    cost is repeated, uncached archive parsing across sibling checks, not
+    one rebuild. Fixing that cache lives in `frob.tickets._archive`/
+    `_store`, outside this ticket's scope (`src/frob/app/ticket_runner/
+    _new.py` only) -- filed separately (see this ticket's done report).
+
+    Called before each of `_new`'s sequential phases so a slow run says
+    which phase it is in NOW, turning "is it hung?" into a question with
+    an answer, without the fast common case (well under the threshold)
+    ever printing anything -- the MUST-FIRE/MUST-STAY-QUIET pair this
+    ticket's fixture asks for. `start_time=None` (a caller with no
+    command-wide clock, e.g. an isolated unit test) is always quiet."""
+    if start_time is None:
+        return
+    elapsed = time.monotonic() - start_time
+    if elapsed >= _PHASE_PROGRESS_THRESHOLD_S:
+        _log.info(
+            "%s: %.1fs elapsed -- now in phase: %s", cmd_name, elapsed, phase_name
+        )
 
 
 # frob:ticket T-2021
@@ -1044,6 +1093,12 @@ def _new(root: Path, cfg: AppConfig) -> None:
         _log.error("frob ticket new requires --title and --kind")
         sys.exit(1)
 
+    # frob:ticket T-3993
+    # Command-wide clock for `_report_phase_progress` (F-209): a fast run
+    # never crosses `_PHASE_PROGRESS_THRESHOLD_S` and stays silent; a slow
+    # one narrates which of these phases it is in, in order.
+    start_time = time.monotonic()
+
     # frob:ticket T-2021
     # Resolved EXACTLY ONCE for this whole command and threaded through --
     # see `_resolve_new_body`'s docstring for why a second call is unsafe
@@ -1051,9 +1106,11 @@ def _new(root: Path, cfg: AppConfig) -> None:
     body = _resolve_new_body(cfg)
 
     # frob:ticket T-1995
+    _report_phase_progress("ticket new", start_time, "duplicate/related-ticket check")
     _refuse_unacknowledged_related_tickets(root, cfg, cfg.ticket_title, body)
 
     # frob:ticket T-2177
+    _report_phase_progress("ticket new", start_time, "scope plausibility check")
     plausibility_warnings = _log_scope_plausibility_warnings(
         root, cfg.ticket_title, cfg.ticket_scope, body
     )
@@ -1071,14 +1128,17 @@ def _new(root: Path, cfg: AppConfig) -> None:
     # final outcome; warning about it as if --no-commit left it that way
     # is actively misleading (confirmed live: a plain `frob ticket new`,
     # no --no-commit anywhere, still printed that warning).
+    _report_phase_progress("ticket new", start_time, "ledger write (new_ticket)")
     result = new_ticket(root, spec, no_commit=True, warn_if_dirty=False)
     if result.is_err:
         _log.error("ticket new failed: %s", result.danger_err)
         sys.exit(1)
     ticket = result.danger_ok
-    _emit_new_ticket_side_effects(root, cfg, ticket, body)
+    _emit_new_ticket_side_effects(root, cfg, ticket, body, start_time=start_time)
+    _report_phase_progress("ticket new", start_time, "ledger auto-commit")
     _commit_new_ticket_ledger_change_or_exit(root, ticket, cfg.ticket_no_commit)
     # frob:ticket T-4339
+    _report_phase_progress("ticket new", start_time, "readback confirmation")
     _confirm_new_ticket_readback_or_exit(root, ticket)
     if not cfg.ticket_json:
         _log.info("created %s: %s", ticket.id, ticket.title)
@@ -1089,19 +1149,30 @@ def _new(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-3308
+# frob:ticket T-3993
 def _emit_new_ticket_side_effects(
-    root: Path, cfg: AppConfig, ticket, body: str
+    root: Path, cfg: AppConfig, ticket, body: str, *, start_time: float | None = None
 ) -> None:  # noqa: ANN001
     """`_new`'s post-creation side effects (ARCH001 split): scope-closure/
     overlap/body-similarity warnings, the telemetry event, `--evidence`
     application, and the clipboard-image offer -- everything `_new` does
     to `ticket` between `new_ticket` succeeding and the final ledger
     commit. Exits 1 (via `_apply_evidence`) if `--evidence` was given and
-    failed to resolve, same as before this split."""
+    failed to resolve, same as before this split.
+
+    `start_time` (T-3993, F-209, optional so this stays callable without a
+    clock in isolation/tests) threads `_new`'s command-wide clock through
+    to `_report_phase_progress`: the scope-closure and scope-overlap
+    checks below are, by measurement, the dominant cost of this command
+    (each independently reloads/re-parses the full archived-ticket set),
+    so this is exactly where a slow run needs to keep naming its phase."""
+    _report_phase_progress("ticket new", start_time, "scope closure warnings")
     _emit_scope_closure_warnings(
         "ticket new", ticket.id, _scope_closure_warnings(root, ticket.scope)
     )
+    _report_phase_progress("ticket new", start_time, "scope overlap warnings")
     _emit_scope_overlap_warnings(root, ticket.id, ticket.scope)
+    _report_phase_progress("ticket new", start_time, "body similarity warnings")
     _emit_body_similarity_warnings(root, ticket.id, body)
 
     from frob.app.telemetry import record_ticket_event

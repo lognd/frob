@@ -1,0 +1,60 @@
+## Done report
+
+# Why (T-3993)
+
+Consumer F-209 (recurrence of F-138, 3x in one ticket): ledger verbs that
+write one file run for minutes in silence, so the harness backgrounds them
+and an agent stalls waiting on work that has already finished.
+
+## Measurement (idle worktree, this repo's size: 711 active + ~4048 archived
+tickets)
+
+`frob ticket new --scope src/frob/app/ticket_runner/_new.py` took ~95s wall
+clock. `cProfile` on a repeat run showed the dominant cost is NOT one
+"tickets index rebuild" as hypothesized -- it is FIVE independent
+`load_archive` calls inside one command (scope-closure warnings, scope-
+overlap warnings, the orphaned-lock scan, plus `new_ticket` itself), each
+re-parsing the full archived-ticket set from scratch: ~20k YAML parses,
+~70s of the ~95s run (`yaml.constructor.get_single_data` alone: 60.2s
+cumulative). Scope-closure/overlap warning volume is real (22-48 warnings
+on this scope in these runs) but the warning TEXT is cheap; the cost is the
+five redundant archive re-parses that produce it.
+
+## Fix (this ticket's scope: src/frob/app/ticket_runner/_new.py only)
+
+Added `_report_phase_progress`, called before each of `_new`'s sequential
+phases (duplicate/related check, scope plausibility, ledger write, scope
+closure/overlap/body-similarity warnings, auto-commit, readback). It stays
+silent until the command has run past `_PHASE_PROGRESS_THRESHOLD_S` (2.0s),
+then logs one INFO line per phase naming what is running now -- satisfying
+both fixtures: MUST-FIRE (a slow verb narrates) and MUST-STAY-QUIET (a fast
+verb never prints). Verified live: a real `frob ticket new` run showed
+"3.3s elapsed -- now in phase: scope closure warnings", "26.7s -- ... scope
+overlap warnings", etc., with zero output before the 2s threshold.
+
+## Speedup
+
+Not attempted in this ticket -- the measured fix (caching `load_archive`
+across the five call sites) lives in `frob.tickets._archive`/`_store`,
+outside `src/frob/app/ticket_runner/_new.py`'s declared scope. Filed as
+T-5157 ("cache load_archive across ticket new side-effect
+checks") per the ticket's own instruction to keep any speedup guided by
+measurement, not guesswork, and separate from this scope.
+
+## Filed
+
+- T-5157 (feature): cache `load_archive` across `ticket new`'s
+  side-effect checks -- found while working T-3993, out of this ticket's
+  scope.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_new.py           | 77 ++++++++++++++++++++++++++--
+ tests/unit/test_ticket_new_phase_progress.py | 47 +++++++++++++++++
+ tickets/T-3993/ticket.md                     |  4 +-
+ tickets/T-5157/ticket.md           | 29 +++++++++++
+ 4 files changed, 153 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress::test_fast_run_stays_quiet` (pytest node id, verified passing when recorded)
