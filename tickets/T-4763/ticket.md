@@ -2,7 +2,7 @@
 id: T-4763
 title: typani floor to 0.2.3 and python-tool demonstrates Result at the config file-IO
   boundary
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
