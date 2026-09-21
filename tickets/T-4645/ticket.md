@@ -6,7 +6,7 @@ kind: docs
 origin: human
 created: '2026-09-19'
 priority: medium
-parent: T-4420
+parent: T-2994
 tier: ticket
 sprint: v0.534.0
 runs_last: false
@@ -37,6 +37,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: parent
+  old_value: T-4420
+  new_value: T-2994
+  reason: T-4645 is the ticket_land_suite docstring rewrite carved out of T-2994's
+    test-hygiene tree; T-4420 needs T-2994's descendants closed
+  actor: logan
+  at: '2026-09-21'
 designated_repro_test: null
 acceptance:
 - text: DOCARCH001 count for tests/ticket_land_suite's 12 scoped files is 0
