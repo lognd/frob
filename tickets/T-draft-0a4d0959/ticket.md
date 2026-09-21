@@ -15,11 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_ticket_runner_base_forward_t4105.py
-- tests/unit/verify/test_drain.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/verify/test_drain.py
+  reason: T-5035 holds a live lease on test_drain.py; splitting to unblock the base_forward_t4105
+    half
+  actor: logan
+  at: '2026-09-21'
 designated_repro_test: null
 threat: null
 component: null
