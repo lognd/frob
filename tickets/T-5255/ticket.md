@@ -1,5 +1,5 @@
 ---
-id: T-draft-ed08d09f
+id: T-5255
 title: Land prepare phase adopts and promotes worktree-only drafts and drops stale
   promoted-draft dirs before the merge (ledger-only promotion, T-4652)
 state: queued
