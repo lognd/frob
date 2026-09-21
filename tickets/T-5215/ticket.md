@@ -1,5 +1,5 @@
 ---
-id: T-draft-59758a29
+id: T-5215
 title: frob.app.telemetry.redact_command now transitively loads frob.gates (T-1318
   boundary regression)
 state: queued
