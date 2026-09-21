@@ -872,7 +872,55 @@ def record_lease(
     # -- `read_all_leases`'s per-file stat check picks up this write (new
     # mtime/size, or a brand-new path in the directory listing) on its own
     # next call, from THIS process or any sibling one.
+    _commit_start_ledger_write_in_fleet_context(root, ticket_id, record)
     return Ok(None)
+
+
+# frob:ticket T-5120
+# frob:tests \
+# tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext.test_in_progress_transition_commits_the_ledger  # noqa: E501
+def _commit_start_ledger_write_in_fleet_context(
+    root: Path, ticket_id: str, record: "_LeaseRecord"
+) -> None:
+    """T-5120: commit `root`'s just-written `IN_PROGRESS` ledger row THROUGH
+    `commit_ticket_ledger_change` in the same operation that records the
+    cross-worktree lease, but ONLY when dispatched agent worktrees are
+    actually registered (`_list_agent_worktrees`, the same fleet-detection
+    `_should_skip_root_lease` already uses) -- the measured T-5120 gap (32
+    of 71 leases held against tickets the root ledger still called
+    'queued') is specifically the multi-worktree dispatch shape, where
+    `frob.app.ticket_runner`'s generic per-command auto-commit sweep
+    (`_auto_commit_ledger_after_dispatch`) commits only the CALLING
+    worktree's own `tickets.md`, never `root`'s -- so `root`'s copy of the
+    ledger only ever learns of the transition through a later, separate
+    mirror commit.
+
+    Deliberately narrower than 'always commit here': the ordinary single-
+    checkout case (no sibling agent worktrees at all) is UNCHANGED by this
+    ticket -- `transition`'s existing contract there (write now, an
+    explicit caller such as `commit_start_transition`/`frob ticket start`
+    commits when it is ready to) is exercised by a wide swath of this
+    repo's own test suite (e.g. `tests/test_ticket_leases_cross_worktree.py`'s
+    own `_commit_all(repo, "start ...")` pattern) and stays intact.
+    Best-effort like every other `_leases` write: a commit failure here is
+    logged, never raised, so it can never turn a successful lease record
+    into a reported transition failure."""
+    from frob.tickets._worktree_sweep import _list_agent_worktrees
+
+    siblings = _list_agent_worktrees(root)
+    if not (siblings.is_ok and len(siblings.danger_ok) > 0):
+        return
+    message = (
+        f"tickets: {ticket_id} start (worktree={record.worktree} "
+        f"branch={record.branch})"
+    )
+    result = commit_ticket_ledger_change(root, ticket_id, message)
+    if result.is_err:
+        _log.warning(
+            "tickets: %s fleet-context start-transition ledger commit failed: %s",
+            ticket_id,
+            result.danger_err,
+        )
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473

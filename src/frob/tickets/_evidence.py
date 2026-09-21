@@ -1105,7 +1105,11 @@ def transition(
     if guard.is_err:
         return Err(guard.danger_err)
 
-    updated = ticket.model_copy(update={"state": to})
+    field_updates: dict[str, object] = {"state": to}
+    if to == TicketState.IN_PROGRESS:
+        # frob:ticket T-5120
+        field_updates.update(_start_transition_ledger_fields(root))
+    updated = ticket.model_copy(update=field_updates)
     write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)
@@ -1114,6 +1118,34 @@ def transition(
     if to in (TicketState.DONE, TicketState.DROPPED):
         _warn_stranded_directives(root, ticket_id)
     return Ok(updated)
+
+
+# frob:ticket T-5120
+# frob:tests \
+# tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext.test_in_progress_transition_stamps_worktree_and_branch  # noqa: E501
+def _start_transition_ledger_fields(root: Path) -> dict[str, object]:
+    """The `worktree`/`branch` extra fields to stamp onto a ticket entering
+    `IN_PROGRESS` (T-5120: a durable record on the ticket itself, not only
+    `frob.tickets._leases`'s gitignored cross-worktree lease file). `Ticket`
+    declares `extra="allow"` (see its own docstring), so these two keys need
+    no schema change here -- they round-trip through `model_dump`/reload
+    like any other frontmatter field. Resolution failure (a `root` that is
+    not a git work tree, the same degrade `record_lease` already tolerates)
+    yields an empty dict rather than blocking the transition: the ledger
+    write and its commit are the source of truth this ticket fixes; the
+    worktree/branch fields are best-effort metadata riding along with it."""
+    from frob import gitio
+
+    combined = gitio.common_dir_and_branch(root)
+    if combined.is_err:
+        _log.warning(
+            "tickets: start-transition ledger fields not resolved (no shared "
+            "git dir under %s) -- worktree/branch left unset on the ticket",
+            root,
+        )
+        return {}
+    _common_dir, branch = combined.danger_ok
+    return {"worktree": str(root.resolve()), "branch": branch}
 
 
 # frob:ticket T-4312

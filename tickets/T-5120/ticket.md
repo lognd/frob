@@ -2,7 +2,7 @@
 id: T-5120
 title: ticket start transition must be a ledger write carrying worktree and branch,
   not a lease side effect
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -29,7 +29,10 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
-designated_repro_test: null
+evidence:
+- tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext::test_in_progress_transition_commits_the_ledger
+- tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext::test_in_progress_transition_stamps_worktree_and_branch
+designated_repro_test: tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext::test_in_progress_transition_commits_the_ledger
 threat: null
 component: null
 anchor: false
