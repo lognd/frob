@@ -72,7 +72,7 @@ acceptance_amendments:
   new_text: null
   reason: criterion 4 (PERF007 fires once [[perf.heavy]] is populated) requires editing
     frob.toml, which carried a live cross-worktree lease (T-5138) when T-5136 started
-    and was removed from scope; filed as T-draft-a4b2ce94
+    and was removed from scope; filed as T-5202
   actor: logan
   at: '2026-09-21'
 threat: null

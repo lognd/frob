@@ -1,5 +1,5 @@
 ---
-id: T-draft-a4b2ce94
+id: T-5202
 title: register PERF015-018 in frob.toml, docs/modules/gates.md and _KNOWN_GATE_RULES
 state: queued
 kind: bug
