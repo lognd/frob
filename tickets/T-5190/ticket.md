@@ -1,5 +1,5 @@
 ---
-id: T-draft-06eaaa96
+id: T-5190
 title: known-gate-rule-id registry has grown to 17 unregistered ids (CI run 35510697497
   burn-down)
 state: queued
