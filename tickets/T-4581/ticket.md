@@ -2,7 +2,7 @@
 id: T-4581
 title: 'Capability matrix: csharp/net cell is both patterned and excused after Unity
   net APIs landed (T-4514)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-18'
@@ -39,16 +39,25 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_cell_is_both_patterned_and_excused
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 designated_repro_test: null
 acceptance:
 - text: 'bound([''tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_cell_is_both_patterned_and_excused'',
     ''tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells'']):
     the generated csharp/net excuse is removed and no matrix cell is both patterned
     and excused, while every cell remains patterned or excused'
-  evidence: []
+  evidence:
+  - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_cell_is_both_patterned_and_excused
+  - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4581
+branch: t-4581
 ---
+## Drop reason
+- 2026-09-21: T-4514's land already removed the stale generated csharp/net excuse; TestMatrixExhaustiveness passes unmodified against current dev, nothing left to fix (absorbed by T-4514)
