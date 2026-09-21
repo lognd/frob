@@ -26,9 +26,8 @@
       "ticket": "T-1628"
     },
     "cli::exec": {
-      "accepted_count": 7,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 8,
+      "reason": "branch-own via addition auto-accept (T-4759)"
     },
     "cli::fs.read": {
       "accepted_count": 24,
@@ -258,7 +257,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 553,
+      "accepted_count": 554,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

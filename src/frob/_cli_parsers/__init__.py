@@ -81,6 +81,7 @@ from ._reporting import (
     _add_profile_parser,
     _add_registry_parser,
 )
+from ._run import _add_build_parser, _add_run_parser
 from ._status import _add_status_parser
 from ._ticket import (
     _add_ticket_attach_and_lifecycle_end_parsers,
@@ -165,7 +166,9 @@ __all__ = [
     "_add_pool_parser",
     "_add_profile_parser",
     "_add_registry_parser",
+    "_add_build_parser",
     "_add_release_parser",
+    "_add_run_parser",
     "_add_scaffold_parser",
     "_add_serve_parser",
     "_add_stats_parser",

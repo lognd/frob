@@ -17,6 +17,7 @@ from frob._cli_parsers import (
     _add_agent_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_arch_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_bind_parser,  # noqa: F401 -- re-exported: prior __main__ surface
+    _add_build_parser,  # noqa: F401 -- re-exported: T-4759
     _add_check_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_claude_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_clean_parser,  # noqa: F401 -- re-exported: prior __main__ surface
@@ -48,6 +49,7 @@ from frob._cli_parsers import (
     _add_quality_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_registry_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_release_parser,  # noqa: F401 -- re-exported: prior __main__ surface
+    _add_run_parser,  # noqa: F401 -- re-exported: T-4759
     _add_scaffold_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_serve_parser,  # noqa: F401 -- re-exported: prior __main__ surface
     _add_stats_parser,  # noqa: F401 -- re-exported: prior __main__ surface
@@ -207,6 +209,28 @@ def _dispatch_worktree(argv: list[str]) -> None:
     from frob.app.worktree_runner import run as _worktree_run
 
     _worktree_run(argv)
+
+
+# frob:ticket T-4759
+def _dispatch_run(argv: list[str]) -> None:
+    """`frob run <name> [--dry-run]` (T-4759) -- dispatched directly,
+    mirroring `frob bind`/`agent`/`worktree` -- see
+    `frob.app.run_runner`'s module docstring for why (its own parser tree
+    is not yet wired into `_build_parser`, see that module's docstring
+    for the leased-file reason)."""
+    from frob.app.run_runner import run as _run_run
+
+    _run_run(argv)
+
+
+# frob:ticket T-4759
+def _dispatch_build(argv: list[str]) -> None:
+    """`frob build [--dry-run]` (T-4759) -- dispatched directly, mirroring
+    `frob run` immediately above -- see `frob.app.run_runner`'s module
+    docstring for why."""
+    from frob.app.run_runner import run_build as _run_build
+
+    _run_build(argv)
 
 
 # frob:ticket T-4299
@@ -538,13 +562,18 @@ def _apply_verbose_env_override(argv: list[str]) -> None:
 # frob:ticket T-2443
 # frob:ticket T-2452
 # frob:ticket T-4301
+# frob:ticket T-4759
 def _dispatch(argv: list[str]) -> None:
     """`main`'s actual argv-to-`App` dispatch, split out so `main` can wrap
     only this in the `KeyboardInterrupt` handler (T-0355) without also
     catching interrupts raised by argument parsing itself. T-2452: the
     body itself is now a pure argv-routing table -- each special case's
     real work lives in its own `_dispatch_*` helper (ARCH001)."""
-    if argv and argv[0] == "bind":
+    if argv and argv[0] == "run":
+        _dispatch_run(argv[1:])
+    elif argv and argv[0] == "build":
+        _dispatch_build(argv[1:])
+    elif argv and argv[0] == "bind":
         _dispatch_bind(argv[1:])
     elif _is_quality_bind(argv):
         _dispatch_quality_bind(argv[1:])

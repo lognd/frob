@@ -176,7 +176,9 @@ node cli : trusted {
     // 1s timeout, OSError/TimeoutExpired handled) to resolve the repo's
     // running commit for the version-drift check -- a real, new exec
     // site.
-    may "exec" via "src/frob/app/_daemon_proxy.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_lifecycle.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/_version_guard.py";
+    may "exec" via "src/frob/app/_daemon_proxy.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_lifecycle.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/_version_guard.py", "src/frob/app/run_runner.py";
+    // T-4759: frob run/build spawn the resolved [commands] steps shell-free
+    // (subprocess.run on a literal argv) from src/frob/app/run_runner.py.
     // T-1126: the CLI daemon proxy (app/_daemon_proxy.py) now opens the
     // project daemon's unix socket directly for lease acquire/release
     // (_LeaseConnection, promoted from the T-1097 test-only _RawClient)
