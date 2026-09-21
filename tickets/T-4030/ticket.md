@@ -1,7 +1,7 @@
 ---
 id: T-4030
 title: 'policy.pattern: dangerouslySetInnerHTML with direct JSON.stringify'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-09-06'
