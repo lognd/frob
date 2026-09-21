@@ -33,6 +33,7 @@ scope:
 - tests/fixtures/check_stages/**
 - src/frob/app/scaffold_runner.py
 - src/frob/check/__init__.py
+- docs/commands/cycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,6 +72,14 @@ scope_changes:
   reason: narrative needs a --only alias (narrative -> the narrative_blocks gate name)
     and mutate needs a decision recorded in _TOOL_ONLY_STAGE_GROUPS-adjacent code;
     this is the single place --only's stage vocabulary is declared
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/commands/cycle.md
+  reason: DOC004/DOC006 require docs/commands/*.md naming a deprecated verb updated
+    in the same ticket; docs/commands/exports.md is currently leased by in-progress
+    T-4690 -- left untouched, noted in Done report as residual for whoever lands after
+    T-4690
   actor: logan
   at: '2026-09-21'
 triage_changes:
