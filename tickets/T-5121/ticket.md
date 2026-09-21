@@ -2,7 +2,7 @@
 id: T-5121
 title: 'TICK rule: requeue an in-progress ticket whose recorded worktree or branch
   is dead'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -37,5 +37,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5121
+branch: t-5121
 ---
 Measured 2026-09-20 (scratchpad/STRANDED.md): 38 of 54 in-progress tickets were abandoned by dead agents while their worktree directories survived; orphaned_leases in src/frob/tickets/_leases.py returned 0 because liveness is tested by directory existence, not by process or branch activity. Fix: add the next free TICK0xx rule in src/frob/gates/_tickets_gate.py that, for every in-progress ticket, resolves the worktree and branch recorded on the ticket (depends on the start-transition ticket filed alongside this one) and errors when the path is absent, the branch is absent, or no live process holds it (reuse the process-presence verdict in src/frob/tickets/_worktree_sweep.py near line 351), then flips the ticket back to queued through the ledger commit path with a fail-log entry naming the dead worktree. Positive control: a fixture ticket started in a worktree whose directory is then deleted is reported by the rule and is queued again after frob check; a ticket with a live holder is untouched.
