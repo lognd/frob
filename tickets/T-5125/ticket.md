@@ -2,16 +2,14 @@
 id: T-5125
 title: 'strata grammar: import/export/pub and the accepts clause on cross-module flows
   (parse-only)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
 priority: critical
-blocked_by:
-- T-5082
-parent: T-5081
+parent: T-draft-0a0c7b43
 tier: ticket
-sprint: v0.536.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -23,35 +21,45 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- strata-core/src/parse/mod.rs::tests::parses_import_export_and_accepts
+- strata-core/src/parse/mod.rs::tests::import_wildcard_is_a_syntax_error
+- strata-core/src/parse/mod.rs::tests::design_frob_strata_still_parses_after_the_module_grammar_change
+- strata-core/src/parse/mod.rs::tests::all_seven_litmus_files_still_parse_after_the_module_grammar_change
+- strata-core/src/parse/mod.rs::tests::parses_layer_declaration
+- strata-core/src/parse/mod.rs::tests::duplicate_layer_statement_is_a_parse_error
+- strata-core/src/parse/mod.rs::tests::accepts_with_an_import_alias_is_a_parse_error
+- strata-core/src/parse/mod.rs::tests::accepts_from_a_non_aliased_dotted_path_still_parses
 designated_repro_test: null
 acceptance:
 - text: Given a module file using `import a.b as c;`, `export { ... }` and `accepts
     f from m;`, when parsed by strata-core, then the AST carries import, export and
     accepts records with their dotted paths and aliases.
-  evidence: []
+  evidence:
+  - strata-core/src/parse/mod.rs::tests::parses_import_export_and_accepts
 - text: Given `import tickets.*;` or any wildcard/re-export spelling, when parsed,
     then the parser reports a syntax error (the form does not exist in the grammar).
-  evidence: []
+  evidence:
+  - strata-core/src/parse/mod.rs::tests::import_wildcard_is_a_syntax_error
 - text: 'Given design/frob.strata and all 7 design/litmus/*.strata files, when parsed
     after the grammar change, then the parse result is unchanged from before (positive
     control: a planted new-syntax file parses, the old files are byte-identical in
     their AST).'
-  evidence: []
+  evidence:
+  - strata-core/src/parse/mod.rs::tests::design_frob_strata_still_parses_after_the_module_grammar_change
+  - strata-core/src/parse/mod.rs::tests::all_seven_litmus_files_still_parse_after_the_module_grammar_change
 - text: Given the D-M9 hierarchy decision, when a module file declares its position
     in the hierarchy, then the grammar accepts that declaration form and rejects a
     file that declares it twice.
-  evidence: []
+  evidence:
+  - strata-core/src/parse/mod.rs::tests::parses_layer_declaration
+  - strata-core/src/parse/mod.rs::tests::duplicate_layer_statement_is_a_parse_error
 - text: 'Given `accepts f from <module>` where <module> is NOT imported, when parsed,
     then it parses: `accepts` takes a module REFERENCE, never an import alias. Positive
     control: an `accepts` written with an import alias is a parse error.'
-  evidence: []
+  evidence:
+  - strata-core/src/parse/mod.rs::tests::accepts_with_an_import_alias_is_a_parse_error
+  - strata-core/src/parse/mod.rs::tests::accepts_from_a_non_aliased_dotted_path_still_parses
 threat: null
 component: null
 anchor: false
@@ -70,3 +78,6 @@ Dotted module names accepted in the `module` header. Parse-only: the AST/py
 bridge carries the new nodes through, nothing checks them yet. All 7 existing
 design/litmus/*.strata files and design/frob.strata must still parse unchanged,
 because none of them use the new syntax.
+
+## Unblock log
+- 2026-09-19: unblocked by T-draft-0bcabfa4 -- D-M9 decided 2026-09-19 19:30 (hierarchy, import up only, flows declared by the lower module, accept down); the grammar leaf's acceptance is updated and it is free to start

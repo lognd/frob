@@ -3,6 +3,9 @@
 // frob:ticket T-1627
 
 impl Parser {
+    // D-M9's `accepts FLOW from MODULE;` clause, added to this function's
+    // node-body loop below.
+    // frob:ticket T-5125
     fn parse_node(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'node'
         let id = self.expect_ident("node id")?;
@@ -69,6 +72,15 @@ impl Parser {
         let mut krb_delegation: Option<String> = None;
         let mut krb_delegation_targets: Vec<String> = Vec::new();
         let mut krb_trusts: Vec<serde_json::Value> = Vec::new();
+        // T-5125: `accepts FLOW from MODULE` -- zero or more
+        // two-sided cross-module flow contracts on this node
+        // (docs/strata/surface.md#module-system, D-M9's option (a)).
+        // `MODULE` is a bare dotted module path, never an import alias: the
+        // whole point of `accepts` is that the SINK names its inbound
+        // peer BY REFERENCE with no import of its own (D-M9 ruling,
+        // tickets/T-draft-0bcabfa4). Repeatable: a node may accept more
+        // than one inbound flow, from the same or different modules.
+        let mut accepts: Vec<serde_json::Value> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -529,6 +541,21 @@ impl Parser {
                         "reason": reason,
                         "ticket": ticket,
                     }));
+                } else if self.at_keyword("accepts") {
+                    // T-5125: `accepts FLOW from MODULE;` -- FLOW
+                    // is an IDENT naming the flow this node consents to
+                    // receive; MODULE is a bare dotted path (parsed with
+                    // `parse_dotted_path`, NOT `expect_ident`), since it
+                    // names the peer module by reference with no import
+                    // binding it to a local alias.
+                    self.advance();
+                    let flow = self.expect_ident("accepts flow name")?;
+                    self.expect_keyword("from")?;
+                    let from_module = self.parse_dotted_path("accepts source module")?;
+                    accepts.push(json!({
+                        "flow": flow,
+                        "from": from_module,
+                    }));
                 } else if self.at_keyword("observe") {
                     // T-0070: observe { log IDENT (, IDENT)* ; to IDENT }
                     self.advance();
@@ -615,6 +642,7 @@ impl Parser {
             "krb_delegation": krb_delegation,
             "krb_delegation_targets": krb_delegation_targets,
             "krb_trusts": krb_trusts,
+            "accepts": accepts,
         }));
         Ok(())
     }

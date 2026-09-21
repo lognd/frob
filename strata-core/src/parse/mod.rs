@@ -17,6 +17,8 @@
 //! - `grammar_flow`: `flow`/`boundary`/`operation`/`refine` productions
 //! - `grammar_infra`: `store`/`cache`/`resource`/`queue`/`cdn`/`balancer`
 //!   productions
+//! - `grammar_module`: `import`/`export` productions (T-5125's
+//!   module-system surface, docs/strata/surface.md#module-system)
 //! - `grammar_policy`: `policy`/`claim`/`scenario` productions and the
 //!   top-level `parse_program` entry point
 //!
@@ -44,6 +46,7 @@ include!("grammar_vmodel.rs");
 include!("grammar_node.rs");
 include!("grammar_flow.rs");
 include!("grammar_infra.rs");
+include!("grammar_module.rs");
 include!("grammar_policy.rs");
 
 // frob:waive LARGE001 reason="Rust-idiom, not a Python line-budget question: this file's own \
@@ -482,6 +485,204 @@ mod tests {
         let v = ok("module payments");
         assert_eq!(v["name"], "payments");
         assert_eq!(v["nodes"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn parses_dotted_module_name() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // charter D6: `module a.b;` -- a dotted module path, degenerate
+        // single-segment case is `parses_bare_module` above (unchanged).
+        let v = ok("module tickets.ledger");
+        assert_eq!(v["name"], "tickets.ledger");
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn parses_import_export_and_accepts() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // Planted new-syntax positive control (T-5125 acceptance
+        // criterion 1): import/export/accepts all round-trip into the AST
+        // with their dotted paths and aliases.
+        let v = ok(r#"
+            module tickets.ledger
+            import platform.core as core;
+            export { node Store; channel submit; label TicketBody; }
+            node Store : trusted {
+                accepts submit from graph;
+            }
+        "#);
+        assert_eq!(v["name"], "tickets.ledger");
+        assert_eq!(v["imports"][0]["path"], "platform.core");
+        assert_eq!(v["imports"][0]["alias"], "core");
+        assert_eq!(v["exports"][0]["kind"], "node");
+        assert_eq!(v["exports"][0]["name"], "Store");
+        assert_eq!(v["exports"][1]["kind"], "channel");
+        assert_eq!(v["exports"][1]["name"], "submit");
+        assert_eq!(v["exports"][2]["kind"], "label");
+        assert_eq!(v["exports"][2]["name"], "TicketBody");
+        assert_eq!(v["nodes"][0]["accepts"][0]["flow"], "submit");
+        assert_eq!(v["nodes"][0]["accepts"][0]["from"], "graph");
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn empty_export_block_is_a_fully_private_module() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // D-M1: an absent OR empty export block both mean "fully private" --
+        // this covers the explicit-but-empty spelling.
+        let v = ok(r#"
+            module m
+            export { }
+        "#);
+        assert_eq!(v["exports"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn import_wildcard_is_a_syntax_error() {
+        // acceptance criterion 2: no wildcard/re-export spelling exists in
+        // this grammar at all -- `*` is not a lexable character, so this
+        // fails at the LEXER (a line/col error, not a silent no-op).
+        let e = err(r#"
+            module m
+            import tickets.* as t;
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("unexpected character"));
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn import_requires_alias() {
+        // No import-without-alias spelling: `as ALIAS` is mandatory, never
+        // an implicit re-export of the imported module's own name.
+        let e = err(r#"
+            module m
+            import tickets.ledger;
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("as"));
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn design_frob_strata_still_parses_after_the_module_grammar_change() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // Acceptance criterion 3's literal positive control: the real
+        // monolith (2766 lines, STRATA-MODULES.md section 2) parses
+        // without error and declares no imports/exports/layer, since it
+        // uses none of this ticket's new syntax.
+        let text = include_str!("../../../design/frob.strata");
+        let v = ok(text);
+        assert_eq!(v["name"], "frob");
+        assert_eq!(v["imports"].as_array().unwrap().len(), 0);
+        assert_eq!(v["exports"].as_array().unwrap().len(), 0);
+        assert!(v["layer"].is_null());
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn all_seven_litmus_files_still_parse_after_the_module_grammar_change() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // Acceptance criterion 3, the other half: every design/litmus/*.strata
+        // file (none use the new syntax) still parses cleanly.
+        for text in [
+            include_str!("../../../design/litmus/audit_hardened.strata"),
+            include_str!("../../../design/litmus/audit_vuln.strata"),
+            include_str!("../../../design/litmus/chirp.strata"),
+            include_str!("../../../design/litmus/deploy_secret.strata"),
+            include_str!("../../../design/litmus/payments.strata"),
+            include_str!("../../../design/litmus/payments_hardened.strata"),
+            include_str!("../../../design/litmus/tube.strata"),
+        ] {
+            let v = ok(text);
+            assert_eq!(v["imports"].as_array().unwrap().len(), 0);
+            assert_eq!(v["exports"].as_array().unwrap().len(), 0);
+        }
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn existing_files_carry_empty_import_export_accepts_by_default() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // Every pre-existing file (module system litmus: design/frob.strata
+        // and all 7 design/litmus/*.strata) uses none of this new syntax,
+        // so the new fields must default to empty without changing any
+        // other part of the AST.
+        let v = ok(r#"
+            module legacy
+            node n : trusted { }
+        "#);
+        assert_eq!(v["imports"].as_array().unwrap().len(), 0);
+        assert_eq!(v["exports"].as_array().unwrap().len(), 0);
+        assert_eq!(v["nodes"][0]["accepts"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn parses_layer_declaration() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // D-M9: `layer N;` -- lower number is higher in the hierarchy.
+        let v = ok(r#"
+            module platform
+            layer 0;
+        "#);
+        assert_eq!(v["layer"], 0);
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn duplicate_layer_statement_is_a_parse_error() {
+        // D-M9 acceptance: "the grammar accepts that declaration form and
+        // rejects a file that declares it twice."
+        let e = err(r#"
+            module app
+            layer 9;
+            layer 10;
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("duplicate layer"));
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn layer_is_absent_by_default() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        let v = ok("module legacy");
+        assert!(v["layer"].is_null());
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn accepts_with_an_import_alias_is_a_parse_error() {
+        // D-M9 acceptance criterion 5's positive control: `accepts` must
+        // name the peer module's REAL dotted path, never an import alias
+        // bound in this same file.
+        let e = err(r#"
+            module gates
+            import platform.core as core;
+            node Verify : trusted {
+                accepts submit from core;
+            }
+        "#);
+        assert!(e["message"]
+            .as_str()
+            .unwrap()
+            .contains("names an import alias"));
+    }
+
+    #[test]
+    // frob:ticket T-5125
+    fn accepts_from_a_non_aliased_dotted_path_still_parses() {
+        // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+        // The same source, but `from` names the real dotted path instead
+        // of the local alias -- legal, per D-M9's accept-by-reference rule.
+        let v = ok(r#"
+            module gates
+            import platform.core as core;
+            node Verify : trusted {
+                accepts submit from platform.core;
+            }
+        "#);
+        assert_eq!(v["nodes"][0]["accepts"][0]["from"], "platform.core");
     }
 
     #[test]

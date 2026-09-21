@@ -49,6 +49,32 @@ struct ModuleAst {
     // empty for a fragment -- fragments do not name a module, only the
     // root they extend.
     part_of: Option<String>,
+    // T-5125: `import a.b as c;` records -- dotted module `path`
+    // plus its mandatory local `alias` (surface.md#module-system). Parse-
+    // only: nothing resolves these yet (that is T-draft-9d041fdf's job); the
+    // AST just carries them through unchanged, same as every other field on
+    // this struct.
+    imports: Vec<serde_json::Value>,
+    // T-5125: `export { node X; channel Y; label Z; }` records --
+    // one entry per exported symbol, `{"kind": "node"|"channel"|"label",
+    // "name": ID}`. An absent or empty export block is legal (a fully
+    // private module, surface.md#module-system) and produces an empty
+    // `Vec`, not `None` -- there is no way to distinguish "no export block"
+    // from "an empty export block" at this layer, and D-M1's privacy-by-
+    // default rule treats both identically, so the distinction would be
+    // meaningless to carry.
+    exports: Vec<serde_json::Value>,
+    // D-M9 (owner ruling 2026-09-19 19:30, recorded verbatim in
+    // tickets/T-draft-0bcabfa4): a module declares its position in an
+    // explicit hierarchy so import direction and `accepts` direction are
+    // both checkable without a graph traversal -- `layer N;`, an integer
+    // rank where a LOWER number is HIGHER in the hierarchy (platform is
+    // layer 0; a module may only `import` a strictly lower layer number,
+    // and may only `accepts ... from` a strictly higher one -- the linker
+    // leaf T-draft-27d3ece1's job, not this parser's). `None` when the
+    // file declares no layer at all (legal at this parse-only stage; the
+    // linker is where an undeclared layer becomes a hard requirement).
+    layer: Option<i64>,
     // T-2502: `extend node ID { may "ATOM" via GLOB[, GLOB...]; ... }`
     // statements -- the ONLY statement shape a fragment file may contain.
     // Each entry mirrors `NodeDecl`'s `may_grants` shape narrowly (atom +
@@ -158,6 +184,26 @@ impl Parser {
             }
             _ => self.err(format!("expected {}", what)),
         }
+    }
+
+    /// T-5125: `IDENT ("." IDENT)*` -- a dotted module path (charter
+    /// D6), used by `module a.b;`, `import a.b as c;` and the `accepts f from
+    /// <module>;` clause's bare module reference. Built from plain `.`
+    /// `Symbol` tokens (never `DotDot`, which the lexer only emits for `..`
+    /// with no space, so `a.b` and `a..b` are lexically distinguishable) --
+    /// there is deliberately no way to spell a wildcard segment here: `*` is
+    /// not a valid character anywhere in the lexer's symbol set, so
+    /// `import a.*` fails at the LEXER, before this parser rule even runs
+    /// (docs/strata/surface.md#module-system).
+    fn parse_dotted_path(&mut self, what: &str) -> Result<String, ParseError> {
+        let mut path = self.expect_ident(what)?;
+        while self.at_symbol('.') {
+            self.advance();
+            let seg = self.expect_ident(what)?;
+            path.push('.');
+            path.push_str(&seg);
+        }
+        Ok(path)
     }
 
     fn expect_number(&mut self, what: &str) -> Result<f64, ParseError> {
@@ -412,7 +458,11 @@ impl Parser {
             return self.err("duplicate module statement");
         }
         self.advance(); // 'module'
-        let name = self.expect_ident("module name")?;
+        // T-5125: dotted module names (charter D6), e.g. `module
+        // tickets.ledger;` -- a bare single-segment name (today's only form)
+        // is still exactly `parse_dotted_path` with zero `.` iterations, so
+        // every existing `module NAME;` file parses byte-identically.
+        let name = self.parse_dotted_path("module name")?;
         ast.name = name;
         *seen_module = true;
         Ok(())

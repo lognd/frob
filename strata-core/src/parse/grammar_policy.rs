@@ -322,6 +322,10 @@ impl Parser {
     fn parse_program(&mut self) -> Result<ModuleAst, ParseError> {
         let mut ast = ModuleAst::default();
         let mut seen_module = false;
+        // D-M9: `layer N;` hierarchy declaration, at most once per file
+        // (tickets/T-draft-0bcabfa4, `parse_layer`'s own doc has the full
+        // rationale).
+        let mut seen_layer = false;
         while !self.at_eof() {
             let kw = match self.peek_ident() {
                 Some(s) => s.to_string(),
@@ -334,6 +338,48 @@ impl Parser {
                 // and refuse a duplicate) -- a fragment file can never
                 // ALSO declare a module of its own.
                 "part" => self.parse_part_of(&mut ast, &mut seen_module)?,
+                // D-M9: `layer N;` -- same "requires a module first, never
+                // inside a fragment" posture as `import`/`export` below.
+                "layer" => {
+                    if !seen_module {
+                        return self.err("'layer' statement before module declaration");
+                    }
+                    if ast.part_of.is_some() {
+                        return self.err(
+                            "fragment file may only contain 'extend' statements -- found \
+                             top-level 'layer', which belongs to a root file",
+                        );
+                    }
+                    self.parse_layer(&mut ast, &mut seen_layer)?
+                }
+                // T-5125: `import a.b as c;` and `export { ... }`
+                // require a module header first (an import/export surface
+                // belongs to a named module boundary, same rationale
+                // `node`/`flow`/etc use below) and, like every other
+                // top-level construct, are refused inside a fragment file --
+                // a fragment extends an existing grant, it does not add to
+                // the module's import/export surface.
+                "import" | "export" => {
+                    if !seen_module {
+                        return self.err(format!(
+                            "'{}' statement before module declaration",
+                            kw
+                        ));
+                    }
+                    if ast.part_of.is_some() {
+                        return self.err(format!(
+                            "fragment file ('part of {}') may only contain 'extend' \
+                             statements -- found top-level '{}', which belongs to a root file",
+                            ast.part_of.as_deref().unwrap_or(""),
+                            kw
+                        ));
+                    }
+                    if kw == "import" {
+                        self.parse_import(&mut ast)?
+                    } else {
+                        self.parse_export(&mut ast)?
+                    }
+                }
                 // T-2502: `extend node ID { ... }` is valid ONLY inside a
                 // fragment file (`part of` already seen and `ast.part_of`
                 // is set) -- a root file extending is meaningless (it
@@ -451,6 +497,7 @@ impl Parser {
         if !seen_module {
             return self.err("missing module statement");
         }
+        self.check_accepts_are_not_aliases(&ast)?;
         Ok(ast)
     }
 }

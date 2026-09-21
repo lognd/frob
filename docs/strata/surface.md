@@ -1191,6 +1191,89 @@ Dotted module paths (`use base.labels { Pii }`); per-repo `design/`
 directory; the std vocabulary ships with frob (decision D6). Cross-repo
 registries are deferred but the path syntax already accommodates them.
 
+### Import/export grammar (T-5125, parse-only)
+
+The module-system decision tree (T-4662 / T-draft-0a0c7b43, owner
+decisions D-M1..D-M9) lands the module boundary in stages; this stage is
+grammar only -- the parser accepts the new syntax and carries it through
+to JSON unchanged, but nothing resolves, checks privacy, or detects import
+cycles yet (that is T-draft-9d041fdf's resolver/elaborator and
+T-draft-27d3ece1's linker).
+
+```
+module      := "module" dotted
+layer       := "layer" NUMBER [";"]
+dotted      := ident ("." ident)*
+import      := "import" dotted "as" ident [";"]
+export      := "export" "{" export_item* "}"
+export_item := ("node" | "channel" | "label") ident [";"]
+accepts     := "accepts" ident "from" dotted [";"]   // node-body clause
+```
+
+- **`layer N;` -- the hierarchy-position declaration (D-M9, owner ruling
+  2026-09-19 19:30, recorded verbatim in tickets/T-draft-0bcabfa4).** A
+  module names its rank in the explicit module hierarchy: a plain integer
+  where a LOWER number is HIGHER in the hierarchy (`platform`, at the top
+  since every other module imports it, is layer 0). At most one `layer`
+  statement per file -- a second one is a parse error ("duplicate layer
+  statement"), the same one-declaration-per-file shape `module`/`part of`
+  already enforce. This is the chosen spelling of the "smallest hierarchy
+  declaration form" the owner asked for over the alternative considered
+  (`module tickets.ledger above app, test;`, naming every immediate child
+  explicitly) -- a single rank number is enough to answer both direction
+  questions the linker needs (import-up-only, accepts-down-only) without
+  hand-listing every pairwise edge, and it stays correct as modules are
+  inserted between existing layers (renumber, not re-list). **Parse-only
+  at this stage:** the number is carried through unchecked; enforcing
+  "import only a strictly lower `layer` number" and "`accepts` only from a
+  strictly higher one" is T-draft-27d3ece1's linker job, once every
+  module's file is loaded and layers can be compared against each other.
+- **Dotted module names (D-M4/charter D6).** `module tickets.ledger` --
+  the pre-existing single-segment form (`module payments`) is the
+  zero-`.` case of the same production and parses byte-identically.
+- **`import a.b as c;`.** One dotted module path bound to a mandatory
+  local alias; there is no bare (aliasless) import form. The trailing
+  `;` is accepted and discarded if present -- top-level statements in
+  this grammar are otherwise never semicolon-terminated (`module`/`node`/
+  `flow` all omit it), so the `;` here is ergonomic sugar, never required.
+- **No wildcard, ever.** `import a.*` is not a distinct grammar rule that
+  gets refused semantically -- `*` is not a character the LEXER accepts
+  anywhere in this language, so `import a.*` fails at the lexer with an
+  "unexpected character" diagnostic before the parser rule for `import`
+  even runs. There is likewise no re-export syntax: an import's alias
+  names only this file's own local binding.
+- **`export { node X; channel Y; label Z; }` (D-M1).** Zero or more
+  entries, each one of `node`/`channel`/`label` followed by the exported
+  symbol's identifier. An absent export block and an explicitly empty
+  `export { }` both mean "fully private module" and are indistinguishable
+  in the AST (`Module.exports == []` either way) -- privacy-by-default
+  does not need to tell them apart.
+- **`accepts FLOW from MODULE;` (D-M3/D-M9).** A node-body clause (same
+  clause position as `may`/`carries`/`waive`) declaring that this node
+  consents to receive the named flow from a peer module. Per the D-M9
+  ruling (tickets/T-draft-0bcabfa4: hierarchy, import up only, flows
+  declared by the lower module, accept down by reference), `MODULE` is a
+  **bare dotted module path, not an import alias** -- the whole point of
+  `accepts` is that the upper module names its lower peer by reference
+  with no import of its own, so import cycles are impossible by
+  construction (a module can only import strictly upward) rather than
+  merely detected after the fact. **Enforced at PARSE time, not deferred
+  to the linker:** after a file is fully parsed, every `accepts ... from
+  X;` is checked against that same file's own `import ... as X;` aliases;
+  a match is a parse error ("names an import alias, not a module path"),
+  since accepting-by-reference from a name that happens to also be a
+  local alias would silently make the reference's validity depend on
+  whether an unrelated import statement exists in the same file.
+
+Positive control (T-5125 acceptance criteria): a file using all
+three new forms parses to the expected AST
+(`strata-core/src/parse/mod.rs::parses_import_export_and_accepts`), and
+every pre-existing `.strata` file (design/frob.strata, all 7
+design/litmus/*.strata) is unaffected -- none of them use this syntax, so
+`Module.imports`/`Module.exports`/`NodeDecl.accepts` are simply empty on
+every one of them
+(`strata-core/src/parse/mod.rs::existing_files_carry_empty_import_export_accepts_by_default`).
+
 ## Parser
 
 <!-- frob:ticket T-0059 -->
@@ -1214,7 +1297,12 @@ per grammar production:
 - `Module` <!-- frob:describes src/frob/strata/_ast.py::Module -->
   -- name, nodes, flows, boundaries, claims, resources (T-0700: named
   shared-resource/arbiter declarations, docs/strata/host.md
-  #resource-access-modes-t-0700).
+  #resource-access-modes-t-0700). T-5125: the Rust `ModuleAst`
+  additionally carries `imports`/`exports` (see "Import/export grammar"
+  above); binding those onto the pydantic `Module` model itself is
+  T-draft-9d041fdf's resolver/elaborator work, not this grammar-only
+  stage's -- today the JSON fields exist and round-trip, but nothing on
+  the Python side reads them yet.
 - `NodeDecl` <!-- frob:describes src/frob/strata/_ast.py::NodeDecl -->
   -- id, trust, is_abstract, clearance, attrs, capacity, residence, users,
   rate (T-0702: entry-demand declarations, docs/strata/kernel.md
