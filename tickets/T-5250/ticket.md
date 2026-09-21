@@ -1,5 +1,5 @@
 ---
-id: T-draft-5ff600a1
+id: T-5250
 title: 'Drainer lifecycle: a land-queue cycle in the frob serve daemon with single-drainer
   lock, progress-aware deadline, and queue/stuck-since in frob status'
 state: queued

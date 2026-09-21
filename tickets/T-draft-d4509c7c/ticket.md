@@ -9,7 +9,7 @@ created: '2026-09-21'
 priority: high
 blocked_by:
 - T-draft-796f317b
-- T-draft-5ff600a1
+- T-5250
 parent: T-5106
 tier: ticket
 sprint: v0.535.0
