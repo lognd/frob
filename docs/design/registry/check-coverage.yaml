@@ -957,6 +957,11 @@ gate_rule_entries:
     name: "REL301 is a live, enforced gate rule"
     disposition: "handled_by:REL301"
     cross_refs: []
+  - id: "CHK-GATE-REL303"
+    fixability: "manual"
+    name: "REL303 is a live, enforced gate rule"
+    disposition: "handled_by:REL303"
+    cross_refs: []
   - id: "CHK-GATE-REL310"
     fixability: "manual"
     name: "REL310 is a live, enforced gate rule"
@@ -1555,6 +1560,16 @@ gate_rule_entries:
   - id: "CHK-GATE-SYS111"
     name: "SYS111 is a live, enforced gate rule"
     disposition: "handled_by:SYS111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SYS114"
+    name: "SYS114 is a live, enforced gate rule"
+    disposition: "handled_by:SYS114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SYS115"
+    name: "SYS115 is a live, enforced gate rule"
+    disposition: "handled_by:SYS115"
     fixability: "manual"
     cross_refs: []
   - id: "CHK-GATE-CAP001"

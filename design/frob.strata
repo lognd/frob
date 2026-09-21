@@ -567,6 +567,7 @@ node checker : trusted {
 // frob:ticket T-1627
 // frob:ticket T-1870
 // frob:ticket T-2910
+// frob:ticket T-4113
 node stratamod : trusted {
 
     attr interface=[
@@ -637,7 +638,7 @@ node stratamod : trusted {
     // narrow exception to this module's committed-lock-is-hand-edited-
     // only discipline.
     may "fs.write" via "src/frob/strata/_bootstrap.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_shrink.py", "src/frob/strata/_threat.py", "src/frob/strata/_unity_asmdef.py";
-    may "fs.read" via "src/frob/strata/_code_binding.py", "src/frob/strata/_design_load.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_native_staleness_digest.py", "src/frob/strata/_obligation_proof.py", "src/frob/strata/_reliability.py", "src/frob/strata/_selfconform_surface_rules.py", "src/frob/strata/_shrink.py", "src/frob/strata/_sync_may.py", "src/frob/strata/_unity_asmdef.py";
+    may "fs.read" via "src/frob/strata/_code_binding.py", "src/frob/strata/_design_load.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_native_staleness_digest.py", "src/frob/strata/_obligation_proof.py", "src/frob/strata/_outbound_destination.py", "src/frob/strata/_reliability.py", "src/frob/strata/_selfconform_surface_rules.py", "src/frob/strata/_shrink.py", "src/frob/strata/_sync_may.py", "src/frob/strata/_unity_asmdef.py";
     may "net.connect" via "src/frob/strata/_threat_catalog_benign.py";
     // T-4573: `_land_commit_in_progress` reads `FROB_LAND_LOCK_ROOT`
     // (`os.environ.get`) to find the primary checkout a spawned
@@ -1627,6 +1628,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-4179
 // frob:ticket T-4475
 // frob:ticket T-4460
+// frob:ticket T-4113
 node testsuite : trusted {
     attr interface=[];
     clearance Internal;
@@ -1788,6 +1790,10 @@ node testsuite : trusted {
     // a real network call, the same fixture-literal false-positive shape
     // T-2464's own comment above already documents for this node.
     may "net.connect" via "tests/test_refs_gate.py";
+    // T-4113: SYS114/SYS115 synthetic fixtures deliberately contain a
+    // requests.get(...) needle literal to exercise the hardcoded-host
+    // must-fire path; the literal is never executed (parsed, not run).
+    may "net.connect" via "tests/unit/strata/fixtures/outbound_destination/hardcoded.py", "tests/unit/strata/fixtures/outbound_destination/configured.py";
     // T-2464: TestNetMutateVerbSplit's own fire fixtures contain real
     // `requests.post(`/`httpx.delete(` needle literals (proving the new
     // net-mutate split actually fires), the same self-conformance

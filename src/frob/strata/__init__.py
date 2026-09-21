@@ -246,6 +246,12 @@ from frob.strata._host_isolation import (
     evaluate_vertical_isolation,
     host_movement_flows,
 )
+from frob.strata._inbound_rate import (
+    REL_MISSING_INBOUND_RATE,
+    InboundRateReport,
+    InboundRateViolation,
+    check_inbound_rate,
+)
 from frob.strata._infra import InfraExpansion, elaborate_infra
 from frob.strata._interactive_cost import (
     INTERACTIVE_COST_RULES,
@@ -368,6 +374,14 @@ from frob.strata._observability import (
     ObservabilityReport,
     ObservabilityViolation,
     check_observability_obligations,
+)
+from frob.strata._outbound_destination import (
+    SYS_MISSING_OUTBOUND_RATE,
+    SYS_UNCONSTRAINED_DESTINATION,
+    OutboundDestinationReport,
+    OutboundDestinationViolation,
+    check_outbound_destination,
+    check_outbound_rate,
 )
 from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
@@ -774,6 +788,7 @@ __all__ = [
     "REL_MISSING_CIRCUIT_BREAKER",
     "REL_MISSING_FALLBACK",
     "REL_MISSING_HEALTH",
+    "REL_MISSING_INBOUND_RATE",
     "REL_MISSING_TIMEOUT",
     "REL_NONIDEMPOTENT_RETRY",
     "REL_UNPROVEN_BACKOFF",
@@ -793,6 +808,8 @@ __all__ = [
     "CircuitBreakerViolation",
     "FallbackReport",
     "FallbackViolation",
+    "InboundRateReport",
+    "InboundRateViolation",
     "ReliabilityReport",
     "ReliabilityViolation",
     "RetryReport",
@@ -836,9 +853,13 @@ __all__ = [
     "ResourceContentionReport",
     "ResourceContentionViolation",
     "SYS_DUPLICATE_PORT",
+    "SYS_MISSING_OUTBOUND_RATE",
     "SYS_OVERLAPPING_PATH",
     "SYS_SHARED_PIPE",
     "SYS_SHARED_STORE_WRITE",
+    "SYS_UNCONSTRAINED_DESTINATION",
+    "OutboundDestinationReport",
+    "OutboundDestinationViolation",
     "SecretExpansion",
     "SecretSpec",
     "SelfConformReport",
@@ -875,6 +896,8 @@ __all__ = [
     "check_process_bounds_obligations",
     "check_supply_chain_boot_obligations",
     "check_observability_obligations",
+    "check_outbound_destination",
+    "check_outbound_rate",
     "capability_ratchet_violations",
     "check_capability_completeness",
     "check_capability_conformance",
@@ -894,6 +917,7 @@ __all__ = [
     "check_regulation_discharge",
     "check_circuit_breaker_obligations",
     "check_fallback_obligations",
+    "check_inbound_rate",
     "check_reliability_health",
     "check_reliability_timeouts",
     "check_retry_obligations",

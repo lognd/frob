@@ -156,6 +156,8 @@ _log = get_logger(__name__)
 #: _duplicate_interface_violations`) -- whether it belongs in this set is
 #: pre-existing, out of T-1870's scope (this ticket only removes SYS104),
 #: and not evaluated here.
+# frob:ticket T-4112
+# frob:ticket T-4113
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
@@ -169,6 +171,9 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "SYS203",
         "REL200",
         "REL201",
+        "REL303",
+        "SYS114",
+        "SYS115",
         "REL220",
         "REL221",
         "REL222",

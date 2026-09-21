@@ -199,9 +199,8 @@
       "ticket": "T-1628"
     },
     "stratamod::fs.read": {
-      "accepted_count": 12,
-      "reason": "T-4512: src/frob/strata/_unity_asmdef.py's .asmdef assembly-boundary parsing adds one new stratamod fs.read via-list site (reading .asmdef JSON files as strata component boundaries); bumping the ceiling 11 -> 12, one new site.",
-      "ticket": "T-4512"
+      "accepted_count": 13,
+      "reason": "branch-own via addition auto-accept (T-4112)"
     },
     "stratamod::fs.write": {
       "accepted_count": 7,
@@ -278,9 +277,8 @@
       "ticket": "T-2488"
     },
     "testsuite::net.connect": {
-      "accepted_count": 4,
-      "reason": "T-4145: tests/test_refs_gate.py newly declares net.connect on testsuite (3 -> 4) for its TestGithubConventionExempt fixtures, which write literal GitHub template filenames (feature_request.yml, PULL_REQUEST_TEMPLATE.md) into synthetic tmp_path fixture files -- a 'request' substring needle match, not a real network call, the same fixture-literal declaration shape T-3593's own entry above documents.",
-      "ticket": "T-4145"
+      "accepted_count": 6,
+      "reason": "branch-own via addition auto-accept (T-4112)"
     },
     "testsuite::process-control": {
       "accepted_count": 2,

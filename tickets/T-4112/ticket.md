@@ -2,7 +2,7 @@
 id: T-4112
 title: 'H3-2: an unauthenticated route writing to a carries-bearing store needs a
   declared inbound rate, not just retention'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-06'

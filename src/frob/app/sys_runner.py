@@ -74,11 +74,15 @@ from frob.strata import (
     Module,
     PlannedTicket,
     ReliabilityReport,
+    ReliabilityViolation,
     ResourceContentionReport,
     SelfConformReport,
     bind_code,
     build_facts,
+    check_inbound_rate,
     check_mode_conformance,
+    check_outbound_destination,
+    check_outbound_rate,
     check_reliability_health,
     check_reliability_timeouts,
     check_resource_contention,
@@ -751,14 +755,21 @@ def _log_reliability_violations(report: ReliabilityReport) -> None:
 
 # frob:ticket T-0640
 # frob:ticket T-0644
+# frob:ticket T-4112
+# frob:ticket T-4113
 def _print_reliability_report(report: ReliabilityReport) -> None:
     """Print `frob sys audit`'s REL2xx reliability summary (T-0640 wiring
     `check_reliability_timeouts` into production, mirroring T-0724's
     contention wiring; T-0644 adds `check_reliability_health`'s findings
-    into the SAME combined report `_run_audit` builds): every REL200
-    (missing timeout)/REL201 (unproven timeout)/REL210 (missing health)/
-    REL211 (unproven health) violation, one per line, matching
-    `_print_contention_report`'s CI-parseable style."""
+    into the SAME combined report `_run_audit` builds; T-4112 folds
+    `check_inbound_rate`'s REL303 findings into it too, module docstring
+    on that call site; T-4113 folds `check_outbound_destination`'s SYS114
+    and `check_outbound_rate`'s SYS115 findings in the same way): every
+    REL200 (missing timeout)/REL201 (unproven timeout)/REL210 (missing
+    health)/REL211 (unproven health)/REL303 (missing inbound rate)/SYS114
+    (unconstrained outbound destination)/SYS115 (missing outbound rate)
+    violation, one per line, matching `_print_contention_report`'s
+    CI-parseable style."""
     _log_waived_reliability(report)
     if not report.violations:
         _log_reliability_proved(report)
@@ -868,6 +879,91 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
     return audited.danger_ok, selfconform.danger_ok
 
 
+# frob:ticket T-4112
+# frob:ticket T-4113
+def _as_reliability(violations) -> tuple[ReliabilityViolation, ...]:
+    """Re-shape REL303/SYS114/SYS115 findings (which mirror
+    `ReliabilityViolation`'s (rule, node, sub_target, detail) shape by
+    construction) into the combined reliability report's own type."""
+    return tuple(
+        ReliabilityViolation(
+            rule=v.rule, node=v.node, sub_target=v.sub_target, detail=v.detail
+        )
+        for v in violations
+    )
+
+
+# frob:ticket T-4112
+# frob:ticket T-4113
+def _rate_and_destination_findings(
+    model, root: Path
+) -> tuple[tuple[ReliabilityViolation, ...], tuple[ReliabilityViolation, ...]]:
+    """`frob sys audit`'s REL303 inbound-rate (T-4112) plus SYS114/SYS115
+    outbound destination/rate (T-4113) legs, folded into the SAME combined
+    report `_print_reliability_report` already prints -- one printer, no
+    new REL-family report/printer pair per single-rule module. Returns
+    (violations, waived); a loader error exits nonzero like every other
+    audit leg. Split out of `_run_audit` for ARCH001."""
+    inbound_rate = check_inbound_rate(model)
+    if inbound_rate.is_err:
+        _log.error("sys audit: inbound rate: %s", inbound_rate.danger_err)
+        sys.exit(1)
+    outbound_destination = check_outbound_destination(model, root)
+    if outbound_destination.is_err:
+        _log.error(
+            "sys audit: outbound destination: %s", outbound_destination.danger_err
+        )
+        sys.exit(1)
+    outbound_rate = check_outbound_rate(model)
+    if outbound_rate.is_err:
+        _log.error("sys audit: outbound rate: %s", outbound_rate.danger_err)
+        sys.exit(1)
+    _log.debug(
+        "sys audit: rate/destination legs: %d inbound, %d destination, %d outbound",
+        len(inbound_rate.danger_ok.violations),
+        len(outbound_destination.danger_ok.violations),
+        len(outbound_rate.danger_ok.violations),
+    )
+    violations = (
+        _as_reliability(inbound_rate.danger_ok.violations)
+        + _as_reliability(outbound_destination.danger_ok.violations)
+        + _as_reliability(outbound_rate.danger_ok.violations)
+    )
+    waived = (
+        _as_reliability(inbound_rate.danger_ok.waived)
+        + _as_reliability(outbound_destination.danger_ok.waived)
+        + _as_reliability(outbound_rate.danger_ok.waived)
+    )
+    return violations, waived
+
+
+# frob:ticket T-4112
+# frob:ticket T-4113
+def _combined_reliability_report(model, root: Path) -> ReliabilityReport:
+    """Every reliability-family leg of `frob sys audit` as ONE report:
+    REL200/REL201 timeouts (T-0640), REL210/REL211 health (T-0644), plus
+    the REL303 and SYS114/SYS115 legs `_rate_and_destination_findings`
+    folds in. A loader error exits nonzero like every other audit leg.
+    Split out of `_run_audit` for ARCH001."""
+    reliability = check_reliability_timeouts(model, root)
+    if reliability.is_err:
+        _log.error("sys audit: reliability: %s", reliability.danger_err)
+        sys.exit(1)
+    health = check_reliability_health(model, root)
+    if health.is_err:
+        _log.error("sys audit: reliability health: %s", health.danger_err)
+        sys.exit(1)
+    rate_violations, rate_waived = _rate_and_destination_findings(model, root)
+    return ReliabilityReport(
+        violations=(
+            reliability.danger_ok.violations
+            + health.danger_ok.violations
+            + rate_violations
+        ),
+        waived=(reliability.danger_ok.waived + health.danger_ok.waived + rate_waived),
+    )
+
+
 # `frob sys audit` is the CI-ready checking counterpart to `frob sys doc`'s
 # human-facing matrix rendering (T-0115): it evaluates the full three-part
 # exhaustiveness conjunction (THREAT001-003 for security/quality,
@@ -910,18 +1006,7 @@ def _run_audit(cfg: AppConfig) -> None:
     mode_conformance = check_mode_conformance(
         model, resource_module, binding.danger_ok, root
     )
-    reliability = check_reliability_timeouts(model, root)
-    if reliability.is_err:
-        _log.error("sys audit: reliability: %s", reliability.danger_err)
-        sys.exit(1)
-    health = check_reliability_health(model, root)
-    if health.is_err:
-        _log.error("sys audit: reliability health: %s", health.danger_err)
-        sys.exit(1)
-    combined_reliability = ReliabilityReport(
-        violations=reliability.danger_ok.violations + health.danger_ok.violations,
-        waived=reliability.danger_ok.waived + health.danger_ok.waived,
-    )
+    combined_reliability = _combined_reliability_report(model, root)
     _print_audit_report(report)
     _print_selfconform_report(selfconform)
     _print_contention_report(contention)

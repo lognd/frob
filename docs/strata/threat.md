@@ -495,6 +495,55 @@ EXPLICITLY ZERO (frob models design/ticket/code text, not personal data)
 as a checked assertion (zero `pii=` attrs on every node, `evaluate_pii`
 clean) rather than letting the zero case hold silently by omission.
 
+<a id="sys11x-outbound-destination-obligation-t-4113"></a>
+## Outbound destination + rate (SYS114/SYS115, T-4113)
+
+`_outbound_destination.py::check_outbound_destination`/`check_outbound_
+rate` join the CWE catalog's file-granular capability proof (SYS100/
+SYS101, "a file granted `net.connect` and observed connecting satisfies
+the gate regardless of WHERE it connects to") with a flow-granular one:
+SYS100/SYS101 prove a file MAY connect out; nothing before T-4113 proved
+its connection target was constrained to the specific foreign node the
+kernel model declares -- an SSRF surface invisible to any prior rule
+(F-307 H3-3).
+
+- **SYS114 unconstrained destination** -- an outbound flow (`Flow.dst`
+  foreign-trust, `_models.py::TRUST`'s bottom rung) whose granting file's
+  bound code has no proven config-field-bound host constraint
+  (`_outbound_destination.py::_CONFIG_BOUND_HOST_RE`) at its outbound
+  call site. Deny-by-default (charter law 2): absence of the proof fires,
+  regardless of whether a hardcoded literal host is ALSO present, or the
+  node has no bound code at all.
+- **SYS115 missing outbound rate** -- a narrower, cheaper lint (built
+  first, per this rule's own ticket): among one node's own outbound-to-
+  foreign flows, a flow with no `rate` while a SIBLING outbound-to-
+  foreign flow from the same node already declares one. A lone outbound-
+  to-foreign flow with no sibling proving a rate is expressible at all is
+  not flagged -- there is nothing to contrast against, so this stays a
+  narrow internal-consistency lint rather than duplicating REL200/REL201's
+  broader "every flow needs some obligation" deny-by-default shape.
+
+Both rules share ONE module (they walk the same flow population and the
+same "outbound flow to a foreign node" precondition) and both join
+`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` (a node can originate several
+outbound-to-foreign flows), so a waiver must carry the `RULE:FLOW_ID`
+sub-target convention:
+
+```
+node backend : trusted {
+    code "src/backend/**";
+    waive "SYS114:f_fetch_media" reason "constrained via egress proxy allowlist, tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
+**Fixture note, honestly disclosed**: frob makes no outbound network call
+to a foreign host as part of its own operation (its one foreign-touching
+flow, `f_registry_fetch : registry -> vet`, is the OPPOSITE direction --
+`src` foreign, modeling a response flowing in), so SYS114/SYS115's test
+coverage is entirely a synthetic `KernelModel` plus a matching stub
+source file under `tests/unit/strata/fixtures/outbound_destination/`,
+never drawn from `design/frob.strata`.
+
 ## Operational design lints (`std.lint`, T-0155)
 
 `std.pii` (above) proves a MODELING-shape obligation family (does a

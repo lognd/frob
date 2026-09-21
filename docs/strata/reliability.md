@@ -1608,6 +1608,75 @@ node legacy_bootloader_stage : trusted {
 }
 ```
 
+<a id="rel3xx-inbound-rate-obligation-t-4112"></a>
+## REL303: inbound-rate obligation (T-4112, H3-2)
+
+`_inbound_rate.py::check_inbound_rate` reads `KernelModel.nodes`/`flows`
+directly (no new kernel field, charter law 1) to find every write flow
+from an unauthenticated route into a carries-bearing store that already
+declares a retention bound but no inbound rate bound -- REL201's
+timeout-on-every-outbound-flow discipline applied in the OPPOSITE
+direction, to writes, gated on the ORIGINATING route's trust level
+instead of the flow's own declared attrs. This is a single, standalone
+REL3xx rule in its own module (not folded into `_reliability.py`'s
+REL200/REL201 pair, whose module docstring's own dispatch instruction is
+for rules sharing that pair's OUTBOUND-flow direction; this rule reads
+the opposite way).
+
+- **REL303 missing inbound rate** -- a flow whose `src` node has
+  `trust == "foreign"` (`_models.py::TRUST`'s bottom rung, this kernel's
+  one existing "no auth requirement" spelling) into a `dst` node that
+  carries a `pii=<category>.<field>` tag (`_pii.py::node_carries_pii`,
+  the SAME carries-bearing tag `_pii.py`'s PII001-004 family already
+  establishes -- no new vocabulary) with a declared `retention=<value>
+  <unit>` bound (`_compliance.py::_retention_limit`) but no declared
+  `Flow.rate`. Deny-by-default on the write path only: a `dst`-side
+  store exporting data OUTWARD is a different flow (its `src`, not
+  `dst`, would need the carries-bearing tag) and never matches this
+  rule's population, so REL303 cannot duplicate or re-fire on REL201's
+  outbound obligation.
+
+### Surface vocabulary
+
+```
+node public_route : foreign {}
+node user_store : trusted {
+    pii "identifier.email";
+    attr retention=30d;
+}
+
+flow f_collect : public_route -> user_store {
+    rate 10 req/s;   // discharges REL303
+}
+```
+
+A flow with no `rate` clause on the same shape fires REL303; a `user_
+store` reached from an `authenticated`/`trusted` route never fires it
+at all, regardless of `rate` (module scope: unauthenticated write paths
+only, per the finding's own framing).
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+Unlike REL200/REL201/REL220 and most of this family, REL303 needs no
+proof-against-code pass at all: its whole precondition (`Node.trust`,
+`carries`/`retention=` attrs, `Flow.rate`) is already typed, declarative
+kernel data (`_models.py::Flow.rate` is a real `Quantity`, not a bare
+presence marker) -- there is no honesty gap to disclose here, since the
+grammar already round-trips a real rate magnitude and unit.
+
+### Waiver channel
+
+REL303 DOES join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` (same as
+REL200/REL201): a node can originate several inbound flows, so a waive
+clause must name the specific flow via the `RULE:FLOW_ID` sub-target
+convention:
+
+```
+node public_route : foreign {
+    waive "REL303:f_collect" reason "rate limiting enforced at the edge proxy, tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
 <a id="population-projected-capacity-t-1927"></a>
 ## Population-projected capacity (`frob sys capacity`, T-1927)
 
