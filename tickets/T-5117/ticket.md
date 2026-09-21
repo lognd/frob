@@ -2,7 +2,7 @@
 id: T-5117
 title: over_broad_literal_globs/declared_source_prefixes uncached per ticket-holder
   pair (TICK008 third bottleneck)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -20,10 +20,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_models.py
 - src/frob/lang/_nodes.py
+- tests/unit/test_pyproject_data_memoization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_pyproject_data_memoization.py
+  reason: T-5117 needs a repro test for the over_broad_literal_globs/declared_source_prefixes
+    uncached-per-pair regression (BUG002 evidence requirement)
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: sprint
   old_value: null
@@ -31,11 +39,16 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_derives_package_prefix_for_a_differently_named_project
+- tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_this_repos_own_src_frob_globs_are_unchanged
+- tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo::test_scales_across_many_candidates_and_leases
 designated_repro_test: null
 acceptance:
 - text: test_real_repo_ledger_is_tick008_clean completes well within its Windows CI
     timeout with T-5036 and T-5075 also applied
-  evidence: []
+  evidence:
+  - tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_derives_package_prefix_for_a_differently_named_project
 threat: null
 component: null
 anchor: false
