@@ -94,7 +94,7 @@ acceptance_amendments:
   new_text: null
   reason: explore_runner.py removed from T-5135's scope due to a live cross-worktree
     lease collision with T-4690 (frob ticket work refused to start with it in scope);
-    the xref/map artifact-cache fix is filed separately as T-draft-4ae93df2
+    the xref/map artifact-cache fix is filed separately as T-5201
   actor: logan
   at: '2026-09-21'
 threat: null
