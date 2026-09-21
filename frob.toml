@@ -365,6 +365,12 @@ reason = "ticket attachment referenced only via tickets-archive.md's own YAML at
 path = "tickets/attachments/T-1433/03-untitled.txt"
 reason = "ticket attachment referenced only via tickets-archive.md's own YAML attachments: path: field (T-1433), a syntactic position REF001's auto-scan does not treat as a reference"
 
+# frob:ticket T-4693
+# frob:doc docs/modules/gates.md#docarch002
+[gates.docs]
+comment_run_max = 12
+docstring_max = 20
+
 [gates.severity]
 # frob-zone-start gates.severity T-1002
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public
@@ -1038,8 +1044,12 @@ language = "rust"
 [gates_schema]
 ratchet_known_keys = "frob.gates._gates_schema:GATES_RATCHET_KNOWN_KEYS"
 
+# T-4693: DOCARCH002 opts in -- ships WARN with today's count baselined
+# via `frob pool snapshot DOCARCH002`; any new over-cap run or bad
+# citation reports ERROR immediately. Promotion to always-ERROR is
+# T-4772, once the eight migration clusters land.
 [gates.ratchet]
-rules = []
+rules = ["DOCARCH002"]
 
 # T-2390 epic child (T-2430): known_keys declares this table's own
 # known-key set for PROFILESCHEMA001 (an unknown/misspelled key in

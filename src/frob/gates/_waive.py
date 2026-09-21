@@ -427,6 +427,9 @@ _KNOWN_GATE_RULES = frozenset(
         # instead of frob:waive reasons; see frob.gates.
         # _docstring_archaeology.
         "DOCARCH001",
+        # T-4693: content-blind comment-run / docstring length structural
+        # rule, ratchet-pooled; see frob.gates._docarch_structural.
+        "DOCARCH002",
         "DEC001",
         "DEC002",
         "REL001",
