@@ -2,7 +2,7 @@
 id: T-5123
 title: landing must reap its own branch and worktree and never dev-sync a done ticket's
   worktree
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -19,10 +19,19 @@ scope:
 - src/frob/tickets/_unlanded.py
 - src/frob/tickets/_land_finalize.py
 - tests/ticket_land_suite/test_land_reaps_worktree.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-5123: the T-1720/T-2173 auto-sync (rebase/merge dev onto the worktree
+    branch after a land) is the ''never dev-sync a done ticket''s worktree'' half
+    of this ticket''s own plan, and lives only here'
+  actor: logan
+  at: '2026-09-20'
 triage_changes:
 - field: sprint
   old_value: null
