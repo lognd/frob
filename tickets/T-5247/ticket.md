@@ -1,5 +1,5 @@
 ---
-id: T-draft-0a4d0959
+id: T-5247
 title: Two more fixture-drift test doubles missing forwarded kwargs (files, whole_land)
 state: queued
 kind: bug
@@ -33,6 +33,11 @@ body_changes:
   at: '2026-09-21'
   old_length: 1092
   new_length: 1556
+lease_force_releases:
+- reason: promote before land (T-5166)
+  staleness_reason: null
+  actor: /home/logan/projects/frob
+  at: '2026-09-21'
 designated_repro_test: null
 threat: null
 component: null
