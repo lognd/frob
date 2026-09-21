@@ -1,7 +1,7 @@
 ---
 id: T-4030
 title: 'policy.pattern: dangerouslySetInnerHTML with direct JSON.stringify'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -10,7 +10,7 @@ blocked_by:
 - T-4013
 parent: T-4025
 tier: ticket
-sprint: v1.1.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -21,24 +21,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.538.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
-- field: sprint
-  old_value: v0.538.0
-  new_value: v1.1.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-20'
+evidence:
+- tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_fires_on_direct_json_stringify
+- tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_stays_quiet_on_sanitized_value
 designated_repro_test: null
 acceptance:
 - text: given a JSX dangerouslySetInnerHTML attribute whose value is a direct JSON.stringify(...)
     call expression, when the new policy.pattern runs, then it fires
-  evidence: []
+  evidence:
+  - tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_fires_on_direct_json_stringify
+  - tests/test_policy.py::TestDangerousInnerHtmlJsonStringify::test_stays_quiet_on_sanitized_value
 - text: given the pattern ships, when it lands, then it lands after T-4013's fnmatch
     glob fix, not before
   evidence: []

@@ -11,6 +11,11 @@ analysis is out of scope for 0.1.0.
 
 `load_policy` eagerly compiles every `pattern` query so a bad query is a
 load-time `Err(BadQuery)`, never a silent no-op at scan time.
+
+T-3986: a `pattern` query that COMPILES but matches zero nodes across its
+whole declared glob set at scan time (a config error -- wrong language,
+over-narrow glob, or a query shape that never occurs) is POL000, distinct
+from a clean pass where the query legitimately matches nothing wrong.
 """
 
 from __future__ import annotations
@@ -38,8 +43,7 @@ _log = get_logger(__name__)
 
 # frob:ticket T-4013
 # frob:tests \
-# tests/test_policy.py::TestRules.test_glob_double_star_matches_file_directly_under_pre\
-# fix
+# tests/test_policy.py::TestRules.test_glob_double_star_matches_file_directly_under_prefix  # noqa: E501
 # frob:tests \
 # tests/test_policy.py::TestRules.test_glob_stays_quiet_outside_matched_directory
 @lru_cache(maxsize=None)
@@ -59,8 +63,7 @@ def _compiled_glob(pattern: str) -> pathspec.PathSpec:
 
 # frob:ticket T-4280
 # frob:tests \
-# tests/test_policy.py::TestRules.test_backslash_joined_path_matches_a_posix_glob_on_ev\
-# ery_platform
+# tests/test_policy.py::TestRules.test_backslash_joined_path_matches_a_posix_glob_on_every_platform  # noqa: E501
 def _files_under(root: Path, snapshot: GraphSnapshot, pattern: str) -> tuple[str, ...]:
     """Repo-relative paths in `snapshot.file_hashes` matching glob `pattern`
     under gitwildmatch semantics (T-4013: not `fnmatch`, which lacks a
@@ -322,25 +325,45 @@ def _compile_pattern_query(rule: PolicyRule, query_text: str) -> tuple | None:
     return parser, query
 
 
-def _file_pattern_violations(
+# frob:ticket T-3986
+# frob:tests tests/test_policy.py::TestPol000.test_pol000_fires_on_zero_match_pattern
+# frob:tests \
+# tests/test_policy.py::TestPol000.test_pol000_stays_quiet_when_underscore_capture_only_matches  # noqa: E501
+def _file_pattern_matches(
     rule: PolicyRule,
     rel_path: str,
     root: Path,
     parser,
     query,  # noqa: ANN001
-) -> list[Violation]:
-    """Every match of `query` against one file, as `Violation`s for `rule`."""
+) -> tuple[list[Violation], int]:
+    """`(violations, match_count)` for `query` against one file.
+
+    T-3986: `match_count` is EVERY captured node, across every capture name
+    in `query` (the subject-count primitive, T-3985, applied to
+    `policy.pattern`) -- it is the "did this query visit anything at all in
+    this file" signal. `violations` is the (possibly smaller) subset: a
+    capture named with a leading underscore (the tree-sitter convention for
+    "structural anchor, not the reported node") is counted toward
+    `match_count` but never becomes a `Violation`, so a query can legitimately
+    match real structure yet report zero violations -- distinct from a query
+    that never matches anything in its whole glob set (POL000, see
+    `_pattern_violations`).
+    """
     try:
         source = (root / rel_path).read_bytes()
     except OSError as exc:
         _log.warning("policy: could not read %s: %s", rel_path, exc)
-        return []
+        return [], 0
     tree = parser.parse(source)
     cursor = tree_sitter.QueryCursor(query)
     captures = cursor.captures(tree.root_node)
     violations: list[Violation] = []
-    for nodes in captures.values():
+    match_count = 0
+    for capture_name, nodes in captures.items():
         for node in nodes:
+            match_count += 1
+            if capture_name.startswith("_"):
+                continue
             line = node.start_point[0] + 1
             _log.debug("policy: %s matched at %s:%d", rule.id, rel_path, line)
             violations.append(
@@ -356,13 +379,41 @@ def _file_pattern_violations(
                     ),
                 )
             )
-    return violations
+    return violations, match_count
 
 
+# frob:ticket T-3986
+def _pol000_zero_match_violation(rule: PolicyRule) -> Violation:
+    """POL000: `rule`'s query matched zero nodes across its whole declared
+    glob set -- a config error (malformed query, wrong `language`, or an
+    over-narrow `globs`), distinct from a clean pass over real matches."""
+    globs_desc = ", ".join(rule.globs) if rule.globs else "**/* (no globs declared)"
+    _log.error(
+        "policy: POL000 %s matched zero nodes across glob set [%s]",
+        rule.id,
+        globs_desc,
+    )
+    return Violation(
+        rule="POL000",
+        severity=Severity.ERROR,
+        file="frob.toml",
+        line=0,
+        message=(
+            f"POL000: policy.pattern {rule.id!r} matched zero nodes across its "
+            f"declared glob set [{globs_desc}] -- this is a config error (a "
+            f"malformed query, wrong language, or over-narrow glob), not a "
+            f"clean pass; fix the pattern or narrow its scope deliberately"
+        ),
+    )
+
+
+# frob:ticket T-3986
 def _pattern_violations(
     rule: PolicyRule, root: Path, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
-    """Every tree-sitter query match in a `globs`-matched, `language`-typed file."""
+    """Every tree-sitter query match in a `globs`-matched, `language`-typed
+    file, plus POL000 (T-3986) when an enforcing pattern matches zero nodes
+    across its whole glob set."""
     query_text = _resolve_query_text(root, rule)
     if query_text is None:
         return ()
@@ -372,8 +423,17 @@ def _pattern_violations(
     parser, query = compiled
 
     violations: list[Violation] = []
+    total_match_count = 0
     for rel_path in _candidate_files(root, snapshot, rule.globs or ("**/*",)):
-        violations.extend(_file_pattern_violations(rule, rel_path, root, parser, query))
+        file_violations, file_match_count = _file_pattern_matches(
+            rule, rel_path, root, parser, query
+        )
+        violations.extend(file_violations)
+        total_match_count += file_match_count
+
+    enforcing = rule.severity != "warn"
+    if enforcing and total_match_count == 0:
+        violations.append(_pol000_zero_match_violation(rule))
     return tuple(violations)
 
 

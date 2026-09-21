@@ -1,7 +1,7 @@
 ---
 id: T-3986
 title: 'POL000: policy.pattern matching zero nodes is a config error'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-09-06'
@@ -10,7 +10,7 @@ blocked_by:
 - T-3985
 parent: T-3984
 tier: ticket
-sprint: v0.536.0
+sprint: null
 runs_last: false
 milestone: null
 runs_last_parallel_safe: false
@@ -21,28 +21,26 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-triage_changes:
-- field: sprint
-  old_value: null
-  new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
-- field: sprint
-  old_value: v0.536.0
-  new_value: v0.536.0
-  reason: sprint set via `frob ticket sprint assign`
-  actor: logan
-  at: '2026-09-19'
+evidence:
+- tests/test_policy.py::TestPol000::test_pol000_stays_quiet_on_real_match
+- tests/test_policy.py::TestPol000::test_pol000_stays_quiet_when_underscore_capture_only_matches
+- tests/test_policy.py::TestPol000::test_pol000_stays_quiet_for_warn_severity
+- tests/test_policy.py::TestPol000::test_pol000_fires_on_zero_match_pattern
 designated_repro_test: null
 acceptance:
 - text: given a [[policy.pattern]] entry whose query matches zero nodes across its
     full declared glob set, when frob check runs, then POL000 fires distinct from
     a clean pass
-  evidence: []
+  evidence:
+  - tests/test_policy.py::TestPol000::test_pol000_stays_quiet_on_real_match
+  - tests/test_policy.py::TestPol000::test_pol000_stays_quiet_when_underscore_capture_only_matches
+  - tests/test_policy.py::TestPol000::test_pol000_stays_quiet_for_warn_severity
+  - tests/test_policy.py::TestPol000::test_pol000_fires_on_zero_match_pattern
 - text: given a pattern that matches at least one node with zero violations, when
     frob check runs, then POL000 stays quiet
-  evidence: []
+  evidence:
+  - tests/test_policy.py::TestPol000::test_pol000_stays_quiet_on_real_match
+  - tests/test_policy.py::TestPol000::test_pol000_stays_quiet_when_underscore_capture_only_matches
 threat: null
 component: null
 anchor: false
