@@ -121,13 +121,23 @@ acceptance:
     frob check --only dup runs on it, then it reports that duplicate -- the same finding
     frob dup reported before the fold (golden comparison, not a no-crash assertion)
   evidence: []
-- text: Given frob check --list-stages, when it runs, then it prints exactly the folded
-    stages (dup arch cycle bind perf coverage narrative exports) and every printed
-    name is accepted by frob check --only; pool, profile, debt, deprecated and parse
-    are absent from that list because none of them is a check stage; mutate is ALSO
-    absent -- it requires a mandatory single-file argument (mutate one file, report
-    which mutants survived) that no other --only stage takes, so it stays a top-level
-    frob mutate <file> verb, undeprecated, not folded
+- text: 'Given frob check --list-stages, when it runs, then it prints exactly the
+    folded stages (dup arch cycle bind narrative exports) and every printed name is
+    accepted by frob check --only; pool, profile, debt, deprecated and parse are absent
+    because none of them is a check stage. mutate, coverage and perf are ALSO absent,
+    each for a measured reason (2026-09-21, while implementing T-4692): frob mutate
+    requires a mandatory single-file argument no --only stage takes; frob coverage''s
+    own docstring is ''refresh coverage.xml... via native_coverage_refresh'' -- a
+    WRITE operation, not a check, genuinely distinct from the read-only COV001-008
+    gate --only coverage already names; frob perf''s profile/collect subcommands likewise
+    WRITE telemetry/ratchet artifacts (frob perf collect is PERF009''s own data producer)
+    that the read-only PERF001-009 perf_gate --only perf already names only READS
+    -- shimming any of the three flat verbs to --only would silently stop them doing
+    the write their callers (including frob check''s own PERF009 rule, T-0712''s regression
+    ratchet) depend on. All three stay top-level verbs, undeprecated, not folded --
+    the same reasoning the ticket''s own pool/profile carve-out already applies, generalized
+    to every verb this ticket''s initial fold list named that turns out to mutate
+    state'
   evidence: []
 - text: Given the exports verb is split, when this ticket closes, then its CHECK half
     runs as frob check --only exports and its GENERATE half (generate __init__.py
@@ -186,6 +196,40 @@ acceptance_amendments:
     stage shape every other folded name shares; the ticket''s own pool/profile carve-out
     (''your call with a reason'') is the closest precedent and is applied here by
     the same logic'
+  actor: logan
+  at: '2026-09-21'
+- op: replace
+  index: 2
+  old_text: Given frob check --list-stages, when it runs, then it prints exactly the
+    folded stages (dup arch cycle bind perf coverage narrative exports) and every
+    printed name is accepted by frob check --only; pool, profile, debt, deprecated
+    and parse are absent from that list because none of them is a check stage; mutate
+    is ALSO absent -- it requires a mandatory single-file argument (mutate one file,
+    report which mutants survived) that no other --only stage takes, so it stays a
+    top-level frob mutate <file> verb, undeprecated, not folded
+  new_text: 'Given frob check --list-stages, when it runs, then it prints exactly
+    the folded stages (dup arch cycle bind narrative exports) and every printed name
+    is accepted by frob check --only; pool, profile, debt, deprecated and parse are
+    absent because none of them is a check stage. mutate, coverage and perf are ALSO
+    absent, each for a measured reason (2026-09-21, while implementing T-4692): frob
+    mutate requires a mandatory single-file argument no --only stage takes; frob coverage''s
+    own docstring is ''refresh coverage.xml... via native_coverage_refresh'' -- a
+    WRITE operation, not a check, genuinely distinct from the read-only COV001-008
+    gate --only coverage already names; frob perf''s profile/collect subcommands likewise
+    WRITE telemetry/ratchet artifacts (frob perf collect is PERF009''s own data producer)
+    that the read-only PERF001-009 perf_gate --only perf already names only READS
+    -- shimming any of the three flat verbs to --only would silently stop them doing
+    the write their callers (including frob check''s own PERF009 rule, T-0712''s regression
+    ratchet) depend on. All three stay top-level verbs, undeprecated, not folded --
+    the same reasoning the ticket''s own pool/profile carve-out already applies, generalized
+    to every verb this ticket''s initial fold list named that turns out to mutate
+    state'
+  reason: 'measured 2026-09-21: coverage_gate/perf_gate (frob.gates) are read-only
+    findings gates genuinely distinct from frob coverage/frob perf''s own write-shaped
+    implementations (native_coverage_refresh writes coverage.xml; frob perf collect
+    writes the PERF009 ratchet artifact) -- folding the verb into --only would silently
+    break the write path every consumer of the verb (including check''s own PERF009
+    rule) depends on'
   actor: logan
   at: '2026-09-21'
 threat: null
