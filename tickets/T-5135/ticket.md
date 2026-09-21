@@ -20,7 +20,6 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_unlanded.py
 - src/frob/lang/__init__.py
-- src/frob/app/explore_runner.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: true
@@ -28,6 +27,13 @@ scope_breadth_ack_reason: one audit, five independent hot-path fixes; split into
   tickets at planning if leases collide
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/explore_runner.py
+  reason: explore_runner.py locked by live T-4690 lease; drop from scope, xref/map
+    fix filed separately
+  actor: logan
+  at: '2026-09-21'
 triage_changes:
 - field: milestone
   old_value: null
