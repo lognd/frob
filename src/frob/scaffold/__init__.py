@@ -34,6 +34,7 @@ from frob.scaffold._pool import (
     warm_worktree,
 )
 from frob.scaffold._skills_sync import SkillsSyncReport, sync_skills
+from frob.scaffold._unity_project import render_unity_project
 from frob.scaffold.project import (
     ScaffoldError,
     install_worktree_lease_hook,
@@ -56,6 +57,7 @@ __all__ = [
     "read_manifest",
     "refill_pool_async",
     "render_project",
+    "render_unity_project",
     "scaffold_conformance_status",
     "sync_skills",
     "warm_pool",

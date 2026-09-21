@@ -46,6 +46,7 @@ from frob.testing._coverage_wait import (
     shared_state_dir,
     tree_digest,
 )
+from frob.testing._dotnet_runner import run_dotnet_tests
 from frob.testing._incremental_coverage import python_coverage_targets
 from frob.testing._models import (
     CollectedTests,
@@ -87,6 +88,12 @@ from frob.testing._stackdump import (
     install_stackdump_handler,
     write_stack_dump,
 )
+from frob.testing._unity_batchmode import (
+    UnityBatchmodeError,
+    parse_unity_batchmode_xml,
+    resolve_unity_editor,
+    run_unity_batchmode,
+)
 
 __all__ = [
     "CollectedTests",
@@ -107,6 +114,7 @@ __all__ = [
     "StabilityEntry",
     "TestRunReport",
     "TestingError",
+    "UnityBatchmodeError",
     "capture_python_outcomes",
     "collect_cpp_tests",
     "collect_csharp_tests",
@@ -132,6 +140,7 @@ __all__ = [
     "load_stability",
     "native_coverage_refresh",
     "parse_csharp",
+    "parse_unity_batchmode_xml",
     "python_collection_failure_detail",
     "python_collection_missing_natives",
     "python_coverage_targets",
@@ -140,8 +149,11 @@ __all__ = [
     "quarantine_alarms",
     "quarantined_node_ids",
     "record_outcomes",
+    "resolve_unity_editor",
     "run_coverage_wait",
+    "run_dotnet_tests",
     "run_selected",
+    "run_unity_batchmode",
     "select_tests",
     "shared_state_dir",
     "track_python_stability",

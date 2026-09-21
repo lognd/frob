@@ -1,7 +1,7 @@
 ---
 id: T-4991
 title: Export missing Unity/dotnet runner symbols from scaffold and testing packages
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -27,10 +27,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 acceptance:
 - text: test_all_nine_packages_report_zero_missing_symbols passes
-  evidence: []
+  evidence:
+  - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 threat: null
 component: null
 anchor: false
