@@ -10,7 +10,7 @@ kind: feature
 origin: human
 created: '2026-09-19'
 priority: high
-parent: null
+parent: T-4654
 tier: story
 sprint: v0.535.0
 runs_last: false
@@ -180,6 +180,12 @@ triage_changes:
   new_value: story
   reason: 'owner decision 2026-09-21: the land queue as default path is a story of
     the land kernel (T-4654), not one ticket'
+  actor: logan
+  at: '2026-09-21'
+- field: parent
+  old_value: null
+  new_value: T-4654
+  reason: land-queue-as-default is the LAND concern's throughput story
   actor: logan
   at: '2026-09-21'
 designated_repro_test: null
