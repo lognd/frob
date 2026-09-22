@@ -2,7 +2,7 @@
 id: T-4692
 title: 'Gate stages are not verbs: fold dup arch cycle bind perf mutate coverage parse
   pool profile narrative debt deprecated into frob check --only'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -325,3 +325,6 @@ this ticket's scope -- they belong to T-4698 and T-4695 respectively. The
 declared scope on the ledger still lists them from the original filing; the
 implementer must run `frob ticket scope T-4692 --remove` for those three (and
 `--add scaffold_runner.py`) before starting, or hand them back at close.
+
+## Failure log
+- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-4692), requeued by frob check
