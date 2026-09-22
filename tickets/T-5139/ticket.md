@@ -21,6 +21,7 @@ scope:
 - src/frob/vet/_scan.py
 - docs/modules/check.md
 - docs/modules/vet.md
+- docs/guides/install.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: one registry consumed by every adapter plus the check and
   land summary that renders it
@@ -45,6 +46,12 @@ scope_changes:
     src/frob/vet/_osv.py, src/frob/vet/_scan.py, docs) this ticket CAN land now; the
     frob check/frob ticket land UNMEASURED summary wiring is filed as a follow-up
     once T-4692/T-5135 close'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/guides/install.md
+  reason: doctor.py's existing frob:doc public-api anchors point at docs/guides/install.md;
+    new tool-registry symbols there need the same doc home
   actor: logan
   at: '2026-09-21'
 triage_changes:
