@@ -2,7 +2,7 @@
 id: T-5228
 title: 'macOS CI aborts at 2400s again (exit 134): different from T-4641''s tick008
   hang, no per-test timeout preceding it'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -28,6 +28,8 @@ scope_changes:
     siblings live in
   actor: logan
   at: '2026-09-21'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_stall_detected_no_crash_fires_without_a_crash
 designated_repro_test: null
 threat: null
 component: null

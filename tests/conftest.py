@@ -269,14 +269,11 @@ _HEAVY_SUBPROCESS_MARKER = "heavy_subprocess"
 # frob:ticket T-2099
 # frob:ticket T-4329
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy\
-# _tests_share_one_xdist_group
+# tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subproc\
-# ess_marker_groups_per_file
+# tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subprocess_marker_groups_per_file  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_fixture_use_joi\
-# ns_the_heavy_group_without_a_name_listing
+# tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_fixture_use_joins_the_heavy_group_without_a_name_listing  # noqa: E501
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
@@ -1096,6 +1093,30 @@ worker crash before the watchdog declares a stall and aborts. Run
 180s is a deliberately small default so a real stall costs minutes, not a
 whole job's budget -- env-overridable for a slower CI image or a test."""
 
+_STALL_ABORT_SECONDS_NO_CRASH = float(
+    os.environ.get("FROB_XDIST_STALL_ABORT_SECONDS_NO_CRASH", "1500")
+)
+"""T-5228: `_STALL_ABORT_SECONDS` above only ever fires when a worker
+CRASH was also recorded (`_stall_detected`'s own `has_crash` gate) --
+by design, so a merely-slow-but-progressing suite never self-aborts.
+That leaves a real gap this ticket's own CI evidence hit twice on
+macOS (runs 35510697497 and 35654510898): a worker wedged in NATIVE
+code (a blocking syscall, a held OS-level lock, or a PyO3 extension
+call that never returns control to the interpreter) never crashes and
+never lets pytest-timeout's own thread-method watcher thread run
+either -- there is no per-test SUITE-RESULT-FAILED line, no worker
+death, nothing but silence until the JOB-level 2400s SIGABRT watchdog
+(T-3250, external to this file, in `.github/workflows/ci.yml`) kills
+the whole step with no test name at all. This second, INDEPENDENT
+threshold closes that gap: it fires on the exact same no-progress
+signal (`_last_progress_ts`) with NO crash requirement, comfortably
+under the 2400s job ceiling (env-overridable -- see this constant's
+own env var for a slower CI image), so a genuine no-crash stall is
+named and killed by THIS watchdog, loudly, with the in-flight test's
+own nodeid (`_format_stalled_item_lines`, the same marker mechanism
+`_announce_stall_and_abort` already uses for the crash-gated case),
+instead of the job's outer, anonymous, minutes-later SIGABRT."""
+
 _last_progress_ts: float | None = None
 """T-3608: wall-clock time of the most recent `pytest_runtest_logreport`
 (`when==\"call\"`) the controller observed, updated by `pytest_runtest_
@@ -1120,8 +1141,7 @@ controller-only under `pytest-xdist`; `None` under plain serial pytest."""
 # pre-existing pytest_internalerror/pytest_handlecrashitem waivers already cover), not \
 # a direct in-repo call site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_requires\
-# _both_a_crash_and_a_progress_gap
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_requires_both_a_crash_and_a_progress_gap  # noqa: E501
 def _stall_detected(
     now: float, last_progress_ts: float | None, has_crash: bool, abort_seconds: float
 ) -> bool:
@@ -1139,6 +1159,28 @@ def _stall_detected(
     return (now - last_progress_ts) >= abort_seconds
 
 
+# frob:ticket T-5228
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_no_crash_fires_without_a_crash  # noqa: E501
+def _stall_detected_no_crash(
+    now: float, last_progress_ts: float | None, abort_seconds: float
+) -> bool:
+    """Pure predicate (T-5228), the crash-independent sibling of
+    `_stall_detected` above: true whenever no test has completed for at
+    least `abort_seconds`, with NO `has_crash` requirement -- closes the
+    gap `_stall_detected`'s own by-design crash gate leaves open (a
+    worker wedged in native code that never crashes and never yields to
+    pytest-timeout's watcher thread either). Deliberately a SEPARATE,
+    LARGER threshold from `_STALL_ABORT_SECONDS` (not a relaxation of
+    the same one): a merely slow full-repo scan legitimately runs
+    without any completed test for a while, so this only trips at
+    `_STALL_ABORT_SECONDS_NO_CRASH`'s much longer default, comfortably
+    under the outer job-level SIGABRT budget it exists to preempt."""
+    if last_progress_ts is None:
+        return False
+    return (now - last_progress_ts) >= abort_seconds
+
+
 # frob:ticket T-3608
 # frob:waive WIRE001 reason="genuinely wired -- called only by \
 # _announce_stall_and_abort below, itself reached exclusively via \
@@ -1146,8 +1188,7 @@ def _stall_detected(
 # own _stall_detected WIRE001 waiver above already covers, not a direct in-repo call \
 # site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item_lin\
-# es_reads_surviving_markers
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item_lines_reads_surviving_markers  # noqa: E501
 def _format_stalled_item_lines(marker_dir: Path, now: float) -> list[str]:
     """T-3608: one `STALL-CRASH-REPORT:` line per T-3516 per-worker marker
     file still present in `marker_dir` at the moment a stall is declared.
@@ -1186,11 +1227,9 @@ def _format_stalled_item_lines(marker_dir: Path, now: float) -> list[str]:
 # threading.Thread(target=...), same gap this file's own _stall_detected WIRE001 \
 # waiver above already covers, not a direct in-repo call site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_reports_real_co\
-# unts_and_failing_ids_from_terminalreporter_stats
+# tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_reports_real_counts_and_failing_ids_from_terminalreporter_stats  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_falls_back_to_z\
-# ero_counts_when_no_reporter_is_registered
+# tests/unit/test_conftest_stackdump.py::TestStallAbortResultLines.test_falls_back_to_zero_counts_when_no_reporter_is_registered  # noqa: E501
 def _stall_abort_result_and_failed_lines(
     config: pytest.Config,
 ) -> tuple[str, list[str]]:
@@ -1269,7 +1308,9 @@ def _stall_abort_result_and_failed_lines(
 # below, itself reached exclusively via threading.Thread(target=...), same gap this \
 # file's own _stall_detected WIRE001 waiver above already covers, not a direct in-repo \
 # call site" follow_up="T-3381"
-def _announce_stall_and_abort(config: pytest.Config, now: float) -> None:
+def _announce_stall_and_abort(
+    config: pytest.Config, now: float, *, no_crash: bool = False
+) -> None:
     """T-3608: builds and prints the loud stall report (a `SUITE-RESULT:
     STALL-DETECTED` line, one `STALL-CRASH-REPORT:` per still-in-flight
     marker, every `WORKER-CRASH-REPORT:` entry recorded so far, and
@@ -1282,12 +1323,29 @@ def _announce_stall_and_abort(config: pytest.Config, now: float) -> None:
     own `remote.py:run_one_test -> get` -- there is no reachable graceful
     path out of that, only an external kill, which is exactly the ~20
     minute CI-budget kill this replaces with a prompt, self-inflicted,
-    and NAMED one."""
-    lines = [
-        f"SUITE-RESULT: STALL-DETECTED no test has completed for "
-        f">={_STALL_ABORT_SECONDS:g}s after a worker crash -- aborting now "
-        f"instead of waiting for an external budget to kill this job (T-3608)",
-    ]
+    and NAMED one.
+
+    T-5228: `no_crash=True` names the OTHER caller (`_stall_detected_
+    no_crash`, no worker crash on record) so the printed line names the
+    right threshold/condition instead of always claiming "after a worker
+    crash" -- the `STALL-CRASH-REPORT:`/`WORKER-CRASH-REPORT:` lines
+    below still fire the same way either way (an in-flight marker names
+    the wedged test whether or not anything actually crashed)."""
+    if no_crash:
+        lines = [
+            f"SUITE-RESULT: STALL-DETECTED no test has completed for "
+            f">={_STALL_ABORT_SECONDS_NO_CRASH:g}s with NO worker crash on "
+            f"record -- a worker is likely wedged in native/blocking code "
+            f"that never yields to pytest-timeout either; aborting now, "
+            f"named, instead of waiting for the external job-level budget "
+            f"to kill this job anonymously (T-5228)",
+        ]
+    else:
+        lines = [
+            f"SUITE-RESULT: STALL-DETECTED no test has completed for "
+            f">={_STALL_ABORT_SECONDS:g}s after a worker crash -- aborting now "
+            f"instead of waiting for an external budget to kill this job (T-3608)",
+        ]
     lines.extend(_format_stalled_item_lines(_XDIST_CRASH_MARKER_DIR, now))
     lines.extend(_worker_crash_entries)
     result_line, failed_lines = _stall_abort_result_and_failed_lines(config)
@@ -1315,7 +1373,14 @@ def _run_stall_watchdog(config: pytest.Config, stop_event: "threading.Event") ->
     `_announce_stall_and_abort` and returns (the process is gone by then).
     `stop_event` is set by `pytest_sessionfinish` on a normal end-of-run so
     this loop exits quietly instead of polling a session that no longer
-    exists."""
+    exists.
+
+    T-5228: ALSO checks `_stall_detected_no_crash` every pass -- a
+    second, independent, crash-free stall condition (its own, much
+    larger default threshold, `_STALL_ABORT_SECONDS_NO_CRASH`) that
+    catches a worker wedged in native/blocking code with no crash and
+    no pytest-timeout intervention either, before the outer job-level
+    budget kills the whole step anonymously."""
     import time
 
     while not stop_event.wait(_STALL_POLL_SECONDS):
@@ -1323,6 +1388,11 @@ def _run_stall_watchdog(config: pytest.Config, stop_event: "threading.Event") ->
         has_crash = bool(_worker_crash_entries) or _last_node_death_ts is not None
         if _stall_detected(now, _last_progress_ts, has_crash, _STALL_ABORT_SECONDS):
             _announce_stall_and_abort(config, now)
+            return
+        if _stall_detected_no_crash(
+            now, _last_progress_ts, _STALL_ABORT_SECONDS_NO_CRASH
+        ):
+            _announce_stall_and_abort(config, now, no_crash=True)
             return
 
 
@@ -1333,11 +1403,9 @@ def _run_stall_watchdog(config: pytest.Config, stop_event: "threading.Event") ->
 # workerfinished), name-based plugin discovery like this file's pre-existing \
 # pytest_handlecrashitem waiver, not a direct in-repo call site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_a_de\
-# ath_controller_only
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_a_death_controller_only  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_pytest_testnodedown_is_\
-# optionalhook
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_pytest_testnodedown_is_optionalhook  # noqa: E501
 @pytest.hookimpl(optionalhook=True)
 def pytest_testnodedown(node: object, error: object) -> None:
     """T-3608: records that SOME worker went down, independent of whether
@@ -1408,8 +1476,7 @@ def _xdist_crash_marker_path(worker_id: str) -> Path:
 # pre-existing pytest_internalerror/pytest_configure/pytest_sessionfinish hooks \
 # already have a waiver for), not a direct in-repo call site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logstart_writes_mar\
-# ker_only_on_worker
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logstart_writes_marker_only_on_worker  # noqa: E501
 def pytest_runtest_logstart(nodeid: str, location: object) -> None:
     """Worker-side half of T-3516's timeout-vs-OOM crash heuristic: record
     `nodeid` and the current time to this worker's own marker file just
@@ -1438,8 +1505,7 @@ def pytest_runtest_logstart(nodeid: str, location: object) -> None:
 # pre-existing pytest_internalerror waiver already covers, not a direct in-repo call \
 # site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logfinish_clears_ma\
-# rker
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logfinish_clears_marker  # noqa: E501
 def pytest_runtest_logfinish(nodeid: str, location: object) -> None:
     """Clear T-3516's per-worker marker once `nodeid` finishes normally
     (any outcome, including a plain failure) -- only a worker that dies
@@ -1498,11 +1564,9 @@ def _infer_worker_crash_cause(worker_id: str, timeout_seconds: float | None) -> 
 # file's pre-existing pytest_internalerror/ pytest_sessionfinish hooks, not a direct \
 # in-repo call site" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_rec\
-# ords_one_entry_and_marks_failed
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_records_one_entry_and_marks_failed  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_res\
-# pects_a_raised_rerun_cap
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_respects_a_raised_rerun_cap  # noqa: E501
 @pytest.hookimpl(optionalhook=True)
 def pytest_handlecrashitem(crashitem: str, report: Any, sched: Any) -> None:
     """pytest-xdist's crashed-item hook (T-3516): a worker died running
@@ -1629,14 +1693,11 @@ above."""
 # above, same controller-only-hook gap T-3516's sibling waiver on \
 # _harden_dsession_active_nodes already covers" follow_up="T-3381"
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_missing_r\
-# egistered_collection_is_absorbed_not_raised
+# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_missing_registered_collection_is_absorbed_not_raised  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healthy_n\
-# ode_still_gets_assigned_normally
+# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_healthy_node_still_gets_assigned_normally  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reentrant\
-# _remove_node_during_reschedule_does_not_raise
+# tests/unit/test_conftest_stackdump.py::TestLoadscopeSchedulerHardening.test_reentrant_remove_node_during_reschedule_does_not_raise  # noqa: E501
 def _harden_loadscope_scheduler() -> None:
     """Patch `xdist.scheduler.loadscope.LoadScopeScheduling._assign_work_unit`
     (T-4353) so a worker that vanishes between `add_node` (registered in
@@ -1786,29 +1847,21 @@ def _harden_loadscope_scheduler() -> None:
 # frob:ticket T-1673
 # frob:ticket T-3246
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_\
-# greppable_line_at_any_verbosity
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_o\
-# n_xdist_worker
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_f\
-# ailing_node_ids
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_fa\
-# iling_node_ids_with_and_n_more
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
-# essionfinish_labels_did_not_complete_runs
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_labels_did_not_complete_runs  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
-# essionfinish_marks_failing_set_incomplete_on_abort
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_marks_failing_set_incomplete_on_abort  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
-# essionfinish_names_internalerror_cause
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_names_internalerror_cause  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
-# essionfinish_completed_run_format_is_unchanged
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_completed_run_format_is_unchanged  # noqa: E501
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Print an always-visible `SUITE-RESULT:` line at the end of every run
     (T-1596), independent of pytest's own verbosity-gated terminal summary,
@@ -2028,8 +2081,7 @@ def _neutralize_inherited_color_env(
 
 # frob:ticket T-0926
 # frob:tests \
-# tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_reset_before_eac\
-# h_test_isolates_partial_parse_state
+# tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_reset_before_each_test_isolates_partial_parse_state  # noqa: E501
 @pytest.fixture(autouse=True)
 def _reset_parse_cache_before_test() -> None:
     """Clear `frob.lang`'s process-lifetime parse memo/`partial_parse_files`

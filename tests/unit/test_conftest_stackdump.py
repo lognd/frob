@@ -1053,6 +1053,19 @@ class TestStallWatchdog:
         assert module._stall_detected(100.0, 0.0, True, 180.0) is False
         assert module._stall_detected(200.0, 0.0, True, 180.0) is True
 
+    # frob:ticket T-5228
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_no_crash_fires_without_a_crash  # noqa: E501
+    def test_stall_detected_no_crash_fires_without_a_crash(self) -> None:
+        """`_stall_detected_no_crash` (T-5228) fires on a progress gap
+        alone -- no crash flag, unlike `_stall_detected` above -- and
+        stays quiet with no progress timestamp yet or a gap short of the
+        threshold, the same shape minus the crash requirement."""
+        module = _load_conftest()
+        assert module._stall_detected_no_crash(1000.0, None, 1500.0) is False
+        assert module._stall_detected_no_crash(100.0, 0.0, 1500.0) is False
+        assert module._stall_detected_no_crash(1500.0, 0.0, 1500.0) is True
+
     # frob:ticket T-3608
     # frob:tests \
     # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item_lines_reads_surviving_markers  # noqa: E501
