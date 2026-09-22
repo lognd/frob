@@ -33,6 +33,12 @@ body_changes:
   at: '2026-09-22'
   old_length: 851
   new_length: 1297
+- mode: append
+  reason: closed-but-unlanded recurrence during queue drains
+  actor: logan
+  at: '2026-09-22'
+  old_length: 1297
+  new_length: 1714
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +53,5 @@ Leaf D of T-5106 (~2 pts). A refused land leaves the worktree exactly as it foun
 
 
 Coordinator note 2026-09-22: when --drain rejects an entry, record_failure appends a '## Failure log' to tickets/<id>/ticket.md in the ROOT checkout without committing it, so the next entry in the same drain refuses with DirtyMain ('root checkout has uncommitted changes'). Seen on T-5199, T-5136, T-5215, T-4713 in one night. The failure record belongs on the intent record and the worktree ledger, or must be committed atomically on the root.
+
+Coordinator note 2026-09-22 (second class): a land refused AFTER finalize by the unscoped pre-land sweep leaves the ticket at state=done on the ROOT ledger with land_commit null and no code on dev (seen: T-4690 on 09-21, T-4698 on 09-22). Every sibling land then refuses with TICK005 because their worktree carries the ticket at in-progress. The unwind must restore the root ledger state too, not just the worktree.
