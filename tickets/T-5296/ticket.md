@@ -1,5 +1,5 @@
 ---
-id: T-draft-69425782
+id: T-5296
 title: frob-exports reports 3 packages with missing symbols (doctor, arch, vet)
 state: queued
 kind: bug
