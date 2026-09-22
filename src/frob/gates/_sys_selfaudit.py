@@ -21,6 +21,7 @@ docstring for the full incident/root-cause history carried verbatim from
 
 from __future__ import annotations
 
+import tomllib
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
@@ -107,15 +108,14 @@ def _selfaudit_violation(
 # docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756 to describe -- \
 # SELFAUDIT001's own shape/behavior is unchanged, only which findings it now correctly \
 # skips); docs/modules/gates.md is not in T-1146's declared scope"
+# frob:ticket T-5105
 # frob:invariant INV-041
 # frob:enforces CHK-GATE-SYS109
 # frob:enforces CHK-GATE-SYS112
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_\
-# violation
+# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation  # noqa: E501
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_vio\
-# lations
+# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations  # noqa: E501
 # frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_suppressed_on_design_load_error  # noqa: E501
 def _selfaudit_violations(
     root: Path,
@@ -322,6 +322,178 @@ def _selfaudit_violations(
             for v in health.danger_ok.violations
         )
 
+    violations.extend(_templated_assume_violations(root, design_dir))
+
+    return violations
+
+
+# frob:ticket T-5105
+def _templated_assume_module_claims(root: Path, design_dir: str):  # noqa: ANN201
+    """Parse every `.strata` file under `root/design_dir` INDEPENDENTLY (never
+    through `design_ids.models`) and wrap each file's own assumed `Claim`s
+    for the templated-assume detector, one `ModuleClaim` per assume with
+    `module` = that file's stem.
+
+    Deliberately not `design_ids.models`: T-1196's cross-file elaboration
+    (`frob.strata._multifile.elaborate_merged`) merges every loaded file
+    into ONE `KernelModel` before this gate ever sees it, discarding which
+    file each `Claim` came from -- exactly the per-file attribution D-M8's
+    shared-expiry-across-modules check needs. Re-parsing here (no
+    elaboration -- `_parse_one_design_file` skips it on purpose, same call
+    `check_ambient_capability_reasons`'s SYS112 wiring above already makes
+    for the same "needs raw per-file structure, not the merged model"
+    reason) keeps that attribution alive.
+
+    Module label is the file's stem -- T-draft-a693d397's kernel `module`
+    attribute on `Node` had not landed when this leaf was written (brief:
+    "until it lands, group by node and treat the file as the module");
+    this function is the ONE place to swap the file-stem fallback for the
+    real attribute once it does. A file that fails to parse contributes no
+    claims (consistent with every other SELFAUDIT001 sub-family's
+    suppress-on-load-error posture, enforced one level up by
+    `_selfaudit_violations`'s own `design_ids.errors` check)."""
+    from frob.excludes import load_exclude_globs
+    from frob.strata._assume_template import ModuleClaim
+    from frob.strata._design_load import _parse_one_design_file, _strata_files
+    from frob.strata._elaborate import _elaborate_claim
+
+    exclude_globs = load_exclude_globs(root)
+    paths = _strata_files(root, root / design_dir, exclude_globs)
+    out: list[ModuleClaim] = []
+    for path in paths:
+        _rel, module, error = _parse_one_design_file(root, path)
+        if error is not None or module is None:
+            _log.debug(
+                "_templated_assume_module_claims: %s failed to parse, "
+                "excluded from templated-assume comparison",
+                path,
+            )
+            continue
+        label = path.stem
+        for decl in module.claims:
+            if not decl.assumed:
+                continue
+            out.append(ModuleClaim(claim=_elaborate_claim(decl), module=label))
+    _log.debug(
+        "_templated_assume_module_claims: %d assumed claim(s) across %d file(s)",
+        len(out),
+        len(paths),
+    )
+    return tuple(out)
+
+
+# frob:ticket T-5105
+def _assume_template_max_modules(root: Path) -> int:
+    """`frob.toml`'s `[gates.sys] assume_template_max_modules`, or
+    `frob.strata._assume_template.DEFAULT_MAX_MODULES` if the table/key is
+    absent, unreadable, or not an int -- fail-open onto the documented
+    default, same posture as `_docstatus._gates_severity_overrides`."""
+    from frob.strata._assume_template import DEFAULT_MAX_MODULES
+
+    path = root / "frob.toml"
+    if not path.exists():
+        return DEFAULT_MAX_MODULES
+    try:
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError):
+        return DEFAULT_MAX_MODULES
+    except Exception:
+        # Fail-open over a genuinely unresolvable manifest-load surprise
+        # too, not just the two named cases (EXHAUST001, T-1371).
+        return DEFAULT_MAX_MODULES
+    sys_table = data.get("gates", {})
+    sys_table = sys_table.get("sys", {}) if isinstance(sys_table, dict) else {}
+    value = (
+        sys_table.get("assume_template_max_modules")
+        if isinstance(sys_table, dict)
+        else None
+    )
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    return DEFAULT_MAX_MODULES
+
+
+# frob:ticket T-5105
+# frob:invariant INV-041
+# frob:tests \
+# tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume.test_red_on_todays_design_frob_strata  # noqa: E501
+def _templated_assume_violations(root: Path, design_dir: str) -> list[Violation]:
+    """SELFAUDIT001 SYS119/SYS120 (D-M8, T-5105, owner directive
+    strengthened from the original T-draft-0a0c7b43 proposal): fold
+    `frob.strata._assume_template.find_templated_assumes`/`find_shared_
+    expiry` into the gate pipeline, the SAME "catalogued but check-
+    invisible" pattern every other sub-family in this module closes.
+
+    MANDATORY POSITIVE CONTROL (ticket body): today's design/frob.strata
+    carries the 33 boilerplate CWE assumes SF-08 measured -- one
+    `noflow registry -> <node> owner logan review "2026-10-15"` shape
+    repeated per node per weakness class. This function is RED against
+    that file (SYS119 fires once per templated cluster); a change that
+    makes it green against the unmodified monolith is a regression in the
+    detector, not a fix.
+
+    SYS119 (templated-assume): `find_templated_assumes` groups >=2 assumes
+    identical after substituting only the node/module name. SYS120
+    (shared-expiry): `find_shared_expiry` groups assumes sharing one
+    `review` date across more than `[gates.sys] assume_template_max_
+    modules` modules. Both are `Severity.WARN` (see `_selfaudit_severity`
+    -- SYS119/SYS120 fall through its default-ERROR branch UNLESS added
+    there; kept WARN here deliberately: ship-at-WARN-with-a-ratchet is
+    this leaf's explicit shipping decision, "so the fleet is not blocked"
+    -- promoting to ERROR is a follow-on ratchet-tightening step, not
+    this leaf's job) via a dedicated severity, never the shared ERROR
+    default the rest of this family uses."""
+    claims = _templated_assume_module_claims(root, design_dir)
+    if not claims:
+        return []
+
+    from frob.strata._assume_template import find_shared_expiry, find_templated_assumes
+
+    max_modules = _assume_template_max_modules(root)
+    violations: list[Violation] = []
+    for group in find_templated_assumes(claims):
+        violations.append(
+            Violation(
+                rule="SELFAUDIT001",
+                severity=Severity.WARN,
+                file=design_dir,
+                line=1,
+                message=(
+                    "SELFAUDIT001: self-audit family SYS119 templated assume: "
+                    f"{len(group.claim_ids)} assume(s) identical after "
+                    f"substituting the node name -- {', '.join(group.claim_ids)}. "
+                    "Write a module-owned assume whose id/reason names the "
+                    "concrete mechanism or evidence gap for its own module "
+                    "instead of copying another node's assume with the name "
+                    "changed."
+                ),
+                symref=group.claim_ids[0],
+            )
+        )
+    for group in find_shared_expiry(claims, max_modules=max_modules):
+        violations.append(
+            Violation(
+                rule="SELFAUDIT001",
+                severity=Severity.WARN,
+                file=design_dir,
+                line=1,
+                message=(
+                    "SELFAUDIT001: self-audit family SYS120 shared expiry: "
+                    f"review date {group.review!r} shared by assume(s) "
+                    f"{', '.join(group.claim_ids)} across "
+                    f"{len(group.modules)} module(s) "
+                    f"({', '.join(group.modules)}), more than "
+                    f"assume_template_max_modules={max_modules}. Give each "
+                    "module its own deliberately-chosen review date instead "
+                    "of copying one date forward across modules."
+                ),
+                symref=group.claim_ids[0],
+            )
+        )
+    _log.info(
+        "_templated_assume_violations: %d SYS119/SYS120 finding(s)", len(violations)
+    )
     return violations
 
 
@@ -352,8 +524,7 @@ def _compliance_selfaudit_violation(view: str, cv, design_dir: str) -> Violation
 # frob:ticket T-1314
 # frob:invariant INV-041
 # frob:tests \
-# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_v\
-# iolation
+# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_violation  # noqa: E501
 # frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_compliance_clean_model_no_violations  # noqa: E501
 # frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_compliance_suppressed_on_design_load_error  # noqa: E501
 def _compliance_selfaudit_violations(

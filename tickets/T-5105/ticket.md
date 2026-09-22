@@ -2,7 +2,7 @@
 id: T-5105
 title: 'templated-assume gate: refuse assumes identical after node/module substitution
   and shared expiry across modules (D-M8), red on todays design/frob.strata'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -30,29 +30,40 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume::test_red_on_todays_design_frob_strata
+- tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes::test_distinct_weakness_class_not_merged
+- tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry::test_red_on_monolith_shared_date
+- tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume::test_module_owned_specific_assume_not_reported
 designated_repro_test: null
 acceptance:
 - text: Given today's design/frob.strata, when the templated-assume gate runs, then
     it is RED and reports the 33 boilerplate CWE assumes (SF-08) by node and rule
     id -- this is the gate's positive control and a green result is a failure of the
     leaf.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume::test_red_on_todays_design_frob_strata
 - text: Given two assumes whose text differs only by the node or module name, when
     the gate runs, then both are reported, and the comparison is shown to be token-level
     (a rename-only difference is caught; an assume with genuinely different wording
     that shares keywords is NOT reported).
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes::test_distinct_weakness_class_not_merged
 - text: Given more than N modules whose assumes share one expiry date, when the gate
     runs, then the shared-expiry finding names every participating module.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry::test_red_on_monolith_shared_date
 - text: Given a module-owned specific assume whose reason names a concrete mechanism
     or evidence gap, when the gate runs, then it is not reported.
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume::test_module_owned_specific_assume_not_reported
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-af37d815
+branch: t-draft-af37d815
 ---
 Templated-assume gate (owner decision D-M8, OVERRIDDEN and strengthened from the
 proposal). The 33 boilerplate CWE assumes (SF-08: one template per node per CWE,

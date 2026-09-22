@@ -265,3 +265,96 @@ ticket's own rework when a capability the ORIGINAL detection code itself
 introduced, `open(` in a since-deleted `frob.toml` reader, stopped being
 observed) is what turns the gate green -- honestly, by declaring what the
 code actually does, never by narrowing what gets scanned.
+
+## SYS119/SYS120 -- the templated-assume gate (D-M8, T-5105)
+
+Owner decision D-M8, recorded on the strata-module-system story
+(T-draft-0a0c7b43) and OVERRIDDEN/STRENGTHENED from its original
+proposal: the module split does NOT carry over `design/frob.strata`'s 33
+boilerplate `assume` statements as-is. SF-08 (`STRATA-FRICTION.md`)
+measured all 33 as one identical shape --
+
+```
+assume "weakness:CWE-<code>:<node>" noflow registry -> <node> owner logan review "2026-10-15"
+```
+
+-- one copy per node per weakness class, same owner, same expiry date,
+zero assumes of any other shape anywhere in the file. An `assume` is an
+owned, EXPIRING entry in the trusted-computing-base ledger (`Claim.
+assumed`, docs/strata/kernel.md#data-models) -- 33 copies of the same
+template is 33 things nobody actually reviewed individually; it is one
+decision copy-pasted 33 times with only the node name changed.
+
+**The rule.** An assume must be MODULE-OWNED and SPECIFIC: its `id`
+names the concrete mechanism or evidence gap for THAT module, not a
+template with the node swapped in. Two structural gates enforce this,
+both folded into SELFAUDIT001 (`frob.gates._sys_selfaudit.
+_templated_assume_violations`) exactly like every other SYS/REL
+sub-family this doc's earlier sections describe:
+
+- **SYS119 (templated assume).** Two or more assumes whose PARSED shape
+  is identical after substituting only the node/module identifier are a
+  finding. This is a TOKEN-LEVEL comparison over the parsed `Claim`/
+  `ClaimBody` fields (`frob.strata._assume_template.
+  find_templated_assumes`) -- never a keyword or regex heuristic (owner
+  directive: checks decide from parsed symbols, never lexically). Each
+  assume's own node identifier (a `noflow`/`reach` claim's `dst`, a
+  `bound` claim's `target`) is rewritten to one placeholder token before
+  two token streams are compared; a different weakness class, `src`, or
+  claim kind is NOT the substituted token and so is preserved -- a
+  CWE-78 assume and a CWE-94 assume about the same node do not collapse
+  into one template, and a genuinely specific assume (one whose `id`
+  embeds a concrete mechanism, e.g. `weakness:CWE-78:vet:validated-via-
+  shlex-quote-allowlist`) does not match the generic template either.
+- **SYS120 (shared expiry).** Assumes sharing ONE `review` expiry date
+  across MORE than `[gates.sys] assume_template_max_modules` (default 2,
+  `frob.strata._assume_template.DEFAULT_MAX_MODULES`) distinct modules
+  are a finding (`find_shared_expiry`) -- a copy-forward date nobody
+  actually re-reviewed per module. "Module" today is the `.strata`
+  SOURCE FILE an assume was parsed from (`_templated_assume_module_
+  claims`'s file-stem fallback) -- T-draft-a693d397's kernel `module`
+  attribute on `Node` had not landed when this gate was written; that
+  function is the one place to swap the fallback for the real attribute
+  once it does.
+
+**Building the `ModuleClaim` sequence.** Both detectors take a flat
+`Sequence[ModuleClaim]`; `frob.strata._assume_template.
+module_claims_from_models` is the seam that builds it, flattening a
+`{module_label: claims}` mapping (however a caller currently resolves
+"module" -- a source-file stem today per SYS120's note above) into one
+`ModuleClaim` per claim, tagged with the module it came from. `frob.
+gates._sys_selfaudit` is the production caller; both `find_templated_
+assumes` and `find_shared_expiry` are otherwise pure over the sequence
+it produces.
+
+**MANDATORY positive control.** SYS119 is RED against today's real
+`design/frob.strata`: it reports exactly the 6 SF-08 weakness-code
+clusters (CWE-78 x18, CWE-94 x6, CWE-89 x3, CWE-502/639/918 x2 each),
+together naming all 33 assumed claim ids
+(`tests/gates_suite/test_sys_assume_template.py::
+TestSelfaudit001TemplatedAssume.test_red_on_todays_design_frob_strata`).
+A green SYS119 result against the unmodified monolith is a regression in
+the detector, not evidence the design got better. SYS120 does not yet
+fire against the monolith -- it is still one file (one module), and
+SYS120 needs assumes to disagree about which module they belong to
+before "shared across modules" is even meaningful; it will start firing
+once the per-module migration leaves (T-draft-6e70e293 and siblings)
+split `design/frob.strata` into `design/<module>.strata` files that
+still copy-forward one review date.
+
+**Severity: WARN, ship-at-WARN-with-a-ratchet.** Both SYS119 and SYS120
+are `Severity.WARN` (`_selfaudit_severity`'s default-ERROR branch is
+explicitly not extended to them) -- promoting either to ERROR is a
+follow-on ratchet-tightening decision, not this leaf's. Shipping at WARN
+means every existing `frob check` run surfaces the 6 SF-08 clusters
+without turning the fleet's in-flight lands red the moment this leaf
+merges; the 33 assumes are still expected to be rewritten (not carried
+over) as each module migration leaf lands, per D-M8's rule above -- WARN
+buys the transition period, it is not a permanent exemption.
+
+**Fixing a finding.** Replace the templated assume with a module-owned
+one: the `id` names the concrete mechanism already in place or the real
+evidence gap for THAT module (e.g. `weakness:CWE-78:vet:shell-args-are-
+argv-list-never-shell-string`, not `weakness:CWE-78:vet`), and its
+`review` date reflects a real, module-specific review cadence rather
+than a date copied from a sibling module's assume.
