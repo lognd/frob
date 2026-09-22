@@ -292,6 +292,14 @@ _DEPRECATED_SPELLINGS: dict[tuple[Subcommand, str | None], tuple[str, str]] = {
     (Subcommand.arch, None): ("arch", "check --only arch"),
     (Subcommand.cycle, None): ("cycle", "check --only cycle"),
     (Subcommand.exports, None): ("exports", "scaffold exports"),
+    # frob:ticket T-4695
+    (Subcommand.gitlog, None): ("gitlog", "explore gitlog"),
+    (Subcommand.stats, None): ("stats", "explore stats"),
+    (Subcommand.debt, None): ("debt", "explore debt"),
+    (Subcommand.deprecated, None): ("deprecated", "explore deprecated"),
+    (Subcommand.graph, "query"): ("graph query", "explore graph-query"),
+    (Subcommand.graph, "why"): ("graph why", "explore graph-why"),
+    (Subcommand.graph, "affects"): ("graph affects", "explore graph-affects"),
 }
 """T-4690's single deprecation-shim dispatch table: every deleted/renamed
 spelling this story's `App.__call__` interception point covers, keyed by
@@ -375,9 +383,9 @@ class App:
         if handler is None:
             _log.error(
                 "usage: frob "
-                "<scaffold|cycle|explore|parse|dup|arch|bind|"
-                "exports|check|gitlog|graph|ack|debt|deprecated|pool|ticket|test|vet|"
-                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|"
+                "<scaffold|explore|parse|bind|"
+                "check|graph|ack|pool|ticket|test|vet|"
+                "perf|release|serve|mutate|sys|deploy|doctor|clean|fleet|"
                 "format|verify|claude>"
                 " ..."
             )

@@ -2,7 +2,7 @@
 id: T-4695
 title: 'Fold the read-only analysis surface into one verb: explore map/outline/xref/docs-search/gitlog/stats
   and the graph queries'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -101,21 +101,30 @@ body_changes:
   at: '2026-09-19'
   old_length: 3223
   new_length: 3255
+evidence:
+- tests/unit/test_explore_verb.py::TestExploreGitlogPositiveControl::test_gitlog_rollup_names_feat_and_fix
+- tests/unit/test_explore_verb.py::TestDeprecatedShimIdenticalOutput::test_gitlog_shim_matches_explore_gitlog
+- tests/unit/test_explore_verb.py::TestGraphLeafDispatch::test_leaf_sets_graph_command_and_dispatches[graph-query-query]
+- tests/unit/test_explore_verb.py::TestBuildStaysUndeprecated::test_build_is_not_in_the_shim_table
 designated_repro_test: null
 acceptance:
 - text: Given a fixture repo with a KNOWN conventional-commit history, when frob explore
     gitlog runs on it, then the expected type/granularity rollup appears -- a no-crash
     assertion does not satisfy this criterion
-  evidence: []
+  evidence:
+  - tests/unit/test_explore_verb.py::TestExploreGitlogPositiveControl::test_gitlog_rollup_names_feat_and_fix
 - text: Given the deprecated top-level frob gitlog before its sunset date, when it
     runs, then it prints the frob explore gitlog spelling on stderr and returns output
     identical to the new spelling; the same holds for stats, debt and deprecated
-  evidence: []
+  evidence:
+  - tests/unit/test_explore_verb.py::TestDeprecatedShimIdenticalOutput::test_gitlog_shim_matches_explore_gitlog
 - text: Given frob --help after this ticket, then gitlog, stats, debt and deprecated
     are absent from the top-level usage line and present under frob explore --help,
     and graph query/why/affects are reachable through frob explore while frob graph
     keeps its cache-building and write-side subverbs
-  evidence: []
+  evidence:
+  - tests/unit/test_explore_verb.py::TestGraphLeafDispatch::test_leaf_sets_graph_command_and_dispatches[graph-query-query]
+  - tests/unit/test_explore_verb.py::TestBuildStaysUndeprecated::test_build_is_not_in_the_shim_table
 acceptance_amendments:
 - op: replace
   index: 1

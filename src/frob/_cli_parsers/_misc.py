@@ -373,11 +373,11 @@ def _populate_mutate_args(mutate_p) -> None:
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_stats_parser(sub) -> None:
-    """Register the `frob stats` subcommand and its arguments."""
+    """Register the DEPRECATED `frob stats` subcommand (T-4695, sunset
+    2026-12-01: use `frob explore stats`) -- suppressed from usage;
+    `App.__call__`'s shim keeps it working through the sunset window."""
     # -- stats ---------------------------------------------------------------
-    stats_p = sub.add_parser(
-        "stats", help="delivery measurement: queue health + commit cadence"
-    )
+    stats_p = sub.add_parser("stats", help=argparse.SUPPRESS)
     _populate_stats_args(stats_p)
 
 

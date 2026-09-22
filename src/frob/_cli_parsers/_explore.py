@@ -27,21 +27,41 @@ from __future__ import annotations
 
 # frob:ticket T-1238
 # frob:ticket T-4690
+# frob:ticket T-4695
 def _add_explore_parser(sub) -> None:
-    """Register the `frob explore` subcommand group and its four
-    subcommands (`map`, `outline`, `xref`, `docs-search`) -- `explore` is
-    the surviving spelling (T-4690 coordinator amendment); each leaf
+    """Register the `frob explore` subcommand group -- `explore` is the
+    surviving spelling (T-4690 coordinator amendment); each leaf
     populates its arguments via the same `_populate_*_args` helper its
-    now-deprecated flat twin uses, so the flag list is declared once."""
+    now-deprecated flat twin uses, so the flag list is declared once.
+
+    T-4695 adds five more leaves onto this same survivor: `gitlog`,
+    `stats`, `graph-query`/`graph-why`/`graph-affects` (the read-only
+    THIRD of `frob graph`'s four subverbs -- `build`, the write side,
+    stays exclusively on flat `frob graph`, per the ticket's own
+    "graph's non-read-only half stays" instruction), `debt` and
+    `deprecated` (T-4692-deferred; both are read-only listings, which is
+    why they land here and not behind `frob check --only`). NAMING: the
+    ticket left `graph query|why|affects`'s new spelling as an
+    implementer choice between a nested `explore graph <verb>` subgroup
+    and flat hyphenated leaves -- hyphenated (`explore graph-query`, ...)
+    was chosen to match `docs-search`'s own existing precedent in this
+    same parser, not a new nesting shape."""
     from frob._cli_parsers._core import (
         _populate_map_args,
         _populate_outline_args,
         _populate_xref_args,
     )
+    from frob._cli_parsers._misc import _populate_stats_args
+    from frob._cli_parsers._reporting import (
+        _populate_debt_args,
+        _populate_deprecated_args,
+        _populate_gitlog_args,
+    )
 
     explore_p = sub.add_parser(
         "explore",
-        help="navigation: map/outline/xref/docs-search grouped under one verb (T-1238)",
+        help="read-only analysis: navigation, gitlog, stats, graph queries, "
+        "debt/deprecated listings, grouped under one verb (T-1238/T-4695)",
     )
     explore_sub = explore_p.add_subparsers(dest="explore_command")
 
@@ -65,6 +85,58 @@ def _add_explore_parser(sub) -> None:
         "docs-search", help="full-text search through docs/"
     )
     _populate_docs_search_args(docs_search_p)
+
+    # frob:ticket T-4695
+    gitlog_p = explore_sub.add_parser(
+        "gitlog",
+        help="summarize git history by type/granularity (conventional commits)",
+    )
+    _populate_gitlog_args(gitlog_p)
+
+    stats_p = explore_sub.add_parser(
+        "stats", help="delivery measurement: queue health + commit cadence"
+    )
+    _populate_stats_args(stats_p)
+
+    graph_query_p = explore_sub.add_parser(
+        "graph-query", help="resolve a symbol ref and show its edges"
+    )
+    graph_query_p.add_argument("graph_ref", metavar="ref")
+    graph_query_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_query_p.add_argument("--json", dest="graph_json", action="store_true")
+
+    graph_why_p = explore_sub.add_parser(
+        "graph-why", help="explain drift/ack status and remedy for a ref"
+    )
+    graph_why_p.add_argument("graph_ref", metavar="ref")
+    graph_why_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_why_p.add_argument("--json", dest="graph_json", action="store_true")
+
+    graph_affects_p = explore_sub.add_parser(
+        "graph-affects",
+        help="transitive uses-contract dependents + docs/tests a ref's change affects",
+    )
+    graph_affects_p.add_argument("graph_ref", metavar="ref")
+    graph_affects_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_affects_p.add_argument("--json", dest="graph_json", action="store_true")
+    graph_affects_p.add_argument(
+        "--max-depth", dest="graph_max_depth", type=int, default=None
+    )
+    graph_affects_p.add_argument(
+        "--max-nodes", dest="graph_max_nodes", type=int, default=None
+    )
+
+    debt_p = explore_sub.add_parser(
+        "debt", help="list outstanding frob:debt entries (rule, site, ticket, until)"
+    )
+    _populate_debt_args(debt_p)
+
+    deprecated_p = explore_sub.add_parser(
+        "deprecated",
+        help="list outstanding frob:deprecated entries (symref, since, sunset, "
+        "ticket, status)",
+    )
+    _populate_deprecated_args(deprecated_p)
 
 
 # frob:ticket T-4520

@@ -82,11 +82,48 @@ def run(cfg: AppConfig) -> None:
         xref_run(cfg)
     elif cfg.explore_command == "docs-search":
         _run_docs_search(cfg)
+    elif cfg.explore_command == "gitlog":
+        from frob.app.gitlog_runner import run as gitlog_run
+
+        gitlog_run(cfg)
+    elif cfg.explore_command == "stats":
+        from frob.app.stats_runner import run as stats_run
+
+        stats_run(cfg)
+    elif cfg.explore_command in ("graph-query", "graph-why", "graph-affects"):
+        _run_graph_leaf(cfg)
+    elif cfg.explore_command == "debt":
+        from frob.app.debt_runner import run as debt_run
+
+        debt_run(cfg)
+    elif cfg.explore_command == "deprecated":
+        from frob.app.deprecated_runner import run as deprecated_run
+
+        deprecated_run(cfg)
     else:
         _log.error(
-            "frob explore requires a subcommand: map, outline, xref, or docs-search"
+            "frob explore requires a subcommand: map, outline, xref, docs-search, "
+            "gitlog, stats, graph-query, graph-why, graph-affects, debt, or deprecated"
         )
         sys.exit(1)
+
+
+# frob:ticket T-4695
+def _run_graph_leaf(cfg: AppConfig) -> None:
+    """`frob explore graph-query|graph-why|graph-affects` (T-4695): the
+    read-only third of `frob graph`'s four subverbs, reached here under
+    their hyphenated `explore` spelling -- `graph_runner.run` itself
+    still dispatches by `cfg.graph_command` (`query`/`why`/`affects`,
+    the SAME dest `frob graph`'s own subparser already populates), so
+    this just maps `explore_command`'s hyphenated leaf name back onto
+    that dest before delegating; `build` (the write side) has no
+    `explore` leaf and is unreachable from here, per the ticket's own
+    "graph's non-read-only half stays on flat frob graph" instruction."""
+    from frob.app.graph_runner import run as graph_run
+
+    assert cfg.explore_command is not None  # guarded by run()'s caller check
+    cfg.graph_command = cfg.explore_command.removeprefix("graph-")
+    graph_run(cfg)
 
 
 # frob:ticket T-1238

@@ -30,13 +30,15 @@ def _add_gitlog_range_args(gitlog_p) -> None:
 
 
 # frob:ticket T-0030
+# frob:ticket T-4695
 def _add_gitlog_parser(sub) -> None:
-    """Register the `frob gitlog` subcommand and its arguments."""
+    """Register the DEPRECATED `frob gitlog` subcommand (T-4695, sunset
+    2026-12-01: use `frob explore gitlog`) -- suppressed from usage;
+    `App.__call__`'s shim keeps it working through the sunset window."""
+    import argparse
+
     # -- gitlog ---------------------------------------------------------------
-    gitlog_p = sub.add_parser(
-        "gitlog",
-        help="summarize git history by type/granularity (conventional commits)",
-    )
+    gitlog_p = sub.add_parser("gitlog", help=argparse.SUPPRESS)
     _populate_gitlog_args(gitlog_p)
 
 
@@ -80,29 +82,33 @@ def _add_graph_parser(sub) -> None:
 
 
 # frob:ticket T-1568
+# frob:ticket T-4695
 def _populate_graph_actions(graph_sub) -> None:
     """Add `frob graph`'s `build`/`query`/`why`/`affects` actions onto
     `graph_sub` -- shared by the standalone top-level parser and `frob
-    design graph` (T-1568) so neither duplicates the flag list."""
+    design graph` (T-1568) so neither duplicates the flag list.
+
+    T-4695: `query`/`why`/`affects` (the read-only three) are DEPRECATED
+    here (sunset 2026-12-01, `explore graph-query`/`graph-why`/
+    `graph-affects` are the surviving spellings) -- suppressed from
+    usage; `App.__call__`'s shim keeps each working through the sunset
+    window. `build` (the write side, cache construction) is NOT
+    deprecated and keeps its normal help text, per the ticket's own
+    "graph's non-read-only half stays on flat frob graph" instruction."""
+    import argparse
+
     graph_build_p = graph_sub.add_parser("build", help="(re)build the graph cache")
     graph_build_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
-    graph_query_p = graph_sub.add_parser(
-        "query", help="resolve a symbol ref and show its edges"
-    )
+    graph_query_p = graph_sub.add_parser("query", help=argparse.SUPPRESS)
     graph_query_p.add_argument("graph_ref", metavar="ref")
     graph_query_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
     graph_query_p.add_argument("--json", dest="graph_json", action="store_true")
-    graph_why_p = graph_sub.add_parser(
-        "why", help="explain drift/ack status and remedy for a ref"
-    )
+    graph_why_p = graph_sub.add_parser("why", help=argparse.SUPPRESS)
     graph_why_p.add_argument("graph_ref", metavar="ref")
     graph_why_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
     graph_why_p.add_argument("--json", dest="graph_json", action="store_true")
     # frob:ticket T-0628
-    graph_affects_p = graph_sub.add_parser(
-        "affects",
-        help="transitive uses-contract dependents + docs/tests a ref's change affects",
-    )
+    graph_affects_p = graph_sub.add_parser("affects", help=argparse.SUPPRESS)
     graph_affects_p.add_argument("graph_ref", metavar="ref")
     graph_affects_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
     graph_affects_p.add_argument("--json", dest="graph_json", action="store_true")
@@ -156,11 +162,18 @@ def _add_ack_parser(sub) -> None:
 
 
 # frob:ticket T-0412
+# frob:ticket T-4695
 def _add_debt_parser(sub) -> None:
-    """Register the `frob debt` subcommand: list outstanding `frob:debt` entries."""
-    debt_p = sub.add_parser(
-        "debt", help="list outstanding frob:debt entries (rule, site, ticket, until)"
-    )
+    """Register the DEPRECATED top-level `frob debt` subcommand (T-4695,
+    sunset 2026-12-01: use `frob explore debt`) -- suppressed from
+    usage; `App.__call__`'s shim keeps it working through the sunset
+    window. `frob ticket debt` (a different dispatch path, T-1570) is
+    unaffected -- this ticket only renders the verdict on the TOP-LEVEL
+    spelling; T-4698 already rendered (and deferred) the `frob ticket`
+    subverb side."""
+    import argparse
+
+    debt_p = sub.add_parser("debt", help=argparse.SUPPRESS)
     _populate_debt_args(debt_p)
 
 
@@ -174,14 +187,16 @@ def _populate_debt_args(debt_p) -> None:
 
 
 # frob:ticket T-0638
+# frob:ticket T-4695
 def _add_deprecated_parser(sub) -> None:
-    """Register the `frob deprecated` subcommand: list outstanding
-    `frob:deprecated` entries (since/sunset/ticket/status)."""
-    deprecated_p = sub.add_parser(
-        "deprecated",
-        help="list outstanding frob:deprecated entries (symref, since, "
-        "sunset, ticket, status)",
-    )
+    """Register the DEPRECATED top-level `frob deprecated` subcommand
+    (T-4695, sunset 2026-12-01: use `frob explore deprecated`) --
+    suppressed from usage; `App.__call__`'s shim keeps it working
+    through the sunset window. `frob ticket deprecated` (T-1570) is
+    unaffected, same carve-out as `debt` above."""
+    import argparse
+
+    deprecated_p = sub.add_parser("deprecated", help=argparse.SUPPRESS)
     _populate_deprecated_args(deprecated_p)
 
 
