@@ -353,7 +353,13 @@ _INT_FIELDS = (
 
 # frob:ticket T-1927
 # frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_flag_survives_real_argv_parsing  # noqa: E501
-_FLOAT_FIELDS = ("vet_timeout", "perf_interval_s", "sys_capacity_population")
+_FLOAT_FIELDS = (
+    "vet_timeout",
+    "perf_interval_s",
+    "sys_capacity_population",
+    # frob:ticket T-5219
+    "ticket_wait_s",
+)
 
 # T-2016: datetime-typed CLI flags, forwarded as their already-parsed
 # `datetime` objects (see `_apply_datetime_fields`'s own docstring).
@@ -406,6 +412,8 @@ _LIST_FIELDS = (
 # frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_absent_ruff_flags_default_false  # noqa: E501
 # frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
 _BOOL_FLAGS = (
+    # frob:ticket T-5219
+    "clean_sweep_worktrees",
     # frob:ticket T-3106
     "process_reap_json",
     # frob:ticket T-2485
