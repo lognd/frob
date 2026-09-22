@@ -26,6 +26,7 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/strata/_assume_template.py
 - docs/modules/vet.md
+- src/frob/tickets/_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,13 @@ scope_changes:
     drift accumulated on dev since this worktree branched (neither file is T-4696''s
     own edit) -- coordinator directive: fix each finding at its root regardless of
     prior declared scope'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: land's unscoped pre-commit-merge-preview sweep flagged the same Class::method
+    DRIFT002 bug the other T-4690-family lands already fixed elsewhere; T-5121 (the
+    ticket that previously held this file's lease) is now done, so this file is free
   actor: logan
   at: '2026-09-22'
 triage_changes:
