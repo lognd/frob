@@ -2,7 +2,7 @@
 id: T-4714
 title: 'Strip no-longer-needed noqa from directive lines: Tier-A fix plus lint, without
   re-tripping T-1987''s ARCH001 line-count regression'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -21,10 +21,32 @@ scope:
 - src/frob/gates/_fmt_directives.py
 - src/frob/gates/_fix_engine_text.py
 - tests/test_gates_fmt_directives.py
+- src/frob/gates/_waive.py
+- docs/modules/gates.md
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'coordinator instruction: register FMT-noqa-strip rule id in _KNOWN_GATE_RULES,
+    frob.toml severities, and docs/modules/gates.md'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'coordinator instruction: register FMT-noqa-strip rule id in _KNOWN_GATE_RULES,
+    frob.toml severities, and docs/modules/gates.md'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: frob.toml
+  reason: 'coordinator instruction: register FMT-noqa-strip rule id in _KNOWN_GATE_RULES,
+    frob.toml severities, and docs/modules/gates.md'
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -38,6 +60,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4714
+branch: t-4714
 ---
 Leaf 5 of T-4703. 2 points. noqa strip. Blocked by leaves 3 and 4 -- stripping before the wrap
 narrows and the stacks merge would re-trip the exact regression T-1987 reverted.
