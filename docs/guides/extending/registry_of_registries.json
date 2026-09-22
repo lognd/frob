@@ -133,6 +133,13 @@
       "guide": "docs/guides/extending/dup-detector-registry.md",
       "anchor_file": "src/frob/dup/_rules.py",
       "anchor_symbol": "DUP001"
+    },
+    {
+      "id": "failure-injection-acceptance-criteria",
+      "title": "Failure-injection acceptance criteria (T-4118)",
+      "guide": "docs/guides/extending/failure-injection-acceptance-criteria.md",
+      "anchor_file": "src/frob/tickets/_models.py",
+      "anchor_symbol": "AcceptanceCriterion"
     }
   ]
 }

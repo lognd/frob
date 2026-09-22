@@ -1608,6 +1608,9 @@ class ScopeChangeOp(StrEnum):
 
 # frob:ticket T-0572
 # frob:doc docs/modules/tickets-data-storage.md#data-models
+# frob:ticket T-5240
+# frob:doc \
+# docs/guides/extending/failure-injection-acceptance-criteria.md#failure-injection-acceptance-criteria-name-every-field-t-4118  # noqa: E501
 class AcceptanceCriterion(BaseModel):
     """One given/when/then acceptance item bound to the evidence id(s) that
     demonstrate it (T-0572): `evidence` empty means the criterion is not

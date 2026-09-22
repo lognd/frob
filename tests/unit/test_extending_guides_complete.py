@@ -67,6 +67,10 @@ _REGISTRY_PROBES: dict[str, tuple[str, str]] = {
     ),
     "ticket-kinds-states": ("src/frob/tickets/_models.py", r"class TicketState"),
     "dup-detector-registry": ("src/frob/dup/_rules.py", r"def DUP001"),
+    "failure-injection-acceptance-criteria": (
+        "src/frob/tickets/_models.py",
+        r"class AcceptanceCriterion",
+    ),
 }
 
 _ANCHOR_RE = re.compile(r"frob:doc\s+(docs/guides/extending/\S+?\.md)#(\S+)")
