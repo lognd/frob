@@ -31,6 +31,7 @@ scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 - src/frob/_cli_parsers/_ticket/_progress.py
 - pyproject.toml
+- tests/test_tickets_points.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,12 @@ scope_changes:
   reason: opt-in points-required gate needs the pyproject [tool.frob] loader allowlist
     entry, --require-points CLI flag, the _refuse_unsized_on_start guard itself, and
     this repo's own pyproject.toml opt-in
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/test_tickets_points.py
+  reason: T-5132's own start-refusal tests must set ticket_points_required=True in
+    their AppConfig fixture now that the gate is opt-in
   actor: logan
   at: '2026-09-22'
 triage_changes:
