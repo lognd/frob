@@ -2,7 +2,7 @@
 id: T-4696
 title: 'Nine ticket field-setters become one: frob ticket set field value (priority
   kind component label tier milestone sprint accept body)'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -261,3 +261,6 @@ FILES (declared scope):
   src/frob/_cli_parsers/_ticket/__init__.py, _metadata.py
   src/frob/app/ticket_runner/__init__.py, _lifecycle.py
   tests/unit/test_ticket_set.py (new)
+
+## Reopen log
+- 2026-09-22: accidentally re-closed by a stale scope-mirror from the worktree before merging the coordinator's own reopen commit -- re-reopening, no code on dev, must land properly
