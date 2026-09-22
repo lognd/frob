@@ -15,12 +15,27 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/telemetry/__init__.py
 - tests/unit/security/test_redact.py
+- src/frob/policy/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/telemetry/__init__.py
+  reason: 'corrected root cause: fix belongs in frob.policy''s frob.gates._models
+    import, not telemetry (telemetry''s own body already correctly uses frob.security._redact
+    per T-1318)'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/policy/__init__.py
+  reason: 'corrected root cause: fix belongs in frob.policy''s frob.gates._models
+    import, not telemetry (telemetry''s own body already correctly uses frob.security._redact
+    per T-1318)'
+  actor: logan
+  at: '2026-09-21'
 body_changes:
 - mode: append
   reason: corrected root cause after tracing python -X importtime; original diagnosis
