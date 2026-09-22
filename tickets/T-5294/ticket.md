@@ -1,5 +1,5 @@
 ---
-id: T-draft-f37999e9
+id: T-5294
 title: TEST002/3/4/7/9 test-gate detectors miscount/misfire on real fixtures
 state: queued
 kind: bug
