@@ -2,7 +2,7 @@
 id: T-4696
 title: 'Nine ticket field-setters become one: frob ticket set field value (priority
   kind component label tier milestone sprint accept body)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -24,6 +24,8 @@ scope:
 - tests/unit/test_ticket_set.py
 - src/frob/app/_config_external.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- src/frob/strata/_assume_template.py
+- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +42,22 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_ledger_mirror.py
   reason: every verb in _ticket_dispatch_table() must declare a LEDGER_VERB_STRATEGY
     entry (T-2603) -- the new set verb needs one
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/strata/_assume_template.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4696 on repo-wide
+    drift accumulated on dev since this worktree branched (neither file is T-4696''s
+    own edit) -- coordinator directive: fix each finding at its root regardless of
+    prior declared scope'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4696 on repo-wide
+    drift accumulated on dev since this worktree branched (neither file is T-4696''s
+    own edit) -- coordinator directive: fix each finding at its root regardless of
+    prior declared scope'
   actor: logan
   at: '2026-09-22'
 triage_changes:
@@ -136,20 +154,37 @@ body_changes:
   at: '2026-09-19'
   old_length: 2270
   new_length: 2246
+evidence:
+- tests/unit/test_ticket_set.py::TestSetRoundTrip::test_priority
+- tests/unit/test_ticket_set.py::TestSetRoundTrip::test_kind
+- tests/unit/test_ticket_set.py::TestSetRoundTrip::test_component
+- tests/unit/test_ticket_set.py::TestSetRoundTrip::test_tier
+- tests/unit/test_ticket_set.py::TestSetRoundTrip::test_milestone
+- tests/unit/test_ticket_set.py::TestSetRoundTrip::test_sprint
+- tests/unit/test_ticket_set.py::TestDeprecatedShimByteIdentical::test_priority_shim_matches_set
+- tests/unit/test_ticket_set.py::TestCitationSweep::test_no_markdown_code_fence_recommends_a_deleted_field_setter
 designated_repro_test: null
 acceptance:
 - text: Given a fixture ledger, when frob ticket set priority high runs on a ticket,
     then frob ticket show --json reports priority high -- one round-trip test per
     folded field
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_set.py::TestSetRoundTrip::test_priority
+  - tests/unit/test_ticket_set.py::TestSetRoundTrip::test_kind
+  - tests/unit/test_ticket_set.py::TestSetRoundTrip::test_component
+  - tests/unit/test_ticket_set.py::TestSetRoundTrip::test_tier
+  - tests/unit/test_ticket_set.py::TestSetRoundTrip::test_milestone
+  - tests/unit/test_ticket_set.py::TestSetRoundTrip::test_sprint
 - text: Given the same fixture ledger and the same value, when the deprecated frob
     ticket priority spelling and the new frob ticket set priority spelling each run,
     then the resulting ledger bytes are identical
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_set.py::TestDeprecatedShimByteIdentical::test_priority_shim_matches_set
 - text: Given git grep over .claude/ docs/ scripts/ src/ tests/ for each of the nine
     deleted spellings, when re-run at close, then every hit outside the shim definitions
     has been updated; ~/.claude/refs/frob.md hits are listed in the Done report instead
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_set.py::TestCitationSweep::test_no_markdown_code_fence_recommends_a_deleted_field_setter
 threat: null
 component: cli
 labels:
