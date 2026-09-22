@@ -433,7 +433,6 @@ class TestClaimDivergencePostMerge:
         # catches a genuine `-1` in the FORMATTED numbers this message is
         # actually guarding against.
         assert "-1" not in notices[0].replace(tid, "<TID>")
-# frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
 
     # frob:tests src/frob/tickets/_reporting.py::set_done_report
     # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="integration"  # noqa: E501
@@ -1706,12 +1705,10 @@ class TestReverifyEvidenceForClose:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
-        """Positive control (b), T-2569: a spawn failure (the real
-        incident: `TestingError.SpawnFailed` under machine contention, load
-        48.5 on 12 cores) must report as UNMEASURED and refuse the close --
-        but with a message that says "could not measure", NEVER the
-        "evidence no longer passes when re-run" wording that (before this
-        fix) misreported the exact same shape as a genuine test failure."""
+        """Verify a spawn-failure (`VerifyStatus.UNMEASURED`) outcome
+        refuses the close and logs a "could not measure" message,
+        distinct from the "evidence no longer passes when re-run"
+        message used for a genuine test failure."""
         from frob.app import ticket_runner
         from frob.app.ticket_runner._verify import VerifyOutcome, VerifyStatus
 

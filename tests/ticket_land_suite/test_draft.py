@@ -81,13 +81,10 @@ class TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean:
 
 
 class TestDraftFinalizeRewritesRegistryYamlRefs:
-    """T-0577: draft finalize at land time (`renumber_one`) used to rewrite
-    only `frob:` directive lines -- a registry yaml's `disposition:
-    "deferred:<draft-id>"` value (docs/design/registry/*.yaml's grammar,
-    `frob.registry._models.parse_disposition`) was left pointing at the
-    now-dead draft id, breaking REG003 until a human hand-swapped it (the
-    real T-0388/compliance.yaml incident). `_rewrite_registry_references`
-    must rewrite these too."""
+    """Verify draft finalize at land time (`renumber_one`) rewrites a
+    registry yaml's `disposition: "deferred:<draft-id>"` value
+    (`frob.registry._models.parse_disposition`) to the final id via
+    `_rewrite_registry_references`, not only `frob:` directive lines."""
 
     def test_registry_yaml_deferred_ref_rewritten_to_final_id(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
@@ -166,14 +163,9 @@ class TestDraftIdFinalization:
 
 # frob:ticket T-0637
 class TestStandaloneSiblingDraftSurvivesLand:
-    """T-0637 field incident: a worktree's ledger held a REAL ticket being
-    landed AND a completely separate, standalone draft ticket (filed via
-    `frob ticket new` mid-session, `frob:new`'s own scope-cut discovery --
-    the T-0575/T-draft-3d5f6965 and T-0576's two-draft shapes). Before this
-    fix, the sibling draft block was silently dropped by the land splice
-    (never carried forward, since it was neither the ticket being landed
-    nor already present on main) -- it must survive and land with a real,
-    finalized id."""
+    """Verify a standalone draft ticket, filed alongside the real
+    ticket being landed but otherwise unrelated to it, survives the
+    land splice and lands with a real, finalized id."""
 
     # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_new_worktree_tickets  # noqa: E501
     # frob:tests src/frob/tickets/_land_finalize.py::_finalize_sibling_drafts  # noqa: E501
@@ -385,13 +377,9 @@ class TestForeignOwnedDraftWorktree:
 
 
 class TestDraftReferenceRewriteOnLand:
-    """T-0811: land renumbers a finalized draft's structural id fields, but
-    before this fix left Done-report PROSE citing the old draft id
-    untouched, so TICK006's phantom-filing-claim gate reds main the
-    moment the draft finalizes to a real id (recurred 3x this drive:
-    T-0778/T-0797, T-0745/T-0764). A land whose own Done report cites its
-    own (pre-finalize) draft id must come out with that reference rewritten
-    to the final id, and zero `T-draft-` ids left anywhere in the ledger."""
+    """Verify a land whose own Done report prose cites its own
+    (pre-finalize) draft id comes out with that reference rewritten to
+    the final id, and zero `T-draft-` ids left anywhere in the ledger."""
 
     # frob:tests src/frob/tickets/_land_finalize.py::_rewrite_draft_references_in_one_ledger  # noqa: E501
     def test_land_rewrites_own_draft_id_reference_in_done_report(

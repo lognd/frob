@@ -307,27 +307,11 @@ class TestArchiveV2:
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_v2_draft_survives_a_concurrent_worktree_restore  # noqa: E501
-        """Regression for the T-1115/T-1126/T-1127/T-1128 draft-death
-        shape (T-1259 acceptance[5], carried forward by this ticket): a
-        draft ticket filed into a worktree, followed by the section 10b
-        ledger-restore recipe (`git checkout main -- <ledger>`) another
-        ticket in the SAME worktree runs before finalizing, used to WIPE
-        the draft outright on the v1 monofile path -- because the whole
-        ledger lives in one file, restoring main's copy of that file
-        discards anything the worktree alone had written to it,
-        including a draft nobody else has seen yet.
-
-        On the v2 per-ticket-file path this class is structurally
-        impossible: a draft is its own disjoint `tickets/T-draft-<hex>/
-        ticket.md` file, never a section inside a shared ledger file, so
-        there is no single-file "restore to main's copy" operation that
-        could ever touch it. This reproduces the exact incident shape --
-        main advances (landing an unrelated ticket) while a worktree
-        independently files a draft, then the worktree does the
-        equivalent of the section 10b restore (checking out main's
-        ledger-relevant state) before its own final commit -- and asserts
-        the draft file is untouched by either the restore or a
-        subsequent merge back into main."""
+        """Verify a worktree-local draft ticket file survives both a
+        `git checkout main -- tickets/<id>` restore of an unrelated
+        tracked ticket and the subsequent merge back into main, because
+        a v2 draft is its own disjoint `tickets/T-draft-<hex>/ticket.md`
+        file rather than a section inside a shared ledger file."""
         from frob.tickets import load_all
         from frob.tickets._store import v2_ticket_dir
 
@@ -392,15 +376,10 @@ class TestArchiveV2:
 # frob:ticket T-1750
 # frob:ticket T-2550
 class TestArchiveSpliceDiscipline:
-    """T-0959: `tickets-archive.md` used to ride along on whatever git's raw
-    merge/checkout produced at land time, with no per-id splice discipline
-    at all (unlike tickets.md's `_splice_and_stage`) -- a real incident
-    (T-0703's land) staged a worktree's STALE tickets-archive.md wholesale,
-    wiping 62 blocks a TICK003 sweep had added to main's archive after the
-    worktree's own warmup merge. This regression-locks the acceptance
-    criterion directly: a worktree whose archive predates a later archive
-    sweep on main must never cause `land` to lose main's newly-archived
-    blocks."""
+    """Verify `land` splices `tickets-archive.md` per id (like
+    `tickets.md`'s `_splice_and_stage`) so a worktree whose archive
+    predates a later archive sweep on main never causes `land` to lose
+    main's newly-archived blocks."""
 
     # frob:tests src/frob/tickets/_land_git_ops.py::_parse_archive_side  # noqa: E501
     def test_splice_and_stage_archive_merges_by_id_never_overwrites(
@@ -643,12 +622,9 @@ class TestArchiveSpliceDiscipline:
 # frob:ticket T-1194
 # frob:ticket T-1750
 class TestArchiveResurrection:
-    """Reviewer bug 2: `splice_ledger` only read active tickets.md, never
-    tickets-archive.md -- an id archived on main after the branch point
-    would survive the ours-union and land back into main's active ledger,
-    resurrecting a duplicate-id class a human previously had to resolve by
-    hand at merge time (T-0176's own 0bb02cf merge). `land` must never
-    reintroduce an already-archived id."""
+    """Verify `splice_ledger` reads tickets-archive.md as well as
+    tickets.md, so an id archived on main after the branch point is
+    never resurrected into main's active ledger by `land`."""
 
     # frob:ticket T-1194
     # frob:ticket T-1750

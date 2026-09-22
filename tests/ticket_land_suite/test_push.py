@@ -74,18 +74,10 @@ class TestLandPushCliWiring:
 
 # frob:ticket T-1057
 class TestLandWorktreeResolvedAtArgParse:
-    """T-1057: `frob ticket land <id> --worktree <RELATIVE path>` used to
-    fail with `[Errno 2] No such file or directory: '<relative>/.venv/
-    bin/python'` -- `ticket_runner._land`'s pre-`land()` spawn joined the
-    still-relative `cfg.ticket_worktree` with `.venv/bin/python` and ran
-    it with `cwd=` set to that same relative path, which the OS resolves
-    against the CALLING process's cwd, not the target `cwd=`.
-    `AppConfig.from_external` now resolves `ticket_worktree` to an
-    absolute path at argument-parse time (the single place every `Path`-
-    typed CLI arg is built), so a relative `--worktree` behaves
-    identically to an absolute one from here on -- this test guards that
-    `cfg.ticket_worktree` is always absolute regardless of how `--worktree`
-    was spelled on the command line."""
+    """Verify `AppConfig.from_external` resolves `ticket_worktree` to an
+    absolute path at argument-parse time, so `cfg.ticket_worktree` is
+    always absolute regardless of whether `--worktree` was spelled
+    relative or absolute on the command line."""
 
     def test_relative_worktree_arg_resolves_to_absolute(self, tmp_path: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse.test_relative_worktree_arg_resolves_to_absolute  # noqa: E501
@@ -279,13 +271,10 @@ class TestSyncGateRulesCallback:
 
 
 class TestSyncGateRulesForLandDiffTarget:
-    """T-1805 regression: `_sync_gate_rules_for_land`'s trigger diff must
-    watch `src/frob/gates/_waive.py`, where `_KNOWN_GATE_RULES` has lived
-    since T-1072 moved it out of `src/frob/gates/__init__.py`. Before the
-    fix, a commit that only edited `_waive.py` (the ordinary shape of
-    "add one rule id") never appeared in the old __init__.py-only diff, so
-    the auto-sync silently no-oped on every real change -- confirmed root
-    cause of PERF012/SYS108 landing unregistered."""
+    """Verify `_sync_gate_rules_for_land`'s trigger diff watches
+    `src/frob/gates/_waive.py`, where `_KNOWN_GATE_RULES` lives, so a
+    commit that edits only that file (adding one rule id) is detected
+    and the auto-sync does not silently no-op."""
 
     def test_edit_to_waive_py_is_detected(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch

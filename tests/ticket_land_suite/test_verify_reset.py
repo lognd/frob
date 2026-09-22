@@ -86,12 +86,10 @@ class TestVerifiedResetRoot:
 
     def test_drift_refusal_still_unstages_the_index(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot.test_drift_refusal_still_unstages_the_index  # noqa: E501
-        """T-1740: the 2026-08-07 incident -- a refused land used to leave
-        its own staged squash content sitting in root's index forever on
-        the drift path, because a full `reset --hard` there is unsafe (it
-        could destroy the concurrent commit that caused the drift). The
-        fix unstages (never touches HEAD or the concurrent commit) even
-        though it cannot fully unwind."""
+        """Verify a drift-refused land unstages its own staged squash
+        content from root's index, without touching HEAD or the
+        concurrent commit that caused the drift, even though it cannot
+        fully unwind (a full `reset --hard` there would be unsafe)."""
         pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         # Land's own staged squash content, still in the index.
         (repo / "land_staged.txt").write_text("land's own staged squash content\n")
@@ -133,15 +131,13 @@ class TestVerifiedResetRoot:
 
 # frob:ticket T-2947
 class TestDriftRefusalRestoresModifiedTrackedContent:
-    """T-2947: the real incident -- a drift-refused land used to leave a
-    MODIFIED TRACKED file's edited bytes sitting in root's working tree
-    after `_unstage_index_only` (a bare `git reset` never touches
-    working-tree content, only the index). For an ordinary bystander
-    file that is cosmetic; for a ticket LEDGER file the squash already
-    wrote `state: done` into before drift was detected, it is a false
-    `done` legible to any on-disk reader while `git show HEAD:...`
-    (correctly) shows nothing of the sort -- reproduces the real
-    `GitFailed: refused to unwind` failure, not an approximation."""
+    """Verify a drift-refused land restores a MODIFIED TRACKED file's
+    working-tree content to HEAD, not merely unstaging it via
+    `_unstage_index_only` (a bare `git reset` never touches
+    working-tree content) -- for a ticket LEDGER file this matters
+    because a stray on-disk `state: done` would be legible to any
+    on-disk reader even though `git show HEAD:...` shows nothing of
+    the sort."""
 
     def test_must_fire_modified_tracked_ledger_file_restored_to_head(
         self, repo: Path
@@ -246,12 +242,10 @@ class TestDriftRefusalRestoresModifiedTrackedContent:
 
 # frob:ticket T-1740
 class TestCommitSquashApplyUnwindsOnCommitFailure:
-    """T-1740's audit found this the ONE real gap: every other failure
-    path in the squash-apply pipeline already unwinds via
-    `_verified_reset_root`, but `_commit_squash_apply` -- the LAST step,
-    the actual `git commit` -- used to just tell the operator to clean up
-    root by hand on failure, leaving the fully-staged squash sitting in
-    the index."""
+    """Verify `_commit_squash_apply` (the final `git commit` step of the
+    squash-apply pipeline) unwinds the fully-staged squash from root's
+    index on commit failure, the same as every other failure path in
+    the pipeline via `_verified_reset_root`."""
 
     def test_commit_failure_unwinds_the_staged_squash(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch

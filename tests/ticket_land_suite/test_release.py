@@ -27,8 +27,9 @@ pytestmark = pytest.mark.heavy_subprocess
 
 # frob:ticket T-0338
 class TestReleaseBump:
-    """T-0338: `land`'s optional `bump_version` callback -- the REL001
-    version-bump/stamp coordinator step folded into `land` itself."""
+    """Verify `land`'s optional `bump_version` callback, the REL001
+    version-bump/stamp coordinator step built into `land`. See T-0338
+    for the design rationale."""
 
     def test_bump_applied_and_reported(self, repo: Path) -> None:
         # frob:tests \
@@ -221,15 +222,11 @@ class TestReleaseBump:
 # frob:ticket T-1078
 # frob:ticket T-2220
 class TestReleaseBumpQuartetAtomicity:
-    """T-1078: land's REL001 bump used to update pyproject.toml/
-    CHANGELOG.md while leaving `.frob-release.json` on its old version
-    whenever a `bump_version` callback forgot (or failed silently) to
-    write the manifest itself -- the desync then made every later land
-    compute an already-taken version and refuse on the T-0992
-    monotonicity guard. `land` now force-resyncs the manifest to the
-    callback's reported version in the SAME step, and its refusal
-    diagnostic names an incoherent quartet explicitly when that is the
-    actual cause of a monotonicity refusal."""
+    """Verify `land`'s REL001 bump force-resyncs `.frob-release.json`
+    to the `bump_version` callback's reported version in the same step
+    as pyproject.toml/CHANGELOG.md, and that its refusal diagnostic
+    names an incoherent quartet explicitly when that is the cause of a
+    monotonicity refusal."""
 
     # frob:ticket T-2220
     # frob:tests src/frob/release/__init__.py::set_manifest_version  # noqa: E501
@@ -974,11 +971,10 @@ class TestRebuildNatives:
 
     # frob:tests src/frob/tickets/_land_squash.py::_post_publish_native_rebuild  # noqa: E501
     def test_rebuild_runs_after_the_landing_commit_is_durable(self, repo: Path) -> None:
-        """T-3111 must-fire: the callback must observe a root whose HEAD is
-        ALREADY the landing commit with a clean working tree -- before this
-        fix it ran while root held the whole squash staged and
-        uncommitted, so every second of a minutes-long native build was a
-        second every sibling agent saw DirtyMain."""
+        """Verify the `rebuild_natives` callback observes a root whose
+        HEAD is already the landing commit, with a clean working tree,
+        rather than one still holding the squash staged and
+        uncommitted. See T-3111 for the design rationale."""
         # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_rebuild_runs_after_the_landing_commit_is_durable  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native-order", str(wt)], repo)

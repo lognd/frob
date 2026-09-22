@@ -169,21 +169,11 @@ class TestLandPlan:
     def test_dry_run_tick_gate_dirty_still_fully_unwinds(
         self, repo: Path, tmp_path: Path
     ) -> None:
-        """T-2189: DESIGNATED REPRO. Pre-fix, `_land_plan_locked`'s
-        `PlanTickGateDirty` branch called `_land_plan_unwind_after_merge`
-        with no knowledge of `dry_run` at all -- it always ran T-1522's
-        stop-at-the-merge-commit policy, correct for a REAL land but not
-        for a `--dry-run` one. A real incident: `frob ticket land --plan
-        --dry-run` against a worktree whose merge succeeds but whose
-        `check_ticks()` reports dirty reported `PlanTickGateDirty` and
-        claimed a full unwind, while root's tip had actually moved to a
-        real merge commit -- a mutation from a call that promised none,
-        with the draft-finalize step never reached because the dirty
-        check fired first. This must leave root's tip fully unmoved,
-        exactly like the non-dirty dry-run path
-        (`test_dry_run_unwinds_the_merge` above) and the durable-merge
-        REAL-land path (`test_tick_gate_dirty_unwinds_finalize_but_keeps_
-        the_durable_merge` above) must stay unchanged by this fix."""
+        """Verify a `--plan --dry-run` land whose merge succeeds but
+        whose `check_ticks()` reports dirty (`PlanTickGateDirty`) leaves
+        root's tip fully unmoved -- no merge commit, no finalize commit
+        -- unlike a real (non-dry-run) land's stop-at-the-merge-commit
+        unwind policy."""
         from frob.tickets._land import land_plan
 
         worktree = _make_design_worktree(repo, tmp_path)
@@ -329,13 +319,10 @@ class TestLandPlan:
 
 # frob:ticket T-1495
 class TestLandPlanUnwindNeverDiscardsForeignCommits:
-    """T-1495 (the 2026-08-04 incident): `land_plan`'s own unwind path
-    (`_land_plan_reset_hard`) used to `reset --hard` unconditionally --
-    if ANOTHER process committed to `root` after this run's own last
-    commit but before the reset ran (a concurrent queue-drain land, a
-    manual `frob ticket drop`), that foreign commit was silently
-    destroyed along with this run's own half-finished work. The fix
-    (`_assert_reset_only_discards_own_commits`) refuses instead."""
+    """Verify `land_plan`'s unwind path refuses, via
+    `_assert_reset_only_discards_own_commits`, instead of `reset --hard`
+    unconditionally, when a foreign commit lands on `root` after this
+    run's own last commit but before the unwind's reset."""
 
     # frob:ticket T-1495
     # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding  # noqa: E501
@@ -375,14 +362,10 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
         self, repo: Path, tmp_path: Path
     ) -> None:
         # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_refusal_still_unstages_own_leftover_content  # noqa: E501
-        """T-1740's second instance of the same defect class: `land
-        --plan` runs its OWN unwind primitive (T-1495), separate from
-        `_verified_reset_root`, with the identical gap -- refusing on
-        foreign-commit detection used to leave whatever this run itself
-        had staged sitting in root's index. Never allowed to reach the
-        `_land_plan_reset_hard` unwind itself (the tip mismatch refuses
-        first), so THIS staged content is whatever `check_ticks()`
-        itself leaves in the index while faking the foreign interleave."""
+        """Verify `land --plan`'s foreign-commit refusal (which fires
+        before the `_land_plan_reset_hard` unwind is reached) still
+        unstages whatever this run itself had staged in root's index,
+        rather than leaving it sitting there."""
         from frob.tickets._land import land_plan
 
         worktree = _make_design_worktree(repo, tmp_path)
@@ -489,10 +472,9 @@ class TestLandPlanQueueDrainCommitsDurable:
 
 # frob:ticket T-1349
 class TestLandSquashHelpersMutationCoverage:
-    """T-1349: same rationale as `TestLandReleaseMonotonicityHelpers` above,
-    for the squash-apply/close family T-1334 moved into `_land_squash.py`.
-    Each test targets one specific surviving mutant the T-1349 mutation
-    run found, not a re-assertion of "the tests cover it structurally"."""
+    """Verify the squash-apply/close helper family in `_land_squash.py`;
+    each test targets one specific mutant, not a re-assertion that "the
+    tests cover it structurally"."""
 
     def test_worktree_full_changeset_diff_ok_but_nonzero_returncode_is_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -731,11 +713,10 @@ class TestLandSquashHelpersMutationCoverage:
 
 # frob:ticket T-3848
 class TestLandPlanUnwindAfterMergeFailureSurfaces:
-    """T-3848 (typani TYP003, FROBLEMS T-013): `_land_plan_locked`'s
-    merge/finalize-failure branch used to discard `_land_plan_unwind_
-    after_merge`'s own `Result` outright. If the unwind ALSO failed,
-    that failure was invisible and the caller only ever saw the original
-    merge error, naming the wrong step for `root`'s actual state."""
+    """Verify that when `_land_plan_locked`'s merge/finalize-failure
+    branch's own unwind also fails, both failures are surfaced (logged)
+    while the caller still sees the original merge error naming the
+    real cause."""
 
     # frob:ticket T-3848
     # frob:tests \

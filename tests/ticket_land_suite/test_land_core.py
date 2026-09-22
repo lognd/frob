@@ -254,12 +254,11 @@ class TestRecordLandCommit:
     def test_land_commit_is_derivable_with_no_follow_up_commit(
         self, repo: Path
     ) -> None:
-        """T-3543 (was MUST-FAIL-FIRST acceptance criterion 1 for T-2220's
-        follow-up-commit design; superseded): landing a ticket no longer
-        writes `land_commit` at all via a trailing bookkeeping commit --
-        `root`'s HEAD after `land()` returns IS `report.commit_sha`
-        itself, exactly one commit, and `derive_land_commit_by_grep`
-        recovers that same sha from the commit's own subject on demand."""
+        """Verify landing a ticket leaves `root`'s HEAD as
+        `report.commit_sha`, exactly one commit with no trailing
+        `land_commit` bookkeeping commit, and that
+        `derive_land_commit_by_grep` recovers that same sha from the
+        commit's own subject on demand."""
         from frob.tickets._land_squash import derive_land_commit_by_grep
 
         wt = repo.parent / "wt"
@@ -1463,16 +1462,10 @@ class TestLandRetryAfterFinalizeThenFail:
 # frob:ticket T-1701
 # frob:ticket T-1721
 class TestLandDroppedTicket:
-    """T-1701: `frob ticket land` must be able to publish a DROPPED
-    ticket's ledger entry to main -- before this fix, `_close_finalized_
-    ticket` unconditionally forced a `dropped -> done` transition
-    (illegal, `InvalidTransition`, every single retry) and `_validate_
-    closeable` unconditionally required evidence + a Done report (neither
-    applicable to a ticket dropped, not done), leaving no path through
-    `land` for a legitimate DROPPED outcome -- forcing an agent to bypass
-    worktree isolation and run `frob ticket drop` directly against the
-    root checkout (the live incident: T-1538, then independently again
-    T-1683 within the same hour)."""
+    """Verify `frob ticket land` publishes a DROPPED ticket's ledger
+    entry to main without forcing a `dropped -> done` transition and
+    without requiring evidence or a Done report (neither applicable to
+    a ticket dropped, not done)."""
 
     # frob:ticket T-1721
     def test_dropped_ticket_with_a_reason_lands_cleanly(self, repo: Path) -> None:
@@ -1530,13 +1523,10 @@ class TestLandDroppedTicket:
 # frob:ticket T-1736
 # frob:ticket T-2550
 class TestLandFailedTicket:
-    """T-1818: `frob ticket land` must be able to publish a QUEUED ticket's
-    `frob ticket fail` record to main -- before this fix, a ticket `fail`
-    correctly returned to QUEUED had no path through `land` at all: the
-    DONE preconditions below (evidence + Done report) never apply to a
-    failed attempt, so the ONE artifact a dead end produces (the failure
-    log) was stranded on the worktree branch, invisible to every later
-    agent (the incident this ticket was filed from: T-1478)."""
+    """Verify `frob ticket land` publishes a QUEUED ticket's `frob
+    ticket fail` record (including its failure log) to main without
+    requiring the DONE preconditions (evidence + Done report), which do
+    not apply to a failed attempt."""
 
     # frob:ticket T-1736
     # frob:ticket T-2550
@@ -1601,16 +1591,10 @@ class TestLandFailedTicket:
 
 # frob:ticket T-0795
 class TestLandRefusesWhenRootIsWorktree:
-    """T-0795: `land()` invoked with `--worktree` resolving to the SAME
-    path as `root` used to fall through to `_worktree_full_changeset`'s
-    much later T-0640/T-0761 diagnosis ("`--worktree` almost certainly
-    points at the same checkout/branch root has checked out ... create a
-    real feature branch") -- a correct remedy for a worktree genuinely
-    pointed at the wrong branch, but a misleading one for the far more
-    common real cause: `root` defaults to the invoker's cwd, so running
-    `frob ticket land` from a shell sitting INSIDE the worktree makes
-    `root` resolve to `worktree` for free. This locks the new EARLY
-    refusal (before any git mutation) that names the real mistake."""
+    """Verify `land()` invoked with `--worktree` resolving to the same
+    path as `root` (the shell never `cd`ed out of the worktree) is
+    refused EARLY, before any git mutation, with a message naming the
+    real cause (`root` defaulting to the invoker's cwd)."""
 
     def test_refused_before_any_git_mutation_names_the_real_mistake(
         self, repo: Path, caplog: pytest.LogCaptureFixture
@@ -1674,16 +1658,11 @@ class TestLandRefusesWhenRootIsWorktree:
 
 # frob:ticket T-1003
 class TestLandChainedCdRootResolution:
-    """T-1003 (churn item 4): `root` defaulting to the invoker's cwd makes
-    it resolve to the IDENTICAL path as a REAL `--worktree` whenever the
-    shell never `cd`ed out of the worktree first -- the "chained cd"
-    ritual every land used to require. Unlike `TestLandRefusesWhenRootIs
-    Worktree` (where `worktree` genuinely IS the primary checkout, no
-    linked worktree exists at all, and refusing is correct), a REAL
-    linked worktree's `git rev-parse --git-common-dir` resolves to a
-    DIFFERENT primary checkout than `worktree` itself -- `land()` uses
-    that to recover the true `root` and land onto it, transparently, with
-    no manual `cd` required."""
+    """Verify that when `root` resolves to a REAL linked worktree
+    (distinct from `TestLandRefusesWhenRootIsWorktree`'s case, where no
+    linked worktree exists), `land()` uses `git rev-parse
+    --git-common-dir` to recover the true primary checkout and land
+    onto it transparently, with no manual `cd` required."""
 
     def test_root_equal_to_a_real_linked_worktree_resolves_and_lands(
         self, repo: Path, caplog: pytest.LogCaptureFixture
@@ -1813,20 +1792,11 @@ class TestMergeMainIntoWorktreeRicherState:
 
 # frob:ticket T-1331
 class TestFrobDirNeverLeaksIntoGitAdd:
-    """T-1331: `.frob/` scratch state (per-ticket locks, the T-1257 v2
-    index/archive cache files) must never become a TRACKED file via any
-    fixture's blanket `git add -A` (`_commit_all`) -- an un-gitignored
-    fixture repo previously let two branches each commit a DIFFERENT
-    `.frob/tickets-index.json` as a real tracked file, colliding as a raw
-    git add/add conflict at merge (`TestArchiveV2::
-    test_archive_v2_regression_two_sided_divergence_no_clobber`) or
-    tripping land's T-0463 completeness assertion (`LandError.
-    IncompleteLand`) once the squash-apply's target checkout came up
-    missing files the source checkout had committed. `_git_init` (T-1258)
-    fixed this by writing a `.gitignore` with `.frob/` into every fixture
-    repo from its very first commit; this locks that in as a regression
-    test tied to T-1331 specifically, independent of `_git_init`'s own
-    docstring."""
+    """Verify `.frob/` scratch state (per-ticket locks, the v2
+    index/archive cache files) never becomes a TRACKED file via a
+    fixture's blanket `git add -A` (`_commit_all`), because `_git_init`
+    writes a `.gitignore` with `.frob/` into every fixture repo from its
+    first commit."""
 
     # frob:ticket T-1331
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd.test_frob_scratch_files_are_gitignored_not_tracked kind="unit"  # noqa: E501
@@ -1897,10 +1867,9 @@ class TestFrobDirNeverLeaksIntoGitAdd:
 
 # frob:ticket T-1799
 class TestCommitsTouchingPath:
-    """T-1799: an `OutOfScopeWaiveDeletion` refusal used to say only
-    "revert the offending commit" with no commit actually named --
-    `_commits_touching_path` reads the REAL commit(s) off `git log`
-    instead of leaving an agent to reconstruct which one by hand."""
+    """Verify `_commits_touching_path` reads the real commit(s) that
+    touched a given path off `git log`, by subject, rather than leaving
+    the caller to reconstruct which commit it is by hand."""
 
     def test_names_the_real_commit_that_touched_the_file(self, repo: Path) -> None:
         # frob:tests \

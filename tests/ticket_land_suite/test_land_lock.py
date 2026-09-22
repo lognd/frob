@@ -215,14 +215,12 @@ class TestLandLockHolderMetadataAndTimeout:
     # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor  # noqa: E501
     # frob:ticket T-2065
     def test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor(self) -> None:
-        """T-2065: `_LAND_LOCK_TIMEOUT_S` must sit strictly BELOW the
-        agent-playbook's own mandated foreground shell-wrapper floor
+        """Verify `_LAND_LOCK_TIMEOUT_S` sits strictly below the
+        agent-playbook's mandated foreground shell-wrapper floor
         (`timeout 540`, docs/guides/agent-playbook.md section 0 item 3 /
-        section 3b) -- otherwise a land queued behind a foreign holder can
-        be SIGTERM'd by that outer wrapper before `_land_lock`'s own
-        `LandLockTimeout` ever gets a chance to fire and print a clean,
-        attributable refusal (the confirmed T-2032/T-2033 silent-death
-        mechanism). Was 600.0 (above the floor) before this fix."""
+        section 3b), so a land queued behind a foreign holder is never
+        SIGTERM'd before `_land_lock`'s own `LandLockTimeout` can fire
+        and print an attributable refusal."""
         from frob.tickets._land import _LAND_LOCK_TIMEOUT_S
 
         playbook_shell_wrapper_floor_s = 540.0
@@ -510,12 +508,10 @@ class TestLandLockPlatformBackends:
 
 # frob:ticket T-3018
 class TestProbeLandLockPidLivenessDelegatesToSharedModule:
-    """T-3018: `_probe_land_lock_pid_liveness` used to run its own
-    POSIX-shaped `os.kill(pid, 0)` -- the same unsafe-on-Windows shape
-    T-3003 had already fixed once in `frob.mutate._journal`. It now
-    delegates to `frob.process._pid_liveness.pid_alive_tristate`; faking
-    that shared module's Windows backend here proves the delegation is
-    real, not just a same-behavior coincidence."""
+    """Verify `_probe_land_lock_pid_liveness` delegates to
+    `frob.process._pid_liveness.pid_alive_tristate` rather than running
+    its own PID-liveness check, by faking that shared module's Windows
+    backend and observing the fake take effect."""
 
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesToSharedModule.test_windows_backend_alive_pid_is_true  # noqa: E501
@@ -755,10 +751,9 @@ class TestLandLockInlineWaitDefaultsNearZero:
     def test_opt_in_env_is_still_capped_by_the_remaining_budget(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """The opt-in cannot be used to reintroduce T-2774's regression:
-        even an explicit request for a long in-land wait is still capped
-        by whatever budget actually remains after the work estimate, not
-        granted outright."""
+        """Verify an explicit `FROB_LAND_INLINE_WAIT_S` opt-in for a
+        long in-land wait is still capped by whatever budget remains
+        after the work estimate, not granted outright."""
         from frob.app._check_chunking import _derive_post_land_sweep_budget_s
         from frob.tickets._land import _resolve_land_lock_wait_budget_s
 

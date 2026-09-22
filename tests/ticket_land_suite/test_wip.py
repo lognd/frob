@@ -138,11 +138,11 @@ class TestWipAddIgnoredPathFallback:
 
 # frob:ticket T-2865
 class TestWipCommitNormalizationOnlyDirty:
-    """T-0847: a worktree that is `_porcelain_dirty` purely because of a
+    """Verify a worktree that is `_porcelain_dirty` purely because of a
     line-ending normalization status line (WSL/autocrlf phantom-modified)
-    must not fail land with `GitFailed` -- `add -A` renormalizes back to the
-    identical committed blob, so `git commit` has nothing real to commit and
-    used to exit 1 with no stderr, wrongly surfaced as a land failure."""
+    is treated as a no-op rather than `GitFailed`, since `add -A`
+    renormalizes back to the identical committed blob and `git commit`
+    has nothing real to commit."""
 
     def test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed(
         self, repo: Path
@@ -256,15 +256,12 @@ class TestWorktreeLeaseEnvIsolation:
         assert os.environ.get("FROB_WORKTREE") == self._LEAK_SENTINEL
 
     def test_b_does_not_see_a_leaked_frob_worktree(self) -> None:
-        """Second test, run immediately after the one above in file-
-        declaration order: `FROB_WORKTREE` must not still be the leaked
-        sentinel at its own start, even though it never cleans up after
-        the prior test itself -- proving the autouse `tests/conftest.py`
-        fixture (not accidental ordering, and not a hand-added cleanup in
-        this test) is what isolates it. A `land()` call against a
-        DIFFERENT `tmp_path` repo right after this would otherwise refuse
-        with `TicketError.WorktreeLeaseViolation` -- the exact T-3123
-        failure shape."""
+        """Verify `FROB_WORKTREE` is not still the leaked sentinel set
+        by the prior test, at this test's own start, proving the
+        autouse `tests/conftest.py` fixture (not accidental ordering or
+        a hand-added cleanup in this test) isolates it -- otherwise a
+        `land()` call against a different repo would refuse with
+        `TicketError.WorktreeLeaseViolation`."""
         # frob:waive SEC110 reason="FROB_WORKTREE is a local worktree path, not a \
         # secret -- this test deliberately reads it directly to prove T-3123's \
         # leak-isolation fixture works"

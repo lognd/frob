@@ -566,18 +566,12 @@ class TestCommittedWaiveDeletionRefusal:
     def test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse(  # noqa: E501
         self, repo: Path
     ) -> None:
-        """T-1922's own live incident: main REWORDS a `frob:waive` line's
-        reason text (an unrelated, already-landed ticket's own edit, on a
-        file this branch NEVER committed to at all) while this worktree's
-        branch forked from an OLDER commit and has not re-merged main
-        since. `_committed_waive_deletions`'s T-1550 two-dot content diff
-        (`main_branch..HEAD`) reads the OLD text as "deleted" purely
-        because main's current tip has the NEW text and this branch's own
-        stale copy still has the OLD one -- even though the branch's own
-        commits never touched the file. Before the T-1922 fix this
-        refused with `OutOfScopeWaiveDeletion`; after it, the finding is
-        filtered out because the file never appears in this branch's own
-        `_branch_changed_files` set."""
+        """Verify that when main rewords a `frob:waive` line's reason
+        text on a file this branch never committed to, and the branch
+        forked from an older commit without re-merging main since, land
+        does not refuse -- the finding is filtered out because the file
+        never appears in this branch's own `_branch_changed_files`
+        set."""
         (repo / "src" / "other.py").write_text(
             '# frob:waive PERF001 reason="old wording"\ndef g():\n    pass\n'
         )
