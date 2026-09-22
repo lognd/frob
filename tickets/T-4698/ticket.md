@@ -3,7 +3,7 @@ id: T-4698
 title: 'Ticket subverb tail: verdict per subverb (attach anchor flow plan board epic
   wave runs-last migrate archive reverify waive-audit review admin debt deprecated
   scope-ack worktree contention) -- keep with a cited consumer or delete with a shim'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -30,10 +30,27 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_waive_audit.py
 - tests/unit/test_ticket_subverb_tail.py
+- src/frob/app/parse_runner.py
+- src/frob/_cli_parsers/_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/parse_runner.py
+  reason: 'the parse verdict (T-4690''s amendment: parse belongs in this story''s
+    own verdict-rendering leaf) is DELETE with a shim -- _core.py is free now that
+    T-4690/T-4692 have both landed'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_core.py
+  reason: 'the parse verdict (T-4690''s amendment: parse belongs in this story''s
+    own verdict-rendering leaf) is DELETE with a shim -- _core.py is free now that
+    T-4690/T-4692 have both landed'
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -90,6 +107,8 @@ labels:
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4698
+branch: t-4698
 ---
 POINTS: 3. Parent story T-4687. blocked_by T-4690 (shim helper) and T-4696
 (shares _cli_parsers/_ticket/__init__.py and app/ticket_runner/__init__.py).
