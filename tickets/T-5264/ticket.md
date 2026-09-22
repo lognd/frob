@@ -1,5 +1,5 @@
 ---
-id: T-draft-82a66dfe
+id: T-5264
 title: 'Post-land sweep residue 2026-09-21_2336: DUP001:src/frob/graph/dsl.py REL002:.frob-release.json
   TEST010:.claude/hooks/_agent_context.py TEST010:.claude/hooks/_shellscan.py TEST010:.'
 state: queued
