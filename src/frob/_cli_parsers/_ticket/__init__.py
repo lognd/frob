@@ -41,6 +41,7 @@ from ._metadata import (
     _add_ticket_kind_parser,
     _add_ticket_label_parser,
     _add_ticket_milestone_parser,
+    _add_ticket_points_parser,
     _add_ticket_priority_parser,
     _add_ticket_runs_last_parallel_safe_parser,
     _add_ticket_runs_last_parser,
@@ -50,6 +51,7 @@ from ._metadata import (
     _add_ticket_set_parser,
     _add_ticket_sprint_parser,
     _add_ticket_tier_parser,
+    _add_ticket_tokens_parser,
 )
 from ._new import (
     _add_ticket_new_graph_args,
@@ -86,6 +88,7 @@ __all__ = [
     "_add_ticket_new_identity_args",
     "_add_ticket_new_parser",
     "_add_ticket_parser",
+    "_add_ticket_points_parser",
     "_add_ticket_priority_parser",
     "_add_ticket_progress_parsers",
     "_add_ticket_query_parsers",
@@ -101,6 +104,7 @@ __all__ = [
     "_add_ticket_set_parser",
     "_add_ticket_sprint_parser",
     "_add_ticket_tier_parser",
+    "_add_ticket_tokens_parser",
     "_suppress_subparser_alias",
 ]
 
@@ -155,6 +159,10 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_runs_last_parallel_safe_parser(ticket_sub),
             # frob:ticket T-2574
             _add_ticket_milestone_parser(ticket_sub),
+            # frob:ticket T-5132
+            _add_ticket_points_parser(ticket_sub),
+            # frob:ticket T-5132
+            _add_ticket_tokens_parser(ticket_sub),
             # frob:ticket T-2392
             _add_ticket_body_parser(ticket_sub),
         ]

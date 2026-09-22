@@ -1112,6 +1112,76 @@ def _milestone(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: milestone now %s", cfg.ticket_id, ticket.milestone)
 
 
+# frob:ticket T-5132
+def _points(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket points <id> <value>`: forward to `frob.tickets.
+    set_points` -- no validation re-derived here, same `_milestone`/
+    T-2574 mirror shape. `value` arrives as a string from argparse (a
+    positional, not `type=int`, so a non-numeric value gets a clean
+    error here rather than an argparse traceback)."""
+    from frob.tickets import set_points
+
+    if cfg.ticket_id is None or cfg.ticket_points_value is None:
+        _log.error("frob ticket points requires <id> <value>")
+        sys.exit(1)
+    try:
+        points_int = int(cfg.ticket_points_value)
+    except ValueError:
+        _log.error(
+            "points change failed: %r is not an integer (allowed: 1 2 3 5 8 13)",
+            cfg.ticket_points_value,
+        )
+        sys.exit(1)
+
+    result = set_points(root, cfg.ticket_id, points_int)
+    if result.is_err:
+        _log.error("points change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: points now %s", cfg.ticket_id, ticket.points)
+
+
+# frob:ticket T-5132
+def _tokens(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket tokens <id> --tokens-in N --tokens-out N [--tokens-
+    cache-read N]`: forward to `frob.tickets.set_tokens` (T-5132
+    amendment's manual path)."""
+    from frob.tickets import set_tokens
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket tokens requires <id>")
+        sys.exit(1)
+    if (
+        cfg.ticket_tokens_in is None
+        and cfg.ticket_tokens_out is None
+        and cfg.ticket_tokens_cache_read is None
+    ):
+        _log.error(
+            "frob ticket tokens requires at least one of --tokens-in/"
+            "--tokens-out/--tokens-cache-read"
+        )
+        sys.exit(1)
+
+    result = set_tokens(
+        root,
+        cfg.ticket_id,
+        tokens_in=cfg.ticket_tokens_in,
+        tokens_out=cfg.ticket_tokens_out,
+        tokens_cache_read=cfg.ticket_tokens_cache_read,
+    )
+    if result.is_err:
+        _log.error("tokens change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: tokens now in=%s out=%s cache_read=%s",
+        cfg.ticket_id,
+        ticket.tokens_in,
+        ticket.tokens_out,
+        ticket.tokens_cache_read,
+    )
+
+
 # frob:ticket T-0715
 def _sprint(root: Path, cfg: AppConfig) -> None:
     """Dispatch `frob ticket sprint assign|show` (T-0715) to its handler."""
@@ -1165,6 +1235,11 @@ def _sprint_show(root: Path, cfg: AppConfig) -> None:
             "tickets": [t.model_dump(mode="json") for t in report.tickets],
             "rollup": {state.value: count for state, count in report.rollup.items()},
             "closed": report.closed,
+            # frob:ticket T-5132
+            "total_points": report.total_points,
+            "points_done": report.points_done,
+            "sized_count": report.sized_count,
+            "points_eta_days": report.points_eta_days,
         }
         _log.info(json.dumps(payload, indent=2))
         return
@@ -1177,6 +1252,20 @@ def _sprint_show(root: Path, cfg: AppConfig) -> None:
         report.sprint,
         len(report.tickets),
         report.closed,
+    )
+    # frob:ticket T-5132
+    eta_text = (
+        f"{report.points_eta_days:.1f}d"
+        if report.points_eta_days is not None
+        else "n/a"
+    )
+    _log.info(
+        "  points: %d/%d done (%d/%d ticket(s) sized) -- ETA %s",
+        report.points_done,
+        report.total_points,
+        report.sized_count,
+        len(report.tickets),
+        eta_text,
     )
     for state, count in sorted(report.rollup.items(), key=lambda kv: kv[0].value):
         _log.info("  %s: %d", state.value, count)
@@ -1250,6 +1339,10 @@ def _flow(root: Path, cfg: AppConfig) -> None:
             "open_count": report.open_count,
             "trailing_net_rate": report.trailing_net_rate,
             "eta_days": report.eta_days,
+            # frob:ticket T-5132
+            "points_per_hour": report.points_per_hour,
+            "points_per_hour_sample": report.points_per_hour_sample,
+            "tokens_per_point": report.tokens_per_point,
         }
         _log.info(json.dumps(payload, indent=2))
         return
@@ -1277,6 +1370,17 @@ def _flow(root: Path, cfg: AppConfig) -> None:
             "ETA: ~%.1f days to zero-open (naive extrapolation, NOT a forecast)",
             report.eta_days,
         )
+    # frob:ticket T-5132
+    if report.points_per_hour is None:
+        _log.info("points/hour: n/a (no closed sized ticket with both transitions)")
+    else:
+        _log.info(
+            "points/hour: %.2f (n=%d closed ticket(s))",
+            report.points_per_hour,
+            report.points_per_hour_sample,
+        )
+    if report.tokens_per_point is not None:
+        _log.info("tokens/point: %.0f", report.tokens_per_point)
 
 
 # frob:ticket T-0398

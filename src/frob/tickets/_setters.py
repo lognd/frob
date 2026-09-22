@@ -65,6 +65,7 @@ from frob.tickets._models import (
     TriageChangeEntry,
     replace_done_report_section,
     validate_milestone,
+    validate_points,
 )
 from frob.tickets._store import (
     _split_done_report,
@@ -884,6 +885,122 @@ def set_milestone(
         log_value=normalized_milestone,
         reason=_MILESTONE_ASSIGNMENT_REASON,
     )
+
+
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+# frob:tests tests/test_tickets_points.py::TestSetPoints.test_valid_value_sets_field
+# frob:tests tests/test_tickets_points.py::TestSetPoints.test_invalid_value_refused
+def set_points(
+    root: Path, ticket_id: str, points: int | None
+) -> Result[Ticket, TicketError | LeaseError]:
+    """`frob ticket points <id> <value>`: set `ticket_id`'s `points` field
+    (T-5132), same ledger-locked `_set_ticket_field` pattern `set_
+    milestone` uses. A non-`None` value is validated via `validate_
+    points` (Fibonacci scale) before the write; `points=None` clears the
+    field unconditionally, re-opening the `frob ticket start` refusal."""
+    if points is None:
+        validated_points = None
+    else:
+        validated = validate_points(points)
+        if validated.is_err:
+            return Err(validated.danger_err)
+        validated_points = validated.danger_ok
+    return _set_ticket_field(
+        root,
+        ticket_id,
+        "points",
+        validated_points,
+        log_value=validated_points,
+        reason="ticket sizing",
+    )
+
+
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+# frob:tests tests/test_tickets_points.py::TestSetUnsizedAck.test_ack_sets_both_fields
+# frob:tests tests/test_tickets_points.py::TestSetUnsizedAck.test_reason_missing_refuses
+def set_unsized_ack(
+    root: Path, ticket_id: str, reason: str
+) -> Result[Ticket, TicketError | LeaseError]:
+    """`frob ticket start <id> --unsized-ack REASON`: acknowledge
+    starting a genuinely-unsized ticket (T-5132) -- sets `unsized_ack=
+    True` and records `reason` in `unsized_ack_reason` in one ledger-
+    locked write, same bool+reason shape `set_scope_breadth_ack` already
+    established. A blank/whitespace-only `reason` is rejected."""
+    if not reason.strip():
+        return Err(TicketError.UnsizedAckReasonMissing)
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    from frob.tickets import _load_ticket_and_queue
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(
+            update={"unsized_ack": True, "unsized_ack_reason": reason}
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s unsized_ack set to True (reason=%s)", ticket_id, reason)
+    return Ok(updated)
+
+
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+# frob:tests tests/test_tickets_points.py::TestSetTokens.test_sets_fields
+def set_tokens(
+    root: Path,
+    ticket_id: str,
+    *,
+    tokens_in: int | None,
+    tokens_out: int | None,
+    tokens_cache_read: int | None = None,
+) -> Result[Ticket, TicketError | LeaseError]:
+    """`frob ticket tokens <id> --tokens-in N --tokens-out N [--tokens-
+    cache-read N]`: manually record measured token spend for the session
+    that drove `ticket_id` (T-5132 amendment). `None` fields are left
+    unset (`0` is never written implicitly -- a real zero-token session
+    is not observable, so absence must stay `None`, never coerced)."""
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    from frob.tickets import _load_ticket_and_queue
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        update: dict[str, int | None] = {}
+        if tokens_in is not None:
+            update["tokens_in"] = tokens_in
+        if tokens_out is not None:
+            update["tokens_out"] = tokens_out
+        if tokens_cache_read is not None:
+            update["tokens_cache_read"] = tokens_cache_read
+        updated = ticket.model_copy(update=update)
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s tokens set (in=%s out=%s cache_read=%s)",
+        ticket_id,
+        tokens_in,
+        tokens_out,
+        tokens_cache_read,
+    )
+    return Ok(updated)
 
 
 # frob:ticket T-1484

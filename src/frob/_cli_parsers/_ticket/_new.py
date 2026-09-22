@@ -131,6 +131,16 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         help="which shippable milestone this ticket belongs to, a real "
         "semver string (e.g. 1.10.0, T-2574); omit for unmilestoned",
     )
+    # frob:ticket T-5132
+    ticket_new_p.add_argument(
+        "--points",
+        dest="ticket_points",
+        type=int,
+        metavar="N",
+        help="story-point size, one of the Fibonacci sizes 1 2 3 5 8 13 "
+        "(T-5132); WARNs if omitted -- required before `frob ticket "
+        "start` unless --unsized-ack is used there",
+    )
     # frob:ticket T-0454
     ticket_new_p.add_argument(
         "--component",

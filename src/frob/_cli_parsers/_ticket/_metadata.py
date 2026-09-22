@@ -814,6 +814,46 @@ def _add_ticket_milestone_parser(ticket_sub):
     return ticket_milestone_p
 
 
+# frob:ticket T-5132
+def _add_ticket_points_parser(ticket_sub):
+    """Register `frob ticket points <id> <value>` -- size an already-
+    created ticket on the Fibonacci scale (T-5132), same mutate-in-place
+    shape as `_add_ticket_milestone_parser`."""
+    ticket_points_p = ticket_sub.add_parser(
+        "points", help="set an existing ticket's story points (T-5132)"
+    )
+    ticket_points_p.add_argument("ticket_id", metavar="id")
+    ticket_points_p.add_argument(
+        "ticket_points_value",
+        metavar="value",
+        help="one of the Fibonacci sizes 1 2 3 5 8 13",
+    )
+    _add_no_commit_flag(ticket_points_p)
+    return ticket_points_p
+
+
+# frob:ticket T-5132
+def _add_ticket_tokens_parser(ticket_sub):
+    """Register `frob ticket tokens <id> --tokens-in N --tokens-out N
+    [--tokens-cache-read N]` -- manually record measured token spend for
+    the session that drove `id` (T-5132 amendment's manual path)."""
+    ticket_tokens_p = ticket_sub.add_parser(
+        "tokens", help="record a ticket's measured token spend (T-5132)"
+    )
+    ticket_tokens_p.add_argument("ticket_id", metavar="id")
+    ticket_tokens_p.add_argument(
+        "--tokens-in", dest="ticket_tokens_in", type=int, metavar="N"
+    )
+    ticket_tokens_p.add_argument(
+        "--tokens-out", dest="ticket_tokens_out", type=int, metavar="N"
+    )
+    ticket_tokens_p.add_argument(
+        "--tokens-cache-read", dest="ticket_tokens_cache_read", type=int, metavar="N"
+    )
+    _add_no_commit_flag(ticket_tokens_p)
+    return ticket_tokens_p
+
+
 # frob:ticket T-0715
 def _add_ticket_sprint_parser(ticket_sub):
     """Register `frob ticket sprint assign|show` (T-0715): `assign <id>

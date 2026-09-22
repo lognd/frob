@@ -191,6 +191,28 @@ def validate_milestone(value: str) -> Result[str, TicketError]:
     return Ok(normalize_milestone(value))
 
 
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+# frob:tests tests/test_tickets_points.py::TestValidatePoints.test_valid_value_accepted
+# frob:tests tests/test_tickets_points.py::TestValidatePoints.test_invalid_value_refused
+def validate_points(value: int) -> Result[int, TicketError]:
+    """Refuse a `Ticket.points`/`TicketSpec.points` value outside the
+    Fibonacci sizing scale (1 2 3 5 8 13, T-5132) at WRITE time, the same
+    "plain function-level guard, write-time not load-time" shape
+    `validate_milestone` already established -- points is only ever set
+    via `frob ticket new --points`/`frob ticket points <id> N`, both
+    call this before the ledger write, so a malformed ledger row loads
+    unvalidated same as `blocked_by`/`parent` (T-1132's reasoning)."""
+    if value not in POINTS_ALLOWED:
+        return Err(TicketError.InvalidPoints)
+    return Ok(value)
+
+
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+POINTS_ALLOWED = frozenset({1, 2, 3, 5, 8, 13})
+
+
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:doc docs/guides/extending/ticket-kinds-states.md#ticket-kinds-and-states
 class TicketState(StrEnum):
@@ -2004,6 +2026,40 @@ class Ticket(BaseModel):
     # starts to matter. Settable via `frob ticket new --milestone` or
     # `frob ticket milestone <id> <value>` (`set_milestone`).
     milestone: str | None = None
+    # frob:ticket T-5132
+    # story-point size on the Fibonacci scale (1 2 3 5 8 13, `POINTS_
+    # ALLOWED`), validated via `validate_points` at every write site
+    # (`set_points`, `frob ticket new --points`), never here -- same
+    # lenient-on-ledger-load shape `milestone` above already established.
+    # `None` means unsized; `frob ticket start` refuses an unsized QUEUED
+    # ticket unless `--unsized-ack REASON` is given (`unsized_ack`/
+    # `unsized_ack_reason` below). Hours are deliberately NOT a field:
+    # actual wall time from start to close is derived by `_flow`, not
+    # entered by hand (owner directive 2026-09-20).
+    points: int | None = None
+    # frob:ticket T-5132
+    # unsized-start override, same bool+reason declaration shape
+    # `scope_breadth_ack`/`scope_breadth_ack_reason` already established
+    # (T-2302) -- `True` bypasses `_refuse_unsized_on_start`'s points=None
+    # refusal, `unsized_ack_reason` records WHY.
+    unsized_ack: bool = False
+    # frob:ticket T-5132
+    # required justification for `unsized_ack=True`; `None` when False.
+    unsized_ack_reason: str | None = None
+    # frob:ticket T-5132
+    # optional measured token spend for the session that drove this
+    # ticket -- `None` means human-worked or unmeasured, NEVER `0`.
+    # Set manually via `frob ticket tokens <id> --tokens-in N --tokens-
+    # out N` (`set_tokens`). Automatic transcript-mining at start/close
+    # is deferred, see T-5132's done report.
+    tokens_in: int | None = None
+    # frob:ticket T-5132
+    # see `tokens_in`; the output half of the same measured pair.
+    tokens_out: int | None = None
+    # frob:ticket T-5132
+    # cache-read tokens, recorded separately from `tokens_in` because
+    # they dominate long sessions and are billed differently.
+    tokens_cache_read: int | None = None
     # frob:ticket T-2579
     # T-2579 (M4b, MILE004): when TWO OR MORE `runs_last` tickets share one
     # effective milestone, ordering between them must be either a real
@@ -2409,6 +2465,12 @@ class TicketSpec(BaseModel):
     # reasoning as `scope_breadth_ack_reason`'s own plain function-level
     # guard).
     milestone: str | None = None
+    # frob:ticket T-5132
+    # see `Ticket.points` -- settable at filing time via `frob ticket
+    # new --points N`; validated by `_validate_new_ticket_spec` via
+    # `validate_points`, not by a field_validator here (same pattern).
+    # `frob ticket new` WARNs (does not refuse) when omitted.
+    points: int | None = None
     # frob:ticket T-2579
     # see `Ticket.runs_last_parallel_safe` -- settable at filing time via
     # `frob ticket new --runs-last-parallel-safe --runs-last-parallel-
@@ -2615,6 +2677,16 @@ class TicketError(ErrorSet):
     InvalidMilestone = (
         "milestone must be a valid semver string (e.g. 1.10.0) or omitted"
     )
+    # frob:ticket T-5132
+    InvalidPoints = "points must be one of the Fibonacci sizes 1 2 3 5 8 13 or omitted"
+    # frob:ticket T-5132
+    UnsizedTicketAtStart = (
+        "ticket has points=None -- refuse to start unsized work (T-5132); size "
+        "it with `frob ticket points <id> N` or override with `--unsized-ack "
+        "REASON`"
+    )
+    # frob:ticket T-5132
+    UnsizedAckReasonMissing = "--unsized-ack requires a non-empty REASON"
     WriteFailed = "Atomic ticket write failed"
     # frob:ticket T-3684
     TicketVanishedDuringScan = (
@@ -3336,6 +3408,26 @@ class SprintReport(BaseModel):
     tickets: tuple[Ticket, ...] = ()
     rollup: Mapping[TicketState, int] = {}
     closed: int = 0
+    # frob:ticket T-5132
+    #: sum of `points` over every ticket committed to this sprint that
+    #: carries one (unsized members contribute 0, disclosed via `sized_
+    #: count` below rather than silently treated as fully accounted for).
+    total_points: int = 0
+    # frob:ticket T-5132
+    #: sum of `points` over the DONE-state subset of the same tickets.
+    points_done: int = 0
+    # frob:ticket T-5132
+    #: how many committed tickets actually carry a `points` value --
+    #: render layers use this vs `len(tickets)` to disclose an unsized
+    #: remainder rather than presenting `total_points` as complete.
+    sized_count: int = 0
+    # frob:ticket T-5132
+    #: naive points-weighted burn-down ETA in days: remaining points
+    #: divided by a simple points/day velocity derived from `points_
+    #: done` over the span from the earliest committed ticket's
+    #: `created` date to today; `None` when there is nothing to divide
+    #: by (no points done yet, or nothing remaining).
+    points_eta_days: float | None = None
 
 
 # frob:ticket T-0938
@@ -3432,6 +3524,23 @@ class TicketFlowReport(BaseModel):
     #: transition across every ticket that has both; None when no ticket
     #: has completed yet (render layers label it "n/a", never omit).
     median_cycle_days: float | None = None
+    # frob:ticket T-5132
+    #: aggregate points-per-actual-hour calibration (sum(points) /
+    #: sum(actual hours) across every closed, sized ticket whose start
+    #: AND done transitions were both minable this window); None when no
+    #: ticket qualifies. See `_ticket_points_per_hour`.
+    points_per_hour: float | None = None
+    # frob:ticket T-5132
+    #: how many closed tickets fed `points_per_hour` -- render layers use
+    #: this to disclose a thin sample rather than presenting a ratio of
+    #: one ticket as a stable calibration.
+    points_per_hour_sample: int = 0
+    # frob:ticket T-5132
+    #: (T-5132 amendment) aggregate tokens-per-point calibration
+    #: (sum(tokens_in+tokens_out) / sum(points) across every closed,
+    #: sized ticket that also carries measured tokens); None when no
+    #: ticket qualifies.
+    tokens_per_point: float | None = None
 
     @property
     # frob:ticket T-1100

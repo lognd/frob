@@ -589,6 +589,12 @@ class AppConfig(BaseModel):
     # mutate verb (same `ticket_tier`/`ticket_tier_value` split). Validated
     # by `_validate_new_ticket_spec` via `validate_milestone`, not here.
     ticket_milestone: str | None = None
+    # frob:ticket T-5132
+    # `frob ticket new --points N` -- the filing-time twin of `ticket_
+    # points_value`'s `frob ticket points <id> N` mutate verb (same
+    # `ticket_milestone`/`ticket_milestone_value` split). Validated by
+    # `_validate_new_ticket_spec` via `validate_points`, not here.
+    ticket_points: int | None = None
     ticket_body: str = ""
     # frob:ticket T-0737
     # `frob ticket new --body-file PATH` -- read the ticket body verbatim
@@ -773,6 +779,17 @@ class AppConfig(BaseModel):
     # value`. Validated by `set_milestone` (real semver, T-2574), not
     # here.
     ticket_milestone_value: str | None = None
+    # frob:ticket T-5132
+    # `frob ticket points <id> <value>` -- the mutate verb's positional
+    # points value, same shape as `ticket_milestone_value`. Validated by
+    # `set_points` (Fibonacci scale, T-5132), not here.
+    ticket_points_value: str | None = None
+    # frob:ticket T-5132
+    # `frob ticket tokens <id> --tokens-in N --tokens-out N [--tokens-
+    # cache-read N]` -- manual token-spend setter (`set_tokens`).
+    ticket_tokens_in: int | None = None
+    ticket_tokens_out: int | None = None
+    ticket_tokens_cache_read: int | None = None
     # frob:ticket T-2392
     # `frob ticket body <id> --append TEXT|--set TEXT ... --reason TEXT` --
     # the validated body-amendment verb (T-2392); `--append`/`--set` (and
@@ -1054,6 +1071,12 @@ class AppConfig(BaseModel):
     # re-records the lease pinned to THIS worktree, invalidating the other
     # worktree's lease for any later close/land attempt.
     ticket_steal: bool = False
+    # frob:ticket T-5132
+    # `frob ticket start <id> --unsized-ack REASON` -- override a refusal
+    # caused by `points=None` on a queued ticket (T-5132); records the
+    # reason on the ticket via `set_unsized_ack`, same bool+reason
+    # declaration shape `scope_breadth_ack` already established.
+    ticket_unsized_ack: str | None = None
     # frob:ticket T-0476
     # `frob ticket reconcile [--apply] [--remove-orphans]`.
     ticket_reconcile_apply: bool = False

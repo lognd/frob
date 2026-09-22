@@ -59,6 +59,16 @@ release -- they are kept as hidden (`--help`-suppressed) aliases, not
 removed outright, since these are the disaster-recovery verbs a script
 or a muscle-memory habit is most likely to still reach for.
 
+## `points` / `tokens` (T-5132)
+
+`frob ticket points <id> <value>` sizes an existing ticket on the
+Fibonacci scale (1 2 3 5 8 13); `frob ticket tokens <id> --tokens-in N
+--tokens-out N [--tokens-cache-read N]` manually records measured token
+spend. `frob ticket start <id> --unsized-ack REASON` overrides the
+points=None start-time refusal. See
+`docs/modules/tickets-data-storage.md#points-t-5132` for the full
+behavioral reference. <!-- frob:waive DOC006 reason="verbs introduced by T-5132; the resolver runs the pre-land parser" -->
+
 ## `runs-last-parallel-safe`
 
 STATUS: NOT YET FOLDED. The plan is `frob ticket runs-last <id>

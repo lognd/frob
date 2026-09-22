@@ -857,6 +857,8 @@ def _start(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
+    ticket = _apply_unsized_ack_on_start(root, cfg, ticket)
+    _refuse_unsized_on_start(ticket)
     ticket = _apply_scope_breadth_ack_on_start(root, cfg, ticket)
     _refuse_over_broad_scope_on_start(root, ticket)
     # T-2394: an EMPTY scope is a different failure mode than a too-BROAD
@@ -1126,6 +1128,66 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
 # frob:ticket T-2446
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_flag_sets_field_before_refusal  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_without_reason_refuses  # noqa: E501
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+def _apply_unsized_ack_on_start(root: Path, cfg: AppConfig, ticket):  # noqa: ANN001,ANN201
+    """T-5132: if `--unsized-ack REASON` was passed to `frob ticket
+    start`, set `unsized_ack=True` (recording `REASON`) BEFORE `_refuse_
+    unsized_on_start` runs -- same inline-ack-before-refusal shape
+    `_apply_scope_breadth_ack_on_start` already established for T-2446.
+    A blank `REASON` refuses immediately (`sys.exit(1)`). Returns
+    `ticket` unchanged when `--unsized-ack` was not passed."""
+    if not cfg.ticket_unsized_ack:
+        return ticket
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+    reason = cfg.ticket_unsized_ack
+    if not reason.strip():
+        _log.error(
+            "ticket start failed: %s --unsized-ack requires a non-empty REASON "
+            "(T-5132)",
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+    from frob.tickets import set_unsized_ack
+
+    result = set_unsized_ack(root, cfg.ticket_id, reason)
+    if result.is_err:
+        _log.error(
+            "ticket start failed: %s --unsized-ack could not be recorded: %s",
+            cfg.ticket_id,
+            result.danger_err,
+        )
+        sys.exit(1)
+    _log.info(
+        "ticket start: %s unsized_ack now True (T-5132, inline at start) -- %s",
+        cfg.ticket_id,
+        reason,
+    )
+    return result.danger_ok
+
+
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+def _refuse_unsized_on_start(ticket) -> None:  # noqa: ANN001
+    """T-5132: `sys.exit(1)` if `ticket.points` is `None` and `ticket.
+    unsized_ack` is not set -- points required to WORK a ticket is the
+    whole point of T-5132 (a `--unsized-ack REASON` override exists, same
+    escape-hatch shape `_refuse_empty_scope_on_start`'s `no_scope_
+    declared` already established, for the rare case sizing genuinely
+    cannot happen before work starts)."""
+    if ticket.points is not None or ticket.unsized_ack:
+        return
+    _log.error(
+        "ticket start failed: %s has points=None -- size it first "
+        "(`frob ticket points %s N`, N in 1 2 3 5 8 13) or override with "
+        "`frob ticket start %s --unsized-ack REASON` (T-5132)",
+        ticket.id,
+        ticket.id,
+        ticket.id,
+    )
+    sys.exit(1)
+
+
 def _apply_scope_breadth_ack_on_start(root: Path, cfg: AppConfig, ticket):  # noqa: ANN001,ANN201
     """T-2446: if `--scope-breadth-ack` was passed to `frob ticket start`,
     set `scope_breadth_ack=True` (with its mandatory `--scope-breadth-ack-

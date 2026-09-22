@@ -104,6 +104,15 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "same non-blank requirement `frob ticket scope-ack --reason` and "
         "`frob ticket new --scope-breadth-ack-reason` already enforce",
     )
+    # frob:ticket T-5132
+    ticket_start_p.add_argument(
+        "--unsized-ack",
+        dest="ticket_unsized_ack",
+        metavar="REASON",
+        help="override the points=None refusal at start (T-5132): sets "
+        "unsized_ack=True and records REASON, same bool+reason shape "
+        "--scope-breadth-ack already established",
+    )
 
     # frob:ticket T-1175
     ticket_work_p = ticket_sub.add_parser(

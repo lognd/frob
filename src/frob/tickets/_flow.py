@@ -74,7 +74,28 @@ def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
     for t in tickets:
         rollup[t.state] = rollup.get(t.state, 0) + 1
     closed = rollup.get(TicketState.DONE, 0)
-    return SprintReport(sprint=sprint, tickets=tickets, rollup=rollup, closed=closed)
+    # frob:ticket T-5132
+    total_points = sum(t.points or 0 for t in tickets)
+    points_done = sum(t.points or 0 for t in tickets if t.state == TicketState.DONE)
+    sized_count = sum(1 for t in tickets if t.points is not None)
+    remaining_points = total_points - points_done
+    points_eta_days = None
+    if remaining_points > 0 and points_done > 0 and tickets:
+        earliest_created = min(t.created for t in tickets)
+        span_days = max((date.today() - earliest_created).days, 1)
+        velocity = points_done / span_days
+        if velocity > 0:
+            points_eta_days = remaining_points / velocity
+    return SprintReport(
+        sprint=sprint,
+        tickets=tickets,
+        rollup=rollup,
+        closed=closed,
+        total_points=total_points,
+        points_done=points_done,
+        sized_count=sized_count,
+        points_eta_days=points_eta_days,
+    )
 
 
 _STATE_LINE_RE = re.compile(r"(?m)^state:\s*(\S+)\s*$")
@@ -155,8 +176,16 @@ def _blob_at(root: Path, sha: str) -> str | None:
 
 
 # frob:ticket T-1330
+# frob:waive ARCH001 reason="T-5132: crossed the threshold by adding a single \
+# target_state parameter and a docstring paragraph explaining it to an already-large \
+# pre-existing v1 walk (T-1330's own docstring already explains why this function is a \
+# full, unsplit ledger-history walk); the actual control flow is unchanged from before \
+# this diff, so a structural split here would separate one cohesive walk into two \
+# halves that must stay in lock-step, not a genuine decomposition"
 def _mine_done_transitions_v1(
-    root: Path, ticket_ids: Sequence[str]
+    root: Path,
+    ticket_ids: Sequence[str],
+    target_state: str = TicketState.DONE.value,
 ) -> tuple[SprintTransition, ...]:
     """v1 (monofile-ledger) done-transition mining -- `_mine_done_
     transitions`'s original body, split out unchanged when T-1330 added
@@ -175,7 +204,12 @@ def _mine_done_transitions_v1(
     `_blob_at` (subprocess `git show`) call per commit in `tickets.md`'s
     ENTIRE history, times every caller -- the ~6-minute `frob ticket
     flow`/`list --stats` cost T-1330 fixed for v2-mode repos by mining
-    each ticket's own small file instead (`_mine_done_transitions_v2`)."""
+    each ticket's own small file instead (`_mine_done_transitions_v2`).
+
+    `target_state` (T-5132) generalizes this from a done-only miner to
+    ANY single-state transition finder -- `_ticket_flow_hours` reuses it
+    with `TicketState.IN_PROGRESS.value` to find each ticket's start
+    transition alongside its done one, same walk, no second mining pass."""
     if not ticket_ids:
         return ()
     transitions: list[SprintTransition] = []
@@ -189,7 +223,7 @@ def _mine_done_transitions_v1(
             if state is None:
                 continue
             try:
-                if state == TicketState.DONE.value and state != prev_state[ticket_id]:
+                if state == target_state and state != prev_state[ticket_id]:
                     try:
                         committed_at = datetime.fromisoformat(iso)
                     except ValueError:
@@ -388,7 +422,9 @@ def _v2_lineage_from(rename_map: dict[str, str], rel_path: str) -> list[str]:
 # git-history walks (T-5131), which the resolver cannot see through; the one real \
 # raise path (datetime.fromisoformat on a malformed timestamp) is caught below"
 def _mine_done_transitions_v2(
-    root: Path, ticket_ids: Sequence[str]
+    root: Path,
+    ticket_ids: Sequence[str],
+    target_state: str = TicketState.DONE.value,
 ) -> tuple[SprintTransition, ...]:
     """v2 (file-per-ticket) done-transition mining (T-1330): TWO batched
     git spawns total (`_v2_all_path_transitions`, `_v2_all_renames`) over
@@ -417,7 +453,7 @@ def _mine_done_transitions_v2(
                 if sha in seen_shas:
                     continue
                 seen_shas.add(sha)
-                if state == TicketState.DONE.value and state != prev_state:
+                if state == target_state and state != prev_state:
                     try:
                         committed_at = datetime.fromisoformat(iso)
                     except ValueError:
@@ -439,19 +475,24 @@ def _mine_done_transitions_v2(
 # frob:ticket T-0938
 # frob:ticket T-1330
 def _mine_done_transitions(
-    root: Path, ticket_ids: Sequence[str]
+    root: Path,
+    ticket_ids: Sequence[str],
+    target_state: str = TicketState.DONE.value,
 ) -> tuple[SprintTransition, ...]:
-    """Mine every `state: done` transition each id in `ticket_ids` has
-    ever made (T-0938's derivation source -- see `sprint_velocity`'s
-    docstring for the honest tradeoffs of this approach), dispatched on
-    `_store_mode(root)` (T-1330): v2-mode repos mine each ticket's own
-    small file (`_mine_done_transitions_v2`, fast -- see its docstring
-    for the cost this avoids); v1-mode repos keep the original whole-
-    ledger walk (`_mine_done_transitions_v1`) unchanged, since the fast
-    path requires per-ticket files to exist at all."""
+    """Mine every `state: <target_state>` transition each id in
+    `ticket_ids` has ever made (T-0938's derivation source -- see
+    `sprint_velocity`'s docstring for the honest tradeoffs of this
+    approach), dispatched on `_store_mode(root)` (T-1330): v2-mode repos
+    mine each ticket's own small file (`_mine_done_transitions_v2`, fast
+    -- see its docstring for the cost this avoids); v1-mode repos keep
+    the original whole-ledger walk (`_mine_done_transitions_v1`)
+    unchanged, since the fast path requires per-ticket files to exist at
+    all. `target_state` defaults to `done` (the name's original meaning)
+    but T-5132's `_ticket_flow_hours` also calls this with `in-progress`
+    to find each ticket's start transition, reusing the same mining."""
     if _store_mode(root) == "v2":
-        return _mine_done_transitions_v2(root, ticket_ids)
-    return _mine_done_transitions_v1(root, ticket_ids)
+        return _mine_done_transitions_v2(root, ticket_ids, target_state)
+    return _mine_done_transitions_v1(root, ticket_ids, target_state)
 
 
 # frob:ticket T-0938
@@ -588,6 +629,81 @@ def _build_flow_rows(
     return rows
 
 
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+def _ticket_points_per_hour(
+    root: Path, all_tickets: dict, first_done: dict[str, date]
+) -> tuple[float | None, int]:
+    """T-5132: `points-per-actual-hour` calibration -- reuses `_mine_
+    done_transitions`'s generalized `target_state` (T-5132) to mine BOTH
+    each closed, sized ticket's first `in-progress` transition and its
+    first `done` transition from the same git-history source `sprint_
+    velocity`/`ticket_flow` already trust, then sums `points` over sum
+    of actual (done - start) hours across every ticket where both
+    transitions were minable and the resulting duration is positive.
+    Returns `(None, 0)` when no ticket qualifies -- render layers must
+    label that "n/a", never a fabricated ratio."""
+    candidate_ids = tuple(
+        tid
+        for tid, t in all_tickets.items()
+        if tid in first_done and t.points is not None
+    )
+    if not candidate_ids:
+        return None, 0
+    starts = _mine_done_transitions(root, candidate_ids, TicketState.IN_PROGRESS.value)
+    dones = _mine_done_transitions(root, candidate_ids, TicketState.DONE.value)
+    first_start: dict[str, datetime] = {}
+    for tr in starts:
+        if (
+            tr.ticket_id not in first_start
+            or tr.committed_at < first_start[tr.ticket_id]
+        ):
+            first_start[tr.ticket_id] = tr.committed_at
+    first_done_dt: dict[str, datetime] = {}
+    for tr in dones:
+        if (
+            tr.ticket_id not in first_done_dt
+            or tr.committed_at < first_done_dt[tr.ticket_id]
+        ):
+            first_done_dt[tr.ticket_id] = tr.committed_at
+    total_points = 0
+    total_hours = 0.0
+    sample = 0
+    for tid in candidate_ids:
+        if tid not in first_start or tid not in first_done_dt:
+            continue
+        hours = (first_done_dt[tid] - first_start[tid]).total_seconds() / 3600.0
+        if hours <= 0:
+            continue
+        total_points += all_tickets[tid].points  # type: ignore[operator]
+        total_hours += hours
+        sample += 1
+    if sample == 0 or total_hours <= 0:
+        return None, 0
+    return total_points / total_hours, sample
+
+
+# frob:ticket T-5132
+# frob:doc docs/modules/tickets-data-storage.md#points-t-5132
+def _ticket_tokens_per_point(all_tickets: dict) -> float | None:
+    """T-5132 amendment: `tokens-per-point` calibration -- sums `tokens_
+    in + tokens_out` over sum of `points` across every ticket carrying
+    BOTH (no history mining needed, both are plain ledger fields).
+    `None` when no ticket carries both."""
+    total_tokens = 0
+    total_points = 0
+    for ticket in all_tickets.values():
+        if ticket.points is None:
+            continue
+        if ticket.tokens_in is None and ticket.tokens_out is None:
+            continue
+        total_tokens += (ticket.tokens_in or 0) + (ticket.tokens_out or 0)
+        total_points += ticket.points
+    if total_points <= 0 or total_tokens <= 0:
+        return None
+    return total_tokens / total_points
+
+
 # frob:ticket T-1528
 # frob:ticket T-1100
 # frob:ticket T-1142
@@ -667,11 +783,19 @@ def ticket_flow(
     )
     open_count = sum(1 for t in queue.tickets.values() if t.state in _OPEN_STATES)
     median_cycle = _median_cycle_days(all_tickets, first_done)
+    # frob:ticket T-5132
+    points_per_hour, points_per_hour_sample = _ticket_points_per_hour(
+        root, all_tickets, first_done
+    )
+    tokens_per_point = _ticket_tokens_per_point(all_tickets)
     return TicketFlowReport(
         rows=tuple(rows),
         open_count=open_count,
         trailing_net_rate=trailing_net_rate,
         median_cycle_days=median_cycle,
+        points_per_hour=points_per_hour,
+        points_per_hour_sample=points_per_hour_sample,
+        tokens_per_point=tokens_per_point,
     )
 
 

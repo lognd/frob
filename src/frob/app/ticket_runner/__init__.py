@@ -120,6 +120,7 @@ from ._mutate import (
     _kind,
     _label,
     _milestone,
+    _points,
     _priority,
     _resolve_scope_reason,
     _runs_last,
@@ -131,6 +132,7 @@ from ._mutate import (
     _sprint_assign,
     _sprint_show,
     _tier,
+    _tokens,
 )
 from ._new import (
     _maybe_attach_clipboard_image,
@@ -455,6 +457,10 @@ def _ticket_dispatch_table() -> dict:
         "runs-last-parallel-safe": _runs_last_parallel_safe,
         # frob:ticket T-2574
         "milestone": _deprecated_set_field("milestone", "milestone", _milestone),
+        # frob:ticket T-5132
+        "points": _points,
+        # frob:ticket T-5132
+        "tokens": _tokens,
         "archive": lambda root, cfg: _archive(
             root,
             force=cfg.ticket_force,

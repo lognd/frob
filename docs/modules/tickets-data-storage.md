@@ -312,6 +312,61 @@ M1 was field + validator + setter + CLI surface only: `milestone` did not
 yet block or reorder anything. M3 (T-2577, below) is where `doable`'s
 sort key starts caring; `MILE00x` gates (M2/M4/M5) are separate tickets.
 
+### Points (T-5132)
+
+`Ticket.points` is an `int | None` story-point size on the Fibonacci
+scale (`POINTS_ALLOWED = {1, 2, 3, 5, 8, 13}`, `frob.tickets._models`);
+`None` means unsized. `validate_points` is the single source of truth
+for whether a value is legal, called BEFORE the ledger write at both
+write sites -- `frob ticket new --points N` (WARNs, does not refuse,
+when omitted) and `frob ticket points <id> N` (`set_points`, refuses an
+out-of-scale value). `Ticket` itself stays lenient on the ledger LOAD
+path, same T-1132 reasoning `milestone`/`blocked_by`/`parent` already
+document.
+
+Hours are DERIVED, never entered: `frob ticket flow`'s `points_per_hour`
+is mined from git history (`_ticket_points_per_hour`, `frob.tickets.
+_flow`) -- the actual wall-clock span between a closed, sized ticket's
+first `in-progress` transition and its first `done` transition, summed
+across every ticket where both were minable this window, divided into
+the summed points. `_mine_done_transitions`'s `target_state` parameter
+(T-5132) generalizes the pre-existing done-only miner to find either
+transition from the same walk.
+
+**Enforcement is at `frob ticket start`, not a repo-wide lint** (owner
+directive 2026-09-20): `_refuse_unsized_on_start` (`frob.app.
+ticket_runner._lifecycle`) refuses `sys.exit(1)` when `ticket.points is
+None` and `ticket.unsized_ack` is not set -- the single override is
+`frob ticket start <id> --unsized-ack REASON`, which sets `unsized_ack`/
+`unsized_ack_reason` (same bool+reason shape `scope_breadth_ack`
+established) via `_apply_unsized_ack_on_start` BEFORE the refusal check
+runs, same inline-ack-before-refusal ordering T-2446's `--scope-breadth-
+ack` established for `_refuse_over_broad_scope_on_start`. This repo's
+own ~666 pre-existing queued tickets need NO backfill: the check only
+trips the moment someone actually starts one, and the per-ticket
+`--unsized-ack` override (not a repo-wide exemption date or a blanket
+`--no-points` flag) is the chosen escape hatch, matching the owner's own
+"no backfill needed" reasoning in T-5132's body.
+
+`frob ticket sprint show LABEL` (`SprintReport`) reports `total_points`/
+`points_done`/`sized_count` (how many committed tickets actually carry a
+value, so an unsized remainder is disclosed rather than silently folded
+into a complete-looking total) and a naive `points_eta_days` (remaining
+points divided by a simple points/day velocity derived from `points_
+done` over the span since the earliest committed ticket was filed;
+`None` when nothing is done yet or nothing remains).
+
+**Token spend (T-5132 amendment).** `tokens_in`/`tokens_out`/`tokens_
+cache_read` are optional `int | None` fields (`None` means human-worked
+or unmeasured, NEVER `0` -- a real zero-token session is not observable)
+recorded manually via `frob ticket tokens <id> --tokens-in N --tokens-
+out N [--tokens-cache-read N]` (`set_tokens`). Automatic session-
+transcript mining at start/close is DEFERRED (see T-5132's done
+report) -- only the manual path shipped this ticket. `frob ticket
+flow`'s `tokens_per_point` (`_ticket_tokens_per_point`) sums `tokens_in +
+tokens_out` over sum of `points` across every ticket carrying both,
+`None` when none does.
+
 ### Milestone as the doable sort axis, and inheritance (T-2577 M3)
 
 `_doable_sort_key` (`frob.tickets`) sorts milestone FIRST, ahead of

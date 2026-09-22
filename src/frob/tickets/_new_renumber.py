@@ -65,6 +65,7 @@ from frob.tickets._models import (
     TicketSpec,
     TicketState,
     validate_milestone,
+    validate_points,
 )
 from frob.tickets._provisional import mint_draft_id, on_default_branch
 from frob.tickets._store import (
@@ -614,6 +615,12 @@ def _refuse_finding_duplicate(
 
 
 # frob:ticket T-1813
+# frob:waive ARCH001 reason="T-5132: crossed the threshold by adding the points \
+# WARN-or-validate stage (mirroring the pre-existing milestone stage immediately above \
+# it) to this already-large pre-existing validation gauntlet, whose own docstring \
+# explains why it stays one function (T-1813: a WIRE001 false-positive rules out \
+# splitting the scope-breadth-ack/milestone/points checks into pydantic validators); a \
+# further structural split is this ticket's own scope boundary, not a T-5132 concern"
 def _validate_new_ticket_spec(
     root: Path, spec: TicketSpec, collected: frozenset[str] | None
 ) -> Result[tuple[str, ...], TicketError]:
@@ -657,6 +664,22 @@ def _validate_new_ticket_spec(
         milestone_check = validate_milestone(spec.milestone)
         if milestone_check.is_err:
             return Err(milestone_check.danger_err)
+
+    # frob:ticket T-5132
+    # `frob ticket new` WARNs (does not refuse) when --points is omitted
+    # -- the refusal is enforced later, at `frob ticket start`, per the
+    # owner directive (points required to WORK a ticket, not to file one).
+    if spec.points is None:
+        _log.warning(
+            "ticket new: %s filed with no --points -- start will refuse "
+            "unless it is sized first (`frob ticket points <id> N`) or "
+            "started with --unsized-ack REASON",
+            spec.title,
+        )
+    else:
+        points_check = validate_points(spec.points)
+        if points_check.is_err:
+            return Err(points_check.danger_err)
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:
