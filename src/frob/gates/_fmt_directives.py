@@ -397,8 +397,8 @@ def resolve_line_length(path: Path, root: Path) -> int | None:
 # frob:ticket T-4712
 # frob:waive DUP001 reason="near-duplicate of frob.graph.dsl's own quoted-TARGET \
 # convention (_QUOTED_TARGET_RE: a leading quote character opens a quoted target, \
-# closes at the next one), kept local rather than imported: T-4712's declared scope \
-# is src/frob/gates/_fmt_directives.py only (dsl.py belongs to leaf 2, T-4711), and \
+# closes at the next one), kept local rather than imported: T-4712's declared scope is \
+# src/frob/gates/_fmt_directives.py only (dsl.py belongs to leaf 2, T-4711), and \
 # frob.gates._tdd_order._looks_like_test_path already establishes the identical \
 # precedent -- a gate-side predicate mirroring a graph-side rule in spirit, not in \
 # code, rather than importing across that layering boundary for one regex"

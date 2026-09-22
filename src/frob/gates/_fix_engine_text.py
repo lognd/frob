@@ -666,3 +666,222 @@ def fix_e501_merge_introduced(root: Path) -> list[FixApplied]:
 
 
 # ---------------------------------------------------------------------------
+# DSTACK001 (T-4713): merge a stacked run of same-kind frob:tests/frob:doc
+# directive lines above one symbol into T-4711's multi-target header form.
+# ---------------------------------------------------------------------------
+
+
+#: `dsl._attrs_verb_error_tests` unconditionally defaults a bare
+#: `frob:tests` directive's `attrs` to this -- present on essentially
+#: every `EdgeKind.TESTS` edge in the repo, not a sign of a genuine
+#: per-target override. Treated as equivalent to "no attrs" by
+#: `_dstack001_mergeable_edges`: the merged bare multi-target form
+#: re-derives this SAME default on the next parse, so dropping it here
+#: changes nothing about the recovered edge set.
+_TESTS_DEFAULT_ATTRS = {"kind": "unit"}
+
+
+def _dstack001_normalized_attrs(edge) -> tuple:  # noqa: ANN001
+    """`edge.attrs` as a hashable, order-independent key, with
+    `_TESTS_DEFAULT_ATTRS` collapsed to empty for a TESTS edge (see that
+    constant's own docstring) -- split out of `_dstack001_mergeable_edges`
+    for ARCH001."""
+    from frob.graph import EdgeKind
+
+    attrs = dict(edge.attrs or {})
+    if edge.kind == EdgeKind.TESTS and attrs == _TESTS_DEFAULT_ATTRS:
+        attrs = {}
+    return tuple(sorted(attrs.items()))
+
+
+def _dstack001_mergeable_edges(edges):  # noqa: ANN001, ANN201
+    """Whether `edges` (one `(file, src)` stack's own edge group) is safe
+    for `fix_dstack001_merge` to collapse: every edge is `EdgeKind.TESTS`
+    or `EdgeKind.DOC` (the only two verbs T-4711's multi-target grammar
+    covers), and every edge's own NORMALIZED attrs (`_dstack001_
+    normalized_attrs`) is empty -- a directive carrying a genuine,
+    non-default `kind="..."` or similar per-target attr is left
+    untouched rather than guessed at, the same never-invent-a-binding
+    posture T-4710's move semantics already commits to. Returns
+    `True`/`False`; never raises."""
+    from frob.graph import EdgeKind
+
+    return all(
+        edge.kind in (EdgeKind.TESTS, EdgeKind.DOC)
+        and _dstack001_normalized_attrs(edge) == ()
+        for edge in edges
+    )
+
+
+def _dstack001_first_seen_kind_groups(edges):  # noqa: ANN001, ANN201
+    """`edges` (sorted by `origin`) grouped by `kind`, in FIRST-SEEN
+    order -- interleaved (doc, tests, doc) collapses to one doc group
+    then one tests group, never reordered alphabetically and never left
+    stably interleaved (T-4713's own ticket body, part (b))."""
+    ordered = sorted(edges, key=lambda e: e.origin)
+    groups: dict = {}
+    order: list = []
+    for edge in ordered:
+        if edge.kind not in groups:
+            groups[edge.kind] = []
+            order.append(edge.kind)
+        groups[edge.kind].append(edge)
+    return [(kind, groups[kind]) for kind in order]
+
+
+_DSTACK001_VERB_FOR_KIND = {
+    "tests": "tests",
+    "doc": "doc",
+}
+
+
+def _dstack001_merged_lines(edges, *, indent: str, marker: str):  # noqa: ANN001, ANN201
+    """The replacement physical comment lines for one mergeable stack --
+    one `{indent}{marker} frob:<verb> <target1>, <target2>, ...` line per
+    kind, in first-seen order (`_dstack001_first_seen_kind_groups`).
+    Deduplicates a target repeated verbatim within the same kind (a
+    same-kind stack sometimes carries the identical target twice,
+    T-4703's own measured 30,915-line corpus) so the merge never
+    manufactures a duplicate multi-target entry the pre-merge stack did
+    not already, functionally, carry twice over."""
+    from frob.graph import EdgeKind
+
+    lines = []
+    for kind, kind_edges in _dstack001_first_seen_kind_groups(edges):
+        verb = _DSTACK001_VERB_FOR_KIND.get(EdgeKind(kind).value)
+        if verb is None:
+            continue
+        seen_targets: list[str] = []
+        for edge in kind_edges:
+            if edge.target not in seen_targets:
+                seen_targets.append(edge.target)
+        targets = ", ".join(seen_targets)
+        lines.append(f"{indent}{marker} frob:{verb} {targets}")
+    return lines
+
+
+def _dstack001_apply_one(root: Path, file: str, src: str, edges) -> FixApplied | None:  # noqa: ANN001
+    """One flagged stack's merge, or `None` when it is not safe to apply
+    (see `_dstack001_mergeable_edges`) or its origin lines are not a
+    tight, gap-free run (a continuation-spanning or non-adjacent stack
+    is left untouched rather than guessed at) -- split out of
+    `fix_dstack001_merge` for ARCH001."""
+    from frob.gates._fmt_directives import marker_for
+
+    if not _dstack001_mergeable_edges(edges):
+        return None
+    line_numbers = sorted(
+        {
+            int(e.origin.rpartition(":")[2])
+            for e in edges
+            if e.origin.rpartition(":")[2].isdigit()
+        }
+    )
+    if not line_numbers or line_numbers[-1] - line_numbers[0] + 1 != len(line_numbers):
+        # A gap: some other, non-directive (or continuation-spanning)
+        # line sits inside the stack -- not this leaf's shape to merge.
+        return None
+    path = root / file
+    if not path.is_file():
+        return None
+    marker = marker_for(file)
+    if marker is None:
+        return None
+    text = path.read_text()
+    file_lines = text.splitlines(keepends=True)
+    start_idx = line_numbers[0] - 1
+    end_idx = line_numbers[-1] - 1
+    if start_idx < 0 or end_idx >= len(file_lines):
+        return None
+    original_block = file_lines[start_idx : end_idx + 1]
+    first_line = original_block[0]
+    indent = first_line[: len(first_line) - len(first_line.lstrip(" \t"))]
+    newline = "\n" if first_line.endswith("\n") else ""
+    merged = _dstack001_merged_lines(edges, indent=indent, marker=marker)
+    if not merged:
+        return None
+    new_block = [line + newline for line in merged]
+    new_lines = file_lines[:start_idx] + new_block + file_lines[end_idx + 1 :]
+    new_text = "".join(new_lines)
+    if new_text == text:
+        return None
+    if not _write_text(path, new_text):
+        return None
+    return FixApplied(
+        rule="DSTACK001",
+        file=file,
+        line=line_numbers[0],
+        detail=(
+            f"{file}:{line_numbers[0]} merged {len(line_numbers)} stacked "
+            f"frob:tests/frob:doc line(s) above {src!r} into "
+            f"{len(merged)} multi-target header(s)"
+        ),
+    )
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:ticket T-4713
+# frob:tests \
+# tests/test_gates_directive_stack.py::TestDstack001MergeFix.test_interleaved_doc_tests_doc_collapses_to_one_doc_then_one_tests  # noqa: E501
+def fix_dstack001_merge(
+    root: Path,
+    snapshot: GraphSnapshot,
+    queue,  # noqa: ANN001
+    ticket_id,  # noqa: ANN001
+    *,
+    only_paths: frozenset[str] | None = None,
+) -> list[FixApplied]:
+    """Tier-A fix for DSTACK001 (T-4713): merge a stacked run of
+    same-kind `frob:tests`/`frob:doc` directive lines above one symbol
+    into T-4711's multi-target header form, grouped by FIRST-SEEN kind
+    (`_dstack001_first_seen_kind_groups`) so an interleaved (doc, tests,
+    doc) stack collapses to one doc header then one tests header --
+    never reordered, never left interleaved.
+
+    Conservative by design, matching this repo's own never-invent-a-
+    binding posture: a stack containing any kind OTHER than tests/doc,
+    any edge carrying attrs, or whose origin lines are not a tight
+    gap-free run is left completely untouched (no partial rewrite) --
+    see `_dstack001_apply_one`'s own docstring for the full applicability
+    check. The merge only ever REORDERS/COLLAPSES existing targets into
+    fewer lines; it never adds, drops, or edits one, so the edge set
+    `parse_directives` recovers from the rewritten file is identical to
+    the pre-merge one (this leaf's own acceptance criterion).
+
+    `only_paths`, when given, restricts which flagged files this call
+    rewrites -- the same land-scope-discipline precedent `fix_fmt001_
+    directive_wrap`'s own `only_paths` establishes (T-1391): a whole-
+    tree rewrite is an out-of-scope WRITE land's own guards reject.
+    `queue`/`ticket_id` are accepted only for `TIER_A_HANDLERS`' uniform
+    4-arg dispatch shape (T-1911's own precedent) -- this handler needs
+    neither."""
+    from frob.gates._directive_stack import edges_for_stack, stack_lint_violations
+
+    violations = stack_lint_violations(snapshot)
+    applied: list[FixApplied] = []
+    seen_keys = set()
+    for violation in violations:
+        if only_paths is not None and violation.file not in only_paths:
+            continue
+        stack_edges = tuple(
+            e for e in snapshot.edges if e.origin.rpartition(":")[0] == violation.file
+        )
+        # Re-derive src from the first edge at this violation's own
+        # first line (edges_for_stack needs src, which Violation itself
+        # does not carry structurally -- recovered from the same edge
+        # group stack_lint_violations grouped by).
+        candidates = {
+            e.src
+            for e in stack_edges
+            if e.origin == f"{violation.file}:{violation.line}"
+        }
+        for src in candidates:
+            key = (violation.file, src)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            edges = edges_for_stack(snapshot, file=violation.file, src=src)
+            fix = _dstack001_apply_one(root, violation.file, src, edges)
+            if fix is not None:
+                applied.append(fix)
+    return applied

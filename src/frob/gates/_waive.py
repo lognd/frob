@@ -370,6 +370,11 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0404 finding 5: catch-all for a malformed `frob:` directive not
         # already claimed by a per-flavor check (WAIVE001/TEST010/DEBT001).
         "DSL001",
+        # T-4713: N+ consecutive frob: directive lines stacked above one
+        # symbol (frob.gates._directive_stack.stack_lint_violations); the
+        # Tier-A fix (frob.gates._fix_engine_text.fix_dstack001_merge)
+        # collapses same-kind directives into T-4711's multi-target form.
+        "DSTACK001",
         "WAIVE001",
         "WAIVE002",
         # T-0470: over-broad package-prefix waiver reach.
