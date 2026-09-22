@@ -129,8 +129,8 @@ class TestDoneReportTouchedFiles:
 
 
 # frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn frob:tests \
 # src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
-# frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 class TestSharedCheckSpawnFnTimeout:
     """Proves `_shared_check_spawn_fn`'s `timeout` parameter defaults to
     600s and `_done_report` passes its own budget through it, so a

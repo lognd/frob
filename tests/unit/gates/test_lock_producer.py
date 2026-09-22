@@ -40,8 +40,8 @@ def _init_repo(root: Path) -> None:
 
 
 # frob:tests src/frob/gates/_lock_producer.py::producer_status frob:tests \
+# src/frob/gates/_lock_producer.py::producer_status frob:tests \
 # src/frob/gates/_lock_producer.py::producer_status \
-# frob:tests src/frob/gates/_lock_producer.py::producer_status \
 class TestProducerStatusVerdicts:
     """`producer_status`'s four verdicts, against a real small git repo."""
 

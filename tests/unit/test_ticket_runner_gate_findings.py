@@ -977,10 +977,10 @@ class TestBudgetDeferredGroupsFromStdout:
 # src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable frob:tests \
 # src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn frob:tests \
 # src/frob/app/ticket_runner/_verify.py::_python_for_tree frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_python_for_tree frob:tests \
 # src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable \
-# frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn \
-# frob:tests src/frob/app/ticket_runner/_verify.py::_python_for_tree \
-# frob:tests src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable \
 class TestPythonForTree:
     """Covers `_python_for_tree` interpreter resolution; each method below
     carries its own `frob:tests` edge."""
@@ -1113,8 +1113,8 @@ class TestPythonForTree:
 
 # frob:ticket T-2076
 # frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn frob:tests \
 # src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
-# frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 class TestSharedCheckSpawnFn:
     """Asserts `_shared_check_spawn_fn` spawns `frob check --ticket <id>`
     at most once and caches the result for every later call, so

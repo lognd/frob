@@ -1,7 +1,7 @@
 ---
 id: T-4516
 title: 'Test evidence: NUnit + Unity Test Framework collection and runners'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -41,17 +41,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
-- field: points
-  old_value: '1'
-  new_value: '1'
-  reason: ticket sizing
-  actor: logan
-  at: '2026-09-22'
+evidence:
+- tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collects_test_and_unitytest
+- tests/test_testing.py::TestCollectCsharpTests::test_collect_csharp_tests_collapses_parameterized_test_case
+- tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_maps_passing_and_failing_ids
+- tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_crash_with_no_results_file_is_run_failed
+- tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml::test_parses_nested_test_suites_into_fqn_result_map
+- tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode::test_crash_with_no_results_file_is_run_failed_distinct_from_a_test_failure
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4516
+branch: t-4516
 ---
 Story: collect and run C#/Unity tests as evidence bindable by frob:tests directives. Parent for the two leaves below. blocked_by T-4518 because the Unity-vs-plain-C# distinction (asmdef, test assembly) needs project-model detection to route correctly.

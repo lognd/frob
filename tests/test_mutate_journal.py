@@ -78,8 +78,8 @@ def test_write_journal_refuses_on_content_collision(tmp_path):
 
 
 # frob:tests src/frob/mutate/_journal.py::remove_journal frob:tests \
+# src/frob/mutate/_journal.py::remove_journal frob:tests \
 # src/frob/mutate/_journal.py::remove_journal \
-# frob:tests src/frob/mutate/_journal.py::remove_journal \
 def test_remove_journal_after_restore(tmp_path):
     # frob:tests tests/test_mutate_journal.py::test_remove_journal_after_restore
     target = tmp_path / "m.py"
@@ -458,8 +458,8 @@ def test_record_journal_progress_swallows_write_failure(tmp_path, monkeypatch):
 
 
 # frob:tests src/frob/mutate/_journal.py::remove_journal frob:tests \
+# src/frob/mutate/_journal.py::remove_journal frob:tests \
 # src/frob/mutate/_journal.py::remove_journal \
-# frob:tests src/frob/mutate/_journal.py::remove_journal \
 def test_remove_journal_swallows_oserror(tmp_path, monkeypatch):
     # frob:tests tests/test_mutate_journal.py::test_remove_journal_swallows_oserror \
     # kind="unit"

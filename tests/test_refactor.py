@@ -1498,8 +1498,8 @@ class TestGitOps:
 
     # frob:tests src/frob/refactor/_gitops.py::current_sha frob:tests \
     # src/frob/refactor/_gitops.py::current_sha frob:tests \
+    # src/frob/refactor/_gitops.py::current_sha frob:tests \
     # src/frob/refactor/_gitops.py::current_sha \
-    # frob:tests src/frob/refactor/_gitops.py::current_sha \
     def test_current_sha_matches_head(self, tmp_path):
         # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_matches_head
         from frob.refactor._gitops import current_sha
@@ -1558,8 +1558,8 @@ class TestGitOps:
         assert result.danger_err == RefactorError.GitError
 
     # frob:tests src/frob/refactor/_gitops.py::current_sha frob:tests \
+    # src/frob/refactor/_gitops.py::current_sha frob:tests \
     # src/frob/refactor/_gitops.py::current_sha \
-    # frob:tests src/frob/refactor/_gitops.py::current_sha \
     def test_current_sha_not_a_git_repo(self, tmp_path):
         # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_not_a_git_repo
         from frob.refactor._gitops import current_sha
