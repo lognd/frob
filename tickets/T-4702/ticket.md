@@ -46,6 +46,28 @@ scope:
 - src/frob/_cli_parsers/_core.py
 - src/frob/app/config.py
 - src/frob/app/_config_external.py
+- docs/commands/ack.md
+- docs/commands/agent.md
+- docs/commands/claude.md
+- docs/commands/clean.md
+- docs/commands/coverage.md
+- docs/commands/doctor.md
+- docs/commands/explore.md
+- docs/commands/fleet.md
+- docs/commands/graph.md
+- docs/commands/mutate.md
+- docs/commands/natives.md
+- docs/commands/perf.md
+- docs/commands/pool.md
+- docs/commands/process.md
+- docs/commands/profile.md
+- docs/commands/registry.md
+- docs/commands/serve.md
+- docs/commands/status.md
+- docs/commands/test.md
+- docs/commands/verify.md
+- docs/commands/vet.md
+- docs/commands/worktree.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -220,6 +242,138 @@ scope_changes:
   reason: the new --sync-command-pages flag needs its bool field declared on AppConfig
     and added to from_external's field-copy allowlist (the T-4690 gap found before
     -- doctor_whereis silently no-op'd without it)
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/ack.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/agent.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/claude.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/clean.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/coverage.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/doctor.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/explore.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/fleet.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/graph.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/mutate.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/natives.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/perf.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/pool.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/process.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/profile.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/registry.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/serve.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/status.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/test.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/verify.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/vet.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/worktree.md
+  reason: 22 new generated stub pages from frob docs --sync-command-pages, closing
+    the doc-coverage gap for every live verb that had none
   actor: logan
   at: '2026-09-22'
 triage_changes:
