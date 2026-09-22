@@ -568,6 +568,7 @@ class TestLeaseTtl:
         assert lease_age_seconds(record) is None
 
     # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired frob:tests \
+    # src/frob/tickets/_leases.py::is_lease_ttl_expired frob:tests \
     # src/frob/tickets/_leases.py::is_lease_ttl_expired \
     # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
     def test_expired_past_ttl(self) -> None:
@@ -576,7 +577,8 @@ class TestLeaseTtl:
         record = self._record(recorded.isoformat())
         assert is_lease_ttl_expired(record, now=now, ttl_seconds=60) is True
 
-    # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
+    # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired frob:tests \
+    # src/frob/tickets/_leases.py::is_lease_ttl_expired \
     # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
     def test_not_expired_within_ttl(self) -> None:
         now = datetime(2026, 7, 23, 12, 0, 0, tzinfo=UTC)

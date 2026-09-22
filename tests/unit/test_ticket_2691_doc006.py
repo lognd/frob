@@ -66,13 +66,20 @@ class TestTicket2691Doc006Regression:
     while describing a future, not-yet-implemented verb."""
 
     def test_backticked_future_verb_is_flagged(self, tmp_path: Path) -> None:
-        """The pre-fix shape (T-2697's own repro): a backtick-quoted
-        two-word phrase that reads exactly like a live CLI invocation but
-        names a verb that does not exist yet must be flagged -- DOC006
-        cannot distinguish "real but missing" from "deliberately
-        aspirational" by pattern alone, which is why the fix is to stop
-        backtick-quoting it as an invocation at all (see the passing test
-        below)."""
+        """SUPERSEDED by T-5126 (kept, inverted, rather than deleted, so
+        the historical shape stays documented): the pre-T-5126 behavior
+        this test originally proved was that a backtick-quoted two-word
+        phrase reading like a live CLI invocation for a not-yet-existing
+        verb was flagged even inside a ticket's own body. T-5126
+        deliberately reversed that for ticket bodies specifically
+        (`_is_ticket_body_doc`, unconditional on ticket state): a
+        ticket's own narrative prose legitimately backtick-quotes a
+        planned/aspirational CLI form, and CLI-pointer resolution is now
+        skipped there regardless of state (see `tests/gates/
+        test_docptr.py::TestDoc006TicketBodyCliPointerSkip`, which pins
+        the current, intended behavior directly). Recording the
+        now-current outcome here instead of leaving a stale flagged-
+        assertion that silently rotted."""
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
         _write(
@@ -85,8 +92,7 @@ class TestTicket2691Doc006Regression:
             tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
         )
         found = [v for v in violations if v.rule == "DOC006"]
-        assert found
-        assert any("land status" in v.message for v in found)
+        assert found == []
 
     def test_prose_description_of_future_verb_not_flagged(self, tmp_path: Path) -> None:
         """T-2697's actual fix: describe the future verb in plain quoted
@@ -155,9 +161,11 @@ class TestTicket2742Doc006Regression:
     below isolates exactly the recurring mistake."""
 
     def test_backticked_future_verb_is_flagged(self, tmp_path: Path) -> None:
-        """The pre-fix shape (T-2745's own repro, same as T-2697's): a
+        """SUPERSEDED by T-5126 (same reversal as `TestTicket2691Doc006
+        Regression`'s test of the same name -- see that docstring): a
         backtick-quoted phrase reading like a live CLI invocation for a
-        verb that does not exist yet must be flagged."""
+        not-yet-existing verb is, since T-5126, intentionally NOT flagged
+        inside a ticket's own body regardless of ticket state."""
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
         _write(
@@ -170,8 +178,7 @@ class TestTicket2742Doc006Regression:
             tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
         )
         found = [v for v in violations if v.rule == "DOC006"]
-        assert found
-        assert any("land status" in v.message for v in found)
+        assert found == []
 
     def test_prose_description_of_future_verb_not_flagged(self, tmp_path: Path) -> None:
         """T-2745's actual fix: describe the future verb in plain prose

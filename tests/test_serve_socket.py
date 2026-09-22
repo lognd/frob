@@ -257,7 +257,8 @@ class TestAcquireSingletonLockPlatformBackends:
 
 
 class TestDispatchRequest:
-    # frob:tests src/frob/serve/_socketd.py::dispatch_request \
+    # frob:tests src/frob/serve/_socketd.py::dispatch_request frob:tests \
+    # src/frob/serve/_socketd.py::dispatch_request \
     # frob:tests src/frob/serve/_socketd.py::dispatch_request \
     def test_known_method_ok(self, root: Path) -> None:
         # frob:tests \

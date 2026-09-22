@@ -1,5 +1,5 @@
 ---
-id: T-draft-7fb71591
+id: T-5308
 title: 'WEBSEC117-122: header/URL/log injection and WebSocket origin check'
 state: queued
 kind: feature
