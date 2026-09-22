@@ -1,7 +1,7 @@
 ---
 id: T-5296
 title: frob-exports reports 3 packages with missing symbols (doctor, arch, vet)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -47,5 +47,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5296
+branch: t-5296
 ---
 gh run 35717833933; re-verified on dev tip 3acf8c6b30: test_all_nine_packages_report_zero_missing_symbols fails -- src/frob missing frob.doctor.relevant_tool_findings/RelevantToolFailureKind/RelevantToolEntry/RelevantToolFinding, src/frob/arch missing arch._layering.check_layering_edges, src/frob/vet missing vet._osv.query_advisories/OsvQueryError/OsvQueryFailure from package __all__/exports.
