@@ -2,7 +2,7 @@
 id: T-4710
 title: frob:tests declared test-side only; graph derives the reverse edge, lint plus
   fix removes the production-side copy
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -38,18 +38,20 @@ body_changes:
   at: '2026-09-19'
   old_length: 3296
   new_length: 4354
-lease_force_releases:
-- reason: worktree t-4710 holds no implementation; T-4710 stays queued, reported SKIP
-    by land-repair
-  staleness_reason: null
-  actor: /home/logan/projects/frob
-  at: '2026-09-21'
+evidence:
+- tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation::test_test_side_declaration_is_reoriented_to_canonical_shape
+- tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation::test_legacy_production_side_declaration_is_unchanged
+- tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation::test_self_referential_test_side_declaration_is_left_alone
+- tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation::test_reoriented_edge_is_never_backwards_by_tdd001s_own_predicate
+- tests/unit/graph/test_dsl.py::TestRedundantTestDeclarationLint::test_both_sides_declared_is_flagged_as_deletable
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4710
+branch: t-4710
 ---
 Leaf 1 of T-4703. 3 points. Move the `frob:tests` declaration to the test side and let the
 graph derive the reverse edge, so the production-side copy stops existing. Sequenced FIRST

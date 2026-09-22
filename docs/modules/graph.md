@@ -1151,6 +1151,62 @@ Targets are stored as opaque strings. Graph does not validate that a ticket
 or doc anchor exists -- that join is `frob.gates`' job (prevents a
 graph -> tickets dependency cycle).
 
+### `frob:tests`: test-side declaration, derived reverse edge (T-4710)
+
+`frob:tests` is declared on the TEST symbol, naming the production symbol
+it covers -- not the other way around. The canonical edge orientation
+(what every consumer, including TDD001's commit-order check, sees) is
+always `src = <implementation symbol>`, `target = <test symbol>`; a
+directive whose comment lives in a test-shaped file (`dsl.
+looks_like_test_path` -- `tests/` anywhere in the path, or a
+`test_*.py`/`*_test.py` leaf name) has its `src`/`target` swapped by
+`dsl._reorient_test_edge` at parse time, before any gate ever sees it.
+One declaration, one parse; the graph derives the reverse edge internally.
+
+```python
+# tests/unit/frob/test_foo.py
+# frob:tests src/frob/foo.py::Foo.bar
+def test_bar() -> None:
+    ...
+```
+
+parses to `Edge(src="src/frob/foo.py::Foo.bar", kind=TESTS,
+target="tests/unit/frob/test_foo.py::test_bar")` -- identical in shape to
+the legacy form (comment on `Foo.bar` itself, naming the test), which
+`_reorient_test_edge` leaves untouched because it is already canonical.
+
+The legacy production-side form is now REDUNDANT, not refused:
+`frob.graph._redundant_test_declarations` (run once per build, over the
+whole finalized edge set, because telling "a test-side declaration for
+this pair already exists" from "none exists yet" needs cross-file
+information no single file's parse has) reports it as a
+`MalformedDirective` naming the file, the line, and which remedy applies
+-- delete (a test-side declaration for the same `(src, target)` pair
+already exists) or move (none does yet, so deleting would silently lose
+the coverage edge). The move/delete FIX itself is a `frob.gates.
+_fix_engine_text` Tier-A handler outside this leaf's scope (T-4710 files
+a follow-up ticket for it rather than widening scope); this pass is the
+lint half only.
+
+Direction-agnostic consumers are unaffected either way:
+`frob.gates._coverage` unions both `edge.src` and `edge.target` into its
+`tested_symrefs` set, so it sees the same set of tested symbols before
+and after a declaration moves sides.
+
+**Self-reference, settled**: a test naming itself (`src == target`, both
+test-shaped -- e.g. a property test asserting its own invariant with no
+separate implementation symbol to point at) is left alone by
+`_reorient_test_edge` (its condition requires the target to be
+NON-test-shaped, so a self-referential pair never matches) and remains a
+valid parse. This does not contradict TDD001 (T-4260) reporting it as an
+ERROR: parsing and commit-order validation are different concerns --
+`dsl.parse_directives` accepting a shape as WELL-FORMED says only that it
+is a directive the grammar understands, not that every well-formed shape
+carries a meaningful ordering fact. A self-referential edge carries no
+such fact (both sides resolve to the same commit by construction), so
+TDD001 continuing to flag it for THAT reason is correct and unchanged by
+this leaf.
+
 ### The `frob:quote(...)` mention escape (T-1970)
 
 <!-- frob:describes src/frob/graph/dsl.py::mask_frob_mentions -->

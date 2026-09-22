@@ -88,6 +88,7 @@ from frob.graph.digest import compute_digests
 from frob.graph.dsl import (
     dedupe_slug,
     fold_comment_runs,
+    looks_like_test_path,
     markdown_anchors,
     parse_directives,
     slugify,
@@ -964,6 +965,93 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
         conn.close()
 
 
+# frob:ticket T-4710
+def _partition_test_declarations(
+    edges: Sequence[Edge],
+) -> tuple[set[tuple[str, str]], list[Edge]]:
+    """Split every `EdgeKind.TESTS` edge into `(test_side_pairs, prod_side)`
+    -- split out of `_redundant_test_declarations` for ARCH001 (T-4710).
+
+    A production-side and a derived test-side declaration both end up as
+    the identical `(src, target)` pair once `dsl._reorient_test_edge` has
+    run -- the only surviving difference is which FILE the comment
+    physically lives in, read back from `edge.origin`. `test_side_pairs`
+    is every `(src, target)` pair with at least one test-side origin;
+    `prod_side` is every edge whose OWN origin is not test-shaped (a
+    candidate for `_redundant_test_declarations`' finding)."""
+    test_side_pairs: set[tuple[str, str]] = set()
+    prod_side: list[Edge] = []
+    for edge in edges:
+        if edge.kind is not EdgeKind.TESTS:
+            continue
+        origin_file = edge.origin.rpartition(":")[0] or edge.origin
+        if looks_like_test_path(origin_file):
+            test_side_pairs.add((edge.src, edge.target))
+        else:
+            prod_side.append(edge)
+    return test_side_pairs, prod_side
+
+
+def _redundant_test_declaration_finding(
+    edge: Edge, *, has_test_side: bool
+) -> MalformedDirective:
+    """One production-side `frob:tests` edge's `MalformedDirective` finding
+    -- split out of `_redundant_test_declarations` for ARCH001 (T-4710).
+    Names the file/line the comment lives at and which remedy applies:
+    DELETE when `has_test_side` (a test-side declaration for the same
+    pair already exists) or MOVE (none does yet, so deleting would
+    silently lose the coverage edge)."""
+    origin_file, _, origin_line = edge.origin.rpartition(":")
+    origin_file = origin_file or edge.origin
+    lineno = int(origin_line) if origin_line.isdigit() else 0
+    if has_test_side:
+        remedy = (
+            "a test-side declaration for the same pair already exists -- "
+            "delete this production-side copy"
+        )
+    else:
+        remedy = (
+            "no test-side declaration exists yet -- move this line onto "
+            f"the test symbol {edge.target!r} in its own file"
+        )
+    return MalformedDirective(
+        file=origin_file,
+        line=lineno,
+        reason=(
+            f"frob:tests on production symbol {edge.src!r} is redundant "
+            f"(T-4710): {remedy}"
+        ),
+    )
+
+
+# frob:ticket T-4710
+def _redundant_test_declarations(
+    edges: Sequence[Edge],
+) -> tuple[MalformedDirective, ...]:
+    """T-4710 leaf 1 part (b): flag every `frob:tests` edge whose comment
+    still lives on the PRODUCTION symbol as redundant now the graph
+    derives the same edge from a test-side declaration -- reported here
+    (over the finalized, whole-repo edge set) rather than in `dsl.
+    parse_directives` because telling "a test-side counterpart already
+    exists" (delete) from "none exists yet" (move) needs the WHOLE
+    graph's edges, not one file's; see `_partition_test_declarations`
+    and `_redundant_test_declaration_finding` for the two halves.
+
+    The actual Tier-A fix (delete/move, per this leaf's ticket body) is
+    NOT implemented here -- it needs `frob.gates._fix_engine_text`'s
+    Tier-A dispatch, outside this leaf's declared scope (`src/frob/
+    graph/*` only); T-4710 files a follow-up ticket for that handler
+    rather than widening scope to add it. This function is the lint
+    half only."""
+    test_side_pairs, prod_side = _partition_test_declarations(edges)
+    return tuple(
+        _redundant_test_declaration_finding(
+            edge, has_test_side=(edge.src, edge.target) in test_side_pairs
+        )
+        for edge in prod_side
+    )
+
+
 # frob:ticket T-0216
 def _log_malformed_files(malformed: tuple[MalformedDirective, ...]) -> None:
     """WARN-log every malformed directive's file:line + parse error (T-0216):
@@ -1007,6 +1095,11 @@ def _finalize_build(
     snapshot = _cache.load_all(conn, stats=stats)
     if parse_failures:
         snapshot = snapshot.model_copy(update={"parse_failures": parse_failures})
+    redundant = _redundant_test_declarations(snapshot.edges)
+    if redundant:
+        snapshot = snapshot.model_copy(
+            update={"malformed": snapshot.malformed + redundant}
+        )
     _log_malformed_files(snapshot.malformed)
     _log_parse_failures(snapshot.parse_failures)
     _log.info(

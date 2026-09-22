@@ -1214,3 +1214,166 @@ class TestTodoDirectiveInsideDocstring:
         assert not malformed
         assert len(edges) == 1
         assert edges[0].attrs["note"] == "cache the lookup in a PyOnceLock"
+
+
+class TestTestSideDeclarationReorientation:
+    """T-4710: a `frob:tests` declared on the TEST symbol (comment lives in
+    a test-shaped file, naming the production symbol it covers) is
+    reoriented at parse time into the one canonical
+    `implementation -> test` edge shape -- the same shape a legacy
+    production-side declaration already produces -- so every downstream
+    consumer (TDD001's backwards check chief among them) sees one
+    orientation regardless of which side declared it."""
+
+    def test_test_side_declaration_is_reoriented_to_canonical_shape(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        # frob:tests tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation.test_test_side_declaration_is_reoriented_to_canonical_shape  # noqa: E501
+        src = (
+            "# frob:tests src/frob/foo.py::Foo.bar\ndef test_bar() -> None:\n    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "tests/test_foo.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 1
+        edge = tests_edges[0]
+        assert edge.src == "src/frob/foo.py::Foo.bar"
+        assert edge.target == "tests/test_foo.py::test_bar"
+
+    def test_legacy_production_side_declaration_is_unchanged(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        # The pre-existing, already-canonical form: comment sits on the
+        # production symbol, names the test. Must NOT be touched by the
+        # new reorientation logic -- it is already in canonical shape.
+        src = (
+            "class Foo:\n"
+            "    # frob:tests tests/unit/graph/test_dsl.py::TestFoo.test_bar\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "src/frob/foo.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 1
+        edge = tests_edges[0]
+        assert edge.src == "src/frob/foo.py::Foo.bar"
+        assert edge.target == "tests/unit/graph/test_dsl.py::TestFoo.test_bar"
+
+    def test_self_referential_test_side_declaration_is_left_alone(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        # T-4710 contradiction 2: a test naming itself (src == target,
+        # both test-like) stays a deliberate, valid parse -- the
+        # reorientation predicate requires the target to be NON-test-like,
+        # so this shape never matches and is returned unchanged.
+        src = (
+            "# frob:tests tests/test_self.py::test_self\n"
+            "def test_self() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "tests/test_self.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 1
+        edge = tests_edges[0]
+        assert edge.src == edge.target == "tests/test_self.py::test_self"
+
+    def test_reoriented_edge_is_never_backwards_by_tdd001s_own_predicate(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        # The control for T-4710's contradiction 1: reuse TDD001's OWN
+        # backwards predicate (src looks test-like, target does not) and
+        # assert the reoriented edge never matches it, while the RAW
+        # (unreoriented) orientation deliberately constructed here WOULD
+        # have matched -- so this test cannot pass vacuously.
+        from frob.gates._tdd_order import _looks_like_test_path as gate_looks_test
+
+        src = (
+            "# frob:tests src/frob/foo.py::Foo.bar\ndef test_bar() -> None:\n    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "tests/test_foo.py", src)).danger_ok
+        edges, _malformed = parse_directives(pf)
+        edge = next(e for e in edges if e.kind == EdgeKind.TESTS)
+
+        def is_backwards(src_symref: str, target_symref: str) -> bool:
+            src_file = src_symref.split("::", 1)[0]
+            target_file = target_symref.split("::", 1)[0]
+            return gate_looks_test(src_file) and not gate_looks_test(target_file)
+
+        assert not is_backwards(edge.src, edge.target)
+        # The raw, un-reoriented shape (what a naive test-side emission
+        # would have produced) DOES trip the backwards predicate.
+        raw_src, raw_target = "tests/test_foo.py::test_bar", "src/frob/foo.py::Foo.bar"
+        assert is_backwards(raw_src, raw_target)
+
+
+class TestRedundantTestDeclarationLint:
+    """T-4710 leaf 1 part (b): `frob.graph._redundant_test_declarations`
+    flags a `frob:tests` edge still declared on the production symbol as
+    redundant, once a test-side declaration exists (or names the move it
+    still needs when none exists yet). Constructs `Edge`s directly rather
+    than through `parse_directives` -- the cross-file grouping this
+    function does is graph-level, not per-file parse behaviour."""
+
+    def test_production_only_declaration_is_flagged_as_needing_a_move(
+        self,
+    ) -> None:
+        # frob:tests tests/unit/graph/test_dsl.py::TestRedundantTestDeclarationLint.test_production_only_declaration_is_flagged_as_needing_a_move  # noqa: E501
+        from frob.graph import _redundant_test_declarations
+        from frob.graph._models import Edge
+
+        edge = Edge(
+            src="src/frob/foo.py::Foo.bar",
+            kind=EdgeKind.TESTS,
+            target="tests/test_foo.py::test_bar",
+            origin="src/frob/foo.py:3",
+            attrs={},
+        )
+        findings = _redundant_test_declarations([edge])
+        assert len(findings) == 1
+        assert findings[0].file == "src/frob/foo.py"
+        assert "move" in findings[0].reason
+
+    def test_test_side_only_declaration_is_not_flagged(self) -> None:
+        from frob.graph import _redundant_test_declarations
+        from frob.graph._models import Edge
+
+        edge = Edge(
+            src="src/frob/foo.py::Foo.bar",
+            kind=EdgeKind.TESTS,
+            target="tests/test_foo.py::test_bar",
+            origin="tests/test_foo.py:1",
+            attrs={},
+        )
+        assert _redundant_test_declarations([edge]) == ()
+
+    def test_both_sides_declared_is_flagged_as_deletable(self) -> None:
+        from frob.graph import _redundant_test_declarations
+        from frob.graph._models import Edge
+
+        prod = Edge(
+            src="src/frob/foo.py::Foo.bar",
+            kind=EdgeKind.TESTS,
+            target="tests/test_foo.py::test_bar",
+            origin="src/frob/foo.py:3",
+            attrs={},
+        )
+        test_side = Edge(
+            src="src/frob/foo.py::Foo.bar",
+            kind=EdgeKind.TESTS,
+            target="tests/test_foo.py::test_bar",
+            origin="tests/test_foo.py:1",
+            attrs={},
+        )
+        findings = _redundant_test_declarations([prod, test_side])
+        assert len(findings) == 1
+        assert findings[0].file == "src/frob/foo.py"
+        assert "delete" in findings[0].reason

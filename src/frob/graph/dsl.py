@@ -28,6 +28,81 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+
+# frob:ticket T-4710
+# frob:doc \
+# docs/modules/graph.md#frobtests-test-side-declaration-derived-reverse-edge-t-4710
+# frob:tests tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation.test_test_side_declaration_is_reoriented_to_canonical_shape  # noqa: E501
+def looks_like_test_path(path: str) -> bool:
+    """Whether `path` (a symref's file half) is a conventional test file --
+    `tests/` anywhere in its directory parts, or a `test_*.py`/`*_test.py`
+    leaf name. T-4710: the shape check `parse_directives` uses to tell a
+    TEST-SIDE `frob:tests` declaration (comment lives in a test file) from
+    the legacy PRODUCTION-SIDE one (comment lives on the implementation
+    symbol) so it can reorient the derived edge into the one canonical
+    `implementation -> test` shape `frob.gates._tdd_order` (TDD001)
+    validates, regardless of which side declared it. Exported (not
+    module-private) so `frob.graph`'s cross-file redundancy pass can reuse
+    the identical predicate rather than re-deriving it -- see that
+    predicate's own near-duplicate in `frob.gates._tdd_order.
+    _looks_like_test_path`, kept local there for the layering reason its
+    own waiver states (gates must not import graph-internal helpers back
+    the other way); this one is the graph-side original the two now share
+    in spirit, not in code, across that boundary."""
+    from pathlib import PurePosixPath
+
+    parts = PurePosixPath(path).parts
+    name = parts[-1] if parts else path
+    return (
+        "tests" in parts[:-1] or name.startswith("test_") or name.endswith("_test.py")
+    )
+
+
+def _tests_edge_target_file(target: str) -> str:
+    """The file half of a `frob:tests` edge's `target` symref -- `target`
+    up to its first `::` (or `.` for the legacy dotted spelling, T-4703
+    owner decision 6 -- not this leaf's job to canonicalize, only to read
+    far enough to find the file boundary), or the whole string if it
+    carries no qualname separator at all."""
+    for sep in ("::", "."):
+        file_part, found, _ = target.partition(sep)
+        if found:
+            return file_part
+    return target
+
+
+def _reorient_test_edge(edge: Edge) -> Edge:
+    """T-4710: fold a TEST-SIDE `frob:tests` declaration into the one
+    canonical `implementation -> test` edge shape.
+
+    Resolves the contradiction `src/frob/gates/_tdd_order.py` (TDD001,
+    T-4260) and this leaf both measure: TDD001 treats an edge whose `src`
+    looks like a test path and whose `target` does not as BACKWARDS --
+    a malformed directive it refuses to order. A declaration now living
+    on the test symbol itself (`src` = the test, since `src` is always
+    the comment's own site) naming the production symbol it covers
+    (`target`) is exactly that backwards shape UNLESS the graph reorients
+    it here, before it ever reaches a gate. `edge` is returned unchanged
+    when `src` does not look test-like (the legacy production-side form,
+    already canonical) or when both sides are test-like (including true
+    self-reference, `src == target`, which T-4710's docs settle as still
+    valid parse-time and still TDD001's own concern, not this function's)
+    -- reorientation applies ONLY to the one shape it exists to fix."""
+    if edge.kind is not EdgeKind.TESTS:
+        return edge
+    src_file = _tests_edge_target_file(edge.src)
+    target_file = _tests_edge_target_file(edge.target)
+    if not looks_like_test_path(src_file) or looks_like_test_path(target_file):
+        return edge
+    return Edge(
+        src=edge.target,
+        kind=edge.kind,
+        target=edge.src,
+        origin=edge.origin,
+        attrs=edge.attrs,
+    )
+
+
 _VERB_TABLE: dict[str, EdgeKind] = {
     "doc": EdgeKind.DOC,
     "uses-contract": EdgeKind.USES_CONTRACT,
@@ -1634,7 +1709,7 @@ def parse_directives(
         if result is None:
             continue
         if isinstance(result, Edge):
-            edges.append(result)
+            edges.append(_reorient_test_edge(result))
         else:
             malformed.append(result)
     extra_edges, coherence_malformed = _debt_todo_coherence(edges)
@@ -1651,6 +1726,7 @@ def parse_directives(
 __all__ = [
     "dedupe_slug",
     "fold_comment_runs",
+    "looks_like_test_path",
     "markdown_anchors",
     "parse_directives",
     "slugify",
