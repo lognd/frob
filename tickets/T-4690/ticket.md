@@ -2,7 +2,7 @@
 id: T-4690
 title: 'Delete every CLI alias and duplicate name: the four group verbs, fmt, docs/docs-search,
   three spellings of status, whereis'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -445,3 +445,6 @@ be shared.
 TITLE DRIFT: this ticket's title still says "the four group verbs". After this
 amendment it is three group verbs plus four standalone mirrors. `frob ticket`
 has no title setter; this paragraph is the correction of record.
+
+## Reopen log
+- 2026-09-21: closed-but-unlanded: a refused drain wrote state=done with land_commit null and no code on dev; reopen to land for real
