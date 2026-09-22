@@ -1186,3 +1186,87 @@ class TestUnbreakableTokenWithTrailingAttrGetsNoqaT4477:
             f"ruff check --select E501 found a violation on the "
             f"canonicalized output:\nstdout={result.stdout}\nstderr={result.stderr}"
         )
+
+
+class TestQuotedTargetNeverSplitByWrap:
+    """T-4712: `_wrap_cut_point`'s narrowing -- a cut may never land inside
+    a QUOTED target (a vitest-style describe title), even when that
+    target contains internal spaces the pre-T-4712 word-boundary scan
+    would happily cut at."""
+
+    def test_pre_change_word_boundary_cut_would_have_split_the_quoted_target(
+        self,
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestQuotedTargetNeverSplitByWrap.test_pre_change_word_boundary_cut_would_have_split_the_quoted_target  # noqa: E501
+        # The CONTROL: the raw word-boundary rule this leaf narrows
+        # (`remaining.rfind(" ", 0, budget)` with no protected-span
+        # check at all) DOES land inside the quoted target here -- if
+        # this assertion ever stopped holding, the "clean" assertion
+        # below would no longer be exercising anything.
+        remaining = (
+            'frob:tests "src/x.test.ts a fairly long describe title with '
+            'several words in it"'
+        )
+        budget = 30
+        naive_cut = remaining.rfind(" ", 0, budget)
+        assert naive_cut > 0
+        assert remaining[0] == "f"  # sanity: this is the whole line
+        # The naive cut position is inside the quoted target span
+        # (opens right after `frob:tests `, well before column 30).
+        open_quote = remaining.index('"')
+        close_quote = remaining.rindex('"')
+        assert open_quote < naive_cut < close_quote
+
+    def test_quoted_target_is_never_split_across_physical_lines(self) -> None:
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "src/x.test.ts a fairly long describe title '
+            'with several words in it"\n'
+            "    pass\n"
+        )
+        out = canonicalize_text(src, path="a.py", limit=40)
+        # The quote count across the whole output is unchanged (2 --
+        # nothing duplicated or dropped), and exactly ONE physical line
+        # carries BOTH quotes -- the title is never split mid-string.
+        assert out.count('"') == 2
+        quote_lines = [line for line in out.splitlines() if line.count('"') == 2]
+        assert len(quote_lines) == 1
+        assert (
+            '"src/x.test.ts a fairly long describe title with several words in it"'
+        ) in out
+
+
+class TestUnbreakableSingleNodeIdStillUnsplittable:
+    """T-4712 positive control: a `frob:tests` whose single node id alone
+    exceeds the line length keeps the pre-existing unsplittable-remainder
+    path -- exactly one final line carrying the noqa suffix, unaffected
+    by this leaf's quoted-target narrowing (there is no quote at all
+    here)."""
+
+    def test_single_long_node_id_produces_one_noqa_suffixed_line(self) -> None:
+        node_id = "tests/" + ("x" * 90) + ".py::TestClass.test_method"
+        src = f"def f():\n    # frob:tests {node_id}\n    pass\n"
+        out = canonicalize_text(src, path="a.py", limit=88)
+        directive_lines = [line for line in out.splitlines() if node_id in line]
+        assert len(directive_lines) == 1
+        assert directive_lines[0].rstrip().endswith("# noqa: E501")
+
+
+class TestCanonicalizeTextIdempotentTwice:
+    """T-4712 positive control: `format_paths` (via `canonicalize_text`)
+    reports zero further changes on a second run -- narrowing the cut
+    point must stay a canonicalizer, not a one-way wrapper."""
+
+    def test_second_format_paths_run_reports_zero_changes(self, tmp_path) -> None:  # noqa: ANN001
+        target = tmp_path / "a.py"
+        target.write_text(
+            "def f():\n"
+            '    # frob:tests "src/x.test.ts a fairly long describe title '
+            'with several words in it"\n'
+            "    pass\n"
+        )
+        first = format_paths(tmp_path, check_only=False, limit=40)
+        assert [c.path for c in first.changes] == ["a.py"]
+        second = format_paths(tmp_path, check_only=False, limit=40)
+        assert second.changes == ()

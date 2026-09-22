@@ -394,8 +394,85 @@ def resolve_line_length(path: Path, root: Path) -> int | None:
     return read_line_length(root)
 
 
+# frob:ticket T-4712
+# frob:waive DUP001 reason="near-duplicate of frob.graph.dsl's own quoted-TARGET \
+# convention (_QUOTED_TARGET_RE: a leading quote character opens a quoted target, \
+# closes at the next one), kept local rather than imported: T-4712's declared scope \
+# is src/frob/gates/_fmt_directives.py only (dsl.py belongs to leaf 2, T-4711), and \
+# frob.gates._tdd_order._looks_like_test_path already establishes the identical \
+# precedent -- a gate-side predicate mirroring a graph-side rule in spirit, not in \
+# code, rather than importing across that layering boundary for one regex"
+_QUOTED_TARGET_START_RE = re.compile(r'^frob:(?P<verb>\S+)\s+"')
+
+
+def _quoted_target_span(text: str) -> tuple[int, int] | None:
+    """The `(start, end)` span of `text`'s own quoted TARGET, quotes
+    included -- `text` is one full logical directive (`frob:<verb>
+    "target text" [attrs...]`) -- or `None` when `text`'s target is not
+    quoted at all. T-4712, owner decision 2: a quoted TARGET (a vitest-
+    style describe title) is an opaque value a wrap must never split;
+    a `reason="..."`/other `key="value"` attribute is deliberately NOT
+    covered here -- wrapping a long `reason=` across physical lines at
+    its own natural word boundaries is this module's whole reason to
+    exist (its own module docstring), and folding always reconstructs
+    the exact original value regardless of where among ITS OWN spaces
+    the split lands (T-0286's join-with-empty-string contract), so no
+    correctness is lost by leaving `reason=` wrappable -- only a quoted
+    TARGET's split, at the SYMBOL side of the grammar, is what owner
+    decision 2 is protecting against."""
+    match = _QUOTED_TARGET_START_RE.match(text)
+    if match is None:
+        return None
+    open_quote = match.end() - 1
+    close_quote = text.find('"', open_quote + 1)
+    if close_quote == -1:
+        return None
+    return (open_quote, close_quote + 1)
+
+
+# frob:ticket T-4712
+def _inside_protected_span(pos: int, protected_span: tuple[int, int] | None) -> bool:
+    """Whether `pos` falls strictly inside `protected_span` (`_quoted_
+    target_span`'s `(start, end)`, already shifted into the caller's own
+    coordinate space) -- split out of `_wrap_cut_point` for ARCH001.
+    `pos == start`/`pos == end` (a span's own edge) is NOT inside, since
+    a cut exactly at a quote's boundary is a token-separation break, not
+    a mid-value one. `protected_span=None` (no quoted target at all)
+    always returns `False`."""
+    if protected_span is None:
+        return False
+    return protected_span[0] < pos < protected_span[1]
+
+
+# frob:ticket T-0991
+def _boundary_space_cut(
+    remaining: str, budget: int, cut: int, protected_span: tuple[int, int] | None
+) -> tuple[str, str] | None:
+    """The T-0991 edge case, split out of `_wrap_cut_point` for ARCH001:
+    `rfind`'s exclusive end bound makes a space sitting exactly AT index
+    `budget` invisible to `_wrap_cut_point`'s own `rfind(..., 0, budget)`
+    scan -- not an oversized token, just the natural word boundary
+    landing on the one index that scan cannot see. Returns the `(head,
+    tail)` split with `cut` backed off any such boundary space(s) so
+    neither carries a leading/trailing space (the real parser's per-line
+    `.strip()` would silently eat a leading one, concatenating the words
+    on either side with no separator) -- or `None` when this case does
+    not apply (a real cut was already found, or the boundary space
+    itself is `_inside_protected_span`, T-4712)."""
+    if cut > 0 or budget >= len(remaining) or remaining[budget] != " ":
+        return None
+    if _inside_protected_span(budget, protected_span):
+        return None
+    cut = budget
+    while cut > 0 and remaining[cut] == " ":
+        cut -= 1
+    return remaining[:cut], remaining[cut:]
+
+
 # frob:ticket T-4179
-def _wrap_cut_point(remaining: str, budget: int) -> tuple[str, str] | None:
+def _wrap_cut_point(
+    remaining: str, budget: int, *, protected_span: tuple[int, int] | None = None
+) -> tuple[str, str] | None:
     """The `(head, tail)` split of `remaining` for one physical line of
     `_canonical_lines`'s wrap loop, given `budget` columns of room --
     extracted (T-4179, ARCH001) so that loop's own body stays a plain
@@ -427,22 +504,27 @@ def _wrap_cut_point(remaining: str, budget: int) -> tuple[str, str] | None:
     once ONE token in it does not fit reuses T-4475's own already-
     idempotent, already-tested final-line contract unchanged: exactly one
     physical line, ending in the caller's own noqa suffix, nothing left
-    to wrap further."""
+    to wrap further.
+
+    T-4712: owner decision 2 -- a break may land ONLY at token
+    separation, never inside a symbol path, an anchor, or a QUOTED
+    TARGET. `protected_span` (`_quoted_target_span`'s span, already
+    shifted into THIS call's `remaining` coordinate space by the
+    caller) is checked against every candidate cut position below; a
+    space that only LOOKS like a word boundary but sits inside the
+    quoted target is skipped, walking further left, exactly as if it
+    were not a space at all -- this is a NARROWING of the space scan
+    already here, not a new wrapper (this file's own module
+    docstring). A `reason=`/other attribute value is NOT covered by
+    `protected_span` -- see `_quoted_target_span`'s own docstring for
+    why wrapping one at its natural word boundaries stays correct and
+    intentional."""
     cut = remaining.rfind(" ", 0, budget)
-    if cut <= 0 and budget < len(remaining) and remaining[budget] == " ":
-        # frob:ticket T-0991
-        # `rfind`'s exclusive end bound makes a space sitting exactly AT
-        # index `budget` invisible to the scan above -- not an oversized
-        # token, just the natural word boundary landing on the one index
-        # `rfind(..., 0, budget)` cannot see. Back `cut` off any such
-        # boundary space(s) so neither `head` nor `tail` carries a
-        # leading/trailing space (the real parser's per-line `.strip()`
-        # would silently eat a leading one, concatenating the words on
-        # either side with no separator).
-        cut = budget
-        while cut > 0 and remaining[cut] == " ":
-            cut -= 1
-        return remaining[:cut], remaining[cut:]
+    while cut > 0 and _inside_protected_span(cut, protected_span):
+        cut = remaining.rfind(" ", 0, cut)
+    boundary_cut = _boundary_space_cut(remaining, budget, cut, protected_span)
+    if boundary_cut is not None:
+        return boundary_cut
     if cut <= 0:
         # frob:ticket T-4179
         # frob:ticket T-4477
@@ -498,6 +580,15 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
     if len(prefix) + len(text) <= limit:
         return [prefix + text]
 
+    # T-4712: the quoted-target span (if any) is derived ONCE from the
+    # full, unwrapped `text` -- every loop iteration below re-derives its
+    # own LOCAL view of it by subtracting how much of `text` this
+    # iteration's `remaining` has already shed, rather than re-scanning
+    # `remaining` itself (which, after the first cut, no longer starts
+    # with `frob:<verb> "`, so `_quoted_target_span` could never find it
+    # there again).
+    target_span = _quoted_target_span(text)
+
     lines: list[str] = []
     remaining = text
     while True:
@@ -522,7 +613,13 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
         # token); `None` means "unbreakable token, nothing left to wrap
         # onto a further line" -- emit `remaining` whole and stop, same
         # contract as the `budget <= 0` branch above.
-        cut_point = _wrap_cut_point(remaining, budget)
+        consumed = len(text) - len(remaining)
+        local_span = (
+            (target_span[0] - consumed, target_span[1] - consumed)
+            if target_span is not None
+            else None
+        )
+        cut_point = _wrap_cut_point(remaining, budget, protected_span=local_span)
         if cut_point is None:
             # frob:ticket T-4475
             # T-4179 made this line intentionally over `limit` (never

@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 392
+gate_rule_total: 402
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     fixability: "manual"
@@ -2005,6 +2005,56 @@ gate_rule_entries:
   - id: "CHK-GATE-TICK015"
     name: "TICK015 is a live, enforced gate rule"
     disposition: "handled_by:TICK015"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-ARCH104"
+    name: "ARCH104 is a live, enforced gate rule"
+    disposition: "handled_by:ARCH104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-FORBID001"
+    name: "FORBID001 is a live, enforced gate rule"
+    disposition: "handled_by:FORBID001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-FORBID002"
+    name: "FORBID002 is a live, enforced gate rule"
+    disposition: "handled_by:FORBID002"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-FORBID003"
+    name: "FORBID003 is a live, enforced gate rule"
+    disposition: "handled_by:FORBID003"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PERF015"
+    name: "PERF015 is a live, enforced gate rule"
+    disposition: "handled_by:PERF015"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PERF016"
+    name: "PERF016 is a live, enforced gate rule"
+    disposition: "handled_by:PERF016"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PERF017"
+    name: "PERF017 is a live, enforced gate rule"
+    disposition: "handled_by:PERF017"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-PERF018"
+    name: "PERF018 is a live, enforced gate rule"
+    disposition: "handled_by:PERF018"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-POL000"
+    name: "POL000 is a live, enforced gate rule"
+    disposition: "handled_by:POL000"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-VET012"
+    name: "VET012 is a live, enforced gate rule"
+    disposition: "handled_by:VET012"
     fixability: "manual"
     cross_refs: []
 concern_family_total: 13

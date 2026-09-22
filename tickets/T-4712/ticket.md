@@ -2,7 +2,7 @@
 id: T-4712
 title: Narrow the directive wrapper to cut only at token separation, never inside
   a path, anchor or quoted value
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -30,12 +30,19 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/test_gates_fmt_directives.py::TestQuotedTargetNeverSplitByWrap::test_pre_change_word_boundary_cut_would_have_split_the_quoted_target
+- tests/test_gates_fmt_directives.py::TestQuotedTargetNeverSplitByWrap::test_quoted_target_is_never_split_across_physical_lines
+- tests/test_gates_fmt_directives.py::TestUnbreakableSingleNodeIdStillUnsplittable::test_single_long_node_id_produces_one_noqa_suffixed_line
+- tests/test_gates_fmt_directives.py::TestCanonicalizeTextIdempotentTwice::test_second_format_paths_run_reports_zero_changes
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4712
+branch: t-4712
 ---
 Leaf 3 of T-4703. 2 points. Narrow the existing wrapper so it cuts ONLY at token separation.
 Owns src/frob/gates/_fmt_directives.py's wrap path; no new wrapper is written.
