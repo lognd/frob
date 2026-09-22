@@ -2,7 +2,7 @@
 id: T-5201
 title: 'explore_runner.py: open parse-artifact cache read-only for single-process
   explore commands'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/explore_runner.py
 - tests/unit/test_explore_runner_parse_artifact_cache.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,15 @@ scope_changes:
   reason: positive-control test for the read-only artifact-cache stamp
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: declare cli node''s env.read/env.write via explore_runner.py
+    for the new PARSE_ARTIFACT_CACHE_ENV stamp'
+  actor: logan
+  at: '2026-09-22'
+evidence:
+- tests/unit/test_explore_runner_parse_artifact_cache.py::TestStampReadOnlyParseArtifactCacheEnv::test_stamps_env_when_cache_db_exists
+- tests/unit/test_explore_runner_parse_artifact_cache.py::TestStampReadOnlyParseArtifactCacheEnv::test_does_not_stamp_when_no_cache_db_exists
 designated_repro_test: null
 threat: null
 component: null
