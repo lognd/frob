@@ -2,7 +2,7 @@
 id: T-4611
 title: land's own refusal-avoidance quarantine-raised log line does not name the undisposed
   findings forcing synchronous verification
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -41,6 +41,10 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_enumerates_rule_and_file_identities_inline
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_deduplicates_repeated_rule_file_pairs
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_caps_named_identities_and_suffixes_the_remainder
 designated_repro_test: null
 threat: null
 component: null

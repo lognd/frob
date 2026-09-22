@@ -6603,20 +6603,50 @@ def _quarantine_override_ceilings(
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_no_quarantine_ever_raised_is_unknown_not_a_crash  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_corrupt_store_is_unknown  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_raised_record_counts_undisposed_findings  # noqa: E501
+#: T-4611: the max (rule, file) identities `_quarantine_undisposed_
+#: summary` names inline before falling back to "+N more" -- unbounded
+#: enumeration would turn a large raise into a wall of text in the ONE
+#: ERROR line an operator is meant to triage from at a glance; this cap
+#: mirrors `frob.graph.affects`/`frob.graph.callgraph.closure`'s own
+#: posture of bounding a best-effort triage aid rather than printing
+#: everything.
+_QUARANTINE_SUMMARY_NAMED_LIMIT = 8
+
+
 def _quarantine_undisposed_summary(root: Path) -> str:
-    """T-2049: a short human-readable fragment for `_quarantine_override_
-    ceilings`' own ERROR line -- "N finding(s) undisposed" for a readable
-    raised record, or "undisposed count unknown (store unreadable)" when
-    `load_quarantine` itself errors, so the log line always states a
-    concrete remedy-relevant fact instead of only naming the ticket."""
+    """T-2049/T-4611: a short human-readable fragment for `_quarantine_
+    override_ceilings`' own ERROR line -- "N finding(s) undisposed" for a
+    readable raised record, or "undisposed count unknown (store
+    unreadable)" when `load_quarantine` itself errors, so the log line
+    always states a concrete remedy-relevant fact instead of only naming
+    the ticket.
+
+    T-4611: the T-3233 incident measured a real land spending 27.3s of
+    fully-synchronous verification because this line named only a COUNT
+    ("16 finding(s) undisposed"), forcing a separate `frob verify
+    dispose`-read round trip mid-land just to learn WHICH findings were
+    blocking. Now also enumerates each undisposed finding's `(rule_id,
+    file)` identity inline (deduplicated -- the same rule/file pair can
+    recur across multiple lines, and the triage question is "which
+    files/rules", not "how many lines"), up to `_QUARANTINE_SUMMARY_
+    NAMED_LIMIT`, with a `"+N more"` suffix beyond that cap so the first
+    log line alone is enough to start triaging without a round trip."""
     from frob.verify._quarantine import load_quarantine
 
     loaded = load_quarantine(root)
     if loaded.is_err or loaded.danger_ok is None:
         return "undisposed count unknown (store unreadable)"
     record = loaded.danger_ok
-    undisposed = sum(1 for f in record.findings if not f.disposition)
-    return f"{undisposed} finding(s) undisposed"
+    undisposed = [f for f in record.findings if not f.disposition]
+    if not undisposed:
+        return "0 finding(s) undisposed"
+    identities = sorted({(f.rule_id, f.file) for f in undisposed})
+    named = ", ".join(
+        f"{rule}:{file}" for rule, file in identities[:_QUARANTINE_SUMMARY_NAMED_LIMIT]
+    )
+    remaining = len(identities) - _QUARANTINE_SUMMARY_NAMED_LIMIT
+    suffix = f", +{remaining} more" if remaining > 0 else ""
+    return f"{len(undisposed)} finding(s) undisposed ({named}{suffix})"
 
 
 # frob:ticket T-1693

@@ -120,7 +120,67 @@ class TestQuarantineUndisposedSummary:
                 QuarantinedFinding(rule_id="TEST002", file="src/y.py", line=2),
             ),
         ).is_ok
-        assert _quarantine_undisposed_summary(tmp_path) == "2 finding(s) undisposed"
+        summary = _quarantine_undisposed_summary(tmp_path)
+        assert summary.startswith("2 finding(s) undisposed")
+
+    # frob:ticket T-4611
+    def test_enumerates_rule_and_file_identities_inline(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_enumerates_rule_and_file_identities_inline  # noqa: E501
+        """T-4611 (the T-3233 incident): the summary must name each
+        undisposed finding's (rule, file) identity inline -- the whole
+        point is triaging from the FIRST log line without a separate
+        `frob verify dispose`-read round trip."""
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
+                QuarantinedFinding(rule_id="TEST002", file="src/y.py", line=2),
+            ),
+        ).is_ok
+        summary = _quarantine_undisposed_summary(tmp_path)
+        assert "TEST001:src/x.py" in summary
+        assert "TEST002:src/y.py" in summary
+
+    # frob:ticket T-4611
+    def test_deduplicates_repeated_rule_file_pairs(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_deduplicates_repeated_rule_file_pairs  # noqa: E501
+        """The same (rule, file) pair recurring across multiple lines is
+        named ONCE -- triage is "which files/rules", not "how many
+        lines"."""
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=9),
+            ),
+        ).is_ok
+        summary = _quarantine_undisposed_summary(tmp_path)
+        assert summary.count("TEST001:src/x.py") == 1
+        assert summary.startswith("2 finding(s) undisposed")
+
+    # frob:ticket T-4611
+    def test_caps_named_identities_and_suffixes_the_remainder(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_caps_named_identities_and_suffixes_the_remainder  # noqa: E501
+        """Beyond `_QUARANTINE_SUMMARY_NAMED_LIMIT` distinct identities,
+        the summary stays a single readable line via a '+N more' suffix
+        instead of enumerating everything."""
+        findings = tuple(
+            QuarantinedFinding(rule_id=f"TEST{i:03d}", file=f"src/f{i}.py", line=1)
+            for i in range(12)
+        )
+        assert raise_quarantine(
+            tmp_path, batch_commit_shas=("deadbeef",), findings=findings
+        ).is_ok
+        summary = _quarantine_undisposed_summary(tmp_path)
+        assert summary.startswith("12 finding(s) undisposed")
+        assert "+4 more" in summary
 
 
 # frob:ticket T-1693
