@@ -2,7 +2,7 @@
 id: T-4702
 title: Regenerate docs/commands from the final CLI surface (18 files for 51 verbs
   today) and report the drift in the owner-owned ~/.claude/refs/frob.md
-state: done
+state: queued
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -520,3 +520,6 @@ FILES (declared scope):
   docs/commands/**
   docs/design/cli-regrouping.md
   tests/unit/test_docs_commands_coverage.py (new)
+
+## Reopen log
+- 2026-09-22: closed-but-unlanded: refused land wrote state=done with land_commit null and no code on dev
