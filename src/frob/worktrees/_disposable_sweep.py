@@ -37,6 +37,7 @@ from pydantic import BaseModel
 
 import frob.gitio as gitio
 from frob.logging import get_logger
+from frob.process._pid_liveness import pid_alive
 
 _log = get_logger(__name__)
 
@@ -113,19 +114,18 @@ def _read_owner_pid(scratch: Path) -> int | None:
         return None
 
 
+# frob:ticket T-5222
 def _pid_is_alive(pid: int) -> bool:
-    """`True` iff `pid` names a currently-running process (the standard
-    `os.kill(pid, 0)` liveness probe, no signal actually sent)."""
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        # T-4437: a live pid owned by another user still answers with
-        # EPERM, not ESRCH -- that IS aliveness, just not one we can
-        # signal, so treat it as alive rather than dead.
-        return True
-    return True
+    """`True` iff `pid` names a currently-running process.
+
+    T-5222: delegates to `frob.process._pid_liveness.pid_alive` (T-3018's
+    one sanctioned `os.kill(pid, 0)` liveness probe, PLATFORM002's own
+    `_ALLOWLIST` entry) instead of this module's own duplicate `os.kill`
+    call -- same EPERM-is-alive precedent this function's own T-4437
+    citation already established, now the ONE implementation instead of
+    a second copy PLATFORM002 correctly flagged as outside the
+    sanctioned home."""
+    return pid_alive(pid)
 
 
 def _classify_scratch_dir(scratch: Path) -> DisposableWorktreeEntry:
