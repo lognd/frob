@@ -1,5 +1,5 @@
 ---
-id: T-draft-b5abf556
+id: T-5273
 title: 'Post-land sweep residue 2026-09-22_0234: COV002:src/frob/strata/_assume_template.py
   COV003:tests/unit/test_ticket_set.py REL002:.frob-release.json '
 state: queued
