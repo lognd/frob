@@ -2,7 +2,7 @@
 id: T-5215
 title: frob.app.telemetry.redact_command now transitively loads frob.gates (T-1318
   boundary regression)
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-21'
@@ -17,6 +17,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/security/test_redact.py
 - src/frob/policy/__init__.py
+- src/frob/vet/_ecosystem.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_scan_violations.py
+- src/frob/vet/_supplychain.py
+- src/frob/testing/_coverage_wait.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +41,41 @@ scope_changes:
     per T-1318)'
   actor: logan
   at: '2026-09-21'
+- op: add
+  glob: src/frob/vet/_ecosystem.py
+  reason: fixing frob.policy alone did not make plain 'import frob' gates-free; frob.vet
+    (4 files) and frob.testing._coverage_wait had the same anti-pattern on frob's
+    own init path, fixed alongside to satisfy the measurable sys.modules test
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: fixing frob.policy alone did not make plain 'import frob' gates-free; frob.vet
+    (4 files) and frob.testing._coverage_wait had the same anti-pattern on frob's
+    own init path, fixed alongside to satisfy the measurable sys.modules test
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/vet/_scan_violations.py
+  reason: fixing frob.policy alone did not make plain 'import frob' gates-free; frob.vet
+    (4 files) and frob.testing._coverage_wait had the same anti-pattern on frob's
+    own init path, fixed alongside to satisfy the measurable sys.modules test
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/vet/_supplychain.py
+  reason: fixing frob.policy alone did not make plain 'import frob' gates-free; frob.vet
+    (4 files) and frob.testing._coverage_wait had the same anti-pattern on frob's
+    own init path, fixed alongside to satisfy the measurable sys.modules test
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/testing/_coverage_wait.py
+  reason: fixing frob.policy alone did not make plain 'import frob' gates-free; frob.vet
+    (4 files) and frob.testing._coverage_wait had the same anti-pattern on frob's
+    own init path, fixed alongside to satisfy the measurable sys.modules test
+  actor: logan
+  at: '2026-09-22'
 body_changes:
 - mode: append
   reason: corrected root cause after tracing python -X importtime; original diagnosis
@@ -44,12 +84,6 @@ body_changes:
   at: '2026-09-21'
   old_length: 1406
   new_length: 3183
-lease_force_releases:
-- reason: 'coordinator: no live work in that worktree (T-5215 diagnosed only; T-4599
-    landed)'
-  staleness_reason: null
-  actor: /home/logan/projects/frob
-  at: '2026-09-22'
 designated_repro_test: null
 threat: null
 component: null
