@@ -1,5 +1,5 @@
 ---
-id: T-draft-e4547e60
+id: T-5283
 title: frob.app._config_external missing T-5132 CLI field allowlist entries (points/tokens/unsized-ack
   silently dropped)
 state: queued
