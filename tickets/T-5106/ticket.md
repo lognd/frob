@@ -329,6 +329,13 @@ body_changes:
   at: '2026-09-21'
   old_length: 2259
   new_length: 2259
+- mode: set
+  reason: design after mapping the existing queue machinery (T-1345/T-3613) and the
+    v0.535.0 land-kernel plan
+  actor: logan
+  at: '2026-09-21'
+  old_length: 2259
+  new_length: 2259
 designated_repro_test: null
 threat: null
 component: null
