@@ -1,5 +1,5 @@
 ---
-id: T-draft-9ef13c58
+id: T-5288
 title: frob ticket land's Tier-A pre-land fix pass produces spurious mass ty invalid-type-form
   Never errors, refusing otherwise-clean lands
 state: queued
