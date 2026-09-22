@@ -26,6 +26,7 @@ scope:
 - tests/unit/test_explore_verb.py
 - src/frob/app/debt_runner.py
 - src/frob/app/deprecated_runner.py
+- docs/commands/gitlog.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,12 @@ scope_changes:
   reason: 'reconciling per the ticket''s own note: T-4690 already handles the map/outline
     mirrors under explore; debt/deprecated are the T-4692-deferred top-level verbs
     this ticket now folds'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/gitlog.md
+  reason: DOC004/DOC006 require docs/commands pages naming a deprecated verb updated
+    in the same ticket
   actor: logan
   at: '2026-09-22'
 triage_changes:
