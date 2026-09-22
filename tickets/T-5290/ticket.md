@@ -1,5 +1,5 @@
 ---
-id: T-draft-edc25180
+id: T-5290
 title: frob ticket points (and other setters) on an ARCHIVED id materialize a duplicate
   active ticket dir, wedging the ledger with DuplicateId
 state: queued
