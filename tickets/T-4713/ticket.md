@@ -2,7 +2,7 @@
 id: T-4713
 title: Directive stack lint (N+ consecutive, default 4) plus a Tier-A fix that merges
   same-kind directives into multi-target headers
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -90,3 +90,6 @@ rewrite is an out-of-scope WRITE and land's own guards reject it (T-1391, measur
 - Stack count (runs of 3+) after this leaf, reported against the leaf-1 number and the 1,712
   pre-story baseline.
 - No new ARCH001 on any touched file (the merge shrinks line count; assert it never grows one).
+
+## Failure log
+- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-4713), requeued by frob check
